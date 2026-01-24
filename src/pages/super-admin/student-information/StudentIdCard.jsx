@@ -125,8 +125,8 @@ const StudentIdCard = () => {
                     pincode,
                     photo_url,
                     student_status,
-                    classes(id, name),
-                    sections(id, name)
+                    classes:class_id(id, name),
+                    sections:section_id(id, name)
                 `)
                 .eq('branch_id', branchId)
                 .eq('class_id', filters.class_id)

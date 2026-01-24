@@ -347,14 +347,14 @@ const StudentIdCard = () => {
                                 <label className="text-sm font-medium">Section</label>
                                 <Select 
                                     value={filters.section_id} 
-                                    onValueChange={(value) => setFilters(prev => ({ ...prev, section_id: value }))}
+                                    onValueChange={(value) => setFilters(prev => ({ ...prev, section_id: value === 'all' ? '' : value }))}
                                     disabled={!filters.class_id}
                                 >
                                     <SelectTrigger>
                                         <SelectValue placeholder="All Sections" />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        <SelectItem value="">All Sections</SelectItem>
+                                        <SelectItem value="all">All Sections</SelectItem>
                                         {sections.map((sec) => (
                                             <SelectItem key={sec.id} value={sec.id}>
                                                 {sec.name}

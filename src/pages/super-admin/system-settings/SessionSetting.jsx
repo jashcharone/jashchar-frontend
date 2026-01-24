@@ -106,7 +106,7 @@ const SessionSetting = () => {
             // Fetch branch info
             const { data: branch, error: branchError } = await supabase
                 .from('branches')
-                .select('id, branch_name, current_session_id')
+                .select('id, branch_name')
                 .eq('id', branchId)
                 .single();
             
@@ -170,14 +170,6 @@ const SessionSetting = () => {
 
             if (error) throw error;
 
-            // If first session, also update branch's current_session_id
-            if (sessions.length === 0) {
-                await supabase
-                    .from('branches')
-                    .update({ current_session_id: data.id })
-                    .eq('id', branchId);
-            }
-
             toast({ title: 'Success', description: `Session "${newSession.name}" created successfully` });
             setCreateDialogOpen(false);
             setNewSession({ name: '', startDate: '', endDate: '' });
@@ -204,12 +196,6 @@ const SessionSetting = () => {
                 .from('sessions')
                 .update({ is_active: true })
                 .eq('id', sessionId);
-
-            // Update branch's current_session_id
-            await supabase
-                .from('branches')
-                .update({ current_session_id: sessionId })
-                .eq('id', branchId);
 
             toast({ title: 'Success', description: `Session "${sessionName}" is now active` });
             fetchData();
@@ -266,7 +252,7 @@ const SessionSetting = () => {
         if (!deleteConfirm) return;
         
         // Don't allow deleting active session
-        if (branchInfo?.current_session_id === deleteConfirm.id) {
+        if (deleteConfirm.is_active) {
             toast({ variant: 'destructive', title: 'Error', description: 'Cannot delete active session. Please activate another session first.' });
             setDeleteConfirm(null);
             return;
@@ -329,14 +315,14 @@ const SessionSetting = () => {
                 </div>
 
                 {/* Current Active Session */}
-                {branchInfo?.current_session_id && (
+                {sessions.find(s => s.is_active) && (
                     <Card className="border-green-200 bg-green-50/50 dark:bg-green-900/10">
                         <CardContent className="py-4">
                             <div className="flex items-center gap-3">
                                 <CheckCircle className="h-5 w-5 text-green-600" />
                                 <span className="font-medium">Current Active Session:</span>
                                 <Badge className="bg-green-600 text-white">
-                                    {sessions.find(s => s.id === branchInfo.current_session_id)?.name || 'Unknown'}
+                                    {sessions.find(s => s.is_active)?.name || 'Unknown'}
                                 </Badge>
                             </div>
                         </CardContent>
@@ -375,7 +361,7 @@ const SessionSetting = () => {
                                 </TableHeader>
                                 <TableBody>
                                     {sessions.map((session) => {
-                                        const isActive = branchInfo?.current_session_id === session.id;
+                                        const isActive = session.is_active;
                                         const isEditing = editingSessionId === session.id;
 
                                         return (

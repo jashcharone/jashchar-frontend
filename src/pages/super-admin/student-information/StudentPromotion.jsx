@@ -62,9 +62,9 @@ const StudentPromotion = () => {
             try {
                 const { data, error } = await supabase
                     .from('sessions')
-                    .select('id, session_name, is_active')
+                    .select('id, name, is_active')
                     .eq('branch_id', branchId)
-                    .order('session_name', { ascending: false });
+                    .order('name', { ascending: false });
                 
                 if (error) throw error;
                 setSessions(data || []);
@@ -293,7 +293,7 @@ const StudentPromotion = () => {
 
     // Get session name by ID
     const getSessionName = (sessionId) => {
-        return sessions.find(s => s.id === sessionId)?.session_name || 'N/A';
+        return sessions.find(s => s.id === sessionId)?.name || 'N/A';
     };
 
     return (
@@ -337,7 +337,7 @@ const StudentPromotion = () => {
                                             <SelectContent>
                                                 {sessions.map((session) => (
                                                     <SelectItem key={session.id} value={session.id}>
-                                                        {session.session_name} {session.is_active && '(Active)'}
+                                                        {session.name} {session.is_active && '(Active)'}
                                                     </SelectItem>
                                                 ))}
                                             </SelectContent>
@@ -413,7 +413,7 @@ const StudentPromotion = () => {
                                             <SelectContent>
                                                 {sessions.map((session) => (
                                                     <SelectItem key={session.id} value={session.id}>
-                                                        {session.session_name} {session.is_active && '(Active)'}
+                                                        {session.name} {session.is_active && '(Active)'}
                                                     </SelectItem>
                                                 ))}
                                             </SelectContent>

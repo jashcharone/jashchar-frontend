@@ -1,0 +1,671 @@
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { motion } from 'framer-motion';
+import { ROUTES } from '@/registry/routeRegistry';
+import { Building, PlusCircle, Search, MoreHorizontal, User, Edit, Trash2, ToggleLeft, ToggleRight, Upload, X, Info, CreditCard, CheckCircle, Mail, Phone, UserCog } from 'lucide-react';
+import DashboardLayout from '@/components/DashboardLayout';
+import { supabase } from '@/lib/customSupabaseClient';
+import api from '@/lib/api';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { useToast } from '@/components/ui/use-toast';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator
+} from '@/components/ui/dropdown-menu';
+import {
+  AlertDialog,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogClose
+} from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
+import { v4 as uuidv4 } from 'uuid';
+
+const formatDate = (dateString) => {
+  const options = { day: '2-digit', month: 'short', year: 'numeric' };
+  return new Date(dateString).toLocaleDateString('en-GB', options).replace(/ /g, '.');
+};
+
+const calculateExpiryDate = (startDate, plan) => {
+  if (!plan || plan.subscription_period_type === 'Lifetime') {
+    return 'Lifetime';
+  }
+  const date = new Date(startDate);
+  const periodType = plan.subscription_period_type;
+  const periodValue = plan.subscription_period_value;
+
+  if (periodType === 'Days') {
+    date.setDate(date.getDate() + periodValue);
+  } else if (periodType === 'Months') {
+    date.setMonth(date.getMonth() + periodValue);
+  } else if (periodType === 'Years') {
+    date.setFullYear(date.getFullYear() + periodValue);
+  }
+  return formatDate(date);
+};
+
+const AssignPlanDialog = ({ school, isOpen, onOpenChange, onPlanAssigned }) => {
+  const { toast } = useToast();
+  const [plans, setPlans] = useState([]);
+  const [selectedPlanId, setSelectedPlanId] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [assigning, setAssigning] = useState(false);
+
+  useEffect(() => {
+    if (isOpen) {
+      fetchPlans();
+    }
+  }, [isOpen]);
+
+  const fetchPlans = async () => {
+    setLoading(true);
+    // Fix: status is boolean, not string 'active'
+    const { data, error } = await supabase.from('subscription_plans').select('*').eq('status', true);
+    if (error) {
+      toast({ variant: "destructive", title: "Error", description: "Failed to fetch plans" });
+    } else {
+      setPlans(data || []);
+    }
+    setLoading(false);
+  };
+
+  const handleAssign = async () => {
+    if (!selectedPlanId) return;
+    setAssigning(true);
+    try {
+      const plan = plans.find(p => p.id === selectedPlanId);
+      const startDate = new Date().toISOString();
+      
+      // Calculate End Date
+      let endDate = null;
+      if (plan.period_type !== 'Lifetime') {
+         const date = new Date();
+         // Assuming period_value is number. If string, parse it.
+         const val = parseInt(plan.period_value);
+         if (plan.period_type === 'Days') date.setDate(date.getDate() + val);
+         if (plan.period_type === 'Months') date.setMonth(date.getMonth() + val);
+         if (plan.period_type === 'Years') date.setFullYear(date.getFullYear() + val);
+         endDate = date.toISOString();
+      }
+
+      const { error: schoolError } = await supabase
+        .from('schools')
+        .update({
+          plan_id: selectedPlanId,
+          subscription_status: 'active'
+        })
+        .eq('id', school.id);
+
+      if (schoolError) throw schoolError;
+
+      // 2. Create Subscription Record in 'school_subscriptions'
+      // First, expire any existing active subscriptions
+      await supabase
+        .from('school_subscriptions')
+        .update({ status: 'expired' })
+        .eq('school_id', school.id)
+        .eq('status', 'active');
+
+      // Insert new subscription
+      const { error: subError } = await supabase
+        .from('school_subscriptions')
+        .insert([{
+            school_id: school.id,
+            plan_id: selectedPlanId,
+            start_date: startDate,
+            end_date: endDate,
+            status: 'active',
+            billing_type: 'prepaid'
+        }]);
+
+      if (subError) throw subError;
+
+      toast({ title: "Success", description: `Plan assigned to ${school.name}` });
+      onPlanAssigned();
+      onOpenChange(false);
+    } catch (error) {
+      toast({ variant: "destructive", title: "Error", description: error.message });
+    } finally {
+      setAssigning(false);
+    }
+  };
+
+  return (
+    <Dialog open={isOpen} onOpenChange={onOpenChange}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Assign Subscription Plan</DialogTitle>
+          <DialogDescription>Select a plan for <strong>{school?.name}</strong></DialogDescription>
+        </DialogHeader>
+        <div className="py-4">
+          {loading ? <div className="text-center">Loading plans...</div> : (
+            <div className="space-y-4">
+              <div className="grid gap-2">
+                {plans.map(plan => (
+                  <div 
+                    key={plan.id} 
+                    className={`p-4 border rounded-lg cursor-pointer flex justify-between items-center ${selectedPlanId === plan.id ? 'border-primary bg-primary/5' : 'hover:bg-gray-50'}`}
+                    onClick={() => setSelectedPlanId(plan.id)}
+                  >
+                    <div>
+                      <div className="font-medium">{plan.name}</div>
+                      <div className="text-sm text-muted-foreground">{plan.price} / {plan.period_value} {plan.period_type}</div>
+                    </div>
+                    {selectedPlanId === plan.id && <div className="h-4 w-4 rounded-full bg-primary" />}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+        <div className="flex justify-end space-x-2">
+          <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
+          <Button onClick={handleAssign} disabled={assigning || !selectedPlanId}>
+            {assigning ? 'Assigning...' : 'Assign Plan'}
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
+const ManageOwnerDialog = ({ school, owner, isOpen, onOpenChange, onOwnerUpdate }) => {
+  const { toast } = useToast();
+  const [formData, setFormData] = useState({ firstName: '', lastName: '', phone: '' });
+  const [imageFile, setImageFile] = useState(null);
+  const [imagePreview, setImagePreview] = useState('');
+  const [actions, setActions] = useState({ resetPassword: false, resendEmail: false, twoFactor: false });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    if (owner) {
+      const nameParts = owner.full_name?.split(' ') || [];
+      const firstName = nameParts.shift() || '';
+      const lastName = nameParts.join(' ') || '';
+      setFormData({
+        firstName,
+        lastName,
+        phone: owner.phone || '',
+      });
+      setImagePreview(owner.photo_url || '');
+    }
+  }, [owner]);
+
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setImageFile(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+  
+  const handleManualVerify = async () => {
+    toast({ title: '🚧 Feature in Development', description: 'Manual email verification will be implemented soon.' });
+  }
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!owner) return;
+    setIsSubmitting(true);
+
+    try {
+      let photoUrl = owner.photo_url;
+      if (imageFile) {
+        const fileName = `avatars/${owner.id}-${uuidv4()}`;
+        const { error: uploadError } = await supabase.storage
+          .from('school-logos') // Re-using for avatars for simplicity
+          .upload(fileName, imageFile, { upsert: true });
+
+        if (uploadError) throw uploadError;
+
+        const { data: { publicUrl } } = supabase.storage
+          .from('school-logos')
+          .getPublicUrl(fileName);
+        photoUrl = publicUrl;
+      }
+
+      const fullName = `${formData.firstName} ${formData.lastName}`.trim();
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .update({
+          full_name: fullName,
+          phone: formData.phone,
+          photo_url: photoUrl,
+        })
+        .eq('id', owner.id);
+      
+      if (profileError) throw profileError;
+      
+      if (actions.resetPassword || actions.resendEmail) {
+        const { error: actionError } = await supabase.functions.invoke('manage-school-owner-actions', {
+          body: {
+            userId: owner.id,
+            email: owner.email,
+            resetPassword: actions.resetPassword,
+            resendEmail: actions.resendEmail
+          }
+        });
+        if(actionError) throw actionError;
+      }
+      
+      toast({ title: 'Owner Updated Successfully!' });
+      onOwnerUpdate(); // Refetch schools list
+      onOpenChange(false); // Close dialog
+    } catch (error) {
+      toast({ variant: 'destructive', title: 'Update Failed', description: error.message });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+
+  if (!owner) return null;
+
+  return (
+    <Dialog open={isOpen} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-3xl bg-card p-0">
+        <DialogHeader className="p-6 bg-muted/50 rounded-t-lg border-b">
+          <DialogTitle className="text-2xl font-bold">Manage School Owner</DialogTitle>
+          <DialogDescription>Manage details and actions for the owner of {school?.name}.</DialogDescription>
+        </DialogHeader>
+        <form onSubmit={handleSubmit}>
+          <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div><Label htmlFor="email">Email *</Label><Input id="email" value={owner.email} readOnly disabled className="bg-muted" /></div>
+            <div></div>
+            <div><Label htmlFor="firstName">First Name *</Label><Input id="firstName" value={formData.firstName} onChange={(e) => setFormData({...formData, firstName: e.target.value})} required /></div>
+            <div><Label htmlFor="lastName">Last Name *</Label><Input id="lastName" value={formData.lastName} onChange={(e) => setFormData({...formData, lastName: e.target.value})} required /></div>
+            <div><Label htmlFor="phone">Admin Contact *</Label><Input id="phone" value={formData.phone} onChange={(e) => setFormData({...formData, phone: e.target.value})} required /></div>
+            <div>
+              <Label>Admin Image</Label>
+              <div className="flex items-center gap-4 mt-2">
+                 <img src={imagePreview || `https://ui-avatars.com/api/?name=${owner.full_name}&background=random`} alt="Owner" className="h-20 w-20 rounded-full object-cover border-2 border-border" />
+                 <Button asChild variant="outline">
+                    <label htmlFor="admin-image-upload"><Upload className="mr-2 h-4 w-4" />Upload<input id="admin-image-upload" type="file" className="sr-only" onChange={handleFileChange} accept="image/*" /></label>
+                 </Button>
+              </div>
+            </div>
+            
+            <div className="md:col-span-2 border-t pt-6 mt-2 space-y-4">
+               <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
+                <div className="flex items-center space-x-2"><Checkbox id="resetPassword" checked={actions.resetPassword} onCheckedChange={(c) => setActions({...actions, resetPassword: c})} /><Label htmlFor="resetPassword">Reset Password</Label></div>
+                <div className="flex items-center space-x-2"><Checkbox id="resendEmail" checked={actions.resendEmail} onCheckedChange={(c) => setActions({...actions, resendEmail: c})} /><Label htmlFor="resendEmail">Re-send Email</Label></div>
+                <Button type="button" variant="link" className="p-0 h-auto" onClick={handleManualVerify}>Manually Verify Email</Button>
+               </div>
+               <div className="flex items-center space-x-2">
+                <Checkbox id="twoFactor" checked={actions.twoFactor} onCheckedChange={(c) => setActions({...actions, twoFactor: c})} disabled />
+                <Label htmlFor="twoFactor">Two Factor Verification <span className="text-xs text-muted-foreground">(Coming Soon)</span></Label>
+               </div>
+            </div>
+          </div>
+          <div className="flex justify-end gap-2 p-6 bg-muted/50 border-t rounded-b-lg">
+            <DialogClose asChild><Button type="button" variant="secondary">Close</Button></DialogClose>
+            <Button type="submit" disabled={isSubmitting}>{isSubmitting ? 'Submitting...' : 'Submit'}</Button>
+          </div>
+        </form>
+         <DialogClose className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground">
+            <X className="h-4 w-4" />
+            <span className="sr-only">Close</span>
+        </DialogClose>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
+const SchoolsPage = () => {
+  const navigate = useNavigate();
+  const { toast } = useToast();
+  const [schools, setSchools] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [schoolToDelete, setSchoolToDelete] = useState(null);
+  const [deleting, setDeleting] = useState(false);
+  const [schoolToManage, setSchoolToManage] = useState(null);
+  const [schoolToAssignPlan, setSchoolToAssignPlan] = useState(null);
+  
+  const fetchSchools = async () => {
+    setLoading(true);
+    
+    try {
+      // Use backend API to avoid RLS policy recursion issues
+      const response = await api.get('/schools');
+      setSchools(response.data || []);
+    } catch (error) {
+      const errorMsg = error.response?.data?.message || error.message || 'Failed to fetch schools';
+      toast({ variant: 'destructive', title: 'Error fetching schools', description: errorMsg });
+      setSchools([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  useEffect(() => {
+    fetchSchools();
+  }, []);
+  
+  const handleToggleStatus = async (school) => {
+    const newStatus = school.status === 'Active' ? 'Inactive' : 'Active';
+    const { error } = await supabase.from('schools').update({ status: newStatus }).eq('id', school.id);
+    if (error) {
+      toast({ variant: 'destructive', title: `Failed to ${newStatus === 'Active' ? 'activate' : 'deactivate'} school` });
+    } else {
+      toast({ title: 'Status Updated!', description: `${school.name} is now ${newStatus}.` });
+      fetchSchools();
+    }
+  };
+
+  const handleDeleteSchool = async () => {
+    if (!schoolToDelete) return;
+    setDeleting(true);
+
+    toast({ title: 'Starting Hard Delete...', description: 'Permanently removing school and ALL related data including users.' });
+
+    try {
+      // Use backend API for hard delete (includes auth user deletion)
+      const response = await api.delete(`/schools/${schoolToDelete.id}/hard-delete`);
+      
+      setDeleting(false);
+      toast({ 
+        title: 'School Permanently Deleted', 
+        description: `${schoolToDelete.name} and all its data (including ${response.data.deletedUsers || 0} users) have been permanently removed.` 
+      });
+      setSchoolToDelete(null);
+      fetchSchools();
+    } catch (error) {
+      setDeleting(false);
+      const errorMsg = error.response?.data?.message || error.message;
+      toast({ variant: 'destructive', title: 'Deletion Failed', description: errorMsg });
+    }
+  };
+
+  const filteredSchools = schools.filter(school =>
+    school.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    school.organizationName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    school.branchName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (school.school_code_prefix + school.school_code_number).toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  // Group schools by organization for display
+  const groupedSchools = React.useMemo(() => {
+    const groups = {};
+    const result = [];
+    
+    // First pass: Group
+    filteredSchools.forEach(school => {
+      // Use organization_id for grouping, or fallback to ID for standalone schools
+      // If organization_id is missing but organizationName exists, use that to group (legacy support)
+      const orgKey = school.organization_id || (school.organizationName ? `name-${school.organizationName}` : `standalone-${school.id}`);
+      
+      if (!groups[orgKey]) {
+        groups[orgKey] = [];
+      }
+      groups[orgKey].push(school);
+    });
+
+    // Second pass: Flatten and calculate rowspans
+    Object.values(groups).forEach(group => {
+      // Sort branches: Primary first, then by sequence
+      group.sort((a, b) => {
+        if (a.is_primary === b.is_primary) {
+            return (a.branchSequence || 0) - (b.branchSequence || 0);
+        }
+        return a.is_primary ? -1 : 1;
+      });
+
+      group.forEach((school, index) => {
+        result.push({
+          ...school,
+          isFirstInGroup: index === 0,
+          groupSize: group.length
+        });
+      });
+    });
+
+    return result;
+  }, [filteredSchools]);
+
+  return (
+    <DashboardLayout>
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h1 className="text-3xl font-bold">Manage Schools</h1>
+          <p className="text-muted-foreground mt-1">View and manage schools in the system. New schools are added via School Requests.</p>
+        </div>
+        <Button onClick={() => navigate(ROUTES.MASTER_ADMIN.CREATE_ORGANIZATION)}>
+          <PlusCircle className="mr-2 h-4 w-4" />
+          Create Organization
+        </Button>
+      </div>
+
+      <div className="bg-card rounded-xl shadow-lg p-6" style={{boxShadow: 'var(--shadow)'}}>
+        <div className="flex items-center mb-4">
+          <div className="relative w-full max-w-sm">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+            <Input placeholder="Search by name or code..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-10" />
+          </div>
+        </div>
+
+        {loading ? <div className="text-center py-10 text-muted-foreground">Loading schools...</div> : (
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-border border">
+              <thead className="bg-muted/50">
+                <tr>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider border-r w-16">Logo</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider border-r">Organization</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider border-r">Branch Name</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider border-r">Plan</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider border-r">Contact Info</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider border-r">Owner Details</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider border-r">Location</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider border-r">Status</th>
+                  <th className="px-4 py-3 text-center text-xs font-medium text-muted-foreground uppercase tracking-wider">Action</th>
+                </tr>
+              </thead>
+              <tbody className="bg-card divide-y divide-border">
+                {groupedSchools.map((school, index) => (
+                  <motion.tr key={school.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: index * 0.05 }} className="hover:bg-muted/50">
+                    {school.isFirstInGroup && (
+                      <>
+                        <td className="px-4 py-3 whitespace-nowrap border-r align-top bg-muted/5" rowSpan={school.groupSize}>
+                            <div className="h-14 w-14 rounded-full bg-muted flex items-center justify-center overflow-hidden border shadow-sm">
+                                {school.logo_url ? (
+                                    <img src={school.logo_url} alt="Logo" className="h-full w-full object-cover" />
+                                ) : (
+                                    <Building className="h-6 w-6 text-muted-foreground" />
+                                )}
+                            </div>
+                        </td>
+                        <td className="px-4 py-3 whitespace-nowrap text-sm text-foreground border-r font-medium align-top bg-muted/5" rowSpan={school.groupSize}>
+                            <div className="flex flex-col">
+                                <span className="font-semibold text-base">{school.organizationName}</span>
+                                <span className="text-xs text-muted-foreground">
+                                    {school.organization?.code || school.organization?.org_code || 'N/A'}
+                                </span>
+                            </div>
+                        </td>
+                      </>
+                    )}
+                    <td className="px-4 py-3 whitespace-nowrap text-sm text-foreground border-r font-medium">
+                        <div className="flex flex-col">
+                            <span className="font-semibold text-base">{school.branchName}</span>
+                            <span className="text-xs text-muted-foreground">
+                                {school.branchSequence} {school.is_primary && <span className="text-primary">(Primary)</span>}
+                            </span>
+                            <span className="text-xs text-muted-foreground">Code: {school.school_code_prefix}{school.school_code_number}</span>
+                        </div>
+                    </td>
+                    <td className="px-4 py-3 whitespace-nowrap text-sm text-foreground border-r">
+                        {school.plan ? (
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300">
+                                {school.plan.name}
+                            </span>
+                        ) : (
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-400">
+                                No Plan
+                            </span>
+                        )}
+                    </td>
+                    <td className="px-4 py-3 whitespace-nowrap text-sm text-foreground border-r">
+                        <div className="flex flex-col space-y-1">
+                            <div className="flex items-center text-xs">
+                                <Mail className="h-3 w-3 mr-2 text-muted-foreground" />
+                                <span className="truncate max-w-[150px]" title={school.contact_email}>{school.contact_email || 'N/A'}</span>
+                            </div>
+                            <div className="flex items-center text-xs">
+                                <Phone className="h-3 w-3 mr-2 text-muted-foreground" />
+                                <span>{school.contact_number}</span>
+                            </div>
+                        </div>
+                    </td>
+                    <td className="px-4 py-3 whitespace-nowrap text-sm text-foreground border-r">
+                        {school.owner ? (
+                            <div className="flex items-center">
+                                <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center mr-3 text-primary font-bold text-sm">
+                                    {school.owner.photo_url ? (
+                                        <img src={school.owner.photo_url} alt={school.owner.full_name} className="h-full w-full rounded-full object-cover" />
+                                    ) : (
+                                        school.owner.full_name?.charAt(0) || 'U'
+                                    )}
+                                </div>
+                                <div className="flex flex-col">
+                                    <span className="font-medium text-xs">{school.owner.full_name}</span>
+                                    <span className="text-[10px] text-muted-foreground">{school.owner.email}</span>
+                                    <span className="text-[10px] text-muted-foreground">{school.owner.phone}</span>
+                                </div>
+                            </div>
+                        ) : (
+                            <span className="text-xs text-muted-foreground italic">No Owner Assigned</span>
+                        )}
+                    </td>
+                    <td className="px-4 py-3 whitespace-nowrap text-sm text-foreground border-r">
+                        <div className="flex flex-col">
+                            <span className="text-xs font-medium">{school.city || 'N/A'}</span>
+                            <span className="text-[10px] text-muted-foreground">{school.state || 'N/A'}</span>
+                        </div>
+                    </td>
+                    <td className="px-4 py-3 whitespace-nowrap text-sm text-foreground border-r">
+                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${school.status === 'Active' ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300' : 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300'}`}>
+                            {school.status}
+                        </span>
+                    </td>
+                    <td className="px-4 py-3 whitespace-nowrap text-center text-sm font-medium">
+                      <div className="flex flex-wrap items-center justify-center gap-2">
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          className="h-7 px-2 text-xs bg-blue-50 text-blue-600 border-blue-200 hover:bg-blue-100 hover:text-blue-700 dark:bg-blue-900/20 dark:text-blue-400 dark:border-blue-800"
+                          onClick={() => navigate(ROUTES.MASTER_ADMIN.SCHOOL_DETAILS.replace(':id', school.id))}
+                        >
+                          <Info className="h-3 w-3 mr-1" /> Details
+                        </Button>
+                        
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          className="h-7 px-2 text-xs bg-purple-50 text-purple-600 border-purple-200 hover:bg-purple-100 hover:text-purple-700 dark:bg-purple-900/20 dark:text-purple-400 dark:border-purple-800"
+                          onClick={() => setSchoolToManage(school)}
+                        >
+                          <UserCog className="h-3 w-3 mr-1" /> Owner
+                        </Button>
+
+                        {!school.plan && (
+                            <Button 
+                              variant="outline" 
+                              size="sm" 
+                              className="h-7 px-2 text-xs bg-orange-50 text-orange-600 border-orange-200 hover:bg-orange-100 hover:text-orange-700 dark:bg-orange-900/20 dark:text-orange-400 dark:border-orange-800"
+                              onClick={() => setSchoolToAssignPlan(school)}
+                            >
+                              <CreditCard className="h-3 w-3 mr-1" /> Assign Plan
+                            </Button>
+                        )}
+
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          className="h-7 px-2 text-xs bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100 hover:text-slate-700 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-700"
+                          onClick={() => navigate(ROUTES.MASTER_ADMIN.EDIT_SCHOOL.replace(':id', school.id))}
+                        >
+                          <Edit className="h-3 w-3 mr-1" /> Edit
+                        </Button>
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          className="h-7 px-2 text-xs bg-red-50 text-red-600 border-red-200 hover:bg-red-100 hover:text-red-700 dark:bg-red-900/20 dark:text-red-400 dark:border-red-800"
+                          onClick={() => setSchoolToDelete(school)}
+                        >
+                          <Trash2 className="h-3 w-3 mr-1" /> Delete
+                        </Button>
+                      </div>
+                    </td>
+                  </motion.tr>
+                ))}
+              </tbody>
+            </table>
+            {filteredSchools.length === 0 && <div className="text-center py-10 text-muted-foreground">No schools found.</div>}
+          </div>
+        )}
+      </div>
+      
+      <AlertDialog open={!!schoolToDelete} onOpenChange={(open) => !open && setSchoolToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader><AlertDialogTitle>⚠️ HARD DELETE - Are you absolutely sure?</AlertDialogTitle><AlertDialogDescription>This action <strong>CANNOT</strong> be undone. This will <strong>permanently delete</strong>:
+          <ul className="list-disc ml-4 mt-2 space-y-1">
+            <li><strong>{schoolToDelete?.name}</strong> school</li>
+            <li>All user accounts (email, login credentials)</li>
+            <li>All profiles (owner, staff, students)</li>
+            <li>All academic data (classes, sections, subjects)</li>
+            <li>All financial records (fees, payments)</li>
+            <li>All other related data</li>
+          </ul>
+          </AlertDialogDescription></AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleting}>Cancel</AlertDialogCancel>
+            <Button variant="destructive" onClick={handleDeleteSchool} disabled={deleting}>
+              {deleting ? 'Deleting Everything...' : 'Yes, PERMANENTLY delete'}
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {schoolToAssignPlan && (
+        <AssignPlanDialog 
+          school={schoolToAssignPlan}
+          isOpen={!!schoolToAssignPlan}
+          onOpenChange={(isOpen) => !isOpen && setSchoolToAssignPlan(null)}
+          onPlanAssigned={fetchSchools}
+        />
+      )}
+
+      {schoolToManage && (
+        <ManageOwnerDialog 
+          school={schoolToManage}
+          owner={schoolToManage.owner}
+          isOpen={!!schoolToManage}
+          onOpenChange={(isOpen) => !isOpen && setSchoolToManage(null)}
+          onOwnerUpdate={fetchSchools}
+        />
+      )}
+    </DashboardLayout>
+  );
+};
+
+export default SchoolsPage;

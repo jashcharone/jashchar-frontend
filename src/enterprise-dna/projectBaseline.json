@@ -1,0 +1,22 @@
+{
+  "version": "1.0.0-IMMORTAL",
+  "timestamp": "2025-11-30T12:00:00Z",
+  "stats": {
+    "total_routes": 312,
+    "total_sidebar_items": 145,
+    "locked_files": ["App.jsx", "Sidebar.jsx", "SupabaseAuthContext.jsx"]
+  },
+  "critical_routes": [
+    "/master-admin/schools",
+    "/school-owner/dashboard",
+    "/student/dashboard",
+    "/login",
+    "/school-login"
+  ],
+  "immutability_rules": {
+    "routes": "APPEND_ONLY",
+    "sidebar": "APPEND_ONLY",
+    "permissions": "MERGE_ONLY",
+    "ui_layout": "FROZEN"
+  }
+}

@@ -1,0 +1,566 @@
+import React, { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Switch } from '@/components/ui/switch';
+import { useToast } from '@/components/ui/use-toast';
+import { useAuth } from '@/contexts/SupabaseAuthContext';
+import { supabase } from '@/lib/customSupabaseClient';
+import { Loader2, Plus, Trash2, Edit, Upload, Search, X, FileText, Calendar, Newspaper, Image as ImageIcon } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import ReactQuill from 'react-quill';
+import 'react-quill/dist/quill.snow.css';
+import MediaPickerModal from '@/components/front-cms-editor/MediaPickerModal';
+
+const Pages = () => {
+  const { school, user } = useAuth();
+  const schoolId = school?.id || user?.profile?.school_id;
+  const { toast } = useToast();
+  const quillRef = useRef(null);
+  
+  const [view, setView] = useState('list'); // 'list' or 'add'
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [pages, setPages] = useState([]);
+  const [editingPage, setEditingPage] = useState(null);
+  const [seoOpen, setSeoOpen] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [mediaPickerOpen, setMediaPickerOpen] = useState(false);
+  
+  const [formData, setFormData] = useState({
+    title: '',
+    page_type: 'standard',
+    content_html: '',
+    meta_title: '',
+    meta_keyword: '',
+    meta_description: '',
+    sidebar_enabled: false,
+    featured_image: '',
+    is_published: true
+  });
+
+  const pageTypes = [
+    { value: 'standard', label: 'Standard' },
+    { value: 'events', label: 'Events' },
+    { value: 'news', label: 'News' },
+    { value: 'gallery', label: 'Gallery' }
+  ];
+
+  useEffect(() => {
+    if (schoolId) {
+      loadPages();
+    }
+  }, [schoolId]);
+
+  const loadPages = async () => {
+    if (!schoolId) return;
+    setLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('front_cms_pages')
+        .select('*')
+        .eq('school_id', schoolId)
+        .order('created_at', { ascending: true });
+
+      if (error) throw error;
+      setPages(data || []);
+    } catch (error) {
+      console.error('Error loading pages:', error);
+      toast({ variant: 'destructive', title: 'Error', description: 'Failed to load pages' });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const resetForm = () => {
+    setFormData({
+      title: '',
+      page_type: 'standard',
+      content_html: '',
+      meta_title: '',
+      meta_keyword: '',
+      meta_description: '',
+      sidebar_enabled: false,
+      featured_image: '',
+      is_published: true
+    });
+    setEditingPage(null);
+  };
+
+  const handleAdd = () => {
+    resetForm();
+    setView('add');
+  };
+
+  const handleEdit = (page) => {
+    setEditingPage(page);
+    setFormData({
+      title: page.title || '',
+      page_type: page.page_type || 'standard',
+      content_html: page.content_html || '',
+      meta_title: page.meta_title || '',
+      meta_keyword: page.meta_keyword || '',
+      meta_description: page.meta_description || page.meta_desc || '',
+      sidebar_enabled: page.sidebar_enabled || false,
+      featured_image: page.featured_image || '',
+      is_published: page.is_published !== false
+    });
+    setView('add');
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    
+    if (!formData.title.trim()) {
+      toast({ variant: 'destructive', title: 'Validation Error', description: 'Page title is required' });
+      return;
+    }
+
+    setSaving(true);
+    try {
+      const slug = formData.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+      
+      const payload = {
+        school_id: schoolId,
+        title: formData.title.trim(),
+        slug: slug,
+        page_type: formData.page_type,
+        content_html: formData.content_html,
+        meta_title: formData.meta_title || null,
+        meta_keyword: formData.meta_keyword || null,
+        meta_desc: formData.meta_description || null,
+        sidebar_enabled: formData.sidebar_enabled,
+        featured_image: formData.featured_image || null,
+        is_published: formData.is_published,
+        is_active: true,
+        updated_at: new Date().toISOString()
+      };
+
+      let error;
+      if (editingPage) {
+        const { error: updateError } = await supabase
+          .from('front_cms_pages')
+          .update(payload)
+          .eq('id', editingPage.id);
+        error = updateError;
+      } else {
+        const { error: insertError } = await supabase
+          .from('front_cms_pages')
+          .insert(payload);
+        error = insertError;
+      }
+
+      if (error) throw error;
+
+      toast({ title: 'Success', description: editingPage ? 'Page updated successfully' : 'Page created successfully' });
+      resetForm();
+      setView('list');
+      loadPages();
+    } catch (error) {
+      console.error('Error saving page:', error);
+      toast({ variant: 'destructive', title: 'Error', description: error.message || 'Failed to save page' });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDelete = async (pageId) => {
+    if (!confirm('Are you sure you want to delete this page?')) return;
+
+    try {
+      const { error } = await supabase
+        .from('front_cms_pages')
+        .delete()
+        .eq('id', pageId);
+
+      if (error) throw error;
+
+      toast({ title: 'Success', description: 'Page deleted successfully' });
+      loadPages();
+    } catch (error) {
+      console.error('Error deleting page:', error);
+      toast({ variant: 'destructive', title: 'Error', description: 'Failed to delete page' });
+    }
+  };
+
+  const filteredPages = pages.filter(page => 
+    page.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    page.slug?.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const getPageTypeStyle = (type) => {
+    switch(type) {
+      case 'events': return 'bg-orange-500 text-white';
+      case 'news': return 'bg-red-500 text-white';
+      case 'gallery': return 'bg-green-500 text-white';
+      default: return 'bg-gray-500 text-white';
+    }
+  };
+
+  if (!schoolId) {
+    return <div className="p-6 text-center">Loading...</div>;
+  }
+
+  // ADD PAGE VIEW
+  if (view === 'add') {
+    return (
+      <div className="p-6">
+        <div className="flex gap-6">
+          {/* Left Side - Form */}
+          <div className="flex-1">
+            <Card>
+              <CardHeader className="border-b bg-slate-50 dark:bg-slate-800">
+                <CardTitle className="text-lg font-medium">
+                  {editingPage ? 'Edit Page' : 'Add Page'}
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-6">
+                <form onSubmit={handleSubmit} className="space-y-6">
+                  {/* Title */}
+                  <div className="space-y-2">
+                    <Label htmlFor="title">
+                      Title <span className="text-red-500">*</span>
+                    </Label>
+                    <Input
+                      id="title"
+                      value={formData.title}
+                      onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                      placeholder="Enter page title"
+                      className="w-full"
+                    />
+                  </div>
+
+                  {/* Page Type - Radio Buttons */}
+                  <div className="space-y-2">
+                    <Label>Page Type</Label>
+                    <RadioGroup 
+                      value={formData.page_type} 
+                      onValueChange={(v) => setFormData({ ...formData, page_type: v })}
+                      className="flex flex-wrap gap-6"
+                    >
+                      {pageTypes.map((type) => (
+                        <div key={type.value} className="flex items-center space-x-2">
+                          <RadioGroupItem value={type.value} id={type.value} />
+                          <Label htmlFor={type.value} className="cursor-pointer font-normal">
+                            {type.label}
+                          </Label>
+                        </div>
+                      ))}
+                    </RadioGroup>
+                  </div>
+
+                  {/* Description */}
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <Label>Description</Label>
+                      <Button 
+                        type="button" 
+                        variant="outline" 
+                        size="sm" 
+                        className="bg-green-500 text-white hover:bg-green-600"
+                        onClick={() => setMediaPickerOpen(true)}
+                      >
+                        <Plus className="h-4 w-4 mr-1" /> Add Media
+                      </Button>
+                    </div>
+                    <div className="border rounded-md bg-white dark:bg-slate-900">
+                      <ReactQuill
+                        ref={quillRef}
+                        theme="snow"
+                        value={formData.content_html}
+                        onChange={(v) => setFormData({ ...formData, content_html: v })}
+                        className="h-64"
+                        modules={{
+                          toolbar: [
+                            ['bold', 'italic', 'underline', 'strike'],
+                            [{ 'header': [1, 2, 3, 4, 5, 6, false] }],
+                            [{ 'list': 'ordered' }, { 'list': 'bullet' }],
+                            [{ 'align': [] }],
+                            ['link', 'image'],
+                            ['clean']
+                          ]
+                        }}
+                      />
+                    </div>
+                  </div>
+
+                  {/* SEO Detail */}
+                  <Collapsible open={seoOpen} onOpenChange={setSeoOpen} className="border rounded-md">
+                    <CollapsibleTrigger className="w-full p-4 flex justify-between items-center bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700">
+                      <span className="font-medium">SEO Detail</span>
+                      <span className="text-xl">{seoOpen ? '−' : '+'}</span>
+                    </CollapsibleTrigger>
+                    <CollapsibleContent className="p-4 space-y-4 border-t">
+                      <div className="space-y-2">
+                        <Label htmlFor="meta_title">Meta Title</Label>
+                        <Input
+                          id="meta_title"
+                          value={formData.meta_title}
+                          onChange={(e) => setFormData({ ...formData, meta_title: e.target.value })}
+                          placeholder="Enter meta title"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="meta_keyword">Meta Keyword</Label>
+                        <Input
+                          id="meta_keyword"
+                          value={formData.meta_keyword}
+                          onChange={(e) => setFormData({ ...formData, meta_keyword: e.target.value })}
+                          placeholder="Enter keywords separated by commas"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="meta_description">Meta Description</Label>
+                        <Textarea
+                          id="meta_description"
+                          value={formData.meta_description}
+                          onChange={(e) => setFormData({ ...formData, meta_description: e.target.value })}
+                          placeholder="Enter meta description"
+                          rows={3}
+                        />
+                      </div>
+                    </CollapsibleContent>
+                  </Collapsible>
+                </form>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Right Side - Sidebar Settings & Featured Image */}
+          <div className="w-72 space-y-4">
+            {/* Sidebar Setting */}
+            <Card>
+              <CardHeader className="border-b bg-slate-50 dark:bg-slate-800 py-3">
+                <div className="flex justify-between items-center">
+                  <CardTitle className="text-sm font-medium">Sidebar Setting</CardTitle>
+                  <span className="text-lg">−</span>
+                </div>
+              </CardHeader>
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="sidebar">Sidebar</Label>
+                  <Switch
+                    id="sidebar"
+                    checked={formData.sidebar_enabled}
+                    onCheckedChange={(checked) => setFormData({ ...formData, sidebar_enabled: checked })}
+                  />
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Featured Image */}
+            <Card>
+              <CardHeader className="border-b bg-slate-50 dark:bg-slate-800 py-3">
+                <div className="flex justify-between items-center">
+                  <CardTitle className="text-sm font-medium">Featured Image</CardTitle>
+                  <span className="text-lg">−</span>
+                </div>
+              </CardHeader>
+              <CardContent className="p-4">
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <Input
+                      value={formData.featured_image}
+                      onChange={(e) => setFormData({ ...formData, featured_image: e.target.value })}
+                      placeholder="Please Select Image"
+                      className="flex-1"
+                      readOnly
+                    />
+                    <Button 
+                      type="button" 
+                      size="icon" 
+                      className="bg-green-500 hover:bg-green-600"
+                      onClick={() => {
+                        setMediaPickerOpen(true);
+                        // Store that we're picking for featured image
+                        window._featuredImageMode = true;
+                      }}
+                    >
+                      <Upload className="h-4 w-4" />
+                    </Button>
+                    {formData.featured_image && (
+                      <Button 
+                        type="button" 
+                        size="icon" 
+                        variant="destructive"
+                        onClick={() => setFormData({ ...formData, featured_image: '' })}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    )}
+                  </div>
+                  {formData.featured_image && (
+                    <img src={formData.featured_image} alt="Featured" className="mt-2 w-full h-32 object-cover rounded border" />
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Save Button */}
+            <Button 
+              onClick={handleSubmit} 
+              className="w-full bg-green-500 hover:bg-green-600 text-white"
+              disabled={saving}
+            >
+              {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Save
+            </Button>
+
+            {/* Cancel Button */}
+            <Button 
+              variant="outline"
+              onClick={() => { resetForm(); setView('list'); }}
+              className="w-full"
+            >
+              Cancel
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // PAGE LIST VIEW
+  return (
+    <div className="p-6">
+      <Card>
+        <CardHeader className="border-b bg-slate-50 dark:bg-slate-800">
+          <div className="flex justify-between items-center">
+            <CardTitle className="text-lg font-medium">Page List</CardTitle>
+            <Button onClick={handleAdd} className="bg-green-500 hover:bg-green-600 text-white">
+              <Plus className="h-4 w-4 mr-1" /> Add
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent className="p-0">
+          {/* Search */}
+          <div className="p-4 border-b">
+            <div className="relative w-64">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-9"
+              />
+            </div>
+          </div>
+
+          {/* Table */}
+          {loading ? (
+            <div className="flex items-center justify-center py-12">
+              <Loader2 className="h-8 w-8 animate-spin" />
+            </div>
+          ) : filteredPages.length === 0 ? (
+            <div className="text-center py-12 text-muted-foreground">
+              No pages found. Click "+ Add" to create your first page.
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-slate-50 dark:bg-slate-800 border-b">
+                  <tr>
+                    <th className="text-left p-4 font-medium text-sm">Title</th>
+                    <th className="text-left p-4 font-medium text-sm">URL</th>
+                    <th className="text-left p-4 font-medium text-sm">Page Type</th>
+                    <th className="text-right p-4 font-medium text-sm">Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredPages.map((page) => (
+                    <tr key={page.id} className="border-b hover:bg-slate-50 dark:hover:bg-slate-800/50">
+                      <td className="p-4">
+                        <span className="text-blue-600 hover:underline cursor-pointer font-medium">
+                          {page.title}
+                        </span>
+                      </td>
+                      <td className="p-4">
+                        <span className="text-sm text-muted-foreground">
+                          /s/{school?.slug || 'school'}/page/{page.slug}
+                        </span>
+                      </td>
+                      <td className="p-4">
+                        <span className={`text-xs px-3 py-1 rounded ${getPageTypeStyle(page.page_type)}`}>
+                          {page.page_type === 'events' ? 'Event' : 
+                           page.page_type === 'news' ? 'News' : 
+                           page.page_type === 'gallery' ? 'Gallery' : 'Standard'}
+                        </span>
+                      </td>
+                      <td className="p-4 text-right">
+                        <div className="flex items-center justify-end gap-1">
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            onClick={() => handleEdit(page)}
+                            className="h-8 w-8"
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            onClick={() => handleDelete(page.id)}
+                            className="h-8 w-8 text-red-500 hover:text-red-600 hover:bg-red-50"
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Media Picker Modal */}
+      <MediaPickerModal
+        isOpen={mediaPickerOpen}
+        onClose={() => {
+          setMediaPickerOpen(false);
+          window._featuredImageMode = false;
+        }}
+        onSelect={(media) => {
+          // Check if we're picking for featured image
+          if (window._featuredImageMode) {
+            if (media.mime_type?.startsWith('image/')) {
+              setFormData({ ...formData, featured_image: media.url });
+              toast({ title: 'Success', description: 'Featured image selected' });
+            } else {
+              toast({ variant: 'destructive', title: 'Error', description: 'Please select an image file' });
+            }
+            window._featuredImageMode = false;
+          } else {
+            // Insert into editor
+            const quill = quillRef.current?.getEditor();
+            if (quill) {
+              const range = quill.getSelection();
+              const position = range ? range.index : quill.getLength();
+              
+              if (media.mime_type?.startsWith('image/')) {
+                // Insert image
+                quill.insertEmbed(position, 'image', media.url);
+              } else if (media.mime_type?.startsWith('video/')) {
+                // Insert video as link
+                quill.insertText(position, media.filename, 'link', media.url);
+              } else {
+                // Insert as link for other files
+                quill.insertText(position, media.filename, 'link', media.url);
+              }
+              quill.setSelection(position + 1);
+            }
+          }
+        }}
+        schoolId={schoolId}
+      />
+    </div>
+  );
+};
+
+export default Pages;

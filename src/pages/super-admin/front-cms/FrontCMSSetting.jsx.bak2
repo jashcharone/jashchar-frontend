@@ -1,0 +1,252 @@
+import React, { useState, useEffect } from 'react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
+import { Textarea } from '@/components/ui/textarea';
+import { useToast } from '@/components/ui/use-toast';
+import { Loader2, Upload, X, Save } from 'lucide-react';
+import frontCmsService from '@/services/frontCmsService';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { PermissionButton } from '@/components/PermissionComponents';
+import { supabase } from '@/lib/customSupabaseClient';
+import DashboardLayout from '@/components/DashboardLayout';
+
+const FrontCMSSetting = () => {
+  const { toast } = useToast();
+  const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  
+  const [formData, setFormData] = useState({
+    is_active: true,
+    theme_color: '#000000',
+    logo_url: '',
+    favicon_url: '',
+    footer_text: '',
+    facebook_url: '',
+    twitter_url: '',
+    instagram_url: '',
+    youtube_url: '',
+    linkedin_url: '',
+    google_analytics: '',
+    custom_css: '',
+    custom_js: ''
+  });
+
+  useEffect(() => {
+    loadSettings();
+  }, []);
+
+  const loadSettings = async () => {
+    setLoading(true);
+    try {
+      const response = await frontCmsService.getSettings();
+      if (response.success && response.data) {
+        const data = response.data;
+        setFormData({
+          is_active: data.is_active,
+          logo_url: data.logo_url || '',
+          favicon_url: data.favicon_url || '',
+          theme_color: data.theme?.primary_color || '#000000',
+          footer_text: data.contact_info?.footer_text || '',
+          facebook_url: data.social_links?.facebook || '',
+          twitter_url: data.social_links?.twitter || '',
+          instagram_url: data.social_links?.instagram || '',
+          youtube_url: data.social_links?.youtube || '',
+          linkedin_url: data.social_links?.linkedin || '',
+          google_analytics: data.contact_info?.google_analytics || '',
+          custom_css: data.theme?.custom_css || '',
+          custom_js: data.theme?.custom_js || ''
+        });
+      }
+    } catch (error) {
+      console.error(error);
+      toast({ variant: 'destructive', title: 'Error loading settings' });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleFileUpload = async (e, field) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    setUploading(true);
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `settings/${field}/${Date.now()}.${fileExt}`;
+      
+      const { error: uploadError } = await supabase.storage
+        .from('school-assets')
+        .upload(fileName, file);
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('school-assets')
+        .getPublicUrl(fileName);
+
+      setFormData(prev => ({ ...prev, [field]: publicUrl }));
+      toast({ title: 'Image uploaded successfully' });
+    } catch (error) {
+      console.error(error);
+      toast({ variant: 'destructive', title: 'Upload failed' });
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setSaving(true);
+
+    const payload = {
+      is_active: formData.is_active,
+      logo_url: formData.logo_url,
+      favicon_url: formData.favicon_url,
+      theme: {
+        primary_color: formData.theme_color,
+        custom_css: formData.custom_css,
+        custom_js: formData.custom_js
+      },
+      contact_info: {
+        footer_text: formData.footer_text,
+        google_analytics: formData.google_analytics
+      },
+      social_links: {
+        facebook: formData.facebook_url,
+        twitter: formData.twitter_url,
+        instagram: formData.instagram_url,
+        youtube: formData.youtube_url,
+        linkedin: formData.linkedin_url
+      }
+    };
+
+    try {
+      const response = await frontCmsService.updateSettings(payload);
+      if (response.success) {
+        toast({ title: 'Settings updated successfully' });
+      }
+    } catch (error) {
+      console.error(error);
+      toast({ variant: 'destructive', title: 'Update failed' });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <DashboardLayout>
+      <div className="p-6 max-w-4xl mx-auto">
+        <Card>
+          <CardHeader>
+            <CardTitle>Front CMS Settings</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleSubmit} className="space-y-6">
+              
+              {/* General Settings */}
+              <div className="space-y-4">
+                <h3 className="text-lg font-medium">General</h3>
+                <div className="flex items-center space-x-2">
+                  <Switch
+                    id="is_active"
+                    checked={formData.is_active}
+                    onCheckedChange={(checked) => setFormData({ ...formData, is_active: checked })}
+                  />
+                  <Label htmlFor="is_active">Enable Front CMS Site</Label>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                        <Label>Logo</Label>
+                        <div className="flex items-center gap-2">
+                            <Input type="file" onChange={(e) => handleFileUpload(e, 'logo_url')} disabled={uploading} />
+                            {formData.logo_url && <img src={formData.logo_url} alt="Logo" className="h-8 w-8 object-contain" />}
+                        </div>
+                    </div>
+                    <div className="space-y-2">
+                        <Label>Favicon</Label>
+                        <div className="flex items-center gap-2">
+                            <Input type="file" onChange={(e) => handleFileUpload(e, 'favicon_url')} disabled={uploading} />
+                            {formData.favicon_url && <img src={formData.favicon_url} alt="Favicon" className="h-8 w-8 object-contain" />}
+                        </div>
+                    </div>
+                </div>
+                <div className="space-y-2">
+                    <Label htmlFor="theme_color">Theme Color</Label>
+                    <div className="flex gap-2">
+                        <Input
+                        id="theme_color"
+                        type="color"
+                        value={formData.theme_color}
+                        onChange={(e) => setFormData({ ...formData, theme_color: e.target.value })}
+                        className="w-12 h-10 p-1"
+                        />
+                        <Input
+                        value={formData.theme_color}
+                        onChange={(e) => setFormData({ ...formData, theme_color: e.target.value })}
+                        placeholder="#000000"
+                        />
+                    </div>
+                </div>
+              </div>
+
+              {/* Social Links */}
+              <div className="space-y-4">
+                <h3 className="text-lg font-medium">Social Links</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                        <Label htmlFor="facebook">Facebook URL</Label>
+                        <Input id="facebook" value={formData.facebook_url} onChange={(e) => setFormData({ ...formData, facebook_url: e.target.value })} />
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="twitter">Twitter URL</Label>
+                        <Input id="twitter" value={formData.twitter_url} onChange={(e) => setFormData({ ...formData, twitter_url: e.target.value })} />
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="instagram">Instagram URL</Label>
+                        <Input id="instagram" value={formData.instagram_url} onChange={(e) => setFormData({ ...formData, instagram_url: e.target.value })} />
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="youtube">YouTube URL</Label>
+                        <Input id="youtube" value={formData.youtube_url} onChange={(e) => setFormData({ ...formData, youtube_url: e.target.value })} />
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="linkedin">LinkedIn URL</Label>
+                        <Input id="linkedin" value={formData.linkedin_url} onChange={(e) => setFormData({ ...formData, linkedin_url: e.target.value })} />
+                    </div>
+                </div>
+              </div>
+
+              {/* Footer & Analytics */}
+              <div className="space-y-4">
+                <h3 className="text-lg font-medium">Footer & Analytics</h3>
+                <div className="space-y-2">
+                    <Label htmlFor="footer_text">Footer Text</Label>
+                    <Textarea id="footer_text" value={formData.footer_text} onChange={(e) => setFormData({ ...formData, footer_text: e.target.value })} />
+                </div>
+                <div className="space-y-2">
+                    <Label htmlFor="google_analytics">Google Analytics Code</Label>
+                    <Textarea id="google_analytics" value={formData.google_analytics} onChange={(e) => setFormData({ ...formData, google_analytics: e.target.value })} />
+                </div>
+              </div>
+
+              <div className="flex justify-end">
+                <PermissionButton moduleSlug="frontend_cms.settings" action="edit">
+                    <Button type="submit" disabled={saving || uploading}>
+                    {saving && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+                    <Save className="h-4 w-4 mr-2" /> Save Settings
+                    </Button>
+                </PermissionButton>
+              </div>
+
+            </form>
+          </CardContent>
+        </Card>
+      </div>
+    </DashboardLayout>
+  );
+};
+
+export default FrontCMSSetting;

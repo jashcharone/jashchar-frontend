@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: blob: https: http:; font-src 'self' data: https://fonts.gstatic.com; connect-src 'self' https://fexjccrkgaeafyimpobv.supabase.co https://bjuteyzpcpbittmdzveq.supabase.co https://devapi.jashcharerp.com http://localhost:* https://*.jashchar.in https://*.edunexttechnologies.com https://*.up.railway.app https://api.postalpincode.in ws://localhost:* wss://*; frame-src 'self' https://www.youtube.com https://www.youtube-nocookie.com; worker-src 'self' blob:; child-src 'self' blob:; media-src 'self' blob: https: http:;">
+    <title>School ERP</title>
+    <!-- Apply theme immediately to prevent flash -->
+    <script>
+      (function() {
+        try {
+          var savedTheme = localStorage.getItem('app-theme-settings');
+          if (savedTheme) {
+            var settings = JSON.parse(savedTheme);
+            // Check for any dashboard context that has dark mode
+            var isDark = false;
+            if (settings) {
+              for (var key in settings) {
+                if (settings[key] && settings[key].mode === 'dark') {
+                  isDark = true;
+                  break;
+                }
+              }
+            }
+            if (isDark) {
+              document.documentElement.classList.add('dark');
+              document.documentElement.style.colorScheme = 'dark';
+            } else {
+              document.documentElement.classList.remove('dark');
+              document.documentElement.style.colorScheme = 'light';
+            }
+          }
+        } catch (e) {}
+      })();
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <!-- Runtime-config allows setting env on the server without rebuild -->
+    <!-- Use absolute path so nested routes don't resolve it incorrectly -->
+    <script src="/runtime-config.js"></script>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>

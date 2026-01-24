@@ -1,0 +1,15 @@
+backend/
+  src/
+    controllers/   (All logic here)
+    middlewares/   (Security & Auth)
+    routes/        (API Endpoints - Clean & Unified)
+    _deprecated/   (Old unused code)
+    app.js
+database/
+  migrations/      (Schema changes)
+  scripts/         (One-off SQL scripts)
+frontend/
+  src/
+    components/
+    pages/
+    ...

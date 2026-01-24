@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>API Test</title>
+</head>
+<body>
+    <h1>API Test</h1>
+    <p>Fetching /api/public/saas/homepage...</p>
+    <pre id="result">Loading...</pre>
+    <script>
+        fetch('/api/public/saas/homepage')
+            .then(async response => {
+                const text = await response.text();
+                try {
+                    const json = JSON.parse(text);
+                    return { status: response.status, data: json };
+                } catch (e) {
+                    return { status: response.status, error: "Invalid JSON", text: text };
+                }
+            })
+            .then(data => {
+                document.getElementById('result').innerText = JSON.stringify(data, null, 2);
+            })
+            .catch(error => {
+                document.getElementById('result').innerText = 'Fetch Error: ' + error;
+            });
+    </script>
+</body>
+</html>

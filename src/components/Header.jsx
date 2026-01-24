@@ -1,0 +1,243 @@
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { LogOut, User, Settings, Sun, Moon, Menu, Clock, Bell, Download, Search, Command, Calendar, Mail, Key, Briefcase } from 'lucide-react';
+import { useAuth } from '@/contexts/SupabaseAuthContext';
+import { useTheme } from '@/contexts/ThemeContext';
+import { Button } from '@/components/ui/button';
+import SessionSwitcher from './SessionSwitcher';
+import BranchSelector from './BranchSelector';
+import { useToast } from '@/components/ui/use-toast';
+import { cn } from '@/lib/utils';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+
+const Header = ({ toggleSidebar, onThemeSettingsClick }) => {
+  const navigate = useNavigate();
+  const { user, signOut, school } = useAuth();
+  const { settings, toggleMode } = useTheme();
+  const { toast } = useToast();
+  const [currentDateTime, setCurrentDateTime] = useState(new Date());
+  const [canInstall, setCanInstall] = useState(false);
+  
+  // Get role from all possible sources for consistency
+  const rawRole = user?.role || user?.profile?.role?.name || user?.profile?.role || user?.user_metadata?.role;
+  const role = rawRole?.toLowerCase()?.replace(/\s+/g, '_');
+  const userType = user?.userType || user?.profile?.type; // 'owner' or 'staff'
+
+  const getRoleBasedPath = (type) => {
+    
+    switch (type) {
+      case 'profile':
+        if (role === 'master_admin') return '/master-admin/profile';
+        if (role === 'super_admin' || role === 'school_owner' || role === 'organization_owner' || role === 'admin') return '/super-admin/profile';
+        if (role === 'student') return '/Student/profile';
+        return '/profile'; // Fallback
+        
+      case 'reset-password':
+        if (role === 'master_admin') return '/master-admin/reset-password';
+        if (role === 'super_admin' || role === 'school_owner' || role === 'organization_owner' || role === 'admin') return '/super-admin/reset-password';
+        return '/reset-password';
+        
+      case 'settings':
+        if (role === 'master_admin') return '/master-admin/settings';
+        return null;
+        
+      default:
+        return '#';
+    }
+  };
+
+  useEffect(() => {
+    const timer = setInterval(() => setCurrentDateTime(new Date()), 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  useEffect(() => {
+    const checkInstall = () => setCanInstall(!!window.pwaInstallPrompt);
+    window.addEventListener('pwa-install-available', checkInstall);
+    checkInstall();
+    return () => window.removeEventListener('pwa-install-available', checkInstall);
+  }, []);
+
+  const handleInstallApp = async () => {
+    if (!window.pwaInstallPrompt) return;
+    window.pwaInstallPrompt.prompt();
+    const { outcome } = await window.pwaInstallPrompt.userChoice;
+    if (outcome === 'accepted') {
+      window.pwaInstallPrompt = null;
+      setCanInstall(false);
+    }
+  };
+
+  return (
+    <header className="px-6 pt-3 pb-2 sticky top-0 z-40">
+      <div 
+        className={cn(
+          "border shadow-sm backdrop-blur-xl px-6 py-3 flex items-center justify-between transition-all duration-300",
+          "bg-background/80 supports-[backdrop-filter]:bg-background/60"
+        )}
+        style={{
+            borderRadius: `${settings.headerRadius ?? 24}px`,
+            ...(settings.colors.headerBackground ? { backgroundColor: settings.colors.headerBackground } : {}),
+            ...(settings.colors.border && { borderColor: settings.colors.border })
+        }}
+      >
+        {/* LEFT: Mobile Toggle & Time */}
+        <div className="flex items-center gap-4">
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            className="md:hidden rounded-xl"
+            onClick={toggleSidebar}
+          >
+            <Menu className="h-5 w-5" />
+          </Button>
+
+          {/* Digital Clock & Session */}
+          <div className="hidden md:flex items-center gap-3">
+             <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-primary/5 border border-primary/10">
+                <Clock className="h-4 w-4 text-primary" />
+                <span className="font-mono font-bold text-sm text-primary">
+                  {currentDateTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                </span>
+             </div>
+             
+             <div className="flex items-center gap-2">
+                {/* Session Switcher Removed as per request */}
+             </div>
+          </div>
+        </div>
+
+        {/* CENTER: Branch Selector - Only for Admin roles */}
+        <div className="hidden md:block flex-1 max-w-md mx-4">
+             {(role === 'super_admin' || role === 'school_owner' || role === 'organization_owner' || role === 'admin' || userType === 'owner') && <BranchSelector />}
+        </div>
+
+        {/* RIGHT: Actions */}
+        <div className="flex items-center gap-2">
+          
+          {/* PWA Install */}
+          {canInstall && (
+            <Button 
+                variant="outline" 
+                size="sm" 
+                className="hidden sm:flex gap-2 rounded-xl border-primary/20 text-primary hover:bg-primary/10"
+                onClick={handleInstallApp}
+            >
+                <Download className="h-4 w-4" />
+                <span className="text-xs font-bold">Install App</span>
+            </Button>
+          )}
+
+          {/* Theme Toggle */}
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={toggleMode}
+            className="rounded-xl hover:bg-muted transition-transform hover:scale-105"
+          >
+            {settings.mode === 'dark' ? (
+              <Moon className="h-5 w-5 text-blue-400 fill-blue-400/20" />
+            ) : (
+              <Sun className="h-5 w-5 text-orange-500 fill-orange-500/20" />
+            )}
+          </Button>
+
+          {/* Notifications */}
+          <Button
+            variant="ghost"
+            size="icon"
+            className="rounded-xl hover:bg-muted transition-transform hover:scale-105 relative"
+            onClick={() => toast({ title: "No new notifications" })}
+          >
+            <Bell className="h-5 w-5 text-muted-foreground" />
+            <span className="absolute top-2 right-2 h-2 w-2 bg-red-500 rounded-full border-2 border-background"></span>
+          </Button>
+
+          {/* Settings (Theme Studio) */}
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={onThemeSettingsClick}
+            className="rounded-xl hover:bg-muted transition-transform hover:scale-105"
+          >
+            <Settings className="h-5 w-5 text-muted-foreground" />
+          </Button>
+
+          {/* User Profile Dropdown */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" className="relative h-10 w-10 rounded-full ml-2">
+                <Avatar className="h-10 w-10 border-2 border-primary/10 transition-transform hover:scale-105">
+                  <AvatarImage src={user?.user_metadata?.avatar_url} alt={user?.user_metadata?.full_name} />
+                  <AvatarFallback className="bg-primary/5 text-primary font-bold">
+                    {user?.user_metadata?.full_name?.charAt(0) || 'U'}
+                  </AvatarFallback>
+                </Avatar>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent className="w-72" align="end" forceMount>
+              <div className="flex items-center gap-4 p-4">
+                <Avatar className="h-16 w-16 border-2 border-primary/10">
+                  <AvatarImage src={user?.user_metadata?.avatar_url} alt={user?.user_metadata?.full_name} />
+                  <AvatarFallback className="bg-primary/5 text-primary text-2xl font-bold">
+                    {user?.user_metadata?.full_name?.charAt(0) || 'U'}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="flex flex-col space-y-1">
+                  <p className="text-lg font-semibold leading-none">{user?.user_metadata?.full_name || 'User'}</p>
+                  <p className="text-xs font-medium text-muted-foreground">{user?.user_metadata?.role || 'Role'}</p>
+                  <Button 
+                    variant="destructive" 
+                    size="sm" 
+                    className="h-7 px-3 text-xs mt-1 w-fit"
+                    onClick={() => signOut(school?.slug ? `/${school.slug}` : '/')}
+                  >
+                    <LogOut className="h-3 w-3 mr-1" /> Logout
+                  </Button>
+                </div>
+              </div>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem className="cursor-pointer py-2.5" onClick={() => navigate(getRoleBasedPath('profile'))}>
+                <User className="mr-3 h-4 w-4 text-muted-foreground" />
+                <span>Profile</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem className="cursor-pointer py-2.5" onClick={() => navigate(getRoleBasedPath('reset-password'))}>
+                <Key className="mr-3 h-4 w-4 text-muted-foreground" />
+                <span>Reset Password</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem className="cursor-pointer py-2.5" onClick={() => toast({ title: "Mailbox", description: "This feature is coming soon!" })}>
+                <Mail className="mr-3 h-4 w-4 text-muted-foreground" />
+                <span>Mailbox</span>
+              </DropdownMenuItem>
+              {getRoleBasedPath('settings') && (
+                <>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem className="cursor-pointer py-2.5" onClick={() => navigate(getRoleBasedPath('settings'))}>
+                    <Briefcase className="mr-3 h-4 w-4 text-muted-foreground" />
+                    <span>Global Settings</span>
+                  </DropdownMenuItem>
+                </>
+              )}
+              <DropdownMenuSeparator />
+              <DropdownMenuItem className="cursor-pointer py-2.5 text-red-600 focus:text-red-600 focus:bg-red-50 dark:focus:bg-red-950/50" onClick={() => signOut(school?.slug ? `/${school.slug}` : '/')}>
+                <LogOut className="mr-3 h-4 w-4" />
+                <span>Logout</span>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      </div>
+    </header>
+  );
+};
+
+export default Header;
+

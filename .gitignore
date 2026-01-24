@@ -1,0 +1,41 @@
+# Dependencies
+node_modules/
+
+# Build outputs
+dist/
+dev-dist/
+build/
+.vite/
+
+# Environment files (keep .env.example if exists)
+.env
+.env.local
+.env.*.local
+
+# Logs
+*.log
+npm-debug.log*
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+
+# Temp files
+tmp/
+temp/
+*.tmp
+
+# Testing
+coverage/
+
+# Vercel
+.vercel/
+
+# Scripts folder (not needed in production)
+scripts/
+
+# Tools folder
+tools/

@@ -1,0 +1,106 @@
+import React, { useState, useEffect } from 'react';
+import DashboardLayout from '@/components/DashboardLayout';
+import { useParams, useNavigate } from 'react-router-dom';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { supabase } from '@/lib/customSupabaseClient';
+import { useAuth } from '@/contexts/SupabaseAuthContext';
+import { useToast } from '@/components/ui/use-toast';
+import ReactQuill from 'react-quill';
+import 'react-quill/dist/quill.snow.css';
+import SEODetail from '@/components/front-cms/SEODetail';
+import SidebarSetting from '@/components/front-cms/SidebarSetting';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Upload } from 'lucide-react';
+import MediaSelectorModal from '@/components/front-cms/MediaSelectorModal';
+
+const AddEditNews = () => {
+  const { newsId } = useParams();
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const [loading, setLoading] = useState(false);
+  const [modalOpen, setModalOpen] = useState(false);
+  
+  const [formData, setFormData] = useState({
+    title: '', date: '', description: '',
+    meta_title: '', meta_keyword: '', meta_description: '',
+    sidebar_enabled: false, featured_image: ''
+  });
+
+  useEffect(() => {
+    if (newsId && user?.profile?.school_id) {
+      const fetchNews = async () => {
+        const { data } = await supabase.from('cms_news').select('*').eq('id', newsId).single();
+        if (data) setFormData(data);
+      };
+      fetchNews();
+    }
+  }, [newsId, user]);
+
+  const handleSave = async () => {
+    if (!formData.title) return toast({ variant: 'destructive', title: 'Title required' });
+    setLoading(true);
+    try {
+      const payload = { ...formData, school_id: user.profile.school_id };
+      const query = newsId 
+        ? supabase.from('cms_news').update(payload).eq('id', newsId)
+        : supabase.from('cms_news').insert(payload);
+      
+      const { error } = await query;
+      if (error) throw error;
+      
+      toast({ title: 'Saved successfully' });
+      navigate('/school-owner/front-cms/news');
+    } catch (error) {
+      toast({ variant: 'destructive', title: 'Error saving' });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <DashboardLayout>
+      <div className="p-6 flex gap-6 flex-col lg:flex-row">
+        <div className="flex-1 space-y-6">
+          <Card>
+            <CardHeader><CardTitle>News Details</CardTitle></CardHeader>
+            <CardContent className="space-y-4">
+              <div><Label>Title *</Label><Input value={formData.title} onChange={e => setFormData({...formData, title: e.target.value})} /></div>
+              <div><Label>Date</Label><Input type="date" value={formData.date || ''} onChange={e => setFormData({...formData, date: e.target.value})} /></div>
+              <div>
+                <Label>Description</Label>
+                <ReactQuill theme="snow" value={formData.description || ''} onChange={v => setFormData({...formData, description: v})} className="mt-2 h-64 mb-12" />
+              </div>
+            </CardContent>
+          </Card>
+          <SEODetail data={formData} onChange={(k, v) => setFormData(prev => ({...prev, [k]: v}))} />
+        </div>
+
+        <div className="w-full lg:w-80 space-y-6">
+          <SidebarSetting enabled={formData.sidebar_enabled} onChange={v => setFormData({...formData, sidebar_enabled: v})} />
+          <Card>
+            <CardHeader><CardTitle className="text-base">Featured Image</CardTitle></CardHeader>
+            <CardContent>
+              <div className="border-2 border-dashed rounded-lg p-4 text-center cursor-pointer hover:bg-gray-50" onClick={() => setModalOpen(true)}>
+                {formData.featured_image ? (
+                  <img src={formData.featured_image} alt="Featured" className="w-full h-auto rounded" />
+                ) : (
+                  <div className="flex flex-col items-center text-gray-500">
+                    <Upload className="h-8 w-8 mb-2" />
+                    <span className="text-xs">Select Image</span>
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+          <Button className="w-full" onClick={handleSave} disabled={loading}>{loading ? 'Saving...' : 'Save News'}</Button>
+        </div>
+      </div>
+      <MediaSelectorModal isOpen={modalOpen} onClose={() => setModalOpen(false)} onSelect={(file) => setFormData({...formData, featured_image: file.file_url})} />
+    </DashboardLayout>
+  );
+};
+
+export default AddEditNews;

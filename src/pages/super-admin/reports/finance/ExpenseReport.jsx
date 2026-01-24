@@ -1,0 +1,110 @@
+﻿import React, { useState, useEffect } from 'react';
+import DashboardLayout from '@/components/DashboardLayout';
+import { Button } from '@/components/ui/button';
+import DatePicker from '@/components/ui/DatePicker';
+import { useToast } from '@/components/ui/use-toast';
+import { supabase } from '@/lib/customSupabaseClient';
+import { useAuth } from '@/contexts/SupabaseAuthContext';
+import { Search, Loader2, Printer } from 'lucide-react';
+import { useReactToPrint } from 'react-to-print';
+import { format } from 'date-fns';
+
+const ExpenseReport = () => {
+  const { school } = useAuth();
+  const { toast } = useToast();
+  
+  const [dateFrom, setDateFrom] = useState(format(new Date(), 'yyyy-MM-dd'));
+  const [dateTo, setDateTo] = useState(format(new Date(), 'yyyy-MM-dd'));
+  
+  const [reportData, setReportData] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const printRef = React.useRef();
+
+  const handleSearch = async () => {
+    setLoading(true);
+    const { data, error } = await supabase
+      .from('expenses')
+      .select(`
+        id,
+        date,
+        name,
+        invoice_no,
+        amount,
+        expense_head:expense_heads (name)
+      `)
+      .eq('branch_id', school.id)
+      .gte('date', dateFrom)
+      .lte('date', dateTo);
+
+    if (error) {
+      toast({ variant: 'destructive', title: 'Error fetching report data', description: error.message });
+      setReportData([]);
+    } else {
+      setReportData(data);
+    }
+    setLoading(false);
+  };
+
+  const handlePrint = useReactToPrint({
+    content: () => printRef.current,
+  });
+
+  const grandTotal = reportData.reduce((sum, row) => sum + row.amount, 0);
+
+  return (
+    <DashboardLayout>
+      <h1 className="text-2xl font-bold mb-4">Expense Report</h1>
+      <div className="bg-card p-4 rounded-lg shadow-sm mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+          <div><label>Date From</label><DatePicker value={dateFrom} onChange={setDateFrom} /></div>
+          <div><label>Date To</label><DatePicker value={dateTo} onChange={setDateTo} /></div>
+          <div className="flex gap-2">
+            <Button onClick={handleSearch} disabled={loading} className="w-full">{loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Search className="mr-2 h-4 w-4" />} Search</Button>
+            <Button onClick={handlePrint} variant="outline" className="w-full" disabled={reportData.length === 0}><Printer className="mr-2 h-4 w-4" /> Print</Button>
+          </div>
+        </div>
+      </div>
+
+      {loading ? (
+        <div className="text-center py-10"><Loader2 className="mx-auto h-8 w-8 animate-spin" /></div>
+      ) : (
+        <div ref={printRef} className="bg-card p-4 rounded-lg shadow-sm overflow-x-auto">
+          <h2 className="text-xl font-semibold mb-4 text-center">Expense Report</h2>
+          <p className="text-center text-sm mb-4">From {format(new Date(dateFrom), 'dd-MM-yyyy')} to {format(new Date(dateTo), 'dd-MM-yyyy')}</p>
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="text-left bg-muted">
+                <th className="p-2">Date</th>
+                <th className="p-2">Name</th>
+                <th className="p-2">Invoice No</th>
+                <th className="p-2">Expense Head</th>
+                <th className="p-2 text-right">Amount</th>
+              </tr>
+            </thead>
+            <tbody>
+              {reportData.length > 0 ? reportData.map(row => (
+                <tr key={row.id} className="border-b">
+                  <td className="p-2">{format(new Date(row.date), 'dd-MM-yyyy')}</td>
+                  <td className="p-2">{row.name}</td>
+                  <td className="p-2">{row.invoice_no}</td>
+                  <td className="p-2">{row.expense_head.name}</td>
+                  <td className="p-2 text-right">{row.amount.toFixed(2)}</td>
+                </tr>
+              )) : (
+                <tr><td colSpan="5" className="text-center py-10 text-muted-foreground">No data found for the selected criteria.</td></tr>
+              )}
+            </tbody>
+            <tfoot>
+              <tr className="font-bold bg-muted">
+                <td colSpan="4" className="p-2 text-right">Grand Total:</td>
+                <td className="p-2 text-right">{grandTotal.toFixed(2)}</td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+      )}
+    </DashboardLayout>
+  );
+};
+
+export default ExpenseReport;

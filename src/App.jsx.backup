@@ -1,0 +1,1107 @@
+import React, { useEffect, Suspense, lazy } from 'react';
+import { Routes, Route, Navigate } from 'react-router-dom';
+import ProtectedRoute from '@/components/ProtectedRoute';
+import SecurityHeaders from '@/components/SecurityHeaders';
+import { ROUTES } from '@/registry/routeRegistry';
+import { MASTER_ADMIN_ROUTES } from '@/routes/masterAdminRoutes';
+import NewModuleRoutes from '@/routes/routes.new.jsx';
+import { NEW_MODULES } from '@/modules/moduleRegistry.append';
+import DemoAutomationDialog from '@/components/DemoAutomationDialog';
+import { useAuth } from '@/contexts/SupabaseAuthContext';
+import { PermissionProvider } from '@/contexts/PermissionContext';
+import { RecoveryProvider } from '@/contexts/RecoveryContext';
+import { EnvStatusProvider } from '@/contexts/EnvStatusContext';
+import OfflineIndicator from '@/components/OfflineIndicator';
+import EnvWarningBanner from '@/components/EnvWarningBanner';
+import PwaUpdater from '@/components/PwaUpdater';
+import PushNotificationManager from '@/components/PushNotificationManager';
+import { initDevTools } from '@/utils/devTools';
+import { getSubdomain } from '@/utils/subdomain';
+import LoadingFallback from '@/components/LoadingFallback';
+
+// ✅ CRITICAL: Keep these as eager imports for initial page load
+import Homepage from '@/pages/Homepage';
+import Login from '@/pages/Login';
+import SchoolLogin from '@/pages/SchoolLogin';
+import NotFound from '@/pages/NotFound';
+
+// ✅ LAZY LOAD: Auth pages
+const ForgotPassword = lazy(() => import('@/pages/ForgotPassword'));
+const ResetPassword = lazy(() => import('@/pages/ResetPassword'));
+const UpdatePassword = lazy(() => import('@/pages/UpdatePassword'));
+const SchoolHomepage = lazy(() => import('@/pages/SchoolHomepage'));
+
+// ✅ LAZY LOAD: Public Pages
+const PublicSchoolLogin = lazy(() => import('@/pages/public/PublicSchoolLogin'));
+const PublicForgotPassword = lazy(() => import('@/pages/public/PublicForgotPassword'));
+const PublicSignUp = lazy(() => import('@/pages/public/PublicSignUp'));
+const PublicPageDetail = lazy(() => import('@/pages/public/PublicPageDetail'));
+const PublicEvents = lazy(() => import('@/pages/public/PublicEvents'));
+const PublicNews = lazy(() => import('@/pages/public/PublicNews'));
+const PublicNewsDetail = lazy(() => import('@/pages/public/PublicNewsDetail'));
+const PublicGallery = lazy(() => import('@/pages/public/PublicGallery'));
+const PublicExamResult = lazy(() => import('@/pages/public/PublicExamResult'));
+const OnlineCourseFrontSite = lazy(() => import('@/pages/public/OnlineCourseFrontSite'));
+const OnlineAdmission = lazy(() => import('@/pages/public/OnlineAdmission'));
+const SchoolPublicHome = lazy(() => import('@/pages/public/SchoolPublicHome'));
+const RegisterSchool = lazy(() => import('@/pages/public/RegisterSchool'));
+const NewSchoolHomepage = lazy(() => import('@/pages/public/SchoolHomepage'));
+const SchoolSubpage = lazy(() => import('@/pages/public/SchoolSubpage'));
+
+// ✅ LAZY LOAD: Dashboards
+const MasterAdminDashboard = lazy(() => import('@/pages/master-admin/MasterAdminDashboard'));
+const SchoolsPage = lazy(() => import('@/pages/master-admin/SchoolsPage'));
+const AddNewSchool = lazy(() => import('@/pages/master-admin/AddNewSchool'));
+const EditSchool = lazy(() => import('@/pages/master-admin/EditSchool'));
+const SchoolDetails = lazy(() => import('@/pages/master-admin/SchoolDetails'));
+const Articles = lazy(() => import('@/pages/master-admin/articles/Articles'));
+const CreateArticle = lazy(() => import('@/pages/master-admin/articles/CreateArticle'));
+const EditArticle = lazy(() => import('@/pages/master-admin/articles/EditArticle'));
+const ViewArticle = lazy(() => import('@/pages/master-admin/articles/ViewArticle'));
+const ArticlesDocumentation = lazy(() => import('@/pages/master-admin/articles/ArticlesDocumentation'));
+const SchoolOwnerDashboard = lazy(() => import('@/pages/school-owner/SchoolOwnerDashboard'));
+const BranchList = lazy(() => import('@/pages/school-owner/multi-branch/BranchList'));
+const AddBranch = lazy(() => import('@/pages/school-owner/multi-branch/AddBranch'));
+const EditBranch = lazy(() => import('@/pages/school-owner/multi-branch/EditBranch'));
+const BranchSettings = lazy(() => import('@/pages/school-owner/multi-branch/BranchSettings'));
+const BranchReport = lazy(() => import('@/pages/school-owner/multi-branch/BranchReport'));
+const AdminDashboard = lazy(() => import('@/pages/AdminDashboard'));
+const StaffDashboard = lazy(() => import('@/pages/StaffDashboard'));
+const StudentDashboard = lazy(() => import('@/pages/student/StudentDashboard'));
+const ParentDashboard = lazy(() => import('@/pages/ParentDashboard'));
+
+// ✅ Zoom Live Classes
+import ZoomLiveClasses from '@/pages/school-owner/ZoomLiveClasses';
+
+// ✅ Finance
+import Income from '@/pages/school-owner/finance/Income';
+import AddIncome from '@/pages/school-owner/finance/AddIncome';
+import SearchIncome from '@/pages/school-owner/finance/SearchIncome';
+import IncomeHead from '@/pages/school-owner/finance/IncomeHead';
+import Expense from '@/pages/school-owner/finance/Expense';
+import AddExpense from '@/pages/school-owner/finance/AddExpense';
+import SearchExpense from '@/pages/school-owner/finance/SearchExpense';
+import ExpenseHead from '@/pages/school-owner/finance/ExpenseHead';
+
+// ✅ Fees Collection
+import CollectFees from '@/pages/school-owner/fees-collection/CollectFees';
+
+// ✅ Behaviour Records
+import AssignIncident from '@/pages/school-owner/behaviour-records/AssignIncident';
+import Incidents from '@/pages/school-owner/behaviour-records/Incidents';
+import BehaviourReports from '@/pages/school-owner/behaviour-records/Reports';
+import BehaviourSetting from '@/pages/school-owner/behaviour-records/BehaviourSetting';
+
+import DemoAutomationV2 from '@/pages/master-admin/DemoAutomationV2';
+import SchoolOwnerDiagnostics from '@/pages/master-admin/SchoolOwnerDiagnostics';
+
+import DomainList from '@/pages/master-admin/custom-domain/DomainList';
+import DomainSettings from '@/pages/master-admin/custom-domain/DomainSettings';
+
+// ✅ Master Admin Pages (Extended)
+import MasterAdminProfile from '@/pages/master-admin/MasterAdminProfile';
+import MasterAdminResetPassword from '@/pages/master-admin/MasterAdminResetPassword';
+import SubscriptionPlans from '@/pages/master-admin/subscriptions/SubscriptionPlans';
+import AddSubscriptionPlan from '@/pages/master-admin/subscriptions/AddSubscriptionPlan';
+import EditSubscriptionPlan from '@/pages/master-admin/subscriptions/EditSubscriptionPlan';
+import RolePermission from '@/pages/master-admin/RolePermission';
+import AssignPermission from '@/pages/master-admin/AssignPermission';
+import SchoolRequests from '@/pages/master-admin/SchoolRequests';
+import SubscriptionsList from '@/pages/master-admin/subscriptions/SubscriptionsList';
+import SubscriptionInvoices from '@/pages/master-admin/subscriptions/SubscriptionInvoices';
+import SubscriptionTransactions from '@/pages/master-admin/subscriptions/SubscriptionTransactions';
+import BillingAudit from '@/pages/master-admin/subscriptions/BillingAudit';
+import GenerateBill from '@/pages/master-admin/subscriptions/GenerateBill';
+import BulkInvoiceGenerator from '@/pages/master-admin/subscriptions/BulkInvoiceGenerator';
+import QueriesFinder from '@/pages/master-admin/system-settings/QueriesFinder'; // New Module
+import CommunicationSettingsMaster from '@/pages/master-admin/system-settings/CommunicationSettings';
+import EmailSettingsMaster from '@/pages/master-admin/system-settings/EmailSettings';
+import PaymentSettingsMaster from '@/pages/master-admin/system-settings/PaymentSettings';
+import LoginPageSettings from '@/pages/master-admin/system-settings/LoginPageSettings';
+import SessionSettingMaster from '@/pages/master-admin/system-settings/SessionSetting';
+import ExportImport from '@/pages/master-admin/system-settings/ExportImport';
+import MasterDataSettings from '@/pages/master-admin/system-settings/MasterDataSettings';
+import SaasWebsiteSettings from '@/pages/master-admin/frontend-cms/SaasWebsiteSettings';
+import FrontCmsMasterAdmin from '@/pages/master-admin/front-cms/FrontCmsMasterAdmin';
+import MasterAdminMenus from '@/pages/master-admin/front-cms/Menus';
+import MasterAdminMenuItems from '@/pages/master-admin/front-cms/MenuItems';
+import FrontCmsSchoolOwner from '@/pages/school-owner/front-cms/FrontCmsSchoolOwner';
+import Menus from '@/pages/school-owner/front-cms/Menus';
+import MenuItems from '@/pages/school-owner/front-cms/MenuItems';
+import ModuleHealth from '@/pages/master-admin/ModuleHealth';
+import EnterpriseHealthMonitor from '@/pages/master-admin/EnterpriseHealthMonitor';
+import PlaceholderModule from '@/components/common/PlaceholderModule';
+
+// ✅ Master Admin Branch Management
+import SchoolBranchesOverview from '@/pages/master-admin/branch-management/SchoolBranchesOverview';
+import SchoolBranches from '@/pages/master-admin/branch-management/SchoolBranches';
+import AddBranchForSchool from '@/pages/master-admin/branch-management/AddBranchForSchool';
+import EditBranchForSchool from '@/pages/master-admin/branch-management/EditBranchForSchool';
+
+// ✅ School Owner Pages (Extended)
+import SchoolOwnerProfile from '@/pages/school-owner/SchoolOwnerProfile';
+import SchoolOwnerResetPassword from '@/pages/school-owner/SchoolOwnerResetPassword';
+import MySubscriptionPlan from '@/pages/school-owner/subscription/MySubscriptionPlan';
+
+// Front Office
+import SetupFrontOffice from '@/pages/school-owner/front-office/SetupFrontOffice';
+import AdmissionEnquiry from '@/pages/school-owner/front-office/AdmissionEnquiry';
+import VisitorBook from '@/pages/school-owner/front-office/VisitorBook';
+import PhoneCallLog from '@/pages/school-owner/front-office/PhoneCallLog';
+import PostalDispatch from '@/pages/school-owner/front-office/PostalDispatch';
+import PostalReceive from '@/pages/school-owner/front-office/PostalReceive';
+import Complain from '@/pages/school-owner/front-office/Complain';
+
+// Online Course
+import OnlineCourse from '@/pages/school-owner/online-course/OnlineCourse';
+import OfflinePayment from '@/pages/school-owner/online-course/OfflinePayment';
+import OnlineCourseReport from '@/pages/school-owner/online-course/OnlineCourseReport';
+import OnlineCourseSetting from '@/pages/school-owner/online-course/Setting';
+
+// Academics
+import Classes from '@/pages/school-owner/academics/Classes';
+import Sections from '@/pages/school-owner/academics/Sections';
+import Subjects from '@/pages/school-owner/academics/Subjects';
+import SubjectGroup from '@/pages/school-owner/academics/SubjectGroup';
+import ClassTimetable from '@/pages/school-owner/academics/ClassTimetable';
+import TeacherTimetable from '@/pages/school-owner/academics/TeacherTimetable';
+import AssignClassTeacher from '@/pages/school-owner/academics/AssignClassTeacher';
+import PromoteStudent from '@/pages/school-owner/academics/PromoteStudent';
+
+// Student Info
+import StudentAdmission from '@/pages/school-owner/student-information/StudentAdmission';
+import AdmissionFormSettings from '@/pages/school-owner/student-information/AdmissionFormSettings';
+import StudentDetails from '@/pages/school-owner/student-information/StudentDetails';
+import StudentProfile from '@/pages/school-owner/student-information/StudentProfile';
+import EditStudentProfile from '@/pages/school-owner/student-information/EditStudentProfile';
+import OnlineAdmissionList from '@/pages/school-owner/student-information/OnlineAdmissionList';
+import EditOnlineAdmission from '@/pages/school-owner/student-information/EditOnlineAdmission';
+import StudentCategories from '@/pages/school-owner/student-information/StudentCategories';
+import StudentHouse from '@/pages/school-owner/student-information/StudentHouse';
+import DisabledStudents from '@/pages/school-owner/student-information/DisabledStudents';
+import DisableReason from '@/pages/school-owner/student-information/DisableReason';
+import MultiClassStudent from '@/pages/school-owner/student-information/MultiClassStudent';
+import BulkDelete from '@/pages/school-owner/student-information/BulkDelete';
+
+// HR
+import Departments from '@/pages/school-owner/human-resource/Departments';
+import Designations from '@/pages/school-owner/human-resource/Designations';
+import AddEmployee from '@/pages/school-owner/human-resource/AddEmployee';
+import EditEmployee from '@/pages/school-owner/human-resource/EditEmployee';
+import EmployeeList from '@/pages/school-owner/human-resource/EmployeeList';
+import StaffDirectory from '@/pages/school-owner/human-resource/StaffDirectory';
+import StaffProfile from '@/pages/school-owner/human-resource/StaffProfile';
+import ImportStaff from '@/pages/school-owner/human-resource/ImportStaff';
+import StaffLeaveType from '@/pages/school-owner/human-resource/StaffLeaveType';
+import StaffApplyLeave from '@/pages/school-owner/human-resource/StaffApplyLeave';
+import ApproveStaffLeave from '@/pages/school-owner/human-resource/ApproveStaffLeave';
+import EmployeeDocuments from '@/pages/school-owner/human-resource/EmployeeDocuments';
+import EmployeePerformance from '@/pages/school-owner/human-resource/EmployeePerformance';
+import EmployeePayroll from '@/pages/school-owner/human-resource/EmployeePayroll';
+
+// Attendance
+import StudentAttendance from '@/pages/school-owner/attendance/StudentAttendance';
+import LiveClasses from '@/pages/school-owner/gmeet-live-classes/LiveClasses'; // ✅ Import LiveClasses
+import AttendanceByDate from '@/pages/school-owner/attendance/AttendanceByDate';
+import ApproveStudentLeave from '@/pages/school-owner/attendance/ApproveStudentLeave';
+import StaffAttendance from '@/pages/school-owner/attendance/StaffAttendance';
+
+// Fees (Remaining)
+import FeesGroup from '@/pages/school-owner/fees-collection/FeesGroup';
+import FeesType from '@/pages/school-owner/fees-collection/FeesType';
+import FeesMaster from '@/pages/school-owner/fees-collection/FeesMaster';
+import AssignFeeGroup from '@/pages/school-owner/fees-collection/AssignFeeGroup';
+import StudentFees from '@/pages/school-owner/fees-collection/StudentFees';
+import SearchFeesPayment from '@/pages/school-owner/fees-collection/SearchFeesPayment';
+import SearchDueFees from '@/pages/school-owner/fees-collection/SearchDueFees';
+import FeesDiscount from '@/pages/school-owner/fees-collection/FeesDiscount';
+import FeesCarryForward from '@/pages/school-owner/fees-collection/FeesCarryForward';
+import FeesReminder from '@/pages/school-owner/fees-collection/FeesReminder';
+import PrintFeesReceipt from '@/pages/school-owner/fees-collection/PrintFeesReceipt';
+import PrintSelectedFees from '@/pages/school-owner/fees-collection/PrintSelectedFees';
+import QuickFees from '@/pages/school-owner/fees-collection/QuickFees';
+
+// Examinations
+import ExamGroup from '@/pages/school-owner/examinations/ExamGroup';
+import ExamList from '@/pages/school-owner/examinations/ExamList';
+import ExamSchedule from '@/pages/school-owner/examinations/ExamSchedule';
+import ExamAttendance from '@/pages/school-owner/examinations/ExamAttendance';
+import MarksEntry from '@/pages/school-owner/examinations/MarksEntry';
+import MarksDivision from '@/pages/school-owner/examinations/MarksDivision';
+import MarksGrade from '@/pages/school-owner/examinations/MarksGrade';
+import GeneralExamResult from '@/pages/school-owner/examinations/GeneralExamResult';
+import GeneralExamSchedule from '@/pages/school-owner/examinations/GeneralExamSchedule';
+import CbseExam from '@/pages/school-owner/examinations/CbseExam';
+import CbseSettings from '@/pages/school-owner/examinations/CbseSettings';
+import CbseTerm from '@/pages/school-owner/examinations/CbseTerm';
+import CbseAssessment from '@/pages/school-owner/examinations/CbseAssessment';
+import CbseObservation from '@/pages/school-owner/examinations/CbseObservation';
+import CbseObservationParameter from '@/pages/school-owner/examinations/CbseObservationParameter';
+import CbseExamGrade from '@/pages/school-owner/examinations/CbseExamGrade';
+import AddExamSubjects from '@/pages/school-owner/examinations/AddExamSubjects';
+import AssignStudents from '@/pages/school-owner/examinations/AssignStudents';
+import EnterMarks from '@/pages/school-owner/examinations/EnterMarks';
+import LinkExam from '@/pages/school-owner/examinations/LinkExam';
+import GenerateRank from '@/pages/school-owner/examinations/GenerateRank';
+import GenerateTemplateRank from '@/pages/school-owner/examinations/GenerateTemplateRank';
+import MarksheetTemplate from '@/pages/school-owner/examinations/MarksheetTemplate';
+import PrintMarksheet from '@/pages/school-owner/examinations/PrintMarksheet';
+import PrintMarksheetGeneral from '@/pages/school-owner/examinations/PrintMarksheetGeneral';
+import PrintAdmitCard from '@/pages/school-owner/examinations/PrintAdmitCard';
+import DesignMarksheet from '@/pages/school-owner/examinations/DesignMarksheet';
+import DesignAdmitCard from '@/pages/school-owner/examinations/DesignAdmitCard';
+import TeacherRemarks from '@/pages/school-owner/examinations/TeacherRemarks';
+import AssignObservation from '@/pages/school-owner/examinations/AssignObservation';
+import CbseReports from '@/pages/school-owner/examinations/CbseReports';
+
+// Library
+import LibraryBooks from '@/pages/school-owner/library/LibraryBooks';
+import LibraryBookIssued from '@/pages/school-owner/library/LibraryBookIssued';
+import LibraryMembers from '@/pages/school-owner/library/LibraryMembers';
+import LibraryIssueReturn from '@/pages/school-owner/library/LibraryIssueReturn';
+
+// Hostel
+import Hostels from '@/pages/school-owner/hostel/Hostels';
+import HostelRooms from '@/pages/school-owner/hostel/HostelRooms';
+import RoomTypes from '@/pages/school-owner/hostel/RoomTypes';
+
+// Transport
+import TransportRoutes from '@/pages/school-owner/transport/TransportRoutes';
+import TransportVehicles from '@/pages/school-owner/transport/TransportVehicles';
+import PickupPoints from '@/pages/school-owner/transport/PickupPoints';
+import RoutePickupPoint from '@/pages/school-owner/transport/RoutePickupPoint';
+import AssignVehicle from '@/pages/school-owner/transport/AssignVehicle';
+import StudentTransportFees from '@/pages/school-owner/transport/StudentTransportFees';
+import TransportFeesMaster from '@/pages/school-owner/transport/TransportFeesMaster';
+
+// Communicate
+import NoticeBoard from '@/pages/school-owner/communicate/NoticeBoard';
+import SendEmail from '@/pages/school-owner/communicate/SendEmail';
+import SendSms from '@/pages/school-owner/communicate/SendSms';
+import ComposeMessage from '@/pages/school-owner/communicate/ComposeMessage';
+import EmailSmsLog from '@/pages/school-owner/communicate/EmailSmsLog';
+
+// QR
+import QrAttendanceSetting from '@/pages/school-owner/qr-code-attendance/QrAttendanceSetting';
+import QrAttendanceScan from '@/pages/school-owner/qr-code-attendance/QrAttendanceScan';
+
+// System Settings
+import GeneralSetting from '@/pages/school-owner/system-settings/GeneralSetting';
+import SchoolOwnerRolePermission from '@/pages/school-owner/system-settings/RolePermission';
+import StudentProfileUpdateSettings from '@/pages/school-owner/system-settings/StudentProfileUpdateSettings';
+import PrintHeaderFooter from '@/pages/school-owner/system-settings/PrintHeaderFooter';
+import OnlineAdmissionSetting from '@/pages/school-owner/system-settings/OnlineAdmissionSetting';
+import AssignPermissionSchoolPage from '@/pages/school-owner/system-settings/AssignPermission';
+
+// Homework
+import HomeworkList from '@/pages/school-owner/homework/HomeworkList';
+
+// Inventory
+import AddItem from '@/pages/school-owner/inventory/AddItem';
+import AddItemStock from '@/pages/school-owner/inventory/AddItemStock';
+import IssueItem from '@/pages/school-owner/inventory/IssueItem';
+import ItemCategory from '@/pages/school-owner/inventory/ItemCategory';
+import ItemStore from '@/pages/school-owner/inventory/ItemStore';
+import ItemSupplier from '@/pages/school-owner/inventory/ItemSupplier';
+
+// Certificate
+import CertificateTemplates from '@/pages/school-owner/certificate/CertificateTemplates';
+import GenerateCertificate from '@/pages/school-owner/certificate/GenerateCertificate';
+import CertificateHistory from '@/pages/school-owner/certificate/CertificateHistory';
+import StudentCertificate from '@/pages/school-owner/certificate/StudentCertificate';
+import GenerateIDCard from '@/pages/school-owner/certificate/GenerateIDCard';
+import StaffIDCard from '@/pages/school-owner/certificate/StaffIDCard';
+import GenerateStaffIDCard from '@/pages/school-owner/certificate/GenerateStaffIDCard';
+import StudentIDCard from '@/pages/school-owner/certificate/StudentIDCard';
+
+// Student Panel
+import StudentPanelProfile from '@/pages/student/StudentPanelProfile';
+import EditStudentPanelProfile from '@/pages/student/EditStudentPanelProfile';
+import StudentPanelFees from '@/pages/student/StudentPanelFees';
+import StudentExamSchedule from '@/pages/student/ExamSchedule';
+import StudentExamResult from '@/pages/student/ExamResult';
+import StudentHostelRooms from '@/pages/student/StudentHostelRooms';
+import StudentTransportRoutes from '@/pages/student/TransportRoutes';
+import StudentAttendanceView from '@/pages/student/Attendance';
+import ApplyLeave from '@/pages/student/ApplyLeave';
+
+function App() {
+  const { loading } = useAuth();
+  const subdomain = getSubdomain();
+  const isSubdomain = !!subdomain;
+
+  // ✅ Initialize Dev Tools on App Mount
+  useEffect(() => {
+    initDevTools();
+  }, []);
+
+  // ✅ Loading UI
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <RecoveryProvider>
+      <EnvStatusProvider>
+        <SecurityHeaders />
+        <DemoAutomationDialog />
+        <OfflineIndicator />
+        <EnvWarningBanner />
+        <PwaUpdater />
+        <PushNotificationManager />
+        <PermissionProvider>
+          <Suspense fallback={<LoadingFallback />}>
+            <Routes>
+            {/* ✅ Public Routes - Subdomain Logic */}
+            {isSubdomain ? (
+              <>
+                <Route path="/" element={<SchoolPublicHome />} />
+                <Route path="/login" element={<PublicSchoolLogin />} />
+                <Route path="/forgot-password" element={<PublicForgotPassword />} />
+                <Route path="/signup" element={<PublicSignUp />} />
+                <Route path="/exam-result" element={<PublicExamResult />} />
+                <Route path="/pages/:pageSlug" element={<PublicPageDetail />} />
+                <Route path="/events" element={<PublicEvents />} />
+                <Route path="/news" element={<PublicNews />} />
+                <Route path="/news/:newsSlug" element={<PublicNewsDetail />} />
+                <Route path="/gallery" element={<PublicGallery />} />
+                <Route path="/online-course" element={<OnlineCourseFrontSite />} />
+                <Route path="/admission" element={<OnlineAdmission />} />
+              </>
+            ) : (
+              <>
+                <Route path={ROUTES.PUBLIC.HOME} element={<Homepage />} />
+                <Route path={ROUTES.PUBLIC.LOGIN} element={<Login />} />
+                <Route path={ROUTES.PUBLIC.FORGOT_PASSWORD} element={<ForgotPassword />} />
+                <Route path={ROUTES.PUBLIC.RESET_PASSWORD} element={<ResetPassword />} />
+                <Route path="/update-password" element={<UpdatePassword />} /> {/* ✅ Route for Supabase Reset Link */}
+                <Route path={ROUTES.PUBLIC.SCHOOL_LOGIN} element={<SchoolLogin />} />
+                <Route path="/register-school" element={<RegisterSchool />} />
+                <Route path={ROUTES.PUBLIC.SCHOOL_HOMEPAGE} element={<SchoolHomepage />} />
+                
+                {/* ✅ New Dynamic School Homepage (Testing Route) */}
+                <Route path="/s/:domain" element={<NewSchoolHomepage />} />
+                <Route path="/s/:domain/login" element={<PublicSchoolLogin />} />
+                <Route path="/s/:domain/forgot-password" element={<PublicForgotPassword />} />
+                <Route path="/s/:domain/signup" element={<PublicSignUp />} />
+                <Route path="/s/:domain/online_course" element={<SchoolSubpage variant="online_course" />} />
+                <Route path="/s/:domain/online_admission" element={<SchoolSubpage variant="online_admission" />} />
+                <Route path="/s/:domain/cbseexam" element={<SchoolSubpage variant="cbseexam" />} />
+                <Route path="/s/:domain/examresult" element={<SchoolSubpage variant="examresult" />} />
+                <Route path="/s/:domain/annual_calendar" element={<SchoolSubpage variant="annual_calendar" />} />
+                <Route path="/s/:domain/page/:pageSlug" element={<SchoolSubpage variant="page" />} />
+
+                {/* Fallback for path-based access on main domain */}
+                <Route path="/:schoolSlug" element={<SchoolPublicHome />} />
+                <Route path={ROUTES.PUBLIC.DYNAMIC_LOGIN} element={<PublicSchoolLogin />} />
+                <Route path={ROUTES.PUBLIC.DYNAMIC_FORGOT_PASSWORD} element={<PublicForgotPassword />} />
+                <Route path={ROUTES.PUBLIC.DYNAMIC_SIGNUP} element={<PublicSignUp />} />
+                <Route path={ROUTES.PUBLIC.DYNAMIC_EXAM_RESULT} element={<PublicExamResult />} />
+                <Route path={ROUTES.PUBLIC.DYNAMIC_PAGE} element={<PublicPageDetail />} />
+                <Route path={ROUTES.PUBLIC.DYNAMIC_EVENTS} element={<PublicEvents />} />
+                <Route path={ROUTES.PUBLIC.DYNAMIC_NEWS} element={<PublicNews />} />
+                <Route path={ROUTES.PUBLIC.DYNAMIC_NEWS_DETAIL} element={<PublicNewsDetail />} />
+                <Route path={ROUTES.PUBLIC.DYNAMIC_GALLERY} element={<PublicGallery />} />
+                <Route path={ROUTES.PUBLIC.DYNAMIC_ONLINE_COURSE} element={<OnlineCourseFrontSite />} />
+                <Route path={ROUTES.PUBLIC.DYNAMIC_ADMISSION} element={<OnlineAdmission />} />
+              </>
+            )}
+
+            {/* ✅ Master Admin */}
+            <Route
+              path={ROUTES.MASTER_ADMIN.DASHBOARD}
+              element={
+                <ProtectedRoute allowedRoles={['master_admin']}>
+                  <MasterAdminDashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path={ROUTES.MASTER_ADMIN.DEMO_AUTOMATION_V2}
+              element={
+                <ProtectedRoute allowedRoles={['master_admin']}>
+                  <DemoAutomationV2 />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path={ROUTES.MASTER_ADMIN.SCHOOL_OWNER_DIAGNOSTICS}
+              element={
+                <ProtectedRoute allowedRoles={['master_admin']}>
+                  <SchoolOwnerDiagnostics />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path={ROUTES.MASTER_ADMIN.SCHOOLS}
+              element={
+                <ProtectedRoute allowedRoles={['master_admin']}>
+                  <SchoolsPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path={ROUTES.MASTER_ADMIN.SCHOOL_REQUESTS}
+              element={
+                <ProtectedRoute allowedRoles={['master_admin']}>
+                  <SchoolRequests />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path={ROUTES.MASTER_ADMIN.ADD_SCHOOL}
+              element={
+                <ProtectedRoute allowedRoles={['master_admin']}>
+                  <AddNewSchool />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path={ROUTES.MASTER_ADMIN.EDIT_SCHOOL}
+              element={
+                <ProtectedRoute allowedRoles={['master_admin']}>
+                  <EditSchool />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path={ROUTES.MASTER_ADMIN.SCHOOL_DETAILS}
+              element={
+                <ProtectedRoute allowedRoles={['master_admin']}>
+                  <SchoolDetails />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path={ROUTES.MASTER_ADMIN.ARTICLES}
+              element={
+                <ProtectedRoute allowedRoles={['master_admin']}>
+                  <Articles />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path={ROUTES.MASTER_ADMIN.CREATE_ARTICLE}
+              element={
+                <ProtectedRoute allowedRoles={['master_admin']}>
+                  <CreateArticle />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path={ROUTES.MASTER_ADMIN.EDIT_ARTICLE}
+              element={
+                <ProtectedRoute allowedRoles={['master_admin']}>
+                  <EditArticle />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path={ROUTES.MASTER_ADMIN.VIEW_ARTICLE}
+              element={
+                <ProtectedRoute allowedRoles={['master_admin']}>
+                  <ViewArticle />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path={ROUTES.MASTER_ADMIN.ARTICLES_DOCS}
+              element={
+                <ProtectedRoute allowedRoles={['master_admin']}>
+                  <ArticlesDocumentation />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path={ROUTES.MASTER_ADMIN.ROLE_PERMISSION}
+              element={
+                <ProtectedRoute allowedRoles={['master_admin']}>
+                  <RolePermission />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path={ROUTES.MASTER_ADMIN.ASSIGN_PERMISSION}
+              element={
+                <ProtectedRoute allowedRoles={['master_admin']}>
+                  <AssignPermission />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path={ROUTES.MASTER_ADMIN.ASSIGN_PERMISSION_ID}
+              element={
+                <ProtectedRoute allowedRoles={['master_admin']}>
+                  <AssignPermission />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path={ROUTES.MASTER_ADMIN.ASSIGN_PERMISSION_FULL}
+              element={
+                <ProtectedRoute allowedRoles={['master_admin']}>
+                  <AssignPermission />
+                </ProtectedRoute>
+              }
+            />
+
+            {/* ✅ School Owner */}
+            <Route path="/school-owner" element={<Navigate to={ROUTES.SCHOOL_OWNER.DASHBOARD} replace />} />
+            <Route
+              path={ROUTES.SCHOOL_OWNER.DASHBOARD}
+              element={
+                <ProtectedRoute allowedRoles={['school_owner', 'admin']}>
+                  <SchoolOwnerDashboard />
+                </ProtectedRoute>
+              }
+            />
+
+            {/* Multi Branch */}
+            <Route
+              path="/school-owner/multi-branch"
+              element={<Navigate to={ROUTES.SCHOOL_OWNER.BRANCH_LIST} replace />}
+            />
+            <Route
+              path={ROUTES.SCHOOL_OWNER.BRANCH_LIST}
+              element={
+                <ProtectedRoute allowedRoles={['school_owner', 'admin']}>
+                  <BranchList />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path={ROUTES.SCHOOL_OWNER.ADD_BRANCH}
+              element={
+                <ProtectedRoute allowedRoles={['school_owner', 'admin']}>
+                  <AddBranch />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path={ROUTES.SCHOOL_OWNER.EDIT_BRANCH}
+              element={
+                <ProtectedRoute allowedRoles={['school_owner', 'admin']}>
+                  <EditBranch />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path={ROUTES.SCHOOL_OWNER.BRANCH_SETTINGS}
+              element={
+                <ProtectedRoute allowedRoles={['school_owner', 'admin']}>
+                  <BranchSettings />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path={ROUTES.SCHOOL_OWNER.BRANCH_SETTINGS_ROOT}
+              element={
+                <ProtectedRoute allowedRoles={['school_owner', 'admin']}>
+                  <BranchSettings />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path={ROUTES.SCHOOL_OWNER.BRANCH_REPORT}
+              element={
+                <ProtectedRoute allowedRoles={['school_owner', 'admin']}>
+                  <BranchReport />
+                </ProtectedRoute>
+              }
+            />
+            
+            {/* Assign Permission (School Owner) */}
+            <Route
+              path="/school-owner/system-settings/assign-permission"
+              element={
+                <ProtectedRoute allowedRoles={['school_owner', 'admin']}>
+                  <AssignPermissionSchoolPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/school-owner/system-settings/assign-permission/:roleId"
+              element={
+                <ProtectedRoute allowedRoles={['school_owner', 'admin']}>
+                  <AssignPermissionSchoolPage />
+                </ProtectedRoute>
+              }
+            />
+
+            {/* ✅ Student */}
+            <Route
+              path={ROUTES.STUDENT.DASHBOARD}
+              element={
+                <ProtectedRoute allowedRoles={['student']}>
+                  <StudentDashboard />
+                </ProtectedRoute>
+              }
+            />
+
+            {/* ✅ Teacher */}
+            <Route
+              path={ROUTES.TEACHER.DASHBOARD}
+              element={
+                <ProtectedRoute allowedRoles={['teacher']}>
+                  <StaffDashboard />
+                </ProtectedRoute>
+              }
+            />
+
+            {/* ✅ Parent */}
+            <Route
+              path={ROUTES.PARENT.DASHBOARD}
+              element={
+                <ProtectedRoute allowedRoles={['parent']}>
+                  <ParentDashboard />
+                </ProtectedRoute>
+              }
+            />
+
+            {/* ✅ Staff */}
+            <Route
+              path={ROUTES.STAFF.PRINCIPAL}
+              element={
+                <ProtectedRoute allowedRoles={['principal']}>
+                  <StaffDashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path={ROUTES.STAFF.ACCOUNTANT}
+              element={
+                <ProtectedRoute allowedRoles={['accountant']}>
+                  <StaffDashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path={ROUTES.STAFF.LIBRARIAN}
+              element={
+                <ProtectedRoute allowedRoles={['librarian']}>
+                  <StaffDashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path={ROUTES.STAFF.DASHBOARD}
+              element={
+                <ProtectedRoute allowedRoles={['employee']}>
+                  <StaffDashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path={ROUTES.STAFF.RECEPTIONIST}
+              element={
+                <ProtectedRoute allowedRoles={['receptionist']}>
+                  <StaffDashboard />
+                </ProtectedRoute>
+              }
+            />
+
+            {/* ✅ GMeet Live Classes */}
+            <Route path={ROUTES.SCHOOL_OWNER.LIVE_CLASSES} element={<ProtectedRoute allowedRoles={['school_owner', 'admin', 'teacher', 'student']} requiredModule="gmeet_live_classes"><LiveClasses /></ProtectedRoute>} />
+            
+            {/* ✅ Zoom Live Classes */}
+            <Route
+              path="/school-owner/zoom/classes"
+              element={
+                <ProtectedRoute allowedRoles={['school_owner', 'admin']} requiredModule="zoom_live_classes">
+                  <ZoomLiveClasses />
+                </ProtectedRoute>
+              }
+            />
+
+            {/* ✅ Online Course */}
+            <Route path={ROUTES.SCHOOL_OWNER.ONLINE_COURSE} element={<ProtectedRoute allowedRoles={['school_owner', 'admin', 'teacher', 'student']} requiredModule="online_course"><OnlineCourse /></ProtectedRoute>} />
+            <Route path={ROUTES.SCHOOL_OWNER.OFFLINE_PAYMENT} element={<ProtectedRoute allowedRoles={['school_owner', 'admin']} requiredModule="online_course"><OfflinePayment /></ProtectedRoute>} />
+            <Route path={ROUTES.SCHOOL_OWNER.ONLINE_COURSE_SETTING} element={<ProtectedRoute allowedRoles={['school_owner', 'admin']} requiredModule="online_course"><OnlineCourseSetting /></ProtectedRoute>} />
+            <Route path={ROUTES.SCHOOL_OWNER.ONLINE_COURSE_REPORT} element={<ProtectedRoute allowedRoles={['school_owner', 'admin']} requiredModule="online_course"><OnlineCourseReport /></ProtectedRoute>} />
+
+            {/* ✅ Finance */}
+            <Route
+              path={ROUTES.SCHOOL_OWNER.INCOME}
+              element={
+                <ProtectedRoute allowedRoles={['school_owner', 'admin', 'accountant']} requiredModule="finance">
+                  <Income />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path={ROUTES.SCHOOL_OWNER.ADD_INCOME}
+              element={
+                <ProtectedRoute allowedRoles={['school_owner', 'admin', 'accountant']} requiredModule="finance">
+                  <AddIncome />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path={ROUTES.SCHOOL_OWNER.SEARCH_INCOME}
+              element={
+                <ProtectedRoute allowedRoles={['school_owner', 'admin', 'accountant']} requiredModule="finance">
+                  <SearchIncome />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path={ROUTES.SCHOOL_OWNER.INCOME_HEAD}
+              element={
+                <ProtectedRoute allowedRoles={['school_owner', 'admin', 'accountant']} requiredModule="finance">
+                  <IncomeHead />
+                </ProtectedRoute>
+              }
+            />
+             <Route
+              path={ROUTES.SCHOOL_OWNER.EXPENSE}
+              element={
+                <ProtectedRoute allowedRoles={['school_owner', 'admin', 'accountant']} requiredModule="finance">
+                  <Expense />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path={ROUTES.SCHOOL_OWNER.ADD_EXPENSE}
+              element={
+                <ProtectedRoute allowedRoles={['school_owner', 'admin', 'accountant']} requiredModule="finance">
+                  <AddExpense />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path={ROUTES.SCHOOL_OWNER.SEARCH_EXPENSE}
+              element={
+                <ProtectedRoute allowedRoles={['school_owner', 'admin', 'accountant']} requiredModule="finance">
+                  <SearchExpense />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path={ROUTES.SCHOOL_OWNER.EXPENSE_HEAD}
+              element={
+                <ProtectedRoute allowedRoles={['school_owner', 'admin', 'accountant']} requiredModule="finance">
+                  <ExpenseHead />
+                </ProtectedRoute>
+              }
+            />
+
+            {/* ✅ Fees Collection */}
+            <Route
+              path={ROUTES.SCHOOL_OWNER.COLLECT_FEES}
+              element={
+                <ProtectedRoute allowedRoles={['school_owner', 'admin', 'accountant']} requiredModule="fees_collection">
+                  <CollectFees />
+                </ProtectedRoute>
+              }
+            />
+
+            {/* ✅ Behaviour Records */}
+            <Route
+              path={ROUTES.SCHOOL_OWNER.ASSIGN_INCIDENT}
+              element={
+                <ProtectedRoute allowedRoles={['school_owner', 'admin', 'teacher']} requiredModule="behaviour_records">
+                  <AssignIncident />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path={ROUTES.SCHOOL_OWNER.INCIDENTS}
+              element={
+                <ProtectedRoute allowedRoles={['school_owner', 'admin', 'teacher']} requiredModule="behaviour_records">
+                  <Incidents />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path={ROUTES.SCHOOL_OWNER.BEHAVIOUR_REPORTS}
+              element={
+                <ProtectedRoute allowedRoles={['school_owner', 'admin']} requiredModule="behaviour_records">
+                  <BehaviourReports />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path={ROUTES.SCHOOL_OWNER.BEHAVIOUR_SETTING}
+              element={
+                <ProtectedRoute allowedRoles={['school_owner', 'admin']} requiredModule="behaviour_records">
+                  <BehaviourSetting />
+                </ProtectedRoute>
+              }
+            />
+
+            {/* ✅ Master Admin (Extended) */}
+            <Route path={ROUTES.MASTER_ADMIN.PROFILE} element={<ProtectedRoute allowedRoles={['master_admin']}><MasterAdminProfile /></ProtectedRoute>} />
+            <Route path={ROUTES.MASTER_ADMIN.RESET_PASSWORD} element={<ProtectedRoute allowedRoles={['master_admin']}><MasterAdminResetPassword /></ProtectedRoute>} />
+            <Route path={ROUTES.MASTER_ADMIN.SUBSCRIPTION_PLANS} element={<ProtectedRoute allowedRoles={['master_admin']}><SubscriptionPlans /></ProtectedRoute>} />
+            <Route path="/master-admin/school-requests" element={<ProtectedRoute allowedRoles={['master_admin']}><SchoolRequests /></ProtectedRoute>} />
+            <Route path={ROUTES.MASTER_ADMIN.ADD_SUBSCRIPTION_PLAN} element={<ProtectedRoute allowedRoles={['master_admin']}><AddSubscriptionPlan /></ProtectedRoute>} />
+            <Route path={ROUTES.MASTER_ADMIN.EDIT_SUBSCRIPTION_PLAN} element={<ProtectedRoute allowedRoles={['master_admin']}><EditSubscriptionPlan /></ProtectedRoute>} />
+            <Route path={ROUTES.MASTER_ADMIN.SUBSCRIPTIONS} element={<ProtectedRoute allowedRoles={['master_admin']}><SubscriptionsList /></ProtectedRoute>} />
+            <Route path={ROUTES.MASTER_ADMIN.SUBSCRIPTION_INVOICES} element={<ProtectedRoute allowedRoles={['master_admin']}><SubscriptionInvoices /></ProtectedRoute>} />
+            <Route path={ROUTES.MASTER_ADMIN.SUBSCRIPTION_TRANSACTIONS} element={<ProtectedRoute allowedRoles={['master_admin']}><SubscriptionTransactions /></ProtectedRoute>} />
+            <Route path={ROUTES.MASTER_ADMIN.BILLING_AUDIT} element={<ProtectedRoute allowedRoles={['master_admin']}><BillingAudit /></ProtectedRoute>} />
+            <Route path={ROUTES.MASTER_ADMIN.GENERATE_BILL} element={<ProtectedRoute allowedRoles={['master_admin']}><GenerateBill /></ProtectedRoute>} />
+            <Route path={ROUTES.MASTER_ADMIN.BULK_INVOICE} element={<ProtectedRoute allowedRoles={['master_admin']}><BulkInvoiceGenerator /></ProtectedRoute>} />
+            <Route path={ROUTES.MASTER_ADMIN.QUERIES_FINDER} element={<ProtectedRoute allowedRoles={['master_admin']}><QueriesFinder /></ProtectedRoute>} />
+            <Route path={ROUTES.MASTER_ADMIN.COMMUNICATION_SETTINGS} element={<ProtectedRoute allowedRoles={['master_admin']}><CommunicationSettingsMaster /></ProtectedRoute>} />
+            <Route path={ROUTES.MASTER_ADMIN.EMAIL_SETTINGS} element={<ProtectedRoute allowedRoles={['master_admin']}><EmailSettingsMaster /></ProtectedRoute>} />
+            <Route path={ROUTES.MASTER_ADMIN.PAYMENT_SETTINGS} element={<ProtectedRoute allowedRoles={['master_admin']}><PaymentSettingsMaster /></ProtectedRoute>} />
+            <Route path={ROUTES.MASTER_ADMIN.LOGIN_PAGE_SETTINGS} element={<ProtectedRoute allowedRoles={['master_admin']}><LoginPageSettings /></ProtectedRoute>} />
+            <Route path={ROUTES.MASTER_ADMIN.SESSION_SETTING} element={<ProtectedRoute allowedRoles={['master_admin']}><SessionSettingMaster /></ProtectedRoute>} />
+            <Route path={ROUTES.MASTER_ADMIN.MASTER_DATA_SETTINGS} element={<ProtectedRoute allowedRoles={['master_admin']}><MasterDataSettings /></ProtectedRoute>} />
+            <Route path={ROUTES.MASTER_ADMIN.EXPORT_IMPORT} element={<ProtectedRoute allowedRoles={['master_admin']}><ExportImport /></ProtectedRoute>} />
+            <Route path={ROUTES.MASTER_ADMIN.SAAS_WEBSITE_SETTINGS} element={<ProtectedRoute allowedRoles={['master_admin']}><SaasWebsiteSettings /></ProtectedRoute>} />
+            {/* ✅ Front CMS - Specific routes first to avoid route conflicts */}
+            <Route path="/master-admin/front-cms/menus/:menuId/items" element={<ProtectedRoute allowedRoles={['master_admin']}><MasterAdminMenuItems /></ProtectedRoute>} />
+            <Route path="/master-admin/front-cms/menus" element={<ProtectedRoute allowedRoles={['master_admin']}><MasterAdminMenus /></ProtectedRoute>} />
+            <Route path={ROUTES.MASTER_ADMIN.FRONT_CMS} element={<ProtectedRoute allowedRoles={['master_admin']}><FrontCmsMasterAdmin /></ProtectedRoute>} />
+            <Route path={ROUTES.MASTER_ADMIN.MODULE_HEALTH} element={<ProtectedRoute allowedRoles={['master_admin']}><ModuleHealth /></ProtectedRoute>} />
+            <Route path={ROUTES.MASTER_ADMIN.ENTERPRISE_HEALTH} element={<ProtectedRoute allowedRoles={['master_admin']}><EnterpriseHealthMonitor /></ProtectedRoute>} />
+            
+            {/* ✅ Custom Domain */}
+            <Route path="/master-admin/custom-domain" element={<ProtectedRoute allowedRoles={['master_admin']}><DomainList /></ProtectedRoute>} />
+            <Route path="/master-admin/custom-domain/instruction" element={<ProtectedRoute allowedRoles={['master_admin']}><DomainSettings /></ProtectedRoute>} />
+
+            {/* ✅ Master Admin Branch Management */}
+            <Route path="/master-admin/branch-management" element={<ProtectedRoute allowedRoles={['master_admin']}><SchoolBranchesOverview /></ProtectedRoute>} />
+            <Route path="/master-admin/branch-management/schools/:schoolId/branches" element={<ProtectedRoute allowedRoles={['master_admin']}><SchoolBranches /></ProtectedRoute>} />
+            <Route path="/master-admin/branch-management/schools/:schoolId/branches/add" element={<ProtectedRoute allowedRoles={['master_admin']}><AddBranchForSchool /></ProtectedRoute>} />
+            <Route path="/master-admin/branch-management/schools/:schoolId/branches/:branchId/edit" element={<ProtectedRoute allowedRoles={['master_admin']}><EditBranchForSchool /></ProtectedRoute>} />
+
+            {/* ✅ School Owner Profile & Subscription */}
+            <Route path={ROUTES.SCHOOL_OWNER.PROFILE} element={<ProtectedRoute allowedRoles={['school_owner', 'admin']}><SchoolOwnerProfile /></ProtectedRoute>} />
+            <Route path={ROUTES.SCHOOL_OWNER.RESET_PASSWORD} element={<ProtectedRoute allowedRoles={['school_owner', 'admin']}><SchoolOwnerResetPassword /></ProtectedRoute>} />
+            <Route path={ROUTES.SCHOOL_OWNER.MY_SUBSCRIPTION} element={<ProtectedRoute allowedRoles={['school_owner', 'admin']}><MySubscriptionPlan /></ProtectedRoute>} />
+
+            {/* ✅ Front Office */}
+            <Route path={ROUTES.SCHOOL_OWNER.SETUP_FRONT_OFFICE} element={<ProtectedRoute allowedRoles={['school_owner', 'admin', 'receptionist']} requiredModule="front_office"><SetupFrontOffice /></ProtectedRoute>} />
+            <Route path={ROUTES.SCHOOL_OWNER.ADMISSION_ENQUIRY} element={<ProtectedRoute allowedRoles={['school_owner', 'admin', 'receptionist']} requiredModule="front_office"><AdmissionEnquiry /></ProtectedRoute>} />
+            <Route path={ROUTES.SCHOOL_OWNER.VISITOR_BOOK} element={<ProtectedRoute allowedRoles={['school_owner', 'admin', 'receptionist']} requiredModule="front_office"><VisitorBook /></ProtectedRoute>} />
+            <Route path={ROUTES.SCHOOL_OWNER.PHONE_CALL_LOG} element={<ProtectedRoute allowedRoles={['school_owner', 'admin', 'receptionist']} requiredModule="front_office"><PhoneCallLog /></ProtectedRoute>} />
+            <Route path={ROUTES.SCHOOL_OWNER.POSTAL_DISPATCH} element={<ProtectedRoute allowedRoles={['school_owner', 'admin', 'receptionist']} requiredModule="front_office"><PostalDispatch /></ProtectedRoute>} />
+            <Route path={ROUTES.SCHOOL_OWNER.POSTAL_RECEIVE} element={<ProtectedRoute allowedRoles={['school_owner', 'admin', 'receptionist']} requiredModule="front_office"><PostalReceive /></ProtectedRoute>} />
+            <Route path={ROUTES.SCHOOL_OWNER.COMPLAIN} element={<ProtectedRoute allowedRoles={['school_owner', 'admin', 'receptionist']} requiredModule="front_office"><Complain /></ProtectedRoute>} />
+
+            {/* ✅ Academics */}
+            <Route path={ROUTES.SCHOOL_OWNER.CLASSES} element={<ProtectedRoute allowedRoles={['school_owner', 'admin', 'teacher']} requiredModule="academics"><Classes /></ProtectedRoute>} />
+            <Route path={ROUTES.SCHOOL_OWNER.SECTIONS} element={<ProtectedRoute allowedRoles={['school_owner', 'admin', 'teacher']} requiredModule="academics"><Sections /></ProtectedRoute>} />
+            <Route path={ROUTES.SCHOOL_OWNER.SUBJECTS} element={<ProtectedRoute allowedRoles={['school_owner', 'admin', 'teacher']} requiredModule="academics"><Subjects /></ProtectedRoute>} />
+            <Route path={ROUTES.SCHOOL_OWNER.SUBJECT_GROUP} element={<ProtectedRoute allowedRoles={['school_owner', 'admin', 'teacher']} requiredModule="academics"><SubjectGroup /></ProtectedRoute>} />
+            <Route path={ROUTES.SCHOOL_OWNER.CLASS_TIMETABLE} element={<ProtectedRoute allowedRoles={['school_owner', 'admin', 'teacher', 'student', 'parent']} requiredModule="academics"><ClassTimetable /></ProtectedRoute>} />
+            <Route path={ROUTES.SCHOOL_OWNER.TEACHER_TIMETABLE} element={<ProtectedRoute allowedRoles={['school_owner', 'admin', 'teacher']} requiredModule="academics"><TeacherTimetable /></ProtectedRoute>} />
+            <Route path={ROUTES.SCHOOL_OWNER.ASSIGN_CLASS_TEACHER} element={<ProtectedRoute allowedRoles={['school_owner', 'admin']} requiredModule="academics"><AssignClassTeacher /></ProtectedRoute>} />
+            <Route path={ROUTES.SCHOOL_OWNER.PROMOTE_STUDENT} element={<ProtectedRoute allowedRoles={['school_owner', 'admin']} requiredModule="academics"><PromoteStudent /></ProtectedRoute>} />
+
+            {/* ✅ Student Information */}
+            <Route path={ROUTES.SCHOOL_OWNER.STUDENT_ADMISSION} element={<ProtectedRoute allowedRoles={['school_owner', 'admin']} requiredModule="student_information"><StudentAdmission /></ProtectedRoute>} />
+            <Route path={ROUTES.SCHOOL_OWNER.ADMISSION_FORM_SETTINGS} element={<ProtectedRoute allowedRoles={['school_owner', 'admin']} requiredModule="student_information"><AdmissionFormSettings /></ProtectedRoute>} />
+            <Route path={ROUTES.SCHOOL_OWNER.STUDENT_DETAILS} element={<ProtectedRoute allowedRoles={['school_owner', 'admin', 'teacher']} requiredModule="student_information"><StudentDetails /></ProtectedRoute>} />
+            <Route path={ROUTES.SCHOOL_OWNER.STUDENT_PROFILE} element={<ProtectedRoute allowedRoles={['school_owner', 'admin', 'teacher']} requiredModule="student_information"><StudentProfile /></ProtectedRoute>} />
+            <Route path={ROUTES.SCHOOL_OWNER.EDIT_STUDENT} element={<ProtectedRoute allowedRoles={['school_owner', 'admin']} requiredModule="student_information"><EditStudentProfile /></ProtectedRoute>} />
+            <Route path={ROUTES.SCHOOL_OWNER.ONLINE_ADMISSION_LIST} element={<ProtectedRoute allowedRoles={['school_owner', 'admin']} requiredModule="student_information"><OnlineAdmissionList /></ProtectedRoute>} />
+            <Route path={ROUTES.SCHOOL_OWNER.EDIT_ONLINE_ADMISSION} element={<ProtectedRoute allowedRoles={['school_owner', 'admin']} requiredModule="student_information"><EditOnlineAdmission /></ProtectedRoute>} />
+            <Route path={ROUTES.SCHOOL_OWNER.STUDENT_CATEGORIES} element={<ProtectedRoute allowedRoles={['school_owner', 'admin']} requiredModule="student_information"><StudentCategories /></ProtectedRoute>} />
+            <Route path={ROUTES.SCHOOL_OWNER.STUDENT_HOUSE} element={<ProtectedRoute allowedRoles={['school_owner', 'admin']} requiredModule="student_information"><StudentHouse /></ProtectedRoute>} />
+            <Route path={ROUTES.SCHOOL_OWNER.DISABLED_STUDENTS} element={<ProtectedRoute allowedRoles={['school_owner', 'admin']} requiredModule="student_information"><DisabledStudents /></ProtectedRoute>} />
+            <Route path={ROUTES.SCHOOL_OWNER.DISABLE_REASON} element={<ProtectedRoute allowedRoles={['school_owner', 'admin']} requiredModule="student_information"><DisableReason /></ProtectedRoute>} />
+            <Route path={ROUTES.SCHOOL_OWNER.MULTI_CLASS_STUDENT} element={<ProtectedRoute allowedRoles={['school_owner', 'admin']} requiredModule="student_information"><MultiClassStudent /></ProtectedRoute>} />
+            <Route path={ROUTES.SCHOOL_OWNER.BULK_DELETE} element={<ProtectedRoute allowedRoles={['school_owner', 'admin']} requiredModule="student_information"><BulkDelete /></ProtectedRoute>} />
+
+            {/* ✅ HR */}
+            <Route path={ROUTES.SCHOOL_OWNER.DEPARTMENTS} element={<ProtectedRoute allowedRoles={['school_owner', 'admin']} requiredModule="human_resource"><Departments /></ProtectedRoute>} />
+            <Route path={ROUTES.SCHOOL_OWNER.DESIGNATIONS} element={<ProtectedRoute allowedRoles={['school_owner', 'admin']} requiredModule="human_resource"><Designations /></ProtectedRoute>} />
+            <Route path={ROUTES.SCHOOL_OWNER.ADD_EMPLOYEE} element={<ProtectedRoute allowedRoles={['school_owner', 'admin']} requiredModule="human_resource"><AddEmployee /></ProtectedRoute>} />
+            <Route path={ROUTES.SCHOOL_OWNER.EDIT_EMPLOYEE} element={<ProtectedRoute allowedRoles={['school_owner', 'admin']} requiredModule="human_resource"><EditEmployee /></ProtectedRoute>} />
+            <Route path={ROUTES.SCHOOL_OWNER.EMPLOYEE_LIST} element={<ProtectedRoute allowedRoles={['school_owner', 'admin']} requiredModule="human_resource"><EmployeeList /></ProtectedRoute>} />
+            <Route path={ROUTES.SCHOOL_OWNER.STAFF_DIRECTORY} element={<ProtectedRoute allowedRoles={['school_owner', 'admin', 'teacher', 'student', 'parent']} requiredModule="human_resource"><StaffDirectory /></ProtectedRoute>} />
+            <Route path={ROUTES.SCHOOL_OWNER.STAFF_PROFILE} element={<ProtectedRoute allowedRoles={['school_owner', 'admin']} requiredModule="human_resource"><StaffProfile /></ProtectedRoute>} />
+            <Route path={ROUTES.SCHOOL_OWNER.IMPORT_STAFF} element={<ProtectedRoute allowedRoles={['school_owner', 'admin']} requiredModule="human_resource"><ImportStaff /></ProtectedRoute>} />
+            <Route path={ROUTES.SCHOOL_OWNER.STAFF_LEAVE_TYPE} element={<ProtectedRoute allowedRoles={['school_owner', 'admin']} requiredModule="human_resource"><StaffLeaveType /></ProtectedRoute>} />
+            <Route path={ROUTES.SCHOOL_OWNER.STAFF_APPLY_LEAVE} element={<ProtectedRoute allowedRoles={['school_owner', 'admin', 'teacher', 'employee']} requiredModule="human_resource"><StaffApplyLeave /></ProtectedRoute>} />
+            <Route path={ROUTES.SCHOOL_OWNER.APPROVE_STAFF_LEAVE} element={<ProtectedRoute allowedRoles={['school_owner', 'admin']} requiredModule="human_resource"><ApproveStaffLeave /></ProtectedRoute>} />
+            <Route path={ROUTES.SCHOOL_OWNER.EMPLOYEE_DOCUMENTS} element={<ProtectedRoute allowedRoles={['school_owner', 'admin']} requiredModule="human_resource"><EmployeeDocuments /></ProtectedRoute>} />
+            <Route path={ROUTES.SCHOOL_OWNER.EMPLOYEE_PERFORMANCE} element={<ProtectedRoute allowedRoles={['school_owner', 'admin']} requiredModule="human_resource"><EmployeePerformance /></ProtectedRoute>} />
+            <Route path={ROUTES.SCHOOL_OWNER.EMPLOYEE_PAYROLL} element={<ProtectedRoute allowedRoles={['school_owner', 'admin', 'accountant']} requiredModule="human_resource"><EmployeePayroll /></ProtectedRoute>} />
+
+            {/* ✅ Attendance */}
+            <Route path={ROUTES.SCHOOL_OWNER.STUDENT_ATTENDANCE} element={<ProtectedRoute allowedRoles={['school_owner', 'admin', 'teacher']} requiredModule="attendance"><StudentAttendance /></ProtectedRoute>} />
+            <Route path={ROUTES.SCHOOL_OWNER.ATTENDANCE_BY_DATE} element={<ProtectedRoute allowedRoles={['school_owner', 'admin', 'teacher']} requiredModule="attendance"><AttendanceByDate /></ProtectedRoute>} />
+            <Route path={ROUTES.SCHOOL_OWNER.APPROVE_LEAVE} element={<ProtectedRoute allowedRoles={['school_owner', 'admin', 'teacher']} requiredModule="attendance"><ApproveStudentLeave /></ProtectedRoute>} />
+            <Route path={ROUTES.SCHOOL_OWNER.STAFF_ATTENDANCE} element={<ProtectedRoute allowedRoles={['school_owner', 'admin']} requiredModule="attendance"><StaffAttendance /></ProtectedRoute>} />
+
+            {/* ✅ Fees (Remaining) */}
+            <Route path={ROUTES.SCHOOL_OWNER.COLLECT_FEES} element={<ProtectedRoute allowedRoles={['school_owner', 'admin', 'accountant']}><CollectFees /></ProtectedRoute>} />
+            <Route path={ROUTES.SCHOOL_OWNER.FEES_GROUP} element={<ProtectedRoute allowedRoles={['school_owner', 'admin', 'accountant']}><FeesGroup /></ProtectedRoute>} />
+            <Route path={ROUTES.SCHOOL_OWNER.FEES_TYPE} element={<ProtectedRoute allowedRoles={['school_owner', 'admin', 'accountant']}><FeesType /></ProtectedRoute>} />
+            <Route path={ROUTES.SCHOOL_OWNER.FEES_MASTER} element={<ProtectedRoute allowedRoles={['school_owner', 'admin', 'accountant']}><FeesMaster /></ProtectedRoute>} />
+            <Route path={ROUTES.SCHOOL_OWNER.ASSIGN_FEE_GROUP} element={<ProtectedRoute allowedRoles={['school_owner', 'admin', 'accountant']}><AssignFeeGroup /></ProtectedRoute>} />
+            <Route path={ROUTES.SCHOOL_OWNER.STUDENT_FEES} element={<ProtectedRoute allowedRoles={['school_owner', 'admin', 'accountant']}><StudentFees /></ProtectedRoute>} />
+            <Route path={ROUTES.SCHOOL_OWNER.SEARCH_FEES_PAYMENT} element={<ProtectedRoute allowedRoles={['school_owner', 'admin', 'accountant']}><SearchFeesPayment /></ProtectedRoute>} />
+            <Route path={ROUTES.SCHOOL_OWNER.SEARCH_DUE_FEES} element={<ProtectedRoute allowedRoles={['school_owner', 'admin', 'accountant']}><SearchDueFees /></ProtectedRoute>} />
+            <Route path={ROUTES.SCHOOL_OWNER.FEES_DISCOUNT} element={<ProtectedRoute allowedRoles={['school_owner', 'admin', 'accountant']}><FeesDiscount /></ProtectedRoute>} />
+            <Route path={ROUTES.SCHOOL_OWNER.FEES_CARRY_FORWARD} element={<ProtectedRoute allowedRoles={['school_owner', 'admin', 'accountant']}><FeesCarryForward /></ProtectedRoute>} />
+            <Route path={ROUTES.SCHOOL_OWNER.FEES_REMINDER} element={<ProtectedRoute allowedRoles={['school_owner', 'admin', 'accountant']}><FeesReminder /></ProtectedRoute>} />
+            <Route path={ROUTES.SCHOOL_OWNER.PRINT_FEES_RECEIPT} element={<ProtectedRoute allowedRoles={['school_owner', 'admin', 'accountant']}><PrintFeesReceipt /></ProtectedRoute>} />
+            <Route path={ROUTES.SCHOOL_OWNER.PRINT_SELECTED_FEES} element={<ProtectedRoute allowedRoles={['school_owner', 'admin', 'accountant']}><PrintSelectedFees /></ProtectedRoute>} />
+            <Route path={ROUTES.SCHOOL_OWNER.QUICK_FEES} element={<ProtectedRoute allowedRoles={['school_owner', 'admin', 'accountant']}><QuickFees /></ProtectedRoute>} />
+
+            {/* ✅ Examinations */}
+            <Route path={ROUTES.SCHOOL_OWNER.EXAM_GROUP} element={<ProtectedRoute allowedRoles={['school_owner', 'admin', 'teacher']} requiredModule="examinations"><ExamGroup /></ProtectedRoute>} />
+            <Route path={ROUTES.SCHOOL_OWNER.EXAM_LIST} element={<ProtectedRoute allowedRoles={['school_owner', 'admin', 'teacher']} requiredModule="examinations"><ExamList /></ProtectedRoute>} />
+            <Route path={ROUTES.SCHOOL_OWNER.EXAM_SCHEDULE} element={<ProtectedRoute allowedRoles={['school_owner', 'admin', 'teacher', 'student', 'parent']} requiredModule="examinations"><ExamSchedule /></ProtectedRoute>} />
+            <Route path={ROUTES.SCHOOL_OWNER.EXAM_ATTENDANCE} element={<ProtectedRoute allowedRoles={['school_owner', 'admin', 'teacher']} requiredModule="examinations"><ExamAttendance /></ProtectedRoute>} />
+            <Route path={ROUTES.SCHOOL_OWNER.MARKS_ENTRY} element={<ProtectedRoute allowedRoles={['school_owner', 'admin', 'teacher']} requiredModule="examinations"><MarksEntry /></ProtectedRoute>} />
+            <Route path={ROUTES.SCHOOL_OWNER.MARKS_DIVISION} element={<ProtectedRoute allowedRoles={['school_owner', 'admin']} requiredModule="examinations"><MarksDivision /></ProtectedRoute>} />
+            <Route path={ROUTES.SCHOOL_OWNER.MARKS_GRADE} element={<ProtectedRoute allowedRoles={['school_owner', 'admin']} requiredModule="examinations"><MarksGrade /></ProtectedRoute>} />
+            <Route path={ROUTES.SCHOOL_OWNER.GENERAL_EXAM_RESULT} element={<ProtectedRoute allowedRoles={['school_owner', 'admin', 'teacher']} requiredModule="examinations"><GeneralExamResult /></ProtectedRoute>} />
+            <Route path={ROUTES.SCHOOL_OWNER.GENERAL_EXAM_SCHEDULE} element={<ProtectedRoute allowedRoles={['school_owner', 'admin', 'teacher']} requiredModule="examinations"><GeneralExamSchedule /></ProtectedRoute>} />
+            <Route path={ROUTES.SCHOOL_OWNER.CBSE_EXAM} element={<ProtectedRoute allowedRoles={['school_owner', 'admin']} requiredModule="examinations"><CbseExam /></ProtectedRoute>} />
+            <Route path={ROUTES.SCHOOL_OWNER.CBSE_SETTINGS} element={<ProtectedRoute allowedRoles={['school_owner', 'admin']} requiredModule="examinations"><CbseSettings /></ProtectedRoute>} />
+            <Route path={ROUTES.SCHOOL_OWNER.CBSE_TERM} element={<ProtectedRoute allowedRoles={['school_owner', 'admin']} requiredModule="examinations"><CbseTerm /></ProtectedRoute>} />
+            <Route path={ROUTES.SCHOOL_OWNER.CBSE_ASSESSMENT} element={<ProtectedRoute allowedRoles={['school_owner', 'admin']} requiredModule="examinations"><CbseAssessment /></ProtectedRoute>} />
+            <Route path={ROUTES.SCHOOL_OWNER.CBSE_OBSERVATION} element={<ProtectedRoute allowedRoles={['school_owner', 'admin']} requiredModule="examinations"><CbseObservation /></ProtectedRoute>} />
+            <Route path={ROUTES.SCHOOL_OWNER.CBSE_OBSERVATION_PARAM} element={<ProtectedRoute allowedRoles={['school_owner', 'admin']} requiredModule="examinations"><CbseObservationParameter /></ProtectedRoute>} />
+            <Route path={ROUTES.SCHOOL_OWNER.CBSE_EXAM_GRADE} element={<ProtectedRoute allowedRoles={['school_owner', 'admin']} requiredModule="examinations"><CbseExamGrade /></ProtectedRoute>} />
+            <Route path={ROUTES.SCHOOL_OWNER.ADD_EXAM_SUBJECTS} element={<ProtectedRoute allowedRoles={['school_owner', 'admin']} requiredModule="examinations"><AddExamSubjects /></ProtectedRoute>} />
+            <Route path={ROUTES.SCHOOL_OWNER.ASSIGN_STUDENTS} element={<ProtectedRoute allowedRoles={['school_owner', 'admin']} requiredModule="examinations"><AssignStudents /></ProtectedRoute>} />
+            <Route path={ROUTES.SCHOOL_OWNER.ENTER_MARKS} element={<ProtectedRoute allowedRoles={['school_owner', 'admin', 'teacher']} requiredModule="examinations"><EnterMarks /></ProtectedRoute>} />
+            <Route path={ROUTES.SCHOOL_OWNER.LINK_EXAM} element={<ProtectedRoute allowedRoles={['school_owner', 'admin']} requiredModule="examinations"><LinkExam /></ProtectedRoute>} />
+            <Route path={ROUTES.SCHOOL_OWNER.GENERATE_RANK} element={<ProtectedRoute allowedRoles={['school_owner', 'admin']} requiredModule="examinations"><GenerateRank /></ProtectedRoute>} />
+            <Route path={ROUTES.SCHOOL_OWNER.GENERATE_TEMPLATE_RANK} element={<ProtectedRoute allowedRoles={['school_owner', 'admin']} requiredModule="examinations"><GenerateTemplateRank /></ProtectedRoute>} />
+            <Route path={ROUTES.SCHOOL_OWNER.MARKSHEET_TEMPLATE} element={<ProtectedRoute allowedRoles={['school_owner', 'admin']} requiredModule="examinations"><MarksheetTemplate /></ProtectedRoute>} />
+            <Route path={ROUTES.SCHOOL_OWNER.PRINT_MARKSHEET} element={<ProtectedRoute allowedRoles={['school_owner', 'admin']} requiredModule="examinations"><PrintMarksheet /></ProtectedRoute>} />
+            <Route path={ROUTES.SCHOOL_OWNER.PRINT_MARKSHEET_GENERAL} element={<ProtectedRoute allowedRoles={['school_owner', 'admin']} requiredModule="examinations"><PrintMarksheetGeneral /></ProtectedRoute>} />
+            <Route path={ROUTES.SCHOOL_OWNER.PRINT_ADMIT_CARD} element={<ProtectedRoute allowedRoles={['school_owner', 'admin']} requiredModule="examinations"><PrintAdmitCard /></ProtectedRoute>} />
+            <Route path={ROUTES.SCHOOL_OWNER.DESIGN_MARKSHEET} element={<ProtectedRoute allowedRoles={['school_owner', 'admin']} requiredModule="examinations"><DesignMarksheet /></ProtectedRoute>} />
+            <Route path={ROUTES.SCHOOL_OWNER.DESIGN_ADMIT_CARD} element={<ProtectedRoute allowedRoles={['school_owner', 'admin']} requiredModule="examinations"><DesignAdmitCard /></ProtectedRoute>} />
+            <Route path={ROUTES.SCHOOL_OWNER.TEACHER_REMARKS} element={<ProtectedRoute allowedRoles={['school_owner', 'admin', 'teacher']} requiredModule="examinations"><TeacherRemarks /></ProtectedRoute>} />
+            <Route path={ROUTES.SCHOOL_OWNER.ASSIGN_OBSERVATION} element={<ProtectedRoute allowedRoles={['school_owner', 'admin']} requiredModule="examinations"><AssignObservation /></ProtectedRoute>} />
+            <Route path={ROUTES.SCHOOL_OWNER.CBSE_REPORTS} element={<ProtectedRoute allowedRoles={['school_owner', 'admin']} requiredModule="examinations"><CbseReports /></ProtectedRoute>} />
+
+            {/* ✅ Library */}
+            <Route path={ROUTES.SCHOOL_OWNER.LIBRARY_BOOKS} element={<ProtectedRoute allowedRoles={['school_owner', 'admin', 'librarian']} requiredModule="library"><LibraryBooks /></ProtectedRoute>} />
+            <Route path={ROUTES.SCHOOL_OWNER.LIBRARY_BOOK_ISSUED} element={<ProtectedRoute allowedRoles={['school_owner', 'admin', 'librarian']} requiredModule="library"><LibraryBookIssued /></ProtectedRoute>} />
+            <Route path={ROUTES.SCHOOL_OWNER.LIBRARY_MEMBERS} element={<ProtectedRoute allowedRoles={['school_owner', 'admin', 'librarian']} requiredModule="library"><LibraryMembers /></ProtectedRoute>} />
+            <Route path={ROUTES.SCHOOL_OWNER.LIBRARY_ISSUE_RETURN} element={<ProtectedRoute allowedRoles={['school_owner', 'admin', 'librarian']} requiredModule="library"><LibraryIssueReturn /></ProtectedRoute>} />
+
+            {/* ✅ Hostel */}
+            <Route path={ROUTES.SCHOOL_OWNER.HOSTELS} element={<ProtectedRoute allowedRoles={['school_owner', 'admin']} requiredModule="hostel"><Hostels /></ProtectedRoute>} />
+            <Route path={ROUTES.SCHOOL_OWNER.HOSTEL_ROOMS} element={<ProtectedRoute allowedRoles={['school_owner', 'admin']} requiredModule="hostel"><HostelRooms /></ProtectedRoute>} />
+            <Route path={ROUTES.SCHOOL_OWNER.ROOM_TYPES} element={<ProtectedRoute allowedRoles={['school_owner', 'admin']} requiredModule="hostel"><RoomTypes /></ProtectedRoute>} />
+
+            {/* ✅ Transport */}
+            <Route path={ROUTES.SCHOOL_OWNER.TRANSPORT_ROUTES} element={<ProtectedRoute allowedRoles={['school_owner', 'admin']} requiredModule="transport"><TransportRoutes /></ProtectedRoute>} />
+            <Route path={ROUTES.SCHOOL_OWNER.TRANSPORT_VEHICLES} element={<ProtectedRoute allowedRoles={['school_owner', 'admin']} requiredModule="transport"><TransportVehicles /></ProtectedRoute>} />
+            <Route path={ROUTES.SCHOOL_OWNER.PICKUP_POINTS} element={<ProtectedRoute allowedRoles={['school_owner', 'admin']} requiredModule="transport"><PickupPoints /></ProtectedRoute>} />
+            <Route path={ROUTES.SCHOOL_OWNER.ROUTE_PICKUP_POINT} element={<ProtectedRoute allowedRoles={['school_owner', 'admin']} requiredModule="transport"><RoutePickupPoint /></ProtectedRoute>} />
+            <Route path={ROUTES.SCHOOL_OWNER.ASSIGN_VEHICLE} element={<ProtectedRoute allowedRoles={['school_owner', 'admin']} requiredModule="transport"><AssignVehicle /></ProtectedRoute>} />
+            <Route path={ROUTES.SCHOOL_OWNER.STUDENT_TRANSPORT_FEES} element={<ProtectedRoute allowedRoles={['school_owner', 'admin']} requiredModule="transport"><StudentTransportFees /></ProtectedRoute>} />
+            <Route path={ROUTES.SCHOOL_OWNER.TRANSPORT_FEES_MASTER} element={<ProtectedRoute allowedRoles={['school_owner', 'admin']} requiredModule="transport"><TransportFeesMaster /></ProtectedRoute>} />
+
+            {/* ✅ Communicate */}
+            <Route path={ROUTES.SCHOOL_OWNER.NOTICE_BOARD} element={<ProtectedRoute allowedRoles={['school_owner', 'admin', 'teacher', 'student', 'parent']} requiredModule="communicate"><NoticeBoard /></ProtectedRoute>} />
+            <Route path={ROUTES.SCHOOL_OWNER.SEND_EMAIL} element={<ProtectedRoute allowedRoles={['school_owner', 'admin']} requiredModule="communicate"><SendEmail /></ProtectedRoute>} />
+            <Route path={ROUTES.SCHOOL_OWNER.SEND_SMS} element={<ProtectedRoute allowedRoles={['school_owner', 'admin']} requiredModule="communicate"><SendSms /></ProtectedRoute>} />
+            <Route path={ROUTES.SCHOOL_OWNER.COMPOSE_MESSAGE} element={<ProtectedRoute allowedRoles={['school_owner', 'admin']} requiredModule="communicate"><ComposeMessage /></ProtectedRoute>} />
+            <Route path={ROUTES.SCHOOL_OWNER.EMAIL_SMS_LOG} element={<ProtectedRoute allowedRoles={['school_owner', 'admin']} requiredModule="communicate"><EmailSmsLog /></ProtectedRoute>} />
+
+            {/* ✅ QR Attendance */}
+            <Route path={ROUTES.SCHOOL_OWNER.QR_ATTENDANCE_SETTING} element={<ProtectedRoute allowedRoles={['school_owner', 'admin']} requiredModule="qr_code_attendance"><QrAttendanceSetting /></ProtectedRoute>} />
+            <Route path={ROUTES.SCHOOL_OWNER.QR_ATTENDANCE_SCAN} element={<ProtectedRoute allowedRoles={['school_owner', 'admin']} requiredModule="qr_code_attendance"><QrAttendanceScan /></ProtectedRoute>} />
+
+            {/* ✅ System Settings */}
+            <Route path={ROUTES.SCHOOL_OWNER.SETTINGS_GENERAL} element={<ProtectedRoute allowedRoles={['school_owner', 'admin']} requiredModule="system_settings"><GeneralSetting /></ProtectedRoute>} />
+            <Route path={ROUTES.SCHOOL_OWNER.SETTINGS_ROLE_PERMISSION} element={<ProtectedRoute allowedRoles={['school_owner', 'admin']} requiredModule="system_settings"><AssignPermissionSchoolPage /></ProtectedRoute>} />
+            <Route path={ROUTES.SCHOOL_OWNER.SETTINGS_PROFILE_UPDATE} element={<ProtectedRoute allowedRoles={['school_owner', 'admin']} requiredModule="system_settings"><StudentProfileUpdateSettings /></ProtectedRoute>} />
+            <Route path={ROUTES.SCHOOL_OWNER.SETTINGS_PRINT_HEADER} element={<ProtectedRoute allowedRoles={['school_owner', 'admin']} requiredModule="system_settings"><PrintHeaderFooter /></ProtectedRoute>} />
+            <Route path={ROUTES.SCHOOL_OWNER.SETTINGS_ONLINE_ADMISSION} element={<ProtectedRoute allowedRoles={['school_owner', 'admin']} requiredModule="system_settings"><OnlineAdmissionSetting /></ProtectedRoute>} />
+
+            {/* ✅ School Owner Assign Permission (Deep Link) */}
+            <Route path="/school-owner/system-settings/assign-permission" element={<ProtectedRoute allowedRoles={['school_owner', 'admin']} requiredModule="system_settings"><AssignPermissionSchoolPage /></ProtectedRoute>} />
+            <Route path="/school-owner/system-settings/assign-permission/:roleId" element={<ProtectedRoute allowedRoles={['school_owner', 'admin']} requiredModule="system_settings"><AssignPermissionSchoolPage /></ProtectedRoute>} />
+
+            {/* ✅ Front CMS - Specific routes first to avoid route conflicts */}
+            <Route path="/school-owner/front-cms/menus/:menuId/items" element={<ProtectedRoute allowedRoles={['school_owner', 'admin']} requiredModule="front_cms"><MenuItems /></ProtectedRoute>} />
+            <Route path="/school-owner/front-cms/menus" element={<ProtectedRoute allowedRoles={['school_owner', 'admin']} requiredModule="front_cms"><Menus /></ProtectedRoute>} />
+            {/* Front CMS Editor - must be last to avoid catching /menus route */}
+            <Route path="/school-owner/front-cms/:tab?" element={<ProtectedRoute allowedRoles={['school_owner', 'admin']} requiredModule="front_cms"><FrontCmsSchoolOwner /></ProtectedRoute>} />
+
+            {/* ✅ Homework */}
+            <Route path={ROUTES.SCHOOL_OWNER.HOMEWORK_LIST} element={<ProtectedRoute allowedRoles={['school_owner', 'admin', 'teacher', 'student', 'parent']} requiredModule="homework"><HomeworkList /></ProtectedRoute>} />
+
+            {/* ✅ Inventory */}
+            <Route path={ROUTES.SCHOOL_OWNER.INV_ADD_ITEM} element={<ProtectedRoute allowedRoles={['school_owner', 'admin']} requiredModule="inventory"><AddItem /></ProtectedRoute>} />
+            <Route path={ROUTES.SCHOOL_OWNER.INV_ADD_STOCK} element={<ProtectedRoute allowedRoles={['school_owner', 'admin']} requiredModule="inventory"><AddItemStock /></ProtectedRoute>} />
+            <Route path={ROUTES.SCHOOL_OWNER.INV_ISSUE_ITEM} element={<ProtectedRoute allowedRoles={['school_owner', 'admin']} requiredModule="inventory"><IssueItem /></ProtectedRoute>} />
+            <Route path={ROUTES.SCHOOL_OWNER.INV_CATEGORY} element={<ProtectedRoute allowedRoles={['school_owner', 'admin']} requiredModule="inventory"><ItemCategory /></ProtectedRoute>} />
+            <Route path={ROUTES.SCHOOL_OWNER.INV_STORE} element={<ProtectedRoute allowedRoles={['school_owner', 'admin']} requiredModule="inventory"><ItemStore /></ProtectedRoute>} />
+            <Route path={ROUTES.SCHOOL_OWNER.INV_SUPPLIER} element={<ProtectedRoute allowedRoles={['school_owner', 'admin']} requiredModule="inventory"><ItemSupplier /></ProtectedRoute>} />
+
+            {/* ✅ Certificate */}
+            <Route path={ROUTES.SCHOOL_OWNER.CERT_TEMPLATES} element={<ProtectedRoute allowedRoles={['school_owner', 'admin']} requiredModule="certificate"><CertificateTemplates /></ProtectedRoute>} />
+            <Route path={ROUTES.SCHOOL_OWNER.CERT_GENERATE} element={<ProtectedRoute allowedRoles={['school_owner', 'admin']} requiredModule="certificate"><GenerateCertificate /></ProtectedRoute>} />
+            <Route path={ROUTES.SCHOOL_OWNER.CERT_HISTORY} element={<ProtectedRoute allowedRoles={['school_owner', 'admin']} requiredModule="certificate"><CertificateHistory /></ProtectedRoute>} />
+            <Route path={ROUTES.SCHOOL_OWNER.CERT_STUDENT} element={<ProtectedRoute allowedRoles={['school_owner', 'admin']} requiredModule="certificate"><StudentCertificate /></ProtectedRoute>} />
+            <Route path={ROUTES.SCHOOL_OWNER.CERT_GENERATE_ID} element={<ProtectedRoute allowedRoles={['school_owner', 'admin']} requiredModule="certificate"><GenerateIDCard /></ProtectedRoute>} />
+            <Route path={ROUTES.SCHOOL_OWNER.CERT_STAFF_ID} element={<ProtectedRoute allowedRoles={['school_owner', 'admin']} requiredModule="certificate"><StaffIDCard /></ProtectedRoute>} />
+            <Route path={ROUTES.SCHOOL_OWNER.CERT_GENERATE_STAFF_ID} element={<ProtectedRoute allowedRoles={['school_owner', 'admin']} requiredModule="certificate"><GenerateStaffIDCard /></ProtectedRoute>} />
+            <Route path={ROUTES.SCHOOL_OWNER.CERT_STUDENT_ID} element={<ProtectedRoute allowedRoles={['school_owner', 'admin']} requiredModule="certificate"><StudentIDCard /></ProtectedRoute>} />
+
+            {/* ✅ Student Panel */}
+            <Route path={ROUTES.STUDENT.PROFILE} element={<ProtectedRoute allowedRoles={['student']}><StudentPanelProfile /></ProtectedRoute>} />
+            <Route path={ROUTES.STUDENT.EDIT_PROFILE} element={<ProtectedRoute allowedRoles={['student']}><EditStudentPanelProfile /></ProtectedRoute>} />
+            <Route path={ROUTES.STUDENT.FEES} element={<ProtectedRoute allowedRoles={['student']}><StudentPanelFees /></ProtectedRoute>} />
+            <Route path={ROUTES.STUDENT.EXAM_SCHEDULE} element={<ProtectedRoute allowedRoles={['student']}><StudentExamSchedule /></ProtectedRoute>} />
+            <Route path={ROUTES.STUDENT.EXAM_RESULT} element={<ProtectedRoute allowedRoles={['student']}><StudentExamResult /></ProtectedRoute>} />
+            <Route path={ROUTES.STUDENT.HOSTEL_ROOMS} element={<ProtectedRoute allowedRoles={['student']}><StudentHostelRooms /></ProtectedRoute>} />
+            <Route path={ROUTES.STUDENT.TRANSPORT_ROUTES} element={<ProtectedRoute allowedRoles={['student']}><StudentTransportRoutes /></ProtectedRoute>} />
+            <Route path={ROUTES.STUDENT.ATTENDANCE} element={<ProtectedRoute allowedRoles={['student']}><StudentAttendanceView /></ProtectedRoute>} />
+            <Route path={ROUTES.STUDENT.APPLY_LEAVE} element={<ProtectedRoute allowedRoles={['student', 'parent']}><ApplyLeave /></ProtectedRoute>} />
+
+            {/* ✅ DYNAMIC NEW MODULES */}
+            {NEW_MODULES.map((module) => (
+              <>
+                <Route 
+                  key={module.key} 
+                  path={module.route.path} 
+                  element={
+                    <ProtectedRoute allowedRoles={[module.role]} requiredModule={module.key}>
+                      {module.route.element}
+                    </ProtectedRoute>
+                  } 
+                />
+                {module.sidebar?.submenu?.map((sub, idx) => (
+                  <Route
+                    key={`${module.key}-sub-${idx}`}
+                    path={sub.path}
+                    element={
+                      <ProtectedRoute allowedRoles={[module.role]} requiredModule={module.key}>
+                        <PlaceholderModule title={sub.title} moduleName={`${module.key}.${sub.path.split('/').filter(Boolean).pop()?.replace(/-/g, '_')}`} />
+                      </ProtectedRoute>
+                    }
+                  />
+                ))}
+              </>
+            ))}
+
+            {/* ✅ Dynamic New Module Routes (Moved to bottom to prevent blocking) */}
+            <Route path="/*" element={<NewModuleRoutes />} />
+
+            {/* ✅ Fallback */}
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+          </Suspense>
+        </PermissionProvider>
+      </EnvStatusProvider>
+    </RecoveryProvider>
+  );
+}
+
+export default App;

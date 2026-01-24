@@ -345,6 +345,7 @@ const StudentProfileUpdateSettings = lazy(() => import('@/pages/super-admin/syst
 const PrintHeaderFooter = lazy(() => import('@/pages/super-admin/system-settings/PrintHeaderFooter'));
 const OnlineAdmissionSetting = lazy(() => import('@/pages/super-admin/system-settings/OnlineAdmissionSetting'));
 const AssignPermissionSchoolPage = lazy(() => import('@/pages/super-admin/system-settings/AssignPermission'));
+const SessionSetting = lazy(() => import('@/pages/super-admin/system-settings/SessionSetting'));
 
 // Homework
 const HomeworkList = lazy(() => import('@/pages/super-admin/homework/HomeworkList'));
@@ -1278,6 +1279,7 @@ function App() {
             <Route path={ROUTES.SUPER_ADMIN.SETTINGS_PROFILE_UPDATE} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="system_settings"><StudentProfileUpdateSettings /></ProtectedRoute>} />
             <Route path={ROUTES.SUPER_ADMIN.SETTINGS_PRINT_HEADER} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="system_settings"><PrintHeaderFooter /></ProtectedRoute>} />
             <Route path={ROUTES.SUPER_ADMIN.SETTINGS_ONLINE_ADMISSION} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="system_settings"><OnlineAdmissionSetting /></ProtectedRoute>} />
+            <Route path={ROUTES.SUPER_ADMIN.SETTINGS_SESSION} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="system_settings"><SessionSetting /></ProtectedRoute>} />
 
             {/* ? School Owner Assign Permission (Deep Link) */}
             <Route path="/super-admin/system-settings/assign-permission" element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="system_settings"><AssignPermissionSchoolPage /></ProtectedRoute>} />

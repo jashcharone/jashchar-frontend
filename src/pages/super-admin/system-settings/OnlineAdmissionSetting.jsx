@@ -14,38 +14,68 @@ import DocumentUploadField from '@/components/common/DocumentUploadField';
 import frontCmsService from '@/services/frontCmsService';
 
 const ADMISSION_FIELDS = [
-  { id: 'student_last_name', label: 'Last Name' },
-  { id: 'student_email', label: 'Email' },
-  { id: 'student_photo', label: 'Student Photo' },
+  // Basic Student Details
+  { id: 'student_last_name', label: 'Last Name', category: 'Student Details' },
+  { id: 'student_email', label: 'Email', category: 'Student Details' },
+  { id: 'student_photo', label: 'Student Photo', category: 'Student Details' },
+  { id: 'blood_group', label: 'Blood Group', category: 'Student Details' },
+  { id: 'mother_tongue', label: 'Mother Tongue', category: 'Student Details' },
+  { id: 'religion', label: 'Religion', category: 'Student Details' },
+  { id: 'caste', label: 'Caste', category: 'Student Details' },
+  { id: 'category', label: 'Category', category: 'Student Details' },
+  { id: 'national_id', label: 'National ID (Aadhar)', category: 'Student Details' },
   
-  { id: 'father_name', label: 'Father Name' },
-  { id: 'father_phone', label: 'Father Phone' },
-  { id: 'father_occupation', label: 'Father Occupation' },
-  { id: 'father_photo', label: 'Father Photo' },
+  // Father Details
+  { id: 'father_name', label: 'Father Name', category: 'Father Details' },
+  { id: 'father_phone', label: 'Father Phone', category: 'Father Details' },
+  { id: 'father_occupation', label: 'Father Occupation', category: 'Father Details' },
+  { id: 'father_photo', label: 'Father Photo', category: 'Father Details' },
+  { id: 'father_email', label: 'Father Email', category: 'Father Details' },
+  { id: 'father_income', label: 'Father Annual Income', category: 'Father Details' },
+  { id: 'father_education', label: 'Father Education', category: 'Father Details' },
+  { id: 'father_aadhar', label: 'Father Aadhar No', category: 'Father Details' },
+  { id: 'father_dob', label: 'Father Date of Birth', category: 'Father Details' },
   
-  { id: 'mother_name', label: 'Mother Name' },
-  { id: 'mother_phone', label: 'Mother Phone' },
-  { id: 'mother_occupation', label: 'Mother Occupation' },
-  { id: 'mother_photo', label: 'Mother Photo' },
+  // Mother Details
+  { id: 'mother_name', label: 'Mother Name', category: 'Mother Details' },
+  { id: 'mother_phone', label: 'Mother Phone', category: 'Mother Details' },
+  { id: 'mother_occupation', label: 'Mother Occupation', category: 'Mother Details' },
+  { id: 'mother_photo', label: 'Mother Photo', category: 'Mother Details' },
+  { id: 'mother_income', label: 'Mother Annual Income', category: 'Mother Details' },
+  { id: 'mother_education', label: 'Mother Education', category: 'Mother Details' },
+  { id: 'mother_aadhar', label: 'Mother Aadhar No', category: 'Mother Details' },
+  { id: 'mother_dob', label: 'Mother Date of Birth', category: 'Mother Details' },
   
-  { id: 'guardian_name', label: 'Guardian Name' },
-  { id: 'guardian_relation', label: 'Guardian Relation' },
-  { id: 'guardian_email', label: 'Guardian Email' },
-  { id: 'guardian_photo', label: 'Guardian Photo' },
-  { id: 'guardian_phone', label: 'Guardian Phone' },
-  { id: 'guardian_occupation', label: 'Guardian Occupation' },
-  { id: 'guardian_address', label: 'Guardian Address' },
+  // Guardian Details
+  { id: 'guardian_name', label: 'Guardian Name', category: 'Guardian Details' },
+  { id: 'guardian_relation', label: 'Guardian Relation', category: 'Guardian Details' },
+  { id: 'guardian_email', label: 'Guardian Email', category: 'Guardian Details' },
+  { id: 'guardian_photo', label: 'Guardian Photo', category: 'Guardian Details' },
+  { id: 'guardian_phone', label: 'Guardian Phone', category: 'Guardian Details' },
+  { id: 'guardian_occupation', label: 'Guardian Occupation', category: 'Guardian Details' },
+  { id: 'guardian_address', label: 'Guardian Address', category: 'Guardian Details' },
   
-  { id: 'current_address', label: 'Current Address' },
-  { id: 'permanent_address', label: 'Permanent Address' },
+  // Address Details
+  { id: 'pincode', label: 'Pincode', category: 'Address' },
+  { id: 'city', label: 'City', category: 'Address' },
+  { id: 'state', label: 'State', category: 'Address' },
+  { id: 'current_address', label: 'Current Address', category: 'Address' },
+  { id: 'permanent_address', label: 'Permanent Address', category: 'Address' },
   
-  { id: 'national_id', label: 'National Identification Number' },
-  { id: 'local_id', label: 'Local Identification Number' },
-  { id: 'bank_account_no', label: 'Bank Account Number' },
-  { id: 'bank_name', label: 'Bank Name' },
-  { id: 'ifsc_code', label: 'IFSC Code' },
-  { id: 'previous_school_details', label: 'Previous School Details' },
-  { id: 'upload_documents', label: 'Upload Documents' }
+  // Additional Details
+  { id: 'student_house', label: 'House', category: 'Additional Details' },
+  { id: 'height', label: 'Height', category: 'Additional Details' },
+  { id: 'weight', label: 'Weight', category: 'Additional Details' },
+  { id: 'as_on_date', label: 'Measurement Date', category: 'Additional Details' },
+  
+  // Miscellaneous
+  { id: 'local_id', label: 'Local Identification Number', category: 'Miscellaneous' },
+  { id: 'bank_account_no', label: 'Bank Account Number', category: 'Miscellaneous' },
+  { id: 'bank_name', label: 'Bank Name', category: 'Miscellaneous' },
+  { id: 'ifsc_code', label: 'IFSC Code', category: 'Miscellaneous' },
+  { id: 'previous_school_details', label: 'Previous School Details', category: 'Miscellaneous' },
+  { id: 'upload_documents', label: 'Upload Documents', category: 'Miscellaneous' },
+  { id: 'rte_student', label: 'RTE Student', category: 'Miscellaneous' }
 ];
 
 const OnlineAdmissionSetting = () => {
@@ -122,8 +152,18 @@ const OnlineAdmissionSetting = () => {
   };
 
   const filteredFields = ADMISSION_FIELDS.filter(field => 
-    field.label.toLowerCase().includes(searchTerm.toLowerCase())
+    field.label.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    field.category.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  // Group fields by category
+  const groupedFields = filteredFields.reduce((acc, field) => {
+    if (!acc[field.category]) {
+      acc[field.category] = [];
+    }
+    acc[field.category].push(field);
+    return acc;
+  }, {});
 
   if (loading) {
     return (
@@ -251,26 +291,24 @@ const OnlineAdmissionSetting = () => {
                 </div>
                 </CardHeader>
                 <CardContent>
-                <div className="space-y-4">
-                    <div className="grid grid-cols-12 font-medium text-sm text-muted-foreground border-b pb-2 mb-4">
-                    <div className="col-span-10">Name</div>
-                    <div className="col-span-2 text-right">Action</div>
-                    </div>
-                    
-                    {filteredFields.map((field) => (
-                    <div key={field.id} className="grid grid-cols-12 items-center py-2 border-b last:border-0">
-                        <div className="col-span-10 text-sm font-medium">{field.label}</div>
-                        <div className="col-span-2 flex justify-end">
-                        <Switch 
-                            checked={isFieldVisible(field.id)}
-                            onCheckedChange={() => toggleField(field.id)}
-                            className="data-[state=checked]:bg-green-600"
-                        />
+                <div className="space-y-6">
+                    {Object.entries(groupedFields).map(([category, fields]) => (
+                        <div key={category} className="space-y-2">
+                            <h3 className="text-sm font-semibold text-primary border-b pb-2 mb-3">{category}</h3>
+                            {fields.map((field) => (
+                                <div key={field.id} className="flex items-center justify-between py-2 px-2 hover:bg-muted/50 rounded-md">
+                                    <div className="text-sm font-medium">{field.label}</div>
+                                    <Switch 
+                                        checked={isFieldVisible(field.id)}
+                                        onCheckedChange={() => toggleField(field.id)}
+                                        className="data-[state=checked]:bg-green-600"
+                                    />
+                                </div>
+                            ))}
                         </div>
-                    </div>
                     ))}
 
-                    {filteredFields.length === 0 && (
+                    {Object.keys(groupedFields).length === 0 && (
                     <div className="text-center py-8 text-muted-foreground">
                         No fields found matching "{searchTerm}"
                     </div>

@@ -18,6 +18,9 @@ export const ROUTES = {
     DYNAMIC_GALLERY: '/:schoolAlias/gallery',
     DYNAMIC_ONLINE_COURSE: '/:schoolAlias/online-course',
     DYNAMIC_ADMISSION: '/:schoolAlias/admission',
+    DYNAMIC_ONLINE_ADMISSION: '/:schoolAlias/online-admission',
+    DYNAMIC_CBSE_EXAM_RESULT: '/:schoolAlias/cbse-exam-result',
+    DYNAMIC_SERVICES_HUB: '/:schoolAlias/services',
   },
   MASTER_ADMIN: {
     DASHBOARD: '/master-admin/dashboard',

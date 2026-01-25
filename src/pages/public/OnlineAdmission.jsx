@@ -35,25 +35,49 @@ const OnlineAdmission = () => {
   const [news, setNews] = useState([]);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   
+  // Master Data
+  const [categories, setCategories] = useState([]);
+  const [religions, setReligions] = useState([]);
+  const [castes, setCastes] = useState([]);
+  const [bloodGroups, setBloodGroups] = useState([]);
+  const [motherTongues, setMotherTongues] = useState([]);
+  const [houses, setHouses] = useState([]);
+  const [pincodeLoading, setPincodeLoading] = useState(false);
+  
   const [formData, setFormData] = useState({
     class_id: '',
     first_name: '',
     last_name: '',
     gender: '',
-    date_of_birth: null,
+    date_of_birth: '',
     mobile_number: '',
     email: '',
     student_photo: '',
+    blood_group: '',
+    mother_tongue: '',
+    religion: '',
+    caste: '',
+    category_id: '',
+    national_id_no: '',
     
     father_name: '',
     father_phone: '',
     father_occupation: '',
     father_photo: '',
+    father_email: '',
+    father_income: '',
+    father_education: '',
+    father_aadhar_no: '',
+    father_dob: '',
     
     mother_name: '',
     mother_phone: '',
     mother_occupation: '',
     mother_photo: '',
+    mother_income: '',
+    mother_education: '',
+    mother_aadhar_no: '',
+    mother_dob: '',
     
     guardian_is: 'father', // father, mother, other
     guardian_name: '',
@@ -64,17 +88,25 @@ const OnlineAdmission = () => {
     guardian_occupation: '',
     guardian_address: '',
     
+    pincode: '',
+    city: '',
+    state: '',
     current_address: '',
     permanent_address: '',
     is_permanent_same_as_current: false,
     is_guardian_address_same_as_current: false,
     
-    national_id_no: '',
+    student_house: '',
+    height: '',
+    weight: '',
+    as_on_date: '',
+    
     local_id_no: '',
     bank_account_no: '',
     bank_name: '',
     ifsc_code: '',
     previous_school_details: '',
+    is_rte_student: false,
     
     documents: []
   });
@@ -115,6 +147,23 @@ const OnlineAdmission = () => {
             throw new Error(classesRes.message || 'Failed to load classes');
         }
         setClasses(classesRes.data || []);
+
+        // 4. Fetch Master Data
+        const [religionsRes, castesRes, bloodGroupsRes, motherTonguesRes, categoriesRes, housesRes] = await Promise.all([
+          supabase.from('master_religions').select('name'),
+          supabase.from('master_castes').select('name'),
+          supabase.from('master_blood_groups').select('name'),
+          supabase.from('master_mother_tongues').select('name'),
+          supabase.from('student_categories').select('id, name').eq('branch_id', schoolData.id),
+          supabase.from('student_houses').select('id, name').eq('branch_id', schoolData.id)
+        ]);
+        
+        setReligions(religionsRes.data || []);
+        setCastes(castesRes.data || []);
+        setBloodGroups(bloodGroupsRes.data || []);
+        setMotherTongues(motherTonguesRes.data || []);
+        setCategories(categoriesRes.data || []);
+        setHouses(housesRes.data || []);
       } catch (error) {
         console.error(error);
         toast({ variant: 'destructive', title: 'Error', description: error.message });
@@ -164,6 +213,30 @@ const OnlineAdmission = () => {
     }
   }, [formData.is_permanent_same_as_current, formData.current_address]);
 
+  // Pincode auto-fetch
+  useEffect(() => {
+    const fetchPincodeData = async () => {
+      if (!formData.pincode || formData.pincode.length !== 6) {
+        return;
+      }
+      setPincodeLoading(true);
+      try {
+        const response = await fetch(`https://api.postalpincode.in/pincode/${formData.pincode}`);
+        const data = await response.json();
+        if (data && data[0] && data[0].Status === 'Success' && data[0].PostOffice?.length > 0) {
+          const { District, State } = data[0].PostOffice[0];
+          setFormData(prev => ({ ...prev, city: District || '', state: State || '' }));
+        }
+      } catch (error) {
+        console.error('Pincode fetch error:', error);
+      } finally {
+        setPincodeLoading(false);
+      }
+    };
+    const timer = setTimeout(fetchPincodeData, 500);
+    return () => clearTimeout(timer);
+  }, [formData.pincode]);
+
 
   const handleChange = (key, value) => {
     setFormData(prev => ({ ...prev, [key]: value }));
@@ -203,11 +276,11 @@ const OnlineAdmission = () => {
       const branch_id = selectedClass ? selectedClass.branch_id : null;
 
       const admissionData = {
-          branch_id: school.id,
-          branch_id: branch_id,
+          branch_id: branch_id || school.id,
           reference_no,
           enrolled_status: 'Pending',
           
+          // Student Details
           class_id: formData.class_id,
           first_name: formData.first_name,
           last_name: formData.last_name,
@@ -216,17 +289,35 @@ const OnlineAdmission = () => {
           mobile_number: formData.mobile_number,
           email: formData.email,
           student_photo: formData.student_photo,
+          blood_group: formData.blood_group,
+          mother_tongue: formData.mother_tongue,
+          religion: formData.religion,
+          caste: formData.caste,
+          category_id: formData.category_id,
+          national_id_no: formData.national_id_no,
           
+          // Father Details
           father_name: formData.father_name,
           father_phone: formData.father_phone,
           father_occupation: formData.father_occupation,
           father_photo: formData.father_photo,
+          father_email: formData.father_email,
+          father_income: formData.father_income,
+          father_education: formData.father_education,
+          father_aadhar_no: formData.father_aadhar_no,
+          father_dob: formData.father_dob,
 
+          // Mother Details
           mother_name: formData.mother_name,
           mother_phone: formData.mother_phone,
           mother_occupation: formData.mother_occupation,
           mother_photo: formData.mother_photo,
+          mother_income: formData.mother_income,
+          mother_education: formData.mother_education,
+          mother_aadhar_no: formData.mother_aadhar_no,
+          mother_dob: formData.mother_dob,
           
+          // Guardian Details
           guardian_is: formData.guardian_is,
           guardian_name: formData.guardian_name,
           guardian_relation: formData.guardian_relation,
@@ -236,10 +327,21 @@ const OnlineAdmission = () => {
           guardian_occupation: formData.guardian_occupation,
           guardian_address: formData.guardian_address,
           
+          // Address Details
+          pincode: formData.pincode,
+          city: formData.city,
+          state: formData.state,
           current_address: formData.current_address,
           permanent_address: formData.permanent_address,
           
-          national_id_no: formData.national_id_no,
+          // Additional Details
+          student_house: formData.student_house,
+          height: formData.height,
+          weight: formData.weight,
+          as_on_date: formData.as_on_date,
+          is_rte_student: formData.is_rte_student,
+          
+          // Miscellaneous
           local_id_no: formData.local_id_no,
           bank_account_no: formData.bank_account_no,
           bank_name: formData.bank_name,
@@ -417,6 +519,76 @@ const OnlineAdmission = () => {
                         <Input type="date" value={formData.date_of_birth} onChange={(e) => handleChange('date_of_birth', e.target.value)} />
                     </div>
 
+                    {isFieldVisible('blood_group') && (
+                        <div className="space-y-2">
+                            <Label className="text-gray-700">Blood Group</Label>
+                            <Select onValueChange={(val) => handleChange('blood_group', val)} value={formData.blood_group}>
+                                <SelectTrigger><SelectValue placeholder="Select Blood Group" /></SelectTrigger>
+                                <SelectContent>
+                                    {bloodGroups.map((bg) => (
+                                        <SelectItem key={bg.name} value={bg.name}>{bg.name}</SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
+                    )}
+
+                    {isFieldVisible('mother_tongue') && (
+                        <div className="space-y-2">
+                            <Label className="text-gray-700">Mother Tongue</Label>
+                            <Select onValueChange={(val) => handleChange('mother_tongue', val)} value={formData.mother_tongue}>
+                                <SelectTrigger><SelectValue placeholder="Select Mother Tongue" /></SelectTrigger>
+                                <SelectContent>
+                                    {motherTongues.map((mt) => (
+                                        <SelectItem key={mt.name} value={mt.name}>{mt.name}</SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
+                    )}
+
+                    {isFieldVisible('religion') && (
+                        <div className="space-y-2">
+                            <Label className="text-gray-700">Religion</Label>
+                            <Select onValueChange={(val) => handleChange('religion', val)} value={formData.religion}>
+                                <SelectTrigger><SelectValue placeholder="Select Religion" /></SelectTrigger>
+                                <SelectContent>
+                                    {religions.map((r) => (
+                                        <SelectItem key={r.name} value={r.name}>{r.name}</SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
+                    )}
+
+                    {isFieldVisible('caste') && (
+                        <div className="space-y-2">
+                            <Label className="text-gray-700">Caste</Label>
+                            <Select onValueChange={(val) => handleChange('caste', val)} value={formData.caste}>
+                                <SelectTrigger><SelectValue placeholder="Select Caste" /></SelectTrigger>
+                                <SelectContent>
+                                    {castes.map((c) => (
+                                        <SelectItem key={c.name} value={c.name}>{c.name}</SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
+                    )}
+
+                    {isFieldVisible('category') && categories.length > 0 && (
+                        <div className="space-y-2">
+                            <Label className="text-gray-700">Category</Label>
+                            <Select onValueChange={(val) => handleChange('category_id', val)} value={formData.category_id}>
+                                <SelectTrigger><SelectValue placeholder="Select Category" /></SelectTrigger>
+                                <SelectContent>
+                                    {categories.map((c) => (
+                                        <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
+                    )}
+
                     <div className="space-y-2">
                         <Label className="text-gray-700">Mobile Number <span className="text-red-500">*</span></Label>
                         <Input value={formData.mobile_number} onChange={(e) => handleChange('mobile_number', e.target.value)} placeholder="" />
@@ -426,6 +598,13 @@ const OnlineAdmission = () => {
                         <div className="space-y-2">
                             <Label className="text-gray-700">Email</Label>
                             <Input type="email" value={formData.email} onChange={(e) => handleChange('email', e.target.value)} placeholder="" />
+                        </div>
+                    )}
+
+                    {isFieldVisible('national_id') && (
+                        <div className="space-y-2">
+                            <Label className="text-gray-700">National ID (Aadhar No)</Label>
+                            <Input value={formData.national_id_no} onChange={(e) => handleChange('national_id_no', e.target.value.replace(/\D/g, '').slice(0, 12))} placeholder="12 digit Aadhar" maxLength={12} />
                         </div>
                     )}
 
@@ -448,58 +627,122 @@ const OnlineAdmission = () => {
                 <CardHeader className="bg-gray-50 border-b py-3">
                     <CardTitle className="text-base font-semibold text-gray-800">Parent Details</CardTitle>
                 </CardHeader>
-                <CardContent className="p-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                    {/* Father */}
-                    {isFieldVisible('father_name') && (
-                        <div className="space-y-2">
-                            <Label className="text-gray-700">Father Name</Label>
-                            <Input value={formData.father_name} onChange={(e) => handleChange('father_name', e.target.value)} placeholder="" />
+                <CardContent className="p-6 space-y-6">
+                    {/* Father Details */}
+                    <div>
+                        <h4 className="text-sm font-medium text-primary mb-4 border-b pb-2">Father Details</h4>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                            {isFieldVisible('father_name') && (
+                                <div className="space-y-2">
+                                    <Label className="text-gray-700">Father Name</Label>
+                                    <Input value={formData.father_name} onChange={(e) => handleChange('father_name', e.target.value)} placeholder="" />
+                                </div>
+                            )}
+                            {isFieldVisible('father_phone') && (
+                                <div className="space-y-2">
+                                    <Label className="text-gray-700">Father Phone</Label>
+                                    <Input value={formData.father_phone} onChange={(e) => handleChange('father_phone', e.target.value)} placeholder="" />
+                                </div>
+                            )}
+                            {isFieldVisible('father_email') && (
+                                <div className="space-y-2">
+                                    <Label className="text-gray-700">Father Email</Label>
+                                    <Input type="email" value={formData.father_email} onChange={(e) => handleChange('father_email', e.target.value)} placeholder="" />
+                                </div>
+                            )}
+                            {isFieldVisible('father_occupation') && (
+                                <div className="space-y-2">
+                                    <Label className="text-gray-700">Father Occupation</Label>
+                                    <Input value={formData.father_occupation} onChange={(e) => handleChange('father_occupation', e.target.value)} placeholder="" />
+                                </div>
+                            )}
+                            {isFieldVisible('father_income') && (
+                                <div className="space-y-2">
+                                    <Label className="text-gray-700">Father Annual Income</Label>
+                                    <Input type="number" value={formData.father_income} onChange={(e) => handleChange('father_income', e.target.value)} placeholder="" />
+                                </div>
+                            )}
+                            {isFieldVisible('father_education') && (
+                                <div className="space-y-2">
+                                    <Label className="text-gray-700">Father Education</Label>
+                                    <Input value={formData.father_education} onChange={(e) => handleChange('father_education', e.target.value)} placeholder="" />
+                                </div>
+                            )}
+                            {isFieldVisible('father_aadhar') && (
+                                <div className="space-y-2">
+                                    <Label className="text-gray-700">Father Aadhar No</Label>
+                                    <Input value={formData.father_aadhar_no} onChange={(e) => handleChange('father_aadhar_no', e.target.value.replace(/\D/g, '').slice(0, 12))} placeholder="12 digit Aadhar" maxLength={12} />
+                                </div>
+                            )}
+                            {isFieldVisible('father_dob') && (
+                                <div className="space-y-2">
+                                    <Label className="text-gray-700">Father Date of Birth</Label>
+                                    <Input type="date" value={formData.father_dob || ''} onChange={(e) => handleChange('father_dob', e.target.value)} />
+                                </div>
+                            )}
+                            {isFieldVisible('father_photo') && (
+                                <div className="space-y-2">
+                                    <Label className="text-gray-700">Father Photo</Label>
+                                    <DocumentUploadField onUploadComplete={(url) => handleChange('father_photo', url)} label="Upload" className="h-10 text-xs" />
+                                </div>
+                            )}
                         </div>
-                    )}
-                    {isFieldVisible('father_phone') && (
-                        <div className="space-y-2">
-                            <Label className="text-gray-700">Father Phone</Label>
-                            <Input value={formData.father_phone} onChange={(e) => handleChange('father_phone', e.target.value)} placeholder="" />
-                        </div>
-                    )}
-                    {isFieldVisible('father_occupation') && (
-                        <div className="space-y-2">
-                            <Label className="text-gray-700">Father Occupation</Label>
-                            <Input value={formData.father_occupation} onChange={(e) => handleChange('father_occupation', e.target.value)} placeholder="" />
-                        </div>
-                    )}
-                    {isFieldVisible('father_photo') && (
-                        <div className="space-y-2">
-                            <Label className="text-gray-700">Father Photo</Label>
-                            <DocumentUploadField onUploadComplete={(url) => handleChange('father_photo', url)} label="Upload" className="h-10 text-xs" />
-                        </div>
-                    )}
+                    </div>
 
-                    {/* Mother */}
-                    {isFieldVisible('mother_name') && (
-                        <div className="space-y-2">
-                            <Label className="text-gray-700">Mother Name</Label>
-                            <Input value={formData.mother_name} onChange={(e) => handleChange('mother_name', e.target.value)} placeholder="" />
+                    {/* Mother Details */}
+                    <div>
+                        <h4 className="text-sm font-medium text-primary mb-4 border-b pb-2">Mother Details</h4>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                            {isFieldVisible('mother_name') && (
+                                <div className="space-y-2">
+                                    <Label className="text-gray-700">Mother Name</Label>
+                                    <Input value={formData.mother_name} onChange={(e) => handleChange('mother_name', e.target.value)} placeholder="" />
+                                </div>
+                            )}
+                            {isFieldVisible('mother_phone') && (
+                                <div className="space-y-2">
+                                    <Label className="text-gray-700">Mother Phone</Label>
+                                    <Input value={formData.mother_phone} onChange={(e) => handleChange('mother_phone', e.target.value)} placeholder="" />
+                                </div>
+                            )}
+                            {isFieldVisible('mother_occupation') && (
+                                <div className="space-y-2">
+                                    <Label className="text-gray-700">Mother Occupation</Label>
+                                    <Input value={formData.mother_occupation} onChange={(e) => handleChange('mother_occupation', e.target.value)} placeholder="" />
+                                </div>
+                            )}
+                            {isFieldVisible('mother_income') && (
+                                <div className="space-y-2">
+                                    <Label className="text-gray-700">Mother Annual Income</Label>
+                                    <Input type="number" value={formData.mother_income} onChange={(e) => handleChange('mother_income', e.target.value)} placeholder="" />
+                                </div>
+                            )}
+                            {isFieldVisible('mother_education') && (
+                                <div className="space-y-2">
+                                    <Label className="text-gray-700">Mother Education</Label>
+                                    <Input value={formData.mother_education} onChange={(e) => handleChange('mother_education', e.target.value)} placeholder="" />
+                                </div>
+                            )}
+                            {isFieldVisible('mother_aadhar') && (
+                                <div className="space-y-2">
+                                    <Label className="text-gray-700">Mother Aadhar No</Label>
+                                    <Input value={formData.mother_aadhar_no} onChange={(e) => handleChange('mother_aadhar_no', e.target.value.replace(/\D/g, '').slice(0, 12))} placeholder="12 digit Aadhar" maxLength={12} />
+                                </div>
+                            )}
+                            {isFieldVisible('mother_dob') && (
+                                <div className="space-y-2">
+                                    <Label className="text-gray-700">Mother Date of Birth</Label>
+                                    <Input type="date" value={formData.mother_dob || ''} onChange={(e) => handleChange('mother_dob', e.target.value)} />
+                                </div>
+                            )}
+                            {isFieldVisible('mother_photo') && (
+                                <div className="space-y-2">
+                                    <Label className="text-gray-700">Mother Photo</Label>
+                                    <DocumentUploadField onUploadComplete={(url) => handleChange('mother_photo', url)} label="Upload" className="h-10 text-xs" />
+                                </div>
+                            )}
                         </div>
-                    )}
-                    {isFieldVisible('mother_phone') && (
-                        <div className="space-y-2">
-                            <Label className="text-gray-700">Mother Phone</Label>
-                            <Input value={formData.mother_phone} onChange={(e) => handleChange('mother_phone', e.target.value)} placeholder="" />
-                        </div>
-                    )}
-                    {isFieldVisible('mother_occupation') && (
-                        <div className="space-y-2">
-                            <Label className="text-gray-700">Mother Occupation</Label>
-                            <Input value={formData.mother_occupation} onChange={(e) => handleChange('mother_occupation', e.target.value)} placeholder="" />
-                        </div>
-                    )}
-                    {isFieldVisible('mother_photo') && (
-                        <div className="space-y-2">
-                            <Label className="text-gray-700">Mother Photo</Label>
-                            <DocumentUploadField onUploadComplete={(url) => handleChange('mother_photo', url)} label="Upload" className="h-10 text-xs" />
-                        </div>
-                    )}
+                    </div>
                 </CardContent>
             </Card>
 
@@ -579,43 +822,130 @@ const OnlineAdmission = () => {
             </Card>
 
             {/* Address Details */}
-            {(isFieldVisible('current_address') || isFieldVisible('permanent_address')) && (
+            {(isFieldVisible('current_address') || isFieldVisible('permanent_address') || isFieldVisible('pincode')) && (
                 <Card className="shadow-sm">
                     <CardHeader className="bg-gray-50 border-b py-3">
                         <CardTitle className="text-base font-semibold text-gray-800">Student Address Details</CardTitle>
                     </CardHeader>
-                    <CardContent className="p-6 grid grid-cols-1 md:grid-cols-2 gap-8">
-                        {isFieldVisible('current_address') && (
-                            <div className="space-y-4">
-                                <div className="flex justify-between items-center">
-                                    <Label className="text-gray-700 font-medium">Current Address</Label>
-                                    <div className="flex items-center gap-2">
-                                        <Checkbox 
-                                            id="same_as_guardian" 
-                                            checked={formData.is_guardian_address_same_as_current}
-                                            onCheckedChange={(checked) => handleChange('is_guardian_address_same_as_current', checked)}
-                                        />
-                                        <label htmlFor="same_as_guardian" className="text-xs text-gray-600 cursor-pointer">If Guardian Address is Current Address</label>
+                    <CardContent className="p-6 space-y-6">
+                        {/* Pincode, City, State */}
+                        {(isFieldVisible('pincode') || isFieldVisible('city') || isFieldVisible('state')) && (
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                {isFieldVisible('pincode') && (
+                                    <div className="space-y-2">
+                                        <Label className="text-gray-700">Pincode</Label>
+                                        <div className="relative">
+                                            <Input 
+                                                value={formData.pincode} 
+                                                onChange={(e) => handleChange('pincode', e.target.value.replace(/\D/g, '').slice(0, 6))} 
+                                                placeholder="6 digit pincode"
+                                                maxLength={6}
+                                            />
+                                            {pincodeLoading && <Loader2 className="absolute right-2 top-2.5 h-4 w-4 animate-spin text-muted-foreground" />}
+                                        </div>
                                     </div>
-                                </div>
-                                <Textarea value={formData.current_address} onChange={(e) => handleChange('current_address', e.target.value)} placeholder="" className="h-24" />
+                                )}
+                                {isFieldVisible('city') && (
+                                    <div className="space-y-2">
+                                        <Label className="text-gray-700">City</Label>
+                                        <Input value={formData.city} onChange={(e) => handleChange('city', e.target.value)} placeholder="" />
+                                    </div>
+                                )}
+                                {isFieldVisible('state') && (
+                                    <div className="space-y-2">
+                                        <Label className="text-gray-700">State</Label>
+                                        <Input value={formData.state} onChange={(e) => handleChange('state', e.target.value)} placeholder="" />
+                                    </div>
+                                )}
                             </div>
                         )}
                         
-                        {isFieldVisible('permanent_address') && (
-                            <div className="space-y-4">
-                                <div className="flex justify-between items-center">
-                                    <Label className="text-gray-700 font-medium">Permanent Address</Label>
-                                    <div className="flex items-center gap-2">
-                                        <Checkbox 
-                                            id="same_as_current" 
-                                            checked={formData.is_permanent_same_as_current}
-                                            onCheckedChange={(checked) => handleChange('is_permanent_same_as_current', checked)}
-                                        />
-                                        <label htmlFor="same_as_current" className="text-xs text-gray-600 cursor-pointer">If Permanent Address is Current Address</label>
+                        {/* Current and Permanent Address */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                            {isFieldVisible('current_address') && (
+                                <div className="space-y-4">
+                                    <div className="flex justify-between items-center">
+                                        <Label className="text-gray-700 font-medium">Current Address</Label>
+                                        <div className="flex items-center gap-2">
+                                            <Checkbox 
+                                                id="same_as_guardian" 
+                                                checked={formData.is_guardian_address_same_as_current}
+                                                onCheckedChange={(checked) => handleChange('is_guardian_address_same_as_current', checked)}
+                                            />
+                                            <label htmlFor="same_as_guardian" className="text-xs text-gray-600 cursor-pointer">If Guardian Address is Current Address</label>
+                                        </div>
                                     </div>
+                                    <Textarea value={formData.current_address} onChange={(e) => handleChange('current_address', e.target.value)} placeholder="" className="h-24" />
                                 </div>
-                                <Textarea value={formData.permanent_address} onChange={(e) => handleChange('permanent_address', e.target.value)} placeholder="" className="h-24" />
+                            )}
+                            
+                            {isFieldVisible('permanent_address') && (
+                                <div className="space-y-4">
+                                    <div className="flex justify-between items-center">
+                                        <Label className="text-gray-700 font-medium">Permanent Address</Label>
+                                        <div className="flex items-center gap-2">
+                                            <Checkbox 
+                                                id="same_as_current" 
+                                                checked={formData.is_permanent_same_as_current}
+                                                onCheckedChange={(checked) => handleChange('is_permanent_same_as_current', checked)}
+                                            />
+                                            <label htmlFor="same_as_current" className="text-xs text-gray-600 cursor-pointer">If Permanent Address is Current Address</label>
+                                        </div>
+                                    </div>
+                                    <Textarea value={formData.permanent_address} onChange={(e) => handleChange('permanent_address', e.target.value)} placeholder="" className="h-24" />
+                                </div>
+                            )}
+                        </div>
+                    </CardContent>
+                </Card>
+            )}
+
+            {/* Additional Details */}
+            {(isFieldVisible('student_house') || isFieldVisible('height') || isFieldVisible('weight') || isFieldVisible('as_on_date') || isFieldVisible('rte_student')) && (
+                <Card className="shadow-sm">
+                    <CardHeader className="bg-gray-50 border-b py-3">
+                        <CardTitle className="text-base font-semibold text-gray-800">Additional Details</CardTitle>
+                    </CardHeader>
+                    <CardContent className="p-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                        {isFieldVisible('student_house') && houses.length > 0 && (
+                            <div className="space-y-2">
+                                <Label className="text-gray-700">House</Label>
+                                <Select onValueChange={(val) => handleChange('student_house', val)} value={formData.student_house}>
+                                    <SelectTrigger><SelectValue placeholder="Select House" /></SelectTrigger>
+                                    <SelectContent>
+                                        {houses.map((h) => (
+                                            <SelectItem key={h.id} value={h.id}>{h.name}</SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                        )}
+                        {isFieldVisible('height') && (
+                            <div className="space-y-2">
+                                <Label className="text-gray-700">Height (cm)</Label>
+                                <Input type="number" value={formData.height} onChange={(e) => handleChange('height', e.target.value)} placeholder="" />
+                            </div>
+                        )}
+                        {isFieldVisible('weight') && (
+                            <div className="space-y-2">
+                                <Label className="text-gray-700">Weight (kg)</Label>
+                                <Input type="number" value={formData.weight} onChange={(e) => handleChange('weight', e.target.value)} placeholder="" />
+                            </div>
+                        )}
+                        {isFieldVisible('as_on_date') && (
+                            <div className="space-y-2">
+                                <Label className="text-gray-700">Measurement Date</Label>
+                                <Input type="date" value={formData.as_on_date || ''} onChange={(e) => handleChange('as_on_date', e.target.value)} />
+                            </div>
+                        )}
+                        {isFieldVisible('rte_student') && (
+                            <div className="flex items-center space-x-2 pt-6">
+                                <Checkbox 
+                                    id="rte_student" 
+                                    checked={formData.is_rte_student}
+                                    onCheckedChange={(checked) => handleChange('is_rte_student', checked)}
+                                />
+                                <label htmlFor="rte_student" className="text-sm text-gray-700 cursor-pointer">RTE Student</label>
                             </div>
                         )}
                     </CardContent>
@@ -623,18 +953,12 @@ const OnlineAdmission = () => {
             )}
 
             {/* Miscellaneous Details */}
-            {(isFieldVisible('national_id') || isFieldVisible('local_id') || isFieldVisible('bank_account_no') || isFieldVisible('previous_school_details')) && (
+            {(isFieldVisible('local_id') || isFieldVisible('bank_account_no') || isFieldVisible('previous_school_details')) && (
                 <Card className="shadow-sm">
                     <CardHeader className="bg-gray-50 border-b py-3">
                         <CardTitle className="text-base font-semibold text-gray-800">Miscellaneous Details</CardTitle>
                     </CardHeader>
                     <CardContent className="p-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        {isFieldVisible('national_id') && (
-                            <div className="space-y-2">
-                                <Label className="text-gray-700">National Identification Number</Label>
-                                <Input value={formData.national_id_no} onChange={(e) => handleChange('national_id_no', e.target.value)} />
-                            </div>
-                        )}
                         {isFieldVisible('local_id') && (
                             <div className="space-y-2">
                                 <Label className="text-gray-700">Local Identification Number</Label>

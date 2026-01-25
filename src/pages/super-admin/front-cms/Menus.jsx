@@ -563,8 +563,17 @@ const Menus = ({ branchId: propSchoolId }) => {
                                             </TableCell>
                                             <TableCell className="text-right">
                                                 <div className="flex justify-end gap-2">
-                                                    <Button variant="outline" size="sm" onClick={() => handleManageItems(menu)} title="Add Menu Items">
-                                                        <Plus className="h-4 w-4 mr-1" /> Add Items
+                                                    <Button 
+                                                        variant="default" 
+                                                        size="sm" 
+                                                        onClick={() => navigate(branchId ? `/super-admin/front-cms/menus/${menu.id}/items?branch_id=${branchId}` : `/super-admin/front-cms/menus/${menu.id}/items`)}
+                                                        className="bg-green-600 hover:bg-green-700"
+                                                        title="Manage & Reorder Items"
+                                                    >
+                                                        Manage Items
+                                                    </Button>
+                                                    <Button variant="outline" size="sm" onClick={() => handleManageItems(menu)} title="Quick Add Items">
+                                                        <Plus className="h-4 w-4 mr-1" /> Add
                                                     </Button>
                                                     <PermissionButton moduleSlug="front_cms.menus" action="edit">
                                                         <Button variant="ghost" size="icon" onClick={() => handleEditMenu(menu)}>

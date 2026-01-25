@@ -78,6 +78,10 @@ const frontCmsService = {
     const response = await api.delete(`${API_URL}/menu-items/${id}`, getHeaders(branchId));
     return response.data;
   },
+  reorderMenuItems: async (menuId, items, branchId = null) => {
+    const response = await api.put(`${API_URL}/menu-items/reorder/${menuId}`, { items }, getHeaders(branchId));
+    return response.data;
+  },
 
   // Pages
   getPages: async (branchId = null) => {

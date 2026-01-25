@@ -18,6 +18,7 @@
 import React from 'react';
 import { usePermissions } from '@/contexts/PermissionContext';
 import { Button } from '@/components/ui/button';
+import { Edit, Trash2 } from 'lucide-react';
 
 export const PermissionButton = ({ 
   moduleSlug, 

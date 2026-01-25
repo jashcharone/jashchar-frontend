@@ -45,6 +45,9 @@ const PublicNews = lazy(() => import('@/pages/public/PublicNews'));
 const PublicNewsDetail = lazy(() => import('@/pages/public/PublicNewsDetail'));
 const PublicGallery = lazy(() => import('@/pages/public/PublicGallery'));
 const PublicExamResult = lazy(() => import('@/pages/public/PublicExamResult'));
+const ExamResultPage = lazy(() => import('@/pages/public/ExamResultPage'));
+const CBSEExamResult = lazy(() => import('@/pages/public/CBSEExamResult'));
+const SchoolServicesHub = lazy(() => import('@/pages/public/SchoolServicesHub'));
 const OnlineCourseFrontSite = lazy(() => import('@/pages/public/OnlineCourseFrontSite'));
 const OnlineAdmission = lazy(() => import('@/pages/public/OnlineAdmission'));
 const SchoolPublicHome = lazy(() => import('@/pages/public/SchoolPublicHome'));
@@ -435,7 +438,9 @@ function App() {
                 <Route path="/login" element={<PublicSchoolLogin />} />
                 <Route path="/forgot-password" element={<PublicForgotPassword />} />
                 <Route path="/signup" element={<PublicSignUp />} />
-                <Route path="/exam-result" element={<PublicExamResult />} />
+                <Route path="/exam-result" element={<ExamResultPage />} />
+                <Route path="/cbse-exam-result" element={<CBSEExamResult />} />
+                <Route path="/services" element={<SchoolServicesHub />} />
                 <Route path="/pages/:pageSlug" element={<PublicPageDetail />} />
                 <Route path="/events" element={<PublicEvents />} />
                 <Route path="/news" element={<PublicNews />} />
@@ -1374,7 +1379,7 @@ function App() {
             <Route path={ROUTES.PUBLIC.DYNAMIC_LOGIN} element={<PublicSchoolLogin />} />
             <Route path={ROUTES.PUBLIC.DYNAMIC_FORGOT_PASSWORD} element={<PublicForgotPassword />} />
             <Route path={ROUTES.PUBLIC.DYNAMIC_SIGNUP} element={<PublicSignUp />} />
-            <Route path={ROUTES.PUBLIC.DYNAMIC_EXAM_RESULT} element={<PublicExamResult />} />
+            <Route path={ROUTES.PUBLIC.DYNAMIC_EXAM_RESULT} element={<ExamResultPage />} />
             <Route path={ROUTES.PUBLIC.DYNAMIC_PAGE} element={<PublicPageDetail />} />
             <Route path={ROUTES.PUBLIC.DYNAMIC_EVENTS} element={<PublicEvents />} />
             <Route path={ROUTES.PUBLIC.DYNAMIC_NEWS} element={<PublicNews />} />
@@ -1382,6 +1387,9 @@ function App() {
             <Route path={ROUTES.PUBLIC.DYNAMIC_GALLERY} element={<PublicGallery />} />
             <Route path={ROUTES.PUBLIC.DYNAMIC_ONLINE_COURSE} element={<OnlineCourseFrontSite />} />
             <Route path={ROUTES.PUBLIC.DYNAMIC_ADMISSION} element={<OnlineAdmission />} />
+            <Route path={ROUTES.PUBLIC.DYNAMIC_ONLINE_ADMISSION} element={<OnlineAdmission />} />
+            <Route path={ROUTES.PUBLIC.DYNAMIC_CBSE_EXAM_RESULT} element={<CBSEExamResult />} />
+            <Route path={ROUTES.PUBLIC.DYNAMIC_SERVICES_HUB} element={<SchoolServicesHub />} />
 
             {/* ? Dynamic New Module Routes (Moved to bottom to prevent blocking) */}
             <Route path="/*" element={<NewModuleRoutes />} />

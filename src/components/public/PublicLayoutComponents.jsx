@@ -279,8 +279,8 @@ export const PublicHeader = ({ settings, menus, mobileMenuOpen, setMobileMenuOpe
         <div className="container mx-auto px-4">
           <div className="flex justify-between items-center py-3">
             
-            {/* Left: Logo + School Name */}
-            <Link to={`/${activeSlug}`} className="flex items-center gap-3 group shrink-0">
+            {/* Left: Logo Only (School name is in logo) */}
+            <Link to={`/${activeSlug}`} className="flex items-center group shrink-0">
               {settings?.logo_url ? (
                 <img 
                   src={settings.logo_url} 
@@ -292,16 +292,6 @@ export const PublicHeader = ({ settings, menus, mobileMenuOpen, setMobileMenuOpe
                   {settings?.school_name?.charAt(0) || 'S'}
                 </div>
               )}
-              <div className="hidden sm:flex flex-col">
-                <span className="text-xl lg:text-2xl font-bold text-red-800 dark:text-red-500">
-                  {settings?.school_name || 'School Name'}
-                </span>
-                {settings?.tagline && (
-                  <span className="text-xs text-slate-500 dark:text-slate-400">
-                    {settings.tagline}
-                  </span>
-                )}
-              </div>
             </Link>
 
             {/* Right: Call Us + Login */}

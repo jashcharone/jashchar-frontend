@@ -22,6 +22,7 @@ import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Progress } from '@/components/ui/progress';
 import { cn } from '@/lib/utils';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { validateAnyFile, getAcceptString } from '@/utils/fileValidation';
 
 // Storage limit: 200 MB
 const STORAGE_LIMIT_BYTES = 200 * 1024 * 1024; // 200 MB in bytes
@@ -48,6 +49,7 @@ const MediaManager = () => {
   const [filterType, setFilterType] = useState('all');
   const [selectedMedia, setSelectedMedia] = useState(null);
   const [viewMode, setViewMode] = useState('grid');
+  const [acceptString, setAcceptString] = useState('image/*,video/*,audio/*,.pdf,.doc,.docx,.xls,.xlsx');
   const fileInputRef = useRef(null);
 
   // Stats
@@ -71,6 +73,8 @@ const MediaManager = () => {
     if (branchId && branchId !== 'null' && branchId !== 'undefined') {
       loadMedia();
     }
+    // Load accept string from settings
+    getAcceptString('all').then(str => setAcceptString(str));
   }, [branchId]);
 
   useEffect(() => {
@@ -134,6 +138,18 @@ const MediaManager = () => {
     if (!file) return;
     if (!branchId || branchId === 'null' || branchId === 'undefined') {
       toast({ variant: 'destructive', title: 'Please select a school first' });
+      return;
+    }
+
+    // Validate file type and size using system settings
+    const validation = await validateAnyFile(file);
+    if (!validation.valid) {
+      toast({ 
+        variant: 'destructive', 
+        title: 'Invalid File',
+        description: validation.error,
+        duration: 8000
+      });
       return;
     }
 
@@ -316,7 +332,7 @@ const MediaManager = () => {
             type="file"
             className="hidden"
             onChange={(e) => handleFileUpload(e.target.files[0])}
-            accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.xls,.xlsx"
+            accept={acceptString}
           />
         </div>
 

@@ -353,7 +353,7 @@ const PublicSchoolLogin = () => {
             {logo ? (
               <div className="relative group">
                 <div className="absolute -inset-2 bg-white/20 rounded-2xl blur-xl group-hover:bg-white/30 transition-all duration-500"></div>
-                <img src={logo} alt="Logo" className="relative h-14 w-auto bg-white/95 p-2 rounded-xl shadow-2xl" />
+                <img src={logo} alt="Logo" className="relative h-14 w-auto object-contain drop-shadow-lg" />
               </div>
             ) : (
               <div className="w-14 h-14 bg-white/10 backdrop-blur-md rounded-xl flex items-center justify-center border border-white/20">

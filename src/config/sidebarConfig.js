@@ -53,6 +53,7 @@ export const BASE_SIDEBAR = {
       submenu: [
         { title: 'General Settings', path: ROUTES.MASTER_ADMIN.SAAS_WEBSITE_SETTINGS },
         { title: 'Login Page Settings', path: ROUTES.MASTER_ADMIN.LOGIN_PAGE_SETTINGS },
+        { title: 'File Type Settings', path: '/master-admin/system-settings/file-type' },
         { title: 'File Manager', path: ROUTES.MASTER_ADMIN.FILE_MANAGER },
       ]
     },

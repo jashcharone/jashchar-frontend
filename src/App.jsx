@@ -135,6 +135,7 @@ const CommunicationSettingsMaster = lazy(() => import('@/pages/master-admin/syst
 const EmailSettingsMaster = lazy(() => import('@/pages/master-admin/system-settings/EmailSettings'));
 const PaymentSettingsMaster = lazy(() => import('@/pages/master-admin/system-settings/PaymentSettings'));
 const LoginPageSettings = lazy(() => import('@/pages/master-admin/system-settings/LoginPageSettings'));
+const FileTypeSettings = lazy(() => import('@/pages/master-admin/system-settings/FileTypeSettings'));
 const MasterSchoolLoginSettings = lazy(() => import('@/pages/master-admin/front-cms/MasterSchoolLoginSettings'));
 const SessionSettingMaster = lazy(() => import('@/pages/master-admin/system-settings/SessionSetting'));
 const ExportImport = lazy(() => import('@/pages/master-admin/system-settings/ExportImport'));
@@ -1075,6 +1076,7 @@ function App() {
             <Route path={ROUTES.MASTER_ADMIN.EMAIL_SETTINGS} element={<ProtectedRoute allowedRoles={['master_admin']}><EmailSettingsMaster /></ProtectedRoute>} />
             <Route path={ROUTES.MASTER_ADMIN.PAYMENT_SETTINGS} element={<ProtectedRoute allowedRoles={['master_admin']}><PaymentSettingsMaster /></ProtectedRoute>} />
             <Route path={ROUTES.MASTER_ADMIN.LOGIN_PAGE_SETTINGS} element={<ProtectedRoute allowedRoles={['master_admin']}><LoginPageSettings /></ProtectedRoute>} />
+            <Route path="/master-admin/system-settings/file-type" element={<ProtectedRoute allowedRoles={['master_admin']}><FileTypeSettings /></ProtectedRoute>} />
             <Route path={ROUTES.MASTER_ADMIN.MASTER_SCHOOL_LOGIN_SETTINGS} element={<ProtectedRoute allowedRoles={['master_admin']}><MasterSchoolLoginSettings /></ProtectedRoute>} />
             <Route path={ROUTES.MASTER_ADMIN.SESSION_SETTING} element={<ProtectedRoute allowedRoles={['master_admin']}><SessionSettingMaster /></ProtectedRoute>} />
             <Route path={ROUTES.MASTER_ADMIN.MASTER_DATA_SETTINGS} element={<ProtectedRoute allowedRoles={['master_admin']}><MasterDataSettings /></ProtectedRoute>} />

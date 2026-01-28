@@ -91,7 +91,7 @@ const CollectFees = () => {
             // Filter by current session
             let query = supabase
                 .from('student_profiles')
-                .select('id, full_name, father_name, dob, phone, school_code, session_id, classes!student_profiles_class_id_fkey(name), sections!student_profiles_section_id_fkey(name)')
+                .select('id, full_name, father_name, phone, school_code, session_id, classes!student_profiles_class_id_fkey(name), sections!student_profiles_section_id_fkey(name)')
                 .eq('branch_id', selectedBranch.id)
                 .eq('class_id', selectedClass)
                 .eq('session_id', currentSessionId);

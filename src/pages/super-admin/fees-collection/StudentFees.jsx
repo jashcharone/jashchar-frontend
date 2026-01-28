@@ -60,18 +60,22 @@ const StudentFees = () => {
     const [revokeReason, setRevokeReason] = useState('');
 
     const fetchStudentAndFees = useCallback(async () => {
-        if (!studentId || !branchId || !selectedBranch) return;
+        if (!studentId || !selectedBranch?.id) return;
         setLoading(true);
         try {
             const studentRes = await supabase
                 .from('profiles')
                 .select('*, classes(name), sections(name)')
                 .eq('id', studentId)
-                .eq('branch_id', branchId)
                 .eq('branch_id', selectedBranch.id)
-                .single();
+                .maybeSingle();
 
             if (studentRes.error) throw studentRes.error;
+            if (!studentRes.data) {
+                toast({ variant: 'destructive', title: 'Student not found', description: 'No student found with this ID in the selected branch.' });
+                setLoading(false);
+                return;
+            }
             setStudent(studentRes.data);
 
             const [allocationsRes, paymentsRes] = await Promise.all([
@@ -86,13 +90,11 @@ const StudentFees = () => {
                         )
                     `)
                     .eq('student_id', studentId)
-                    .eq('branch_id', branchId)
                     .eq('branch_id', selectedBranch.id),
                 supabase
                     .from('fee_payments')
                     .select(`*, fee_master:fee_masters(*, fee_group:fee_groups(name), fee_type:fee_types(name))`)
                     .eq('student_id', studentId)
-                    .eq('branch_id', branchId)
                     .eq('branch_id', selectedBranch.id)
                     .order('payment_date', { ascending: false })
             ]);

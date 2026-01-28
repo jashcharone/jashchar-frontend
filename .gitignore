@@ -39,3 +39,33 @@ scripts/
 
 # Tools folder
 tools/
+
+# Debug/utility scripts (not needed for production)
+add_*.js
+fill_*.js
+fix_*.js
+audit_*.js
+check_*.js
+test_*.js
+verify_*.js
+quick_*.js
+register_*.js
+debug_*.js
+setup_*.js
+create_*.js
+run_*.js
+seed_*.js
+migrate_*.js
+
+# Archive folders
+_archive/
+_cleanup/
+screenshots/
+
+# Backup files
+*.backup
+*.bak
+
+# Audit files
+AUDIT_REPORT*
+*AUDIT*

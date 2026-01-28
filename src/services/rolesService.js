@@ -1,6 +1,5 @@
 ﻿import { supabase } from '@/lib/customSupabaseClient';
 import { syncPlanModulesToSchoolOwnerPermissions } from '@/services/planModuleSyncService';
-import { seedCoreModules } from '@/seeds/seedCoreModules';
 import { repairPlanModuleMappings } from '@/services/planModuleRepairService';
 
 export const rolesService = {
@@ -9,8 +8,7 @@ export const rolesService = {
    * Includes Pre-flight checks for Modules and Plan Mappings.
    */
   createDefaultRoles: async (branchId, planId = null) => {
-    // SAFETY: Ensure core modules exist before we start assigning them
-    await seedCoreModules();
+    // Modules are managed via backend/database
     
     // SAFETY: Ensure the plan maps to modules correctly
     await repairPlanModuleMappings();

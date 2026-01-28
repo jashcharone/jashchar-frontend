@@ -1,5 +1,4 @@
-﻿import { seedCoreModules } from '@/seeds/seedCoreModules';
-import { repairPlanModuleMappings } from '@/services/planModuleRepairService';
+﻿import { repairPlanModuleMappings } from '@/services/planModuleRepairService';
 import { checkDatabaseIntegrity } from '@/utils/databaseHealthCheck';
 
 /**
@@ -13,13 +12,12 @@ export const runSafeMigrations = async () => {
         // 1. Health Check
         const health = await checkDatabaseIntegrity();
         
-        // 2. Seed Modules (if table exists)
+        // 2. Modules are now managed via backend/database only
         if (health.modulesTableExists) {
-            console.log("Seeding modules...");
-            const seedResult = await seedCoreModules();
-            report.migrations.push({ name: 'seed_core_modules', result: seedResult });
+            console.log("Modules table exists - managed via backend");
+            report.migrations.push({ name: 'modules_check', result: { success: true } });
         } else {
-            report.errors.push("Cannot seed modules: table missing");
+            report.errors.push("Modules table missing - contact admin");
         }
 
         // 3. Repair Plan Mappings

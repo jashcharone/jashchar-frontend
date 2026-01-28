@@ -50,7 +50,7 @@ const AssignFeeGroup = () => {
     const handleSearch = async () => {
         if (!selectedBranch) return;
         setSearching(true);
-        let query = supabase.from('profiles').select('id, full_name, school_code, father_name, gender, role_id(name)').eq('branch_id', user.profile.branch_id).eq('branch_id', selectedBranch.id);
+        let query = supabase.from('profiles').select('id, full_name, admission_no, father_name, gender, role_id(name)').eq('branch_id', selectedBranch.id);
         
         // This is a simplification. A proper implementation would join classes and sections.
         // For now, we filter on what's available in profiles.
@@ -133,7 +133,7 @@ const AssignFeeGroup = () => {
                             {students.map(student => (
                                 <tr key={student.id} className="border-b">
                                     <td className="p-2"><Checkbox checked={selectedStudents.has(student.id)} onCheckedChange={c => handleSelectStudent(student.id, c)} /></td>
-                                    <td className="p-2">{student.school_code}</td>
+                                    <td className="p-2">{student.admission_no}</td>
                                     <td className="p-2">{student.full_name}</td>
                                     <td className="p-2">{student.father_name}</td>
                                     <td className="p-2">General</td>

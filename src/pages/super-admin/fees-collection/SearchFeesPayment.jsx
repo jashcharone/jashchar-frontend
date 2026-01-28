@@ -34,10 +34,9 @@ const SearchFeesPayment = () => {
             .from('fee_payments')
             .select(`
                 id, payment_date, amount, discount_amount, fine_paid, payment_mode, transaction_id,
-                student:profiles(id, full_name, school_code, class:class_id(name), section:section_id(name)),
+                student:profiles(id, full_name, admission_no, class:class_id(name), section:section_id(name)),
                 master:fee_masters(fee_group:fee_groups(name), fee_type:fee_types(name))
             `)
-            .eq('branch_id', branchId)
             .eq('branch_id', selectedBranch.id)
             .ilike('transaction_id', `${transactionId.trim()}%`);
 
@@ -88,7 +87,7 @@ const SearchFeesPayment = () => {
                                                 <td className="p-2">{format(new Date(p.payment_date), 'dd-MM-yyyy')}</td>
                                                 <td className="p-2">
                                                     <Link to={`/super-admin/student-information/profile/${p.student?.id}`} className="hover:underline">
-                                                        {p.student?.full_name} ({p.student?.school_code})
+                                                        {p.student?.full_name} ({p.student?.admission_no})
                                                     </Link>
                                                 </td>
                                                 <td className="p-2">{p.student?.class?.name} ({p.student?.section?.name})</td>

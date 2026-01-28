@@ -144,7 +144,7 @@ const SearchDueFees = () => {
                                         {students.length > 0 ? students.map(student => (
                                             <tr key={`${student.student_id}-${student.fee_group_name}`} className="border-b">
                                                 <td className="p-2">{student.class_name} - {student.section_name}</td>
-                                                <td className="p-2">{student.school_code}</td>
+                                                <td className="p-2">{student.admission_no}</td>
                                                 <td className="p-2 font-semibold">{student.full_name}</td>
                                                 <td className="p-2">{student.fee_group_name}</td>
                                                 <td className="p-2 text-right">{Number(student.total_amount).toFixed(2)}</td>

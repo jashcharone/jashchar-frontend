@@ -271,7 +271,7 @@ const PrintFeesReceipt = () => {
       <div className='flex justify-between items-start mb-3 text-[11px]'>
         <div>
           <p><strong>Student Name:</strong> {student.full_name}</p>
-          <p><strong>Admission No:</strong> {student.school_code}</p>
+          <p><strong>Admission No:</strong> {student.admission_no}</p>
           <p><strong>Father Name:</strong> {student.father_name}</p>
           <p><strong>Class:</strong> {student.classes?.name} ({student.sections?.name})</p>
         </div>

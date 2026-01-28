@@ -32,7 +32,7 @@ const PrintSelectedFees = () => {
 
   const handlePrint = useReactToPrint({
     content: () => printRef.current,
-    documentTitle: `Fees-Invoice-${printData?.student?.school_code || studentId}`,
+    documentTitle: `Fees-Invoice-${printData?.student?.admission_no || studentId}`,
   });
 
   useEffect(() => {
@@ -135,7 +135,7 @@ const PrintSelectedFees = () => {
             <div className="flex justify-between items-start mb-6 text-sm">
               <div>
                 <p><strong>Student Name:</strong> {student.full_name}</p>
-                <p><strong>Admission No:</strong> {student.school_code}</p>
+                <p><strong>Admission No:</strong> {student.admission_no}</p>
                 <p><strong>Father Name:</strong> {student.father_name}</p>
                 <p><strong>Class:</strong> {student.class?.name} ({student.section?.name})</p>
               </div>

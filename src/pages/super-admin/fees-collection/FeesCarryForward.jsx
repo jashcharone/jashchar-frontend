@@ -135,7 +135,7 @@ const FeesCarryForward = () => {
                                         {students.length > 0 ? students.map(student => (
                                             <tr key={student.id} className="border-b">
                                                 <td className="p-2">{student.full_name}</td>
-                                                <td className="p-2">{student.school_code}</td>
+                                                <td className="p-2">{student.admission_no}</td>
                                                 <td className="p-2">{student.admission_date ? format(new Date(student.admission_date), 'dd-MM-yyyy') : 'N/A'}</td>
                                                 <td className="p-2">{student.roll_number}</td>
                                                 <td className="p-2">{student.father_name}</td>

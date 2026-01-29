@@ -118,9 +118,23 @@ const AddEditModule = () => {
     try {
       setLoadingParents(true);
       const res = await moduleRegistryApiService.getModulesFlat({ parent_only: true });
-      setParentModules(res.data || []);
+      console.log('📦 Parent Modules API Response:', res);
+      
+      // Handle different response formats
+      let modules = [];
+      if (Array.isArray(res)) {
+        modules = res;
+      } else if (res?.data && Array.isArray(res.data)) {
+        modules = res.data;
+      } else if (res?.success && res?.data) {
+        modules = res.data;
+      }
+      
+      console.log('📋 Parsed Parent Modules:', modules.length, 'modules found');
+      setParentModules(modules);
     } catch (error) {
       console.error('Error loading parents:', error);
+      setParentModules([]);
     } finally {
       setLoadingParents(false);
     }

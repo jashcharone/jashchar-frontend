@@ -10,7 +10,8 @@ const SchoolPublicGallery = lazy(() => import('@/pages/public/SchoolPublicGaller
 const SchoolPublicGalleryDetail = lazy(() => import('@/pages/public/SchoolPublicGalleryDetail'));
 const SchoolPublicNotices = lazy(() => import('@/pages/public/SchoolPublicNotices'));
 const SchoolPublicContact = lazy(() => import('@/pages/public/SchoolPublicContact'));
-const OnlineAdmission = lazy(() => import('@/pages/public/OnlineAdmission'));
+// Single page admission form (no next/back buttons - all sections on one page)
+const OnlineAdmission = lazy(() => import('@/pages/public/OnlineAdmissionSinglePage'));
 const ExamResult = lazy(() => import('@/pages/public/ExamResult'));
 
 // Dummy placeholders for list/detail to ensure build passes if I missed creating them above

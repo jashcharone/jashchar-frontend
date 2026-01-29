@@ -59,6 +59,15 @@ const publicCmsService = {
     const response = await axios.get(`${API_URL}/classes/${slug}`);
     return response.data;
   },
+  // Get classes filtered by branch ID
+  getClassesByBranch: async (slug, branchId) => {
+    const response = await axios.get(`${API_URL}/classes/${slug}?branchId=${branchId}`);
+    return response.data;
+  },
+  getBranches: async (slug) => {
+    const response = await axios.get(`${API_URL}/branches/${slug}`);
+    return response.data;
+  },
   submitAdmission: async (slug, data) => {
     const response = await axios.post(`${API_URL}/admission/${slug}`, data);
     return response.data;

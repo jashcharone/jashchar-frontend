@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useCallback, useMemo } from 'react';
+﻿import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
 import { supabase } from '@/lib/customSupabaseClient';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
@@ -1055,64 +1055,95 @@ const StudentAdmission = () => {
   };
 
 
-  // Validation Logic
+  // Validation Logic - Debounced to prevent excessive re-renders
+  const validationTimeoutRef = useRef(null);
+  
   useEffect(() => {
-    const validateForm = () => {
-      const newErrors = {};
-      
-      allFields.forEach(field => {
-         if(!field.is_enabled) return;
-         if(field.is_required) {
-             const val = field.is_system ? formData[field.field_name] : customFieldValues[field.field_key];
-             const isEmpty = val === null || val === undefined || val === '' || (Array.isArray(val) && val.length === 0);
-             if(isEmpty) {
-                 const errKey = field.is_system ? field.field_name : `custom_${field.id}`;
-                 newErrors[errKey] = `${field.field_label} is required`;
-             }
-         }
-         
-         if(field.field_name === 'pincode' && (!pincode || !/^\d{6}$/.test(pincode))) newErrors.pincode = "Valid 6-digit Pincode is required";
-         if((field.field_name === 'phone' || field.field_name === 'father_phone') && formData[field.field_name] && !/^\d{10}$/.test(formData[field.field_name])) {
-             newErrors[field.field_name] = "Valid 10-digit Mobile No is required";
-         }
-         if((field.field_name === 'national_id_no' || field.field_name === 'father_aadhar_no' || field.field_name === 'mother_aadhar_no') && formData[field.field_name] && formData[field.field_name].length !== 12) {
-             newErrors[field.field_name] = "Valid 12-digit Aadhar No is required";
-         }
-      });
+    // Clear previous timeout
+    if (validationTimeoutRef.current) {
+      clearTimeout(validationTimeoutRef.current);
+    }
+    
+    // Debounce validation by 300ms
+    validationTimeoutRef.current = setTimeout(() => {
+      const validateForm = () => {
+        const newErrors = {};
+        
+        // Field name mapping: API field name -> formData key
+        const fieldNameMap = {
+          'class': 'class_id',
+          'section': 'section_id',
+          'session': 'session_id',
+          'category': 'category_id',
+          'admission_no': 'school_code',
+        };
+        
+        allFields.forEach(field => {
+           if(!field.is_enabled) return;
+           if(field.is_required) {
+               // Use mapped field name if exists, otherwise use original
+               const mappedFieldName = fieldNameMap[field.field_name] || field.field_name;
+               const val = field.is_system ? formData[mappedFieldName] : customFieldValues[field.field_key];
+               const isEmpty = val === null || val === undefined || val === '' || (Array.isArray(val) && val.length === 0);
+               if(isEmpty) {
+                   const errKey = field.is_system ? mappedFieldName : `custom_${field.id}`;
+                   newErrors[errKey] = `${field.field_label} is required`;
+               }
+           }
+           
+           if(field.field_name === 'pincode' && (!pincode || !/^\d{6}$/.test(pincode))) newErrors.pincode = "Valid 6-digit Pincode is required";
+           if((field.field_name === 'phone' || field.field_name === 'father_phone') && formData[field.field_name] && !/^\d{10}$/.test(formData[field.field_name])) {
+               newErrors[field.field_name] = "Valid 10-digit Mobile No is required";
+           }
+           if((field.field_name === 'national_id_no' || field.field_name === 'father_aadhar_no' || field.field_name === 'mother_aadhar_no') && formData[field.field_name] && formData[field.field_name].length !== 12) {
+               newErrors[field.field_name] = "Valid 12-digit Aadhar No is required";
+           }
+        });
 
-      // Complex Validations
-      if (formData.password && formData.password.length < 6) newErrors.password = "Password must be at least 6 characters";
-      if (formData.password !== formData.retype_password) newErrors.retype_password = "Passwords do not match";
-      if (formData.parent_password && formData.parent_password.length < 6) newErrors.parent_password = "Password must be at least 6 characters";
-      if (formData.parent_password !== formData.parent_retype_password) newErrors.parent_retype_password = "Passwords do not match";
+        // Complex Validations
+        if (formData.password && formData.password.length < 6) newErrors.password = "Password must be at least 6 characters";
+        if (formData.password !== formData.retype_password) newErrors.retype_password = "Passwords do not match";
+        if (formData.parent_password && formData.parent_password.length < 6) newErrors.parent_password = "Password must be at least 6 characters";
+        if (formData.parent_password !== formData.parent_retype_password) newErrors.parent_retype_password = "Passwords do not match";
 
-      // Fees
-      if (!Object.values(formData.fee_groups).some(v => v)) newErrors.fee_groups = "At least one fee must be selected";
+        // Fees - Only validate if there are fee groups defined
+        if (feeGroups.length > 0 && !Object.values(formData.fee_groups).some(v => v)) {
+          newErrors.fee_groups = "At least one fee must be selected";
+        }
 
-      // Documents - Check required documents
-      const missingDocs = masterDocuments
-        .filter(doc => doc.is_required && !formData.documents_received[doc.name])
-        .map(doc => doc.name);
-      if (missingDocs.length > 0) newErrors.documents_received = `Missing required documents: ${missingDocs.join(', ')}`;
+        // Documents - Check required documents
+        const missingDocs = masterDocuments
+          .filter(doc => doc.is_required && !formData.documents_received[doc.name])
+          .map(doc => doc.name);
+        if (missingDocs.length > 0) newErrors.documents_received = `Missing required documents: ${missingDocs.join(', ')}`;
 
-      // Transport Conditional
-      if (formData.transport_required) {
-        if (!formData.transport_route_id) newErrors.transport_route_id = "Transport Route is required";
-        if (!formData.transport_pickup_point_id) newErrors.transport_pickup_point_id = "Pickup Point is required";
+        // Transport Conditional
+        if (formData.transport_required) {
+          if (!formData.transport_route_id) newErrors.transport_route_id = "Transport Route is required";
+          if (!formData.transport_pickup_point_id) newErrors.transport_pickup_point_id = "Pickup Point is required";
+        }
+
+        // Hostel Conditional
+        if (formData.hostel_required) {
+          if (!formData.hostel_id) newErrors.hostel_id = "Hostel Name is required";
+          if (!formData.hostel_room_type) newErrors.hostel_room_type = "Room Type is required";
+        }
+
+        setErrors(newErrors);
+        const valid = Object.keys(newErrors).length === 0 && !rollNumberError && !studentEmailError && !fatherEmailError && !aadharError && !studentUsernameError && !parentUsernameError;
+        setIsFormValid(valid);
+      };
+
+      validateForm();
+    }, 300);
+    
+    // Cleanup timeout on unmount
+    return () => {
+      if (validationTimeoutRef.current) {
+        clearTimeout(validationTimeoutRef.current);
       }
-
-      // Hostel Conditional
-      if (formData.hostel_required) {
-        if (!formData.hostel_id) newErrors.hostel_id = "Hostel Name is required";
-        if (!formData.hostel_room_type) newErrors.hostel_room_type = "Room Type is required";
-      }
-
-      setErrors(newErrors);
-      setIsFormValid(Object.keys(newErrors).length === 0 && !rollNumberError && !studentEmailError && !fatherEmailError && !aadharError && !studentUsernameError && !parentUsernameError);
     };
-
-    validateForm();
-  }, [formData, customFieldValues, allFields, pincode, profilePictureFile, rollNumberError, studentEmailError, fatherEmailError, aadharError, masterDocuments, studentUsernameError, parentUsernameError]);
+  }, [formData, customFieldValues, allFields, pincode, profilePictureFile, rollNumberError, studentEmailError, fatherEmailError, aadharError, masterDocuments, studentUsernameError, parentUsernameError, feeGroups]);
 
   const handleBlur = (field) => {
     setTouched(prev => ({ ...prev, [field]: true }));
@@ -1429,6 +1460,9 @@ const StudentAdmission = () => {
     }
   }, [formData.class_id, formData.section_id, getNextRollNumber, rollNumberManuallyEdited, checkDuplicateRollNumber]);
   
+  // Track previous class_id to detect actual changes
+  const prevClassIdRef = useRef(formData.class_id);
+  
   useEffect(() => {
     if (formData.class_id) {
       const fetchSections = async () => {
@@ -1439,9 +1473,16 @@ const StudentAdmission = () => {
     } else {
       setSections([]);
     }
-    setFormData(prev => ({ ...prev, section_id: '' }));
+    // Only reset section_id if class_id actually changed
+    if (prevClassIdRef.current !== formData.class_id) {
+      setFormData(prev => ({ ...prev, section_id: '' }));
+      prevClassIdRef.current = formData.class_id;
+    }
   }, [formData.class_id]);
 
+  // Track previous transport_route_id
+  const prevTransportRouteRef = useRef(formData.transport_route_id);
+  
   useEffect(() => {
     const fetchTransportDetails = async () => {
       if (formData.transport_route_id) {
@@ -1455,29 +1496,36 @@ const StudentAdmission = () => {
       } else {
         setPickupPoints([]);
       }
-      handleChange('transport_pickup_point_id', '');
-      handleChange('transport_fee', 0);
+      // Only reset if transport_route_id actually changed
+      if (prevTransportRouteRef.current !== formData.transport_route_id) {
+        setFormData(prev => ({ ...prev, transport_pickup_point_id: '', transport_fee: 0 }));
+        prevTransportRouteRef.current = formData.transport_route_id;
+      }
     };
     fetchTransportDetails();
   }, [formData.transport_route_id, toast]);
 
   useEffect(() => {
-    const selectedPoint = pickupPoints.find(p => p.pickup_point.id === formData.transport_pickup_point_id);
+    const selectedPoint = pickupPoints.find(p => p.pickup_point?.id === formData.transport_pickup_point_id);
     if (selectedPoint) {
-      handleChange('transport_fee', selectedPoint.monthly_fees);
-      handleChange('pickup_time', selectedPoint.pickup_time);
-    } else {
-      handleChange('transport_fee', 0);
-      handleChange('pickup_time', '');
+      setFormData(prev => {
+        if (prev.transport_fee !== selectedPoint.monthly_fees || prev.pickup_time !== selectedPoint.pickup_time) {
+          return { ...prev, transport_fee: selectedPoint.monthly_fees, pickup_time: selectedPoint.pickup_time };
+        }
+        return prev;
+      });
     }
   }, [formData.transport_pickup_point_id, pickupPoints]);
   
   useEffect(() => {
     const selectedRoomType = hostelRoomTypes.find(rt => rt.id === formData.hostel_room_type);
     if (selectedRoomType) {
-        handleChange('hostel_fee', selectedRoomType.cost);
-    } else {
-        handleChange('hostel_fee', 0);
+      setFormData(prev => {
+        if (prev.hostel_fee !== selectedRoomType.cost) {
+          return { ...prev, hostel_fee: selectedRoomType.cost };
+        }
+        return prev;
+      });
     }
   }, [formData.hostel_room_type, hostelRoomTypes]);
 

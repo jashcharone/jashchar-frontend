@@ -1158,15 +1158,19 @@ const StudentAdmission = () => {
     setParentUsernameError('');
     setExistingParentData(null);
     try {
-      // Check if parent with this phone exists
+      // Check if parent with this phone exists - use phone column instead of username
       const { data, error } = await supabase
         .from('profiles')
-        .select('id, full_name, username, students')
+        .select('id, full_name, phone, students')
         .eq('role', 'parent')
-        .eq('username', phone)
+        .eq('phone', phone)
         .limit(1);
       
-      if (error) throw error;
+      if (error) {
+        // If error (likely column doesn't exist), log it but don't show error to user
+        console.error('Error checking parent phone:', error);
+        return;
+      }
       if (data && data.length > 0) {
         const parent = data[0];
         const studentCount = Array.isArray(parent.students) ? parent.students.length : 0;

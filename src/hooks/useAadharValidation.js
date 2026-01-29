@@ -18,16 +18,19 @@ export const useAadharValidation = (initialError = '') => {
     setIsChecking(true);
     validationTimeout.current = setTimeout(async () => {
       try {
+        // Check in student_profiles table using national_id_no column
         const { data, error: dbError } = await supabase
-          .from('profiles')
-          .select('id')
-          .eq('aadhar_no', aadharNumber)
+          .from('student_profiles')
+          .select('id, first_name, last_name')
+          .eq('national_id_no', aadharNumber)
           .limit(1);
 
         if (dbError) {
-          console.error("Aadhar validation RPC Error:", dbError);
+          console.error("Aadhar validation error:", dbError);
+          // Don't set error message if it's a schema issue - just log it
         } else if (data && data.length > 0) {
-          setError('This Aadhar number already exists.');
+          const studentName = `${data[0].first_name || ''} ${data[0].last_name || ''}`.trim();
+          setError(`This Aadhar number is already registered to ${studentName || 'another student'}.`);
         } else {
           setError('');
         }

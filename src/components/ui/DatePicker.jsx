@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect, useRef } from 'react';
 import { format, isValid, isAfter, startOfToday, parse } from 'date-fns';
 import { Calendar as CalendarIcon } from 'lucide-react';
 
@@ -18,23 +18,35 @@ export function DatePicker({ value, onChange, className, disabled, id, required,
   const [inputValue, setInputValue] = useState("");
   const [isOpen, setIsOpen] = useState(false);
   const [error, setError] = useState(false);
+  const prevValueRef = useRef(value);
+  const isInitializedRef = useRef(false);
 
-  // Sync prop value to internal state
+  // Sync prop value to internal state - only when value actually changes
   useEffect(() => {
+    // Skip if value hasn't changed
+    if (isInitializedRef.current && prevValueRef.current === value) {
+      return;
+    }
+    prevValueRef.current = value;
+    isInitializedRef.current = true;
+    
     if (value) {
       // Parse the YYYY-MM-DD string into a local Date object
       const parsedDate = parse(value, 'yyyy-MM-dd', new Date());
       
       if (isValid(parsedDate)) {
-        setDate(parsedDate);
-        setInputValue(format(parsedDate, 'dd-MM-yyyy'));
+        const newInputValue = format(parsedDate, 'dd-MM-yyyy');
+        // Only update if different to prevent cursor issues
+        if (inputValue !== newInputValue) {
+          setDate(parsedDate);
+          setInputValue(newInputValue);
+        }
         setError(false);
       } else {
         setDate(null);
         setInputValue("");
       }
     } else {
-        // Only clear if value is strictly null/empty to allow controlled components to reset
         setDate(null);
         setInputValue("");
     }

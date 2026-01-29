@@ -64,9 +64,9 @@ const SectionBox = ({ icon, title, children, className, collapsible = false, def
       "group relative overflow-hidden rounded-3xl border border-border/40 bg-card shadow-xl transition-all duration-500 hover:shadow-2xl hover:border-primary/30",
       className
     )}>
-      {/* Premium Gradient Background */}
-      <div className={cn("absolute inset-0 bg-gradient-to-br opacity-60 transition-opacity duration-500 group-hover:opacity-100", gradientStyles[gradient])} />
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-white/80 via-transparent to-transparent dark:from-gray-900/80" />
+      {/* Premium Gradient Background - pointer-events-none to allow clicks through */}
+      <div className={cn("absolute inset-0 bg-gradient-to-br opacity-60 transition-opacity duration-500 group-hover:opacity-100 pointer-events-none", gradientStyles[gradient])} />
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-white/80 via-transparent to-transparent dark:from-gray-900/80 pointer-events-none" />
       
       {/* Header */}
       <div 
@@ -79,12 +79,12 @@ const SectionBox = ({ icon, title, children, className, collapsible = false, def
         <div className="flex items-center gap-4">
           {/* Premium Icon Container */}
           <div className="relative">
-            <div className="absolute inset-0 bg-gradient-to-br from-primary/30 to-primary/10 rounded-2xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+            <div className="absolute inset-0 bg-gradient-to-br from-primary/30 to-primary/10 rounded-2xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
             <div className={cn("relative bg-gradient-to-br p-3.5 rounded-2xl shadow-lg", iconGradients[gradient])}>
               <Icon className="h-6 w-6 text-white drop-shadow-sm" />
             </div>
             {/* Status Indicator */}
-            <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full bg-gradient-to-r from-green-400 to-emerald-500 border-2 border-card shadow-lg">
+            <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full bg-gradient-to-r from-green-400 to-emerald-500 border-2 border-card shadow-lg pointer-events-none">
               <span className="absolute inset-0 rounded-full bg-green-400 animate-ping opacity-75" />
             </div>
           </div>
@@ -422,7 +422,8 @@ const StudentAdmission = () => {
   };
 
   // --- Dynamic Field Renderer with Enhanced Styling ---
-  const DynamicField = ({ field }) => {
+  // Changed from component to function to prevent re-mounting and focus loss
+  const renderDynamicField = (field) => {
     if (!field.is_enabled) return null;
 
     const label = field.field_label;
@@ -925,9 +926,12 @@ const StudentAdmission = () => {
                     placeholder="9876543210"
                     onChange={e => {
                       const phone = e.target.value.replace(/\D/g, '').slice(0, 10);
-                      handleChange(field.field_name, phone);
-                      // Auto-set parent_username = father_phone
-                      setFormData(prev => ({ ...prev, parent_username: phone }));
+                      // Update both father_phone AND parent_username in single state update
+                      setFormData(prev => ({ 
+                        ...prev, 
+                        [field.field_name]: phone,
+                        parent_username: phone 
+                      }));
                       // Check for duplicate parent when 10 digits
                       if (phone.length === 10) {
                         checkParentUsernameDuplicate(phone);
@@ -1058,92 +1062,100 @@ const StudentAdmission = () => {
   // Validation Logic - Debounced to prevent excessive re-renders
   const validationTimeoutRef = useRef(null);
   
+  // Real-time validation for LOGIN DETAILS ONLY (password match)
   useEffect(() => {
-    // Clear previous timeout
-    if (validationTimeoutRef.current) {
-      clearTimeout(validationTimeoutRef.current);
+    const loginErrors = {};
+    
+    // Only validate password fields in real-time
+    if (formData.password && formData.password.length < 6) {
+      loginErrors.password = "Password must be at least 6 characters";
+    }
+    if (formData.password && formData.retype_password && formData.password !== formData.retype_password) {
+      loginErrors.retype_password = "Passwords do not match";
+    }
+    if (formData.parent_password && formData.parent_password.length < 6) {
+      loginErrors.parent_password = "Password must be at least 6 characters";
+    }
+    if (formData.parent_password && formData.parent_retype_password && formData.parent_password !== formData.parent_retype_password) {
+      loginErrors.parent_retype_password = "Passwords do not match";
     }
     
-    // Debounce validation by 300ms
-    validationTimeoutRef.current = setTimeout(() => {
-      const validateForm = () => {
-        const newErrors = {};
-        
-        // Field name mapping: API field name -> formData key
-        const fieldNameMap = {
-          'class': 'class_id',
-          'section': 'section_id',
-          'session': 'session_id',
-          'category': 'category_id',
-          'admission_no': 'school_code',
-        };
-        
-        allFields.forEach(field => {
-           if(!field.is_enabled) return;
-           if(field.is_required) {
-               // Use mapped field name if exists, otherwise use original
-               const mappedFieldName = fieldNameMap[field.field_name] || field.field_name;
-               const val = field.is_system ? formData[mappedFieldName] : customFieldValues[field.field_key];
-               const isEmpty = val === null || val === undefined || val === '' || (Array.isArray(val) && val.length === 0);
-               if(isEmpty) {
-                   const errKey = field.is_system ? mappedFieldName : `custom_${field.id}`;
-                   newErrors[errKey] = `${field.field_label} is required`;
-               }
-           }
-           
-           if(field.field_name === 'pincode' && (!pincode || !/^\d{6}$/.test(pincode))) newErrors.pincode = "Valid 6-digit Pincode is required";
-           if((field.field_name === 'phone' || field.field_name === 'father_phone') && formData[field.field_name] && !/^\d{10}$/.test(formData[field.field_name])) {
-               newErrors[field.field_name] = "Valid 10-digit Mobile No is required";
-           }
-           if((field.field_name === 'national_id_no' || field.field_name === 'father_aadhar_no' || field.field_name === 'mother_aadhar_no') && formData[field.field_name] && formData[field.field_name].length !== 12) {
-               newErrors[field.field_name] = "Valid 12-digit Aadhar No is required";
-           }
-        });
-
-        // Complex Validations
-        if (formData.password && formData.password.length < 6) newErrors.password = "Password must be at least 6 characters";
-        if (formData.password !== formData.retype_password) newErrors.retype_password = "Passwords do not match";
-        if (formData.parent_password && formData.parent_password.length < 6) newErrors.parent_password = "Password must be at least 6 characters";
-        if (formData.parent_password !== formData.parent_retype_password) newErrors.parent_retype_password = "Passwords do not match";
-
-        // Fees - Only validate if there are fee groups defined
-        if (feeGroups.length > 0 && !Object.values(formData.fee_groups).some(v => v)) {
-          newErrors.fee_groups = "At least one fee must be selected";
-        }
-
-        // Documents - Check required documents
-        const missingDocs = masterDocuments
-          .filter(doc => doc.is_required && !formData.documents_received[doc.name])
-          .map(doc => doc.name);
-        if (missingDocs.length > 0) newErrors.documents_received = `Missing required documents: ${missingDocs.join(', ')}`;
-
-        // Transport Conditional
-        if (formData.transport_required) {
-          if (!formData.transport_route_id) newErrors.transport_route_id = "Transport Route is required";
-          if (!formData.transport_pickup_point_id) newErrors.transport_pickup_point_id = "Pickup Point is required";
-        }
-
-        // Hostel Conditional
-        if (formData.hostel_required) {
-          if (!formData.hostel_id) newErrors.hostel_id = "Hostel Name is required";
-          if (!formData.hostel_room_type) newErrors.hostel_room_type = "Room Type is required";
-        }
-
-        setErrors(newErrors);
-        const valid = Object.keys(newErrors).length === 0 && !rollNumberError && !studentEmailError && !fatherEmailError && !aadharError && !studentUsernameError && !parentUsernameError;
-        setIsFormValid(valid);
-      };
-
-      validateForm();
-    }, 300);
+    // Update only login-related errors, preserve other errors
+    setErrors(prev => {
+      const { password, retype_password, parent_password, parent_retype_password, ...otherErrors } = prev;
+      return { ...otherErrors, ...loginErrors };
+    });
+  }, [formData.password, formData.retype_password, formData.parent_password, formData.parent_retype_password]);
+  
+  // Full form validation function - called only on save
+  const validateFullForm = useCallback(() => {
+    const newErrors = {};
     
-    // Cleanup timeout on unmount
-    return () => {
-      if (validationTimeoutRef.current) {
-        clearTimeout(validationTimeoutRef.current);
-      }
+    // Field name mapping: API field name -> formData key
+    const fieldNameMap = {
+      'class': 'class_id',
+      'section': 'section_id',
+      'session': 'session_id',
+      'category': 'category_id',
+      'admission_no': 'school_code',
     };
-  }, [formData, customFieldValues, allFields, pincode, profilePictureFile, rollNumberError, studentEmailError, fatherEmailError, aadharError, masterDocuments, studentUsernameError, parentUsernameError, feeGroups]);
+    
+    allFields.forEach(field => {
+       if(!field.is_enabled) return;
+       if(field.is_required) {
+           // Use mapped field name if exists, otherwise use original
+           const mappedFieldName = fieldNameMap[field.field_name] || field.field_name;
+           const val = field.is_system ? formData[mappedFieldName] : customFieldValues[field.field_key];
+           const isEmpty = val === null || val === undefined || val === '' || (Array.isArray(val) && val.length === 0);
+           if(isEmpty) {
+               const errKey = field.is_system ? mappedFieldName : `custom_${field.id}`;
+               newErrors[errKey] = `${field.field_label} is required`;
+           }
+       }
+       
+       if(field.field_name === 'pincode' && pincode && !/^\d{6}$/.test(pincode)) newErrors.pincode = "Valid 6-digit Pincode is required";
+       if((field.field_name === 'phone' || field.field_name === 'father_phone') && formData[field.field_name] && !/^\d{10}$/.test(formData[field.field_name])) {
+           newErrors[field.field_name] = "Valid 10-digit Mobile No is required";
+       }
+       if((field.field_name === 'national_id_no' || field.field_name === 'father_aadhar_no' || field.field_name === 'mother_aadhar_no') && formData[field.field_name] && formData[field.field_name].length !== 12) {
+           newErrors[field.field_name] = "Valid 12-digit Aadhar No is required";
+       }
+    });
+
+    // Password Validations
+    if (formData.password && formData.password.length < 6) newErrors.password = "Password must be at least 6 characters";
+    if (formData.password !== formData.retype_password) newErrors.retype_password = "Passwords do not match";
+    if (formData.parent_password && formData.parent_password.length < 6) newErrors.parent_password = "Password must be at least 6 characters";
+    if (formData.parent_password !== formData.parent_retype_password) newErrors.parent_retype_password = "Passwords do not match";
+
+    // Fees - Only validate if there are fee groups defined
+    if (feeGroups.length > 0 && !Object.values(formData.fee_groups).some(v => v)) {
+      newErrors.fee_groups = "At least one fee must be selected";
+    }
+
+    // Documents - Check required documents
+    const missingDocs = masterDocuments
+      .filter(doc => doc.is_required && !formData.documents_received[doc.name])
+      .map(doc => doc.name);
+    if (missingDocs.length > 0) newErrors.documents_received = `Missing required documents: ${missingDocs.join(', ')}`;
+
+    // Transport Conditional
+    if (formData.transport_required) {
+      if (!formData.transport_route_id) newErrors.transport_route_id = "Transport Route is required";
+      if (!formData.transport_pickup_point_id) newErrors.transport_pickup_point_id = "Pickup Point is required";
+    }
+
+    // Hostel Conditional
+    if (formData.hostel_required) {
+      if (!formData.hostel_id) newErrors.hostel_id = "Hostel Name is required";
+      if (!formData.hostel_room_type) newErrors.hostel_room_type = "Room Type is required";
+    }
+
+    setErrors(newErrors);
+    const valid = Object.keys(newErrors).length === 0 && !rollNumberError && !studentEmailError && !fatherEmailError && !aadharError && !studentUsernameError && !parentUsernameError;
+    setIsFormValid(valid);
+    return valid;
+  }, [formData, customFieldValues, allFields, pincode, rollNumberError, studentEmailError, fatherEmailError, aadharError, masterDocuments, studentUsernameError, parentUsernameError, feeGroups]);
 
   const handleBlur = (field) => {
     setTouched(prev => ({ ...prev, [field]: true }));
@@ -1189,11 +1201,12 @@ const StudentAdmission = () => {
     setParentUsernameError('');
     setExistingParentData(null);
     try {
-      // Check if parent with this phone exists - use phone column instead of username
+      // Check if parent with this phone exists in profiles table
+      // Only check phone column since school_code and students don't exist in profiles table
+      // REMOVED .eq('role', 'parent') as the column might not exist or be named differently
       const { data, error } = await supabase
         .from('profiles')
-        .select('id, full_name, phone, students')
-        .eq('role', 'parent')
+        .select('id, full_name, phone')
         .eq('phone', phone)
         .limit(1);
       
@@ -1204,7 +1217,13 @@ const StudentAdmission = () => {
       }
       if (data && data.length > 0) {
         const parent = data[0];
-        const studentCount = Array.isArray(parent.students) ? parent.students.length : 0;
+        // Count students linked to this parent from student_profiles
+        const { data: studentsData } = await supabase
+          .from('student_profiles')
+          .select('id')
+          .eq('father_phone', phone)
+          .eq('branch_id', selectedBranch.id);
+        const studentCount = studentsData?.length || 0;
         setExistingParentData({
           id: parent.id,
           name: parent.full_name,
@@ -1665,13 +1684,31 @@ const StudentAdmission = () => {
   };
   
   const handleSave = async () => {
-    if (!isFormValid) {
+    // Run full validation on save
+    const isValid = validateFullForm();
+    
+    if (!isValid) {
         const firstErrorField = Object.keys(errors)[0];
         if(firstErrorField) {
             const element = document.querySelector(`[name="${firstErrorField}"], [id="${firstErrorField}"]`);
             if(element) element.focus();
         }
-        toast({ variant: 'destructive', title: 'Validation Error', description: 'Please fill all mandatory fields marked with *.' });
+        
+        // Detailed error message
+        const missingFields = Object.keys(errors).map(key => {
+             // Try to find label from allFields
+             const field = allFields.find(f => {
+                 const mapped = { 'class_id': 'class', 'section_id': 'section', 'session_id': 'session', 'category_id': 'category', 'school_code': 'admission_no' }[key]; 
+                 return f.field_name === key || f.field_name === mapped;
+             });
+             return field ? field.field_label : key.replace(/_/g, ' ');
+        }).join(', ');
+
+        toast({ 
+            variant: 'destructive', 
+            title: 'Validation Error', 
+            description: `Please fill mandatory fields: ${missingFields}` 
+        });
         return;
     }
 
@@ -1848,14 +1885,14 @@ const StudentAdmission = () => {
       {/* ✨ WORLD-CLASS Premium Header */}
       <div className="relative mb-10">
         {/* Animated Background Effects */}
-        <div className="absolute inset-0 overflow-hidden rounded-3xl">
+        <div className="absolute inset-0 overflow-hidden rounded-3xl pointer-events-none">
           <div className="absolute -top-24 -right-24 w-96 h-96 bg-gradient-to-br from-blue-500/30 via-purple-500/20 to-pink-500/10 rounded-full blur-3xl animate-pulse" />
           <div className="absolute -bottom-24 -left-24 w-96 h-96 bg-gradient-to-br from-emerald-500/20 via-teal-500/10 to-cyan-500/5 rounded-full blur-3xl animate-pulse delay-700" />
         </div>
         
         <div className="relative bg-gradient-to-br from-card/95 via-card/90 to-card/80 backdrop-blur-xl rounded-3xl border border-border/50 overflow-hidden">
           {/* Top Accent Line */}
-          <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500" />
+          <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 pointer-events-none" />
           
           <div className="p-8">
             <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
@@ -1863,12 +1900,12 @@ const StudentAdmission = () => {
               <div className="flex items-start gap-5">
                 {/* Premium Icon */}
                 <div className="relative flex-shrink-0">
-                  <div className="absolute inset-0 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl blur-xl opacity-50 animate-pulse" />
+                  <div className="absolute inset-0 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl blur-xl opacity-50 animate-pulse pointer-events-none" />
                   <div className="relative bg-gradient-to-br from-blue-500 via-indigo-500 to-purple-600 p-5 rounded-2xl shadow-2xl">
                     <GraduationCap className="h-10 w-10 text-white drop-shadow-lg" />
                   </div>
                   {/* Live Indicator */}
-                  <div className="absolute -top-1 -right-1">
+                  <div className="absolute -top-1 -right-1 pointer-events-none">
                     <span className="relative flex h-5 w-5">
                       <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
                       <span className="relative inline-flex rounded-full h-5 w-5 bg-gradient-to-r from-green-400 to-emerald-500 border-2 border-white shadow-lg"></span>
@@ -2167,8 +2204,16 @@ const StudentAdmission = () => {
                         <h3 className="text-lg font-bold text-blue-700 dark:text-blue-300">Father Details</h3>
                       </div>
                       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                        {fatherFields.map(field => <DynamicField key={field.id || field.key} field={field} />)}
-                        {fatherPhotos.map(field => <DynamicField key={field.id || field.key} field={field} />)}
+                        {fatherFields.map(field => (
+                            <React.Fragment key={field.id || field.key}>
+                                {renderDynamicField(field)}
+                            </React.Fragment>
+                        ))}
+                        {fatherPhotos.map(field => (
+                            <React.Fragment key={field.id || field.key}>
+                                {renderDynamicField(field)}
+                            </React.Fragment>
+                        ))}
                       </div>
                     </div>
                     
@@ -2181,17 +2226,33 @@ const StudentAdmission = () => {
                         <h3 className="text-lg font-bold text-pink-700 dark:text-pink-300">Mother Details</h3>
                       </div>
                       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                        {motherFields.map(field => <DynamicField key={field.id || field.key} field={field} />)}
-                        {motherPhotos.map(field => <DynamicField key={field.id || field.key} field={field} />)}
+                        {motherFields.map(field => (
+                            <React.Fragment key={field.id || field.key}>
+                                {renderDynamicField(field)}
+                            </React.Fragment>
+                        ))}
+                        {motherPhotos.map(field => (
+                            <React.Fragment key={field.id || field.key}>
+                                {renderDynamicField(field)}
+                            </React.Fragment>
+                        ))}
                       </div>
                     </div>
                   </>
                 ) : (
                   /* Simple 4-column grid - Photo integrated */
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                    {regularFields.map(field => <DynamicField key={field.id || field.key} field={field} />)}
+                    {regularFields.map(field => (
+                        <React.Fragment key={field.id || field.key}>
+                            {renderDynamicField(field)}
+                        </React.Fragment>
+                    ))}
                     {/* Photo in same grid */}
-                    {photoFields.map(field => <DynamicField key={field.id || field.key} field={field} />)}
+                    {photoFields.map(field => (
+                        <React.Fragment key={field.id || field.key}>
+                            {renderDynamicField(field)}
+                        </React.Fragment>
+                    ))}
                   </div>
                 )}
                 
@@ -2352,8 +2413,8 @@ const StudentAdmission = () => {
         <div className="sticky bottom-4 z-10">
           <div className="relative overflow-hidden bg-card/95 backdrop-blur-xl rounded-3xl border border-border/50 shadow-2xl">
             {/* Gradient Background */}
-            <div className="absolute inset-0 bg-gradient-to-r from-blue-500/5 via-purple-500/5 to-pink-500/5" />
-            <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-primary/50 to-transparent" />
+            <div className="absolute inset-0 bg-gradient-to-r from-blue-500/5 via-purple-500/5 to-pink-500/5 pointer-events-none" />
+            <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-primary/50 to-transparent pointer-events-none" />
             
             <div className="relative p-5">
               <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
@@ -2394,14 +2455,9 @@ const StudentAdmission = () => {
                   
                   <Button 
                     onClick={handleSave} 
-                    disabled={loading || isAadharChecking || !!rollNumberError || !isFormValid} 
+                    disabled={loading || isAadharChecking} 
                     size="lg"
-                    className={cn(
-                      "h-12 px-8 rounded-xl font-bold text-base transition-all duration-500 relative overflow-hidden group",
-                      isFormValid 
-                        ? "bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-600 hover:from-blue-600 hover:via-indigo-600 hover:to-purple-700 shadow-xl shadow-blue-500/25 hover:shadow-2xl hover:shadow-blue-500/40 hover:scale-105" 
-                        : "bg-gray-300 dark:bg-gray-700 cursor-not-allowed"
-                    )}
+                    className="h-12 px-8 rounded-xl font-bold text-base transition-all duration-500 relative overflow-hidden group bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-600 hover:from-blue-600 hover:via-indigo-600 hover:to-purple-700 shadow-xl shadow-blue-500/25 hover:shadow-2xl hover:shadow-blue-500/40 hover:scale-105"
                   >
                     {/* Button Shine Effect */}
                     <span className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
@@ -2431,7 +2487,7 @@ const StudentAdmission = () => {
         <AlertDialogContent className="max-w-lg p-0 overflow-hidden border-0 bg-transparent shadow-2xl">
           <div className="relative bg-gradient-to-br from-emerald-50 via-green-50 to-teal-50 dark:from-gray-900 dark:via-emerald-950 dark:to-green-950 rounded-3xl overflow-hidden">
             {/* Animated Background */}
-            <div className="absolute inset-0 overflow-hidden">
+            <div className="absolute inset-0 overflow-hidden pointer-events-none">
               <div className="absolute -top-32 -right-32 w-64 h-64 bg-gradient-to-br from-emerald-400/30 to-green-500/20 rounded-full blur-3xl animate-pulse" />
               <div className="absolute -bottom-32 -left-32 w-64 h-64 bg-gradient-to-br from-teal-400/20 to-cyan-500/10 rounded-full blur-3xl animate-pulse delay-500" />
             </div>
@@ -2440,14 +2496,14 @@ const StudentAdmission = () => {
               {/* Success Icon */}
               <div className="flex justify-center mb-6">
                 <div className="relative">
-                  <div className="absolute inset-0 bg-gradient-to-r from-emerald-400 to-green-500 rounded-full blur-2xl opacity-40 animate-pulse" />
+                  <div className="absolute inset-0 bg-gradient-to-r from-emerald-400 to-green-500 rounded-full blur-2xl opacity-40 animate-pulse pointer-events-none" />
                   <div className="relative bg-gradient-to-br from-emerald-400 via-green-500 to-teal-500 p-5 rounded-full shadow-2xl">
                     <Award className="w-12 h-12 text-white drop-shadow-lg" />
                   </div>
                   {/* Confetti Effect */}
-                  <div className="absolute -top-2 -left-2 w-4 h-4 bg-yellow-400 rounded-full animate-bounce" />
-                  <div className="absolute -top-1 -right-3 w-3 h-3 bg-pink-400 rounded-full animate-bounce delay-100" />
-                  <div className="absolute -bottom-2 -right-1 w-3 h-3 bg-blue-400 rounded-full animate-bounce delay-200" />
+                  <div className="absolute -top-2 -left-2 w-4 h-4 bg-yellow-400 rounded-full animate-bounce pointer-events-none" />
+                  <div className="absolute -top-1 -right-3 w-3 h-3 bg-pink-400 rounded-full animate-bounce delay-100 pointer-events-none" />
+                  <div className="absolute -bottom-2 -right-1 w-3 h-3 bg-blue-400 rounded-full animate-bounce delay-200 pointer-events-none" />
                 </div>
               </div>
               

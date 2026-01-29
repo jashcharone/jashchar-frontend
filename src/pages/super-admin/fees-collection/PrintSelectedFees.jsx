@@ -32,7 +32,7 @@ const PrintSelectedFees = () => {
 
   const handlePrint = useReactToPrint({
     content: () => printRef.current,
-    documentTitle: `Fees-Invoice-${printData?.student?.admission_no || studentId}`,
+    documentTitle: `Fees-Invoice-${printData?.student?.school_code || studentId}`,
   });
 
   useEffect(() => {
@@ -46,7 +46,7 @@ const PrintSelectedFees = () => {
 
       try {
         const [studentRes, mastersRes, settingsRes] = await Promise.all([
-          supabase.from('profiles').select('*, school:schools(*), class:classes(name), section:sections(name)').eq('id', studentId).eq('branch_id', selectedBranch.id).single(),
+          supabase.from('student_profiles').select('*, school:schools(*), class:classes!student_profiles_class_id_fkey(name), section:sections!student_profiles_section_id_fkey(name)').eq('id', studentId).eq('branch_id', selectedBranch.id).single(),
           supabase.from('fee_masters').select('*, fee_group:fee_group_id(name), fee_type:fee_type_id(name, code), due_date').in('id', feeMasterIds),
           supabase.from('print_settings').select('header_image_url, footer_content').eq('branch_id', branchId).eq('branch_id', selectedBranch.id).eq('type', 'fees_receipt').single(),
         ]);
@@ -135,7 +135,7 @@ const PrintSelectedFees = () => {
             <div className="flex justify-between items-start mb-6 text-sm">
               <div>
                 <p><strong>Student Name:</strong> {student.full_name}</p>
-                <p><strong>Admission No:</strong> {student.admission_no}</p>
+                <p><strong>Admission No:</strong> {student.school_code}</p>
                 <p><strong>Father Name:</strong> {student.father_name}</p>
                 <p><strong>Class:</strong> {student.class?.name} ({student.section?.name})</p>
               </div>

@@ -138,7 +138,7 @@ const HomeworkReport = () => {
       // 2. Fetch All Students in Class/Section (Base Data) - Filter by session
       let studentsQuery = supabase
         .from('student_profiles')
-        .select('id, full_name, admission_no, phone, father_name, dob, gender')
+        .select('id, full_name, school_code, phone, father_name, dob, gender')
         .eq('branch_id', user.profile.branch_id)
         .eq('class_id', filters.class_id)
         .eq('section_id', filters.section_id);

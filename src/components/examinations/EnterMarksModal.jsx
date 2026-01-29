@@ -53,11 +53,11 @@ const EnterMarksModal = ({ isOpen, onClose, exam, branchId }) => {
     const fetchStudentsAndMarks = async (subjectId) => {
         setLoading(true);
         try {
-            // Fetch students assigned to this exam
+            // Fetch students assigned to this exam - use student_profiles
             const { data: assignedStudents, error: studentError } = await supabase
                 .from('exam_students')
                 .select(`
-                    student:profiles(id, full_name, roll_number, admission_no, father_name)
+                    student:student_profiles(id, full_name, roll_number, school_code, father_name)
                 `)
                 .eq('exam_id', exam.id);
 
@@ -132,7 +132,7 @@ const EnterMarksModal = ({ isOpen, onClose, exam, branchId }) => {
                 const m = marks[s.id] || {};
                 return [
                     s.id,
-                    s.admission_no || '',
+                    s.school_code || '',
                     s.roll_number || '',
                     `"${s.full_name}"`,
                     `"${s.father_name || ''}"`,
@@ -233,7 +233,7 @@ const EnterMarksModal = ({ isOpen, onClose, exam, branchId }) => {
                                         const m = marks[student.id] || {};
                                         return (
                                             <TableRow key={student.id}>
-                                                <TableCell>{student.admission_no}</TableCell>
+                                                <TableCell>{student.school_code}</TableCell>
                                                 <TableCell>{student.roll_number}</TableCell>
                                                 <TableCell className="font-medium">{student.full_name}</TableCell>
                                                 <TableCell>{student.father_name}</TableCell>

@@ -93,7 +93,7 @@ const StudentTransportFees = () => {
     let query = supabase
       .from('student_profiles')
       .select(`
-        id, full_name, admission_no, roll_number,
+        id, full_name, school_code, roll_number,
         class:class_id(name),
         section:section_id(name),
         transport_details_id
@@ -109,7 +109,7 @@ const StudentTransportFees = () => {
     }
 
     if (searchFilters.search) {
-      query = query.or(`full_name.ilike.%${searchFilters.search}%,admission_no.ilike.%${searchFilters.search}%`);
+      query = query.or(`full_name.ilike.%${searchFilters.search}%,school_code.ilike.%${searchFilters.search}%`);
     }
 
     const { data: studentData, error } = await query.order('full_name');
@@ -361,7 +361,7 @@ const StudentTransportFees = () => {
                       <TableCell className="font-medium">
                         {student.full_name}
                       </TableCell>
-                      <TableCell>{student.admission_no || '-'}</TableCell>
+                      <TableCell>{student.school_code || '-'}</TableCell>
                       <TableCell>
                         {student.class?.name || '-'}
                         {student.section?.name ? ` - ${student.section.name}` : ''}

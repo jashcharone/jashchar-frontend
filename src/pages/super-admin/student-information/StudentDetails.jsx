@@ -77,7 +77,6 @@ const StudentDetails = () => {
             const { data: classData, error: classError } = await supabase
                 .from('classes')
                 .select('id, name')
-                .eq('branch_id', branchId)
                 .eq('branch_id', selectedBranch.id);
             if (classError) toast({ variant: 'destructive', title: 'Error fetching classes' });
             else setClasses(classData || []);
@@ -123,7 +122,6 @@ const StudentDetails = () => {
             class:classes!student_profiles_class_id_fkey( name ),
             section:sections!student_profiles_section_id_fkey( name )
         `, { count: 'exact' })
-        .eq('branch_id', branchId)
         .eq('branch_id', selectedBranch.id)
         .eq('role_id', roleData.id)
         .eq('class_id', filters.class_id)

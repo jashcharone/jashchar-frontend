@@ -62,7 +62,6 @@ const StudentCategories = ({ embedded = false }) => {
     const { data, error } = await supabase
       .from('student_categories')
       .select('*')
-      .eq('branch_id', user.profile.branch_id)
       .eq('branch_id', selectedBranch.id)
       .order('name');
     
@@ -81,7 +80,6 @@ const StudentCategories = ({ embedded = false }) => {
     const { error } = await supabase
       .from('student_categories')
       .insert([{
-        branch_id: user.profile.branch_id,
         branch_id: selectedBranch.id,
         name: formData.name.trim()
       }]);

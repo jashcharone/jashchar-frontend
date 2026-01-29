@@ -53,7 +53,7 @@ const QuickFees = () => {
     useEffect(() => {
         if (!branchId || !selectedBranch) return;
         const fetchClassesAndSections = async () => {
-            const { data: classesData } = await supabase.from('classes').select('id, name').eq('branch_id', branchId).eq('branch_id', selectedBranch.id);
+            const { data: classesData } = await supabase.from('classes').select('id, name').eq('branch_id', selectedBranch.id);
             setClasses(classesData || []);
         };
         fetchClassesAndSections();
@@ -79,12 +79,11 @@ const QuickFees = () => {
     useEffect(() => {
         if (selectedClass && currentSessionId && selectedBranch) {
             const fetchStudents = async () => {
-                // Filter by current session and branch
-                let query = supabase.from('profiles')
-                    .select('id, full_name, admission_no, session_id')
+                // Filter by current session and branch - use student_profiles table
+                let query = supabase.from('student_profiles')
+                    .select('id, full_name, school_code, session_id')
                     .eq('branch_id', selectedBranch.id)
                     .eq('class_id', selectedClass)
-                    .eq('status', 'active')
                     .eq('session_id', currentSessionId);
 
                 if (selectedSection && selectedSection !== 'all') {
@@ -128,7 +127,7 @@ const QuickFees = () => {
     const checkForAssignedFees = async (studentId, student) => {
         if (!student) return;
         setFetching(true);
-        const groupName = `Quick Fees - ${student.admission_no || student.id}`;
+        const groupName = `Quick Fees - ${student.school_code || student.id}`;
         const { data: feeGroups, error } = await supabase.from('fee_groups').select('id').eq('name', groupName).eq('branch_id', branchId);
 
         if (error) {
@@ -188,9 +187,9 @@ const QuickFees = () => {
         
         if (Number(feeData.firstInstallment) > 0) {
              generated.push({
-                fee_group: `Quick Fees - ${selectedStudent.admission_no || selectedStudent.id}`,
+                fee_group: `Quick Fees - ${selectedStudent.school_code || selectedStudent.id}`,
                 fee_type: 'Installment-1',
-                fee_code: `QF-${selectedStudent.admission_no || selectedStudent.id}-1`,
+                fee_code: `QF-${selectedStudent.school_code || selectedStudent.id}-1`,
                 due_date: new Date().toISOString().split('T')[0], // Due today or configurable? Assuming today for 1st.
                 fine_type: feeData.fineType,
                 fine_value: feeData.fineValue || null,
@@ -207,9 +206,9 @@ const QuickFees = () => {
             const dueDate = setDate(nextMonth, Number(feeData.monthlyDueDate));
             
             generated.push({
-                fee_group: `Quick Fees - ${selectedStudent.admission_no || selectedStudent.id}`,
+                fee_group: `Quick Fees - ${selectedStudent.school_code || selectedStudent.id}`,
                 fee_type: `Installment-${i + (Number(feeData.firstInstallment) > 0 ? 2 : 1)}`,
-                fee_code: `QF-${selectedStudent.admission_no || selectedStudent.id}-${i + (Number(feeData.firstInstallment) > 0 ? 2 : 1)}`,
+                fee_code: `QF-${selectedStudent.school_code || selectedStudent.id}-${i + (Number(feeData.firstInstallment) > 0 ? 2 : 1)}`,
                 due_date: dueDate.toISOString().split('T')[0],
                 fine_type: feeData.fineType,
                 fine_value: feeData.fineValue || null,
@@ -225,7 +224,7 @@ const QuickFees = () => {
         setLoading(true);
         try {
             // 1. Create Fee Group
-            const groupName = `Quick Fees - ${selectedStudent.admission_no || selectedStudent.id}`;
+            const groupName = `Quick Fees - ${selectedStudent.school_code || selectedStudent.id}`;
             const { data: feeGroup, error: groupError } = await supabase.from('fee_groups').insert({ branch_id: selectedBranch.id, name: groupName, description: 'Auto-generated quick fees' }).select().single();
             if (groupError) throw groupError;
 
@@ -361,7 +360,7 @@ const QuickFees = () => {
                         <Select value={selectedStudentId} onValueChange={setSelectedStudentId} disabled={!selectedClass}>
                             <SelectTrigger><SelectValue placeholder="Select Student" /></SelectTrigger>
                             <SelectContent>
-                                {students.map(s => <SelectItem key={s.id} value={s.id}>{s.full_name} ({s.admission_no || '-'})</SelectItem>)}
+                                {students.map(s => <SelectItem key={s.id} value={s.id}>{s.full_name} ({s.school_code || '-'})</SelectItem>)}
                             </SelectContent>
                         </Select>
                     </div>

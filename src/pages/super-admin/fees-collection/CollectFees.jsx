@@ -91,7 +91,7 @@ const CollectFees = () => {
             // Filter by current session
             let query = supabase
                 .from('student_profiles')
-                .select('id, full_name, father_name, phone, admission_no, session_id, classes!student_profiles_class_id_fkey(name), sections!student_profiles_section_id_fkey(name)')
+                .select('id, full_name, father_name, phone, school_code, session_id, classes!student_profiles_class_id_fkey(name), sections!student_profiles_section_id_fkey(name)')
                 .eq('branch_id', selectedBranch.id)
                 .eq('class_id', selectedClass)
                 .eq('session_id', currentSessionId);
@@ -101,7 +101,7 @@ const CollectFees = () => {
             }
 
             if (keyword) {
-                query = query.or(`full_name.ilike.%${keyword}%,admission_no.ilike.%${keyword}%`);
+                query = query.or(`full_name.ilike.%${keyword}%,school_code.ilike.%${keyword}%`);
             }
 
             const { data, error } = await query.order('full_name');
@@ -184,7 +184,7 @@ const CollectFees = () => {
                                     <tbody>
                                         {students.length > 0 ? students.map(student => (
                                             <tr key={student.id} className="border-b hover:bg-muted/50 transition-colors">
-                                                <td className="p-2">{student.admission_no || '-'}</td>
+                                                <td className="p-2">{student.school_code || '-'}</td>
                                                 <td className="p-2 font-medium">{student.full_name}</td>
                                                 <td className="p-2">{student.classes?.name} {student.sections?.name ? `(${student.sections.name})` : ''}</td>
                                                 <td className="p-2">{student.father_name || '-'}</td>

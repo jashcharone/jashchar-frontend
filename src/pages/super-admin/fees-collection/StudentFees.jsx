@@ -336,7 +336,7 @@ const StudentFees = () => {
                             <div className="flex justify-between items-start">
                                 <div>
                                     <CardTitle>{student.full_name}</CardTitle>
-                                    <p className="text-sm text-muted-foreground">Admission No: {student.admission_no}</p>
+                                    <p className="text-sm text-muted-foreground">Admission No: {student.school_code}</p>
                                     <p className="text-sm text-muted-foreground">Class: {student.classes?.name} ({student.sections?.name})</p>
                                     <p className="text-sm text-muted-foreground">Father: {student.father_name}</p>
                                 </div>

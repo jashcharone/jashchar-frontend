@@ -55,9 +55,10 @@ const FeesStatementReport = () => {
         setSelectedStudent('');
         return;
       }
-      const { data, error } = await supabase.from('profiles').select('id, full_name').eq('class_id', selectedClass).eq('section_id', selectedSection);
+      // Use student_profiles table for student data
+      const { data, error } = await supabase.from('student_profiles').select('id, full_name').eq('class_id', selectedClass).eq('section_id', selectedSection);
       if (error) toast({ variant: 'destructive', title: 'Error fetching students' });
-      else setStudents(data);
+      else setStudents(data || []);
     };
     fetchStudents();
   }, [selectedClass, selectedSection, toast]);

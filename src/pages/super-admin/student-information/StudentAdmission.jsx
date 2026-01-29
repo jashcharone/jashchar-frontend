@@ -395,6 +395,12 @@ const StudentAdmission = () => {
   const [isCheckingParentUsername, setIsCheckingParentUsername] = useState(false);
   const [parentUsernameError, setParentUsernameError] = useState('');
   const [existingParentData, setExistingParentData] = useState(null); // Stores existing parent info if found
+  
+  // Password visibility states
+  const [showStudentPassword, setShowStudentPassword] = useState(false);
+  const [showStudentRetypePassword, setShowStudentRetypePassword] = useState(false);
+  const [showParentPassword, setShowParentPassword] = useState(false);
+  const [showParentRetypePassword, setShowParentRetypePassword] = useState(false);
 
   const { isChecking: isStudentEmailChecking, error: studentEmailError, validateEmail: validateStudentEmail, resetValidation: resetStudentEmailValidation } = useEmailValidation();
   const { isChecking: isFatherEmailChecking, error: fatherEmailError, validateEmail: validateFatherEmail, resetValidation: resetFatherEmailValidation } = useEmailValidation();
@@ -712,20 +718,103 @@ const StudentAdmission = () => {
               </SmartField>
              );
         case 'password':
-        case 'retype_password':
-        case 'parent_password':
-        case 'parent_retype_password':
             return (
               <SmartField label={label} required={isRequired} error={errors[field.field_name]} touched={touched[field.field_name]} icon={Key} hint={schoolSettings?.password_auto_generation ? "Auto-generated" : null}>
-                <Input 
-                  type="password" 
-                  value={formData[field.field_name]} 
-                  placeholder="••••••••"
-                  onChange={e => handleChange(field.field_name, e.target.value)} 
-                  onBlur={() => handleBlur(field.field_name)} 
-                  disabled={schoolSettings?.password_auto_generation} 
-                  className={cn("h-11", schoolSettings?.password_auto_generation && "bg-muted/50")}
-                />
+                <div className="relative">
+                  <Input 
+                    type={showStudentPassword ? "text" : "password"} 
+                    value={formData[field.field_name]} 
+                    placeholder="Enter password"
+                    onChange={e => handleChange(field.field_name, e.target.value)} 
+                    onBlur={() => handleBlur(field.field_name)} 
+                    disabled={schoolSettings?.password_auto_generation} 
+                    className={cn("h-11 pr-10", schoolSettings?.password_auto_generation && "bg-muted/50")}
+                  />
+                  <Button 
+                    type="button" 
+                    variant="ghost" 
+                    size="sm" 
+                    className="absolute right-2 top-1/2 -translate-y-1/2 h-7 w-7 p-0 hover:bg-primary/10"
+                    onClick={() => setShowStudentPassword(!showStudentPassword)}
+                  >
+                    {showStudentPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </Button>
+                </div>
+              </SmartField>
+            );
+        case 'retype_password':
+            return (
+              <SmartField label={label} required={isRequired} error={errors[field.field_name]} touched={touched[field.field_name]} icon={Key}>
+                <div className="relative">
+                  <Input 
+                    type={showStudentRetypePassword ? "text" : "password"} 
+                    value={formData[field.field_name]} 
+                    placeholder="Re-type password"
+                    onChange={e => handleChange(field.field_name, e.target.value)} 
+                    onBlur={() => handleBlur(field.field_name)} 
+                    disabled={schoolSettings?.password_auto_generation} 
+                    className={cn("h-11 pr-10", schoolSettings?.password_auto_generation && "bg-muted/50")}
+                  />
+                  <Button 
+                    type="button" 
+                    variant="ghost" 
+                    size="sm" 
+                    className="absolute right-2 top-1/2 -translate-y-1/2 h-7 w-7 p-0 hover:bg-primary/10"
+                    onClick={() => setShowStudentRetypePassword(!showStudentRetypePassword)}
+                  >
+                    {showStudentRetypePassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </Button>
+                </div>
+              </SmartField>
+            );
+        case 'parent_password':
+            return (
+              <SmartField label={label} required={isRequired} error={errors[field.field_name]} touched={touched[field.field_name]} icon={Key} hint={schoolSettings?.password_auto_generation ? "Auto-generated" : null}>
+                <div className="relative">
+                  <Input 
+                    type={showParentPassword ? "text" : "password"} 
+                    value={formData[field.field_name]} 
+                    placeholder="Enter password"
+                    onChange={e => handleChange(field.field_name, e.target.value)} 
+                    onBlur={() => handleBlur(field.field_name)} 
+                    disabled={schoolSettings?.password_auto_generation} 
+                    className={cn("h-11 pr-10", schoolSettings?.password_auto_generation && "bg-muted/50")}
+                  />
+                  <Button 
+                    type="button" 
+                    variant="ghost" 
+                    size="sm" 
+                    className="absolute right-2 top-1/2 -translate-y-1/2 h-7 w-7 p-0 hover:bg-primary/10"
+                    onClick={() => setShowParentPassword(!showParentPassword)}
+                  >
+                    {showParentPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </Button>
+                </div>
+              </SmartField>
+            );
+        case 'parent_retype_password':
+            return (
+              <SmartField label={label} required={isRequired} error={errors[field.field_name]} touched={touched[field.field_name]} icon={Key}>
+                <div className="relative">
+                  <Input 
+                    type={showParentRetypePassword ? "text" : "password"} 
+                    value={formData[field.field_name]} 
+                    placeholder="Re-type password"
+                    onChange={e => handleChange(field.field_name, e.target.value)} 
+                    onBlur={() => handleBlur(field.field_name)} 
+                    disabled={schoolSettings?.password_auto_generation} 
+                    className={cn("h-11 pr-10", schoolSettings?.password_auto_generation && "bg-muted/50")}
+                  />
+                  <Button 
+                    type="button" 
+                    variant="ghost" 
+                    size="sm" 
+                    className="absolute right-2 top-1/2 -translate-y-1/2 h-7 w-7 p-0 hover:bg-primary/10"
+                    onClick={() => setShowParentRetypePassword(!showParentRetypePassword)}
+                  >
+                    {showParentRetypePassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </Button>
+                </div>
               </SmartField>
             );
         case 'religion':
@@ -1973,6 +2062,9 @@ const StudentAdmission = () => {
           const hasFields = sectionFields.length > 0;
           const isAcademic = section.key === 'academic_details';
           
+          // Skip mother_details as it's combined with father_details
+          if (section.key === 'mother_details') return null;
+          
           // Assign gradient colors based on section type
           const sectionGradients = {
             'academic_details': 'blue',
@@ -1980,7 +2072,7 @@ const StudentAdmission = () => {
             'address_details': 'green',
             'student_login': 'orange',
             'parent_login': 'orange',
-            'father_details': 'blue',
+            'father_details': 'blue', // Now contains both Father & Mother
             'mother_details': 'pink',
             'guardian_details': 'purple',
             'additional_details': 'green',
@@ -1988,18 +2080,68 @@ const StudentAdmission = () => {
           
           if (!hasFields && !isAcademic) return null;
 
+          // For father_details, also include mother_details fields
+          let combinedFields = sectionFields;
+          let combinedTitle = section.label;
+          if (section.key === 'father_details') {
+            const motherSection = formSections.find(s => s.key === 'mother_details');
+            const motherFields = allFields.filter(f => f.section_key === 'mother_details').sort((a,b) => a.sort_order - b.sort_order);
+            combinedFields = [...sectionFields, ...motherFields];
+            combinedTitle = 'Parents Details'; // Combined title
+          }
+          
           // Separate photo fields from regular fields for better layout
-          const photoFields = sectionFields.filter(f => ['student_photo', 'father_photo', 'mother_photo', 'guardian_photo'].includes(f.field_name));
-          const regularFields = sectionFields.filter(f => !['student_photo', 'father_photo', 'mother_photo', 'guardian_photo'].includes(f.field_name));
+          const photoFields = combinedFields.filter(f => ['student_photo', 'father_photo', 'mother_photo', 'guardian_photo'].includes(f.field_name));
+          const regularFields = combinedFields.filter(f => !['student_photo', 'father_photo', 'mother_photo', 'guardian_photo'].includes(f.field_name));
+          
+          // For combined Parents Details, separate Father and Mother fields for cleaner display
+          const fatherFields = regularFields.filter(f => f.section_key === 'father_details');
+          const motherFields = regularFields.filter(f => f.section_key === 'mother_details');
+          const fatherPhotos = photoFields.filter(f => f.field_name === 'father_photo');
+          const motherPhotos = photoFields.filter(f => f.field_name === 'mother_photo');
+          const otherPhotos = photoFields.filter(f => !['father_photo', 'mother_photo'].includes(f.field_name));
+          const isCombinedParents = section.key === 'father_details' && motherFields.length > 0;
 
           return (
-            <SectionBox key={section.key} icon={ICON_MAP[section.icon] || User} title={section.label} gradient={sectionGradients[section.key] || 'blue'}>
-                {/* Simple 4-column grid - Photo integrated */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                  {regularFields.map(field => <DynamicField key={field.id || field.key} field={field} />)}
-                  {/* Photo in same grid */}
-                  {photoFields.map(field => <DynamicField key={field.id || field.key} field={field} />)}
-                </div>
+            <SectionBox key={section.key} icon={ICON_MAP[section.icon] || User} title={combinedTitle} gradient={sectionGradients[section.key] || 'blue'}>
+                {isCombinedParents ? (
+                  <>
+                    {/* Father Section */}
+                    <div className="mb-6">
+                      <div className="flex items-center gap-3 mb-4 pb-3 border-b border-blue-200 dark:border-blue-800">
+                        <div className="bg-gradient-to-br from-blue-500 to-indigo-600 p-2.5 rounded-xl">
+                          <User className="h-5 w-5 text-white" />
+                        </div>
+                        <h3 className="text-lg font-bold text-blue-700 dark:text-blue-300">Father Details</h3>
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                        {fatherFields.map(field => <DynamicField key={field.id || field.key} field={field} />)}
+                        {fatherPhotos.map(field => <DynamicField key={field.id || field.key} field={field} />)}
+                      </div>
+                    </div>
+                    
+                    {/* Mother Section */}
+                    <div>
+                      <div className="flex items-center gap-3 mb-4 pb-3 border-b border-pink-200 dark:border-pink-800">
+                        <div className="bg-gradient-to-br from-pink-500 to-rose-600 p-2.5 rounded-xl">
+                          <Heart className="h-5 w-5 text-white" />
+                        </div>
+                        <h3 className="text-lg font-bold text-pink-700 dark:text-pink-300">Mother Details</h3>
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                        {motherFields.map(field => <DynamicField key={field.id || field.key} field={field} />)}
+                        {motherPhotos.map(field => <DynamicField key={field.id || field.key} field={field} />)}
+                      </div>
+                    </div>
+                  </>
+                ) : (
+                  /* Simple 4-column grid - Photo integrated */
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    {regularFields.map(field => <DynamicField key={field.id || field.key} field={field} />)}
+                    {/* Photo in same grid */}
+                    {photoFields.map(field => <DynamicField key={field.id || field.key} field={field} />)}
+                  </div>
+                )}
                 
                 {/* Academic Extra: Siblings */}
                 {isAcademic && (

@@ -55,7 +55,7 @@ const ASSIGNMENT_TYPES = [
   { value: 'both', label: 'Both (Master Admin + Plans)', description: 'Available for Master Admin AND schools based on subscription plan', icon: 'Globe', color: 'green' }
 ];
 
-const PLAN_OPTIONS = ['basic', 'standard', 'premium', 'enterprise'];
+// PLAN_OPTIONS - now loaded dynamically from database
 
 const AddEditModule = () => {
   const navigate = useNavigate();
@@ -70,6 +70,8 @@ const AddEditModule = () => {
   const [organizations, setOrganizations] = useState([]);
   const [branches, setBranches] = useState([]);
   const [loadingOrgs, setLoadingOrgs] = useState(false);
+  const [subscriptionPlans, setSubscriptionPlans] = useState([]);
+  const [loadingPlans, setLoadingPlans] = useState(true);
 
   const [formData, setFormData] = useState({
     name: '',
@@ -102,10 +104,41 @@ const AddEditModule = () => {
 
   const [errors, setErrors] = useState({});
 
-  // Load parent modules for dropdown
+  // Load parent modules and subscription plans
   useEffect(() => {
     loadParentModules();
+    loadSubscriptionPlans();
   }, []);
+
+  // Load subscription plans from database
+  const loadSubscriptionPlans = async () => {
+    try {
+      setLoadingPlans(true);
+      const baseUrl = import.meta.env.VITE_API_URL || '';
+      const token = localStorage.getItem('token');
+      
+      const response = await fetch(`${baseUrl}/api/subscriptions/plans`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        const plans = Array.isArray(data) ? data : (Array.isArray(data?.data) ? data.data : []);
+        // Filter only active plans
+        const activePlans = plans.filter(p => p.status === true || p.status === 'active');
+        setSubscriptionPlans(activePlans);
+        console.log('📋 Loaded subscription plans:', activePlans.length);
+      } else {
+        console.error('Failed to load plans:', response.status);
+        setSubscriptionPlans([]);
+      }
+    } catch (error) {
+      console.error('Error loading subscription plans:', error);
+      setSubscriptionPlans([]);
+    } finally {
+      setLoadingPlans(false);
+    }
+  };
 
   // Load existing module if editing
   useEffect(() => {
@@ -1164,26 +1197,36 @@ const AddEditModule = () => {
                    {errors.default_plans && <p className="text-sm text-red-500 mb-2">{errors.default_plans}</p>}
                    
                    <div className="space-y-2">
-                    {PLAN_OPTIONS.map(plan => {
-                      const plansArray = Array.isArray(formData.default_plans) ? formData.default_plans : [];
-                      const isSelected = plansArray.includes(plan);
-                      return (
-                        <div
-                          key={plan}
-                          onClick={() => togglePlan(plan)}
-                          className={`flex items-center justify-between p-3 rounded-lg border cursor-pointer transition-all ${
-                             isSelected
-                              ? 'bg-purple-50 border-purple-200 dark:bg-purple-900/20 dark:border-purple-800'
-                              : 'bg-white border-gray-200 dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700'
-                          }`}
-                        >
-                           <span className="font-medium text-gray-700 dark:text-gray-200 capitalize">{plan}</span>
-                           <div className={`w-5 h-5 rounded-full border flex items-center justify-center ${isSelected ? 'bg-purple-500 border-purple-500 text-white' : 'border-gray-300 dark:border-gray-600'}`}>
-                             {isSelected && <Check className="w-3.5 h-3.5" />}
-                           </div>
-                        </div>
-                      );
-                    })}
+                    {loadingPlans ? (
+                      <div className="flex items-center justify-center py-4">
+                        <Loader2 className="w-5 h-5 animate-spin text-purple-500" />
+                        <span className="ml-2 text-sm text-gray-500">Loading plans...</span>
+                      </div>
+                    ) : subscriptionPlans.length === 0 ? (
+                      <p className="text-sm text-gray-500 text-center py-4">No subscription plans found</p>
+                    ) : (
+                      subscriptionPlans.map(plan => {
+                        const plansArray = Array.isArray(formData.default_plans) ? formData.default_plans : [];
+                        const planSlug = plan.slug || plan.name?.toLowerCase();
+                        const isSelected = plansArray.includes(planSlug);
+                        return (
+                          <div
+                            key={plan.id || planSlug}
+                            onClick={() => togglePlan(planSlug)}
+                            className={`flex items-center justify-between p-3 rounded-lg border cursor-pointer transition-all ${
+                               isSelected
+                                ? 'bg-purple-50 border-purple-200 dark:bg-purple-900/20 dark:border-purple-800'
+                                : 'bg-white border-gray-200 dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700'
+                            }`}
+                          >
+                             <span className="font-medium text-gray-700 dark:text-gray-200">{plan.name}</span>
+                             <div className={`w-5 h-5 rounded-full border flex items-center justify-center ${isSelected ? 'bg-purple-500 border-purple-500 text-white' : 'border-gray-300 dark:border-gray-600'}`}>
+                               {isSelected && <Check className="w-3.5 h-3.5" />}
+                             </div>
+                          </div>
+                        );
+                      })
+                    )}
                   </div>
                 </div>
               </div>

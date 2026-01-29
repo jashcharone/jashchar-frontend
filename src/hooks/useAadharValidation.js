@@ -18,11 +18,11 @@ export const useAadharValidation = (initialError = '') => {
     setIsChecking(true);
     validationTimeout.current = setTimeout(async () => {
       try {
-        // Check in student_profiles table using national_id_no column
+        // Check in student_profiles table using aadhar_no column
         const { data, error: dbError } = await supabase
           .from('student_profiles')
           .select('id, first_name, last_name')
-          .eq('national_id_no', aadharNumber)
+          .eq('aadhar_no', aadharNumber)
           .limit(1);
 
         if (dbError) {

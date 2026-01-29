@@ -82,8 +82,35 @@ const MediaSelectorModal = ({ isOpen, onClose, onSelect, allowMultiple = false, 
         }
       }
 
-      // 3. For Master Admin, also fetch SaaS assets
+      // 3. For Master Admin, also fetch platform files from platform-files bucket
       if (isMasterAdmin) {
+        try {
+          const { data: platformFiles, error: platformError } = await supabase.storage
+            .from('platform-files')
+            .list('', {
+              limit: 100,
+              sortBy: { column: 'created_at', order: 'desc' },
+            });
+
+          if (!platformError && platformFiles?.length > 0) {
+            const mappedPlatform = platformFiles
+              .filter(f => f.name !== '.emptyFolderPlaceholder' && !f.name.endsWith('/'))
+              .map(f => ({
+                id: f.id || `platform-${f.name}`,
+                file_name: f.name,
+                file_type: f.metadata?.mimetype || (f.name.match(/\.(jpg|jpeg|png|gif|webp)$/i) ? 'image' : 'file'),
+                file_url: supabase.storage.from('platform-files').getPublicUrl(f.name).data.publicUrl,
+                source: 'platform'
+              }));
+            
+            console.log('[MediaSelectorModal] Found platform files:', mappedPlatform.length);
+            allMedia = [...allMedia, ...mappedPlatform];
+          }
+        } catch (platformErr) {
+          console.log('[MediaSelectorModal] Platform files fetch error:', platformErr);
+        }
+
+        // Also fetch SaaS assets
         try {
           const { data: saasFiles, error: saasError } = await supabase.storage
             .from('front-cms')

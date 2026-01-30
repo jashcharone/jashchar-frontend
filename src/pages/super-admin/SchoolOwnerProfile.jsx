@@ -137,19 +137,6 @@ const SchoolOwnerProfile = () => {
                 error = authError;
             } else {
                 savedData = authData;
-                // Also try to update profiles table if it exists (optional, ignore errors)
-                try {
-                    await supabase
-                        .from('profiles')
-                        .upsert({
-                            id: user.id,
-                            full_name: profile.full_name,
-                            email: profile.email,
-                            phone: profile.phone
-                        }, { onConflict: 'id' });
-                } catch (e) {
-                    console.log('profiles table update skipped:', e.message);
-                }
             }
         } else {
             // school_owner_profiles table: user_id, full_name, email, phone, address, city, state, photo_url

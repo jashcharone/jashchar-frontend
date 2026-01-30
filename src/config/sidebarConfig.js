@@ -455,7 +455,7 @@ export const BASE_SIDEBAR = {
       icon: BookOpen,
       submenu: [
         { title: 'Homework', path: ROUTES.STUDENT.HOMEWORK },
-        { title: 'Syllabus', path: ROUTES.STUDENT.HOMEWORK },
+        { title: 'Syllabus', path: '/Student/syllabus' },
       ]
     },
     {

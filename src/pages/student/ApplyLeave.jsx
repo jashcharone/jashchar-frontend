@@ -35,7 +35,7 @@ const ApplyLeave = () => {
         try {
             const [typesRes, requestsRes] = await Promise.all([
                 supabase.from('leave_types').select('id, name').eq('branch_id', branchId).eq('is_active', true),
-                supabase.from('leave_requests').select('*').eq('user_id', user.id).order('created_at', { ascending: false })
+                supabase.from('leave_requests').select('*').eq('student_id', user.id).eq('branch_id', branchId).order('created_at', { ascending: false })
             ]);
 
             if (typesRes.error) throw typesRes.error;
@@ -70,10 +70,9 @@ const ApplyLeave = () => {
             const { error } = await supabase.from('leave_requests').insert({
                 ...formData,
                 branch_id: branchId,
-                branch_id: branchId,
                 session_id: currentSessionId,
-                user_id: user.id,
-                role: user.profile.role, // 'student' or 'parent' acting for student
+                student_id: user.id,
+                role: user.profile.role || 'student',
                 status: 'pending',
             });
 

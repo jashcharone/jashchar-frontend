@@ -370,6 +370,7 @@ export const ROUTES = {
     TRANSPORT_ROUTES: '/Student/transport-routes',
     TIMETABLE: '/Student/timetable',
     HOMEWORK: '/Student/homework',
+    SYLLABUS: '/Student/syllabus',
     LIBRARY: '/Student/library',
     ATTENDANCE: '/Student/attendance',
     APPLY_LEAVE: '/Student/apply-leave',

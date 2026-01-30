@@ -32,6 +32,7 @@ const StudentDetails = () => {
     const [selectedStudents, setSelectedStudents] = useState([]);
     const [currentPage, setCurrentPage] = useState(1);
     const [pageSize, setPageSize] = useState(25);
+    const [feesData, setFeesData] = useState({}); // { studentId: { total, paid, progress } }
 
     const branchId = user?.profile?.branch_id;
 
@@ -156,6 +157,10 @@ const StudentDetails = () => {
         
         if (studentsData && studentsData.length > 0) {
             toast({ title: `${count || 0} students found.`});
+            
+            // Fetch fees progress for all students
+            const studentIds = studentsData.map(s => s.id);
+            await fetchFeesProgress(studentIds);
         } else {
             toast({ title: "No students found." });
         }
@@ -163,6 +168,63 @@ const StudentDetails = () => {
         setStudents(studentsData || []);
         setSelectedStudents([]);
         setLoading(false);
+    };
+
+    // Fetch fees progress for students
+    const fetchFeesProgress = async (studentIds) => {
+        try {
+            // Get allocations for students
+            const { data: allocations } = await supabase
+                .from('fee_allocations')
+                .select(`
+                    id,
+                    student_id,
+                    fee_master:fee_masters(amount)
+                `)
+                .in('student_id', studentIds);
+            
+            // Get payments for students
+            const { data: payments } = await supabase
+                .from('fee_payments')
+                .select('student_id, amount')
+                .in('student_id', studentIds)
+                .eq('status', 'paid');
+            
+            // Calculate progress per student
+            const progressMap = {};
+            studentIds.forEach(id => {
+                progressMap[id] = { total: 0, paid: 0, progress: 0 };
+            });
+            
+            // Sum up total fees from allocations
+            if (allocations) {
+                allocations.forEach(alloc => {
+                    const amount = alloc.fee_master?.amount || 0;
+                    if (progressMap[alloc.student_id]) {
+                        progressMap[alloc.student_id].total += parseFloat(amount);
+                    }
+                });
+            }
+            
+            // Sum up paid amount from payments
+            if (payments) {
+                payments.forEach(pay => {
+                    if (progressMap[pay.student_id]) {
+                        progressMap[pay.student_id].paid += parseFloat(pay.amount || 0);
+                    }
+                });
+            }
+            
+            // Calculate percentage
+            Object.keys(progressMap).forEach(id => {
+                const { total, paid } = progressMap[id];
+                progressMap[id].progress = total > 0 ? Math.round((paid / total) * 100) : 0;
+            });
+            
+            setFeesData(progressMap);
+        } catch (error) {
+            console.error('Error fetching fees progress:', error);
+        }
     };
 
     const handleFilterChange = (key, value) => {
@@ -271,7 +333,8 @@ const StudentDetails = () => {
                                 {paginatedStudents.map((s) => {
                                     const guardian = getGuardianInfo(s);
                                     const age = calculateAge(s.date_of_birth);
-                                    const feesProgress = 0; // TODO: Calculate from fees data
+                                    const studentFees = feesData[s.id] || { total: 0, paid: 0, progress: 0 };
+                                    const feesProgress = studentFees.progress;
                                     
                                     return (
                                         <tr key={s.id} className="border-b hover:bg-muted/30 transition-colors">
@@ -303,10 +366,13 @@ const StudentDetails = () => {
                                                     {guardian.phone && <div className="text-xs text-emerald-600">{guardian.phone}</div>}
                                                 </div>
                                             </td>
-                                            <td className="p-3 min-w-[120px]">
-                                                <div className="flex items-center gap-2">
-                                                    <Progress value={feesProgress} className="h-2 flex-1" />
-                                                    <span className="text-xs font-medium w-8">{feesProgress}%</span>
+                                            <td className="p-3 min-w-[140px]">
+                                                <div className="flex items-center gap-2" title={`Paid: ₹${studentFees.paid.toLocaleString()} / Total: ₹${studentFees.total.toLocaleString()}`}>
+                                                    <Progress 
+                                                        value={feesProgress} 
+                                                        className={`h-2 flex-1 ${feesProgress === 100 ? '[&>div]:bg-green-500' : feesProgress > 0 ? '[&>div]:bg-amber-500' : '[&>div]:bg-red-400'}`} 
+                                                    />
+                                                    <span className={`text-xs font-medium w-10 ${feesProgress === 100 ? 'text-green-600' : feesProgress > 0 ? 'text-amber-600' : 'text-red-500'}`}>{feesProgress}%</span>
                                                 </div>
                                             </td>
                                             <td className="p-3">

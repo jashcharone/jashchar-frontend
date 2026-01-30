@@ -1858,7 +1858,19 @@ const StudentAdmission = () => {
         hostel_details_id,
       };
       
-      // Call backend API to create student (handles auth user + profile creation)
+      // Add fee allocations to payload (backend will handle insert with service key)
+      const selectedFeeMasters = feeGroups.filter(fg => fee_groups[fg.id]).flatMap(fg => fg.fee_masters.map(fm => fm.id));
+      if (selectedFeeMasters.length > 0) {
+        studentPayload.fee_master_ids = selectedFeeMasters;
+      }
+      
+      // Add discount allocations to payload
+      const selectedDiscounts = Object.keys(fee_discounts).filter(id => fee_discounts[id]);
+      if (selectedDiscounts.length > 0) {
+        studentPayload.discount_ids = selectedDiscounts;
+      }
+      
+      // Call backend API to create student (handles auth user + profile + fees creation)
       const response = await api.post('/students', studentPayload);
       
       if (!response.data?.success) {
@@ -1872,21 +1884,9 @@ const StudentAdmission = () => {
       if (transport_details_id) await supabase.from('student_transport_details').update({ student_id: studentId }).eq('id', transport_details_id);
       if (hostel_details_id) await supabase.from('student_hostel_details').update({ student_id: studentId }).eq('id', hostel_details_id);
 
-      const feeMasterPromises = [];
-      const selectedFeeMasters = feeGroups.filter(fg => fee_groups[fg.id]).flatMap(fg => fg.fee_masters.map(fm => fm.id));
-      if (selectedFeeMasters.length > 0) {
-        const feeAllocations = selectedFeeMasters.map(masterId => ({ branch_id: selectedBranch.id, student_id: studentId, fee_master_id: masterId }));
-        feeMasterPromises.push(supabase.from('student_fee_allocations').insert(feeAllocations));
-      }
+      // Carry forward fees (if any) - still need direct RPC call
       if (formData.carry_forward_fees && parseFloat(formData.carry_forward_fees) > 0) {
-        feeMasterPromises.push(supabase.rpc('carry_forward_fees', { p_branch_id: selectedBranch.id, p_due_date: format(new Date(), 'yyyy-MM-dd'), p_students_balance: [{id: studentId, balance: formData.carry_forward_fees}] }));
-      }
-      await Promise.all(feeMasterPromises);
-      
-      const selectedDiscounts = Object.keys(fee_discounts).filter(id => fee_discounts[id]);
-      if (selectedDiscounts.length > 0) {
-        const discountAllocations = selectedDiscounts.map(discountId => ({ branch_id: selectedBranch.id, student_id: studentId, discount_id: discountId }));
-        await supabase.from('student_fee_discounts').insert(discountAllocations);
+        await supabase.rpc('carry_forward_fees', { p_branch_id: selectedBranch.id, p_due_date: format(new Date(), 'yyyy-MM-dd'), p_students_balance: [{id: studentId, balance: formData.carry_forward_fees}] });
       }
 
       // NOTE: Parent user creation via Edge Function disabled - direct insert to student_profiles is used
@@ -1908,12 +1908,14 @@ const StudentAdmission = () => {
 
       // Set success data with new credential structure
       // Student login: Admission Number, Parent login: Mobile Number
+      const parentAlreadyExists = studentCredentials?.parent?.already_exists || false;
       setAdmissionSuccessData({ 
         school_code, 
         student_login: studentCredentials?.student?.login || school_code,
         student_password: studentCredentials?.student?.password || password || '123456',
         parent_login: studentCredentials?.parent?.login || formData.father_phone?.replace(/[^0-9]/g, '') || null,
-        parent_password: studentCredentials?.parent?.password || parent_password || '123456',
+        parent_password: parentAlreadyExists ? '(ಈಗಾಗಲೇ ಇರುವ password ಬಳಸಿ)' : (studentCredentials?.parent?.password || parent_password || '123456'),
+        parent_already_exists: parentAlreadyExists,
         // Legacy fields for backward compatibility
         username: studentCredentials?.student?.login || school_code, 
         password: studentCredentials?.student?.password || password || '123456', 

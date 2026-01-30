@@ -139,10 +139,33 @@ const SchoolOwnerProfile = () => {
 
         console.log("Saving profile:", tableUpdateData);
         
-        const { data: savedData, error } = await supabase
+        // First check if profile exists for this user
+        const { data: existingProfile } = await supabase
             .from('school_owner_profiles')
-            .upsert(tableUpdateData, { onConflict: 'user_id' })
-            .select();
+            .select('id')
+            .eq('user_id', user.id)
+            .maybeSingle();
+        
+        let savedData, error;
+        
+        if (existingProfile) {
+            // Update existing profile
+            const { data, error: updateError } = await supabase
+                .from('school_owner_profiles')
+                .update(tableUpdateData)
+                .eq('user_id', user.id)
+                .select();
+            savedData = data;
+            error = updateError;
+        } else {
+            // Insert new profile
+            const { data, error: insertError } = await supabase
+                .from('school_owner_profiles')
+                .insert(tableUpdateData)
+                .select();
+            savedData = data;
+            error = insertError;
+        }
             
         if (error) throw error;
         console.log("Saved profile result:", savedData);

@@ -105,6 +105,17 @@ const StudentDetails = () => {
             return;
         }
         setLoading(true);
+        
+        // Get active session for the SELECTED branch (not user's branch)
+        const { data: branchSession } = await supabase
+            .from('sessions')
+            .select('id')
+            .eq('branch_id', selectedBranch.id)
+            .eq('is_active', true)
+            .maybeSingle();
+        
+        const activeSessionId = branchSession?.id;
+        console.log('[StudentDetails] Selected branch:', selectedBranch.id, 'Active session:', activeSessionId);
 
         let studentQuery = supabase.from('student_profiles').select(`
             id, full_name, first_name, last_name, school_code, roll_number, gender, date_of_birth, phone, photo_url,
@@ -116,9 +127,9 @@ const StudentDetails = () => {
         .or('is_disabled.is.null,is_disabled.eq.false')
         .order('roll_number', { ascending: true, nullsFirst: false });
         
-        // Filter by session if selected (optional now)
-        if (currentSessionId) {
-            studentQuery = studentQuery.eq('session_id', currentSessionId);
+        // Filter by branch's active session (not user's session)
+        if (activeSessionId) {
+            studentQuery = studentQuery.eq('session_id', activeSessionId);
         }
         
         // Only add class filter if selected

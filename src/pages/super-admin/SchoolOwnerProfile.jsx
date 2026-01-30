@@ -18,6 +18,12 @@ const SchoolOwnerProfile = () => {
   const [imagePreview, setImagePreview] = useState('');
   const [isLoading, setIsLoading] = useState(true);
 
+  // Determine the correct table based on user role
+  const userRole = user?.user_metadata?.role || user?.role;
+  const isSuperAdmin = userRole === 'super_admin' || userRole === 'master_admin';
+  const tableName = isSuperAdmin ? 'profiles' : 'school_owner_profiles';
+  const idColumn = isSuperAdmin ? 'id' : 'user_id';
+
   useEffect(() => {
     const loadProfile = async () => {
         if (authLoading) return;
@@ -30,11 +36,11 @@ const SchoolOwnerProfile = () => {
         setIsLoading(true);
 
         try {
-            // Fetch fresh profile data directly from DB
+            // Fetch fresh profile data directly from DB using correct table
             const { data: freshProfile, error } = await supabase
-                .from('school_owner_profiles')
+                .from(tableName)
                 .select('*')
-                .eq('user_id', user.id)
+                .eq(idColumn, user.id)
                 .maybeSingle();
 
             if (error) {
@@ -46,11 +52,11 @@ const SchoolOwnerProfile = () => {
                 ...user.user_metadata,
                 ...user.profile,
                 ...(freshProfile || {}),
-                present_address: freshProfile?.current_address || user.profile?.current_address || user.profile?.present_address || ''
+                present_address: freshProfile?.address || freshProfile?.current_address || user.profile?.current_address || user.profile?.present_address || ''
             };
 
             setProfile(mergedProfile);
-            setImagePreview(freshProfile?.photo_url || user.profile?.photo_url || user.user_metadata?.avatar_url || '');
+            setImagePreview(freshProfile?.photo_url || freshProfile?.avatar_url || user.profile?.photo_url || user.user_metadata?.avatar_url || '');
         } catch (err) {
             console.error('Profile load error:', err);
             // Fallback to existing user data
@@ -66,7 +72,7 @@ const SchoolOwnerProfile = () => {
     };
 
     loadProfile();
-  }, [user, authLoading]);
+  }, [user, authLoading, tableName, idColumn]);
 
   const handleImageChange = (e) => {
     const file = e.target.files[0];
@@ -114,36 +120,44 @@ const SchoolOwnerProfile = () => {
             linkedin_url: profile.linkedin_url
         };
         
-        // Filter data for the table update (only include columns that exist in school_owner_profiles)
-        const tableUpdateData = {
-            user_id: user.id, // Use user_id for the foreign key reference
-            full_name: profile.full_name,
-            photo_url: photo_url,
-            email: profile.email,
-            phone: profile.phone,
-            gender: profile.gender,
-            religion: profile.religion,
-            blood_group: profile.blood_group,
-            dob: profile.dob,
-            current_address: profile.present_address,
-            permanent_address: profile.permanent_address,
-            facebook_url: profile.facebook_url,
-            twitter_url: profile.twitter_url,
-            linkedin_url: profile.linkedin_url,
-            updated_at: new Date().toISOString()
-        };
-
-        if (school?.id) {
-            tableUpdateData.branch_id = school.id;
+        // Build update data based on table type
+        let tableUpdateData;
+        
+        if (isSuperAdmin) {
+            // profiles table: id, email, full_name, phone, avatar_url, preferences
+            tableUpdateData = {
+                full_name: profile.full_name,
+                avatar_url: photo_url,
+                email: profile.email,
+                phone: profile.phone,
+                updated_at: new Date().toISOString()
+            };
+        } else {
+            // school_owner_profiles table: user_id, full_name, email, phone, address, city, state, photo_url
+            tableUpdateData = {
+                user_id: user.id,
+                full_name: profile.full_name,
+                photo_url: photo_url,
+                email: profile.email,
+                phone: profile.phone,
+                address: profile.present_address || profile.current_address || profile.address,
+                city: profile.city,
+                state: profile.state,
+                updated_at: new Date().toISOString()
+            };
+            
+            if (school?.id) {
+                tableUpdateData.branch_id = school.id;
+            }
         }
 
-        console.log("Saving profile:", tableUpdateData);
+        console.log(`Saving profile to ${tableName}:`, tableUpdateData);
         
         // First check if profile exists for this user
         const { data: existingProfile } = await supabase
-            .from('school_owner_profiles')
+            .from(tableName)
             .select('id')
-            .eq('user_id', user.id)
+            .eq(idColumn, user.id)
             .maybeSingle();
         
         let savedData, error;
@@ -151,20 +165,32 @@ const SchoolOwnerProfile = () => {
         if (existingProfile) {
             // Update existing profile
             const { data, error: updateError } = await supabase
-                .from('school_owner_profiles')
+                .from(tableName)
                 .update(tableUpdateData)
-                .eq('user_id', user.id)
+                .eq(idColumn, user.id)
                 .select();
             savedData = data;
             error = updateError;
         } else {
-            // Insert new profile with explicit id
-            const { data, error: insertError } = await supabase
-                .from('school_owner_profiles')
-                .insert({ ...tableUpdateData, id: uuidv4() })
-                .select();
-            savedData = data;
-            error = insertError;
+            // Insert new profile
+            if (isSuperAdmin) {
+                // profiles table: id must be user.id (references auth.users)
+                const { data, error: insertError } = await supabase
+                    .from(tableName)
+                    .insert({ ...tableUpdateData, id: user.id })
+                    .select();
+                savedData = data;
+                error = insertError;
+            } else {
+                // school_owner_profiles: don't set id, let DB generate it
+                // But we need user to exist in public.users table first
+                const { data, error: insertError } = await supabase
+                    .from(tableName)
+                    .insert(tableUpdateData)
+                    .select();
+                savedData = data;
+                error = insertError;
+            }
         }
             
         if (error) throw error;

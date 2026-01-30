@@ -34,7 +34,7 @@ const SchoolOwnerProfile = () => {
             const { data: freshProfile, error } = await supabase
                 .from('school_owner_profiles')
                 .select('*')
-                .eq('id', user.id)
+                .eq('user_id', user.id)
                 .maybeSingle();
 
             if (error) {
@@ -116,8 +116,7 @@ const SchoolOwnerProfile = () => {
         
         // Filter data for the table update (only include columns that exist in school_owner_profiles)
         const tableUpdateData = {
-            id: user.id, // Ensure ID is present for upsert
-            user_id: user.id, // Also set user_id
+            user_id: user.id, // Use user_id for the foreign key reference
             full_name: profile.full_name,
             photo_url: photo_url,
             email: profile.email,
@@ -130,7 +129,8 @@ const SchoolOwnerProfile = () => {
             permanent_address: profile.permanent_address,
             facebook_url: profile.facebook_url,
             twitter_url: profile.twitter_url,
-            linkedin_url: profile.linkedin_url
+            linkedin_url: profile.linkedin_url,
+            updated_at: new Date().toISOString()
         };
 
         if (school?.id) {
@@ -141,7 +141,7 @@ const SchoolOwnerProfile = () => {
         
         const { data: savedData, error } = await supabase
             .from('school_owner_profiles')
-            .upsert(tableUpdateData)
+            .upsert(tableUpdateData, { onConflict: 'user_id' })
             .select();
             
         if (error) throw error;

@@ -75,10 +75,6 @@ const CollectFees = () => {
             toast({ variant: 'destructive', title: 'Class is required' });
             return;
         }
-        if (!currentSessionId) {
-            toast({ variant: 'destructive', title: 'No session selected. Please set a current session.' });
-            return;
-        }
         if (!selectedBranch) {
             toast({ variant: 'destructive', title: 'Branch not selected' });
             return;
@@ -87,14 +83,28 @@ const CollectFees = () => {
         setSearched(true);
         
         try {
+            // Get active session for the SELECTED branch (not user's branch)
+            const { data: branchSession } = await supabase
+                .from('sessions')
+                .select('id')
+                .eq('branch_id', selectedBranch.id)
+                .eq('is_active', true)
+                .maybeSingle();
+            
+            const activeSessionId = branchSession?.id;
+            console.log('[CollectFees] Branch:', selectedBranch.id, 'Active session:', activeSessionId);
+            
             // Use student_profiles directly - it's faster and more reliable
-            // Filter by current session
             let query = supabase
                 .from('student_profiles')
                 .select('id, full_name, father_name, phone, school_code, session_id, classes!student_profiles_class_id_fkey(name), sections!student_profiles_section_id_fkey(name)')
                 .eq('branch_id', selectedBranch.id)
-                .eq('class_id', selectedClass)
-                .eq('session_id', currentSessionId);
+                .eq('class_id', selectedClass);
+            
+            // Filter by branch's active session
+            if (activeSessionId) {
+                query = query.eq('session_id', activeSessionId);
+            }
 
             if (selectedSection && selectedSection !== 'all') {
                 query = query.eq('section_id', selectedSection);

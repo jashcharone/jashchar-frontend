@@ -71,20 +71,29 @@ const StudentAttendance = () => {
             return;
         }
         setLoading(true);
+        
+        // Get active session for selected branch
+        const { data: branchSession } = await supabase
+            .from('sessions')
+            .select('id')
+            .eq('branch_id', selectedBranch.id)
+            .eq('is_active', true)
+            .maybeSingle();
+        
+        const activeSessionId = branchSession?.id;
 
-        // Fetch students of the class and section - filter by session
+        // Fetch students of the class and section - filter by branch's session
         let studentQuery = supabase
             .from('student_profiles')
             .select('id, full_name, admission_no')
-            .eq('branch_id', branchId)
             .eq('branch_id', selectedBranch.id)
             .eq('class_id', filters.class_id)
             .eq('section_id', filters.section_id)
             .order('admission_no');
         
         // Add session filter if available
-        if (currentSessionId) {
-            studentQuery = studentQuery.eq('session_id', currentSessionId);
+        if (activeSessionId) {
+            studentQuery = studentQuery.eq('session_id', activeSessionId);
         }
         
         const { data: studentData, error: studentError } = await studentQuery;
@@ -96,19 +105,18 @@ const StudentAttendance = () => {
         }
         setStudents(studentData);
 
-        // Fetch existing attendance for that date - filter by session
+        // Fetch existing attendance for that date - filter by branch's session
         let attendanceQuery = supabase
             .from('student_attendance')
             .select('student_id, status, remark')
-            .eq('branch_id', branchId)
             .eq('branch_id', selectedBranch.id)
             .eq('class_id', filters.class_id)
             .eq('section_id', filters.section_id)
             .eq('date', filters.date);
         
         // Add session filter if available
-        if (currentSessionId) {
-            attendanceQuery = attendanceQuery.eq('session_id', currentSessionId);
+        if (activeSessionId) {
+            attendanceQuery = attendanceQuery.eq('session_id', activeSessionId);
         }
         
         const { data: attendanceData, error: attendanceError } = await attendanceQuery;

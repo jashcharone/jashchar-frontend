@@ -77,14 +77,27 @@ const QuickFees = () => {
     }, [selectedClass, selectedBranch]);
 
     useEffect(() => {
-        if (selectedClass && currentSessionId && selectedBranch) {
+        if (selectedClass && selectedBranch) {
             const fetchStudents = async () => {
-                // Filter by current session and branch - use student_profiles table
+                // Get active session for selected branch
+                const { data: branchSession } = await supabase
+                    .from('sessions')
+                    .select('id')
+                    .eq('branch_id', selectedBranch.id)
+                    .eq('is_active', true)
+                    .maybeSingle();
+                
+                const activeSessionId = branchSession?.id;
+                
+                // Filter by branch's active session - use student_profiles table
                 let query = supabase.from('student_profiles')
                     .select('id, full_name, school_code, session_id')
                     .eq('branch_id', selectedBranch.id)
-                    .eq('class_id', selectedClass)
-                    .eq('session_id', currentSessionId);
+                    .eq('class_id', selectedClass);
+                
+                if (activeSessionId) {
+                    query = query.eq('session_id', activeSessionId);
+                }
 
                 if (selectedSection && selectedSection !== 'all') {
                     query = query.eq('section_id', selectedSection);

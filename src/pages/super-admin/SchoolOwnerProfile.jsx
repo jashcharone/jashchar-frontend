@@ -158,10 +158,10 @@ const SchoolOwnerProfile = () => {
             savedData = data;
             error = updateError;
         } else {
-            // Insert new profile
+            // Insert new profile with explicit id
             const { data, error: insertError } = await supabase
                 .from('school_owner_profiles')
-                .insert(tableUpdateData)
+                .insert({ ...tableUpdateData, id: uuidv4() })
                 .select();
             savedData = data;
             error = insertError;

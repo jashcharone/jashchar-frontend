@@ -1,5 +1,12 @@
 ﻿import { supabase } from '@/lib/customSupabaseClient';
 import { masterAdminSafetyService } from '@/services/masterAdminSafetyService';
+import axios from 'axios';
+
+// Get auth token for API calls
+const getAuthToken = async () => {
+  const { data: { session } } = await supabase.auth.getSession();
+  return session?.access_token || '';
+};
 
 /**
  * Validates if the target table is safe to write to.
@@ -30,18 +37,38 @@ export const cmsEditorService = {
     }
   },
 
-  // --- SCHOOL LOGIN SETTINGS ---
+  // --- SCHOOL LOGIN SETTINGS (via Backend API to bypass RLS) ---
   getSchoolLoginSettings: async (branchId) => {
-    const { data, error } = await supabase.from('school_login_settings').select('*').eq('branch_id', branchId).maybeSingle();
-    if (error) throw error;
-    return data;
+    try {
+      const token = await getAuthToken();
+      const response = await axios.get('/api/front-cms/login-settings', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'x-school-id': branchId
+        }
+      });
+      return response.data.data || null;
+    } catch (error) {
+      console.error('[cmsEditorService] getSchoolLoginSettings error:', error);
+      // Fallback to direct Supabase for read (might work if RLS allows select)
+      const { data, error: dbError } = await supabase.from('school_login_settings').select('*').eq('branch_id', branchId).maybeSingle();
+      if (dbError) throw dbError;
+      return data;
+    }
   },
 
   upsertSchoolLoginSettings: async (branchId, data) => {
-    ensureSafety('school_login_settings'); // Safe
-    const payload = { branch_id: branchId, ...data, updated_at: new Date().toISOString() };
-    const { error } = await supabase.from('school_login_settings').upsert(payload, { onConflict: 'branch_id' });
-    if (error) throw error;
+    const token = await getAuthToken();
+    const response = await axios.put('/api/front-cms/login-settings', data, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'x-school-id': branchId
+      }
+    });
+    if (!response.data.success) {
+      throw new Error(response.data.message || 'Failed to save login settings');
+    }
+    return response.data.data;
   },
 
   // --- BANNERS ---

@@ -174,7 +174,10 @@ const Sidebar = ({ role, isSidebarOpen, isMobile, toggleSidebar, closeSidebar, o
   // Auto-expand parent if child is active - and keep it expanded
   useEffect(() => {
     const activeParent = currentMenu.find(item => 
-      item.submenu && item.submenu.some(sub => sub.path === location.pathname)
+      item.submenu && item.submenu.some(sub => 
+        sub.path === location.pathname || 
+        (sub.path && sub.path !== '/' && location.pathname.startsWith(sub.path + '/'))
+      )
     );
     if (activeParent) {
       setOpenSubmenus(prev => ({ ...prev, [activeParent.title]: true }));
@@ -183,8 +186,13 @@ const Sidebar = ({ role, isSidebarOpen, isMobile, toggleSidebar, closeSidebar, o
 
   // --- RENDER ITEM ---
   const MenuItem = ({ item, depth = 0 }) => {
-    const isActive = location.pathname === item.path;
-    const isParentActive = item.submenu && item.submenu.some(sub => sub.path === location.pathname);
+    // Check if path matches (exact or starts with for nested routes like /edit/:id)
+    const isActive = location.pathname === item.path || 
+      (item.path && item.path !== '/' && location.pathname.startsWith(item.path + '/'));
+    const isParentActive = item.submenu && item.submenu.some(sub => 
+      sub.path === location.pathname || 
+      (sub.path && sub.path !== '/' && location.pathname.startsWith(sub.path + '/'))
+    );
     const hasSubmenu = item.submenu && item.submenu.length > 0;
     const isOpen = openSubmenus[item.title];
     const Icon = item.icon || LayoutDashboard;
@@ -195,7 +203,10 @@ const Sidebar = ({ role, isSidebarOpen, isMobile, toggleSidebar, closeSidebar, o
     const activeText = settings.colors.sidebarPrimary;
 
     // Check if any child is active (for parent styling)
-    const isChildActive = item.submenu && item.submenu.some(sub => sub.path === location.pathname);
+    const isChildActive = item.submenu && item.submenu.some(sub => 
+      sub.path === location.pathname || 
+      (sub.path && sub.path !== '/' && location.pathname.startsWith(sub.path + '/'))
+    );
     const isActuallyActive = isActive || isChildActive;
 
     const itemStyle = {

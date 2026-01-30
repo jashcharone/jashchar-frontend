@@ -1795,33 +1795,79 @@ const StudentAdmission = () => {
         final_organization_id = schoolData?.organization_id || null;
       }
 
-      const studentMetaData = Object.fromEntries(Object.entries({
-        ...restOfForm,
-        username,
-        school_code,
-        admission_date,
+      // Build student data for backend API call
+      // Use timestamp to ensure unique email when user doesn't provide one
+      const uniqueId = Date.now();
+      const studentEmail = formData.email || `student.${school_code}.${uniqueId}@temp.jashchar.edu`;
+      
+      const studentPayload = {
+        // Basic info
+        first_name: formData.first_name,
+        last_name: formData.last_name || null,
+        email: studentEmail,
+        password: password || '123456',
+        parent_password: parent_password || '123456',
+        gender: formData.gender,
+        date_of_birth: formData.dob,
+        blood_group: formData.blood_group || null,
+        religion: formData.religion || null,
+        caste: formData.caste || null,
+        mother_tongue: formData.mother_tongue || null,
+        phone: formData.mobile_no || null,
+        aadhar_no: formData.aadhar_no || null,
+        present_address: formData.current_address || null,
+        permanent_address: formData.permanent_address || null,
+        city: formData.city || null,
+        state: formData.state || null,
+        pincode: pincode || null,
+        // Academic
         class_id,
         section_id,
         session_id: final_session_id,
-        full_name: `${formData.first_name} ${formData.last_name || ''}`.trim(),
+        school_code: school_code,
+        roll_number: formData.roll_number,
+        admission_date,
+        category_id: formData.category_id || null,
+        // Parent info
+        father_name: formData.father_name || null,
+        father_phone: formData.father_phone || null,
+        father_occupation: formData.father_occupation || null,
+        father_email: formData.father_email || null,
+        father_aadhar_no: formData.father_aadhar_no || null,
+        mother_name: formData.mother_name || null,
+        mother_phone: formData.mother_phone || null,
+        mother_occupation: formData.mother_occupation || null,
+        mother_aadhar_no: formData.mother_aadhar_no || null,
+        guardian_name: formData.guardian_name || null,
+        guardian_relation: formData.guardian_relation || null,
+        guardian_phone: formData.guardian_phone || null,
+        guardian_occupation: formData.guardian_occupation || null,
+        // Photos
         photo_url: profilePhotoUrl,
         father_photo_url: fatherPhotoUrl,
         mother_photo_url: motherPhotoUrl,
         guardian_photo_url: guardianPhotoUrl,
+        // Branch/Org
         branch_id: selectedBranch.id,
         organization_id: final_organization_id,
-        role: 'student',
-        pincode,
+        // Other
+        is_rte_student: formData.is_rte_student || false,
+        documents_received: formData.documents_received || {},
         sibling_group_id,
         transport_details_id,
         hostel_details_id,
-        custom_fields: customFieldValues,
-      }).map(([key, value]) => [key, value === '' ? null : value]));
+      };
       
-      const studentEmail = formData.email || `${uuidv4()}@example.com`;
-      const { data: studentUserResult, error: studentError } = await supabase.functions.invoke('create-user', { body: { email: studentEmail, password, metadata: studentMetaData } });
-      if (studentError) throw studentError;
-      const studentId = studentUserResult.user.id;
+      // Call backend API to create student (handles auth user + profile creation)
+      const response = await api.post('/students', studentPayload);
+      
+      if (!response.data?.success) {
+        throw new Error(response.data?.error || 'Failed to create student');
+      }
+      
+      const studentId = response.data.data.id;
+      const studentCredentials = response.data.credentials;
+
 
       if (transport_details_id) await supabase.from('student_transport_details').update({ student_id: studentId }).eq('id', transport_details_id);
       if (hostel_details_id) await supabase.from('student_hostel_details').update({ student_id: studentId }).eq('id', hostel_details_id);
@@ -1843,9 +1889,11 @@ const StudentAdmission = () => {
         await supabase.from('student_fee_discounts').insert(discountAllocations);
       }
 
-      if (parent_username && formData.father_email) {
-        await supabase.functions.invoke('create-user', { body: { email: formData.father_email, password: parent_password, metadata: { username: parent_username, full_name: formData.father_name, role: 'parent', branch_id: selectedBranch.id, students: [studentId] } } });
-      }
+      // NOTE: Parent user creation via Edge Function disabled - direct insert to student_profiles is used
+      // Parent login can be implemented later with separate user management
+      // if (parent_username && formData.father_email) {
+      //   await supabase.functions.invoke('create-user', { ... });
+      // }
 
       if (Object.keys(customFieldValues).length > 0) {
         const { error: customDataError } = await supabase
@@ -1858,12 +1906,25 @@ const StudentAdmission = () => {
         if (customDataError) console.error("Error saving custom data:", customDataError);
       }
 
-      setAdmissionSuccessData({ school_code, username, password, parent_username, parent_password });
+      // Set success data with new credential structure
+      // Student login: Admission Number, Parent login: Mobile Number
+      setAdmissionSuccessData({ 
+        school_code, 
+        student_login: studentCredentials?.student?.login || school_code,
+        student_password: studentCredentials?.student?.password || password || '123456',
+        parent_login: studentCredentials?.parent?.login || formData.father_phone?.replace(/[^0-9]/g, '') || null,
+        parent_password: studentCredentials?.parent?.password || parent_password || '123456',
+        // Legacy fields for backward compatibility
+        username: studentCredentials?.student?.login || school_code, 
+        password: studentCredentials?.student?.password || password || '123456', 
+        parent_username: studentCredentials?.parent?.login || formData.father_phone?.replace(/[^0-9]/g, '') || null, 
+      });
     } catch (error) {
       console.error("Admission Error:", error);
-      const errorMessage = error.message || error.context?.error_description || 'An unknown error occurred.';
-      const isDuplicate = errorMessage.includes('duplicate key value') || errorMessage.includes('already exists');
-      toast({ variant: 'destructive', title: 'Admission Failed', description: isDuplicate ? `Duplicate Entry Detect (ID, Email or Aadhar)` : errorMessage });
+      // Handle axios errors and regular errors
+      const errorMessage = error.response?.data?.error || error.message || error.context?.error_description || 'An unknown error occurred.';
+      const isDuplicate = errorMessage.includes('duplicate key value') || errorMessage.includes('already exists') || errorMessage.includes('already registered');
+      toast({ variant: 'destructive', title: 'Admission Failed', description: isDuplicate ? `Duplicate Entry Detected (ID, Email or Aadhar)` : errorMessage });
       if (isDuplicate && schoolSettings?.student_admission_no_auto_generation) await generateNextId(schoolSettings);
     } finally {
       setLoading(false);
@@ -1928,7 +1989,7 @@ const StudentAdmission = () => {
                       <Building2 className="h-4 w-4" />
                       <span className="font-medium">{selectedBranch?.branch_name || 'Select a branch'}</span>
                     </p>
-                    <span className="text-muted-foreground/50">�</span>
+                    <span className="text-muted-foreground/50">�</span>
                     <p className="text-muted-foreground flex items-center gap-2">
                       <CalendarDays className="h-4 w-4" />
                       <span>{format(new Date(), 'dd MMM yyyy')}</span>
@@ -2523,23 +2584,16 @@ const StudentAdmission = () => {
                     <div className="bg-gradient-to-r from-blue-500 to-indigo-500 p-2 rounded-xl">
                       <UserCircle2 className="h-5 w-5 text-white" />
                     </div>
-                    <h3 className="font-bold text-lg text-gray-800 dark:text-gray-100">Student Login</h3>
+                    <h3 className="font-bold text-lg text-gray-800 dark:text-gray-100">🎓 Student Login</h3>
                   </div>
                   <div className="space-y-3">
                     <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800/50 rounded-xl group hover:bg-emerald-50 dark:hover:bg-emerald-900/20 transition-colors">
                       <div className="flex items-center gap-3">
                         <Hash className="h-4 w-4 text-gray-400" />
-                        <span className="text-sm text-gray-600 dark:text-gray-300"><strong>Admission No:</strong></span>
-                      </div>
-                      <span className="font-mono font-bold text-emerald-600 dark:text-emerald-400">{admissionSuccessData?.school_code}</span>
-                    </div>
-                    <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800/50 rounded-xl group hover:bg-emerald-50 dark:hover:bg-emerald-900/20 transition-colors">
-                      <div className="flex items-center gap-3">
-                        <User className="h-4 w-4 text-gray-400" />
-                        <span className="text-sm text-gray-600 dark:text-gray-300"><strong>Username:</strong></span>
+                        <span className="text-sm text-gray-600 dark:text-gray-300"><strong>Login ID (Admission No):</strong></span>
                       </div>
                       <div className="flex items-center gap-2">
-                        <span className="font-mono font-bold">{admissionSuccessData?.username}</span>
+                        <span className="font-mono font-bold text-emerald-600 dark:text-emerald-400">{admissionSuccessData?.username}</span>
                         <Button size="sm" variant="ghost" className="h-8 w-8 p-0 rounded-lg hover:bg-emerald-100 dark:hover:bg-emerald-800" onClick={() => copyToClipboard(admissionSuccessData?.username)}>
                           <Copy className="w-4 h-4" />
                         </Button>
@@ -2567,13 +2621,13 @@ const StudentAdmission = () => {
                       <div className="bg-gradient-to-r from-purple-500 to-pink-500 p-2 rounded-xl">
                         <Users className="h-5 w-5 text-white" />
                       </div>
-                      <h3 className="font-bold text-lg text-gray-800 dark:text-gray-100">Parent Login</h3>
+                      <h3 className="font-bold text-lg text-gray-800 dark:text-gray-100">👨‍👩‍👧 Parent Login</h3>
                     </div>
                     <div className="space-y-3">
                       <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800/50 rounded-xl group hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-colors">
                         <div className="flex items-center gap-3">
-                          <User className="h-4 w-4 text-gray-400" />
-                          <span className="text-sm text-gray-600 dark:text-gray-300"><strong>Username:</strong></span>
+                          <Phone className="h-4 w-4 text-gray-400" />
+                          <span className="text-sm text-gray-600 dark:text-gray-300"><strong>Login ID (Mobile No):</strong></span>
                         </div>
                         <div className="flex items-center gap-2">
                           <span className="font-mono font-bold">{admissionSuccessData?.parent_username}</span>

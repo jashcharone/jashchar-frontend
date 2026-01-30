@@ -39,6 +39,18 @@ const AcademicsClasses = () => {
   const { selectedBranch } = useBranch();
   const [classes, setClasses] = useState([]);
   const [sections, setSections] = useState([]);
+
+  // Custom sort function for classes: Nursery, LKG, UKG, Class 1-10
+  const sortClasses = (classList) => {
+    const order = { 'nursery': 1, 'lkg': 2, 'ukg': 3 };
+    return classList.slice().sort((a, b) => {
+      const aName = a.name.toLowerCase();
+      const bName = b.name.toLowerCase();
+      const aOrder = order[aName] || (aName.startsWith('class') ? 10 + parseInt(aName.replace(/\D/g, '') || '0') : 100);
+      const bOrder = order[bName] || (bName.startsWith('class') ? 10 + parseInt(bName.replace(/\D/g, '') || '0') : 100);
+      return aOrder - bOrder;
+    });
+  };
   const [className, setClassName] = useState('');
   const [selectedSections, setSelectedSections] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -92,7 +104,7 @@ const AcademicsClasses = () => {
         const sectionsData = Array.isArray(sectionsRes.data) ? sectionsRes.data : (sectionsRes.data?.data || []);
 
         // Backend classes do not include sections join; UI already handles missing sections gracefully
-        setClasses(classesData);
+        setClasses(sortClasses(classesData));
         setSections(sectionsData);
     } catch (err) {
         console.error('Error fetching classes/sections:', err);
@@ -302,7 +314,7 @@ const AcademicsClasses = () => {
                     <tr key={c.id} className="border-b hover:bg-muted/30">
                       <td className="px-6 py-4 font-medium">{c.name}</td>
                       <td className="px-6 py-4 flex flex-wrap gap-1">
-                        {c.sections?.map(s => <Badge key={s.id} variant="secondary">{s.name}</Badge>)}
+                        {c.sections?.slice().sort((a, b) => a.name.localeCompare(b.name)).map(s => <Badge key={s.id} variant="secondary">{s.name}</Badge>)}
                         {(!c.sections || c.sections.length === 0) && <span className="text-muted-foreground text-xs">No sections</span>}
                       </td>
                       <td className="px-6 py-4 text-right space-x-1">

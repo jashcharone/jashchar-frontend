@@ -101,7 +101,15 @@ const StudentProfile = () => {
   const getFieldValue = (field) => {
       // Handle System Fields
       if (field.is_system) {
-          const val = student[field.field_name];
+          // Map form field names to actual DB column names
+          const fieldMapping = {
+              'dob': 'date_of_birth',
+              'mobile_no': 'phone',
+              'current_address': 'present_address',
+              'national_id_no': 'aadhar_no'
+          };
+          const dbFieldName = fieldMapping[field.field_name] || field.field_name;
+          const val = student[dbFieldName];
           
           switch(field.field_name) {
               case 'class': return student.class?.name;

@@ -515,14 +515,14 @@ const PublicSchoolLogin = () => {
             
             {/* Email Field */}
             <div className="space-y-2">
-              <Label className="text-sm font-medium text-slate-700">Email or Mobile Number</Label>
+              <Label className="text-sm font-medium text-slate-700">Email / Admission No. / Mobile</Label>
               <div className="relative group">
                 <div className="absolute -inset-0.5 bg-gradient-to-r from-blue-500 to-purple-500 rounded-xl opacity-0 group-hover:opacity-20 blur transition duration-300"></div>
                 <div className="relative">
                   <User className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400 group-focus-within:text-blue-500 transition-colors" />
                   <Input 
                     className="pl-12 h-12 bg-white border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all shadow-sm" 
-                    placeholder="Enter your email or mobile" 
+                    placeholder="Email, Admission No. or Mobile" 
                     value={formData.email} 
                     onChange={e => setFormData({...formData, email: e.target.value})}
                     required

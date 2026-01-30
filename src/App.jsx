@@ -696,8 +696,17 @@ function App() {
             <Route path="/Parent/dashboard" element={<ProtectedRoute allowedRoles={['parent']}><ParentDashboard /></ProtectedRoute>} />
             <Route path="/Parent/*" element={<Navigate to="/Parent/dashboard" replace />} />
             
+            {/* ✅ Student Portal Routes */}
             <Route path="/Student/dashboard" element={<ProtectedRoute allowedRoles={['student']}><StudentDashboard /></ProtectedRoute>} />
-            <Route path="/Student/*" element={<Navigate to="/Student/dashboard" replace />} />
+            <Route path={ROUTES.STUDENT.PROFILE} element={<ProtectedRoute allowedRoles={['student']}><StudentPanelProfile /></ProtectedRoute>} />
+            <Route path={ROUTES.STUDENT.EDIT_PROFILE} element={<ProtectedRoute allowedRoles={['student']}><EditStudentPanelProfile /></ProtectedRoute>} />
+            <Route path={ROUTES.STUDENT.FEES} element={<ProtectedRoute allowedRoles={['student']}><StudentPanelFees /></ProtectedRoute>} />
+            <Route path={ROUTES.STUDENT.EXAM_SCHEDULE} element={<ProtectedRoute allowedRoles={['student']}><StudentExamSchedule /></ProtectedRoute>} />
+            <Route path={ROUTES.STUDENT.EXAM_RESULT} element={<ProtectedRoute allowedRoles={['student']}><StudentExamResult /></ProtectedRoute>} />
+            <Route path={ROUTES.STUDENT.HOSTEL_ROOMS} element={<ProtectedRoute allowedRoles={['student']}><StudentHostelRooms /></ProtectedRoute>} />
+            <Route path={ROUTES.STUDENT.TRANSPORT_ROUTES} element={<ProtectedRoute allowedRoles={['student']}><StudentTransportRoutes /></ProtectedRoute>} />
+            <Route path={ROUTES.STUDENT.ATTENDANCE} element={<ProtectedRoute allowedRoles={['student']}><StudentAttendanceView /></ProtectedRoute>} />
+            <Route path={ROUTES.STUDENT.APPLY_LEAVE} element={<ProtectedRoute allowedRoles={['student', 'parent']}><ApplyLeave /></ProtectedRoute>} />
 
             {/* ✅ School Dashboard - All school staff use this */}
             <Route
@@ -1339,17 +1348,6 @@ function App() {
             <Route path={ROUTES.SUPER_ADMIN.CERT_STAFF_ID} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="certificate"><StaffIDCard /></ProtectedRoute>} />
             <Route path={ROUTES.SUPER_ADMIN.CERT_GENERATE_STAFF_ID} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="certificate"><GenerateStaffIDCard /></ProtectedRoute>} />
             <Route path={ROUTES.SUPER_ADMIN.CERT_STUDENT_ID} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="certificate"><StudentIDCard /></ProtectedRoute>} />
-
-            {/* ? Student Panel */}
-            <Route path={ROUTES.STUDENT.PROFILE} element={<ProtectedRoute allowedRoles={['student']}><StudentPanelProfile /></ProtectedRoute>} />
-            <Route path={ROUTES.STUDENT.EDIT_PROFILE} element={<ProtectedRoute allowedRoles={['student']}><EditStudentPanelProfile /></ProtectedRoute>} />
-            <Route path={ROUTES.STUDENT.FEES} element={<ProtectedRoute allowedRoles={['student']}><StudentPanelFees /></ProtectedRoute>} />
-            <Route path={ROUTES.STUDENT.EXAM_SCHEDULE} element={<ProtectedRoute allowedRoles={['student']}><StudentExamSchedule /></ProtectedRoute>} />
-            <Route path={ROUTES.STUDENT.EXAM_RESULT} element={<ProtectedRoute allowedRoles={['student']}><StudentExamResult /></ProtectedRoute>} />
-            <Route path={ROUTES.STUDENT.HOSTEL_ROOMS} element={<ProtectedRoute allowedRoles={['student']}><StudentHostelRooms /></ProtectedRoute>} />
-            <Route path={ROUTES.STUDENT.TRANSPORT_ROUTES} element={<ProtectedRoute allowedRoles={['student']}><StudentTransportRoutes /></ProtectedRoute>} />
-            <Route path={ROUTES.STUDENT.ATTENDANCE} element={<ProtectedRoute allowedRoles={['student']}><StudentAttendanceView /></ProtectedRoute>} />
-            <Route path={ROUTES.STUDENT.APPLY_LEAVE} element={<ProtectedRoute allowedRoles={['student', 'parent']}><ApplyLeave /></ProtectedRoute>} />
 
             {/* ? DYNAMIC NEW MODULES */}
             {NEW_MODULES.map((module) => (

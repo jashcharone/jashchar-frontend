@@ -359,18 +359,27 @@ export const AuthProvider = ({ children }) => {
     let email = identifier;
     const isEmail = (str) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(str);
 
+    console.log('[SignIn] Identifier:', identifier, 'IsEmail:', isEmail(identifier));
+
     if (!isEmail(identifier)) {
       try {
+        console.log('[SignIn] Calling lookup-email API...');
         const response = await api.post('/auth/lookup-email', { identifier });
+        console.log('[SignIn] Lookup response:', response.data);
         if (response.data?.email) {
           email = response.data.email;
+          console.log('[SignIn] Resolved email:', email);
         } else {
+          console.log('[SignIn] No email in response');
           return { error: { message: "User not found." } };
         }
       } catch (err) {
+        console.error('[SignIn] Lookup error:', err);
         return { error: { message: "Error resolving user credentials." } };
       }
     }
+
+    console.log('[SignIn] Attempting Supabase login with email:', email);
 
     try {
       // Note: setPersistence is deprecated in Supabase v2+

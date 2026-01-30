@@ -543,13 +543,13 @@ const Login = () => {
 
             <form onSubmit={handleLogin} className="space-y-5">
               <div className="space-y-2">
-                <Label htmlFor="identifier">Email or Mobile</Label>
+                <Label htmlFor="identifier">Email / Admission No. / Mobile</Label>
                 <Input
                   id="identifier"
                   type="text"
                   value={identifier}
                   onChange={(e) => setIdentifier(e.target.value)}
-                  placeholder="Enter your login ID..."
+                  placeholder="Email, Admission No. or Mobile No."
                   required
                 />
               </div>

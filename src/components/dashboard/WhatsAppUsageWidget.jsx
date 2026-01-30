@@ -18,7 +18,7 @@ const WhatsAppUsageWidget = () => {
           setData(res.data.data);
         }
       } catch (err) {
-        console.error(err);
+        // Silently fail - widget will hide if no data (WhatsApp may not be configured for this user)
         setError(true);
       } finally {
         setLoading(false);

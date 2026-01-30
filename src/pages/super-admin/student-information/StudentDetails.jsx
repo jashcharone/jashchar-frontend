@@ -173,9 +173,9 @@ const StudentDetails = () => {
     // Fetch fees progress for students
     const fetchFeesProgress = async (studentIds) => {
         try {
-            // Get allocations for students
+            // Get allocations for students (correct table name: student_fee_allocations)
             const { data: allocations } = await supabase
-                .from('fee_allocations')
+                .from('student_fee_allocations')
                 .select(`
                     id,
                     student_id,
@@ -183,12 +183,12 @@ const StudentDetails = () => {
                 `)
                 .in('student_id', studentIds);
             
-            // Get payments for students
+            // Get payments for students (fee_payments has no status column, filter by reverted_at being null)
             const { data: payments } = await supabase
                 .from('fee_payments')
                 .select('student_id, amount')
                 .in('student_id', studentIds)
-                .eq('status', 'paid');
+                .is('reverted_at', null);
             
             // Calculate progress per student
             const progressMap = {};

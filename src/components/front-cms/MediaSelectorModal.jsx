@@ -21,8 +21,6 @@ const MediaSelectorModal = ({ isOpen, onClose, onSelect, allowMultiple = false, 
   // instead of schools-specific 'cms-media' bucket.
   const isMasterAdmin = user?.user_metadata?.role === 'master_admin';
 
-  console.log('[MediaSelectorModal] Debug:', { isOpen, branchId, targetSchoolId, isMasterAdmin, userRole: user?.user_metadata?.role });
-
   useEffect(() => {
     if (isOpen) {
       fetchAllMedia();
@@ -199,9 +197,10 @@ const MediaSelectorModal = ({ isOpen, onClose, onSelect, allowMultiple = false, 
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-3xl max-h-[80vh] flex flex-col dark:bg-slate-800">
+      <DialogContent className="max-w-3xl max-h-[80vh] flex flex-col dark:bg-slate-800" aria-describedby="media-selector-description">
         <DialogHeader>
           <DialogTitle className="dark:text-white">Select Media</DialogTitle>
+          <p id="media-selector-description" className="sr-only">Choose an image from your media library or upload a new one</p>
         </DialogHeader>
         
         <div className="flex justify-between items-center py-2">

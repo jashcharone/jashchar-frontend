@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useCallback } from 'react';
+﻿import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/lib/customSupabaseClient';
 import { useToast } from '@/components/ui/use-toast';
 import DashboardLayout from '@/components/DashboardLayout';
@@ -8,21 +8,46 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Save, Loader2, FileImage as ImageIcon, Image as LucideImage } from 'lucide-react';
-import ImageUploader from '@/components/ImageUploader';
+import { Save, Loader2, FileImage as ImageIcon, Upload, X } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { v4 as uuidv4 } from 'uuid';
-import MediaSelectorModal from '@/components/front-cms/MediaSelectorModal';
 
 // Reusable config form for consistent data structure
 const ConfigForm = ({ config, setConfig, onSave, loading, saving, title }) => {
-    const [mediaField, setMediaField] = useState(null);
+    const { toast } = useToast();
+    const [uploading, setUploading] = useState({});
+    const logoInputRef = useRef(null);
+    const bgInputRef = useRef(null);
 
-    const handleMediaSelect = (file) => {
-        if (mediaField) {
-            // MediaSelectorModal returns object with file_url
-            setConfig({ ...config, [mediaField]: file.file_url || file.url });
-            setMediaField(null);
+    // Direct upload to platform-files bucket for Master Admin
+    const handleDirectUpload = async (file, fieldName) => {
+        if (!file) return;
+        
+        setUploading(prev => ({ ...prev, [fieldName]: true }));
+        try {
+            const fileExt = file.name.split('.').pop();
+            const uniqueName = `login-assets/${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
+            
+            const { error: uploadError } = await supabase.storage
+                .from('platform-files')
+                .upload(uniqueName, file, { 
+                    upsert: true,
+                    contentType: file.type 
+                });
+
+            if (uploadError) throw uploadError;
+
+            const { data: { publicUrl } } = supabase.storage
+                .from('platform-files')
+                .getPublicUrl(uniqueName);
+
+            setConfig({ ...config, [fieldName]: publicUrl });
+            toast({ title: 'Success', description: 'Image uploaded successfully!' });
+        } catch (error) {
+            console.error('Upload error:', error);
+            toast({ variant: 'destructive', title: 'Upload failed', description: error.message });
+        } finally {
+            setUploading(prev => ({ ...prev, [fieldName]: false }));
         }
     };
 
@@ -70,17 +95,53 @@ const ConfigForm = ({ config, setConfig, onSave, loading, saving, title }) => {
                     </div>
                     <div className="space-y-2">
                         <Label>Brand Logo</Label>
-                        <div className="flex gap-2">
+                        <div className="space-y-3">
+                            {/* Preview */}
+                            {config.logo_url && (
+                                <div className="relative w-32 h-32 border rounded-lg overflow-hidden bg-slate-100 dark:bg-slate-800">
+                                    <img src={config.logo_url} alt="Logo Preview" className="w-full h-full object-contain" />
+                                    <Button 
+                                        variant="destructive" 
+                                        size="icon" 
+                                        className="absolute top-1 right-1 h-6 w-6"
+                                        onClick={() => setConfig({...config, logo_url: ''})}
+                                    >
+                                        <X className="h-3 w-3" />
+                                    </Button>
+                                </div>
+                            )}
+                            {/* Upload Button */}
+                            <div className="flex gap-2">
+                                <input 
+                                    type="file" 
+                                    ref={logoInputRef}
+                                    accept="image/*" 
+                                    className="hidden" 
+                                    onChange={(e) => handleDirectUpload(e.target.files[0], 'logo_url')}
+                                />
+                                <Button 
+                                    variant="outline" 
+                                    onClick={() => logoInputRef.current?.click()}
+                                    disabled={uploading.logo_url}
+                                    className="flex-1"
+                                >
+                                    {uploading.logo_url ? (
+                                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                    ) : (
+                                        <Upload className="mr-2 h-4 w-4" />
+                                    )}
+                                    {uploading.logo_url ? 'Uploading...' : 'Upload Logo'}
+                                </Button>
+                            </div>
+                            {/* Manual URL */}
                             <Input 
                                 value={config.logo_url || ''} 
                                 onChange={(e) => setConfig({...config, logo_url: e.target.value})} 
-                                placeholder="https://..." 
+                                placeholder="Or paste image URL..." 
+                                className="text-xs"
                             />
-                            <Button variant="outline" size="icon" onClick={() => setMediaField('logo_url')}>
-                                <LucideImage className="h-4 w-4" />
-                            </Button>
                         </div>
-                        <p className="text-xs text-muted-foreground mt-1">Transparent PNG recommended.</p>
+                        <p className="text-xs text-muted-foreground">Transparent PNG recommended.</p>
                     </div>
                     <div className="space-y-2">
                         <Label>Accent Color</Label>
@@ -130,15 +191,51 @@ const ConfigForm = ({ config, setConfig, onSave, loading, saving, title }) => {
                         ) : (
                             <div className="space-y-2">
                                 <Label>Background Image</Label>
-                                <div className="flex gap-2">
+                                <div className="space-y-3">
+                                    {/* Preview */}
+                                    {config.background_value && (
+                                        <div className="relative w-full h-32 border rounded-lg overflow-hidden bg-slate-100 dark:bg-slate-800">
+                                            <img src={config.background_value} alt="Background Preview" className="w-full h-full object-cover" />
+                                            <Button 
+                                                variant="destructive" 
+                                                size="icon" 
+                                                className="absolute top-1 right-1 h-6 w-6"
+                                                onClick={() => setConfig({...config, background_value: ''})}
+                                            >
+                                                <X className="h-3 w-3" />
+                                            </Button>
+                                        </div>
+                                    )}
+                                    {/* Upload Button */}
+                                    <div className="flex gap-2">
+                                        <input 
+                                            type="file" 
+                                            ref={bgInputRef}
+                                            accept="image/*" 
+                                            className="hidden" 
+                                            onChange={(e) => handleDirectUpload(e.target.files[0], 'background_value')}
+                                        />
+                                        <Button 
+                                            variant="outline" 
+                                            onClick={() => bgInputRef.current?.click()}
+                                            disabled={uploading.background_value}
+                                            className="flex-1"
+                                        >
+                                            {uploading.background_value ? (
+                                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                            ) : (
+                                                <Upload className="mr-2 h-4 w-4" />
+                                            )}
+                                            {uploading.background_value ? 'Uploading...' : 'Upload Background'}
+                                        </Button>
+                                    </div>
+                                    {/* Manual URL */}
                                     <Input 
                                         value={config.background_value || ''} 
                                         onChange={(e) => setConfig({...config, background_value: e.target.value})} 
-                                        placeholder="https://..." 
+                                        placeholder="Or paste image URL..." 
+                                        className="text-xs"
                                     />
-                                    <Button variant="outline" size="icon" onClick={() => setMediaField('background_value')}>
-                                        <LucideImage className="h-4 w-4" />
-                                    </Button>
                                 </div>
                             </div>
                         )}
@@ -164,12 +261,6 @@ const ConfigForm = ({ config, setConfig, onSave, loading, saving, title }) => {
                         Save Configuration
                     </Button>
                 </div>
-
-                <MediaSelectorModal 
-                    isOpen={!!mediaField} 
-                    onClose={() => setMediaField(null)} 
-                    onSelect={handleMediaSelect} 
-                />
             </CardContent>
         </Card>
     );

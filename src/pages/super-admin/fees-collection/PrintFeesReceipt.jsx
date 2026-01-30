@@ -76,7 +76,7 @@ const PrintFeesReceipt = () => {
         .select('*, classes(name), sections(name)')
         .eq('id', studentId)
         .eq('branch_id', selectedBranch.id)
-        .single();
+        .maybeSingle(); // Use maybeSingle() to return null instead of error when 0 rows
 
       if (profileData) {
         student = {
@@ -85,13 +85,13 @@ const PrintFeesReceipt = () => {
             section: profileData.sections
         };
       } else {
-         // Fallback
+         // Fallback - use explicit FK relationship names to avoid ambiguity
          const { data: studentProfileData } = await supabase
             .from('student_profiles')
-            .select('*, classes(name), sections(name)')
+            .select('*, classes!student_profiles_class_id_fkey(name), sections!student_profiles_section_id_fkey(name)')
             .eq('id', studentId)
             .eq('branch_id', selectedBranch.id)
-            .single();
+            .maybeSingle();
          if (studentProfileData) {
              student = {
                  ...studentProfileData,

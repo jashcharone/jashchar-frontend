@@ -104,29 +104,22 @@ const StudentDetails = () => {
             toast({ variant: 'destructive', title: 'Please select a class or enter admission number (min 4 chars).' });
             return;
         }
-        if (!currentSessionId) {
-            toast({ variant: 'destructive', title: 'No session selected.' });
-            return;
-        }
         setLoading(true);
-        
-        const { data: roleData } = await supabase.from('roles').select('id').ilike('name', 'student').eq('branch_id', branchId).maybeSingle();
-        if (!roleData) {
-             toast({ variant: 'destructive', title: 'Could not verify student role.'});
-             setLoading(false);
-             return;
-        }
 
         let studentQuery = supabase.from('student_profiles').select(`
             id, full_name, first_name, last_name, school_code, roll_number, gender, date_of_birth, phone, photo_url,
-            father_name, father_phone, guardian_name, guardian_phone, admission_date,
+            father_name, father_phone, guardian_name, guardian_phone, admission_date, session_id,
             class:classes!student_profiles_class_id_fkey( name ),
             section:sections!student_profiles_section_id_fkey( name )
         `, { count: 'exact' })
         .eq('branch_id', selectedBranch.id)
-        .eq('role_id', roleData.id)
-        .eq('session_id', currentSessionId)
-        .order('roll_number', { ascending: true });
+        .or('is_disabled.is.null,is_disabled.eq.false')
+        .order('roll_number', { ascending: true, nullsFirst: false });
+        
+        // Filter by session if selected (optional now)
+        if (currentSessionId) {
+            studentQuery = studentQuery.eq('session_id', currentSessionId);
+        }
         
         // Only add class filter if selected
         if (filters.class_id) {

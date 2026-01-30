@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/lib/customSupabaseClient';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
@@ -21,8 +21,32 @@ const SchoolOwnerProfile = () => {
   // Determine the correct table based on user role
   const userRole = user?.user_metadata?.role || user?.role;
   const isSuperAdmin = userRole === 'super_admin' || userRole === 'master_admin';
-  const tableName = isSuperAdmin ? 'profiles' : 'school_owner_profiles';
-  const idColumn = isSuperAdmin ? 'id' : 'user_id';
+
+  // Function to load profile from current user data
+  const loadProfileFromUser = useCallback((currentUser) => {
+    if (!currentUser) return null;
+    
+    const metadata = currentUser.user_metadata || {};
+    const profileData = currentUser.profile || {};
+    
+    return {
+      id: currentUser.id,
+      email: currentUser.email,
+      full_name: metadata.full_name || profileData.full_name || '',
+      phone: metadata.phone || profileData.phone || '',
+      photo_url: metadata.avatar_url || profileData.photo_url || '',
+      gender: metadata.gender || profileData.gender || '',
+      religion: metadata.religion || profileData.religion || '',
+      blood_group: metadata.blood_group || profileData.blood_group || '',
+      dob: metadata.dob || profileData.dob || '',
+      present_address: metadata.current_address || profileData.current_address || profileData.present_address || '',
+      permanent_address: metadata.permanent_address || profileData.permanent_address || '',
+      facebook_url: metadata.facebook_url || profileData.facebook_url || '',
+      twitter_url: metadata.twitter_url || profileData.twitter_url || '',
+      linkedin_url: metadata.linkedin_url || profileData.linkedin_url || '',
+      school_code: profileData.school_code || metadata.school_code || ''
+    };
+  }, []);
 
   useEffect(() => {
     const loadProfile = async () => {
@@ -36,43 +60,47 @@ const SchoolOwnerProfile = () => {
         setIsLoading(true);
 
         try {
-            // Fetch fresh profile data directly from DB using correct table
-            const { data: freshProfile, error } = await supabase
-                .from(tableName)
-                .select('*')
-                .eq(idColumn, user.id)
-                .maybeSingle();
+            if (isSuperAdmin) {
+                // For super_admin/master_admin: Load directly from auth user metadata
+                console.log('Loading super_admin profile from auth metadata');
+                const mergedProfile = loadProfileFromUser(user);
+                setProfile(mergedProfile);
+                setImagePreview(mergedProfile?.photo_url || '');
+            } else {
+                // For school_owner: Fetch from school_owner_profiles table
+                const { data: freshProfile, error } = await supabase
+                    .from('school_owner_profiles')
+                    .select('*')
+                    .eq('user_id', user.id)
+                    .maybeSingle();
 
-            if (error) {
-                console.error('Error fetching profile:', error);
+                if (error) {
+                    console.error('Error fetching school_owner profile:', error);
+                }
+
+                // Merge with user metadata as fallback
+                const mergedProfile = {
+                    ...loadProfileFromUser(user),
+                    ...(freshProfile || {}),
+                    present_address: freshProfile?.address || freshProfile?.current_address || user.profile?.current_address || ''
+                };
+
+                setProfile(mergedProfile);
+                setImagePreview(freshProfile?.photo_url || user.user_metadata?.avatar_url || '');
             }
-
-            // Merge with user metadata as fallback
-            const mergedProfile = {
-                ...user.user_metadata,
-                ...user.profile,
-                ...(freshProfile || {}),
-                present_address: freshProfile?.address || freshProfile?.current_address || user.profile?.current_address || user.profile?.present_address || ''
-            };
-
-            setProfile(mergedProfile);
-            setImagePreview(freshProfile?.photo_url || freshProfile?.avatar_url || user.profile?.photo_url || user.user_metadata?.avatar_url || '');
         } catch (err) {
             console.error('Profile load error:', err);
             // Fallback to existing user data
-            setProfile({ 
-                ...user.user_metadata, 
-                ...user.profile,
-                present_address: user.profile?.current_address || user.profile?.present_address || ''
-            });
-            setImagePreview(user.profile?.photo_url || user.user_metadata?.avatar_url || '');
+            const fallbackProfile = loadProfileFromUser(user);
+            setProfile(fallbackProfile);
+            setImagePreview(fallbackProfile?.photo_url || '');
         } finally {
             setIsLoading(false);
         }
     };
 
     loadProfile();
-  }, [user, authLoading, tableName, idColumn]);
+  }, [user, authLoading, isSuperAdmin, loadProfileFromUser]);
 
   const handleImageChange = (e) => {
     const file = e.target.files[0];
@@ -105,31 +133,25 @@ const SchoolOwnerProfile = () => {
             photo_url = data.publicUrl;
         }
 
-        const updateData = {
-            full_name: profile.full_name,
-            photo_url: photo_url,
-            phone: profile.phone,
-            gender: profile.gender,
-            religion: profile.religion,
-            blood_group: profile.blood_group,
-            dob: profile.dob,
-            current_address: profile.present_address, // Map back to current_address for DB
-            permanent_address: profile.permanent_address,
-            facebook_url: profile.facebook_url,
-            twitter_url: profile.twitter_url,
-            linkedin_url: profile.linkedin_url
-        };
-        
         let savedData, error;
         
         if (isSuperAdmin) {
-            // For super_admin/master_admin: Update auth user metadata directly (always works)
+            // For super_admin/master_admin: Update auth user metadata directly
             console.log('Updating auth user metadata for super_admin');
             const { data: authData, error: authError } = await supabase.auth.updateUser({
                 data: {
                     full_name: profile.full_name,
                     avatar_url: photo_url,
-                    phone: profile.phone
+                    phone: profile.phone,
+                    gender: profile.gender,
+                    religion: profile.religion,
+                    blood_group: profile.blood_group,
+                    dob: profile.dob,
+                    current_address: profile.present_address,
+                    permanent_address: profile.permanent_address,
+                    facebook_url: profile.facebook_url,
+                    twitter_url: profile.twitter_url,
+                    linkedin_url: profile.linkedin_url
                 }
             });
             
@@ -137,6 +159,12 @@ const SchoolOwnerProfile = () => {
                 error = authError;
             } else {
                 savedData = authData;
+                // Update local state immediately with saved data
+                if (authData?.user) {
+                    const updatedProfile = loadProfileFromUser(authData.user);
+                    setProfile(updatedProfile);
+                    setImagePreview(updatedProfile?.photo_url || '');
+                }
             }
         } else {
             // school_owner_profiles table: user_id, full_name, email, phone, address, city, state, photo_url
@@ -174,6 +202,12 @@ const SchoolOwnerProfile = () => {
                     .select();
                 savedData = data;
                 error = updateError;
+                
+                // Update local state with saved data
+                if (data && data[0]) {
+                    setProfile(prev => ({ ...prev, ...data[0], present_address: data[0].address }));
+                    setImagePreview(data[0].photo_url || '');
+                }
             } else {
                 // Insert new profile
                 const { data, error: insertError } = await supabase
@@ -182,13 +216,23 @@ const SchoolOwnerProfile = () => {
                     .select();
                 savedData = data;
                 error = insertError;
+                
+                // Update local state with saved data
+                if (data && data[0]) {
+                    setProfile(prev => ({ ...prev, ...data[0], present_address: data[0].address }));
+                    setImagePreview(data[0].photo_url || '');
+                }
             }
         }
             
         if (error) throw error;
         console.log("Saved profile result:", savedData);
         
+        // Refresh auth context to sync globally
         await refreshUserContext();
+        
+        // Clear the image file since it's now saved
+        setImageFile(null);
 
         toast({ title: "Profile Updated!", description: "Your profile has been successfully updated." });
     } catch (error) {

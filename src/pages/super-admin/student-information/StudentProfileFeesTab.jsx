@@ -35,21 +35,16 @@ const StudentProfileFeesTab = ({ studentId }) => {
                     )
                 `)
                 .eq('student_id', studentId)
-                .eq('branch_id', branchId)
                 .eq('branch_id', selectedBranch.id);
             
             let paymentsQuery = supabase
                 .from('fee_payments')
                 .select(`*`)
                 .eq('student_id', studentId)
-                .eq('branch_id', branchId)
                 .eq('branch_id', selectedBranch.id);
             
-            // Add session filter if available
-            if (currentSessionId) {
-                allocationsQuery = allocationsQuery.eq('session_id', currentSessionId);
-                paymentsQuery = paymentsQuery.eq('session_id', currentSessionId);
-            }
+            // Note: session_id filter removed - allocations may not have session_id set
+            // If needed, filter by session at fee_master level instead
             
             const [allocationsRes, paymentsRes] = await Promise.all([
                 allocationsQuery,

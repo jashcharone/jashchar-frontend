@@ -62,7 +62,9 @@ const RolePermissionSchool = () => {
 
             sortedData.forEach(role => {
                 const lowerName = role.name.toLowerCase().replace(/_/g, ' ').trim();
-                if (lowerName === 'school owner') return;
+                // Hide School Owner and Super Admin roles from this list
+                // Super Admin has all permissions by default and shouldn't modify their own role
+                if (lowerName === 'school owner' || lowerName === 'super admin') return;
                 if (!seenNames.has(lowerName)) {
                     seenNames.add(lowerName);
                     uniqueRoles.push(role);

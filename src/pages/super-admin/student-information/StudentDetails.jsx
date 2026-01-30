@@ -97,8 +97,11 @@ const StudentDetails = () => {
     }, [filters.class_id]);
 
     const handleSearch = async () => {
-        if (!filters.class_id) {
-            toast({ variant: 'destructive', title: 'Please select a class.' });
+        // Allow searching by admission number without class filter (quick search)
+        const isQuickSearch = filters.keyword && filters.keyword.length >= 4 && !filters.class_id;
+        
+        if (!filters.class_id && !isQuickSearch) {
+            toast({ variant: 'destructive', title: 'Please select a class or enter admission number (min 4 chars).' });
             return;
         }
         if (!currentSessionId) {
@@ -122,9 +125,13 @@ const StudentDetails = () => {
         `, { count: 'exact' })
         .eq('branch_id', selectedBranch.id)
         .eq('role_id', roleData.id)
-        .eq('class_id', filters.class_id)
         .eq('session_id', currentSessionId)
         .order('roll_number', { ascending: true });
+        
+        // Only add class filter if selected
+        if (filters.class_id) {
+            studentQuery = studentQuery.eq('class_id', filters.class_id);
+        }
         
         if (filters.section_id && filters.section_id !== 'all') {
             studentQuery = studentQuery.eq('section_id', filters.section_id);

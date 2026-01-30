@@ -94,9 +94,67 @@ export const PermissionProvider = ({ children }) => {
         return;
       }
 
-      // ? Parent/Student Bypass - Give basic view permissions without full role_permissions setup
+      // ? Parent/Student - Fetch ACTUAL permissions from role_permissions table
       if (normalizedRole === 'parent' || normalizedRole === 'student') {
-        console.log('PermissionContext: Granting default permissions for', normalizedRole);
+        console.log('PermissionContext: Loading permissions for', normalizedRole, 'branch:', branchId);
+        
+        try {
+          // Use the same RPC as super_admin to fetch permissions
+          const queryRoleName = normalizedRole.charAt(0).toUpperCase() + normalizedRole.slice(1); // 'Parent' or 'Student'
+          
+          const { data: rolePerms, error: permError } = await supabase
+            .rpc('rpc_get_role_permissions_for_school', {
+              p_branch_id: branchId,
+              p_role_name: queryRoleName
+            });
+
+          console.log('PermissionContext:', normalizedRole, 'permissions from DB:', rolePerms?.length || 0, 'error:', permError);
+
+          if (rolePerms && rolePerms.length > 0) {
+            // Build permission map from database
+            const permMap = { '__ROLE_BASED__': true };
+            
+            rolePerms.forEach(p => {
+              let moduleSlug = p.module_slug;
+              
+              // Fix duplicate parent prefix if present
+              const parts = moduleSlug.split('.');
+              if (parts.length >= 3 && parts[0] === parts[1]) {
+                moduleSlug = parts[0] + '.' + parts.slice(2).join('.');
+              }
+              
+              permMap[moduleSlug] = {
+                can_view: p.can_view,
+                can_add: p.can_add,
+                can_edit: p.can_edit,
+                can_delete: p.can_delete
+              };
+              
+              // Also add base module permission for submodule access
+              const baseModule = moduleSlug.split('.')[0];
+              if (baseModule !== moduleSlug && !permMap[baseModule]) {
+                permMap[baseModule] = {
+                  can_view: p.can_view,
+                  can_add: false,
+                  can_edit: false,
+                  can_delete: false
+                };
+              }
+            });
+
+            // Always ensure dashboard access
+            permMap['dashboard'] = { can_view: true, can_add: false, can_edit: false, can_delete: false };
+            
+            console.log('PermissionContext:', normalizedRole, 'final permissions:', Object.keys(permMap).length);
+            if (isMounted) { setPermissions(permMap); setLoading(false); }
+            return;
+          }
+        } catch (err) {
+          console.error('PermissionContext: Error loading', normalizedRole, 'permissions:', err);
+        }
+
+        // Fallback to basic defaults if no explicit permissions found
+        console.log('PermissionContext: No explicit permissions found for', normalizedRole, '- using defaults');
         const basicPerms = {
           '__BASIC_USER__': true,
           'dashboard': { can_view: true, can_add: false, can_edit: false, can_delete: false },

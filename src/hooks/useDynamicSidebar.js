@@ -239,10 +239,15 @@ export const useDynamicSidebar = (role) => {
   const menu = useMemo(() => {
     // Get effective role
     // master_admin stays as master_admin
+    // student and parent keep their own sidebar
     // All school staff (organization_owner, super_admin, admin, principal, teacher, accountant, receptionist, librarian) -> super_admin
     let effectiveRole = role;
     const schoolStaffRoles = ['organization_owner', 'super_admin', 'admin', 'school_owner', 'principal', 'teacher', 'accountant', 'receptionist', 'librarian'];
-    if (schoolStaffRoles.includes(role)) {
+    
+    // ✅ Student and Parent keep their own sidebar - DO NOT convert to super_admin
+    if (role === 'student' || role === 'parent') {
+      effectiveRole = role;
+    } else if (schoolStaffRoles.includes(role)) {
       effectiveRole = 'super_admin';
     }
     // master_admin keeps its own sidebar
@@ -254,6 +259,13 @@ export const useDynamicSidebar = (role) => {
     
     // Start with static sidebar (has correct routes!)
     const staticMenu = BASE_SIDEBAR[effectiveRole] || BASE_SIDEBAR['super_admin'] || [];
+    
+    // ✅ STUDENT/PARENT: Return their specific static sidebar only
+    // They have limited modules defined in sidebarConfig.js
+    if (effectiveRole === 'student' || effectiveRole === 'parent') {
+      console.log('[useDynamicSidebar]', effectiveRole, '- using role-specific sidebar:', staticMenu.length, 'items');
+      return staticMenu;
+    }
     
     // ✅ MASTER ADMIN: Return ONLY static sidebar, don't add any dynamic modules
     // Master admin has fixed modules (Dashboard, Branches, Subscriptions, etc.)

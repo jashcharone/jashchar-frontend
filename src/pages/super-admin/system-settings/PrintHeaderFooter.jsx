@@ -8,7 +8,7 @@ import { useToast } from '@/components/ui/use-toast';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { useBranch } from '@/contexts/BranchContext';
 import { supabase } from '@/lib/customSupabaseClient';
-import { Loader2, Save, UploadCloud, Trash2, Building2 } from 'lucide-react';
+import { Loader2, Save, UploadCloud, Trash2, Building2, Download, Info, AlertCircle } from 'lucide-react';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
 
@@ -32,7 +32,7 @@ const quillModules = {
   ],
 };
 
-const PrintSettingsForm = ({ type, settings, onSave, loading, branchId, school }) => {
+const PrintSettingsForm = ({ type, settings, onSave, loading, branchId, isOrgDefault, branchName }) => {
   const [headerImage, setHeaderImage] = useState(settings?.header_image_url || '');
   const [footerContent, setFooterContent] = useState(settings?.footer_content || 'This receipt is computer generated hence no signature is required.');
   const [uploading, setUploading] = useState(false);
@@ -43,6 +43,70 @@ const PrintSettingsForm = ({ type, settings, onSave, loading, branchId, school }
     setHeaderImage(settings?.header_image_url || '');
     setFooterContent(settings?.footer_content || 'This receipt is computer generated hence no signature is required.');
   }, [settings]);
+
+  const handleDownloadTemplate = () => {
+    // Create a canvas to generate a template
+    const canvas = document.createElement('canvas');
+    canvas.width = 2230;
+    canvas.height = 300;
+    const ctx = canvas.getContext('2d');
+    
+    // White background
+    ctx.fillStyle = '#FFFFFF';
+    ctx.fillRect(0, 0, 2230, 300);
+    
+    // Left side - Logo placeholder
+    ctx.fillStyle = '#F3F4F6';
+    ctx.fillRect(40, 40, 200, 200);
+    ctx.strokeStyle = '#D1D5DB';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(40, 40, 200, 200);
+    ctx.fillStyle = '#6B7280';
+    ctx.font = '20px Arial';
+    ctx.textAlign = 'center';
+    ctx.fillText('LOGO', 140, 145);
+    ctx.font = '14px Arial';
+    ctx.fillText('(Add Here)', 140, 165);
+    
+    // School name placeholder
+    ctx.fillStyle = '#111827';
+    ctx.font = 'bold 48px Arial';
+    ctx.textAlign = 'left';
+    ctx.fillText('Your School Name Here', 280, 100);
+    
+    // Tagline
+    ctx.fillStyle = '#6B7280';
+    ctx.font = '24px Arial';
+    ctx.fillText('School Tagline / Motto', 280, 145);
+    
+    // Affiliation
+    ctx.font = '18px Arial';
+    ctx.fillText('Affiliated to: CBSE/ICSE/State Board (Affiliation No: XXXXXX)', 280, 185);
+    
+    // Right side - Contact info
+    ctx.fillStyle = '#374151';
+    ctx.font = '18px Arial';
+    ctx.textAlign = 'right';
+    ctx.fillText('Address: Your School Address, City - PIN', 2190, 70);
+    ctx.fillText('Phone: +91 98765 43210', 2190, 105);
+    ctx.fillText('Email: school@example.com', 2190, 140);
+    ctx.fillText('Website: www.yourschool.com', 2190, 175);
+    
+    // Bottom decorative line
+    ctx.fillStyle = '#3B82F6';
+    ctx.fillRect(0, 270, 2230, 30);
+    
+    // Download
+    const link = document.createElement('a');
+    link.download = 'print_header_template_2230x300.png';
+    link.href = canvas.toDataURL('image/png');
+    link.click();
+    
+    toast({ 
+      title: '📥 Template Downloaded!', 
+      description: 'Edit this template in Canva, Photoshop, or any image editor. Replace the placeholders with your school details and upload.' 
+    });
+  };
 
   const handleFileSelect = async (e) => {
     const file = e.target.files?.[0];
@@ -56,7 +120,7 @@ const PrintSettingsForm = ({ type, settings, onSave, loading, branchId, school }
     setUploading(true);
     try {
       const fileExt = file.name.split('.').pop();
-      const fileName = `${branchId}/print-headers/${branchId || 'default'}/${type}_${Date.now()}.${fileExt}`;
+      const fileName = `print-headers/${branchId || 'org-default'}/${type}_${Date.now()}.${fileExt}`;
 
       const { error: uploadError } = await supabase.storage
         .from('school-logos')
@@ -69,7 +133,7 @@ const PrintSettingsForm = ({ type, settings, onSave, loading, branchId, school }
         .getPublicUrl(fileName);
 
       setHeaderImage(publicUrl);
-      toast({ title: 'Image uploaded successfully!' });
+      toast({ title: '✅ Image uploaded successfully!' });
     } catch (error) {
       console.error('Upload error:', error);
       toast({ variant: 'destructive', title: 'Upload failed', description: error.message });
@@ -89,11 +153,56 @@ const PrintSettingsForm = ({ type, settings, onSave, loading, branchId, school }
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
+      {/* Info Banner */}
+      <div className={`p-4 rounded-lg border ${isOrgDefault ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800' : 'bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800'}`}>
+        <div className="flex items-start gap-3">
+          {isOrgDefault ? (
+            <Info className="h-5 w-5 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
+          ) : (
+            <AlertCircle className="h-5 w-5 text-amber-600 dark:text-amber-400 mt-0.5 flex-shrink-0" />
+          )}
+          <div>
+            <p className="font-medium text-sm">
+              {isOrgDefault 
+                ? '🌐 Organization Default - Applies to ALL branches' 
+                : `🏫 Branch Override - Only for "${branchName}"`}
+            </p>
+            <p className="text-xs text-muted-foreground mt-1">
+              {isOrgDefault 
+                ? 'Changes here will apply to all branches that don\'t have their own custom settings.' 
+                : 'This setting overrides the organization default for this specific branch only.'}
+            </p>
+          </div>
+        </div>
+      </div>
+
       {/* Header Image Section */}
       <div className="space-y-3">
-        <Label className="text-base font-medium text-foreground">
-          Header Image (2230px X 300px) <span className="text-red-500">*</span>
-        </Label>
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+          <Label className="text-base font-medium text-foreground">
+            Header Image (2230px × 300px) <span className="text-red-500">*</span>
+          </Label>
+          <Button 
+            type="button" 
+            variant="outline" 
+            size="sm"
+            onClick={handleDownloadTemplate}
+            className="gap-2 w-fit"
+          >
+            <Download className="h-4 w-4" />
+            Download Template
+          </Button>
+        </div>
+        
+        <div className="bg-muted/50 p-3 rounded-md border border-dashed">
+          <p className="text-xs text-muted-foreground">
+            💡 <strong>How to create your header:</strong><br/>
+            1. Click "Download Template" to get a sample image<br/>
+            2. Open in Canva, Photoshop, or any image editor<br/>
+            3. Replace placeholders with your school logo, name & contact details<br/>
+            4. Export as PNG (2230×300 pixels) and upload below
+          </p>
+        </div>
         
         <div 
           className="border-2 border-dashed border-border rounded-lg min-h-[200px] flex flex-col items-center justify-center cursor-pointer hover:border-primary/50 transition-colors bg-muted/20 dark:bg-muted/10 relative overflow-hidden"
@@ -124,14 +233,14 @@ const PrintSettingsForm = ({ type, settings, onSave, loading, branchId, school }
                 />
               </div>
               
-              <div className="flex justify-center mt-4 gap-2">
+              <div className="flex justify-center mt-4 gap-2 flex-wrap">
                 <Button 
                   type="button" 
                   variant="destructive" 
                   size="sm"
                   onClick={(e) => { e.stopPropagation(); handleRemoveImage(); }}
                 >
-                  <Trash2 className="h-4 w-4 mr-2" /> Remove Image
+                  <Trash2 className="h-4 w-4 mr-2" /> Remove
                 </Button>
                 <Button 
                   type="button" 
@@ -139,14 +248,15 @@ const PrintSettingsForm = ({ type, settings, onSave, loading, branchId, school }
                   size="sm"
                   onClick={(e) => { e.stopPropagation(); fileInputRef.current?.click(); }}
                 >
-                  <UploadCloud className="h-4 w-4 mr-2" /> Change Image
+                  <UploadCloud className="h-4 w-4 mr-2" /> Change
                 </Button>
               </div>
             </div>
           ) : (
             <div className="flex flex-col items-center gap-2 text-muted-foreground py-10">
               <UploadCloud className="h-10 w-10" />
-              <span>Drag and drop a file <span className="text-primary underline">here</span> or <span className="text-primary underline">click</span></span>
+              <span>Click to upload or drag and drop</span>
+              <span className="text-xs">Recommended: 2230px × 300px (PNG or JPG)</span>
             </div>
           )}
         </div>
@@ -167,9 +277,9 @@ const PrintSettingsForm = ({ type, settings, onSave, loading, branchId, school }
 
       {/* Save Button */}
       <div className="flex justify-end pt-4">
-        <Button type="submit" disabled={loading}>
-          {loading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Save className="h-4 w-4 mr-2" />}
-          Save
+        <Button type="submit" disabled={loading} className="gap-2">
+          {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+          Save {isOrgDefault ? 'for All Branches' : `for ${branchName}`}
         </Button>
       </div>
     </form>
@@ -177,52 +287,43 @@ const PrintSettingsForm = ({ type, settings, onSave, loading, branchId, school }
 };
 
 const PrintHeaderFooter = () => {
-  const { user } = useAuth();
+  const { user, organizationId } = useAuth();
   const { toast } = useToast();
   const { branches, selectedBranch } = useBranch();
   const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(true);
   const [activeTab, setActiveTab] = useState('fees_receipt');
   const [allSettings, setAllSettings] = useState({});
-  const [school, setSchool] = useState(null);
-  const [currentBranchId, setCurrentBranchId] = useState(selectedBranch?.id || 'all');
+  const [currentBranchId, setCurrentBranchId] = useState('all'); // 'all' = organization default
 
-  const branchId = user?.profile?.branch_id;
+  const userBranchId = user?.profile?.branch_id;
+  const userOrgId = organizationId || user?.profile?.organization_id;
+
+  // Check if current selection is organization default
+  const isOrgDefault = currentBranchId === 'all';
+  const currentBranchName = isOrgDefault 
+    ? 'All Branches' 
+    : branches?.find(b => b.id === currentBranchId)?.branch_name || 'Selected Branch';
 
   const fetchSettings = useCallback(async () => {
-    if (!branchId) {
+    if (!userBranchId) {
       console.log('No branchId, skipping fetch');
       setFetching(false);
       return;
     }
     setFetching(true);
     try {
-      const { data: schoolData } = await supabase
-        .from('schools')
-        .select('name, address, contact_number, contact_email, domain')
-        .eq('id', branchId)
-        .single();
-      
-      // Map to expected field names
-      const mappedSchool = schoolData ? {
-        ...schoolData,
-        phone: schoolData.contact_number,
-        email: schoolData.contact_email,
-        website: schoolData.domain || null
-      } : null;
-      setSchool(mappedSchool);
+      let query = supabase.from('print_settings').select('*');
 
-      // Build query for print settings
-      let query = supabase
-        .from('print_settings')
-        .select('*')
-        .eq('branch_id', branchId);
-
-      // Filter by branch if selected (not 'all')
-      if (currentBranchId && currentBranchId !== 'all') {
-        query = query.eq('branch_id', currentBranchId);
-      } else {
+      if (isOrgDefault) {
+        // Fetch organization defaults (branch_id is NULL)
         query = query.is('branch_id', null);
+        if (userOrgId) {
+          query = query.eq('organization_id', userOrgId);
+        }
+      } else {
+        // Fetch branch-specific settings
+        query = query.eq('branch_id', currentBranchId);
       }
 
       const { data, error } = await query;
@@ -231,7 +332,25 @@ const PrintHeaderFooter = () => {
         console.warn('Print settings fetch warning:', error.message);
       }
 
-      console.log('Fetched print_settings for branch:', currentBranchId, data);
+      console.log('Fetched print_settings for:', isOrgDefault ? 'org-default' : currentBranchId, data);
+
+      // If no branch-specific settings, try to fetch org defaults as fallback
+      if (!isOrgDefault && (!data || data.length === 0)) {
+        console.log('No branch settings, fetching org defaults as fallback...');
+        let fallbackQuery = supabase.from('print_settings').select('*').is('branch_id', null);
+        if (userOrgId) {
+          fallbackQuery = fallbackQuery.eq('organization_id', userOrgId);
+        }
+        const { data: fallbackData } = await fallbackQuery;
+        
+        // Mark fallback data as inherited
+        const settingsMap = {};
+        (fallbackData || []).forEach(item => {
+          settingsMap[item.type] = { ...item, _inherited: true };
+        });
+        setAllSettings(settingsMap);
+        return;
+      }
 
       // Map data by type
       const settingsMap = {};
@@ -239,74 +358,62 @@ const PrintHeaderFooter = () => {
         settingsMap[item.type] = item;
       });
       
-      console.log('Settings map:', settingsMap);
       setAllSettings(settingsMap);
     } catch (error) {
       console.error('Fetch error:', error);
     } finally {
       setFetching(false);
     }
-  }, [branchId, currentBranchId]);
+  }, [userBranchId, userOrgId, currentBranchId, isOrgDefault]);
 
   useEffect(() => {
     fetchSettings();
   }, [fetchSettings]);
 
-  useEffect(() => {
-    if (selectedBranch?.id) {
-      setCurrentBranchId(selectedBranch.id);
-    }
-  }, [selectedBranch]);
-
   const handleSave = async (type, formData) => {
-    if (!branchId) {
+    if (!userBranchId) {
       toast({ variant: 'destructive', title: 'Error', description: 'School ID not found' });
       return;
     }
 
     setLoading(true);
     try {
-      // Prepare data with branch_id for branch-wise storage
-      const branchId = currentBranchId && currentBranchId !== 'all' ? currentBranchId : null;
+      // Determine save parameters based on selection
+      const targetBranchId = isOrgDefault ? null : currentBranchId;
       
-      // Check if record exists for this school + type + branch
-      const { data: existing } = await supabase
+      // Check if record already exists
+      let existingQuery = supabase
         .from('print_settings')
         .select('id')
-        .eq('branch_id', branchId)
-        .eq('type', type)
-        .is('branch_id', branchId ? undefined : null);
+        .eq('type', type);
       
-      let existingId = null;
-      if (branchId) {
-        const { data: branchExisting } = await supabase
-          .from('print_settings')
-          .select('id')
-          .eq('branch_id', branchId)
-          .eq('type', type)
-          .eq('branch_id', branchId)
-          .single();
-        existingId = branchExisting?.id;
-      } else if (existing && existing.length > 0) {
-        existingId = existing[0].id;
+      if (isOrgDefault) {
+        existingQuery = existingQuery.is('branch_id', null);
+        if (userOrgId) {
+          existingQuery = existingQuery.eq('organization_id', userOrgId);
+        }
+      } else {
+        existingQuery = existingQuery.eq('branch_id', targetBranchId);
       }
+      
+      const { data: existing } = await existingQuery.maybeSingle();
 
       const saveData = {
-        branch_id: branchId,
+        branch_id: targetBranchId,
+        organization_id: userOrgId || null,
         type,
-        branch_id: branchId,
         header_image_url: formData.header_image_url || null,
         footer_content: formData.footer_content || null,
         updated_at: new Date().toISOString(),
       };
 
       let data, error;
-      if (existingId) {
+      if (existing?.id) {
         // Update existing record
         const result = await supabase
           .from('print_settings')
           .update(saveData)
-          .eq('id', existingId)
+          .eq('id', existing.id)
           .select()
           .single();
         data = result.data;
@@ -329,7 +436,12 @@ const PrintHeaderFooter = () => {
         [type]: data
       }));
 
-      toast({ title: 'Success!', description: `Print settings saved successfully.` });
+      toast({ 
+        title: '✅ Success!', 
+        description: isOrgDefault 
+          ? 'Settings saved for all branches.' 
+          : `Settings saved for ${currentBranchName}.`
+      });
     } catch (error) {
       console.error('Save error:', error);
       toast({ variant: 'destructive', title: 'Failed to save settings', description: error.message });
@@ -351,43 +463,54 @@ const PrintHeaderFooter = () => {
   return (
     <DashboardLayout>
       <div className="p-6 space-y-6">
-        {/* Header with Tabs */}
-        <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
-          <div className="flex items-center gap-4">
-            <h1 className="text-2xl font-semibold text-foreground">Print Header Footer</h1>
+        {/* Header */}
+        <div className="flex flex-col gap-4">
+          <div className="flex flex-col lg:flex-row lg:justify-between lg:items-center gap-4">
+            <h1 className="text-2xl font-semibold text-foreground">Print Header & Footer</h1>
             
-            {/* Branch Selector */}
-            {branches && branches.length > 0 && (
-              <Select value={currentBranchId} onValueChange={setCurrentBranchId}>
-                <SelectTrigger className="w-[200px]">
-                  <Building2 className="h-4 w-4 mr-2" />
-                  <SelectValue placeholder="Select Branch" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Branches (Default)</SelectItem>
-                  {branches.map((branch) => (
-                    <SelectItem key={branch.id} value={branch.id}>
-                      {branch.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            )}
+            <Tabs value={activeTab} onValueChange={setActiveTab}>
+              <TabsList className="bg-transparent h-auto p-0 gap-0 flex-wrap">
+                {PRINT_TYPES.map(({ id, label }) => (
+                  <TabsTrigger 
+                    key={id} 
+                    value={id}
+                    className="border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:text-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none rounded-none px-3 py-2 text-sm text-muted-foreground"
+                  >
+                    {label}
+                  </TabsTrigger>
+                ))}
+              </TabsList>
+            </Tabs>
           </div>
-          
-          <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="bg-transparent h-auto p-0 gap-0">
-              {PRINT_TYPES.map(({ id, label }) => (
-                <TabsTrigger 
-                  key={id} 
-                  value={id}
-                  className="border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:text-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none rounded-none px-4 py-2 text-sm text-muted-foreground"
-                >
-                  {label}
-                </TabsTrigger>
-              ))}
-            </TabsList>
-          </Tabs>
+
+          {/* Branch Selector */}
+          <div className="flex flex-col sm:flex-row sm:items-center gap-3 p-4 bg-muted/50 rounded-lg border">
+            <div className="flex items-center gap-2">
+              <Building2 className="h-5 w-5 text-muted-foreground" />
+              <span className="text-sm font-medium">Apply settings to:</span>
+            </div>
+            <Select value={currentBranchId} onValueChange={setCurrentBranchId}>
+              <SelectTrigger className="w-full sm:w-[300px]">
+                <SelectValue placeholder="Select Branch" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">
+                  <div className="flex items-center gap-2">
+                    <span className="text-lg">🌐</span>
+                    <span>All Branches (Organization Default)</span>
+                  </div>
+                </SelectItem>
+                {branches && branches.map((branch) => (
+                  <SelectItem key={branch.id} value={branch.id}>
+                    <div className="flex items-center gap-2">
+                      <span className="text-lg">🏫</span>
+                      <span>{branch.branch_name}</span>
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
 
         {/* Content */}
@@ -400,9 +523,9 @@ const PrintHeaderFooter = () => {
                 settings={allSettings[id]}
                 onSave={handleSave}
                 loading={loading}
-                branchId={branchId}
-                school={school}
                 branchId={currentBranchId}
+                isOrgDefault={isOrgDefault}
+                branchName={currentBranchName}
               />
             )
           ))}

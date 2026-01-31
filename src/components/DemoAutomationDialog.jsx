@@ -48,7 +48,7 @@ const DemoAutomationDialog = () => {
 
     return (
         <div className={cn(
-            "fixed bottom-4 right-4 z-50 transition-all duration-300 shadow-2xl",
+            "fixed bottom-4 right-4 z-50 transition-all duration-300 shadow-2xl print-hidden",
             isMinimized ? "w-64" : "w-[450px]"
         )}>
             <Card className="border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950">

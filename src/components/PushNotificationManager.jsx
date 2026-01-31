@@ -65,7 +65,7 @@ const PushNotificationManager = () => {
   if (!user || !isSupported || !isAvailable || subscription) return null;
 
   return (
-    <div className='fixed bottom-4 right-4 z-50'>
+    <div className='fixed bottom-4 right-4 z-50 print-hidden'>
       <Button 
         onClick={handleSubscribe}
         className='shadow-lg rounded-full gap-2 bg-indigo-600 hover:bg-indigo-700 text-white'

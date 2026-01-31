@@ -139,3 +139,32 @@ html:not(.dark) {
     scrollbar-width: none;  /* Firefox */
   }
 }
+
+/* Print Styles - Hide non-printable elements */
+@media print {
+  /* Hide WhatsApp, chat widgets, and floating buttons only */
+  .print-hidden,
+  #whatsapp-widget,
+  #chat-widget,
+  .whatsapp-button,
+  .chat-support-button,
+  [data-print-hidden="true"] {
+    display: none !important;
+    visibility: hidden !important;
+  }
+  
+  /* Reset background and colors for print */
+  body {
+    background: white !important;
+    color: black !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+  
+  /* Ensure content fits the page */
+  .print-content {
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+}

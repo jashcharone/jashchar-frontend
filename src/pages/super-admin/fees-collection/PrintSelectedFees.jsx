@@ -45,18 +45,37 @@ const PrintSelectedFees = () => {
       setLoading(true);
 
       try {
-        const [studentRes, mastersRes, settingsRes] = await Promise.all([
+        const [studentRes, mastersRes] = await Promise.all([
           supabase.from('student_profiles').select('*, school:schools(*), class:classes!student_profiles_class_id_fkey(name), section:sections!student_profiles_section_id_fkey(name)').eq('id', studentId).eq('branch_id', selectedBranch.id).single(),
           supabase.from('fee_masters').select('*, fee_group:fee_group_id(name), fee_type:fee_type_id(name, code), due_date').in('id', feeMasterIds),
-          supabase.from('print_settings').select('header_image_url, footer_content').eq('branch_id', branchId).eq('branch_id', selectedBranch.id).eq('type', 'fees_receipt').single(),
         ]);
 
         if (studentRes.error) throw studentRes.error;
         if (mastersRes.error) throw mastersRes.error;
-        if (settingsRes.error && settingsRes.error.code !== 'PGRST116') throw settingsRes.error;
+
+        // Fetch Print Settings - First try branch-specific, then org default (branch_id = NULL)
+        let settingsData = null;
+        const { data: branchSettings } = await supabase
+          .from('print_settings')
+          .select('header_image_url, footer_content')
+          .eq('branch_id', selectedBranch.id)
+          .eq('type', 'fees_receipt')
+          .maybeSingle();
+
+        if (branchSettings) {
+          settingsData = branchSettings;
+        } else {
+          const { data: orgSettings } = await supabase
+            .from('print_settings')
+            .select('header_image_url, footer_content')
+            .is('branch_id', null)
+            .eq('type', 'fees_receipt')
+            .maybeSingle();
+          settingsData = orgSettings;
+        }
 
         setPrintData({ student: studentRes.data, masters: mastersRes.data });
-        setPrintSettings(settingsRes.data);
+        setPrintSettings(settingsData);
       } catch (error) {
         toast({ variant: 'destructive', title: 'Error fetching data', description: error.message });
       } finally {

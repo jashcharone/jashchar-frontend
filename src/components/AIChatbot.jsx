@@ -263,7 +263,7 @@ const AIChatbot = () => {
     return (
       <Button
         onClick={() => setIsOpen(true)}
-        className="fixed bottom-6 right-24 h-16 w-16 rounded-full shadow-2xl z-[9999] bg-blue-600 hover:bg-blue-700 border-4 border-white"
+        className="fixed bottom-6 right-24 h-16 w-16 rounded-full shadow-2xl z-[9999] bg-blue-600 hover:bg-blue-700 border-4 border-white print-hidden"
         size="icon"
         title="Open AI Chatbot"
       >
@@ -276,7 +276,7 @@ const AIChatbot = () => {
   // Minimized State
   if (isMinimized) {
     return (
-      <div className="fixed bottom-6 right-24 z-[9999]">
+      <div className="fixed bottom-6 right-24 z-[9999] print-hidden">
         <Card className="w-72 shadow-xl">
           <CardHeader className="py-3 px-4 flex flex-row items-center justify-between bg-primary text-primary-foreground rounded-t-lg">
             <div className="flex items-center gap-2">
@@ -309,7 +309,7 @@ const AIChatbot = () => {
 
   // Full Chat Window
   return (
-    <div className="fixed bottom-6 right-24 z-[9999]">
+    <div className="fixed bottom-6 right-24 z-[9999] print-hidden">
       <Card className="w-96 h-[600px] shadow-2xl flex flex-col">
         {/* Header */}
         <CardHeader className="py-3 px-4 flex flex-row items-center justify-between bg-primary text-primary-foreground rounded-t-lg shrink-0">

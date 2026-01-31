@@ -200,6 +200,7 @@ const initialFormData = {
   mobile_no: '',
   email: '',
   aadhar_no: '',
+  national_id_no: '',  // Backend field name for aadhar
   post_office: '',
   city: '',
   state: '',
@@ -569,18 +570,19 @@ const StudentAdmission = () => {
               </SmartField>
              );
         case 'aadhar_no':
+        case 'national_id_no':  // Backend uses national_id_no for student aadhar
         case 'father_aadhar_no':
         case 'mother_aadhar_no':
             return (
-              <SmartField label={label} required={isRequired} error={(field.field_name === 'aadhar_no' ? aadharError : null) || (touched[field.field_name] && errors[field.field_name])} touched icon={Fingerprint} hint="12 digits">
+              <SmartField label={label} required={isRequired} error={(field.field_name === 'aadhar_no' || field.field_name === 'national_id_no' ? aadharError : null) || (touched[field.field_name] && errors[field.field_name])} touched icon={Fingerprint} hint="12 digits">
                 <AadharInput 
                   value={formData[field.field_name] || ''} 
                   onChange={val => {
                     handleChange(field.field_name, val);
-                    if(field.field_name === 'aadhar_no') validateAadhar(val);
+                    if(field.field_name === 'aadhar_no' || field.field_name === 'national_id_no') validateAadhar(val);
                   }} 
-                  checkDuplicates={field.field_name === 'aadhar_no'} 
-                  error={null}
+                  checkDuplicates={field.field_name === 'aadhar_no' || field.field_name === 'national_id_no'} 
+                  hideLabel={true}
                   className="h-11"
                 />
               </SmartField>
@@ -1043,6 +1045,71 @@ const StudentAdmission = () => {
         )
     }
 
+    // Aadhar field type - 12 digits with xxxx xxxx xxxx format
+    if (field.type === 'aadhar' || field.field_type === 'aadhar') {
+        return (
+          <SmartField label={label} required={isRequired} error={errorMsg} touched={touched[field.field_name]} icon={Fingerprint} hint="12 digits">
+            <AadharInput 
+              value={value || ''} 
+              onChange={onChange}
+              checkDuplicates={false}
+              hideLabel={true}
+              className="h-11"
+            />
+          </SmartField>
+        );
+    }
+
+    // Phone field type - 10 digits
+    if (field.type === 'phone' || field.field_type === 'phone') {
+        return (
+          <SmartField label={label} required={isRequired} error={errorMsg} touched={touched[field.field_name]} icon={Phone} hint="10 digits">
+            <Input 
+              value={value} 
+              type="tel"
+              placeholder="9876543210"
+              onChange={e => onChange(e.target.value.replace(/\D/g, '').slice(0, 10))}
+              onBlur={() => field.is_system && handleBlur(field.field_name)}
+              className="h-11"
+              maxLength={10}
+            />
+          </SmartField>
+        );
+    }
+
+    // Email field type
+    if (field.type === 'email' || field.field_type === 'email') {
+        return (
+          <SmartField label={label} required={isRequired} error={errorMsg} touched={touched[field.field_name]} icon={Mail}>
+            <Input 
+              value={value} 
+              type="email"
+              placeholder="email@example.com"
+              onChange={e => onChange(e.target.value)}
+              onBlur={() => field.is_system && handleBlur(field.field_name)}
+              className="h-11"
+            />
+          </SmartField>
+        );
+    }
+
+    // Pincode field type - 6 digits
+    if (field.type === 'pincode' || field.field_type === 'pincode') {
+        return (
+          <SmartField label={label} required={isRequired} error={errorMsg} touched={touched[field.field_name]} icon={MapPinned} hint="6 digits">
+            <Input 
+              value={value} 
+              type="text"
+              placeholder="560001"
+              onChange={e => onChange(e.target.value.replace(/\D/g, '').slice(0, 6))}
+              onBlur={() => field.is_system && handleBlur(field.field_name)}
+              className="h-11 font-mono tracking-widest"
+              maxLength={6}
+            />
+          </SmartField>
+        );
+    }
+
     // Default Text Input with enhanced styling
     return (
       <SmartField label={label} required={isRequired} error={errorMsg} touched={touched[field.field_name]}>
@@ -1426,15 +1493,16 @@ const StudentAdmission = () => {
   }, [selectedBranch?.id, toast]);
 
   const getNextRollNumber = useCallback(async (classId, sectionId) => {
-    if (!classId || !sectionId || rollNumberManuallyEdited || !selectedBranch?.id) return;
+    if (!classId || !sectionId || rollNumberManuallyEdited || !selectedBranch?.id || !formData.session_id) return;
     setIsRollNumberLoading(true);
     setRollNumberError('');
     try {
-      // Get max roll number from student_profiles table directly
+      // Get max roll number from student_profiles for this session + class + section
       const { data, error } = await supabase
         .from('student_profiles')
         .select('roll_number')
         .eq('branch_id', selectedBranch.id)
+        .eq('session_id', formData.session_id)  // Filter by current session
         .eq('class_id', classId)
         .eq('section_id', sectionId)
         .not('roll_number', 'is', null)
@@ -1455,7 +1523,7 @@ const StudentAdmission = () => {
       console.error('[StudentAdmission] Roll number error:', err);
     }
     setIsRollNumberLoading(false);
-  }, [selectedBranch?.id, toast, rollNumberManuallyEdited]);
+  }, [selectedBranch?.id, formData.session_id, toast, rollNumberManuallyEdited]);
   
   useEffect(() => {
     if (rollNumberManuallyEdited) {
@@ -1467,7 +1535,7 @@ const StudentAdmission = () => {
   }, [formData.roll_number, formData.class_id, formData.section_id, rollNumberManuallyEdited, checkDuplicateRollNumber]);
   
   useEffect(() => {
-    if (formData.class_id && formData.section_id) {
+    if (formData.class_id && formData.section_id && formData.session_id) {
       if (!rollNumberManuallyEdited) {
         getNextRollNumber(formData.class_id, formData.section_id);
       } else {
@@ -1477,7 +1545,7 @@ const StudentAdmission = () => {
       handleChange('roll_number', '');
       setRollNumberError('');
     }
-  }, [formData.class_id, formData.section_id, getNextRollNumber, rollNumberManuallyEdited, checkDuplicateRollNumber]);
+  }, [formData.class_id, formData.section_id, formData.session_id, getNextRollNumber, rollNumberManuallyEdited, checkDuplicateRollNumber]);
   
   // Track previous class_id to detect actual changes
   const prevClassIdRef = useRef(formData.class_id);
@@ -1796,9 +1864,9 @@ const StudentAdmission = () => {
       }
 
       // Build student data for backend API call
-      // Use timestamp to ensure unique email when user doesn't provide one
-      const uniqueId = Date.now();
-      const studentEmail = formData.email || `student.${school_code}.${uniqueId}@temp.jashchar.edu`;
+      // NOTE: Student login uses ADMISSION NUMBER, NOT email
+      // Real email is optional - only for communication purposes
+      const studentEmail = formData.email || null; // Real email is optional, NOT for login
       
       const studentPayload = {
         // Basic info
@@ -2364,7 +2432,7 @@ const StudentAdmission = () => {
           <div className="space-y-6">
             {formData.siblings.length > 0 && (
               <div className="p-5 bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/20 border-2 border-amber-300 dark:border-amber-800 rounded-2xl">
-                <SmartField label="Carry Forward Fees from Siblings" hint="Amount in ?" icon={IndianRupee}>
+                <SmartField label="Carry Forward Fees from Siblings" hint="Amount in ₹" icon={IndianRupee}>
                   <Input 
                     value={formData.carry_forward_fees} 
                     type="number" 
@@ -2396,7 +2464,7 @@ const StudentAdmission = () => {
                     </div>
                     <div className="flex items-center gap-4">
                       <div className="bg-emerald-100 dark:bg-emerald-900/40 px-4 py-2 rounded-xl">
-                        <span className="font-black text-xl text-emerald-700 dark:text-emerald-300">?{group.fee_masters.reduce((acc, master) => acc + master.amount, 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                        <span className="font-black text-xl text-emerald-700 dark:text-emerald-300">₹{group.fee_masters.reduce((acc, master) => acc + master.amount, 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
                       </div>
                       <CollapsibleTrigger asChild>
                         <Button variant="ghost" size="sm" className="h-10 w-10 p-0 rounded-xl hover:bg-primary/10">
@@ -2418,7 +2486,7 @@ const StudentAdmission = () => {
                             <CalendarDays className="h-3 w-3" />
                             {new Date(master.due_date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
                           </span>
-                          <span className="font-bold text-foreground">?{master.amount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                          <span className="font-bold text-foreground">₹{master.amount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
                         </div>
                       </div>
                     ))}

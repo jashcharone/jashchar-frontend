@@ -15,7 +15,7 @@ const formatAadhar = (value) => {
   return parts.join(' ');
 };
 
-const AadharInput = ({ value, onChange, label, required, checkDuplicates = false, initialError = '' }) => {
+const AadharInput = ({ value, onChange, label, required, checkDuplicates = false, initialError = '', hideLabel = false, className }) => {
   const [formattedValue, setFormattedValue] = useState(formatAadhar(value || ''));
   const [isChecking, setIsChecking] = useState(false);
   const [error, setError] = useState(initialError);
@@ -80,16 +80,16 @@ const AadharInput = ({ value, onChange, label, required, checkDuplicates = false
 
   return (
     <div>
-      <Label htmlFor={`aadhar-${label}`} required={required}>{label}</Label>
+      {!hideLabel && label && <Label htmlFor={`aadhar-${label}`} required={required}>{label}</Label>}
       <div className="relative">
         <Input
-          id={`aadhar-${label}`}
+          id={`aadhar-${label || 'input'}`}
           type="text"
           value={formattedValue}
           onChange={handleChange}
           placeholder="xxxx xxxx xxxx"
           maxLength={14} // 12 digits + 2 spaces
-          className={cn(error && "border-destructive")}
+          className={cn(className, error && "border-destructive")}
         />
         {isChecking && (
           <Loader2 className="absolute right-2 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-muted-foreground" />

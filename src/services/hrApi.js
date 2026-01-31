@@ -3,7 +3,7 @@
  * Frontend service for HR Module APIs
  */
 
-import api from '@/services/api';
+import api from '@/lib/api';  // FIXED: Use the authenticated api from lib, not services
 
 const hrApi = {
     // ═══════════════════════════════════════════════════════════════════════════

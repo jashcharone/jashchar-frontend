@@ -2,6 +2,7 @@
 import DashboardLayout from '@/components/DashboardLayout';
 import { useToast } from '@/components/ui/use-toast';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
+import { useBranch } from '@/contexts/BranchContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -48,6 +49,10 @@ const FIELD_TYPES = [
     { value: 'checkbox', label: 'Checkbox', icon: CheckSquare },
     { value: 'radio', label: 'Radio', icon: Circle },
     { value: 'file', label: 'File Upload', icon: Upload },
+    { value: 'aadhar', label: 'Aadhar (xxxx xxxx xxxx)', icon: CreditCard },
+    { value: 'phone', label: 'Phone (10 digits)', icon: Phone },
+    { value: 'email', label: 'Email', icon: Type },
+    { value: 'pincode', label: 'Pincode (6 digits)', icon: Hash },
 ];
 
 const getFieldTypeIcon = (type) => {
@@ -61,7 +66,11 @@ const getFieldTypeIcon = (type) => {
 // ============================================================================
 const FormFieldsSettings = () => {
     const { school } = useAuth();
+    const { selectedBranch } = useBranch();
     const { toast } = useToast();
+    
+    // Use selectedBranch for branch-wise data, fallback to school.id
+    const branchId = selectedBranch?.id || school?.id;
     
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
@@ -73,8 +82,14 @@ const FormFieldsSettings = () => {
     // Dialogs
     const [showAddField, setShowAddField] = useState(false);
     const [showEditOptions, setShowEditOptions] = useState(false);
+    const [showEditField, setShowEditField] = useState(false);
     const [editingField, setEditingField] = useState(null);
     const [optionsText, setOptionsText] = useState('');
+    
+    // Edit field form
+    const [editFieldData, setEditFieldData] = useState({
+        field_label: '', field_type: 'text', is_required: false
+    });
     
     // New field form
     const [newField, setNewField] = useState({
@@ -83,11 +98,11 @@ const FormFieldsSettings = () => {
 
     // ==================== DATA FETCHING ====================
     const fetchSettings = useCallback(async () => {
-        if (!school?.id) return;
+        if (!branchId) return;
         setLoading(true);
         try {
             const { data } = await api.get('/form-settings', {
-                params: { branchId: school.id, module: 'student_admission' }
+                params: { branchId: branchId, module: 'student_admission' }
             });
             setSections(data.sections || []);
             setSystemFields(data.systemFields || []);
@@ -98,7 +113,7 @@ const FormFieldsSettings = () => {
         } finally {
             setLoading(false);
         }
-    }, [school?.id, toast]);
+    }, [branchId, toast]);
 
     useEffect(() => { fetchSettings(); }, [fetchSettings]);
 
@@ -150,7 +165,7 @@ const FormFieldsSettings = () => {
         try {
             if (isSystem) {
                 await api.post('/form-settings/save', {
-                    branch_id: school.id,
+                    branch_id: branchId,
                     module: 'student_admission',
                     settings: [{
                         field_key: field.key,
@@ -185,6 +200,70 @@ const FormFieldsSettings = () => {
         setShowEditOptions(true);
     };
 
+    // Edit field (label, type)
+    const handleEditField = (field) => {
+        setEditingField(field);
+        setEditFieldData({
+            field_label: field.field_label || field.label || '',
+            field_type: field.field_type || field.type || 'text',
+            is_required: !!field.is_required
+        });
+        setShowEditField(true);
+    };
+
+    const saveFieldEdit = async () => {
+        if (!editingField || !editFieldData.field_label.trim()) {
+            toast({ variant: 'destructive', title: 'Field label is required' });
+            return;
+        }
+        setSaving(true);
+        
+        try {
+            if (editingField.is_system) {
+                // System field - save to school_field_settings
+                await api.post('/form-settings/save', {
+                    branch_id: branchId,
+                    module: 'student_admission',
+                    settings: [{
+                        field_key: editingField.key,
+                        field_label: editFieldData.field_label,
+                        is_enabled: editingField.is_enabled !== false,
+                        is_required: editFieldData.is_required,
+                        field_options: editingField.field_options || [],
+                        section_key: getSectionKey(editingField),
+                        sort_order: editingField.sort_order || 0
+                    }]
+                });
+                // Update local state
+                setSystemFields(prev => prev.map(f => 
+                    f.key === editingField.key 
+                        ? { ...f, field_label: editFieldData.field_label, is_required: editFieldData.is_required } 
+                        : f
+                ));
+            } else {
+                // Custom field - update via API
+                await api.put(`/form-settings/custom-field/${editingField.id}`, { 
+                    field_label: editFieldData.field_label,
+                    field_type: editFieldData.field_type,
+                    is_required: editFieldData.is_required
+                });
+                // Update local state
+                setCustomFields(prev => prev.map(f => 
+                    f.id === editingField.id 
+                        ? { ...f, field_label: editFieldData.field_label, field_type: editFieldData.field_type, is_required: editFieldData.is_required } 
+                        : f
+                ));
+            }
+            toast({ title: 'Field updated successfully' });
+            setShowEditField(false);
+            setEditingField(null);
+        } catch (error) {
+            toast({ variant: 'destructive', title: 'Error updating field' });
+        } finally {
+            setSaving(false);
+        }
+    };
+
     const saveOptions = async () => {
         if (!editingField) return;
         setSaving(true);
@@ -197,7 +276,7 @@ const FormFieldsSettings = () => {
         try {
             if (editingField.is_system) {
                 await api.post('/form-settings/save', {
-                    branch_id: school.id,
+                    branch_id: branchId,
                     module: 'student_admission',
                     settings: [{
                         field_key: editingField.key,
@@ -242,7 +321,7 @@ const FormFieldsSettings = () => {
 
         try {
             await api.post('/form-settings/custom-field', {
-                branch_id: school.id,
+                branch_id: branchId,
                 module: 'student_admission',
                 field_label: newField.field_label,
                 field_type: newField.field_type,
@@ -466,6 +545,14 @@ const FormFieldsSettings = () => {
                                                                 </TableCell>
                                                                 <TableCell className="text-right">
                                                                     <div className="flex items-center justify-end gap-1">
+                                                                        <Tooltip>
+                                                                            <TooltipTrigger asChild>
+                                                                                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleEditField(field)}>
+                                                                                    <Edit className="h-4 w-4 text-green-500" />
+                                                                                </Button>
+                                                                            </TooltipTrigger>
+                                                                            <TooltipContent>Edit Field</TooltipContent>
+                                                                        </Tooltip>
                                                                         {hasOptions && (
                                                                             <Tooltip>
                                                                                 <TooltipTrigger asChild>
@@ -618,6 +705,88 @@ const FormFieldsSettings = () => {
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
+
+            {/* Edit Field Dialog */}
+            <Dialog open={showEditField} onOpenChange={setShowEditField}>
+                <DialogContent className="max-w-md">
+                    <DialogHeader>
+                        <DialogTitle className="flex items-center gap-2">
+                            <Edit className="h-5 w-5 text-primary" />
+                            Edit Field
+                        </DialogTitle>
+                        <DialogDescription>
+                            {editingField?.is_system ? 'Edit system field settings' : 'Edit custom field settings'}
+                        </DialogDescription>
+                    </DialogHeader>
+                    
+                    <div className="space-y-4 py-4">
+                        <div className="space-y-2">
+                            <Label>Field Label <span className="text-destructive">*</span></Label>
+                            <Input 
+                                value={editFieldData.field_label}
+                                onChange={(e) => setEditFieldData({...editFieldData, field_label: e.target.value})}
+                                placeholder="Enter field label"
+                            />
+                        </div>
+                        
+                        {/* Field type - only editable for custom fields */}
+                        {!editingField?.is_system && (
+                            <div className="space-y-2">
+                                <Label>Field Type</Label>
+                                <Select value={editFieldData.field_type} onValueChange={(v) => setEditFieldData({...editFieldData, field_type: v})}>
+                                    <SelectTrigger>
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {FIELD_TYPES.map(t => (
+                                            <SelectItem key={t.value} value={t.value}>
+                                                <div className="flex items-center gap-2">
+                                                    <t.icon className="h-4 w-4" />
+                                                    {t.label}
+                                                </div>
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                                <p className="text-xs text-muted-foreground">
+                                    {editFieldData.field_type === 'aadhar' && '🔢 Format: xxxx xxxx xxxx (12 digits)'}
+                                    {editFieldData.field_type === 'phone' && '📱 Format: 10 digit mobile number'}
+                                    {editFieldData.field_type === 'pincode' && '📍 Format: 6 digit pincode'}
+                                </p>
+                            </div>
+                        )}
+                        
+                        {editingField?.is_system && (
+                            <div className="p-3 rounded-lg bg-amber-50 dark:bg-amber-950 border border-amber-200 dark:border-amber-800">
+                                <p className="text-sm text-amber-700 dark:text-amber-300 flex items-center gap-2">
+                                    <AlertCircle className="h-4 w-4" />
+                                    System field type cannot be changed
+                                </p>
+                                <p className="text-xs text-amber-600 dark:text-amber-400 mt-1">
+                                    Current type: <span className="font-medium capitalize">{editingField?.field_type || editingField?.type}</span>
+                                </p>
+                            </div>
+                        )}
+                        
+                        <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
+                            <Switch 
+                                id="required-edit"
+                                checked={editFieldData.is_required}
+                                onCheckedChange={(c) => setEditFieldData({...editFieldData, is_required: c})}
+                            />
+                            <Label htmlFor="required-edit" className="cursor-pointer">Mark as required field</Label>
+                        </div>
+                    </div>
+                    
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setShowEditField(false)}>Cancel</Button>
+                        <Button onClick={saveFieldEdit} disabled={saving}>
+                            {saving && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+                            Save Changes
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </TooltipProvider>
     );
 };
@@ -627,14 +796,18 @@ const FormFieldsSettings = () => {
 // ============================================================================
 const AdmissionFormSettings = () => {
     const { school } = useAuth();
+    const { selectedBranch } = useBranch();
     const [stats, setStats] = useState({ sections: 0, system: 0, custom: 0, active: 0 });
+    
+    // Use selectedBranch for branch-wise data
+    const branchId = selectedBranch?.id || school?.id;
     
     useEffect(() => {
         const fetchStats = async () => {
-            if (!school?.id) return;
+            if (!branchId) return;
             try {
                 const { data } = await api.get('/form-settings', {
-                    params: { branchId: school.id, module: 'student_admission' }
+                    params: { branchId: branchId, module: 'student_admission' }
                 });
                 const sysActive = (data.systemFields || []).filter(f => f.is_enabled !== false).length;
                 const cusActive = (data.customFields || []).filter(f => f.is_enabled !== false).length;
@@ -647,7 +820,7 @@ const AdmissionFormSettings = () => {
             } catch (e) {}
         };
         fetchStats();
-    }, [school?.id]);
+    }, [branchId]);
     
     return (
         <DashboardLayout>
@@ -660,7 +833,10 @@ const AdmissionFormSettings = () => {
                         </div>
                         <div>
                             <h1 className="text-2xl font-bold tracking-tight">Admission Form Settings</h1>
-                            <p className="text-muted-foreground">Configure admission form, categories & houses</p>
+                            <div className="text-muted-foreground flex items-center gap-1">
+                                <span>Configure admission form for</span>
+                                <Badge variant="outline">{selectedBranch?.branch_name || selectedBranch?.name || 'Select Branch'}</Badge>
+                            </div>
                         </div>
                     </div>
                 </div>

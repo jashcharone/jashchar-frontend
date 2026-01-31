@@ -162,31 +162,32 @@ const StudentPromotion = () => {
                 .from('student_profiles')
                 .select(`
                     id,
-                    admission_no,
+                    school_code,
+                    roll_number,
                     first_name,
                     last_name,
                     gender,
                     father_name,
-                    mobile_number,
-                    student_status,
+                    phone,
                     classes:class_id(id, name),
                     sections:section_id(id, name)
                 `)
                 .eq('branch_id', branchId)
+                .eq('session_id', filters.current_session)  // CRITICAL: Filter by session
                 .eq('class_id', filters.current_class)
-                .eq('student_status', 'active');
+                .or('is_disabled.is.null,is_disabled.eq.false');  // Only active students
             
             if (filters.current_section) {
                 query = query.eq('section_id', filters.current_section);
             }
             
-            const { data, error } = await query.order('first_name');
+            const { data, error } = await query.order('roll_number', { ascending: true, nullsFirst: false });
             
             if (error) throw error;
             setStudents(data || []);
             
             if (!data || data.length === 0) {
-                toast({ title: 'No Students', description: 'No active students found in selected class' });
+                toast({ title: 'No Students', description: 'No active students found in selected class/session' });
             }
         } catch (error) {
             console.error('Error fetching students:', error);
@@ -239,9 +240,11 @@ const StudentPromotion = () => {
                 
                 try {
                     // Update student with new class, section, and session
+                    // IMPORTANT: Roll number is reset to NULL - new roll will be assigned in new session
                     const updateData = {
                         class_id: filters.promote_class,
                         session_id: filters.promote_session,
+                        roll_number: null,  // Reset roll number for new session - will be re-assigned
                         updated_at: new Date().toISOString()
                     };
                     
@@ -260,7 +263,7 @@ const StudentPromotion = () => {
                     results.failed++;
                     results.errors.push({
                         student: `${student?.first_name} ${student?.last_name}`,
-                        admission_no: student?.admission_no,
+                        school_code: student?.school_code,
                         error: err.message
                     });
                 }
@@ -273,7 +276,7 @@ const StudentPromotion = () => {
             if (results.success > 0) {
                 toast({ 
                     title: 'Promotion Complete', 
-                    description: `${results.success} students promoted successfully${results.failed > 0 ? `, ${results.failed} failed` : ''}` 
+                    description: `${results.success} students promoted successfully${results.failed > 0 ? `, ${results.failed} failed` : ''}. Roll numbers will be assigned when editing students.` 
                 });
                 // Refresh student list
                 handleSearch();
@@ -516,7 +519,7 @@ const StudentPromotion = () => {
                                         <p className="font-medium">Errors:</p>
                                         <ul className="list-disc pl-4">
                                             {promotionResults.errors.slice(0, 5).map((err, i) => (
-                                                <li key={i}>{err.student} ({err.admission_no}): {err.error}</li>
+                                                <li key={i}>{err.student} ({err.school_code}): {err.error}</li>
                                             ))}
                                         </ul>
                                     </div>
@@ -574,12 +577,13 @@ const StudentPromotion = () => {
                                                 />
                                             </TableHead>
                                             <TableHead>Admission No</TableHead>
+                                            <TableHead>Adm No</TableHead>
+                                            <TableHead>Roll</TableHead>
                                             <TableHead>Student Name</TableHead>
                                             <TableHead>Gender</TableHead>
                                             <TableHead>Father Name</TableHead>
                                             <TableHead>Class</TableHead>
                                             <TableHead>Section</TableHead>
-                                            <TableHead>Status</TableHead>
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>
@@ -591,7 +595,8 @@ const StudentPromotion = () => {
                                                         onCheckedChange={(checked) => handleSelectStudent(student.id, checked)}
                                                     />
                                                 </TableCell>
-                                                <TableCell className="font-medium">{student.admission_no}</TableCell>
+                                                <TableCell className="font-medium">{student.school_code}</TableCell>
+                                                <TableCell className="font-mono">{student.roll_number || '-'}</TableCell>
                                                 <TableCell>{student.first_name} {student.last_name}</TableCell>
                                                 <TableCell>
                                                     <Badge variant={student.gender === 'Male' ? 'default' : 'secondary'}>
@@ -601,11 +606,6 @@ const StudentPromotion = () => {
                                                 <TableCell>{student.father_name || '-'}</TableCell>
                                                 <TableCell>{student.classes?.name || '-'}</TableCell>
                                                 <TableCell>{student.sections?.name || '-'}</TableCell>
-                                                <TableCell>
-                                                    <Badge variant="success" className="bg-green-100 text-green-800">
-                                                        Active
-                                                    </Badge>
-                                                </TableCell>
                                             </TableRow>
                                         ))}
                                     </TableBody>

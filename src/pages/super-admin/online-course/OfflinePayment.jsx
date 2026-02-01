@@ -11,7 +11,7 @@ import { useToast } from '@/components/ui/use-toast';
 import { Loader2, IndianRupee } from 'lucide-react';
 
 const OfflinePayment = () => {
-  const { user } = useAuth();
+  const { user, currentSessionId, organizationId } = useAuth();
   const { toast } = useToast();
   const branchId = user?.user_metadata?.branch_id;
 
@@ -83,6 +83,8 @@ const OfflinePayment = () => {
     
     const { error } = await supabase.from('student_course_purchases').insert({
       branch_id: branchId,
+      session_id: currentSessionId,
+      organization_id: organizationId,
       student_id: filters.student_id,
       course_id: course.id,
       price_paid: course.price,

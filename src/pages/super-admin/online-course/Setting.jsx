@@ -12,7 +12,7 @@ import { useToast } from '@/components/ui/use-toast';
 import { Loader2, Trash2 } from 'lucide-react';
 
 const Setting = () => {
-  const { user } = useAuth();
+  const { user, currentSessionId, organizationId } = useAuth();
   const { toast } = useToast();
   const branchId = user?.user_metadata?.branch_id;
   
@@ -36,7 +36,7 @@ const Setting = () => {
   const handleAddCategory = async () => {
     if (!newCategory) return;
     setCatLoading(true);
-    const { error } = await supabase.from('online_course_categories').insert({ name: newCategory, branch_id: branchId });
+    const { error } = await supabase.from('online_course_categories').insert({ name: newCategory, branch_id: branchId, session_id: currentSessionId, organization_id: organizationId });
     if (error) toast({ variant: 'destructive', title: 'Error' });
     else {
       setNewCategory('');

@@ -17,7 +17,7 @@ import {
 } from '@/components/ui/dialog';
 
 const HostelFee = () => {
-  const { user } = useAuth();
+  const { user, currentSessionId, organizationId } = useAuth();
   const { selectedBranch } = useBranch();
   const { toast } = useToast();
   const [students, setStudents] = useState([]);
@@ -196,7 +196,8 @@ const HostelFee = () => {
     const hostelPayload = {
       student_id: selectedStudent.id,
       branch_id: branchId,
-      branch_id: branchId,
+      session_id: currentSessionId,
+      organization_id: organizationId,
       hostel_id: formData.hostel_id || null,
       room_id: formData.room_id || null,
       room_type_id: formData.room_type_id || null,

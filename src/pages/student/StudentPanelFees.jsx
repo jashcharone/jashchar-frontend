@@ -24,7 +24,7 @@ const StudentPanelFees = () => {
             setLoading(true);
 
             const [studentRes, allocationsRes, paymentsRes] = await Promise.all([
-                supabase.from('student_profiles').select('*, photo_url, full_name, school_code, father_name, phone, roll_number, class:class_id(name), section:section_id(name)').eq('id', studentId).single(),
+                supabase.from('student_profiles').select('*, photo_url, full_name, school_code, father_name, phone, roll_number, class:classes!student_profiles_class_id_fkey(name), section:sections!student_profiles_section_id_fkey(name)').eq('id', studentId).single(),
                 supabase.from('student_fee_allocations').select('fee_master_id').eq('student_id', studentId),
                 supabase.from('fee_payments').select('*').eq('student_id', studentId).order('payment_date', { ascending: false }),
             ]);

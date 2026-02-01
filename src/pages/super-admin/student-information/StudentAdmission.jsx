@@ -122,63 +122,100 @@ const SectionBox = ({ icon, title, children, className, collapsible = false, def
 };
 
 // ? Premium Smart Input Field Component
-const SmartField = ({ label, required, error, touched, children, className, hint, icon: FieldIcon, success }) => (
-  <div className={cn("group space-y-2", className)}>
-    <Label className="flex items-center justify-between text-sm font-semibold text-foreground/90">
-      <span className="flex items-center gap-2">
-        {FieldIcon && (
-          <span className="flex items-center justify-center w-6 h-6 rounded-lg bg-primary/10 group-focus-within:bg-primary/20 transition-colors">
-            <FieldIcon className="h-3.5 w-3.5 text-primary" />
+const SmartField = ({ label, required, error, touched, children, className, hint, icon: FieldIcon, success }) => {
+  return (
+    <div className={cn("group space-y-2", className)}>
+      <Label className={cn(
+        "flex items-center justify-between text-sm font-semibold transition-colors duration-200",
+        touched && error ? "text-red-600 dark:text-red-400" : "text-foreground/90"
+      )}>
+        <span className="flex items-center gap-2">
+          {FieldIcon && (
+            <span className={cn(
+              "flex items-center justify-center w-6 h-6 rounded-lg transition-colors duration-200",
+              touched && error ? "bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400" : "bg-primary/10 text-primary group-focus-within:bg-primary/20"
+            )}>
+              <FieldIcon className="h-3.5 w-3.5" />
+            </span>
+          )}
+          <span>{label}</span>
+          {required && <span className="text-red-500 font-bold ml-0.5">*</span>}
+        </span>
+        {hint && (
+          <span className="text-xs text-muted-foreground font-normal flex items-center gap-1 bg-muted/50 px-2 py-0.5 rounded-md">
+            <Sparkles className="h-3 w-3 text-primary" />{hint}
           </span>
         )}
-        <span>{label}</span>
-        {required && <span className="text-red-500 font-bold ml-0.5">*</span>}
-      </span>
-      {hint && (
-        <span className="text-xs text-muted-foreground font-normal flex items-center gap-1 bg-muted/50 px-2 py-0.5 rounded-md">
-          <Sparkles className="h-3 w-3 text-primary" />{hint}
-        </span>
-      )}
-    </Label>
-    <div className="relative">
-      {children}
-      {success && !error && (
-        <div className="absolute right-3 top-1/2 -translate-y-1/2">
-          <CheckCircle2 className="h-4 w-4 text-green-500" />
-        </div>
-      )}
-    </div>
-    {touched && error && (
-      <p className="text-xs text-red-500 flex items-center gap-1.5 animate-in slide-in-from-top-1 bg-red-50 dark:bg-red-950/30 px-2 py-1 rounded-lg border border-red-200 dark:border-red-900">
-        <AlertCircle className="h-3.5 w-3.5 flex-shrink-0" />
-        <span>{error}</span>
-      </p>
-    )}
-  </div>
-);
-
-// ? Simple Photo Upload Card
-const PhotoUploadCard = ({ label, preview, onFileChange, required }) => {
-  return (
-    <div className="flex flex-col items-center gap-2">
-      <Label className="text-xs font-medium flex items-center gap-1 text-muted-foreground">
-        <Camera className="h-3 w-3" />
-        {label}
-        {required && <span className="text-red-500">*</span>}
       </Label>
-      <div className="w-32">
-        <ImageUploader 
-          onFileChange={onFileChange} 
-          initialPreview={preview} 
-          showInstruction={false}
-          showCamera={false}
-          aspectRatio={3.5/4.5}
-          showCrop={true}
-        />
+      <div className="relative">
+        {children}
+        
+        {/* Error/Success Overlay - Works for Input, Select, etc. */}
+        {touched && error && (
+          <div className="absolute inset-0 rounded-md border-2 border-red-500 pointer-events-none ring-2 ring-red-500/20 bg-red-500/5 z-10 animate-in fade-in duration-200" />
+        )}
+        {success && !error && (
+            <div className="absolute inset-0 rounded-md border-2 border-emerald-500 pointer-events-none ring-2 ring-emerald-500/20 bg-emerald-500/5 z-10 animate-in fade-in duration-200" />
+        )}
+
+        {/* Status Icons */}
+        {success && !error && (
+          <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none z-20 animate-in zoom-in-50 duration-200">
+            <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+          </div>
+        )}
+        {touched && error && (
+          <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none z-20 animate-in zoom-in-50 duration-200">
+            <AlertCircle className="h-4 w-4 text-red-600" />
+          </div>
+        )}
       </div>
+      
+      {touched && error && (
+        <p className="text-xs text-red-600 dark:text-red-400 flex items-center gap-1.5 animate-in slide-in-from-top-1 bg-red-50 dark:bg-red-950/30 px-2 py-1.5 rounded-lg border border-red-200 dark:border-red-900 font-medium shadow-sm">
+          <AlertCircle className="h-3.5 w-3.5 flex-shrink-0" />
+          <span>{error}</span>
+        </p>
+      )}
     </div>
   );
 };
+
+// ? Simple Photo Upload Card
+const PhotoUploadCard = ({ label, preview, onFileChange, required, error, touched }) => {
+    return (
+      <div className={cn(
+        "flex flex-col items-center gap-2 p-2 rounded-xl transition-all duration-300", 
+        touched && error ? "bg-red-50 dark:bg-red-950/20 border-2 border-red-200 dark:border-red-800" : ""
+      )}>
+        <Label className={cn(
+          "text-xs font-medium flex items-center gap-1", 
+          touched && error ? "text-red-500 font-bold" : "text-muted-foreground"
+        )}>
+          <Camera className="h-3 w-3" />
+          {label}
+          {required && <span className="text-red-500">*</span>}
+        </Label>
+        <div className="w-32 relative group">
+          <ImageUploader 
+            onFileChange={onFileChange} 
+            initialPreview={preview} 
+            showInstruction={false}
+            showCamera={false}
+            aspectRatio={3.5/4.5}
+            showCrop={true}
+          />
+          {touched && error && (
+            <div className="absolute -bottom-6 left-0 right-0 text-center">
+               <span className="text-[10px] text-red-500 font-bold bg-white dark:bg-black px-2 py-0.5 rounded-full border border-red-200 shadow-sm whitespace-nowrap">
+                {error || "Required"}
+               </span>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
 
 const initialFormData = {
   school_code: '',
@@ -549,6 +586,8 @@ const StudentAdmission = () => {
                   preview={handler.preview}
                   onFileChange={file => handleFileChange(file, handler.setFile, handler.setPreview)}
                   required={isRequired}
+                  error={errors[field.field_name]}
+                  touched={touched[field.field_name]}
                 />
             );
         case 'email':
@@ -1620,47 +1659,29 @@ const StudentAdmission = () => {
     const fetchPincodeData = async () => {
       if (pincode.length !== 6) {
         setPostOffices([]);
-        setFormData(prev => ({ ...prev, city: '', state: '' }));
+        // Don't clear city/state if pincode is being typed
         return;
       }
       setPincodeLoading(true);
       try {
-        let found = false;
-        try {
-          const response = await fetch(`https://api.postalpincode.in/pincode/${pincode}`);
-          const data = await response.json();
-          if (data && data[0] && data[0].Status === 'Success' && Array.isArray(data[0].PostOffice) && data[0].PostOffice.length > 0) {
-            found = true;
-            setPostOffices(data[0].PostOffice);
-            const { District, State } = data[0].PostOffice[0];
-            setFormData(prev => ({ ...prev, city: District || '', state: State || '' }));
-          }
-        } catch {}
-
-        if (!found) {
-          try {
-            const response = await fetch(`https://api.zippopotam.us/in/${pincode}`);
-            if (response.ok) {
-              const data = await response.json();
-              if (data?.places?.length) {
-                const place = data.places[0];
-                found = true;
-                setPostOffices([]);
-                setFormData(prev => ({
-                  ...prev,
-                  state: place?.state || '',
-                  city: place?.['place name'] || ''
-                }));
-              }
-            }
-          } catch {}
-        }
-        if (!found) {
+        // Use api.postalpincode.in (allowed in CSP)
+        const response = await fetch(`https://api.postalpincode.in/pincode/${pincode}`);
+        const data = await response.json();
+        
+        if (data && data[0] && data[0].Status === 'Success' && Array.isArray(data[0].PostOffice) && data[0].PostOffice.length > 0) {
+          setPostOffices(data[0].PostOffice);
+          const { District, State } = data[0].PostOffice[0];
+          setFormData(prev => ({ ...prev, city: District || '', state: State || '' }));
+        } else {
+          // No data found
           setPostOffices([]);
-          toast({ variant: 'destructive', title: 'Invalid Pincode', description: 'No location found.' });
+          setFormData(prev => ({ ...prev, city: '', state: '' }));
+          toast({ variant: 'destructive', title: 'Invalid Pincode', description: 'No location found for this pincode.' });
         }
       } catch (error) {
-        toast({ variant: 'destructive', title: 'API Error', description: error.message });
+        console.error('Pincode API error:', error);
+        setPostOffices([]);
+        toast({ variant: 'destructive', title: 'API Error', description: 'Could not fetch pincode data. Please enter manually.' });
       } finally {
         setPincodeLoading(false);
       }

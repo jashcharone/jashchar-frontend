@@ -25,6 +25,7 @@ const StudentTransportFees = () => {
   const [pickupPoints, setPickupPoints] = useState([]);
   const [classes, setClasses] = useState([]);
   const [vehicles, setVehicles] = useState([]);
+  const [routeVehicles, setRouteVehicles] = useState([]); // Vehicles assigned to selected route
   const [loading, setLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -94,8 +95,8 @@ const StudentTransportFees = () => {
       .from('student_profiles')
       .select(`
         id, full_name, school_code, roll_number,
-        class:class_id(name),
-        section:section_id(name),
+        class:classes!student_profiles_class_id_fkey(name),
+        section:sections!student_profiles_section_id_fkey(name),
         transport_details_id
       `)
       .eq('branch_id', branchId);
@@ -147,7 +148,7 @@ const StudentTransportFees = () => {
     setLoading(false);
   };
 
-  const handleOpenDialog = (student) => {
+  const handleOpenDialog = async (student) => {
     setSelectedStudent(student);
     
     const transport = student.transport;
@@ -163,6 +164,28 @@ const StudentTransportFees = () => {
       driver_contact: transport?.driver_contact || '',
       special_instructions: transport?.special_instructions || ''
     });
+    
+    // Load vehicles assigned to existing route if present
+    if (transport?.transport_route_id) {
+      const { data: assignments, error } = await supabase
+        .from('route_vehicle_assignments')
+        .select('vehicle_id, vehicle:vehicle_id(*)')
+        .eq('route_id', transport.transport_route_id);
+      
+      console.log('Route vehicles query:', transport.transport_route_id, assignments, error);
+      
+      if (assignments && assignments.length > 0) {
+        const assignedVehicles = assignments
+          .filter(a => a.vehicle)
+          .map(a => a.vehicle);
+        setRouteVehicles(assignedVehicles);
+      } else {
+        setRouteVehicles([]);
+      }
+    } else {
+      setRouteVehicles([]);
+    }
+    
     setIsDialogOpen(true);
   };
 
@@ -178,8 +201,33 @@ const StudentTransportFees = () => {
       ...prev, 
       transport_route_id: routeId, 
       transport_pickup_point_id: '',
-      transport_fee: route?.fare || prev.transport_fee
+      transport_fee: route?.fare || prev.transport_fee,
+      // Clear vehicle fields when route changes
+      vehicle_number: '',
+      driver_name: '',
+      driver_contact: ''
     }));
+    
+    // Fetch vehicles assigned to this route
+    if (routeId) {
+      const { data: assignments, error } = await supabase
+        .from('route_vehicle_assignments')
+        .select('vehicle_id, vehicle:vehicle_id(*)')
+        .eq('route_id', routeId);
+      
+      console.log('Route change - vehicles:', routeId, assignments, error);
+      
+      if (assignments && assignments.length > 0) {
+        const assignedVehicles = assignments
+          .filter(a => a.vehicle)
+          .map(a => a.vehicle);
+        setRouteVehicles(assignedVehicles);
+      } else {
+        setRouteVehicles([]);
+      }
+    } else {
+      setRouteVehicles([]);
+    }
   };
 
   const handlePickupPointChange = async (pickupPointId) => {
@@ -204,7 +252,8 @@ const StudentTransportFees = () => {
   };
 
   const handleVehicleChange = (vehicleId) => {
-    const vehicle = vehicles.find(v => v.id === vehicleId);
+    // First check in route-specific vehicles, then fallback to all vehicles
+    const vehicle = routeVehicles.find(v => v.id === vehicleId) || vehicles.find(v => v.id === vehicleId);
     if (vehicle) {
       setFormData(prev => ({
         ...prev,
@@ -426,13 +475,19 @@ const StudentTransportFees = () => {
                   </div>
                 </div>
 
-                {/* Vehicle Selection */}
+                {/* Vehicle Selection - Only show vehicles assigned to selected route */}
                 <div className="space-y-2">
                   <Label>Assign Vehicle (Optional)</Label>
-                  <Select onValueChange={handleVehicleChange}>
-                    <SelectTrigger><SelectValue placeholder="Select Vehicle to auto-fill driver details" /></SelectTrigger>
+                  <Select onValueChange={handleVehicleChange} disabled={!formData.transport_route_id}>
+                    <SelectTrigger>
+                      <SelectValue placeholder={!formData.transport_route_id ? "Select Route first" : routeVehicles.length === 0 ? "No vehicles assigned to this route" : "Select Vehicle"} />
+                    </SelectTrigger>
                     <SelectContent>
-                      {vehicles.map(v => <SelectItem key={v.id} value={v.id}>{v.vehicle_number} - {v.driver_name}</SelectItem>)}
+                      {routeVehicles.length > 0 ? (
+                        routeVehicles.map(v => <SelectItem key={v.id} value={v.id}>{v.vehicle_number} - {v.driver_name}</SelectItem>)
+                      ) : (
+                        <div className="px-2 py-2 text-sm text-muted-foreground">No vehicles assigned to this route</div>
+                      )}
                     </SelectContent>
                   </Select>
                 </div>

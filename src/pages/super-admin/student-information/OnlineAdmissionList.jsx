@@ -277,7 +277,7 @@ const OnlineAdmissionList = () => {
         .from('online_admissions')
         .select(`
           *,
-          class:class_id(id, name)
+          class:classes!online_admissions_class_id_fkey(id, name)
         `)
         .eq('branch_id', currentBranchId) // Filter by current branch
         .order('created_at', { ascending: false });

@@ -34,7 +34,7 @@ const SearchFeesPayment = () => {
             .from('fee_payments')
             .select(`
                 id, payment_date, amount, discount_amount, fine_paid, payment_mode, transaction_id,
-                student:student_profiles(id, full_name, school_code, class:class_id(name), section:section_id(name)),
+                student:student_profiles(id, full_name, school_code, class:classes!student_profiles_class_id_fkey(name), section:sections!student_profiles_section_id_fkey(name)),
                 master:fee_masters(fee_group:fee_groups(name), fee_type:fee_types(name))
             `)
             .eq('branch_id', selectedBranch.id)

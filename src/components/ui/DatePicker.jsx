@@ -53,42 +53,58 @@ export function DatePicker({ value, onChange, className, disabled, id, required,
   }, [value]);
 
   const handleInputChange = (e) => {
-    const val = e.target.value;
-    setInputValue(val);
-
-    // Basic format check: DD-MM-YYYY
-    // We allow partial typing, but only validate and set upon completion or match
-    if (val.trim() === "") {
+    let val = e.target.value;
+    
+    // Allow user to delete completely
+    if (val === "") {
+        setInputValue("");
         onChange && onChange(null);
         setError(false);
         return;
     }
 
-    // Try parsing
-    const parsed = parse(val, 'dd-MM-yyyy', new Date());
+    // Auto-format logic: DD-MM-YYYY
+    // 1. Remove non-numeric characters except existing hyphens if user typed them
+    const numericOnly = val.replace(/\D/g, '');
     
-    if (isValid(parsed) && val.length === 10) {
-        // Valid date string length and parsing
-        if (disableFuture && isAfter(parsed, startOfToday())) {
-            setError(true);
-            return;
-        }
-        if (disablePast && parsed < startOfToday()) {
-             setError(true);
-             return;
-        }
+    // 2. Logic to construct dd-mm-yyyy
+    let formatted = numericOnly;
+    if (numericOnly.length > 2) {
+      formatted = `${numericOnly.slice(0, 2)}-${numericOnly.slice(2)}`;
+    }
+    if (numericOnly.length > 4) {
+      formatted = `${numericOnly.slice(0, 2)}-${numericOnly.slice(2, 4)}-${numericOnly.slice(4, 8)}`;
+    }
+    
+    // Update input value with formatting
+    setInputValue(formatted);
 
-        setDate(parsed);
-        setError(false);
-        onChange && onChange(format(parsed, 'yyyy-MM-dd'));
-    } else {
-        // Don't error immediately while typing, but if we wanted strict blur validation we could do it there.
-        // For now, we just don't update the parent 'onChange' with an invalid date
-        if (val.length === 10 && !isValid(parsed)) {
-            setError(true);
-        } else {
+    // 3. Validation
+    // Only validate if we have a full date (10 chars: dd-mm-yyyy)
+    if (formatted.length === 10) {
+        const parsed = parse(formatted, 'dd-MM-yyyy', new Date());
+        
+        if (isValid(parsed)) {
+             // Valid date
+            if (disableFuture && isAfter(parsed, startOfToday())) {
+                setError(true);
+                return;
+            }
+            if (disablePast && parsed < startOfToday()) {
+                 setError(true);
+                 return;
+            }
+            
+            setDate(parsed);
             setError(false);
+            onChange && onChange(format(parsed, 'yyyy-MM-dd'));
+        } else {
+             // Invalid date (e.g. 99-99-2022)
+             setError(true);
         }
+    } else {
+        // Incomplete date
+        setError(false); // Can change to true if you want to show error while typing
     }
   };
 

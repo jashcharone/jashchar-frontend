@@ -26,7 +26,7 @@ const studentProfileFields = [
 ];
 
 const StudentProfileUpdateSettings = () => {
-    const { user } = useAuth();
+    const { user, currentSessionId, organizationId } = useAuth();
     const { toast } = useToast();
     const [loading, setLoading] = useState(false);
     const [isFetching, setIsFetching] = useState(true);
@@ -87,6 +87,8 @@ const StudentProfileUpdateSettings = () => {
 
         const permissionsToUpsert = Object.entries(fieldPermissions).map(([field_name, is_editable]) => ({
             branch_id: branchId,
+            session_id: currentSessionId,
+            organization_id: organizationId,
             field_name,
             is_editable,
         }));

@@ -16,7 +16,7 @@ import { useAuth } from '@/contexts/SupabaseAuthContext';
 
 const SchoolLoginPageSettings = () => {
     const { toast } = useToast();
-    const { user } = useAuth();
+    const { user, currentSessionId, organizationId } = useAuth();
     const [loading, setLoading] = useState(false);
     const [saving, setSaving] = useState(false);
     const [branchId, setSchoolId] = useState(null);
@@ -112,7 +112,7 @@ const SchoolLoginPageSettings = () => {
         setSaving(true);
         const { error } = await supabase
             .from('login_page_settings')
-            .upsert({ branch_id: branchId, setting_key: 'school_login_config', setting_value: config }, { onConflict: 'branch_id, setting_key' });
+            .upsert({ branch_id: branchId, session_id: currentSessionId, organization_id: organizationId, setting_key: 'school_login_config', setting_value: config }, { onConflict: 'branch_id, setting_key' });
 
         if (error) toast({ variant: 'destructive', title: 'Error', description: error.message });
         else toast({ title: 'Saved', description: 'Login page settings updated successfully.' });

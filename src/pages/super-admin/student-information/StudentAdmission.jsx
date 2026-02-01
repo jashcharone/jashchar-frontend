@@ -377,7 +377,7 @@ const AddSiblingModal = ({ onSiblingAdd }) => {
 
 const StudentAdmission = () => {
   const { toast } = useToast();
-  const { user, organizationId } = useAuth();
+  const { user, organizationId, currentSessionId } = useAuth();
   const { selectedBranch } = useBranch();
   const [formData, setFormData] = useState(initialFormData);
   const [loading, setLoading] = useState(false);
@@ -1896,6 +1896,8 @@ const StudentAdmission = () => {
           .from('student_transport_details')
           .insert({
             branch_id: selectedBranch.id,
+            session_id: final_session_id,
+            organization_id: final_organization_id || organizationId,
             transport_route_id: formData.transport_route_id,
             transport_pickup_point_id: formData.transport_pickup_point_id,
             transport_fee: formData.transport_fee,
@@ -1916,6 +1918,8 @@ const StudentAdmission = () => {
           .from('student_hostel_details')
           .insert({
             branch_id: selectedBranch.id,
+            session_id: final_session_id,
+            organization_id: final_organization_id || organizationId,
             hostel_id: formData.hostel_id,
             room_type: formData.hostel_room_type,
             room_number: formData.room_number,
@@ -2054,6 +2058,8 @@ const StudentAdmission = () => {
           .from('student_custom_data')
           .insert({
             branch_id: selectedBranch.id,
+            session_id: final_session_id,
+            organization_id: final_organization_id || organizationId,
             student_id: studentId,
             custom_data: customFieldValues
           });

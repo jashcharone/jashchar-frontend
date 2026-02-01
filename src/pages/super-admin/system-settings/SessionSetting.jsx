@@ -193,6 +193,7 @@ const SessionSetting = () => {
                 .from('sessions')
                 .insert({
                     branch_id: branchId,
+                    organization_id: organizationId,
                     name: sessionData.name.trim(),
                     start_date: sessionData.startDate || null,
                     end_date: sessionData.endDate || null,

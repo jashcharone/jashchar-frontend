@@ -1,6 +1,6 @@
 ﻿import React, { useState, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Building, User, Save, Loader2, CheckCircle, XCircle, AlertCircle, MapPin } from 'lucide-react';
+import { ArrowLeft, Building, User, Save, Loader2, CheckCircle, XCircle, AlertCircle, MapPin, Shield, GitBranch, RefreshCw } from 'lucide-react';
 import DashboardLayout from '@/components/DashboardLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -14,6 +14,14 @@ const CreateOrganization = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
+  const [codesLoading, setCodesLoading] = useState(false);
+  
+  // Auto-Generated Codes State
+  const [generatedCodes, setGeneratedCodes] = useState({
+    orgCode: '',
+    branchCode: '',
+    superAdminCode: ''
+  });
   
   // Pincode State
   const [pincodeLoading, setPincodeLoading] = useState(false);
@@ -28,6 +36,8 @@ const CreateOrganization = () => {
   const [formData, setFormData] = useState({
     orgName: '',
     orgCode: '',
+    branchCode: '',
+    superAdminCode: '',
     ownerName: '',
     ownerEmail: '',
     ownerPhone: '',
@@ -39,14 +49,56 @@ const CreateOrganization = () => {
     postOffice: ''
   });
 
-  // Auto-generate Org Code
-  const generateOrgCode = (name) => {
-    if (!name) return '';
-    // Take first 4 chars of name + random 4 digits
-    const prefix = name.replace(/[^a-zA-Z0-9]/g, '').substring(0, 4).toUpperCase();
-    const random = Math.floor(1000 + Math.random() * 9000);
-    return `${prefix}${random}`;
-  };
+  // Fetch All Auto-Generated Codes on Component Mount
+  const fetchAllCodes = useCallback(async () => {
+    setCodesLoading(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token;
+
+      if (!token) {
+        console.error('No auth token for fetching codes');
+        return;
+      }
+
+      const response = await axios.get(
+        `${import.meta.env.VITE_API_URL}/org/generate-all-codes`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      if (response.data.success) {
+        const codes = {
+          orgCode: response.data.organization?.code || '',
+          branchCode: response.data.branch?.code || '',
+          superAdminCode: response.data.superAdmin?.code || ''
+        };
+        
+        setGeneratedCodes(codes);
+        setFormData(prev => ({
+          ...prev,
+          orgCode: codes.orgCode,
+          branchCode: codes.branchCode,
+          superAdminCode: codes.superAdminCode
+        }));
+        
+        console.log('Auto-generated codes:', codes);
+      }
+    } catch (error) {
+      console.error('Error fetching codes:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Code Generation Error',
+        description: 'Failed to generate unique codes. Please refresh.'
+      });
+    } finally {
+      setCodesLoading(false);
+    }
+  }, [toast]);
+
+  // Fetch codes on mount
+  useEffect(() => {
+    fetchAllCodes();
+  }, [fetchAllCodes]);
 
   // Check Duplicate Email
   const checkEmail = useCallback(async (email) => {
@@ -158,8 +210,8 @@ const CreateOrganization = () => {
     const { name, value } = e.target;
     
     if (name === 'orgName') {
-        const code = generateOrgCode(value);
-        setFormData(prev => ({ ...prev, [name]: value, orgCode: code }));
+        // Just update name, don't change auto-generated code
+        setFormData(prev => ({ ...prev, [name]: value }));
     } else if (name === 'pincode') {
         // Only allow digits for pincode
         const cleanPincode = value.replace(/\D/g, '').slice(0, 6);
@@ -257,6 +309,56 @@ const CreateOrganization = () => {
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-8">
+          {/* Auto-Generated Codes Info Banner */}
+          <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950 dark:to-indigo-950 p-4 rounded-lg border border-blue-200 dark:border-blue-800">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center">
+                <Shield className="h-5 w-5 mr-2 text-blue-600" />
+                <span className="font-semibold text-blue-900 dark:text-blue-100">100-Year Bulletproof Unique Codes</span>
+              </div>
+              <Button 
+                type="button" 
+                variant="outline" 
+                size="sm"
+                onClick={fetchAllCodes}
+                disabled={codesLoading}
+                className="text-blue-600"
+              >
+                {codesLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+                <span className="ml-1">Refresh</span>
+              </Button>
+            </div>
+            <div className="grid grid-cols-3 gap-4">
+              <div className="bg-white dark:bg-gray-800 p-3 rounded-md border border-gray-200 dark:border-gray-700">
+                <div className="flex items-center text-xs text-muted-foreground mb-1">
+                  <Building className="h-3 w-3 mr-1" /> Organization Code
+                </div>
+                <div className="font-mono text-lg font-bold text-blue-600">
+                  {codesLoading ? '...' : generatedCodes.orgCode || 'ORG-2026-XXXXX'}
+                </div>
+              </div>
+              <div className="bg-white dark:bg-gray-800 p-3 rounded-md border border-gray-200 dark:border-gray-700">
+                <div className="flex items-center text-xs text-muted-foreground mb-1">
+                  <GitBranch className="h-3 w-3 mr-1" /> Branch Code
+                </div>
+                <div className="font-mono text-lg font-bold text-green-600">
+                  {codesLoading ? '...' : generatedCodes.branchCode || 'BRN-2026-XXXXX'}
+                </div>
+              </div>
+              <div className="bg-white dark:bg-gray-800 p-3 rounded-md border border-gray-200 dark:border-gray-700">
+                <div className="flex items-center text-xs text-muted-foreground mb-1">
+                  <User className="h-3 w-3 mr-1" /> Super Admin Code
+                </div>
+                <div className="font-mono text-lg font-bold text-purple-600">
+                  {codesLoading ? '...' : generatedCodes.superAdminCode || 'SA-2026-XXXXX'}
+                </div>
+              </div>
+            </div>
+            <p className="text-xs text-muted-foreground mt-2">
+              ✓ Globally unique across all organizations | ✓ Year changes automatically | ✓ No duplicates possible
+            </p>
+          </div>
+
           {/* Organization Details */}
           <div className="bg-card text-card-foreground p-6 rounded-lg shadow-sm border border-border">
             <div className="flex items-center mb-4">
@@ -284,10 +386,42 @@ const CreateOrganization = () => {
                     name="orgCode"
                     value={formData.orgCode}
                     readOnly
-                    className="bg-muted text-muted-foreground font-mono"
+                    className="bg-muted text-muted-foreground font-mono font-bold"
                     />
-                    <CheckCircle className="absolute right-3 top-2.5 h-4 w-4 text-green-500" />
+                    {formData.orgCode && <CheckCircle className="absolute right-3 top-2.5 h-4 w-4 text-green-500" />}
                 </div>
+                <p className="text-xs text-muted-foreground">Format: ORG-YYYY-NNNNN (Globally Unique)</p>
+              </div>
+              
+              {/* Branch and Super Admin Code Display */}
+              <div className="space-y-2">
+                <Label htmlFor="branchCode">Branch Code (Auto-Generated)</Label>
+                <div className="relative">
+                    <Input
+                    id="branchCode"
+                    name="branchCode"
+                    value={formData.branchCode}
+                    readOnly
+                    className="bg-muted text-muted-foreground font-mono font-bold"
+                    />
+                    {formData.branchCode && <CheckCircle className="absolute right-3 top-2.5 h-4 w-4 text-green-500" />}
+                </div>
+                <p className="text-xs text-muted-foreground">Format: BRN-YYYY-NNNNN (Globally Unique)</p>
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="superAdminCode">Super Admin Code (Auto-Generated)</Label>
+                <div className="relative">
+                    <Input
+                    id="superAdminCode"
+                    name="superAdminCode"
+                    value={formData.superAdminCode}
+                    readOnly
+                    className="bg-muted text-muted-foreground font-mono font-bold"
+                    />
+                    {formData.superAdminCode && <CheckCircle className="absolute right-3 top-2.5 h-4 w-4 text-green-500" />}
+                </div>
+                <p className="text-xs text-muted-foreground">Format: SA-YYYY-NNNNN (Globally Unique)</p>
               </div>
               
               {/* Address Section */}

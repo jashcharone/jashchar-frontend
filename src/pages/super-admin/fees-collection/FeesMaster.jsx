@@ -14,7 +14,7 @@ import DatePicker from '@/components/ui/DatePicker';
 import { useNavigate } from 'react-router-dom';
 
 const FeesMaster = () => {
-    const { user, school } = useAuth();
+    const { user, school, currentSessionId, organizationId } = useAuth();
     const { selectedBranch } = useBranch();
     const currencySymbol = school?.currency_symbol || '₹';
     const { toast } = useToast();
@@ -119,6 +119,8 @@ const FeesMaster = () => {
         const dataToSubmit = {
             ...formData,
             branch_id: selectedBranch.id,
+            session_id: currentSessionId,
+            organization_id: organizationId,
             amount: parseFloat(formData.amount),
             fine_value: formData.fine_value ? parseFloat(formData.fine_value) : null,
         };

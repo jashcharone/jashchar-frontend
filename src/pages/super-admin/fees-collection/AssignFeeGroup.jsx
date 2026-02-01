@@ -14,7 +14,7 @@ import { Search, Save } from 'lucide-react';
 const AssignFeeGroup = () => {
     const { masterId } = useParams();
     const navigate = useNavigate();
-    const { user } = useAuth();
+    const { user, currentSessionId, organizationId } = useAuth();
     const { selectedBranch } = useBranch();
     const { toast } = useToast();
 
@@ -50,17 +50,18 @@ const AssignFeeGroup = () => {
     const handleSearch = async () => {
         if (!selectedBranch) return;
         setSearching(true);
-        // Use student_profiles table for student data
-        let query = supabase.from('student_profiles').select('id, full_name, school_code, father_name, gender').eq('branch_id', selectedBranch.id);
+        let query = supabase.from('profiles').select('id, full_name, school_code, father_name, gender, role_id(name)').eq('branch_id', user.profile.branch_id).eq('branch_id', selectedBranch.id);
         
-        // Filter by class and section
+        // This is a simplification. A proper implementation would join classes and sections.
+        // For now, we filter on what's available in profiles.
         if (filters.gender) query = query.eq('gender', filters.gender);
         if (filters.class_id) query = query.eq('class_id', filters.class_id);
         if (filters.section_id) query = query.eq('section_id', filters.section_id);
+        // Add more filters as profile schema expands
 
         const { data, error } = await query;
         if (error) toast({ variant: 'destructive', title: 'Error searching students' });
-        else setStudents(data || []);
+        else setStudents(data.filter(s => s.role_id.name === 'student'));
         setSearching(false);
     };
     
@@ -76,6 +77,8 @@ const AssignFeeGroup = () => {
         setLoading(true);
         const allocations = Array.from(selectedStudents).map(student_id => ({
             branch_id: selectedBranch.id,
+            session_id: currentSessionId,
+            organization_id: organizationId,
             student_id,
             fee_master_id: masterId
         }));

@@ -69,7 +69,7 @@ const InfoRow = ({ icon: Icon, label, value, className = '' }) => (
 const StudentFees = () => {
     const { studentId } = useParams();
     const navigate = useNavigate();
-    const { user, school } = useAuth();
+    const { user, school, currentSessionId, organizationId } = useAuth();
     const { selectedBranch } = useBranch();
     const { toast } = useToast();
     const branchId = user?.profile?.branch_id;
@@ -304,6 +304,8 @@ const StudentFees = () => {
                 if (amountForThisFee > 0 || discountForThisFee > 0 || fineForThisFee > 0) {
                     paymentsToInsert.push({
                         branch_id: selectedBranch.id,
+                        session_id: currentSessionId,
+                        organization_id: organizationId,
                         student_id: studentId,
                         fee_master_id: fee.masterId,
                         amount: amountForThisFee,

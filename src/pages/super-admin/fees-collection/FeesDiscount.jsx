@@ -23,7 +23,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import DatePicker from '@/components/ui/DatePicker';
 
 const FeesDiscount = () => {
-    const { user } = useAuth();
+    const { user, currentSessionId, organizationId } = useAuth();
     const { selectedBranch } = useBranch();
     const { toast } = useToast();
     const [discounts, setDiscounts] = useState([]);
@@ -135,8 +135,9 @@ const FeesDiscount = () => {
 
         const dataToSubmit = {
             ...formData,
-            branch_id: branchId,
             branch_id: selectedBranch.id,
+            session_id: currentSessionId,
+            organization_id: organizationId,
             amount: parseFloat(formData.amount) || 0,
             use_count: formData.use_count ? parseInt(formData.use_count) : null,
         };
@@ -236,7 +237,9 @@ const FeesDiscount = () => {
         const assignments = Array.from(selectedStudents).map(student_id => ({
             discount_id: selectedDiscount.id,
             student_id,
-            branch_id: branchId,
+            branch_id: selectedBranch.id,
+            session_id: currentSessionId,
+            organization_id: organizationId,
         }));
         
         if (assignments.length > 0) {

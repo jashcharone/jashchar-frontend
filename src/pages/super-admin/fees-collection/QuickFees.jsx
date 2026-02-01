@@ -2,7 +2,6 @@
 import { addMonths, setDate } from 'date-fns';
 import DashboardLayout from '@/components/DashboardLayout';
 import { supabase } from '@/lib/customSupabaseClient';
-import api from '@/lib/api';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { useBranch } from '@/contexts/BranchContext';
 import { useToast } from '@/components/ui/use-toast';
@@ -26,7 +25,7 @@ import {
 import { Checkbox } from '@/components/ui/checkbox';
 
 const QuickFees = () => {
-    const { user, currentSessionId } = useAuth();
+    const { user, currentSessionId, organizationId } = useAuth();
     const { selectedBranch } = useBranch();
     const { toast } = useToast();
     const [classes, setClasses] = useState([]);
@@ -54,7 +53,7 @@ const QuickFees = () => {
     useEffect(() => {
         if (!branchId || !selectedBranch) return;
         const fetchClassesAndSections = async () => {
-            const { data: classesData } = await supabase.from('classes').select('id, name').eq('branch_id', selectedBranch.id);
+            const { data: classesData } = await supabase.from('classes').select('id, name').eq('branch_id', branchId).eq('branch_id', selectedBranch.id);
             setClasses(classesData || []);
         };
         fetchClassesAndSections();
@@ -78,27 +77,16 @@ const QuickFees = () => {
     }, [selectedClass, selectedBranch]);
 
     useEffect(() => {
-        if (selectedClass && selectedBranch) {
+        if (selectedClass && currentSessionId && selectedBranch) {
             const fetchStudents = async () => {
-                // Get active session for selected branch
-                const { data: branchSession } = await supabase
-                    .from('sessions')
-                    .select('id')
-                    .eq('branch_id', selectedBranch.id)
-                    .eq('is_active', true)
-                    .maybeSingle();
-                
-                const activeSessionId = branchSession?.id;
-                
-                // Filter by branch's active session - use student_profiles table
-                let query = supabase.from('student_profiles')
+                // Filter by current session and branch
+                let query = supabase.from('profiles')
                     .select('id, full_name, school_code, session_id')
+                    .eq('branch_id', branchId)
                     .eq('branch_id', selectedBranch.id)
-                    .eq('class_id', selectedClass);
-                
-                if (activeSessionId) {
-                    query = query.eq('session_id', activeSessionId);
-                }
+                    .eq('class_id', selectedClass)
+                    .eq('status', 'active')
+                    .eq('session_id', currentSessionId);
 
                 if (selectedSection && selectedSection !== 'all') {
                     query = query.eq('section_id', selectedSection);
@@ -141,7 +129,7 @@ const QuickFees = () => {
     const checkForAssignedFees = async (studentId, student) => {
         if (!student) return;
         setFetching(true);
-        const groupName = `Quick Fees - ${student.school_code || student.id}`;
+        const groupName = `Quick Fees - ${student.school_code}`;
         const { data: feeGroups, error } = await supabase.from('fee_groups').select('id').eq('name', groupName).eq('branch_id', branchId);
 
         if (error) {
@@ -201,9 +189,9 @@ const QuickFees = () => {
         
         if (Number(feeData.firstInstallment) > 0) {
              generated.push({
-                fee_group: `Quick Fees - ${selectedStudent.school_code || selectedStudent.id}`,
+                fee_group: `Quick Fees - ${selectedStudent.school_code}`,
                 fee_type: 'Installment-1',
-                fee_code: `QF-${selectedStudent.school_code || selectedStudent.id}-1`,
+                fee_code: `QF-${selectedStudent.school_code}-1`,
                 due_date: new Date().toISOString().split('T')[0], // Due today or configurable? Assuming today for 1st.
                 fine_type: feeData.fineType,
                 fine_value: feeData.fineValue || null,
@@ -220,9 +208,9 @@ const QuickFees = () => {
             const dueDate = setDate(nextMonth, Number(feeData.monthlyDueDate));
             
             generated.push({
-                fee_group: `Quick Fees - ${selectedStudent.school_code || selectedStudent.id}`,
+                fee_group: `Quick Fees - ${selectedStudent.school_code}`,
                 fee_type: `Installment-${i + (Number(feeData.firstInstallment) > 0 ? 2 : 1)}`,
-                fee_code: `QF-${selectedStudent.school_code || selectedStudent.id}-${i + (Number(feeData.firstInstallment) > 0 ? 2 : 1)}`,
+                fee_code: `QF-${selectedStudent.school_code}-${i + (Number(feeData.firstInstallment) > 0 ? 2 : 1)}`,
                 due_date: dueDate.toISOString().split('T')[0],
                 fine_type: feeData.fineType,
                 fine_value: feeData.fineValue || null,
@@ -237,32 +225,59 @@ const QuickFees = () => {
         if (!selectedBranch) return;
         setLoading(true);
         try {
-            // Use backend API to bypass RLS
-            const response = await api.post('/fees/quick-assign', {
-                branchId: selectedBranch.id,
-                studentId: selectedStudentId,
-                studentSchoolCode: selectedStudent.school_code || selectedStudent.id,
-                installments: installments.map(inst => ({
-                    fee_type: inst.fee_type,
-                    fee_code: inst.fee_code,
+            // 1. Create Fee Group
+            const groupName = `Quick Fees - ${selectedStudent.school_code}`;
+            const { data: feeGroup, error: groupError } = await supabase.from('fee_groups').insert({ branch_id: selectedBranch.id, session_id: currentSessionId, organization_id: organizationId, name: groupName, description: 'Auto-generated quick fees' }).select().single();
+            if (groupError) throw groupError;
+
+            const feeMastersToInsert = [];
+            
+            // Pre-fetch existing types to minimize queries? Or just upsert.
+            // Let's create unique codes for types to avoid collision: "QF-[SchoolCode]-[InstNumber]"
+            
+            for (const inst of installments) {
+                // 2. Check if Fee Type exists or create it
+                 let { data: feeType, error: typeError } = await supabase.from('fee_types').select('id').eq('branch_id', selectedBranch.id).eq('code', inst.fee_code).maybeSingle();
+                if (typeError) throw typeError;
+
+                if (!feeType) {
+                    const { data: newFeeType, error: newTypeError } = await supabase.from('fee_types').insert({ branch_id: selectedBranch.id, session_id: currentSessionId, organization_id: organizationId, name: inst.fee_type, code: inst.fee_code, description: 'Quick Fees Installment' }).select().single();
+                    if (newTypeError) throw newTypeError;
+                    feeType = newFeeType;
+                }
+                
+                // 3. Prepare Fee Master
+                feeMastersToInsert.push({
+                    branch_id: selectedBranch.id,
+                    session_id: currentSessionId,
+                    organization_id: organizationId,
+                    fee_group_id: feeGroup.id,
+                    fee_type_id: feeType.id,
                     due_date: inst.due_date,
                     amount: inst.amount,
-                    fine_type: inst.fine_type,
-                    fine_value: inst.fine_value
-                }))
-            });
-
-            if (response.data.success) {
-                toast({ title: 'Success', description: 'Fee assigned successfully' });
-                setIsAssigned(true);
-                setAssignedGroupId(response.data.feeGroupId);
-            } else {
-                throw new Error(response.data.message || 'Failed to assign fees');
+                    fine_type: inst.fine_type !== 'None' ? inst.fine_type : null,
+                    fine_value: inst.fine_value,
+                });
             }
+            
+            // 4. Batch insert Fee Masters
+            const { data: feeMasters, error: masterError } = await supabase.from('fee_masters').insert(feeMastersToInsert).select();
+            if (masterError) throw masterError;
+
+            // 5. Batch insert Allocations
+            const allocations = feeMasters.map(master => ({ branch_id: selectedBranch.id, session_id: currentSessionId, organization_id: organizationId, student_id: selectedStudentId, fee_master_id: master.id, fee_group_id: feeGroup.id, id: uuidv4() }));
+            const { error: allocError } = await supabase.from('student_fee_allocations').insert(allocations);
+            
+            if (allocError) throw allocError;
+
+            toast({ title: 'Success', description: 'Fee assigned successfully' });
+            setIsAssigned(true);
+            setAssignedGroupId(feeGroup.id);
+            // Keep installments visible
 
         } catch (error) {
             console.error(error);
-            toast({ variant: 'destructive', title: 'Operation Failed', description: error.response?.data?.message || error.message });
+            toast({ variant: 'destructive', title: 'Operation Failed', description: error.message });
         } finally {
             setLoading(false);
         }
@@ -276,27 +291,42 @@ const QuickFees = () => {
              return;
          };
          try {
-            // Use backend API to bypass RLS
-            const response = await api.post('/fees/quick-unassign', {
-                feeGroupId: assignedGroupId
-            });
+            const {data: masters, error: masterError} = await supabase.from('fee_masters').select('id').eq('fee_group_id', assignedGroupId);
+            if (masterError) throw masterError;
 
-            if (response.data.success) {
-                toast({ title: "Fees Unassigned Successfully" });
-                setIsAssigned(false);
-                setAssignedGroupId(null);
-                setInstallments([]);
-            } else {
-                throw new Error(response.data.message || 'Failed to unassign fees');
+            if (masters && masters.length > 0) {
+                const masterIds = masters.map(m => m.id);
+                // Check for payments before deleting
+                const {data: payments, error: paymentError} = await supabase.from('fee_payments').select('id').in('fee_master_id', masterIds).limit(1);
+                if (paymentError) throw paymentError;
+
+                if (payments && payments.length > 0) {
+                    toast({ variant: 'destructive', title: 'Cannot Unassign', description: 'Payments have been made against these fees. Please revert payments first.' });
+                    setLoading(false);
+                    return;
+                }
+
+                // Delete allocations first
+                const { error: delAllocError } = await supabase.from('student_fee_allocations').delete().in('fee_master_id', masterIds);
+                if (delAllocError) throw delAllocError;
+
+                // Delete masters
+                const { error: delMasterError } = await supabase.from('fee_masters').delete().in('id', masterIds);
+                if (delMasterError) throw delMasterError;
             }
+            
+            // Delete group
+            const { error: delGroupError } = await supabase.from('fee_groups').delete().eq('id', assignedGroupId);
+            if (delGroupError) throw delGroupError;
+            
+            toast({title: "Fees Unassigned Successfully"});
+            setIsAssigned(false);
+            setAssignedGroupId(null);
+            setInstallments([]);
+            // resetForm(); 
          } catch (error) {
             console.error(error);
-            const errorMsg = error.response?.data?.message || error.message;
-            if (errorMsg.includes('Payments have been made')) {
-                toast({ variant: 'destructive', title: 'Cannot Unassign', description: errorMsg });
-            } else {
-                toast({ variant: 'destructive', title: 'Unassign Failed', description: errorMsg });
-            }
+            toast({ variant: 'destructive', title: 'Unassign Failed', description: error.message });
          } finally {
              setLoading(false);
          }
@@ -334,7 +364,7 @@ const QuickFees = () => {
                         <Select value={selectedStudentId} onValueChange={setSelectedStudentId} disabled={!selectedClass}>
                             <SelectTrigger><SelectValue placeholder="Select Student" /></SelectTrigger>
                             <SelectContent>
-                                {students.map(s => <SelectItem key={s.id} value={s.id}>{s.full_name} ({s.school_code || '-'})</SelectItem>)}
+                                {students.map(s => <SelectItem key={s.id} value={s.id}>{s.full_name} ({s.school_code})</SelectItem>)}
                             </SelectContent>
                         </Select>
                     </div>

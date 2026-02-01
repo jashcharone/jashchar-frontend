@@ -22,7 +22,7 @@ import {
 } from '@/components/ui/alert-dialog';
 
 const FeesGroup = () => {
-    const { user } = useAuth();
+    const { user, currentSessionId, organizationId } = useAuth();
     const { selectedBranch } = useBranch();
     const { toast } = useToast();
     const [feesGroups, setFeesGroups] = useState([]);
@@ -76,6 +76,8 @@ const FeesGroup = () => {
 
         const upsertData = {
             branch_id: selectedBranch.id,
+            session_id: currentSessionId,
+            organization_id: organizationId,
             name: formData.name,
             description: formData.description,
         };

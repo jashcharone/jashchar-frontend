@@ -22,7 +22,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from '@/components/ui/badge';
 
 const Hostels = () => {
-  const { user } = useAuth();
+  const { user, currentSessionId, organizationId } = useAuth();
   const { selectedBranch } = useBranch();
   const { toast } = useToast();
   const [hostels, setHostels] = useState([]);
@@ -47,7 +47,6 @@ const Hostels = () => {
     const { data, error } = await supabase
       .from('hostels')
       .select('*')
-      .eq('branch_id', branchId)
       .eq('branch_id', branchId)
       .order('created_at', { ascending: false });
 
@@ -97,7 +96,8 @@ const Hostels = () => {
       intake: formData.intake ? parseInt(formData.intake) : null,
       description: formData.description || null,
       branch_id: branchId,
-      branch_id: branchId
+      session_id: currentSessionId,
+      organization_id: organizationId
     };
 
     let error;

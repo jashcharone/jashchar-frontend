@@ -17,7 +17,7 @@ import { Plus, Trash2, Shield, Loader2, Settings, Users, Building2 } from 'lucid
 const RolePermissionSchool = () => {
     const navigate = useNavigate();
     const { toast } = useToast();
-    const { user, school } = useAuth();
+    const { user, school, currentSessionId, organizationId } = useAuth();
     const { selectedBranch, branches, loading: branchLoading } = useBranch();
     
     // Use selected branch ID for filtering roles
@@ -62,9 +62,7 @@ const RolePermissionSchool = () => {
 
             sortedData.forEach(role => {
                 const lowerName = role.name.toLowerCase().replace(/_/g, ' ').trim();
-                // Hide School Owner and Super Admin roles from this list
-                // Super Admin has all permissions by default and shouldn't modify their own role
-                if (lowerName === 'school owner' || lowerName === 'super admin') return;
+                if (lowerName === 'school owner') return;
                 if (!seenNames.has(lowerName)) {
                     seenNames.add(lowerName);
                     uniqueRoles.push(role);
@@ -89,6 +87,8 @@ const RolePermissionSchool = () => {
             .insert([{ 
                 name: newRoleName, 
                 branch_id: branchId,
+                session_id: currentSessionId,
+                organization_id: organizationId,
                 description: 'Custom Role' 
             }])
             .select()

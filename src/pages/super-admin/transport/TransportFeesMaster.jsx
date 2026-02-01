@@ -20,7 +20,7 @@ const months = [
 ];
 
 const TransportFeesMaster = () => {
-    const { user } = useAuth();
+    const { user, currentSessionId, organizationId } = useAuth();
     const { selectedBranch } = useBranch();
     const { toast } = useToast();
     const [feesMaster, setFeesMaster] = useState([]);
@@ -37,10 +37,6 @@ const TransportFeesMaster = () => {
                 .from('transport_fees_master')
                 .select('*')
                 .eq('branch_id', branchId);
-            
-            if (branchId) {
-                query = query.eq('branch_id', branchId);
-            }
 
             const { data, error } = await query;
 
@@ -51,7 +47,8 @@ const TransportFeesMaster = () => {
                 const existing = feeMap.get(month);
                 return existing || {
                     branch_id: branchId,
-                    branch_id: branchId || null,
+                    session_id: currentSessionId,
+                    organization_id: organizationId,
                     month: month,
                     due_date: null,
                     fine_type: 'none',
@@ -65,7 +62,7 @@ const TransportFeesMaster = () => {
         } finally {
             setLoading(false);
         }
-    }, [branchId, branchId, toast]);
+    }, [branchId, currentSessionId, organizationId, toast]);
 
     useEffect(() => {
         fetchFeesMaster();
@@ -113,13 +110,15 @@ const TransportFeesMaster = () => {
             const upsertData = feesMaster.map(({ id, ...rest }) => ({
                  ...rest,
                  branch_id: branchId || null,
+                 session_id: currentSessionId,
+                 organization_id: organizationId,
                  fine_value: rest.fine_type !== 'none' ? rest.fine_value : null,
                  due_date: rest.due_date || null
             }));
 
             const { error } = await supabase
                 .from('transport_fees_master')
-                .upsert(upsertData, { onConflict: 'branch_id, branch_id, month' });
+                .upsert(upsertData, { onConflict: 'branch_id, month' });
 
             if (error) throw error;
 

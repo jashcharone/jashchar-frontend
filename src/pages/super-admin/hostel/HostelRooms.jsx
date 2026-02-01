@@ -22,7 +22,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from '@/components/ui/badge';
 
 const HostelRooms = () => {
-  const { user } = useAuth();
+  const { user, currentSessionId, organizationId } = useAuth();
   const { selectedBranch } = useBranch();
   const { toast } = useToast();
   const [rooms, setRooms] = useState([]);
@@ -56,7 +56,6 @@ const HostelRooms = () => {
         hostel_room_types(name, cost)
       `)
       .eq('branch_id', branchId)
-      .eq('branch_id', branchId)
       .order('room_number_name', { ascending: true });
 
     if (error) {
@@ -68,16 +67,16 @@ const HostelRooms = () => {
   }, [branchId, branchId, toast]);
 
   const fetchHostels = useCallback(async () => {
-    if (!branchId || !branchId) return;
-    const { data } = await supabase.from('hostels').select('id, name, type').eq('branch_id', branchId).eq('branch_id', branchId);
+    if (!branchId) return;
+    const { data } = await supabase.from('hostels').select('id, name, type').eq('branch_id', branchId);
     setHostels(data || []);
-  }, [branchId, branchId]);
+  }, [branchId]);
 
   const fetchRoomTypes = useCallback(async () => {
-    if (!branchId || !branchId) return;
-    const { data } = await supabase.from('hostel_room_types').select('id, name, cost').eq('branch_id', branchId).eq('branch_id', branchId);
+    if (!branchId) return;
+    const { data } = await supabase.from('hostel_room_types').select('id, name, cost').eq('branch_id', branchId);
     setRoomTypes(data || []);
-  }, [branchId, branchId]);
+  }, [branchId]);
 
   useEffect(() => {
     fetchRooms();
@@ -130,7 +129,8 @@ const HostelRooms = () => {
       cost_per_bed: formData.cost_per_bed ? parseFloat(formData.cost_per_bed) : null,
       description: formData.description || null,
       branch_id: branchId,
-      branch_id: branchId
+      session_id: currentSessionId,
+      organization_id: organizationId
     };
 
     let error;

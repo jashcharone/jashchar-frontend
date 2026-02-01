@@ -13,7 +13,7 @@ import { Loader2, Pencil, Trash2, Download } from 'lucide-react';
 import { format } from 'date-fns';
 
 const PostalDispatch = () => {
-  const { user } = useAuth();
+  const { user, currentSessionId, organizationId } = useAuth();
   const { toast } = useToast();
   const branchId = user?.user_metadata?.branch_id;
   
@@ -62,7 +62,7 @@ const PostalDispatch = () => {
     e.preventDefault();
     setSaving(true);
     try {
-      const payload = { ...formData, branch_id: branchId };
+      const payload = { ...formData, branch_id: branchId, session_id: currentSessionId, organization_id: organizationId };
       delete payload.id;
 
       let error;

@@ -20,7 +20,7 @@ import {
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 const TransportVehicles = () => {
-  const { user } = useAuth();
+  const { user, currentSessionId, organizationId } = useAuth();
   const { selectedBranch } = useBranch();
   const { toast } = useToast();
   const [vehicles, setVehicles] = useState([]);
@@ -117,7 +117,8 @@ const TransportVehicles = () => {
       max_seating_capacity: formData.max_seating_capacity ? parseInt(formData.max_seating_capacity) : null,
       note: formData.note || null,
       branch_id: branchId,
-      branch_id: branchId || null
+      session_id: currentSessionId,
+      organization_id: organizationId
     };
 
     let error;

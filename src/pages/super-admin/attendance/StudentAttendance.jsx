@@ -15,7 +15,7 @@ import DatePicker from '@/components/ui/DatePicker';
 import { format } from 'date-fns';
 
 const StudentAttendance = () => {
-    const { user, currentSessionId } = useAuth();
+    const { user, currentSessionId, organizationId } = useAuth();
     const { selectedBranch } = useBranch();
     const { toast } = useToast();
     const [classes, setClasses] = useState([]);
@@ -35,7 +35,7 @@ const StudentAttendance = () => {
 
     const fetchClasses = useCallback(async () => {
         if (!branchId || !selectedBranch) return;
-        const { data, error } = await supabase.from('classes').select('id, name').eq('branch_id', branchId).eq('branch_id', selectedBranch.id);
+        const { data, error } = await supabase.from('classes').select('id, name').eq('branch_id', selectedBranch.id);
         if (error) toast({ variant: 'destructive', title: 'Error fetching classes' });
         else setClasses(data);
     }, [branchId, selectedBranch, toast]);
@@ -71,18 +71,8 @@ const StudentAttendance = () => {
             return;
         }
         setLoading(true);
-        
-        // Get active session for selected branch
-        const { data: branchSession } = await supabase
-            .from('sessions')
-            .select('id')
-            .eq('branch_id', selectedBranch.id)
-            .eq('is_active', true)
-            .maybeSingle();
-        
-        const activeSessionId = branchSession?.id;
 
-        // Fetch students of the class and section - filter by branch's session
+        // Fetch students of the class and section - filter by session
         let studentQuery = supabase
             .from('student_profiles')
             .select('id, full_name, admission_no')
@@ -92,8 +82,8 @@ const StudentAttendance = () => {
             .order('admission_no');
         
         // Add session filter if available
-        if (activeSessionId) {
-            studentQuery = studentQuery.eq('session_id', activeSessionId);
+        if (currentSessionId) {
+            studentQuery = studentQuery.eq('session_id', currentSessionId);
         }
         
         const { data: studentData, error: studentError } = await studentQuery;
@@ -105,7 +95,7 @@ const StudentAttendance = () => {
         }
         setStudents(studentData);
 
-        // Fetch existing attendance for that date - filter by branch's session
+        // Fetch existing attendance for that date - filter by session
         let attendanceQuery = supabase
             .from('student_attendance')
             .select('student_id, status, remark')
@@ -115,8 +105,8 @@ const StudentAttendance = () => {
             .eq('date', filters.date);
         
         // Add session filter if available
-        if (activeSessionId) {
-            attendanceQuery = attendanceQuery.eq('session_id', activeSessionId);
+        if (currentSessionId) {
+            attendanceQuery = attendanceQuery.eq('session_id', currentSessionId);
         }
         
         const { data: attendanceData, error: attendanceError } = await attendanceQuery;
@@ -159,8 +149,9 @@ const StudentAttendance = () => {
     const handleSave = async () => {
         setIsSaving(true);
         const attendanceToSave = Object.entries(attendance).map(([studentId, details]) => ({
-            branch_id: branchId,
             branch_id: selectedBranch.id,
+            session_id: currentSessionId,
+            organization_id: organizationId,
             student_id: studentId,
             class_id: filters.class_id,
             section_id: filters.section_id,

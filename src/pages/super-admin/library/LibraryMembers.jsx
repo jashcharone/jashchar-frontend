@@ -31,7 +31,7 @@ import { useToast } from '@/components/ui/use-toast';
 import { Search, Plus, Trash2, Loader2 } from 'lucide-react';
 
 const LibraryMembers = () => {
-  const { user, currentSessionId } = useAuth();
+  const { user, currentSessionId, organizationId } = useAuth();
   const { toast } = useToast();
   const [members, setMembers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -154,6 +154,8 @@ const LibraryMembers = () => {
     try {
       const payload = {
         branch_id: user.user_metadata.branch_id,
+        session_id: currentSessionId,
+        organization_id: organizationId,
         member_type: memberType,
         library_card_no: libraryCardNo,
         [memberType === 'student' ? 'student_id' : 'staff_id']: selectedUser

@@ -35,7 +35,7 @@ import {
 } from "@/components/ui/alert-dialog";
 
 const StudentCategories = ({ embedded = false }) => {
-  const { user } = useAuth();
+  const { user, currentSessionId, organizationId } = useAuth();
   const { selectedBranch } = useBranch();
   const { toast } = useToast();
   const [categories, setCategories] = useState([]);
@@ -81,6 +81,8 @@ const StudentCategories = ({ embedded = false }) => {
       .from('student_categories')
       .insert([{
         branch_id: selectedBranch.id,
+        session_id: currentSessionId,
+        organization_id: organizationId,
         name: formData.name.trim()
       }]);
 

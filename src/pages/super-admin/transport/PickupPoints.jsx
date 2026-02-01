@@ -30,7 +30,7 @@ import {
 } from '@/components/ui/alert-dialog';
 
 const PickupPoints = () => {
-  const { user } = useAuth();
+  const { user, currentSessionId, organizationId } = useAuth();
   const { selectedBranch } = useBranch();
   const { toast } = useToast();
   const [points, setPoints] = useState([]);
@@ -51,10 +51,6 @@ const PickupPoints = () => {
       .select('*')
       .eq('branch_id', branchId)
       .order('created_at', { ascending: false });
-    
-    if (branchId) {
-      query = query.eq('branch_id', branchId);
-    }
 
     const { data, error } = await query;
 
@@ -64,7 +60,7 @@ const PickupPoints = () => {
       setPoints(data || []);
     }
     setLoading(false);
-  }, [branchId, branchId, toast]);
+  }, [branchId, toast]);
 
   useEffect(() => {
     fetchPickupPoints();
@@ -95,7 +91,8 @@ const PickupPoints = () => {
         latitude: formData.latitude || null,
         longitude: formData.longitude || null,
         branch_id: branchId,
-        branch_id: branchId || null
+        session_id: currentSessionId,
+        organization_id: organizationId
     };
 
     let error;

@@ -20,7 +20,7 @@ import {
 
 const Designations = () => {
     const { toast } = useToast();
-    const { user } = useAuth();
+    const { user, currentSessionId, organizationId } = useAuth();
     const { selectedBranch } = useBranch();
     const [designations, setDesignations] = useState([]);
     const [designationName, setDesignationName] = useState('');
@@ -39,7 +39,6 @@ const Designations = () => {
         const { data, error } = await supabase
             .from('designations')
             .select('*')
-            .eq('branch_id', branchId)
             .eq('branch_id', selectedBranch.id)
             .order('name');
         
@@ -71,8 +70,9 @@ const Designations = () => {
         
         const payload = {
             name: designationName,
-            branch_id: branchId,
-            branch_id: selectedBranch.id
+            branch_id: selectedBranch.id,
+            session_id: currentSessionId,
+            organization_id: organizationId
         };
 
         let error;

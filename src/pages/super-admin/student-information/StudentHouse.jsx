@@ -36,7 +36,7 @@ import {
 } from "@/components/ui/alert-dialog";
 
 const StudentHouse = ({ embedded = false }) => {
-  const { user } = useAuth();
+  const { user, currentSessionId, organizationId } = useAuth();
   const { selectedBranch } = useBranch();
   const { toast } = useToast();
   const [houses, setHouses] = useState([]);
@@ -63,7 +63,6 @@ const StudentHouse = ({ embedded = false }) => {
     const { data, error } = await supabase
       .from('student_houses')
       .select('*')
-      .eq('branch_id', user.profile.branch_id)
       .eq('branch_id', selectedBranch.id)
       .order('name');
     
@@ -82,8 +81,9 @@ const StudentHouse = ({ embedded = false }) => {
     const { error } = await supabase
       .from('student_houses')
       .insert([{
-        branch_id: user.profile.branch_id,
         branch_id: selectedBranch.id,
+        session_id: currentSessionId,
+        organization_id: organizationId,
         name: formData.name.trim(),
         description: formData.description
       }]);

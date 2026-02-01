@@ -19,7 +19,7 @@ import {
 
 const StaffLeaveType = () => {
     const { toast } = useToast();
-    const { user } = useAuth();
+    const { user, currentSessionId, organizationId } = useAuth();
     const { selectedBranch } = useBranch();
     const [leaveTypes, setLeaveTypes] = useState([]);
     const [typeName, setTypeName] = useState('');
@@ -70,7 +70,9 @@ const StaffLeaveType = () => {
         
         const payload = {
             name: typeName,
-            branch_id: selectedBranch.id
+            branch_id: selectedBranch.id,
+            session_id: currentSessionId,
+            organization_id: organizationId
         };
 
         let error;

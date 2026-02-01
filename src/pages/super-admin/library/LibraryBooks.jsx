@@ -26,7 +26,7 @@ import { useToast } from '@/components/ui/use-toast';
 import { Pencil, Trash2, Search, Plus, Loader2 } from 'lucide-react';
 
 const LibraryBooks = () => {
-  const { user } = useAuth();
+  const { user, currentSessionId, organizationId } = useAuth();
   const { toast } = useToast();
   const [books, setBooks] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -92,6 +92,8 @@ const LibraryBooks = () => {
       const bookData = {
         ...formData,
         branch_id: user.user_metadata.branch_id,
+        session_id: currentSessionId,
+        organization_id: organizationId,
         qty: parseInt(formData.qty) || 0,
         book_price: parseFloat(formData.book_price) || 0,
         // When creating, available = qty. When editing, recalculate available based on diff

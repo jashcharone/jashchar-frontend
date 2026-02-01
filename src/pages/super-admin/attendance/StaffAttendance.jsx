@@ -25,7 +25,7 @@ import { useToast } from '@/components/ui/use-toast';
 import { Search, Save } from 'lucide-react';
 
 const StaffAttendance = () => {
-  const { user } = useAuth();
+  const { user, currentSessionId, organizationId } = useAuth();
   const { selectedBranch } = useBranch();
   const { toast } = useToast();
   const [roles, setRoles] = useState([]);
@@ -133,8 +133,9 @@ const StaffAttendance = () => {
   const saveAttendance = async () => {
     try {
       const upsertData = staffList.map(staff => ({
-        branch_id: user.user_metadata.branch_id,
-        branch_id: selectedBranch?.id,
+        branch_id: selectedBranch?.id || user.user_metadata.branch_id,
+        session_id: currentSessionId,
+        organization_id: organizationId,
         staff_id: staff.id,
         attendance_date: attendanceDate,
         status: staff.attendance_status,

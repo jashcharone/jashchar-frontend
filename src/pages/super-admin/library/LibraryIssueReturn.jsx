@@ -25,7 +25,7 @@ import { Search, RotateCcw, Plus } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 const LibraryIssueReturn = () => {
-  const { user, currentSessionId } = useAuth();
+  const { user, currentSessionId, organizationId } = useAuth();
   const { toast } = useToast();
   
   const [searchId, setSearchId] = useState('');
@@ -142,6 +142,8 @@ const LibraryIssueReturn = () => {
     try {
       const { error } = await supabase.from('book_issues').insert([{
         branch_id: user.user_metadata.branch_id,
+        session_id: currentSessionId,
+        organization_id: organizationId,
         book_id: selectedBook,
         member_id: member.id,
         issue_date: issueDate,

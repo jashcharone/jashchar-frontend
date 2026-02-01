@@ -12,7 +12,7 @@ import { supabase } from '@/lib/customSupabaseClient';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { Loader2, Trash2, Pencil } from 'lucide-react';
 
-const SetupTab = ({ title, tableName, branchId }) => {
+const SetupTab = ({ title, tableName, branchId, sessionId, organizationId }) => {
   const { toast } = useToast();
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -44,6 +44,8 @@ const SetupTab = ({ title, tableName, branchId }) => {
     setSaving(true);
     const payload = {
       branch_id: branchId,
+      session_id: sessionId,
+      organization_id: organizationId,
       [tableFieldName]: formData.field,
       description: formData.description
     };
@@ -141,7 +143,7 @@ const SetupTab = ({ title, tableName, branchId }) => {
 };
 
 const SetupFrontOffice = () => {
-  const { user } = useAuth();
+  const { user, currentSessionId, organizationId } = useAuth();
   const branchId = user?.user_metadata?.branch_id;
 
   if (!branchId) return null;
@@ -158,16 +160,16 @@ const SetupFrontOffice = () => {
             <TabsTrigger value="reference">Reference</TabsTrigger>
           </TabsList>
           <TabsContent value="purpose" className="mt-6">
-            <SetupTab title="Purpose" tableName="front_office_purposes" branchId={branchId} />
+            <SetupTab title="Purpose" tableName="front_office_purposes" branchId={branchId} sessionId={currentSessionId} organizationId={organizationId} />
           </TabsContent>
           <TabsContent value="complain_type" className="mt-6">
-            <SetupTab title="Complain Type" tableName="front_office_complain_types" branchId={branchId} />
+            <SetupTab title="Complain Type" tableName="front_office_complain_types" branchId={branchId} sessionId={currentSessionId} organizationId={organizationId} />
           </TabsContent>
           <TabsContent value="source" className="mt-6">
-            <SetupTab title="Source" tableName="front_office_sources" branchId={branchId} />
+            <SetupTab title="Source" tableName="front_office_sources" branchId={branchId} sessionId={currentSessionId} organizationId={organizationId} />
           </TabsContent>
           <TabsContent value="reference" className="mt-6">
-            <SetupTab title="Reference" tableName="front_office_references" branchId={branchId} />
+            <SetupTab title="Reference" tableName="front_office_references" branchId={branchId} sessionId={currentSessionId} organizationId={organizationId} />
           </TabsContent>
         </Tabs>
       </div>

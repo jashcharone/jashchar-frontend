@@ -20,7 +20,7 @@ import {
 
 const Departments = () => {
     const { toast } = useToast();
-    const { user } = useAuth();
+    const { user, currentSessionId, organizationId } = useAuth();
     const { selectedBranch } = useBranch();
     const [departments, setDepartments] = useState([]);
     const [departmentName, setDepartmentName] = useState('');
@@ -39,7 +39,6 @@ const Departments = () => {
         const { data, error } = await supabase
             .from('departments')
             .select('*')
-            .eq('branch_id', branchId)
             .eq('branch_id', selectedBranch.id)
             .order('name');
         
@@ -71,8 +70,9 @@ const Departments = () => {
         
         const payload = {
             name: departmentName,
-            branch_id: branchId,
-            branch_id: selectedBranch.id
+            branch_id: selectedBranch.id,
+            session_id: currentSessionId,
+            organization_id: organizationId
         };
 
         let error;

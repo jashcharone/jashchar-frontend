@@ -17,7 +17,7 @@ import {
 } from '@/components/ui/dialog';
 
 const StudentTransportFees = () => {
-  const { user } = useAuth();
+  const { user, currentSessionId, organizationId } = useAuth();
   const { selectedBranch } = useBranch();
   const { toast } = useToast();
   const [students, setStudents] = useState([]);
@@ -273,6 +273,8 @@ const StudentTransportFees = () => {
     const transportPayload = {
       student_id: selectedStudent.id,
       branch_id: branchId,
+      session_id: currentSessionId,
+      organization_id: organizationId,
       transport_route_id: formData.transport_route_id || null,
       transport_pickup_point_id: formData.transport_pickup_point_id || null,
       transport_fee: formData.transport_fee ? parseFloat(formData.transport_fee) : null,

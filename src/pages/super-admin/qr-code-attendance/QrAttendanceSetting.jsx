@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Loader2, Save, Settings, Camera, CheckCircle2 } from 'lucide-react';
 
 const QrAttendanceSetting = () => {
-  const { user } = useAuth();
+  const { user, currentSessionId, organizationId } = useAuth();
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -69,6 +69,8 @@ const QrAttendanceSetting = () => {
         .from('qr_code_settings')
         .upsert({
           branch_id: branchId,
+          session_id: currentSessionId,
+          organization_id: organizationId,
           auto_attendance: settings.auto_attendance,
           selected_camera: settings.selected_camera
         }, {

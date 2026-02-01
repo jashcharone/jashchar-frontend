@@ -14,7 +14,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { v4 as uuidv4 } from 'uuid';
 
 const RoutePickupPoint = () => {
-    const { user } = useAuth();
+  const { user, currentSessionId, organizationId } = useAuth();
     const { selectedBranch } = useBranch();
     const { toast } = useToast();
     const [routesWithPoints, setRoutesWithPoints] = useState([]);
@@ -127,7 +127,8 @@ const RoutePickupPoint = () => {
                 .filter(field => field.pickup_point_id)
                 .map((field, index) => ({
                     branch_id: branchId,
-                    branch_id: branchId || null,
+                    session_id: currentSessionId,
+                    organization_id: organizationId,
                     route_id: selectedRoute,
                     pickup_point_id: field.pickup_point_id,
                     distance: field.distance || null,

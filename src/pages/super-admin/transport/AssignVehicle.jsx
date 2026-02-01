@@ -20,7 +20,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from '@/components/ui/badge';
 
 const AssignVehicle = () => {
-  const { user } = useAuth();
+    const { user, currentSessionId, organizationId } = useAuth();
   const { selectedBranch } = useBranch();
   const { toast } = useToast();
   const [assignments, setAssignments] = useState([]);
@@ -49,12 +49,6 @@ const AssignVehicle = () => {
       vehicle:vehicle_id(vehicle_number, driver_name)
     `).eq('branch_id', branchId);
 
-    if (branchId) {
-      routeQuery = routeQuery.eq('branch_id', branchId);
-      vehicleQuery = vehicleQuery.eq('branch_id', branchId);
-      assignmentQuery = assignmentQuery.eq('branch_id', branchId);
-    }
-
     const [routesRes, vehiclesRes, assignmentsRes] = await Promise.all([
       routeQuery, vehicleQuery, assignmentQuery
     ]);
@@ -67,7 +61,7 @@ const AssignVehicle = () => {
       setAssignments(assignmentsRes.data || []);
     }
     setLoading(false);
-  }, [branchId, branchId, toast]);
+  }, [branchId, toast]);
 
   useEffect(() => {
     fetchData();
@@ -115,7 +109,8 @@ const AssignVehicle = () => {
       route_id: formData.route_id,
       vehicle_id: formData.vehicle_id,
       branch_id: branchId,
-      branch_id: branchId || null
+      session_id: currentSessionId,
+      organization_id: organizationId
     };
 
     let error;

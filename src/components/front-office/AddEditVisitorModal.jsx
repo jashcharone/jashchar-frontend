@@ -9,7 +9,7 @@ import { supabase } from '@/lib/customSupabaseClient';
 import { useToast } from '@/components/ui/use-toast';
 import { Loader2, Upload } from 'lucide-react';
 
-const AddEditVisitorModal = ({ isOpen, onClose, visitor, branchId, onSave }) => {
+const AddEditVisitorModal = ({ isOpen, onClose, visitor, branchId, sessionId, organizationId, onSave }) => {
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [purposes, setPurposes] = useState([]);
@@ -105,6 +105,8 @@ const AddEditVisitorModal = ({ isOpen, onClose, visitor, branchId, onSave }) => 
       const payload = { 
         ...formData, 
         branch_id: branchId,
+        session_id: sessionId,
+        organization_id: organizationId,
         // Clear fields not relevant to meeting type
         student_id: formData.meeting_with === 'student' ? formData.student_id : null,
         class_id: formData.meeting_with === 'student' ? formData.class_id : null,

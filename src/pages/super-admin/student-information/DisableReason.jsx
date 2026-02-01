@@ -35,7 +35,7 @@ import {
 } from "@/components/ui/alert-dialog";
 
 const DisableReason = () => {
-  const { user } = useAuth();
+  const { user, currentSessionId, organizationId } = useAuth();
   const { selectedBranch } = useBranch();
   const { toast } = useToast();
   const [reasons, setReasons] = useState([]);
@@ -62,7 +62,6 @@ const DisableReason = () => {
     const { data, error } = await supabase
       .from('disable_reasons')
       .select('*')
-      .eq('branch_id', user.profile.branch_id)
       .eq('branch_id', selectedBranch.id)
       .order('reason');
     
@@ -81,8 +80,9 @@ const DisableReason = () => {
     const { error } = await supabase
       .from('disable_reasons')
       .insert([{
-        branch_id: user.profile.branch_id,
         branch_id: selectedBranch.id,
+        session_id: currentSessionId,
+        organization_id: organizationId,
         reason: formData.reason.trim()
       }]);
 

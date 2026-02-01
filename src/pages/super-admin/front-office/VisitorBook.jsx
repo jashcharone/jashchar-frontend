@@ -13,7 +13,7 @@ import AddEditVisitorModal from '@/components/front-office/AddEditVisitorModal';
 import ViewVisitorDetailsModal from '@/components/front-office/ViewVisitorDetailsModal';
 
 const VisitorBook = () => {
-  const { user } = useAuth();
+  const { user, currentSessionId, organizationId } = useAuth();
   const { toast } = useToast();
   const branchId = user?.user_metadata?.branch_id;
   
@@ -128,7 +128,9 @@ const VisitorBook = () => {
         isOpen={modalOpen} 
         onClose={() => setModalOpen(false)} 
         visitor={selectedVisitor} 
-        branchId={branchId} 
+        branchId={branchId}
+        sessionId={currentSessionId}
+        organizationId={organizationId}
         onSave={fetchVisitors} 
       />
 

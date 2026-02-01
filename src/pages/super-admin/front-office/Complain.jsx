@@ -14,7 +14,7 @@ import { Loader2, Pencil, Trash2, Eye } from 'lucide-react';
 import { format } from 'date-fns';
 
 const Complain = () => {
-  const { user } = useAuth();
+  const { user, currentSessionId, organizationId } = useAuth();
   const { toast } = useToast();
   const branchId = user?.user_metadata?.branch_id;
   
@@ -89,6 +89,8 @@ const Complain = () => {
       const payload = { 
         ...formData, 
         branch_id: branchId,
+        session_id: currentSessionId,
+        organization_id: organizationId,
         assigned_to: formData.assigned_to || null,
         source_id: formData.source_id || null
       };

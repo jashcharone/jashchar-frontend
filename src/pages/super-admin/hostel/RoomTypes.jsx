@@ -21,7 +21,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from '@/components/ui/badge';
 
 const RoomTypes = () => {
-  const { user } = useAuth();
+  const { user, currentSessionId, organizationId } = useAuth();
   const { selectedBranch } = useBranch();
   const { toast } = useToast();
   const [roomTypes, setRoomTypes] = useState([]);
@@ -89,7 +89,8 @@ const RoomTypes = () => {
       cost: formData.cost ? parseFloat(formData.cost) : null,
       description: formData.description || null,
       branch_id: branchId,
-      branch_id: branchId
+      session_id: currentSessionId,
+      organization_id: organizationId
     };
 
     let error;

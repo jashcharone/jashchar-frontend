@@ -21,7 +21,7 @@ import {
 } from "@/components/ui/table";
 
 const TransportRoutes = () => {
-  const { user } = useAuth();
+  const { user, currentSessionId, organizationId } = useAuth();
   const { selectedBranch } = useBranch();
   const { toast } = useToast();
   const [routes, setRoutes] = useState([]);
@@ -93,7 +93,8 @@ const TransportRoutes = () => {
       route_title: formData.route_title,
       fare: formData.fare ? parseFloat(formData.fare) : null,
       branch_id: branchId,
-      branch_id: branchId || null
+      session_id: currentSessionId,
+      organization_id: organizationId
     };
 
     let error;

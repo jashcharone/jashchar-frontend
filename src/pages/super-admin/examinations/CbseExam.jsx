@@ -23,7 +23,7 @@ import TeacherRemarks from './TeacherRemarks';
 import { v4 as uuidv4 } from 'uuid';
 
 const CbseExam = () => {
-    const { user } = useAuth();
+    const { user, currentSessionId, organizationId } = useAuth();
     const { toast } = useToast();
     const navigate = useNavigate();
     const [exams, setExams] = useState([]);
@@ -112,7 +112,7 @@ const CbseExam = () => {
         }
 
         setLoading(true);
-        const examData = { ...formData, branch_id: user.profile.branch_id };
+        const examData = { ...formData, branch_id: user.profile.branch_id, session_id: currentSessionId, organization_id: organizationId };
         const { error } = selectedExam ? await supabase.from('cbse_exams').update(examData).eq('id', selectedExam.id) : await supabase.from('cbse_exams').insert(examData);
 
         if (error) toast({ variant: 'destructive', title: 'Error saving exam', description: error.message });

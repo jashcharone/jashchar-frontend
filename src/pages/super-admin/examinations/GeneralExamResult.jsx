@@ -67,7 +67,7 @@ const GeneralExamResult = () => {
       // Fetch students filtered by current session
       let studentQuery = supabase
         .from('student_profiles')
-        .select('id, full_name, roll_number, school_code, session_id')
+        .select('id, full_name, roll_number, admission_no, session_id')
         .eq('branch_id', branchId)
         .eq('class_id', selectedClass)
         .eq('section_id', selectedSection);

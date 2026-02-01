@@ -47,7 +47,7 @@ const examTypes = [
 ];
 
 const ExamGroup = () => {
-  const { user, currentSessionId } = useAuth();
+  const { user, currentSessionId, organizationId } = useAuth();
   const { selectedBranch } = useBranch();
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -118,8 +118,9 @@ const ExamGroup = () => {
     try {
       const payload = {
         ...data,
-        branch_id: branchId,
-        branch_id: selectedBranch.id
+        branch_id: selectedBranch.id,
+        session_id: currentSessionId,
+        organization_id: organizationId
       };
 
       let error;

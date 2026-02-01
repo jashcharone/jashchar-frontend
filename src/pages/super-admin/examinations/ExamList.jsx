@@ -51,7 +51,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 const ExamList = () => {
     const { groupId } = useParams();
     const navigate = useNavigate();
-    const { user, currentSessionId } = useAuth();
+    const { user, currentSessionId, organizationId } = useAuth();
     const { selectedBranch } = useBranch();
     const { toast } = useToast();
     
@@ -185,8 +185,9 @@ const ExamList = () => {
         try {
             const payload = {
                 ...data,
-                branch_id: branchId,
                 branch_id: selectedBranch.id,
+                session_id: currentSessionId,
+                organization_id: organizationId,
                 exam_group_id: groupId,
                 passing_percentage: data.passing_percentage ? parseFloat(data.passing_percentage) : null
             };

@@ -15,7 +15,7 @@ import ImageUploader from '@/components/ImageUploader';
 import { v4 as uuidv4 } from 'uuid';
 
 const MarksheetTemplate = () => {
-    const { user } = useAuth();
+    const { user, currentSessionId, organizationId } = useAuth();
     const { toast } = useToast();
     const [templates, setTemplates] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -136,6 +136,8 @@ const MarksheetTemplate = () => {
             const dataToSave = {
                 ...formData,
                 branch_id: branchId,
+                session_id: currentSessionId,
+                organization_id: organizationId,
                 header_image_url: headerUrl || formData.header_image_url,
                 background_image_url: bgUrl || formData.background_image_url,
                 left_sign_url: leftUrl || formData.left_sign_url,

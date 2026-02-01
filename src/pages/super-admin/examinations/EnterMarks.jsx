@@ -12,7 +12,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Label } from '@/components/ui/label';
 
 const EnterMarks = ({ exam, onClose }) => {
-    const { user } = useAuth();
+    const { user, currentSessionId, organizationId } = useAuth();
     const { toast } = useToast();
     const [students, setStudents] = useState([]);
     const [subjects, setSubjects] = useState([]);
@@ -103,6 +103,8 @@ const EnterMarks = ({ exam, onClose }) => {
                 return {
                     id: markData.id,
                     branch_id: user.profile.branch_id,
+                    session_id: currentSessionId,
+                    organization_id: organizationId,
                     exam_id: exam.id,
                     exam_subject_id: selectedSubjectId,
                     student_id: studentId,

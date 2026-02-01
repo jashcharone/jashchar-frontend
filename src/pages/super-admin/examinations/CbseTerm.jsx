@@ -13,7 +13,7 @@ import { PlusCircle, Edit, Trash2, Loader2 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 const CbseTerm = () => {
-    const { user } = useAuth();
+    const { user, currentSessionId, organizationId } = useAuth();
     const { toast } = useToast();
     const [terms, setTerms] = useState([]);
     const [loading, setLoading] = useState(false);
@@ -63,6 +63,8 @@ const CbseTerm = () => {
         const termData = {
             ...formData,
             branch_id: user.profile.branch_id,
+            session_id: currentSessionId,
+            organization_id: organizationId,
         };
 
         let error;

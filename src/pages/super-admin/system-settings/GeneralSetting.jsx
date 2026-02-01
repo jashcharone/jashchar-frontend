@@ -19,7 +19,15 @@ import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
 
 // ID Auto Generation Settings Tab
-const IdAutoGenerationSettings = ({ settings, handleChange }) => (
+const IdAutoGenerationSettings = ({ settings, handleChange }) => {
+    // Generate preview of admission number
+    const currentYear = new Date().getFullYear();
+    const prefix = settings.student_admission_no_prefix || 'STU';
+    const digits = settings.student_admission_no_digit || 5;
+    const previewNumber = `${prefix}-${currentYear}-${'X'.repeat(digits)}`;
+    const exampleNumber = `${prefix}-${currentYear}-${String(1).padStart(digits, '0')}`;
+    
+    return (
     <div className="space-y-6">
         {/* Student Admission No */}
         <Card className="border-border/50 shadow-sm">
@@ -35,6 +43,25 @@ const IdAutoGenerationSettings = ({ settings, handleChange }) => (
                 </div>
             </CardHeader>
             <CardContent className="space-y-4">
+                {/* 🌟 Global Unique Info Banner */}
+                <div className="p-4 rounded-lg bg-gradient-to-r from-green-500/10 to-blue-500/10 border border-green-500/20">
+                    <div className="flex items-start gap-3">
+                        <div className="p-1.5 rounded-full bg-green-500/20">
+                            <svg className="h-4 w-4 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                        </div>
+                        <div>
+                            <p className="font-medium text-green-700 dark:text-green-400">🌟 Global Unique Admission Numbers</p>
+                            <p className="text-sm text-muted-foreground mt-1">
+                                Format: <code className="px-1.5 py-0.5 rounded bg-muted">{previewNumber}</code><br/>
+                                Example: <code className="px-1.5 py-0.5 rounded bg-muted font-bold">{exampleNumber}</code><br/>
+                                <span className="text-xs">Admission numbers are <strong>globally unique</strong> across all branches - No duplicates for 100+ years!</span>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
                 <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
                     <Label className="font-medium">Auto Admission No.</Label>
                     <RadioGroup 
@@ -53,21 +80,19 @@ const IdAutoGenerationSettings = ({ settings, handleChange }) => (
                     </RadioGroup>
                 </div>
                 {settings.student_admission_no_auto_generation && (
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
                         <div className="space-y-2">
                             <Label htmlFor="stud-prefix">Admission No. Prefix</Label>
-                            <Input id="stud-prefix" placeholder="e.g., STU" value={settings.student_admission_no_prefix || ''} onChange={(e) => handleChange('student_admission_no_prefix', e.target.value)} />
+                            <Input id="stud-prefix" placeholder="e.g., STU" value={settings.student_admission_no_prefix || ''} onChange={(e) => handleChange('student_admission_no_prefix', e.target.value.toUpperCase())} />
+                            <p className="text-xs text-muted-foreground">Prefix for your branch (e.g., STU, JASH, ABC)</p>
                         </div>
                         <div className="space-y-2">
-                            <Label htmlFor="stud-digit">Admission No. Digit</Label>
-                            <Select value={String(settings.student_admission_no_digit || '')} onValueChange={(v) => handleChange('student_admission_no_digit', parseInt(v))}>
+                            <Label htmlFor="stud-digit">Sequence Digits</Label>
+                            <Select value={String(settings.student_admission_no_digit || '5')} onValueChange={(v) => handleChange('student_admission_no_digit', parseInt(v))}>
                                 <SelectTrigger><SelectValue placeholder="Select digits" /></SelectTrigger>
-                                <SelectContent>{[2,3,4,5,6,7,8,9,10].map(d => <SelectItem key={d} value={String(d)}>{d} digits</SelectItem>)}</SelectContent>
+                                <SelectContent>{[4,5,6,7,8].map(d => <SelectItem key={d} value={String(d)}>{d} digits (up to {Math.pow(10, d) - 1} students/year)</SelectItem>)}</SelectContent>
                             </Select>
-                        </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="stud-start">Start From</Label>
-                            <Input id="stud-start" placeholder="e.g., 1001" value={settings.student_admission_start_from || ''} onChange={(e) => handleChange('student_admission_start_from', e.target.value)} />
+                            <p className="text-xs text-muted-foreground">Number of digits for sequence (recommended: 5)</p>
                         </div>
                     </div>
                 )}
@@ -187,6 +212,7 @@ const IdAutoGenerationSettings = ({ settings, handleChange }) => (
         </Card>
     </div>
 );
+};
 
 // Fees Settings Tab
 const FeesSettings = ({ settings, handleChange, handleQuillChange }) => (

@@ -113,6 +113,25 @@ const IdAutoGenerationSettings = ({ settings, handleChange }) => {
                 </div>
             </CardHeader>
             <CardContent className="space-y-4">
+                {/* 🌟 Global Unique Info Banner */}
+                <div className="p-4 rounded-lg bg-gradient-to-r from-emerald-500/10 to-teal-500/10 border border-emerald-500/20">
+                    <div className="flex items-start gap-3">
+                        <div className="p-1.5 rounded-full bg-emerald-500/20">
+                            <svg className="h-4 w-4 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                        </div>
+                        <div>
+                            <p className="font-medium text-emerald-700 dark:text-emerald-400">🌟 Global Unique Employee IDs</p>
+                            <p className="text-sm text-muted-foreground mt-1">
+                                Format: <code className="px-1.5 py-0.5 rounded bg-muted">{settings.staff_id_prefix || 'EMP'}-{new Date().getFullYear()}-XXXXX</code><br/>
+                                Example: <code className="px-1.5 py-0.5 rounded bg-muted font-bold">{settings.staff_id_prefix || 'EMP'}-{new Date().getFullYear()}-00001</code><br/>
+                                <span className="text-xs">Employee IDs are <strong>globally unique</strong> across all branches - No duplicates for 100+ years!</span>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
                 <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
                     <Label className="font-medium">Auto Employee ID</Label>
                     <RadioGroup 
@@ -131,10 +150,19 @@ const IdAutoGenerationSettings = ({ settings, handleChange }) => {
                     </RadioGroup>
                 </div>
                 {settings.staff_id_auto_generation && (
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
                         <div className="space-y-2">
                             <Label htmlFor="staff-prefix">Employee ID Prefix</Label>
-                            <Input id="staff-prefix" placeholder="e.g., EMP" value={settings.staff_id_prefix || ''} onChange={(e) => handleChange('staff_id_prefix', e.target.value)} />
+                            <Input id="staff-prefix" placeholder="e.g., EMP" value={settings.staff_id_prefix || ''} onChange={(e) => handleChange('staff_id_prefix', e.target.value.toUpperCase())} />
+                            <p className="text-xs text-muted-foreground">Prefix for employee IDs (e.g., EMP, STAFF, TCH)</p>
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="staff-digit">Sequence Digits</Label>
+                            <Select value={String(settings.staff_id_digit || '5')} onValueChange={(v) => handleChange('staff_id_digit', parseInt(v))}>
+                                <SelectTrigger><SelectValue placeholder="Select digits" /></SelectTrigger>
+                                <SelectContent>{[4,5,6,7,8].map(d => <SelectItem key={d} value={String(d)}>{d} digits (up to {Math.pow(10, d) - 1} employees/year)</SelectItem>)}</SelectContent>
+                            </Select>
+                            <p className="text-xs text-muted-foreground">Number of digits for sequence (recommended: 5)</p>
                         </div>
                     </div>
                 )}

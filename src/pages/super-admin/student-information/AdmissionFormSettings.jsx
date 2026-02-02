@@ -25,12 +25,13 @@ import {
     CheckSquare, Circle, Upload, User, Key, Phone, Briefcase, GraduationCap, 
     CreditCard, Files, FileText, Building, X, Check,
     AlertCircle, Sparkles, Layers, ToggleLeft, ListChecks, BookOpen, Shield,
-    Users, UserCog, MapPin, Bus
+    Users, UserCog, MapPin, Bus, Tags
 } from 'lucide-react';
 
 // Sub-modules
 import StudentCategories from './StudentCategories';
 import StudentHouse from './StudentHouse';
+import CasteManagement from './CasteManagement';
 
 // ============================================================================
 // CONSTANTS & HELPERS
@@ -908,6 +909,10 @@ const AdmissionFormSettings = () => {
                             <Users className="h-4 w-4" />
                             Categories
                         </TabsTrigger>
+                        <TabsTrigger value="caste" className="gap-2 data-[state=active]:bg-background">
+                            <Tags className="h-4 w-4" />
+                            Caste / Sub-Caste
+                        </TabsTrigger>
                         <TabsTrigger value="houses" className="gap-2 data-[state=active]:bg-background">
                             <Building className="h-4 w-4" />
                             Houses
@@ -920,6 +925,10 @@ const AdmissionFormSettings = () => {
                     
                     <TabsContent value="categories" className="mt-6">
                         <StudentCategories embedded={true} />
+                    </TabsContent>
+                    
+                    <TabsContent value="caste" className="mt-6">
+                        <CasteManagement embedded={true} />
                     </TabsContent>
                     
                     <TabsContent value="houses" className="mt-6">

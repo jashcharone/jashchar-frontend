@@ -29,9 +29,10 @@ const AadharInput = ({ value, onChange, label, required, checkDuplicates = false
     }
     setIsChecking(true);
     try {
+      // Check in student_profiles table (not profiles) for aadhar_no
       const { data, error: dbError } = await supabase
-        .from('profiles')
-        .select('id')
+        .from('student_profiles')
+        .select('id, first_name, last_name')
         .eq('aadhar_no', aadharNumber)
         .limit(1)
         .maybeSingle();
@@ -41,7 +42,8 @@ const AadharInput = ({ value, onChange, label, required, checkDuplicates = false
       }
 
       if (data) {
-        setError('This Aadhar number already exists.');
+        const studentName = `${data.first_name || ''} ${data.last_name || ''}`.trim();
+        setError(`This Aadhar number is already registered${studentName ? ` to ${studentName}` : ''}.`);
       } else {
         setError('');
       }

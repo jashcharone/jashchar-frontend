@@ -1,7 +1,7 @@
 ﻿import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../contexts/SupabaseAuthContext';
-import axios from 'axios';
+import api from '@/lib/api';
 import { ROUTES } from '@/registry/routeRegistry';
 import { Calendar, User, Book, Clock, AlertCircle } from 'lucide-react';
 import DashboardLayout from '@/components/DashboardLayout';
@@ -40,9 +40,8 @@ const StudentDashboard = () => {
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        const response = await axios.get(`${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/dashboard/student`, {
-          headers: { Authorization: `Bearer ${session?.access_token}` }
-        });
+        // Using centralized api client for proper URL handling
+        const response = await api.get('/dashboard/student');
         setStats(response.data);
       } catch (err) {
         console.error('Error fetching dashboard stats:', err);

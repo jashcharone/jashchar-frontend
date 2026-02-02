@@ -1412,17 +1412,14 @@ const StudentAdmission = () => {
 
     try {
       // 🌟 Call Backend API for GLOBAL UNIQUE admission number
-      const token = (await supabase.auth.getSession())?.data?.session?.access_token;
-      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/students/next-admission-number?branch_id=${branchId}`, {
-        method: 'GET',
+      // Using centralized api client for proper URL handling (relative /api on production, VITE_API_BASE_URL on localhost)
+      const response = await api.get(`/students/next-admission-number?branch_id=${branchId}`, {
         headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
           'x-branch-id': branchId
         }
       });
 
-      const result = await response.json();
+      const result = response.data;
       
       if (!result.success) {
         // Fallback to local generation if API fails
@@ -1450,12 +1447,9 @@ const StudentAdmission = () => {
       return newId;
     } catch (error) {
       console.error('[StudentAdmission] Error calling admission number API:', error);
-      toast({
-        variant: 'destructive',
-        title: 'Error generating admission number',
-        description: 'Please try again or contact support.'
-      });
-      return null;
+      // Fallback to local generation when API fails (network error, backend down, etc.)
+      console.warn('[StudentAdmission] Falling back to local generation...');
+      return await generateNextIdLocal(settings, branchId);
     }
   }, [selectedBranch?.id, toast, checkStudentUsernameDuplicate]);
 

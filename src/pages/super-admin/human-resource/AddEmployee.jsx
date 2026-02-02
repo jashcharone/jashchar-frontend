@@ -294,17 +294,14 @@ const AddEmployee = () => {
             }
 
             // 🌟 Call Backend API for GLOBAL UNIQUE employee ID
-            const token = (await supabase.auth.getSession())?.data?.session?.access_token;
-            const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/staff/next-employee-id?branch_id=${currentBranchId}`, {
-                method: 'GET',
+            // Using centralized api client for proper URL handling (relative /api on production, VITE_API_BASE_URL on localhost)
+            const response = await api.get(`/staff/next-employee-id?branch_id=${currentBranchId}`, {
                 headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json',
                     'x-branch-id': currentBranchId
                 }
             });
 
-            const result = await response.json();
+            const result = response.data;
             
             if (result.success) {
                 const newId = result.employeeId;

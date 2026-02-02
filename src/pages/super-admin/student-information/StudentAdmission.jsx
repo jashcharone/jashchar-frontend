@@ -13,7 +13,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogContent, AlertDialogDescription, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
-import { BookOpen, User, Key, Users, Bus, FileText, UserCog, Save, Shield, Loader2, UserPlus, FileCheck2, Copy, Percent, Wallet, AlertCircle, Building, X, Sparkles, BedDouble, GraduationCap, Phone, MapPin, Files, CheckCircle2, ChevronDown, ChevronUp, Camera, Mail, CreditCard, Home, Heart, School, CalendarDays, Hash, Globe, FileUp, Info, Zap, Search, Star, Award, BadgeCheck, Fingerprint, UserCircle2, MapPinned, Landmark, ShieldCheck, Clock, FileImage, Upload, Eye, EyeOff, Lock, Unlock, IndianRupee, Gift, Truck, Building2, Bed, PhoneCall, AlertTriangle, CircleDot, ArrowRight, Check, Ban, Banknote, Receipt, Tag, Percent as PercentIcon } from 'lucide-react';
+import { BookOpen, User, Key, Users, Bus, FileText, UserCog, Save, Shield, Loader2, UserPlus, FileCheck2, Copy, Percent, Wallet, AlertCircle, Building, X, Sparkles, BedDouble, GraduationCap, Phone, MapPin, Files, CheckCircle2, ChevronDown, ChevronUp, Camera, Mail, CreditCard, Home, Heart, School, CalendarDays, Hash, Globe, FileUp, Info, Zap, Search, Star, Award, BadgeCheck, Fingerprint, UserCircle2, MapPinned, Landmark, ShieldCheck, Clock, FileImage, Upload, Eye, EyeOff, Lock, Unlock, IndianRupee, Gift, Truck, Building2, Bed, PhoneCall, AlertTriangle, CircleDot, ArrowRight, Check, Ban, Banknote, Receipt, Tag, Percent as PercentIcon, MessageCircle, Send } from 'lucide-react';
 import ImageUploader from '@/components/ImageUploader';
 import { v4 as uuidv4 } from 'uuid';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
@@ -2888,8 +2888,8 @@ const StudentAdmission = () => {
               </div>
               
               <AlertDialogHeader className="items-center space-y-2">
-                <AlertDialogTitle className="text-3xl font-black text-transparent bg-gradient-to-r from-emerald-600 via-green-600 to-teal-600 dark:from-emerald-400 dark:via-green-400 dark:to-teal-400 bg-clip-text">
-                  ?? Admission Successful!
+                <AlertDialogTitle className="text-3xl font-black text-transparent bg-gradient-to-r from-emerald-600 via-green-600 to-teal-600 dark:from-emerald-400 dark:via-green-400 dark:to-teal-400 bg-clip-text flex items-center gap-2">
+                  <CheckCircle2 className="w-8 h-8 text-emerald-500" /> Admission Successful!
                 </AlertDialogTitle>
                 <AlertDialogDescription className="text-center text-gray-600 dark:text-gray-300 text-base">
                   The student has been successfully enrolled. Please share the credentials below.
@@ -2972,9 +2972,29 @@ const StudentAdmission = () => {
                 )}
               </div>
               
+              {/* WhatsApp Notification Button */}
+              {admissionSuccessData?.parent_username && (
+                <Button
+                  onClick={() => {
+                    const studentName = formData.first_name + (formData.last_name ? ' ' + formData.last_name : '');
+                    const schoolName = selectedBranch?.name || 'Jashchar School';
+                    const message = `🎓 *${schoolName}*\n\n✅ *Admission Successful!*\n\nDear Parent,\n\nYour ward *${studentName}* has been successfully enrolled.\n\n📚 *Student Login Details:*\n👤 Login ID: ${admissionSuccessData?.username}\n🔐 Password: ${admissionSuccessData?.password}\n\n👨‍👩‍👧 *Parent Login Details:*\n📱 Login ID: ${admissionSuccessData?.parent_username}\n🔐 Password: ${admissionSuccessData?.parent_password}\n\n🌐 Login at: https://jashcharerp.com/login\n\nThank you for choosing ${schoolName}!\n\n_This is an automated message._`;
+                    const encodedMessage = encodeURIComponent(message);
+                    const phoneNumber = admissionSuccessData?.parent_username?.replace(/[^0-9]/g, '');
+                    const whatsappUrl = `https://wa.me/91${phoneNumber}?text=${encodedMessage}`;
+                    window.open(whatsappUrl, '_blank');
+                  }}
+                  className="w-full mt-4 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white h-12 text-base font-bold rounded-2xl shadow-lg shadow-green-500/25 hover:shadow-xl hover:shadow-green-500/40 transition-all duration-300 hover:scale-[1.02] group"
+                >
+                  <MessageCircle className="mr-2 h-5 w-5 group-hover:scale-110 transition-transform" />
+                  Send WhatsApp Notification
+                  <Send className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
+                </Button>
+              )}
+              
               <AlertDialogAction 
                 onClick={handleContinue} 
-                className="w-full mt-6 bg-gradient-to-r from-emerald-500 via-green-500 to-teal-500 hover:from-emerald-600 hover:via-green-600 hover:to-teal-600 text-white h-14 text-lg font-bold rounded-2xl shadow-xl shadow-emerald-500/25 hover:shadow-2xl hover:shadow-emerald-500/40 transition-all duration-300 hover:scale-[1.02] group"
+                className="w-full mt-3 bg-gradient-to-r from-emerald-500 via-green-500 to-teal-500 hover:from-emerald-600 hover:via-green-600 hover:to-teal-600 text-white h-14 text-lg font-bold rounded-2xl shadow-xl shadow-emerald-500/25 hover:shadow-2xl hover:shadow-emerald-500/40 transition-all duration-300 hover:scale-[1.02] group"
               >
                 <UserPlus className="mr-2 h-5 w-5 group-hover:scale-110 transition-transform" />
                 Add Next Student

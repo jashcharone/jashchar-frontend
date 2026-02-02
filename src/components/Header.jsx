@@ -36,13 +36,18 @@ const Header = ({ toggleSidebar, onThemeSettingsClick }) => {
     switch (type) {
       case 'profile':
         if (role === 'master_admin') return '/master-admin/profile';
-        if (role === 'super_admin' || role === 'school_owner' || role === 'organization_owner' || role === 'admin') return '/super-admin/profile';
+        if (role === 'super_admin' || role === 'school_owner' || role === 'organization_owner' || role === 'admin' || role === 'teacher' || role === 'principal' || role === 'accountant' || role === 'receptionist' || role === 'librarian') return '/super-admin/profile';
         if (role === 'student') return '/Student/profile';
-        return '/profile'; // Fallback
+        if (role === 'parent') return '/Parent/profile';
+        // Fallback to Student/profile if role is unknown (better than broken /profile route)
+        console.warn('[Header] Unknown role for profile path:', role, '- defaulting to Student profile');
+        return '/Student/profile';
         
       case 'reset-password':
         if (role === 'master_admin') return '/master-admin/reset-password';
-        if (role === 'super_admin' || role === 'school_owner' || role === 'organization_owner' || role === 'admin') return '/super-admin/reset-password';
+        if (role === 'super_admin' || role === 'school_owner' || role === 'organization_owner' || role === 'admin' || role === 'teacher' || role === 'principal' || role === 'accountant' || role === 'receptionist' || role === 'librarian') return '/super-admin/reset-password';
+        if (role === 'student') return '/Student/reset-password';
+        if (role === 'parent') return '/Parent/reset-password';
         return '/reset-password';
         
       case 'settings':

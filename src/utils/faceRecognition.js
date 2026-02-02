@@ -135,7 +135,17 @@ export const getFaceDescriptor = async (input) => {
  */
 export const compareFaces = (descriptor1, descriptor2) => {
     if (!descriptor1 || !descriptor2) return Infinity;
-    return faceapi.euclideanDistance(descriptor1, descriptor2);
+    
+    // Ensure both are Float32Array with correct length (128)
+    const arr1 = ensureFloat32Array(descriptor1);
+    const arr2 = ensureFloat32Array(descriptor2);
+    
+    if (!arr1 || !arr2 || arr1.length !== 128 || arr2.length !== 128) {
+        console.warn('[FaceAI] Invalid descriptor length:', arr1?.length, arr2?.length);
+        return Infinity;
+    }
+    
+    return faceapi.euclideanDistance(arr1, arr2);
 };
 
 /**
@@ -151,6 +161,44 @@ export const facesMatch = (descriptor1, descriptor2, threshold = 0.6) => {
 };
 
 /**
+ * Ensure value is a valid Float32Array with 128 elements
+ * Handles: Float32Array, Array, Object with numbered keys, JSON string
+ */
+const ensureFloat32Array = (value) => {
+    if (!value) return null;
+    
+    // Already Float32Array
+    if (value instanceof Float32Array) {
+        return value;
+    }
+    
+    // String - parse as JSON
+    if (typeof value === 'string') {
+        try {
+            const parsed = JSON.parse(value);
+            return new Float32Array(Array.isArray(parsed) ? parsed : Object.values(parsed));
+        } catch {
+            return null;
+        }
+    }
+    
+    // Array
+    if (Array.isArray(value)) {
+        return new Float32Array(value);
+    }
+    
+    // Object with numbered keys (0, 1, 2, ...)
+    if (typeof value === 'object') {
+        const values = Object.values(value);
+        if (values.length > 0 && typeof values[0] === 'number') {
+            return new Float32Array(values);
+        }
+    }
+    
+    return null;
+};
+
+/**
  * Find best matching face from a list of known faces
  * @param {Float32Array} unknownDescriptor - Face to identify
  * @param {Array<{id: string, descriptor: Float32Array}>} knownFaces - Array of known faces
@@ -162,18 +210,28 @@ export const findBestMatch = (unknownDescriptor, knownFaces, threshold = 0.6) =>
         return { match: null, distance: Infinity };
     }
 
+    // Ensure unknown descriptor is valid
+    const unknownDesc = ensureFloat32Array(unknownDescriptor);
+    if (!unknownDesc || unknownDesc.length !== 128) {
+        console.warn('[FaceAI] Invalid unknown descriptor');
+        return { match: null, distance: Infinity };
+    }
+
     let bestMatch = null;
     let bestDistance = Infinity;
 
     for (const known of knownFaces) {
         if (!known.descriptor) continue;
 
-        // Convert from string/array back to Float32Array if needed
-        const knownDesc = known.descriptor instanceof Float32Array 
-            ? known.descriptor 
-            : new Float32Array(JSON.parse(known.descriptor));
+        // Convert from any format to Float32Array
+        const knownDesc = ensureFloat32Array(known.descriptor);
+        
+        if (!knownDesc || knownDesc.length !== 128) {
+            console.warn('[FaceAI] Skipping invalid stored descriptor for:', known.student_id || known.id);
+            continue;
+        }
 
-        const distance = compareFaces(unknownDescriptor, knownDesc);
+        const distance = faceapi.euclideanDistance(unknownDesc, knownDesc);
         
         if (distance < bestDistance) {
             bestDistance = distance;

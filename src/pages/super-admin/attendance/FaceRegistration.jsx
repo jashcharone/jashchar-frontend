@@ -201,6 +201,7 @@ const CameraCapture = ({ onCapture, onClose }) => {
     
     const startCamera = async () => {
         try {
+            console.log('[FaceReg] Starting camera...');
             const constraints = {
                 video: {
                     facingMode,
@@ -210,17 +211,27 @@ const CameraCapture = ({ onCapture, onClose }) => {
             };
             
             const mediaStream = await navigator.mediaDevices.getUserMedia(constraints);
+            console.log('[FaceReg] Got media stream');
             setStream(mediaStream);
-            
-            if (videoRef.current) {
-                videoRef.current.srcObject = mediaStream;
-            }
             setCameraError(null);
         } catch (error) {
             console.error('Camera error:', error);
             setCameraError('Unable to access camera. Please check permissions.');
         }
     };
+    
+    // Connect stream to video element
+    useEffect(() => {
+        if (stream && videoRef.current) {
+            console.log('[FaceReg] Connecting stream to video');
+            videoRef.current.srcObject = stream;
+            videoRef.current.play().then(() => {
+                console.log('[FaceReg] Video playing');
+            }).catch(err => {
+                console.error('[FaceReg] Video play error:', err);
+            });
+        }
+    }, [stream]);
     
     const stopCamera = () => {
         if (stream) {

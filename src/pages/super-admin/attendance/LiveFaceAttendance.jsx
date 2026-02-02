@@ -141,25 +141,102 @@ const LiveFaceAttendance = () => {
     const fetchRegisteredFaces = async () => {
         setLoadingFaces(true);
         
-        const { data, error } = await supabase
+        // First get face encodings
+        const { data: facesData, error: facesError } = await supabase
             .from('face_encodings')
             .select('*')
             .eq('branch_id', branchId)
             .eq('is_active', true);
         
-        if (error) {
-            toast({ variant: 'destructive', title: 'Error loading faces', description: error.message });
-        } else {
-            // Convert encoding strings to Float32Arrays
-            const processedFaces = (data || []).map(face => ({
-                ...face,
-                descriptor: face.encoding_vector 
-                    ? new Float32Array(face.encoding_vector)
-                    : null
-            }));
-            setRegisteredFaces(processedFaces);
-            console.log(`[LiveAttendance] Loaded ${processedFaces.length} registered faces`);
+        if (facesError) {
+            toast({ variant: 'destructive', title: 'Error loading faces', description: facesError.message });
+            setLoadingFaces(false);
+            return;
         }
+        
+        // Get student_ids from faces (Note: DB column is 'person_id', but some older code might use 'student_id')
+        const studentIds = (facesData || []).map(f => f.person_id || f.student_id).filter(Boolean);
+        
+        // Fetch student profiles to get class_id and section_id
+        let studentMap = {};
+        if (studentIds.length > 0) {
+            // First try student_profiles
+            const { data: studentsData } = await supabase
+                .from('student_profiles')
+                .select('id, class_id, section_id')
+                .in('id', studentIds);
+            
+            if (studentsData) {
+                studentMap = studentsData.reduce((acc, s) => {
+                    acc[s.id] = { class_id: s.class_id, section_id: s.section_id };
+                    return acc;
+                }, {});
+            }
+            
+            // Also try student_session_assignments for current session (class assignment may be there)
+            if (currentSessionId) {
+                const { data: assignmentsData } = await supabase
+                    .from('student_session_assignments')
+                    .select('student_id, class_id, section_id')
+                    .eq('session_id', currentSessionId)
+                    .in('student_id', studentIds);
+                
+                if (assignmentsData) {
+                    assignmentsData.forEach(a => {
+                        // Override with session assignment data (more current)
+                        if (a.class_id) {
+                            studentMap[a.student_id] = {
+                                ...studentMap[a.student_id],
+                                class_id: a.class_id,
+                                section_id: a.section_id || studentMap[a.student_id]?.section_id
+                            };
+                        }
+                    });
+                }
+            }
+            
+            console.log('[LiveAttendance] Student map:', Object.keys(studentMap).length, 'entries');
+        }
+        
+        // Convert encoding vectors to proper Float32Arrays
+        // Handle: Array, Object with numbered keys, JSON string
+        const processedFaces = (facesData || []).map(face => {
+            const studentId = face.person_id || face.student_id;
+            let descriptor = null;
+            const vec = face.encoding_vector;
+            
+            if (vec) {
+                try {
+                    if (Array.isArray(vec)) {
+                        descriptor = new Float32Array(vec);
+                    } else if (typeof vec === 'string') {
+                        descriptor = new Float32Array(JSON.parse(vec));
+                    } else if (typeof vec === 'object') {
+                        // Object with numbered keys like {0: val, 1: val, ...}
+                        descriptor = new Float32Array(Object.values(vec));
+                    }
+                    console.log(`[LiveAttendance] Face ${studentId}: descriptor length = ${descriptor?.length}`);
+                } catch (e) {
+                    console.error(`[LiveAttendance] Failed to parse descriptor for ${studentId}:`, e);
+                }
+            }
+            
+            // Add class_id and section_id from student_profiles
+            const studentInfo = studentMap[studentId] || {};
+            
+            return { 
+                ...face, 
+                student_id: studentId, // Ensure uniform access later
+                descriptor, 
+                class_id: studentInfo.class_id, 
+                section_id: studentInfo.section_id 
+            };
+        });
+        
+        // Filter out faces with invalid descriptors
+        const validFaces = processedFaces.filter(f => f.descriptor && f.descriptor.length === 128);
+        setRegisteredFaces(validFaces);
+        console.log(`[LiveAttendance] Loaded ${validFaces.length} valid registered faces (${processedFaces.length - validFaces.length} invalid)`);
         
         setLoadingFaces(false);
     };
@@ -189,6 +266,7 @@ const LiveFaceAttendance = () => {
     
     const startCamera = async () => {
         try {
+            console.log('[LiveAttendance] Starting camera...');
             const constraints = {
                 video: {
                     facingMode: 'user',
@@ -198,18 +276,37 @@ const LiveFaceAttendance = () => {
             };
             
             const mediaStream = await navigator.mediaDevices.getUserMedia(constraints);
+            console.log('[LiveAttendance] Got media stream:', mediaStream);
             setStream(mediaStream);
-            
-            if (videoRef.current) {
-                videoRef.current.srcObject = mediaStream;
-            }
-            setCameraError(null);
             setIsScanning(true);
+            setCameraError(null);
         } catch (error) {
             console.error('Camera error:', error);
-            setCameraError('Unable to access camera. Please check permissions.');
+            setCameraError(`Unable to access camera: ${error.message}. Please check permissions.`);
         }
     };
+    
+    // Connect stream to video element when both are available
+    useEffect(() => {
+        if (stream && isScanning) {
+            // Small delay to ensure video element is rendered
+            const connectVideo = () => {
+                if (videoRef.current) {
+                    console.log('[LiveAttendance] Connecting stream to video element');
+                    videoRef.current.srcObject = stream;
+                    videoRef.current.play().then(() => {
+                        console.log('[LiveAttendance] Video playing!');
+                    }).catch(err => {
+                        console.error('[LiveAttendance] Video play error:', err);
+                    });
+                } else {
+                    console.log('[LiveAttendance] Video ref not ready, retrying...');
+                    setTimeout(connectVideo, 100);
+                }
+            };
+            setTimeout(connectVideo, 50);
+        }
+    }, [stream, isScanning]);
     
     const stopCamera = () => {
         setIsScanning(false);
@@ -235,7 +332,17 @@ const LiveFaceAttendance = () => {
                 return;
             }
             
+            // Check if video is ready
+            if (videoRef.current.readyState < 2) {
+                console.log('[LiveAttendance] Video not ready yet, waiting...');
+                if (isRunning && isScanning) {
+                    animationId = requestAnimationFrame(() => setTimeout(detectAndMatch, 200));
+                }
+                return;
+            }
+            
             try {
+                console.log('[LiveAttendance] Running face detection...');
                 const detection = await detectSingleFace(videoRef.current);
                 
                 if (detection) {
@@ -339,7 +446,9 @@ const LiveFaceAttendance = () => {
     const markAttendance = async (person, confidence) => {
         if (!person || !branchId) return;
         
-        const personId = person.person_id;
+        // Ensure we have a valid ID
+        const personId = person.person_id || person.student_id;
+        
         const today = new Date().toISOString().split('T')[0];
         const now = new Date();
         
@@ -357,14 +466,18 @@ const LiveFaceAttendance = () => {
         
         try {
             // Check if already marked today
-            const { data: existing } = await supabase
+            const { data: existing, error: checkError } = await supabase
                 .from('student_attendance')
                 .select('id')
                 .eq('branch_id', branchId)
                 .eq('student_id', personId)
                 .eq('date', today)
-                .single();
+                .maybeSingle(); // Use maybeSingle to avoid 406/PGRST116 error if not found
             
+            if (checkError) {
+                console.error('Error checking existing attendance:', checkError);
+            }
+
             if (existing) {
                 // Already marked - add to log but don't insert again
                 addToLog(person, 'already', confidence);
@@ -372,15 +485,30 @@ const LiveFaceAttendance = () => {
             }
             
             // Mark attendance
+            // Format time as HH:MM:SS for PostgreSQL TIME column
+            const timeString = now.toTimeString().split(' ')[0]; // "HH:MM:SS"
+            
+            // Get class_id and section_id from person data (fetched separately from student_profiles)
+            const classId = person.class_id;
+            const sectionId = person.section_id;
+            
+            if (!classId) {
+                console.error('Missing class_id for student:', personId, '- Student may not have class assigned');
+                addToLog(person, 'error', confidence);
+                return;
+            }
+            
             const attendanceData = {
                 branch_id: branchId,
                 organization_id: organizationId,
                 session_id: currentSessionId,
                 student_id: personId,
+                class_id: classId,
+                section_id: sectionId,
                 date: today,
                 status: 'present',
-                check_in_time: now.toISOString(),
-                marked_by: 'face_recognition_ai',
+                check_in_time: timeString,
+                marked_by: user?.id || null,
                 marked_at: now.toISOString(),
                 remark: `AI Face Recognition (${Math.round(confidence * 100)}% confidence)`,
                 is_late: now.getHours() >= 9 && now.getMinutes() > 30,
@@ -560,6 +688,9 @@ const LiveFaceAttendance = () => {
                                                 muted
                                                 className="w-full h-full object-cover"
                                                 style={{ transform: 'scaleX(-1)' }}
+                                                onLoadedData={() => console.log('[Video] Data loaded')}
+                                                onPlay={() => console.log('[Video] Playing')}
+                                                onError={(e) => console.error('[Video] Error:', e)}
                                             />
                                             <canvas
                                                 ref={overlayCanvasRef}

@@ -1684,6 +1684,10 @@ const StudentAdmission = () => {
           const customFields = customFieldsRes.data.customFields || [];
           setAllFields([...systemFields, ...customFields]);
           setFormSections(customFieldsRes.data.sections || []);
+          
+          // Debug: Log required fields
+          const requiredFields = [...systemFields, ...customFields].filter(f => f.is_required && f.is_enabled);
+          console.log('[StudentAdmission] Required fields loaded:', requiredFields.map(f => ({ name: f.field_name, label: f.field_label })));
       }
     };
     fetchPrereqs();
@@ -1956,6 +1960,19 @@ const StudentAdmission = () => {
     const isValid = validateFullForm();
     
     if (!isValid) {
+        // Debug logging to help identify which fields are failing validation
+        console.log('[StudentAdmission] Validation Failed - Errors:', errors);
+        console.log('[StudentAdmission] FormData:', {
+          first_name: formData.first_name,
+          school_code: formData.school_code,
+          class_id: formData.class_id,
+          section_id: formData.section_id,
+          session_id: formData.session_id,
+          gender: formData.gender,
+          dob: formData.dob,
+          admission_date: formData.admission_date
+        });
+        
         const firstErrorField = Object.keys(errors)[0];
         if(firstErrorField) {
             const element = document.querySelector(`[name="${firstErrorField}"], [id="${firstErrorField}"]`);

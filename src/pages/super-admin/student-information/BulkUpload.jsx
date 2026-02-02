@@ -196,7 +196,6 @@ const BulkUpload = () => {
                     gender: row['Gender'] || 'Male',
                     date_of_birth: row['Date of Birth'] || null,
                     religion: row['Religion'] || null,
-                    caste: row['Caste'] || null,
                     blood_group: row['Blood Group'] || null,
                     email: row['Email'] || null,
                     phone: row['Phone'] || null,

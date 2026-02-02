@@ -19,8 +19,7 @@ import StudentAdmission from '@/pages/super-admin/student-information/StudentAdm
 import OnlineAdmission from '@/pages/public/OnlineAdmission'; // Note: using public one for now as it seems shared
 import DisabledStudents from '@/pages/super-admin/student-information/DisabledStudents';
 import BulkDelete from '@/pages/super-admin/student-information/BulkDelete';
-import StudentCategories from '@/pages/super-admin/student-information/StudentCategories';
-import StudentHouse from '@/pages/super-admin/student-information/StudentHouse';
+// StudentCategories and StudentHouse - embedded in AdmissionFormSettings tabs only
 import DisableReason from '@/pages/super-admin/student-information/DisableReason';
 import AdmissionFormSettings from '@/pages/super-admin/student-information/AdmissionFormSettings';
 import MultiClassStudent from '@/pages/super-admin/student-information/MultiClassStudent';
@@ -261,8 +260,7 @@ export const ROUTE_COMPONENT_MAP = {
   '/school-owner/student-information/online-admission': OnlineAdmission,
   '/school-owner/student-information/disabled-students': DisabledStudents,
   '/school-owner/student-information/bulk-delete': BulkDelete,
-  '/school-owner/student-information/student-categories': StudentCategories,
-  '/school-owner/student-information/student-house': StudentHouse,
+  // student-categories and student-house moved to admission-form-settings tabs
   '/school-owner/student-information/disable-reason': DisableReason,
   '/school-owner/student-information/admission-form-settings': AdmissionFormSettings,
   '/school-owner/student-information/multi-class': MultiClassStudent,

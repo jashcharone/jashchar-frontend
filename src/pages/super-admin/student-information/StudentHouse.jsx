@@ -82,7 +82,6 @@ const StudentHouse = ({ embedded = false }) => {
       .from('student_houses')
       .insert([{
         branch_id: selectedBranch.id,
-        session_id: currentSessionId,
         organization_id: organizationId,
         name: formData.name.trim(),
         description: formData.description

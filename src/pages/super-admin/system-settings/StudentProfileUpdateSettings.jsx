@@ -15,7 +15,7 @@ const studentProfileFields = [
     { key: 'full_name', label: 'Full Name' }, { key: 'first_name', label: 'First Name' }, { key: 'last_name', label: 'Last Name' },
     { key: 'admission_date', label: 'Admission Date' }, { key: 'is_rte_student', label: 'RTE' }, { key: 'photo_url', label: 'Image' },
     { key: 'phone', label: 'Mobile Number' }, { key: 'email', label: 'Email' }, { key: 'religion', label: 'Religion' },
-    { key: 'caste', label: 'Caste' }, { key: 'dob', label: 'Date of Birth' }, { key: 'blood_group', label: 'Blood Group' },
+    { key: 'caste_category_id', label: 'Caste Category' }, { key: 'sub_caste_id', label: 'Sub Caste' }, { key: 'dob', label: 'Date of Birth' }, { key: 'blood_group', label: 'Blood Group' },
     { key: 'house_id', label: 'Student House' }, { key: 'gender', label: 'Gender' }, { key: 'present_address', label: 'Current Address' },
     { key: 'permanent_address', label: 'Permanent Address' }, { key: 'father_name', label: 'Father Name' }, { key: 'father_phone', label: 'Father Phone' },
     { key: 'father_occupation', label: 'Father Occupation' }, { key: 'father_photo_url', label: 'Father Photo' }, { key: 'mother_name', label: 'Mother Name' },

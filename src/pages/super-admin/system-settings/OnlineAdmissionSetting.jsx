@@ -21,7 +21,8 @@ const ADMISSION_FIELDS = [
   { id: 'blood_group', label: 'Blood Group', category: 'Student Details' },
   { id: 'mother_tongue', label: 'Mother Tongue', category: 'Student Details' },
   { id: 'religion', label: 'Religion', category: 'Student Details' },
-  { id: 'caste', label: 'Caste', category: 'Student Details' },
+  { id: 'caste_category', label: 'Caste Category', category: 'Student Details' },
+  { id: 'sub_caste', label: 'Sub Caste', category: 'Student Details' },
   { id: 'category', label: 'Category', category: 'Student Details' },
   { id: 'national_id', label: 'National ID (Aadhar)', category: 'Student Details' },
   

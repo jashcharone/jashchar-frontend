@@ -106,8 +106,7 @@ export const schoolModuleMap = {
       student_admission: 'Student Admission',
       student_details: 'Student Details',
       online_admission: 'Online Admission',
-      student_categories: 'Student Categories',
-      student_house: 'Student House',
+      // student_categories and student_house moved to Admission Form Settings tabs
       disabled_students: 'Disabled Students',
       disable_reason: 'Disable Reason',
       multi_class_student: 'Multi Class Student',

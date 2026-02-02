@@ -42,8 +42,7 @@ export const MODULE_CATALOG = {
       { label: "Admission Form Settings", slug: "admission_form_settings" },
       { label: "Student Details", slug: "student_details" },
       { label: "Online Admission", slug: "online_admission" },
-      { label: "Student Categories", slug: "student_categories" },
-      { label: "Student House", slug: "student_house" },
+      // student_categories and student_house are inside Admission Form Settings tabs
       { label: "Disabled Students", slug: "disabled_students" },
       { label: "Disable Reason", slug: "disable_reason" },
       { label: "Multi Class Student", slug: "multi_class_student" },

@@ -232,7 +232,8 @@ const initialFormData = {
   dob: null,
   mother_tongue: '',
   religion: '',
-  caste: '',
+  caste_category_id: null,
+  sub_caste_id: null,
   phone: '',
   mobile_no: '',
   email: '',
@@ -395,6 +396,9 @@ const StudentAdmission = () => {
   // Master Data States
   const [religions, setReligions] = useState([]);
   const [castes, setCastes] = useState([]);
+  const [casteCategories, setCasteCategories] = useState([]);
+  const [subCastes, setSubCastes] = useState([]);
+  const [filteredSubCastes, setFilteredSubCastes] = useState([]);
   const [bloodGroups, setBloodGroups] = useState([]);
   const [motherTongues, setMotherTongues] = useState([]);
   const [genders, setGenders] = useState([]);
@@ -868,12 +872,56 @@ const StudentAdmission = () => {
                 </Select>
               </SmartField>
             );
-        case 'caste':
-             return (
-              <SmartField label={label} required={isRequired}>
-                <Select value={formData.caste} onValueChange={v => handleChange('caste', v)}>
-                  <SelectTrigger className="h-11"><SelectValue placeholder="Select Caste" /></SelectTrigger>
-                  <SelectContent>{castes.map(c => <SelectItem key={c.name} value={c.name}>{c.name}</SelectItem>)}</SelectContent>
+        case 'caste_category':
+            // New caste category dropdown (state-wise)
+            return (
+              <SmartField label={label || "Caste Category"} required={isRequired}>
+                <Select 
+                  value={formData.caste_category_id || ''} 
+                  onValueChange={v => {
+                    console.log('Selected Category ID:', v);
+                    console.log('All Sub Castes:', subCastes);
+                    handleChange('caste_category_id', v);
+                    handleChange('sub_caste_id', null); // Reset sub-caste when category changes
+                    // Filter sub-castes for selected category
+                    const filtered = subCastes.filter(sc => sc.caste_category_id === v);
+                    console.log('Filtered Sub Castes:', filtered);
+                    setFilteredSubCastes(filtered);
+                  }}
+                >
+                  <SelectTrigger className="h-11"><SelectValue placeholder="Select Caste Category" /></SelectTrigger>
+                  <SelectContent>
+                    {casteCategories.map(cc => (
+                      <SelectItem key={cc.id} value={cc.id}>
+                        <div className="flex items-center justify-between w-full">
+                          <span>{cc.name}</span>
+                          {cc.reservation_percent > 0 && (
+                            <span className="text-xs text-muted-foreground ml-2">({cc.reservation_percent}%)</span>
+                          )}
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </SmartField>
+            );
+        case 'sub_caste':
+            // Sub-caste dropdown (filtered by caste category) with scroll
+            return (
+              <SmartField label={label || "Sub Caste"} required={isRequired}>
+                <Select 
+                  value={formData.sub_caste_id || ''} 
+                  onValueChange={v => handleChange('sub_caste_id', v)}
+                  disabled={!formData.caste_category_id}
+                >
+                  <SelectTrigger className={cn("h-11", !formData.caste_category_id && "bg-muted/50")}>
+                    <SelectValue placeholder={formData.caste_category_id ? "Select Sub Caste" : "Select Category First"} />
+                  </SelectTrigger>
+                  <SelectContent className="max-h-[300px] overflow-y-auto">
+                    {filteredSubCastes.map(sc => (
+                      <SelectItem key={sc.id} value={sc.id}>{sc.name}</SelectItem>
+                    ))}
+                  </SelectContent>
                 </Select>
               </SmartField>
             );
@@ -1539,8 +1587,44 @@ const StudentAdmission = () => {
         supabase.from('student_houses').select('id, name').eq('branch_id', branchId),
         supabase.from('master_documents').select('name, is_required'),
         api.get('/form-settings', { params: { branchId, module: 'student_admission' } }),
-        supabase.from('sessions').select('id, name, is_active').eq('branch_id', branchId).order('name', { ascending: false })
+        supabase.from('sessions').select('id, name, is_active').eq('branch_id', branchId).order('name', { ascending: false }),
+        // Fetch caste categories based on branch's state
+        supabase.from('branches').select('state_id').eq('id', branchId).single()
       ]);
+
+      // Fetch caste categories if branch has state_id
+      let casteCategoriesData = [];
+      let subCastesData = [];
+      if (sessionsRes.data) {
+        // Get state_id from branch (last result in parallel fetch)
+        const branchStateRes = await supabase.from('branches').select('state_id').eq('id', branchId).single();
+        if (branchStateRes.data?.state_id) {
+          // Fetch caste categories for this state
+          const casteCatRes = await supabase
+            .from('caste_categories')
+            .select('id, name, code, reservation_percent')
+            .eq('state_id', branchStateRes.data.state_id)
+            .eq('is_active', true)
+            .order('display_order');
+          
+          casteCategoriesData = casteCatRes.data || [];
+          
+          // Fetch sub-castes only for the categories from this state
+          if (casteCategoriesData.length > 0) {
+            const categoryIds = casteCategoriesData.map(c => c.id);
+            const subCasteRes = await supabase
+              .from('sub_castes')
+              .select('id, name, caste_category_id')
+              .in('caste_category_id', categoryIds)
+              .eq('is_active', true)
+              .order('name');
+            subCastesData = subCasteRes.data || [];
+          }
+          
+          console.log('Caste Categories:', casteCategoriesData.length);
+          console.log('Sub Castes:', subCastesData.length);
+        }
+      }
 
       setClasses(classesRes.data || []);
       setCategories(categoriesRes.data || []);
@@ -1551,6 +1635,8 @@ const StudentAdmission = () => {
       setFeeDiscounts(feeDiscountsRes.data || []);
       setReligions(religionsRes.data || []);
       setCastes(castesRes.data || []);
+      setCasteCategories(casteCategoriesData);
+      setSubCastes(subCastesData);
       setBloodGroups(bloodGroupsRes.data || []);
       setMotherTongues(motherTonguesRes.data || []);
       setGenders(gendersRes.data || []);
@@ -1969,7 +2055,8 @@ const StudentAdmission = () => {
         date_of_birth: formData.dob,
         blood_group: formData.blood_group || null,
         religion: formData.religion || null,
-        caste: formData.caste || null,
+        caste_category_id: formData.caste_category_id || null,
+        sub_caste_id: formData.sub_caste_id || null,
         mother_tongue: formData.mother_tongue || null,
         phone: formData.mobile_no || null,
         aadhar_no: formData.aadhar_no || null,

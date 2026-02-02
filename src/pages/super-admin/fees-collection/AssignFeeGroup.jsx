@@ -21,8 +21,9 @@ const AssignFeeGroup = () => {
     const [master, setMaster] = useState(null);
     const [classes, setClasses] = useState([]);
     const [sections, setSections] = useState([]);
+    const [categories, setCategories] = useState([]);
     const [students, setStudents] = useState([]);
-    const [filters, setFilters] = useState({ class_id: '', section_id: '', category: '', gender: '', rte: '' });
+    const [filters, setFilters] = useState({ class_id: '', section_id: '', category_id: '', gender: '', rte: '' });
     const [selectedStudents, setSelectedStudents] = useState(new Set());
     const [loading, setLoading] = useState(false);
     const [searching, setSearching] = useState(false);
@@ -31,16 +32,18 @@ const AssignFeeGroup = () => {
         const fetchData = async () => {
             if (!user?.profile?.branch_id || !masterId || !selectedBranch) return;
             setLoading(true);
-            const [masterRes, classesRes, sectionsRes, allocatedRes] = await Promise.all([
+            const [masterRes, classesRes, sectionsRes, categoriesRes, allocatedRes] = await Promise.all([
                 supabase.from('fee_masters').select('*, fee_groups(name), fee_types(name)').eq('id', masterId).single(),
-                supabase.from('classes').select('id, name').eq('branch_id', user.profile.branch_id).eq('branch_id', selectedBranch.id),
-                supabase.from('sections').select('id, name').eq('branch_id', user.profile.branch_id).eq('branch_id', selectedBranch.id),
+                supabase.from('classes').select('id, name').eq('branch_id', selectedBranch.id),
+                supabase.from('sections').select('id, name').eq('branch_id', selectedBranch.id),
+                supabase.from('student_categories').select('id, name').eq('branch_id', selectedBranch.id),
                 supabase.from('student_fee_allocations').select('student_id').eq('fee_master_id', masterId)
             ]);
 
             if (masterRes.data) setMaster(masterRes.data);
             if (classesRes.data) setClasses(classesRes.data);
             if (sectionsRes.data) setSections(sectionsRes.data);
+            if (categoriesRes.data) setCategories(categoriesRes.data);
             if (allocatedRes.data) setSelectedStudents(new Set(allocatedRes.data.map(a => a.student_id)));
             setLoading(false);
         };
@@ -50,18 +53,19 @@ const AssignFeeGroup = () => {
     const handleSearch = async () => {
         if (!selectedBranch) return;
         setSearching(true);
-        let query = supabase.from('profiles').select('id, full_name, school_code, father_name, gender, role_id(name)').eq('branch_id', user.profile.branch_id).eq('branch_id', selectedBranch.id);
+        let query = supabase.from('profiles')
+            .select('id, full_name, school_code, father_name, gender, rte, category_id, category:student_categories(name), role_id(name)')
+            .eq('branch_id', selectedBranch.id);
         
-        // This is a simplification. A proper implementation would join classes and sections.
-        // For now, we filter on what's available in profiles.
         if (filters.gender) query = query.eq('gender', filters.gender);
         if (filters.class_id) query = query.eq('class_id', filters.class_id);
         if (filters.section_id) query = query.eq('section_id', filters.section_id);
-        // Add more filters as profile schema expands
+        if (filters.category_id) query = query.eq('category_id', filters.category_id);
+        if (filters.rte) query = query.eq('rte', filters.rte === 'yes');
 
         const { data, error } = await query;
         if (error) toast({ variant: 'destructive', title: 'Error searching students' });
-        else setStudents(data.filter(s => s.role_id.name === 'student'));
+        else setStudents(data?.filter(s => s.role_id?.name === 'student') || []);
         setSearching(false);
     };
     
@@ -110,9 +114,9 @@ const AssignFeeGroup = () => {
                 <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4 items-end">
                     <div><Label>Class</Label><Select onValueChange={v => setFilters({...filters, class_id: v})}><SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger><SelectContent>{classes.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent></Select></div>
                     <div><Label>Section</Label><Select onValueChange={v => setFilters({...filters, section_id: v})}><SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger><SelectContent>{sections.map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}</SelectContent></Select></div>
-                    <div><Label>Category</Label><Select><SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger><SelectContent></SelectContent></Select></div>
+                    <div><Label>Category</Label><Select onValueChange={v => setFilters({...filters, category_id: v})}><SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger><SelectContent>{categories.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent></Select></div>
                     <div><Label>Gender</Label><Select onValueChange={v => setFilters({...filters, gender: v})}><SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger><SelectContent><SelectItem value="male">Male</SelectItem><SelectItem value="female">Female</SelectItem></SelectContent></Select></div>
-                    <div><Label>RTE</Label><Select><SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger><SelectContent></SelectContent></Select></div>
+                    <div><Label>RTE</Label><Select onValueChange={v => setFilters({...filters, rte: v})}><SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger><SelectContent><SelectItem value="yes">Yes</SelectItem><SelectItem value="no">No</SelectItem></SelectContent></Select></div>
                     <Button onClick={handleSearch} disabled={searching}><Search className="mr-2 h-4 w-4" />{searching ? 'Searching...' : 'Search'}</Button>
                 </div>
             </div>
@@ -137,7 +141,7 @@ const AssignFeeGroup = () => {
                                     <td className="p-2">{student.school_code}</td>
                                     <td className="p-2">{student.full_name}</td>
                                     <td className="p-2">{student.father_name}</td>
-                                    <td className="p-2">General</td>
+                                    <td className="p-2">{student.category?.name || 'General'}</td>
                                     <td className="p-2 capitalize">{student.gender}</td>
                                 </tr>
                             ))}

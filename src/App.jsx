@@ -218,8 +218,7 @@ const StudentProfile = lazy(() => import('@/pages/super-admin/student-informatio
 const EditStudentProfile = lazy(() => import('@/pages/super-admin/student-information/EditStudentProfile'));
 const OnlineAdmissionList = lazy(() => import('@/pages/super-admin/student-information/OnlineAdmissionList'));
 const EditOnlineAdmission = lazy(() => import('@/pages/super-admin/student-information/EditOnlineAdmission'));
-const StudentCategories = lazy(() => import('@/pages/super-admin/student-information/StudentCategories'));
-const StudentHouse = lazy(() => import('@/pages/super-admin/student-information/StudentHouse'));
+// StudentCategories and StudentHouse - embedded in AdmissionFormSettings tabs only
 const DisabledStudents = lazy(() => import('@/pages/super-admin/student-information/DisabledStudents'));
 const DisableReason = lazy(() => import('@/pages/super-admin/student-information/DisableReason'));
 const MultiClassStudent = lazy(() => import('@/pages/super-admin/student-information/MultiClassStudent'));
@@ -1154,8 +1153,7 @@ function App() {
             <Route path={ROUTES.SUPER_ADMIN.EDIT_STUDENT} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="student_information"><EditStudentProfile /></ProtectedRoute>} />
             <Route path={ROUTES.SUPER_ADMIN.ONLINE_ADMISSION_LIST} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="student_information"><OnlineAdmissionList /></ProtectedRoute>} />
             <Route path={ROUTES.SUPER_ADMIN.EDIT_ONLINE_ADMISSION} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="student_information"><EditOnlineAdmission /></ProtectedRoute>} />
-            <Route path={ROUTES.SUPER_ADMIN.STUDENT_CATEGORIES} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="student_information"><StudentCategories /></ProtectedRoute>} />
-            <Route path={ROUTES.SUPER_ADMIN.STUDENT_HOUSE} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="student_information"><StudentHouse /></ProtectedRoute>} />
+            {/* StudentCategories and StudentHouse moved to Admission Form Settings tabs - no separate routes needed */}
             <Route path={ROUTES.SUPER_ADMIN.DISABLED_STUDENTS} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="student_information"><DisabledStudents /></ProtectedRoute>} />
             <Route path={ROUTES.SUPER_ADMIN.DISABLE_REASON} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="student_information"><DisableReason /></ProtectedRoute>} />
             <Route path={ROUTES.SUPER_ADMIN.MULTI_CLASS_STUDENT} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="student_information"><MultiClassStudent /></ProtectedRoute>} />
@@ -1205,6 +1203,7 @@ function App() {
             <Route path={ROUTES.SUPER_ADMIN.FEES_GROUP} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'accountant']}><FeesGroup /></ProtectedRoute>} />
             <Route path={ROUTES.SUPER_ADMIN.FEES_TYPE} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'accountant']}><FeesType /></ProtectedRoute>} />
             <Route path={ROUTES.SUPER_ADMIN.FEES_MASTER} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'accountant']}><FeesMaster /></ProtectedRoute>} />
+            <Route path={ROUTES.SUPER_ADMIN.ASSIGN_FEE_MASTER} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'accountant']}><AssignFeeGroup /></ProtectedRoute>} />
             <Route path={ROUTES.SUPER_ADMIN.ASSIGN_FEE_GROUP} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'accountant']}><AssignFeeGroup /></ProtectedRoute>} />
             <Route path={ROUTES.SUPER_ADMIN.STUDENT_FEES} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'accountant']}><StudentFees /></ProtectedRoute>} />
             <Route path={ROUTES.SUPER_ADMIN.SEARCH_FEES_PAYMENT} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'accountant']}><SearchFeesPayment /></ProtectedRoute>} />

@@ -375,8 +375,6 @@ const EditStudentProfile = () => {
                      return <div className="lg:col-span-1">{label}<AadharInput value={formData[field.field_name] || ''} onChange={val => handleChange(field.field_name, val)} /></div>;
                  case 'religion':
                       return <div className="lg:col-span-1">{label}<Select value={formData.religion || ''} onValueChange={v => handleChange('religion', v)}><SelectTrigger><SelectValue placeholder="Select Religion" /></SelectTrigger><SelectContent>{religions.map(r => <SelectItem key={r.name} value={r.name}>{r.name}</SelectItem>)}</SelectContent></Select></div>;
-                 case 'caste':
-                      return <div className="lg:col-span-1">{label}<Select value={formData.caste || ''} onValueChange={v => handleChange('caste', v)}><SelectTrigger><SelectValue placeholder="Select Caste" /></SelectTrigger><SelectContent>{castes.map(c => <SelectItem key={c.name} value={c.name}>{c.name}</SelectItem>)}</SelectContent></Select></div>;
             }
         }
 

@@ -81,7 +81,6 @@ const StudentCategories = ({ embedded = false }) => {
       .from('student_categories')
       .insert([{
         branch_id: selectedBranch.id,
-        session_id: currentSessionId,
         organization_id: organizationId,
         name: formData.name.trim()
       }]);

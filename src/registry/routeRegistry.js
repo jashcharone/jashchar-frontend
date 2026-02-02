@@ -159,8 +159,7 @@ export const ROUTES = {
     EDIT_STUDENT: '/super-admin/student-information/edit/:id',
     ONLINE_ADMISSION_LIST: '/super-admin/student-information/online-admission',
     EDIT_ONLINE_ADMISSION: '/super-admin/student-information/online-admission/edit/:id',
-    STUDENT_CATEGORIES: '/super-admin/student-information/categories',
-    STUDENT_HOUSE: '/super-admin/student-information/house',
+    // STUDENT_CATEGORIES and STUDENT_HOUSE moved to Admission Form Settings tabs
     DISABLED_STUDENTS: '/super-admin/student-information/disabled-students',
     DISABLE_REASON: '/super-admin/student-information/disable-reason',
     MULTI_CLASS_STUDENT: '/super-admin/student-information/multi-class',
@@ -216,6 +215,7 @@ export const ROUTES = {
     FEES_GROUP: '/super-admin/fees-collection/fees-group',
     FEES_TYPE: '/super-admin/fees-collection/fees-type',
     FEES_MASTER: '/super-admin/fees-collection/fees-master',
+    ASSIGN_FEE_MASTER: '/super-admin/fees-collection/master/:masterId/assign',
     ASSIGN_FEE_GROUP: '/super-admin/fees-collection/assign-fee-group',
     COLLECT_FEES: '/super-admin/fees-collection/collect-fees',
     STUDENT_FEES: '/super-admin/fees-collection/student-fees/:studentId',

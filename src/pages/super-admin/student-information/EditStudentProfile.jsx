@@ -192,15 +192,32 @@ const EditStudentProfile = () => {
                 setCastes(castesRes.data || []);
                 setMasterDocuments(masterDocsRes.data || []);
 
-                // 2. Fetch Student Data
-                // Use explicit FK names to avoid ambiguity (student_transport_details has student_id FK pointing to student_profiles)
+                // 2. Fetch Student Data (basic profile only, fetch transport/hostel separately)
                 const { data: student, error } = await supabase
                     .from('student_profiles')
-                    .select('*, transport_details:student_transport_details!student_transport_details_student_id_fkey(*), hostel_details:student_hostel_details!student_hostel_details_student_id_fkey(*)')
+                    .select('*')
                     .eq('id', studentId)
                     .single();
                 
                 if (error) throw error;
+                
+                // 2b. Fetch Transport Details separately (by student_id FK)
+                const { data: transportDetails } = await supabase
+                    .from('student_transport_details')
+                    .select('*')
+                    .eq('student_id', studentId)
+                    .maybeSingle();
+                
+                // 2c. Fetch Hostel Details separately (by student_id FK)
+                const { data: hostelDetails } = await supabase
+                    .from('student_hostel_details')
+                    .select('*')
+                    .eq('student_id', studentId)
+                    .maybeSingle();
+                
+                // Attach to student object for easier mapping
+                student.transport_details = transportDetails;
+                student.hostel_details = hostelDetails;
                 
                 // 3. Fetch Custom Data
                 const { data: customData } = await supabase.from('student_custom_data').select('custom_data').eq('student_id', studentId).maybeSingle();

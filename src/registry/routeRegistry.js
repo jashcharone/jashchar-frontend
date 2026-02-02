@@ -184,6 +184,7 @@ export const ROUTES = {
     DEVICE_MANAGEMENT: '/super-admin/attendance/device-management',
     CARD_MANAGEMENT: '/super-admin/attendance/card-management',
     FACE_REGISTRATION: '/super-admin/attendance/face-registration',
+    LIVE_FACE_ATTENDANCE: '/super-admin/attendance/live-face-attendance',
     ATTENDANCE_RULES: '/super-admin/attendance/rules',
     GEO_FENCE_SETUP: '/super-admin/attendance/geo-fence',
     WEARABLE_DEVICES: '/super-admin/attendance/wearable-devices',

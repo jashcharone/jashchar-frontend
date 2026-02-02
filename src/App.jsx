@@ -258,6 +258,7 @@ const QRCodeGenerator = lazy(() => import('@/pages/super-admin/attendance/QRCode
 const DeviceManagement = lazy(() => import('@/pages/super-admin/attendance/DeviceManagement'));
 const CardManagement = lazy(() => import('@/pages/super-admin/attendance/CardManagement'));
 const FaceRegistration = lazy(() => import('@/pages/super-admin/attendance/FaceRegistration'));
+const LiveFaceAttendance = lazy(() => import('@/pages/super-admin/attendance/LiveFaceAttendance'));
 const AttendanceRules = lazy(() => import('@/pages/super-admin/attendance/AttendanceRules'));
 const GeoFenceSetup = lazy(() => import('@/pages/super-admin/attendance/GeoFenceSetup'));
 const AttendanceAnalytics = lazy(() => import('@/pages/super-admin/attendance/AttendanceAnalytics'));
@@ -1202,6 +1203,7 @@ function App() {
             <Route path={ROUTES.SUPER_ADMIN.DEVICE_MANAGEMENT} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="attendance"><DeviceManagement /></ProtectedRoute>} />
             <Route path={ROUTES.SUPER_ADMIN.CARD_MANAGEMENT} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="attendance"><CardManagement /></ProtectedRoute>} />
             <Route path={ROUTES.SUPER_ADMIN.FACE_REGISTRATION} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="attendance"><FaceRegistration /></ProtectedRoute>} />
+            <Route path={ROUTES.SUPER_ADMIN.LIVE_FACE_ATTENDANCE} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'teacher']} requiredModule="attendance"><LiveFaceAttendance /></ProtectedRoute>} />
             <Route path={ROUTES.SUPER_ADMIN.ATTENDANCE_RULES} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="attendance"><AttendanceRules /></ProtectedRoute>} />
             <Route path={ROUTES.SUPER_ADMIN.GEO_FENCE_SETUP} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="attendance"><GeoFenceSetup /></ProtectedRoute>} />
             <Route path={ROUTES.SUPER_ADMIN.WEARABLE_DEVICES} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="attendance"><WearableDevices /></ProtectedRoute>} />

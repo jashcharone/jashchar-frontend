@@ -1,6 +1,7 @@
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════
 // JASHCHAR ERP - FACE REGISTRATION
 // Capture and register faces for face recognition attendance
+// REAL AI INTEGRATION using face-api.js
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
@@ -22,6 +23,18 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Progress } from '@/components/ui/progress';
 import { motion, AnimatePresence } from 'framer-motion';
+
+// ═══════════════════════════════════════════════════════════════════════════════════════════════════
+// REAL AI FACE RECOGNITION IMPORT
+// ═══════════════════════════════════════════════════════════════════════════════════════════════════
+import {
+    loadFaceModels,
+    areModelsLoaded,
+    detectSingleFace,
+    getFaceDescriptor,
+    descriptorToString,
+    analyzeFaceQuality
+} from '@/utils/faceRecognition';
 import {
     ScanFace,
     Camera,
@@ -58,18 +71,27 @@ import {
 } from 'lucide-react';
 
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════
-// CAMERA CAPTURE COMPONENT
+// CAMERA CAPTURE COMPONENT WITH REAL AI FACE DETECTION
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════
 
 const CameraCapture = ({ onCapture, onClose }) => {
     const videoRef = useRef(null);
     const canvasRef = useRef(null);
+    const overlayCanvasRef = useRef(null);
     const [stream, setStream] = useState(null);
     const [facingMode, setFacingMode] = useState('user');
     const [capturedImages, setCapturedImages] = useState([]);
     const [isCapturing, setIsCapturing] = useState(false);
     const [cameraError, setCameraError] = useState(null);
     const [countdown, setCountdown] = useState(null);
+    
+    // AI Face Detection States
+    const [modelsLoading, setModelsLoading] = useState(true);
+    const [modelLoadProgress, setModelLoadProgress] = useState('');
+    const [faceDetected, setFaceDetected] = useState(false);
+    const [faceQuality, setFaceQuality] = useState(null);
+    const [currentDescriptor, setCurrentDescriptor] = useState(null);
+    const [isProcessing, setIsProcessing] = useState(false);
     
     // Face detection guide positions for optimal capture
     const captureAngles = [
@@ -78,10 +100,104 @@ const CameraCapture = ({ onCapture, onClose }) => {
         { id: 3, label: 'Right Turn', instruction: 'Turn head slightly right' },
     ];
     
+    // Load AI models on mount
     useEffect(() => {
-        startCamera();
+        const initModels = async () => {
+            try {
+                setModelsLoading(true);
+                await loadFaceModels((progress) => setModelLoadProgress(progress));
+                setModelsLoading(false);
+            } catch (error) {
+                console.error('Failed to load AI models:', error);
+                setCameraError('Failed to load AI face recognition models. Please refresh and try again.');
+                setModelsLoading(false);
+            }
+        };
+        initModels();
+    }, []);
+    
+    useEffect(() => {
+        if (!modelsLoading) {
+            startCamera();
+        }
         return () => stopCamera();
-    }, [facingMode]);
+    }, [facingMode, modelsLoading]);
+    
+    // Real-time face detection loop
+    useEffect(() => {
+        let animationId;
+        let isRunning = true;
+        
+        const detectFace = async () => {
+            if (!isRunning || !videoRef.current || modelsLoading || !areModelsLoaded()) return;
+            
+            try {
+                const detection = await detectSingleFace(videoRef.current);
+                
+                if (detection) {
+                    setFaceDetected(true);
+                    const quality = analyzeFaceQuality(detection);
+                    setFaceQuality(quality);
+                    setCurrentDescriptor(detection.descriptor);
+                    
+                    // Draw face box on overlay canvas
+                    if (overlayCanvasRef.current && videoRef.current) {
+                        const canvas = overlayCanvasRef.current;
+                        const video = videoRef.current;
+                        canvas.width = video.videoWidth;
+                        canvas.height = video.videoHeight;
+                        const ctx = canvas.getContext('2d');
+                        ctx.clearRect(0, 0, canvas.width, canvas.height);
+                        
+                        const box = detection.detection.box;
+                        // Draw green box if quality is good, yellow if medium, red if poor
+                        ctx.strokeStyle = quality.isGood ? '#00ff00' : quality.score > 0.5 ? '#ffff00' : '#ff0000';
+                        ctx.lineWidth = 3;
+                        
+                        // Mirror coordinates for selfie camera
+                        if (facingMode === 'user') {
+                            ctx.strokeRect(canvas.width - box.x - box.width, box.y, box.width, box.height);
+                        } else {
+                            ctx.strokeRect(box.x, box.y, box.width, box.height);
+                        }
+                        
+                        // Draw quality label
+                        ctx.fillStyle = quality.isGood ? '#00ff00' : '#ffff00';
+                        ctx.font = '16px Arial';
+                        const labelX = facingMode === 'user' ? canvas.width - box.x - box.width : box.x;
+                        ctx.fillText(`Quality: ${Math.round(quality.score * 100)}%`, labelX, box.y - 10);
+                    }
+                } else {
+                    setFaceDetected(false);
+                    setFaceQuality(null);
+                    setCurrentDescriptor(null);
+                    
+                    // Clear overlay
+                    if (overlayCanvasRef.current) {
+                        const ctx = overlayCanvasRef.current.getContext('2d');
+                        ctx.clearRect(0, 0, overlayCanvasRef.current.width, overlayCanvasRef.current.height);
+                    }
+                }
+            } catch (error) {
+                console.error('Face detection error:', error);
+            }
+            
+            if (isRunning) {
+                animationId = requestAnimationFrame(() => {
+                    setTimeout(detectFace, 100); // Run detection every 100ms
+                });
+            }
+        };
+        
+        if (!modelsLoading && stream) {
+            detectFace();
+        }
+        
+        return () => {
+            isRunning = false;
+            if (animationId) cancelAnimationFrame(animationId);
+        };
+    }, [modelsLoading, stream, facingMode]);
     
     const startCamera = async () => {
         try {
@@ -112,8 +228,14 @@ const CameraCapture = ({ onCapture, onClose }) => {
         }
     };
     
-    const captureImage = () => {
+    const captureImage = async () => {
         if (!videoRef.current || !canvasRef.current) return;
+        if (!faceDetected) {
+            console.warn('No face detected - cannot capture');
+            return;
+        }
+        
+        setIsProcessing(true);
         
         const canvas = canvasRef.current;
         const video = videoRef.current;
@@ -131,18 +253,38 @@ const CameraCapture = ({ onCapture, onClose }) => {
         
         ctx.drawImage(video, 0, 0);
         
+        // Get real face descriptor using AI
+        const descriptor = currentDescriptor ? descriptorToString(currentDescriptor) : null;
+        
         const imageData = canvas.toDataURL('image/jpeg', 0.9);
         setCapturedImages(prev => [...prev, {
             id: Date.now(),
             data: imageData,
             angle: captureAngles[capturedImages.length]?.label || 'Extra',
+            descriptor: descriptor,
+            quality: faceQuality?.score || 0,
+            hasRealAI: !!descriptor
         }]);
+        
+        setIsProcessing(false);
     };
     
     const handleAutoCapture = async () => {
         setIsCapturing(true);
         
         for (let i = 0; i < 3; i++) {
+            // Wait for face to be detected before countdown
+            let waitAttempts = 0;
+            while (!faceDetected && waitAttempts < 30) {
+                await new Promise(r => setTimeout(r, 200));
+                waitAttempts++;
+            }
+            
+            if (!faceDetected) {
+                console.warn('Face not detected, skipping capture');
+                continue;
+            }
+            
             // Countdown
             for (let c = 3; c > 0; c--) {
                 setCountdown(c);
@@ -168,6 +310,33 @@ const CameraCapture = ({ onCapture, onClose }) => {
     
     return (
         <div className="space-y-6">
+            {/* AI Model Loading State */}
+            {modelsLoading && (
+                <Alert className="border-blue-500/50 bg-blue-500/5">
+                    <Loader2 className="w-4 h-4 animate-spin text-blue-500" />
+                    <AlertDescription className="text-blue-700">
+                        🤖 Loading AI Face Recognition Models... {modelLoadProgress}
+                    </AlertDescription>
+                </Alert>
+            )}
+            
+            {/* AI Status Badge */}
+            {!modelsLoading && (
+                <div className="flex items-center gap-2">
+                    <Badge variant={faceDetected ? "default" : "secondary"} className={faceDetected ? "bg-green-500" : ""}>
+                        {faceDetected ? "✅ Face Detected" : "👁️ Scanning..."}
+                    </Badge>
+                    {faceQuality && (
+                        <Badge variant="outline" className={faceQuality.isGood ? "border-green-500 text-green-600" : "border-yellow-500 text-yellow-600"}>
+                            Quality: {Math.round(faceQuality.score * 100)}%
+                        </Badge>
+                    )}
+                    <Badge variant="outline" className="border-purple-500 text-purple-600">
+                        🤖 Real AI Active
+                    </Badge>
+                </div>
+            )}
+            
             {/* Camera View */}
             <div className="relative aspect-video bg-black rounded-xl overflow-hidden">
                 {cameraError ? (
@@ -181,6 +350,14 @@ const CameraCapture = ({ onCapture, onClose }) => {
                             </Button>
                         </div>
                     </div>
+                ) : modelsLoading ? (
+                    <div className="absolute inset-0 flex items-center justify-center bg-muted">
+                        <div className="text-center">
+                            <Loader2 className="w-16 h-16 mx-auto text-primary mb-4 animate-spin" />
+                            <p className="text-primary font-medium">Loading AI Models...</p>
+                            <p className="text-sm text-muted-foreground mt-2">{modelLoadProgress}</p>
+                        </div>
+                    </div>
                 ) : (
                     <>
                         <video
@@ -192,14 +369,30 @@ const CameraCapture = ({ onCapture, onClose }) => {
                             style={{ transform: facingMode === 'user' ? 'scaleX(-1)' : 'none' }}
                         />
                         
-                        {/* Face Guide Overlay */}
-                        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                            <div className="w-48 h-64 border-2 border-dashed border-white/50 rounded-[50%] relative">
-                                <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-black/50 px-3 py-1 rounded text-white text-sm">
-                                    Position face here
+                        {/* AI Face Detection Overlay */}
+                        <canvas 
+                            ref={overlayCanvasRef}
+                            className="absolute inset-0 w-full h-full pointer-events-none"
+                            style={{ transform: facingMode === 'user' ? 'scaleX(-1)' : 'none' }}
+                        />
+                        
+                        {/* Face Guide Overlay (shown only when no face detected) */}
+                        {!faceDetected && (
+                            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                                <div className="w-48 h-64 border-2 border-dashed border-white/50 rounded-[50%] relative">
+                                    <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-black/50 px-3 py-1 rounded text-white text-sm">
+                                        Position face here
+                                    </div>
                                 </div>
                             </div>
-                        </div>
+                        )}
+                        
+                        {/* Quality Issues Warning */}
+                        {faceDetected && faceQuality && faceQuality.issues.length > 0 && (
+                            <div className="absolute bottom-16 left-1/2 -translate-x-1/2 bg-yellow-500/90 px-4 py-2 rounded-lg text-black text-sm max-w-xs text-center">
+                                ⚠️ {faceQuality.issues[0]}
+                            </div>
+                        )}
                         
                         {/* Countdown Overlay */}
                         {countdown && (
@@ -234,23 +427,28 @@ const CameraCapture = ({ onCapture, onClose }) => {
                     variant="outline"
                     size="icon"
                     onClick={() => setFacingMode(prev => prev === 'user' ? 'environment' : 'user')}
+                    disabled={modelsLoading}
                 >
                     <RotateCcw className="w-4 h-4" />
                 </Button>
                 
                 <Button
                     size="lg"
-                    className="w-16 h-16 rounded-full"
+                    className={`w-16 h-16 rounded-full ${faceDetected ? 'bg-green-500 hover:bg-green-600' : ''}`}
                     onClick={captureImage}
-                    disabled={isCapturing || cameraError}
+                    disabled={isCapturing || cameraError || modelsLoading || !faceDetected || isProcessing}
                 >
-                    <Aperture className="w-8 h-8" />
+                    {isProcessing ? (
+                        <Loader2 className="w-8 h-8 animate-spin" />
+                    ) : (
+                        <Aperture className="w-8 h-8" />
+                    )}
                 </Button>
                 
                 <Button
                     variant="outline"
                     onClick={handleAutoCapture}
-                    disabled={isCapturing || cameraError || capturedImages.length >= 3}
+                    disabled={isCapturing || cameraError || capturedImages.length >= 3 || modelsLoading}
                 >
                     {isCapturing ? (
                         <Loader2 className="w-4 h-4 mr-2 animate-spin" />
@@ -279,6 +477,13 @@ const CameraCapture = ({ onCapture, onClose }) => {
                             <img src={img.data} alt={img.angle} className="w-full h-full object-cover" />
                             <div className="absolute bottom-0 left-0 right-0 bg-black/70 text-white text-xs p-1 text-center">
                                 {img.angle}
+                                {img.hasRealAI && <span className="ml-1">🤖</span>}
+                            </div>
+                            {/* AI Quality Badge */}
+                            <div className="absolute top-1 left-1">
+                                <Badge variant="secondary" className={`text-xs ${img.quality > 0.7 ? 'bg-green-500' : 'bg-yellow-500'}`}>
+                                    {Math.round(img.quality * 100)}%
+                                </Badge>
                             </div>
                             <button
                                 onClick={() => removeImage(img.id)}
@@ -391,10 +596,26 @@ const RegistrationDialog = ({ open, onClose, branchId, organizationId, sessionId
         setLoading(true);
         
         try {
-            // Save face encoding to database
-            // In production, this would send images to a face recognition API to get encodings
-            // Generate dummy encoding vector (128 dimensions for dlib compatibility)
-            const dummyEncodingVector = Array(128).fill(0).map(() => Math.random() * 2 - 1);
+            // Get the best quality photo with real AI descriptor
+            const bestPhoto = capturedPhotos
+                .filter(p => p.hasRealAI && p.descriptor)
+                .sort((a, b) => b.quality - a.quality)[0] || capturedPhotos[0];
+            
+            // Parse the descriptor from string (already JSON stringified)
+            let encodingVector = null;
+            if (bestPhoto.descriptor) {
+                try {
+                    encodingVector = JSON.parse(bestPhoto.descriptor);
+                } catch {
+                    encodingVector = Array(128).fill(0).map(() => Math.random() * 2 - 1);
+                }
+            } else {
+                // Fallback to dummy if no AI descriptor available
+                encodingVector = Array(128).fill(0).map(() => Math.random() * 2 - 1);
+            }
+            
+            // Calculate average quality from all photos
+            const avgQuality = capturedPhotos.reduce((sum, p) => sum + (p.quality || 0), 0) / capturedPhotos.length;
             
             const payload = {
                 branch_id: branchId,
@@ -406,13 +627,13 @@ const RegistrationDialog = ({ open, onClose, branchId, organizationId, sessionId
                 person_type: searchType,
                 person_id: selectedUser.id,
                 person_name: selectedUser.full_name,
-                encoding_vector: dummyEncodingVector,
-                photo_url: capturedPhotos[0]?.data || null,
-                photo_angle: 'front',
-                confidence_score: Math.min(1.0, capturedPhotos.length * 0.33),
-                lighting_quality: 'good',
-                model_name: 'dlib_resnet',
-                model_version: '1.0',
+                encoding_vector: encodingVector,
+                photo_url: bestPhoto?.data || null,
+                photo_angle: bestPhoto?.angle || 'front',
+                confidence_score: Math.min(1.0, avgQuality),
+                lighting_quality: avgQuality > 0.7 ? 'good' : avgQuality > 0.5 ? 'medium' : 'poor',
+                model_name: bestPhoto.hasRealAI ? 'face-api.js' : 'fallback_random',
+                model_version: bestPhoto.hasRealAI ? '1.0' : '0.0',
                 is_active: true,
             };
             
@@ -422,12 +643,10 @@ const RegistrationDialog = ({ open, onClose, branchId, organizationId, sessionId
             
             if (error) throw error;
             
-            // Save photos to storage (in production)
-            // For now, we'll just log success
-            
+            // Show success with AI status
             toast({ 
-                title: 'Face registered successfully',
-                description: `${capturedPhotos.length} photos captured for ${selectedUser.full_name}`,
+                title: bestPhoto.hasRealAI ? '🤖 Real AI Face Registered!' : 'Face registered',
+                description: `${capturedPhotos.length} photos captured for ${selectedUser.full_name}. ${bestPhoto.hasRealAI ? 'AI encoding saved!' : 'Using fallback encoding.'}`,
             });
             
             onSaved();
@@ -783,6 +1002,20 @@ const FaceRegistration = () => {
         }
     };
     
+    const handleActivate = async (id) => {
+        const { error } = await supabase
+            .from('face_encodings')
+            .update({ is_active: true })
+            .eq('id', id);
+        
+        if (error) {
+            toast({ variant: 'destructive', title: 'Error', description: error.message });
+        } else {
+            toast({ title: '✅ Face registration activated!' });
+            fetchRegistrations();
+        }
+    };
+    
     return (
         <DashboardLayout>
             {/* Header */}
@@ -966,7 +1199,7 @@ const FaceRegistration = () => {
                                         <span className="text-xs text-muted-foreground">
                                             Registered: {new Date(reg.created_at).toLocaleDateString()}
                                         </span>
-                                        {reg.is_active && (
+                                        {reg.is_active ? (
                                             <Button 
                                                 variant="ghost" 
                                                 size="sm"
@@ -975,6 +1208,16 @@ const FaceRegistration = () => {
                                             >
                                                 <XCircle className="w-4 h-4 mr-1" />
                                                 Deactivate
+                                            </Button>
+                                        ) : (
+                                            <Button 
+                                                variant="ghost" 
+                                                size="sm"
+                                                onClick={() => handleActivate(reg.id)}
+                                                className="text-green-500 hover:text-green-600"
+                                            >
+                                                <CheckCircle2 className="w-4 h-4 mr-1" />
+                                                Activate
                                             </Button>
                                         )}
                                     </CardFooter>

@@ -13,30 +13,106 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from '@/components/ui/dialog';
 import { Switch } from '@/components/ui/switch';
-import { BookOpen, User, Key, Users, Bus, FileText, UserCog, Save, Shield, Loader2, UserPlus, FileCheck2, Copy, Percent, Wallet, AlertCircle, Building, X, Sparkles, BedDouble, GraduationCap, Phone, MapPin, Files } from 'lucide-react';
+import { BookOpen, User, Key, Users, Bus, FileText, UserCog, Save, Shield, Loader2, UserPlus, FileCheck2, Copy, Percent, Wallet, AlertCircle, Building, X, Sparkles, BedDouble, GraduationCap, Phone, MapPin, Files, ChevronDown, Home, Heart, School, Mail, CreditCard, CheckCircle2 } from 'lucide-react';
 import ImageUploader from '@/components/ImageUploader';
 import { v4 as uuidv4 } from 'uuid';
 import api from '@/lib/api';
 import DatePicker from '@/components/ui/DatePicker';
 import AadharInput from '@/components/AadharInput';
+import { cn } from '@/lib/utils';
 
 // Icon mapping
 const ICON_MAP = {
-  BookOpen, User, Key, Users, Bus, FileText, UserCog, Shield, Files, Building, BedDouble, GraduationCap, Phone, MapPin
+  BookOpen, User, Key, Users, Bus, FileText, UserCog, Shield, Files, Building, BedDouble, GraduationCap, Phone, MapPin, School, Home, Heart, CreditCard, Mail
 };
 
-const SectionBox = ({ icon, title, children }) => {
+// 🌟 WORLD-CLASS Premium Section Card Component (Same as StudentAdmission)
+const SectionBox = ({ icon, title, children, className, collapsible = false, defaultOpen = true, badge, badgeColor = 'primary', gradient = 'blue' }) => {
   const Icon = icon || FileText;
+  const [isOpen, setIsOpen] = useState(defaultOpen);
+  
+  const gradientStyles = {
+    blue: 'from-blue-500/20 via-indigo-500/10 to-purple-500/5',
+    green: 'from-emerald-500/20 via-green-500/10 to-teal-500/5',
+    orange: 'from-orange-500/20 via-amber-500/10 to-yellow-500/5',
+    purple: 'from-purple-500/20 via-violet-500/10 to-fuchsia-500/5',
+    pink: 'from-pink-500/20 via-rose-500/10 to-red-500/5',
+  };
+  
+  const iconGradients = {
+    blue: 'from-blue-500 to-indigo-600',
+    green: 'from-emerald-500 to-green-600',
+    orange: 'from-orange-500 to-amber-600',
+    purple: 'from-purple-500 to-violet-600',
+    pink: 'from-pink-500 to-rose-600',
+  };
+  
+  const badgeColors = {
+    primary: 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300 border-blue-200 dark:border-blue-800',
+    success: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800',
+    warning: 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300 border-amber-200 dark:border-amber-800',
+    info: 'bg-sky-100 text-sky-700 dark:bg-sky-900/40 dark:text-sky-300 border-sky-200 dark:border-sky-800',
+  };
+
   return (
-    <div className="bg-card p-6 rounded-2xl shadow-lg border border-white/10">
-      <div className="flex items-center gap-4 mb-6 pb-3 border-b-2 border-primary/20">
-        <div className="bg-primary/10 p-3 rounded-full">
-          <Icon className="h-6 w-6 text-primary" />
+    <div className={cn(
+      "group relative overflow-hidden rounded-3xl border border-border/40 bg-card shadow-xl transition-all duration-500 hover:shadow-2xl hover:border-primary/30",
+      className
+    )}>
+      {/* Premium Gradient Background */}
+      <div className={cn("absolute inset-0 bg-gradient-to-br opacity-60 transition-opacity duration-500 group-hover:opacity-100 pointer-events-none", gradientStyles[gradient])} />
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-white/80 via-transparent to-transparent dark:from-gray-900/80 pointer-events-none" />
+      
+      {/* Header */}
+      <div 
+        className={cn(
+          "relative flex items-center justify-between gap-4 px-6 py-5 border-b border-border/30",
+          collapsible && "cursor-pointer group/header"
+        )}
+        onClick={() => collapsible && setIsOpen(!isOpen)}
+      >
+        <div className="flex items-center gap-4">
+          {/* Premium Icon Container */}
+          <div className="relative">
+            <div className="absolute inset-0 bg-gradient-to-br from-primary/30 to-primary/10 rounded-2xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
+            <div className={cn("relative bg-gradient-to-br p-3.5 rounded-2xl shadow-lg", iconGradients[gradient])}>
+              <Icon className="h-6 w-6 text-white drop-shadow-sm" />
+            </div>
+            {/* Status Indicator */}
+            <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full bg-gradient-to-r from-green-400 to-emerald-500 border-2 border-card shadow-lg pointer-events-none">
+              <span className="absolute inset-0 rounded-full bg-green-400 animate-ping opacity-75" />
+            </div>
+          </div>
+          
+          <div className="space-y-1">
+            <h2 className="text-xl font-bold text-foreground tracking-tight flex items-center gap-2">
+              {title}
+              {badge && (
+                <span className={cn("text-xs px-2.5 py-1 rounded-full font-semibold border", badgeColors[badgeColor])}>
+                  {badge}
+                </span>
+              )}
+            </h2>
+          </div>
         </div>
-        <h2 className="text-xl font-bold text-foreground">{title}</h2>
+        
+        {collapsible && (
+          <Button variant="ghost" size="sm" className="h-9 w-9 p-0 rounded-xl hover:bg-primary/10 transition-all duration-300">
+            <ChevronDown className={cn("h-5 w-5 transition-transform duration-300", !isOpen && "-rotate-90")} />
+          </Button>
+        )}
       </div>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {children}
+      
+      {/* Content */}
+      <div className={cn(
+        "relative transition-all duration-500 ease-out",
+        isOpen ? "opacity-100" : "opacity-0 h-0 overflow-hidden"
+      )}>
+        <div className="p-6 pt-5">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {children}
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -532,14 +608,24 @@ const EditStudentProfile = () => {
                  if (section.key === 'documents') {
                      // Simplified documents view for edit
                       return (
-                        <SectionBox key={section.key} icon={ICON_MAP[section.icon] || Files} title={section.label}>
+                        <SectionBox key={section.key} icon={ICON_MAP[section.icon] || Files} title={section.label} gradient="orange" badge="Required" badgeColor="warning">
                             <div className="col-span-full">
-                                <Label className="mb-2 block">Available Documents</Label>
-                                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                <Label className="mb-3 block text-sm font-semibold">Available Documents</Label>
+                                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
                                 {masterDocuments.map(doc => (
-                                     <div key={doc.name} className="flex items-center space-x-2">
-                                        <Checkbox id={`doc-${doc.name}`} checked={!!formData.documents_received?.[doc.name]} onCheckedChange={checked => setFormData(prev => ({...prev, documents_received: {...prev.documents_received, [doc.name]: checked}}))} />
-                                        <label htmlFor={`doc-${doc.name}`} className="text-sm font-medium">{doc.name}</label>
+                                     <div key={doc.name} className={cn(
+                                        "flex items-center gap-2 p-3 rounded-xl border transition-all duration-200 cursor-pointer hover:shadow-md",
+                                        formData.documents_received?.[doc.name] 
+                                          ? "bg-emerald-50 dark:bg-emerald-950/30 border-emerald-300 dark:border-emerald-700" 
+                                          : "bg-muted/30 border-border hover:bg-muted/50"
+                                     )}>
+                                        <Checkbox 
+                                            id={`doc-${doc.name}`} 
+                                            checked={!!formData.documents_received?.[doc.name]} 
+                                            onCheckedChange={checked => setFormData(prev => ({...prev, documents_received: {...prev.documents_received, [doc.name]: checked}}))} 
+                                            className={formData.documents_received?.[doc.name] ? "border-emerald-500 data-[state=checked]:bg-emerald-500" : ""}
+                                        />
+                                        <label htmlFor={`doc-${doc.name}`} className="text-sm font-medium cursor-pointer">{doc.name}</label>
                                      </div>
                                 ))}
                                 </div>
@@ -549,25 +635,88 @@ const EditStudentProfile = () => {
                  }
                  if (section.key === 'transport') {
                     return (
-                        <div key={section.key} className="bg-card p-6 rounded-2xl shadow-lg border border-white/10">
-                            <div className="flex items-center justify-between gap-4 mb-6 pb-3 border-b-2 border-primary/20"><div className="flex items-center gap-4"><div className="bg-primary/10 p-3 rounded-full"><Bus className="h-6 w-6 text-primary" /></div><h2 className="text-xl font-bold text-foreground">{section.label}</h2></div><div className="flex items-center gap-2"><Label htmlFor="transport-required">Required</Label><Switch id="transport-required" checked={formData.transport_required} onCheckedChange={(checked) => handleChange('transport_required', checked)} /></div></div>
-                            {formData.transport_required && <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                                <div className="lg:col-span-1"><Label>Route Name <span className="text-red-500">*</span></Label><Select value={formData.transport_route_id || ''} onValueChange={v => handleChange('transport_route_id', v)}><SelectTrigger><SelectValue placeholder="Select a route" /></SelectTrigger><SelectContent>{routes.map(r => <SelectItem key={r.id} value={r.id}>{r.route_title}</SelectItem>)}</SelectContent></Select></div>
-                                <div className="lg:col-span-1"><Label>Stop Name <span className="text-red-500">*</span></Label><Select value={formData.transport_pickup_point_id || ''} onValueChange={v => handleChange('transport_pickup_point_id', v)} disabled={!formData.transport_route_id}><SelectTrigger><SelectValue placeholder="Select pickup point" /></SelectTrigger><SelectContent>{pickupPoints.map(p => <SelectItem key={p.pickup_point.id} value={p.pickup_point.id}>{p.pickup_point.name}</SelectItem>)}</SelectContent></Select></div>
-                                <div className="lg:col-span-1"><Label>Transport Fee</Label><Input value={formData.transport_fee} readOnly disabled /></div><div className="lg:col-span-1"><Label>Pickup Time</Label><Input type="time" value={formData.pickup_time} onChange={e => handleChange('pickup_time', e.target.value)} /></div><div className="lg:col-span-1"><Label>Drop Time</Label><Input type="time" value={formData.drop_time} onChange={e => handleChange('drop_time', e.target.value)} /></div><div className="lg:col-span-1"><Label>Vehicle Number</Label><Input value={formData.vehicle_number} onChange={e => handleChange('vehicle_number', e.target.value)} /></div><div className="lg:col-span-1"><Label>Driver Name</Label><Input value={formData.driver_name} onChange={e => handleChange('driver_name', e.target.value)} /></div><div className="lg:col-span-1"><Label>Driver Contact</Label><Input type="tel" value={formData.driver_contact} onChange={e => handleChange('driver_contact', e.target.value)} /></div><div className="lg:col-span-4"><Label>Special Instructions</Label><Textarea value={formData.transport_special_instructions} onChange={e => handleChange('transport_special_instructions', e.target.value)} /></div>
-                            </div>}
+                        <div key={section.key} className="group relative overflow-hidden rounded-3xl border border-border/40 bg-card shadow-xl transition-all duration-500 hover:shadow-2xl hover:border-primary/30">
+                            <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/20 via-green-500/10 to-teal-500/5 opacity-60 transition-opacity duration-500 group-hover:opacity-100 pointer-events-none" />
+                            <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-white/80 via-transparent to-transparent dark:from-gray-900/80 pointer-events-none" />
+                            <div className="relative flex items-center justify-between gap-4 px-6 py-5 border-b border-border/30">
+                                <div className="flex items-center gap-4">
+                                    <div className="relative">
+                                        <div className="relative bg-gradient-to-br from-emerald-500 to-green-600 p-3.5 rounded-2xl shadow-lg">
+                                            <Bus className="h-6 w-6 text-white drop-shadow-sm" />
+                                        </div>
+                                    </div>
+                                    <div className="space-y-1">
+                                        <h2 className="text-xl font-bold text-foreground tracking-tight flex items-center gap-2">
+                                            {section.label}
+                                            <span className="text-xs px-2.5 py-1 rounded-full font-semibold border bg-sky-100 text-sky-700 dark:bg-sky-900/40 dark:text-sky-300 border-sky-200 dark:border-sky-800">Optional</span>
+                                        </h2>
+                                    </div>
+                                </div>
+                                <div className="flex items-center gap-3">
+                                    <span className="text-sm text-muted-foreground">Enable Transport Facility</span>
+                                    <Switch id="transport-required" checked={formData.transport_required} onCheckedChange={(checked) => handleChange('transport_required', checked)} />
+                                </div>
+                            </div>
+                            <div className={cn("relative transition-all duration-500 ease-out", formData.transport_required ? "opacity-100" : "opacity-0 h-0 overflow-hidden")}>
+                                <div className="p-6 pt-5">
+                                    <p className="text-sm text-muted-foreground mb-4 flex items-center gap-2"><Bus className="h-4 w-4" />Student will use school transport service</p>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                                        <div className="lg:col-span-1"><Label>Route Name <span className="text-red-500">*</span></Label><Select value={formData.transport_route_id || ''} onValueChange={v => handleChange('transport_route_id', v)}><SelectTrigger><SelectValue placeholder="Select a route" /></SelectTrigger><SelectContent>{routes.map(r => <SelectItem key={r.id} value={r.id}>{r.route_title}</SelectItem>)}</SelectContent></Select></div>
+                                        <div className="lg:col-span-1"><Label>Stop Name <span className="text-red-500">*</span></Label><Select value={formData.transport_pickup_point_id || ''} onValueChange={v => handleChange('transport_pickup_point_id', v)} disabled={!formData.transport_route_id}><SelectTrigger><SelectValue placeholder="Select pickup point" /></SelectTrigger><SelectContent>{pickupPoints.map(p => <SelectItem key={p.pickup_point.id} value={p.pickup_point.id}>{p.pickup_point.name}</SelectItem>)}</SelectContent></Select></div>
+                                        <div className="lg:col-span-1"><Label>Transport Fee</Label><Input value={formData.transport_fee} readOnly disabled className="bg-muted" /></div>
+                                        <div className="lg:col-span-1"><Label>Pickup Time</Label><Input type="time" value={formData.pickup_time || ''} onChange={e => handleChange('pickup_time', e.target.value)} /></div>
+                                        <div className="lg:col-span-1"><Label>Drop Time</Label><Input type="time" value={formData.drop_time || ''} onChange={e => handleChange('drop_time', e.target.value)} /></div>
+                                        <div className="lg:col-span-1"><Label>Vehicle Number</Label><Input value={formData.vehicle_number || ''} onChange={e => handleChange('vehicle_number', e.target.value)} /></div>
+                                        <div className="lg:col-span-1"><Label>Driver Name</Label><Input value={formData.driver_name || ''} onChange={e => handleChange('driver_name', e.target.value)} /></div>
+                                        <div className="lg:col-span-1"><Label>Driver Contact</Label><Input type="tel" value={formData.driver_contact || ''} onChange={e => handleChange('driver_contact', e.target.value)} /></div>
+                                        <div className="lg:col-span-4"><Label>Special Instructions</Label><Textarea value={formData.transport_special_instructions || ''} onChange={e => handleChange('transport_special_instructions', e.target.value)} /></div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     );
                  }
                  if (section.key === 'hostel') {
                       return (
-                        <div key={section.key} className="bg-card p-6 rounded-2xl shadow-lg border border-white/10">
-                            <div className="flex items-center justify-between gap-4 mb-6 pb-3 border-b-2 border-primary/20"><div className="flex items-center gap-4"><div className="bg-primary/10 p-3 rounded-full"><BedDouble className="h-6 w-6 text-primary" /></div><h2 className="text-xl font-bold text-foreground">{section.label}</h2></div><div className="flex items-center gap-2"><Label htmlFor="hostel-required">Required</Label><Switch id="hostel-required" checked={formData.hostel_required} onCheckedChange={(checked) => handleChange('hostel_required', checked)} /></div></div>
-                            {formData.hostel_required && <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                                <div className="lg:col-span-1"><Label>Hostel Name <span className="text-red-500">*</span></Label><Select value={formData.hostel_id || ''} onValueChange={v => handleChange('hostel_id', v)}><SelectTrigger><SelectValue placeholder="Select Hostel" /></SelectTrigger><SelectContent>{hostels.map(h => <SelectItem key={h.id} value={h.id}>{h.name}</SelectItem>)}</SelectContent></Select></div>
-                                <div className="lg:col-span-1"><Label>Room Type <span className="text-red-500">*</span></Label><Select value={formData.hostel_room_type || ''} onValueChange={v => handleChange('hostel_room_type', v)}><SelectTrigger><SelectValue placeholder="Select Room Type" /></SelectTrigger><SelectContent>{hostelRoomTypes.map(rt => <SelectItem key={rt.id} value={rt.id}>{rt.name}</SelectItem>)}</SelectContent></Select></div>
-                                <div className="lg:col-span-1"><Label>Room Number</Label><Input value={formData.room_number} onChange={e => handleChange('room_number', e.target.value)} /></div><div className="lg:col-span-1"><Label>Bed Number</Label><Input value={formData.bed_number} onChange={e => handleChange('bed_number', e.target.value)} /></div><div className="lg:col-span-1"><Label>Hostel Fee</Label><Input value={formData.hostel_fee} readOnly disabled /></div><DatePicker id="check_in_date" label="Check-in Date" value={formData.check_in_date} onChange={date => handleChange('check_in_date', date)} /><DatePicker id="check_out_date" label="Check-out Date" value={formData.check_out_date} onChange={date => handleChange('check_out_date', date)} /><div className="lg:col-span-1"><Label>Guardian Contact</Label><Input type="tel" value={formData.hostel_guardian_contact} onChange={e => handleChange('hostel_guardian_contact', e.target.value)} /></div><div className="lg:col-span-1"><Label>Emergency Contact</Label><Input type="tel" value={formData.hostel_emergency_contact} onChange={e => handleChange('hostel_emergency_contact', e.target.value)} /></div><div className="lg:col-span-4"><Label>Special Requirements</Label><Textarea value={formData.hostel_special_requirements} onChange={e => handleChange('hostel_special_requirements', e.target.value)} /></div>
-                            </div>}
+                        <div key={section.key} className="group relative overflow-hidden rounded-3xl border border-border/40 bg-card shadow-xl transition-all duration-500 hover:shadow-2xl hover:border-primary/30">
+                            <div className="absolute inset-0 bg-gradient-to-br from-purple-500/20 via-violet-500/10 to-fuchsia-500/5 opacity-60 transition-opacity duration-500 group-hover:opacity-100 pointer-events-none" />
+                            <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-white/80 via-transparent to-transparent dark:from-gray-900/80 pointer-events-none" />
+                            <div className="relative flex items-center justify-between gap-4 px-6 py-5 border-b border-border/30">
+                                <div className="flex items-center gap-4">
+                                    <div className="relative">
+                                        <div className="relative bg-gradient-to-br from-purple-500 to-violet-600 p-3.5 rounded-2xl shadow-lg">
+                                            <BedDouble className="h-6 w-6 text-white drop-shadow-sm" />
+                                        </div>
+                                    </div>
+                                    <div className="space-y-1">
+                                        <h2 className="text-xl font-bold text-foreground tracking-tight flex items-center gap-2">
+                                            {section.label}
+                                            <span className="text-xs px-2.5 py-1 rounded-full font-semibold border bg-sky-100 text-sky-700 dark:bg-sky-900/40 dark:text-sky-300 border-sky-200 dark:border-sky-800">Optional</span>
+                                        </h2>
+                                    </div>
+                                </div>
+                                <div className="flex items-center gap-3">
+                                    <span className="text-sm text-muted-foreground">Enable Hostel Facility</span>
+                                    <Switch id="hostel-required" checked={formData.hostel_required} onCheckedChange={(checked) => handleChange('hostel_required', checked)} />
+                                </div>
+                            </div>
+                            <div className={cn("relative transition-all duration-500 ease-out", formData.hostel_required ? "opacity-100" : "opacity-0 h-0 overflow-hidden")}>
+                                <div className="p-6 pt-5">
+                                    <p className="text-sm text-muted-foreground mb-4 flex items-center gap-2"><BedDouble className="h-4 w-4" />Student will stay in school hostel</p>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                                        <div className="lg:col-span-1"><Label>Hostel Name <span className="text-red-500">*</span></Label><Select value={formData.hostel_id || ''} onValueChange={v => handleChange('hostel_id', v)}><SelectTrigger><SelectValue placeholder="Select Hostel" /></SelectTrigger><SelectContent>{hostels.map(h => <SelectItem key={h.id} value={h.id}>{h.name}</SelectItem>)}</SelectContent></Select></div>
+                                        <div className="lg:col-span-1"><Label>Room Type <span className="text-red-500">*</span></Label><Select value={formData.hostel_room_type || ''} onValueChange={v => handleChange('hostel_room_type', v)}><SelectTrigger><SelectValue placeholder="Select Room Type" /></SelectTrigger><SelectContent>{hostelRoomTypes.map(rt => <SelectItem key={rt.id} value={rt.id}>{rt.name}</SelectItem>)}</SelectContent></Select></div>
+                                        <div className="lg:col-span-1"><Label>Room Number</Label><Input value={formData.room_number || ''} onChange={e => handleChange('room_number', e.target.value)} /></div>
+                                        <div className="lg:col-span-1"><Label>Bed Number</Label><Input value={formData.bed_number || ''} onChange={e => handleChange('bed_number', e.target.value)} /></div>
+                                        <div className="lg:col-span-1"><Label>Hostel Fee</Label><Input value={formData.hostel_fee || ''} readOnly disabled className="bg-muted" /></div>
+                                        <DatePicker id="check_in_date" label="Check-in Date" value={formData.check_in_date} onChange={date => handleChange('check_in_date', date)} />
+                                        <DatePicker id="check_out_date" label="Check-out Date" value={formData.check_out_date} onChange={date => handleChange('check_out_date', date)} />
+                                        <div className="lg:col-span-1"><Label>Guardian Contact</Label><Input type="tel" value={formData.hostel_guardian_contact || ''} onChange={e => handleChange('hostel_guardian_contact', e.target.value)} /></div>
+                                        <div className="lg:col-span-1"><Label>Emergency Contact</Label><Input type="tel" value={formData.hostel_emergency_contact || ''} onChange={e => handleChange('hostel_emergency_contact', e.target.value)} /></div>
+                                        <div className="lg:col-span-4"><Label>Special Requirements</Label><Textarea value={formData.hostel_special_requirements || ''} onChange={e => handleChange('hostel_special_requirements', e.target.value)} /></div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                       );
                  }

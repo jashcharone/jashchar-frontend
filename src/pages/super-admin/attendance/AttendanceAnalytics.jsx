@@ -412,10 +412,10 @@ const AttendanceAnalytics = () => {
             if (userType === 'all' || userType === 'student') {
                 const { data } = await supabase
                     .from('student_attendance')
-                    .select('*, student:student_profiles(student_name, class_name, section)')
+                    .select('*')
                     .eq('branch_id', branchId)
-                    .gte('attendance_date', startDate)
-                    .lte('attendance_date', endDate);
+                    .gte('date', startDate)
+                    .lte('date', endDate);
                 
                 studentData = data || [];
             }
@@ -425,10 +425,10 @@ const AttendanceAnalytics = () => {
             if (userType === 'all' || userType === 'staff') {
                 const { data } = await supabase
                     .from('staff_attendance')
-                    .select('*, staff:staff_profiles(staff_name, department)')
+                    .select('*')
                     .eq('branch_id', branchId)
-                    .gte('attendance_date', startDate)
-                    .lte('attendance_date', endDate);
+                    .gte('date', startDate)
+                    .lte('date', endDate);
                 
                 staffData = data || [];
             }
@@ -467,10 +467,10 @@ const AttendanceAnalytics = () => {
                 .sort((a, b) => b.value - a.value)
                 .slice(0, 8);
             
-            // Department breakdown (for staff)
+            // Department breakdown (for staff) - simplified without joins
             const deptCounts = {};
             staffData.forEach(record => {
-                const dept = record.staff?.department || 'Unknown';
+                const dept = 'Staff'; // Simplified since no FK joins
                 if (!deptCounts[dept]) deptCounts[dept] = 0;
                 if (record.status === 'present' || record.status === 'Present') {
                     deptCounts[dept]++;
@@ -491,14 +491,13 @@ const AttendanceAnalytics = () => {
             // Top performers (students with best attendance)
             const studentAttendanceMap = {};
             studentData.forEach(record => {
-                const name = record.student?.student_name || 'Unknown';
-                const detail = record.student?.class_name || '';
-                if (!studentAttendanceMap[name]) {
-                    studentAttendanceMap[name] = { name, detail, present: 0, total: 0 };
+                const studentId = record.student_id || 'Unknown';
+                if (!studentAttendanceMap[studentId]) {
+                    studentAttendanceMap[studentId] = { name: `Student ${studentId.substring(0, 8)}`, detail: '', present: 0, total: 0 };
                 }
-                studentAttendanceMap[name].total++;
+                studentAttendanceMap[studentId].total++;
                 if (record.status === 'present' || record.status === 'Present') {
-                    studentAttendanceMap[name].present++;
+                    studentAttendanceMap[studentId].present++;
                 }
             });
             

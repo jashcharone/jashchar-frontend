@@ -167,6 +167,7 @@ export const BASE_SIDEBAR = {
         { title: '🔌 Device Management', path: ROUTES.SUPER_ADMIN.DEVICE_MANAGEMENT },
         { title: '💳 Card Management', path: ROUTES.SUPER_ADMIN.CARD_MANAGEMENT },
         { title: '👤 Face Registration', path: ROUTES.SUPER_ADMIN.FACE_REGISTRATION },
+        { title: '⌚ Wearable Devices', path: ROUTES.SUPER_ADMIN.WEARABLE_DEVICES },
         { title: '⚙️ Attendance Rules', path: ROUTES.SUPER_ADMIN.ATTENDANCE_RULES },
         { title: '📍 Geo-Fence Setup', path: ROUTES.SUPER_ADMIN.GEO_FENCE_SETUP },
         { title: '📈 Analytics', path: ROUTES.SUPER_ADMIN.ATTENDANCE_ANALYTICS },

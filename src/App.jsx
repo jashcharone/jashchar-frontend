@@ -261,6 +261,7 @@ const FaceRegistration = lazy(() => import('@/pages/super-admin/attendance/FaceR
 const AttendanceRules = lazy(() => import('@/pages/super-admin/attendance/AttendanceRules'));
 const GeoFenceSetup = lazy(() => import('@/pages/super-admin/attendance/GeoFenceSetup'));
 const AttendanceAnalytics = lazy(() => import('@/pages/super-admin/attendance/AttendanceAnalytics'));
+const WearableDevices = lazy(() => import('@/pages/super-admin/attendance/WearableDevices'));
 
 // Fees (Remaining)
 const FeesGroup = lazy(() => import('@/pages/super-admin/fees-collection/FeesGroup'));
@@ -1203,6 +1204,7 @@ function App() {
             <Route path={ROUTES.SUPER_ADMIN.FACE_REGISTRATION} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="attendance"><FaceRegistration /></ProtectedRoute>} />
             <Route path={ROUTES.SUPER_ADMIN.ATTENDANCE_RULES} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="attendance"><AttendanceRules /></ProtectedRoute>} />
             <Route path={ROUTES.SUPER_ADMIN.GEO_FENCE_SETUP} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="attendance"><GeoFenceSetup /></ProtectedRoute>} />
+            <Route path={ROUTES.SUPER_ADMIN.WEARABLE_DEVICES} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="attendance"><WearableDevices /></ProtectedRoute>} />
             <Route path={ROUTES.SUPER_ADMIN.ATTENDANCE_ANALYTICS} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'teacher']} requiredModule="attendance"><AttendanceAnalytics /></ProtectedRoute>} />
 
             {/* ? Task Management */}

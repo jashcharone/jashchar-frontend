@@ -186,6 +186,7 @@ export const ROUTES = {
     FACE_REGISTRATION: '/super-admin/attendance/face-registration',
     ATTENDANCE_RULES: '/super-admin/attendance/rules',
     GEO_FENCE_SETUP: '/super-admin/attendance/geo-fence',
+    WEARABLE_DEVICES: '/super-admin/attendance/wearable-devices',
     ATTENDANCE_ANALYTICS: '/super-admin/attendance/analytics',
     // Examinations
     EXAM_GROUP: '/super-admin/examinations/exam-group',

@@ -142,22 +142,23 @@ const IssueCardDialog = ({ open, onClose, branchId, organizationId, onSaved }) =
         if (!searchTerm || searchTerm.length < 2) return;
         
         setLoading(true);
-        const table = searchType === 'student' ? 'student_profiles' : 'staff_profiles';
-        const nameField = searchType === 'student' ? 'student_name' : 'staff_name';
+        // Use correct table names: student_profiles (with full_name), employee_profiles (not staff_profiles)
+        const table = searchType === 'student' ? 'student_profiles' : 'employee_profiles';
         
-        let query = supabase
-            .from(table)
-            .select('*')
-            .eq('branch_id', branchId)
-            .or(`${nameField}.ilike.%${searchTerm}%,admission_no.ilike.%${searchTerm}%`)
-            .limit(20);
-        
-        if (searchType !== 'student') {
+        let query;
+        if (searchType === 'student') {
             query = supabase
                 .from(table)
-                .select('*')
+                .select('id, full_name, admission_number, class_id, section_id, photo_url')
                 .eq('branch_id', branchId)
-                .or(`${nameField}.ilike.%${searchTerm}%,employee_id.ilike.%${searchTerm}%`)
+                .or(`full_name.ilike.%${searchTerm}%,admission_number.ilike.%${searchTerm}%`)
+                .limit(20);
+        } else {
+            query = supabase
+                .from(table)
+                .select('id, full_name, phone, designation_id, department_id, photo_url')
+                .eq('branch_id', branchId)
+                .or(`full_name.ilike.%${searchTerm}%,phone.ilike.%${searchTerm}%`)
                 .limit(20);
         }
         
@@ -280,7 +281,7 @@ const IssueCardDialog = ({ open, onClose, branchId, organizationId, onSaved }) =
                                             </div>
                                             <div className="flex-1">
                                                 <p className="font-medium">
-                                                    {searchType === 'student' ? user.student_name : user.staff_name}
+                                                    {user.full_name}
                                                 </p>
                                                 <p className="text-sm text-muted-foreground">
                                                     {searchType === 'student' ? user.admission_no : user.employee_id}
@@ -304,7 +305,7 @@ const IssueCardDialog = ({ open, onClose, branchId, organizationId, onSaved }) =
                             <User className="w-4 h-4" />
                             <AlertDescription className="flex items-center justify-between">
                                 <span>
-                                    Selected: <strong>{searchType === 'student' ? selectedUser.student_name : selectedUser.staff_name}</strong>
+                                    Selected: <strong>{selectedUser.full_name}</strong>
                                     {' '}({searchType === 'student' ? selectedUser.admission_no : selectedUser.employee_id})
                                 </span>
                                 <Button variant="ghost" size="sm" onClick={() => setSelectedUser(null)}>
@@ -432,32 +433,52 @@ const CardManagement = () => {
     const fetchCards = async () => {
         setLoading(true);
         
-        // Fetch cards with user details
+        // Fetch cards - no FK joins, will fetch user details separately
         const { data, error } = await supabase
             .from('attendance_cards')
-            .select(`
-                *,
-                student:student_profiles!attendance_cards_user_id_fkey(student_name, admission_no, class_name, section),
-                staff:staff_profiles!attendance_cards_user_id_fkey(staff_name, employee_id, department)
-            `)
+            .select('*')
             .eq('branch_id', branchId)
             .order('created_at', { ascending: false });
         
         if (error) {
             toast({ variant: 'destructive', title: 'Error fetching cards', description: error.message });
         } else {
-            // Process cards to get user info
-            const processedCards = (data || []).map(card => ({
-                ...card,
-                user_name: card.user_type === 'student' 
-                    ? card.student?.student_name 
-                    : card.staff?.staff_name,
-                user_code: card.user_type === 'student'
-                    ? card.student?.admission_no
-                    : card.staff?.employee_id,
-                user_detail: card.user_type === 'student'
-                    ? `${card.student?.class_name || ''} ${card.student?.section || ''}`
-                    : card.staff?.department || '',
+            // Fetch user details for each card
+            const processedCards = await Promise.all((data || []).map(async (card) => {
+                let userName = 'Unknown';
+                let userCode = '';
+                let userDetail = '';
+                
+                if (card.user_id) {
+                    if (card.user_type === 'student') {
+                        const { data: student } = await supabase
+                            .from('student_profiles')
+                            .select('full_name, admission_number')
+                            .eq('id', card.user_id)
+                            .single();
+                        if (student) {
+                            userName = student.full_name;
+                            userCode = student.admission_number || '';
+                        }
+                    } else {
+                        const { data: staff } = await supabase
+                            .from('employee_profiles')
+                            .select('full_name, phone')
+                            .eq('id', card.user_id)
+                            .single();
+                        if (staff) {
+                            userName = staff.full_name;
+                            userCode = staff.phone || '';
+                        }
+                    }
+                }
+                
+                return {
+                    ...card,
+                    user_name: userName,
+                    user_code: userCode,
+                    user_detail: userDetail,
+                };
             }));
             setCards(processedCards);
         }

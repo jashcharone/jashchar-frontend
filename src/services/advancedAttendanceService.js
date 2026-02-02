@@ -350,16 +350,17 @@ export const attendanceSupabase = {
     if (userType === 'student') {
       query = supabase
         .from('student_profiles')
-        .select('id, full_name, admission_no, class_id, section_id')
+        .select('id, full_name, admission_number, class_id, section_id, photo_url')
         .eq('branch_id', branchId)
-        .or(`full_name.ilike.%${searchTerm}%,admission_no.ilike.%${searchTerm}%`)
+        .or(`full_name.ilike.%${searchTerm}%,admission_number.ilike.%${searchTerm}%`)
         .limit(20);
     } else {
+      // Use employee_profiles (staff_profiles doesn't exist)
       query = supabase
-        .from('staff_profiles')
-        .select('id, full_name, employee_code, designation')
+        .from('employee_profiles')
+        .select('id, full_name, phone, designation_id, department_id, photo_url')
         .eq('branch_id', branchId)
-        .or(`full_name.ilike.%${searchTerm}%,employee_code.ilike.%${searchTerm}%`)
+        .or(`full_name.ilike.%${searchTerm}%,phone.ilike.%${searchTerm}%`)
         .limit(20);
     }
 

@@ -616,15 +616,20 @@ const StudentAdmission = () => {
         case 'national_id_no':  // Backend uses national_id_no for student aadhar
         case 'father_aadhar_no':
         case 'mother_aadhar_no':
+            // Determine the correct key to update in formData
+            // If field is national_id_no, we MUST update aadhar_no because validation expects that
+            let actualKey = field.field_name;
+            if (field.field_name === 'national_id_no') actualKey = 'aadhar_no';
+            
             return (
-              <SmartField label={label} required={isRequired} error={(field.field_name === 'aadhar_no' || field.field_name === 'national_id_no' ? aadharError : null) || (touched[field.field_name] && errors[field.field_name])} touched icon={Fingerprint} hint="12 digits">
+              <SmartField label={label} required={isRequired} error={(actualKey === 'aadhar_no' ? aadharError : null) || (touched[actualKey] && errors[actualKey]) || (field.field_name !== actualKey && errors[field.field_name])} touched icon={Fingerprint} hint="12 digits">
                 <AadharInput 
-                  value={formData[field.field_name] || ''} 
+                  value={formData[actualKey] || ''} 
                   onChange={val => {
-                    handleChange(field.field_name, val);
-                    if(field.field_name === 'aadhar_no' || field.field_name === 'national_id_no') validateAadhar(val);
+                    handleChange(actualKey, val);
+                    if(actualKey === 'aadhar_no') validateAadhar(val);
                   }} 
-                  checkDuplicates={field.field_name === 'aadhar_no' || field.field_name === 'national_id_no'} 
+                  checkDuplicates={actualKey === 'aadhar_no'} 
                   hideLabel={true}
                   className="h-11"
                 />

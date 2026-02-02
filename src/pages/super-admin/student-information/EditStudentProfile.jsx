@@ -193,9 +193,10 @@ const EditStudentProfile = () => {
                 setMasterDocuments(masterDocsRes.data || []);
 
                 // 2. Fetch Student Data
+                // Use explicit FK names to avoid ambiguity (student_transport_details has student_id FK pointing to student_profiles)
                 const { data: student, error } = await supabase
                     .from('student_profiles')
-                    .select('*, transport_details:student_transport_details(*), hostel_details:student_hostel_details(*)')
+                    .select('*, transport_details:student_transport_details!student_transport_details_student_id_fkey(*), hostel_details:student_hostel_details!student_hostel_details_student_id_fkey(*)')
                     .eq('id', studentId)
                     .single();
                 

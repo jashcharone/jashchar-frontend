@@ -632,7 +632,7 @@ const StudentAdmission = () => {
             )
         case 'pincode':
             return (
-              <SmartField label={label} required={isRequired} error={errors.pincode} touched={touched.pincode} icon={MapPinned} hint="6 digits ? Auto-fills">
+              <SmartField label={label} required={isRequired} error={errors.pincode} touched={touched.pincode} icon={MapPinned} hint="6 digits → Auto-fills">
                 <div className="relative">
                   <Input
                     value={pincode}
@@ -640,6 +640,8 @@ const StudentAdmission = () => {
                     onChange={e => {
                       const cleaned = (e.target.value || '').replace(/\D/g, '').slice(0, 6);
                       setPincode(cleaned);
+                      // Sync pincode to formData for validation
+                      handleChange('pincode', cleaned);
                       if (cleaned.length < 6) {
                         handleChange('post_office', '');
                       }

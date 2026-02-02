@@ -44,10 +44,12 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 
-// Branch-level System Roles ONLY
-// NOTE: super_admin & admin are ORGANIZATION-level roles (in org_roles table)
-//       They are NOT created per-branch, only once per organization!
+// Branch-level System Roles
+// NOTE: For NEW organizations, Super Admin & Admin are created at org_roles level
+//       But EXISTING branches may have Super Admin/Admin in roles table - we support both
 const DEFAULT_SYSTEM_ROLES = [
+    'super_admin',  // Legacy support - existing branches may have this
+    'admin',        // Legacy support - existing branches may have this
     'principal',
     'accountant',
     'receptionist',

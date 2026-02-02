@@ -140,10 +140,25 @@ const AssignVehicle = () => {
   };
 
   // Get unassigned routes and vehicles for the dropdown
-  const assignedRouteIds = assignments.filter(a => !editingAssignment || a.id !== editingAssignment.id).map(a => a.route_id);
+  // Logic: Once a route has a vehicle OR a vehicle is assigned to a route, 
+  // they should NOT be available for new assignments
+  
+  // Filter out already assigned routes (except when editing that same assignment)
+  const assignedRouteIds = assignments
+    .filter(a => !editingAssignment || a.id !== editingAssignment.id)
+    .map(a => a.route_id);
   const availableRoutes = editingAssignment 
     ? routes 
     : routes.filter(r => !assignedRouteIds.includes(r.id));
+  
+  // Filter out already assigned vehicles (except when editing that same assignment)
+  // A vehicle can only be assigned to ONE route at a time
+  const assignedVehicleIds = assignments
+    .filter(a => !editingAssignment || a.id !== editingAssignment.id)
+    .map(a => a.vehicle_id);
+  const availableVehicles = editingAssignment 
+    ? vehicles 
+    : vehicles.filter(v => !assignedVehicleIds.includes(v.id));
 
   return (
     <DashboardLayout>
@@ -272,6 +287,11 @@ const AssignVehicle = () => {
                       {availableRoutes.map(r => (
                         <SelectItem key={r.id} value={r.id}>{r.route_title}</SelectItem>
                       ))}
+                      {availableRoutes.length === 0 && (
+                        <div className="px-2 py-4 text-sm text-muted-foreground text-center">
+                          All routes have vehicles assigned
+                        </div>
+                      )}
                     </SelectContent>
                   </Select>
                 </div>
@@ -280,11 +300,16 @@ const AssignVehicle = () => {
                   <Select value={formData.vehicle_id} onValueChange={(v) => setFormData({...formData, vehicle_id: v})}>
                     <SelectTrigger><SelectValue placeholder="Select Vehicle" /></SelectTrigger>
                     <SelectContent>
-                      {vehicles.map(v => (
+                      {availableVehicles.map(v => (
                         <SelectItem key={v.id} value={v.id}>
                           {v.vehicle_number} {v.driver_name ? `(${v.driver_name})` : ''}
                         </SelectItem>
                       ))}
+                      {availableVehicles.length === 0 && (
+                        <div className="px-2 py-4 text-sm text-muted-foreground text-center">
+                          All vehicles are assigned
+                        </div>
+                      )}
                     </SelectContent>
                   </Select>
                 </div>

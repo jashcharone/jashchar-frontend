@@ -108,9 +108,8 @@ const AssignVehicle = () => {
     const payload = {
       route_id: formData.route_id,
       vehicle_id: formData.vehicle_id,
-      branch_id: branchId,
-      session_id: currentSessionId
-      // Note: organization_id column doesn't exist in route_vehicle_assignments table
+      branch_id: branchId
+      // Note: session_id and organization_id columns don't exist in route_vehicle_assignments table
     };
 
     let error;

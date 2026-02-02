@@ -4,8 +4,11 @@ import { repairPlanModuleMappings } from '@/services/planModuleRepairService';
 
 export const rolesService = {
   /**
-   * Creates 9 default roles and ensures Permissions are synced for School Owner.
-   * Includes Pre-flight checks for Modules and Plan Mappings.
+   * Creates BRANCH-LEVEL default roles only.
+   * NOTE: Super Admin & Admin are ORGANIZATION-level roles (stored in org_roles table)
+   *       They should NOT be created here - they are created when organization is created.
+   * 
+   * Branch-level roles: Principal, Teacher, Student, Parent, etc.
    */
   createDefaultRoles: async (branchId, planId = null) => {
     // Modules are managed via backend/database
@@ -13,9 +16,10 @@ export const rolesService = {
     // SAFETY: Ensure the plan maps to modules correctly
     await repairPlanModuleMappings();
 
+    // ⚠️ IMPORTANT: Super Admin & Admin are ORGANIZATION-level roles
+    // They belong in org_roles table, NOT in roles table
+    // DO NOT add 'school_owner', 'super_admin', or 'admin' here!
     const defaultRoles = [
-      'School Owner',
-      'Admin',
       'Principal',
       'Accountant',
       'Librarian',

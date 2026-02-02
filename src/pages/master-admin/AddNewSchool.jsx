@@ -426,10 +426,12 @@ const AddNewSchool = () => {
 
       if (subError) throw subError;
 
-      // 5. Create Default Roles
+      // 5. Create Default BRANCH-LEVEL Roles Only
+      // NOTE: Super Admin & Admin are ORGANIZATION-level roles (stored in org_roles table)
+      //       They are created when the organization is created, NOT per-branch!
       const defaultRoles = [
-          'Super Admin', 'Admin', 'Principal', 'Accountant', 
-          'Receptionist', 'Teacher', 'Librarian', 'Parent', 'Student'
+          'Principal', 'Accountant', 'Receptionist', 'Teacher', 
+          'Librarian', 'Parent', 'Student'
       ];
 
       const roleInserts = defaultRoles.map(rName => ({

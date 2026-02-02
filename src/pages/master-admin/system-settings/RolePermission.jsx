@@ -44,10 +44,10 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 
-// Default System Roles (matches backend schoolSetupService.js)
+// Branch-level System Roles ONLY
+// NOTE: super_admin & admin are ORGANIZATION-level roles (in org_roles table)
+//       They are NOT created per-branch, only once per organization!
 const DEFAULT_SYSTEM_ROLES = [
-    'super_admin',  // Primary owner role (was school_owner in legacy)
-    'admin',
     'principal',
     'accountant',
     'receptionist',

@@ -208,6 +208,7 @@ const EditStudentProfile = () => {
     // Master Lists
     const [classes, setClasses] = useState([]);
     const [sections, setSections] = useState([]);
+    const [sessions, setSessions] = useState([]);
     const [categories, setCategories] = useState([]);
     const [routes, setRoutes] = useState([]);
     const [pickupPoints, setPickupPoints] = useState([]);
@@ -215,6 +216,8 @@ const EditStudentProfile = () => {
     const [hostelRoomTypes, setHostelRoomTypes] = useState([]);
     const [religions, setReligions] = useState([]);
     const [castes, setCastes] = useState([]);
+    const [casteCategories, setCasteCategories] = useState([]);
+    const [subCastes, setSubCastes] = useState([]);
     const [masterDocuments, setMasterDocuments] = useState([]);
     
     // Photos
@@ -241,7 +244,7 @@ const EditStudentProfile = () => {
                 // 1. Fetch Settings & Master Data
                 const [
                     customFieldsRes,
-                    classesRes, categoriesRes, routesRes, hostelsRes, hostelRoomTypesRes, religionsRes, castesRes, masterDocsRes
+                    classesRes, categoriesRes, routesRes, hostelsRes, hostelRoomTypesRes, religionsRes, castesRes, masterDocsRes, sessionsRes, branchRes
                 ] = await Promise.all([
                     api.get('/form-settings', { params: { branchId, module: 'student_admission' } }),
                     supabase.from('classes').select('id, name').eq('branch_id', branchId).eq('branch_id', selectedBranch.id),
@@ -251,8 +254,23 @@ const EditStudentProfile = () => {
                     supabase.from('hostel_room_types').select('*').eq('branch_id', branchId),
                     supabase.from('master_religions').select('name'),
                     supabase.from('master_castes').select('name'),
-                    supabase.from('master_documents').select('name, is_required')
+                    supabase.from('master_documents').select('name, is_required'),
+                    supabase.from('sessions').select('id, name, is_active').eq('branch_id', branchId).order('name', { ascending: false }),
+                    supabase.from('branches').select('state_id').eq('id', branchId).single()
                 ]);
+
+                // Fetch Caste Data based on State
+                let casteCategoriesData = [];
+                let subCastesData = [];
+                if (branchRes.data?.state_id) {
+                     const casteCatRes = await supabase.from('caste_categories').select('id, name').eq('state_id', branchRes.data.state_id).eq('is_active', true).order('display_order');
+                     casteCategoriesData = casteCatRes.data || [];
+                     
+                     if (casteCategoriesData.length > 0) {
+                        const subCasteRes = await supabase.from('sub_castes').select('id, name, caste_category_id').in('caste_category_id', casteCategoriesData.map(c => c.id)).eq('is_active', true).order('name');
+                        subCastesData = subCasteRes.data || [];
+                     }
+                }
 
                 if (customFieldsRes.data?.success) {
                     setAllFields([...(customFieldsRes.data.systemFields || []), ...(customFieldsRes.data.customFields || [])]);
@@ -267,6 +285,9 @@ const EditStudentProfile = () => {
                 setReligions(religionsRes.data || []);
                 setCastes(castesRes.data || []);
                 setMasterDocuments(masterDocsRes.data || []);
+                setSessions(sessionsRes.data || []);
+                setCasteCategories(casteCategoriesData);
+                setSubCastes(subCastesData);
 
                 // 2. Fetch Student Data (basic profile only, fetch transport/hostel separately)
                 const { data: student, error } = await supabase
@@ -448,6 +469,8 @@ const EditStudentProfile = () => {
             switch (field.field_name) {
                  case 'admission_no':
                       return <div className="lg:col-span-1">{label}<Input value={formData.school_code || ''} disabled className="bg-muted" /></div>;
+                 case 'session':
+                      return <div className="lg:col-span-1">{label}<Select value={formData.session_id} onValueChange={v => handleChange('session_id', v)}><SelectTrigger><SelectValue placeholder="Select Session" /></SelectTrigger><SelectContent>{sessions.map(s => <SelectItem key={s.id} value={s.id}>{s.name} {s.is_active ? '(Active)' : ''}</SelectItem>)}</SelectContent></Select></div>;
                  case 'class':
                       return <div className="lg:col-span-1">{label}<Select value={formData.class_id} onValueChange={v => handleChange('class_id', v)}><SelectTrigger><SelectValue placeholder="Select Class" /></SelectTrigger><SelectContent>{classes.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent></Select></div>;
                  case 'section':
@@ -456,6 +479,14 @@ const EditStudentProfile = () => {
                       return <div className="lg:col-span-1"><DatePicker label={field.field_label} required={field.is_required} value={formData[field.field_name]} onChange={date => handleChange(field.field_name, date)} /></div>;
                  case 'category':
                       return <div className="lg:col-span-1">{label}<Select value={formData.category_id || ''} onValueChange={v => handleChange('category_id', v)}><SelectTrigger><SelectValue placeholder="Select Category" /></SelectTrigger><SelectContent>{categories.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent></Select></div>;
+                 case 'caste_category':
+                      return <div className="lg:col-span-1">{label}<Select value={formData.caste_category_id || ''} onValueChange={v => handleChange('caste_category_id', v)}><SelectTrigger><SelectValue placeholder="Select Caste Category" /></SelectTrigger><SelectContent>{casteCategories.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent></Select></div>;
+                 case 'sub_caste':
+                      // Filter sub-castes based on selected category
+                      const filteredSubCastes = formData.caste_category_id 
+                        ? subCastes.filter(sc => sc.caste_category_id === formData.caste_category_id)
+                        : []; 
+                      return <div className="lg:col-span-1">{label}<Select value={formData.sub_caste_id || ''} onValueChange={v => handleChange('sub_caste_id', v)} disabled={!formData.caste_category_id}><SelectTrigger><SelectValue placeholder="Select Sub Caste" /></SelectTrigger><SelectContent>{filteredSubCastes.map(sc => <SelectItem key={sc.id} value={sc.id}>{sc.name}</SelectItem>)}</SelectContent></Select></div>;
                  case 'student_photo': case 'father_photo': case 'mother_photo': case 'guardian_photo':
                     const photoHandlers = {
                         student_photo: { setFile: setProfilePictureFile, preview: profilePicturePreview, setPreview: setProfilePicturePreview },
@@ -469,6 +500,14 @@ const EditStudentProfile = () => {
                      return <div className="lg:col-span-1">{label}<AadharInput value={formData[field.field_name] || ''} onChange={val => handleChange(field.field_name, val)} /></div>;
                  case 'religion':
                       return <div className="lg:col-span-1">{label}<Select value={formData.religion || ''} onValueChange={v => handleChange('religion', v)}><SelectTrigger><SelectValue placeholder="Select Religion" /></SelectTrigger><SelectContent>{religions.map(r => <SelectItem key={r.name} value={r.name}>{r.name}</SelectItem>)}</SelectContent></Select></div>;
+                 
+                 // Login Details - Explicit Handling
+                 case 'username': case 'parent_username':
+                    return <div className="lg:col-span-1">{label}<Input value={formData[field.field_name] || ''} readOnly className="bg-muted" /></div>;
+                 case 'password': case 'retype_password': case 'parent_password': case 'parent_retype_password':
+                    const isParent = field.field_name.startsWith('parent_');
+                    const updatesKey = field.field_name;
+                    return <div className="lg:col-span-1">{label}<Input type="text" placeholder="Leave blank to keep unchanged" value={formData[updatesKey] || ''} onChange={e => handleChange(updatesKey, e.target.value)} /></div>;
             }
         }
 

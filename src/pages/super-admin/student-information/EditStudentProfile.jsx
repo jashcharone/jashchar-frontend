@@ -13,7 +13,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from '@/components/ui/dialog';
 import { Switch } from '@/components/ui/switch';
-import { BookOpen, User, Key, Users, Bus, FileText, UserCog, Save, Shield, Loader2, UserPlus, FileCheck2, Copy, Percent, Wallet, AlertCircle, Building, X, Sparkles, BedDouble, GraduationCap, Phone, MapPin, Files, ChevronDown, Home, Heart, School, Mail, CreditCard, CheckCircle2 } from 'lucide-react';
+import { BookOpen, User, Key, Users, Bus, FileText, UserCog, Save, Shield, Loader2, UserPlus, FileCheck2, Copy, Percent, Wallet, AlertCircle, Building, X, Sparkles, BedDouble, GraduationCap, Phone, MapPin, Files, ChevronDown, Home, Heart, School, Mail, CreditCard, CheckCircle2, Camera, UserCircle2 } from 'lucide-react';
 import ImageUploader from '@/components/ImageUploader';
 import { v4 as uuidv4 } from 'uuid';
 import api from '@/lib/api';
@@ -537,15 +537,10 @@ const EditStudentProfile = () => {
                         ? subCastes.filter(sc => sc.caste_category_id === formData.caste_category_id)
                         : []; 
                       return <div className="lg:col-span-1">{label}<Select value={formData.sub_caste_id || ''} onValueChange={v => handleChange('sub_caste_id', v)} disabled={!formData.caste_category_id}><SelectTrigger><SelectValue placeholder="Select Sub Caste" /></SelectTrigger><SelectContent>{filteredSubCastes.map(sc => <SelectItem key={sc.id} value={sc.id}>{sc.name}</SelectItem>)}</SelectContent></Select></div>;
+                 // PHOTOS ARE NOW RENDERED IN DEDICATED PHOTO GALLERY SECTION AT THE END
+                 // Skip rendering here to avoid duplicates
                  case 'student_photo': case 'father_photo': case 'mother_photo': case 'guardian_photo':
-                    const photoHandlers = {
-                        student_photo: { setFile: setProfilePictureFile, preview: profilePicturePreview, setPreview: setProfilePicturePreview },
-                        father_photo: { setFile: setFatherPictureFile, preview: fatherPicturePreview, setPreview: setFatherPicturePreview },
-                        mother_photo: { setFile: setMotherPictureFile, preview: motherPicturePreview, setPreview: setMotherPicturePreview },
-                        guardian_photo: { setFile: setGuardianPictureFile, preview: guardianPicturePreview, setPreview: setGuardianPicturePreview },
-                    };
-                    const h = photoHandlers[field.field_name];
-                    return <div className="md:col-span-1">{label}<ImageUploader onFileChange={file => handleFileChange(file, h.setFile, h.setPreview)} initialPreview={h.preview} /></div>;
+                    return null; // Photos moved to Photo Gallery section
                  case 'national_id_no': case 'father_aadhar_no': case 'mother_aadhar_no':
                      return <div className="lg:col-span-1">{label}<AadharInput value={formData[field.field_name] || ''} onChange={val => handleChange(field.field_name, val)} /></div>;
                  case 'religion':
@@ -597,6 +592,33 @@ const EditStudentProfile = () => {
                 uploadFile(guardianPictureFile, 'student-photos'),
             ]);
             
+            // CRITICAL: Store transport/hostel values BEFORE cleaning updates object
+            const transportRequired = formData.transport_required;
+            const hostelRequired = formData.hostel_required;
+            const transportData = {
+                transport_route_id: formData.transport_route_id,
+                transport_pickup_point_id: formData.transport_pickup_point_id,
+                transport_fee: formData.transport_fee,
+                pickup_time: formData.pickup_time,
+                drop_time: formData.drop_time,
+                vehicle_number: formData.vehicle_number,
+                driver_name: formData.driver_name,
+                driver_contact: formData.driver_contact,
+                special_instructions: formData.transport_special_instructions
+            };
+            const hostelData = {
+                hostel_id: formData.hostel_id,
+                room_type: formData.hostel_room_type,
+                room_number: formData.room_number,
+                bed_number: formData.bed_number,
+                hostel_fee: formData.hostel_fee,
+                check_in_date: formData.check_in_date,
+                check_out_date: formData.check_out_date,
+                guardian_contact: formData.hostel_guardian_contact,
+                emergency_contact: formData.hostel_emergency_contact,
+                special_requirements: formData.hostel_special_requirements
+            };
+            
             const updates = { ...formData };
             if(pUrl) updates.photo_url = pUrl;
             if(fUrl) updates.father_photo_url = fUrl;
@@ -636,47 +658,24 @@ const EditStudentProfile = () => {
             const { error: updateError } = await supabase.from('student_profiles').update(updates).eq('id', studentId);
             if(updateError) throw updateError;
             
-            // Update Transport
-            if (updates.transport_required) {
-                 const tData = {
-                    transport_route_id: updates.transport_route_id,
-                    transport_pickup_point_id: updates.transport_pickup_point_id,
-                    transport_fee: updates.transport_fee,
-                    pickup_time: updates.pickup_time,
-                    drop_time: updates.drop_time,
-                    vehicle_number: updates.vehicle_number,
-                    driver_name: updates.driver_name,
-                    driver_contact: updates.driver_contact,
-                    special_instructions: updates.transport_special_instructions
-                 };
+            // Update Transport (using saved values from BEFORE delete)
+            if (transportRequired) {
                  if (formData.transport_details?.id) {
-                     await supabase.from('student_transport_details').update(tData).eq('id', formData.transport_details.id);
+                     await supabase.from('student_transport_details').update(transportData).eq('id', formData.transport_details.id);
                  } else {
                      // Note: organization_id not in student_transport_details schema
-                     await supabase.from('student_transport_details').insert({ ...tData, student_id: studentId, branch_id: user.profile.branch_id, session_id: currentSessionId });
+                     await supabase.from('student_transport_details').insert({ ...transportData, student_id: studentId, branch_id: user.profile.branch_id, session_id: currentSessionId });
                  }
             } else if (formData.transport_details?.id) {
                 await supabase.from('student_transport_details').delete().eq('id', formData.transport_details.id);
             }
 
-            // Update Hostel
-            if (updates.hostel_required) {
-                const hData = {
-                    hostel_id: updates.hostel_id,
-                    room_type: updates.hostel_room_type,
-                    room_number: updates.room_number,
-                    bed_number: updates.bed_number,
-                    hostel_fee: updates.hostel_fee,
-                    check_in_date: updates.check_in_date,
-                    check_out_date: updates.check_out_date,
-                    guardian_contact: updates.hostel_guardian_contact,
-                    emergency_contact: updates.hostel_emergency_contact,
-                    special_requirements: updates.hostel_special_requirements
-                };
+            // Update Hostel (using saved values from BEFORE delete)
+            if (hostelRequired) {
                 if (formData.hostel_details?.id) {
-                     await supabase.from('student_hostel_details').update(hData).eq('id', formData.hostel_details.id);
+                     await supabase.from('student_hostel_details').update(hostelData).eq('id', formData.hostel_details.id);
                 } else {
-                     await supabase.from('student_hostel_details').insert({ ...hData, student_id: studentId, branch_id: user.profile.branch_id, session_id: currentSessionId, organization_id: organizationId });
+                     await supabase.from('student_hostel_details').insert({ ...hostelData, student_id: studentId, branch_id: user.profile.branch_id, session_id: currentSessionId, organization_id: organizationId });
                 }
             } else if (formData.hostel_details?.id) {
                 await supabase.from('student_hostel_details').delete().eq('id', formData.hostel_details.id);
@@ -859,6 +858,179 @@ const EditStudentProfile = () => {
                     </SectionBox>
                  );
             })}
+
+            {/* 📸 PHOTO GALLERY - All Photos in One Place at the End */}
+            <SectionBox icon={Camera} title="Photo Gallery" badge="Upload Photos" badgeColor="info" gradient="purple">
+              <div className="col-span-full space-y-6">
+                {/* Student Identity Header */}
+                <div className="bg-gradient-to-r from-purple-500/10 via-violet-500/10 to-fuchsia-500/10 border-2 border-purple-500/30 rounded-2xl p-5">
+                  <div className="flex items-center gap-4">
+                    <div className="relative">
+                      <div className="absolute inset-0 bg-gradient-to-br from-purple-500/30 to-violet-500/20 rounded-2xl blur-xl opacity-60" />
+                      <div className="relative bg-gradient-to-br from-purple-500 to-violet-600 p-4 rounded-2xl shadow-xl">
+                        <UserCircle2 className="h-8 w-8 text-white" />
+                      </div>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground font-medium">Editing photos for</p>
+                      <h3 className="text-2xl font-black text-transparent bg-gradient-to-r from-purple-600 via-violet-600 to-fuchsia-600 dark:from-purple-400 dark:via-violet-400 dark:to-fuchsia-400 bg-clip-text">
+                        {formData.full_name || formData.first_name || 'Student'}
+                      </h3>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        {formData.admission_no && `Admission No: ${formData.admission_no}`}
+                        {formData.roll_number && ` • Roll: ${formData.roll_number}`}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Photo Cards Grid */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-6">
+                  {/* Student Photo */}
+                  <div className="flex flex-col items-center">
+                    <div className={cn(
+                      "relative w-full aspect-[3.5/4.5] rounded-2xl overflow-hidden border-3 transition-all duration-300 shadow-lg group",
+                      profilePicturePreview 
+                        ? "border-emerald-500 bg-emerald-50 dark:bg-emerald-950/30" 
+                        : "border-dashed border-purple-300 dark:border-purple-700 bg-gradient-to-br from-purple-50 to-violet-50 dark:from-purple-950/30 dark:to-violet-950/30 hover:border-purple-500"
+                    )}>
+                      <ImageUploader 
+                        onFileChange={file => handleFileChange(file, setProfilePictureFile, setProfilePicturePreview)} 
+                        initialPreview={profilePicturePreview} 
+                        showInstruction={false}
+                        showCamera={false}
+                        aspectRatio={3.5/4.5}
+                        showCrop={true}
+                      />
+                      {profilePicturePreview && (
+                        <div className="absolute top-2 right-2 bg-emerald-500 text-white p-1.5 rounded-full shadow-lg">
+                          <CheckCircle2 className="h-4 w-4" />
+                        </div>
+                      )}
+                    </div>
+                    <div className="mt-3 text-center">
+                      <p className="text-sm font-bold text-purple-700 dark:text-purple-300 flex items-center justify-center gap-1.5">
+                        <GraduationCap className="h-4 w-4" />
+                        Student Photo
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Father Photo */}
+                  <div className="flex flex-col items-center">
+                    <div className={cn(
+                      "relative w-full aspect-[3.5/4.5] rounded-2xl overflow-hidden border-3 transition-all duration-300 shadow-lg group",
+                      fatherPicturePreview 
+                        ? "border-emerald-500 bg-emerald-50 dark:bg-emerald-950/30" 
+                        : "border-dashed border-blue-300 dark:border-blue-700 bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 hover:border-blue-500"
+                    )}>
+                      <ImageUploader 
+                        onFileChange={file => handleFileChange(file, setFatherPictureFile, setFatherPicturePreview)} 
+                        initialPreview={fatherPicturePreview} 
+                        showInstruction={false}
+                        showCamera={false}
+                        aspectRatio={3.5/4.5}
+                        showCrop={true}
+                      />
+                      {fatherPicturePreview && (
+                        <div className="absolute top-2 right-2 bg-emerald-500 text-white p-1.5 rounded-full shadow-lg">
+                          <CheckCircle2 className="h-4 w-4" />
+                        </div>
+                      )}
+                    </div>
+                    <div className="mt-3 text-center">
+                      <p className="text-sm font-bold text-blue-700 dark:text-blue-300 flex items-center justify-center gap-1.5">
+                        <User className="h-4 w-4" />
+                        Father Photo
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-0.5">{formData.father_name || ''}</p>
+                    </div>
+                  </div>
+
+                  {/* Mother Photo */}
+                  <div className="flex flex-col items-center">
+                    <div className={cn(
+                      "relative w-full aspect-[3.5/4.5] rounded-2xl overflow-hidden border-3 transition-all duration-300 shadow-lg group",
+                      motherPicturePreview 
+                        ? "border-emerald-500 bg-emerald-50 dark:bg-emerald-950/30" 
+                        : "border-dashed border-pink-300 dark:border-pink-700 bg-gradient-to-br from-pink-50 to-rose-50 dark:from-pink-950/30 dark:to-rose-950/30 hover:border-pink-500"
+                    )}>
+                      <ImageUploader 
+                        onFileChange={file => handleFileChange(file, setMotherPictureFile, setMotherPicturePreview)} 
+                        initialPreview={motherPicturePreview} 
+                        showInstruction={false}
+                        showCamera={false}
+                        aspectRatio={3.5/4.5}
+                        showCrop={true}
+                      />
+                      {motherPicturePreview && (
+                        <div className="absolute top-2 right-2 bg-emerald-500 text-white p-1.5 rounded-full shadow-lg">
+                          <CheckCircle2 className="h-4 w-4" />
+                        </div>
+                      )}
+                    </div>
+                    <div className="mt-3 text-center">
+                      <p className="text-sm font-bold text-pink-700 dark:text-pink-300 flex items-center justify-center gap-1.5">
+                        <Heart className="h-4 w-4" />
+                        Mother Photo
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-0.5">{formData.mother_name || ''}</p>
+                    </div>
+                  </div>
+
+                  {/* Guardian Photo */}
+                  <div className="flex flex-col items-center">
+                    <div className={cn(
+                      "relative w-full aspect-[3.5/4.5] rounded-2xl overflow-hidden border-3 transition-all duration-300 shadow-lg group",
+                      guardianPicturePreview 
+                        ? "border-emerald-500 bg-emerald-50 dark:bg-emerald-950/30" 
+                        : "border-dashed border-amber-300 dark:border-amber-700 bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-950/30 dark:to-orange-950/30 hover:border-amber-500"
+                    )}>
+                      <ImageUploader 
+                        onFileChange={file => handleFileChange(file, setGuardianPictureFile, setGuardianPicturePreview)} 
+                        initialPreview={guardianPicturePreview} 
+                        showInstruction={false}
+                        showCamera={false}
+                        aspectRatio={3.5/4.5}
+                        showCrop={true}
+                      />
+                      {guardianPicturePreview && (
+                        <div className="absolute top-2 right-2 bg-emerald-500 text-white p-1.5 rounded-full shadow-lg">
+                          <CheckCircle2 className="h-4 w-4" />
+                        </div>
+                      )}
+                    </div>
+                    <div className="mt-3 text-center">
+                      <p className="text-sm font-bold text-amber-700 dark:text-amber-300 flex items-center justify-center gap-1.5">
+                        <Shield className="h-4 w-4" />
+                        Guardian Photo
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-0.5">{formData.guardian_name || ''}</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Upload Status Summary */}
+                <div className="flex items-center justify-center gap-6 pt-4 border-t border-border/30">
+                  <div className="flex items-center gap-2 text-sm">
+                    <div className={cn("w-3 h-3 rounded-full", profilePicturePreview ? "bg-emerald-500" : "bg-gray-300 dark:bg-gray-600")} />
+                    <span className={profilePicturePreview ? "text-emerald-600 dark:text-emerald-400 font-medium" : "text-muted-foreground"}>Student</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-sm">
+                    <div className={cn("w-3 h-3 rounded-full", fatherPicturePreview ? "bg-emerald-500" : "bg-gray-300 dark:bg-gray-600")} />
+                    <span className={fatherPicturePreview ? "text-emerald-600 dark:text-emerald-400 font-medium" : "text-muted-foreground"}>Father</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-sm">
+                    <div className={cn("w-3 h-3 rounded-full", motherPicturePreview ? "bg-emerald-500" : "bg-gray-300 dark:bg-gray-600")} />
+                    <span className={motherPicturePreview ? "text-emerald-600 dark:text-emerald-400 font-medium" : "text-muted-foreground"}>Mother</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-sm">
+                    <div className={cn("w-3 h-3 rounded-full", guardianPicturePreview ? "bg-emerald-500" : "bg-gray-300 dark:bg-gray-600")} />
+                    <span className={guardianPicturePreview ? "text-emerald-600 dark:text-emerald-400 font-medium" : "text-muted-foreground"}>Guardian</span>
+                  </div>
+                </div>
+              </div>
+            </SectionBox>
             
             <div className="flex justify-end pt-4">
                 <Button onClick={handleSave} disabled={saving} size="lg"><Save className="mr-2 h-5 w-5" /> {saving ? 'Saving...' : 'Update Student'}</Button>

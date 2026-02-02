@@ -68,7 +68,7 @@ const LibraryIssueReturn = () => {
           id, 
           library_card_no, 
           member_type,
-          student:student_profiles(id, full_name, school_code, phone, gender, class:classes(name), section:sections(name)),
+          student:student_profiles(id, full_name, school_code, phone, gender, class:classes!student_profiles_class_id_fkey(name), section:sections!student_profiles_section_id_fkey(name)),
           staff:employee_profiles(id, full_name, phone, role:roles(name))
         `)
         .eq('branch_id', user.user_metadata.branch_id)
@@ -91,7 +91,7 @@ const LibraryIssueReturn = () => {
                   id, 
                   library_card_no, 
                   member_type,
-                  student:student_profiles(id, full_name, school_code, phone, gender, class:classes(name), section:sections(name)),
+                  student:student_profiles(id, full_name, school_code, phone, gender, class:classes!student_profiles_class_id_fkey(name), section:sections!student_profiles_section_id_fkey(name)),
                   staff:employee_profiles(id, full_name, phone, role:roles(name))
                 `)
                 .eq('branch_id', user.user_metadata.branch_id)

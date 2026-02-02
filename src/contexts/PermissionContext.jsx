@@ -348,9 +348,24 @@ export const PermissionProvider = ({ children }) => {
           // 2. Check for Explicit Permissions in role_permissions table
           // This allows Master Admin to disable specific modules for School Owner
           
-          // Normalize role name for query (DB uses 'School Owner', metadata uses 'school_owner')
-          let queryRoleName = roleName;
-          if (roleName === 'school_owner') queryRoleName = 'School Owner';
+          // Normalize role name for query (DB uses 'School Owner'/'Super Admin', metadata uses 'school_owner'/'super_admin')
+          // The ROLE_MAP converts snake_case to Title Case to match how RolePermission.jsx saves them
+          const ROLE_NAME_MAP = {
+            'school_owner': 'School Owner',
+            'super_admin': 'Super Admin',
+            'super admin': 'Super Admin',
+            'organization_owner': 'Super Admin', // Org owners use Super Admin permissions
+            'admin': 'Admin',
+            'principal': 'Principal',
+            'teacher': 'Teacher',
+            'accountant': 'Accountant',
+            'receptionist': 'Receptionist',
+            'librarian': 'Librarian',
+            'parent': 'Parent',
+            'student': 'Student'
+          };
+          
+          let queryRoleName = ROLE_NAME_MAP[normalizedRole] || roleName;
 
           console.log('DEBUG: Querying role_permissions via RPC with branch_id=', ownerSchoolId, 'role_name=', queryRoleName);
 
@@ -464,9 +479,9 @@ export const PermissionProvider = ({ children }) => {
                 permMap[slug] = { can_view: true, can_add: true, can_edit: true, can_delete: true };
 
                 // Also grant permission to all child modules (sub-modules)
-                const modId = slugToIdMap[slug];
-                if (modId && childrenMap[modId]) {
-                    childrenMap[modId].forEach(childSlug => {
+                // childrenMap is keyed by parent_slug (not UUID), so use slug directly
+                if (childrenMap[slug]) {
+                    childrenMap[slug].forEach(childSlug => {
                         permMap[childSlug] = { can_view: true, can_add: true, can_edit: true, can_delete: true };
                     });
                 }

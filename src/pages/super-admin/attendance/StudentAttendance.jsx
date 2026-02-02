@@ -2,15 +2,17 @@
 import DashboardLayout from '@/components/DashboardLayout';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { useBranch } from '@/contexts/BranchContext';
-import { supabase } from '@/lib/customSupabaseClient';
+import { supabase } from '@/lib/supabaseClient';
 import { useToast } from '@/components/ui/use-toast';
+import { usePermissions } from '@/contexts/PermissionContext';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Loader2, Search, Save } from 'lucide-react';
+import { Loader2, Search, Save, AlertCircle } from 'lucide-react';
+import { Alert } from '@/components/ui/alert';
 import DatePicker from '@/components/ui/DatePicker';
 import { format } from 'date-fns';
 
@@ -18,6 +20,8 @@ const StudentAttendance = () => {
     const { user, currentSessionId, organizationId } = useAuth();
     const { selectedBranch } = useBranch();
     const { toast } = useToast();
+    const { canView, canAdd, canEdit } = usePermissions();
+    
     const [classes, setClasses] = useState([]);
     const [sections, setSections] = useState([]);
     const [students, setStudents] = useState([]);
@@ -31,20 +35,36 @@ const StudentAttendance = () => {
         date: format(new Date(), 'yyyy-MM-dd'),
     });
 
-    const branchId = user?.profile?.branch_id;
+    // ✅ JASHCHAR ERP - Use selectedBranch.id as primary, fallback to user profile
+    const branchId = selectedBranch?.id || user?.profile?.branch_id;
+
+    // ✅ Permission check
+    const hasViewPermission = canView('attendance') || canView('attendance.student_attendance');
+    const hasAddPermission = canAdd('attendance') || canAdd('attendance.student_attendance');
+    const hasEditPermission = canEdit('attendance') || canEdit('attendance.student_attendance');
 
     const fetchClasses = useCallback(async () => {
-        if (!branchId || !selectedBranch) return;
-        const { data, error } = await supabase.from('classes').select('id, name').eq('branch_id', selectedBranch.id);
-        if (error) toast({ variant: 'destructive', title: 'Error fetching classes' });
-        else setClasses(data);
-    }, [branchId, selectedBranch, toast]);
+        if (!branchId) return;
+        const { data, error } = await supabase
+            .from('classes')
+            .select('id, name')
+            .eq('branch_id', branchId)
+            .order('name');
+        if (error) toast({ variant: 'destructive', title: 'Error fetching classes', description: error.message });
+        else setClasses(data || []);
+    }, [branchId, toast]);
 
     const fetchSections = useCallback(async (classId) => {
         if (!classId) return;
-        const { data, error } = await supabase.from('class_sections').select('sections(id, name)').eq('class_id', classId);
-        if (error) toast({ variant: 'destructive', title: 'Error fetching sections' });
-        else setSections(data.map(item => item.sections).filter(Boolean));
+        const { data, error } = await supabase
+            .from('class_sections')
+            .select('sections(id, name)')
+            .eq('class_id', classId);
+        if (error) {
+            toast({ variant: 'destructive', title: 'Error fetching sections', description: error.message });
+        } else {
+            setSections((data || []).map(item => item.sections).filter(Boolean));
+        }
     }, [toast]);
 
     useEffect(() => {
@@ -70,59 +90,83 @@ const StudentAttendance = () => {
             toast({ variant: 'destructive', title: 'Please select class, section, and date.' });
             return;
         }
-        setLoading(true);
-
-        // Fetch students of the class and section - filter by session
-        let studentQuery = supabase
-            .from('student_profiles')
-            .select('id, full_name, admission_no')
-            .eq('branch_id', selectedBranch.id)
-            .eq('class_id', filters.class_id)
-            .eq('section_id', filters.section_id)
-            .order('admission_no');
-        
-        // Add session filter if available
-        if (currentSessionId) {
-            studentQuery = studentQuery.eq('session_id', currentSessionId);
-        }
-        
-        const { data: studentData, error: studentError } = await studentQuery;
-
-        if (studentError) {
-            toast({ variant: 'destructive', title: 'Error fetching students', description: studentError.message });
-            setLoading(false);
+        if (!branchId) {
+            toast({ variant: 'destructive', title: 'Branch not selected. Please select a branch.' });
             return;
         }
-        setStudents(studentData);
+        
+        setLoading(true);
+        setStudents([]);
+        setAttendance({});
 
-        // Fetch existing attendance for that date - filter by session
-        let attendanceQuery = supabase
-            .from('student_attendance')
-            .select('student_id, status, remark')
-            .eq('branch_id', selectedBranch.id)
-            .eq('class_id', filters.class_id)
-            .eq('section_id', filters.section_id)
-            .eq('date', filters.date);
-        
-        // Add session filter if available
-        if (currentSessionId) {
-            attendanceQuery = attendanceQuery.eq('session_id', currentSessionId);
-        }
-        
-        const { data: attendanceData, error: attendanceError } = await attendanceQuery;
-        
-        if (attendanceError) {
-             toast({ variant: 'destructive', title: 'Error fetching attendance', description: attendanceError.message });
-        } else {
+        try {
+            // ✅ JASHCHAR ERP - Fetch students with correct columns (school_code or roll_number, not admission_no)
+            let studentQuery = supabase
+                .from('student_profiles')
+                .select('id, full_name, school_code, roll_number')
+                .eq('branch_id', branchId)
+                .eq('class_id', filters.class_id)
+                .eq('section_id', filters.section_id)
+                .or('status.eq.active,status.is.null')
+                .order('roll_number', { ascending: true, nullsFirst: false });
+            
+            // ✅ Add session filter if available
+            if (currentSessionId) {
+                studentQuery = studentQuery.eq('session_id', currentSessionId);
+            }
+            
+            const { data: studentData, error: studentError } = await studentQuery;
+
+            if (studentError) {
+                console.error('Error fetching students:', studentError);
+                toast({ variant: 'destructive', title: 'Error fetching students', description: studentError.message });
+                setLoading(false);
+                return;
+            }
+            
+            if (!studentData || studentData.length === 0) {
+                toast({ title: 'No Students Found', description: 'No students found for the selected criteria.' });
+                setLoading(false);
+                return;
+            }
+            
+            setStudents(studentData);
+
+            // ✅ Fetch existing attendance for that date
+            let attendanceQuery = supabase
+                .from('student_attendance')
+                .select('student_id, status, remark')
+                .eq('branch_id', branchId)
+                .eq('class_id', filters.class_id)
+                .eq('section_id', filters.section_id)
+                .eq('date', filters.date);
+            
+            // Add session filter if available
+            if (currentSessionId) {
+                attendanceQuery = attendanceQuery.eq('session_id', currentSessionId);
+            }
+            
+            const { data: attendanceData, error: attendanceError } = await attendanceQuery;
+            
+            if (attendanceError) {
+                console.error('Error fetching attendance:', attendanceError);
+                toast({ variant: 'destructive', title: 'Error fetching attendance', description: attendanceError.message });
+            }
+            
+            // Initialize attendance state
             const initialAttendance = {};
             studentData.forEach(student => {
-                const record = attendanceData.find(att => att.student_id === student.id);
+                const record = attendanceData?.find(att => att.student_id === student.id);
                 initialAttendance[student.id] = {
-                    status: record?.status ? record.status.charAt(0).toUpperCase() + record.status.slice(1) : 'Present',
-                    note: record?.note || ''
+                    status: record?.status ? record.status.charAt(0).toUpperCase() + record.status.slice(1).replace('_', ' ') : 'Present',
+                    note: record?.remark || ''
                 };
             });
             setAttendance(initialAttendance);
+            
+        } catch (err) {
+            console.error('Search error:', err);
+            toast({ variant: 'destructive', title: 'Error', description: err.message });
         }
 
         setLoading(false);
@@ -147,34 +191,77 @@ const StudentAttendance = () => {
     };
 
     const handleSave = async () => {
-        setIsSaving(true);
-        const attendanceToSave = Object.entries(attendance).map(([studentId, details]) => ({
-            branch_id: selectedBranch.id,
-            session_id: currentSessionId,
-            organization_id: organizationId,
-            student_id: studentId,
-            class_id: filters.class_id,
-            section_id: filters.section_id,
-            date: filters.date,
-            status: details.status.toLowerCase().replace(' ', '_'), // e.g., 'Half Day' -> 'half_day'
-            remark: details.note,
-        }));
-        
-        const { error } = await supabase
-            .from('student_attendance')
-            .upsert(attendanceToSave, { onConflict: 'student_id,date' });
-
-        if (error) {
-            toast({ variant: 'destructive', title: 'Error saving attendance', description: error.message });
-        } else {
-            toast({ title: 'Success', description: 'Attendance saved successfully.' });
+        // ✅ JASHCHAR ERP - Permission check
+        if (!hasAddPermission && !hasEditPermission) {
+            toast({ variant: 'destructive', title: 'Permission Denied', description: 'You do not have permission to save attendance.' });
+            return;
         }
+        
+        if (!branchId || !organizationId) {
+            toast({ variant: 'destructive', title: 'Error', description: 'Branch or Organization not available.' });
+            return;
+        }
+
+        if (students.length === 0) {
+            toast({ variant: 'destructive', title: 'No students to save attendance for.' });
+            return;
+        }
+        
+        setIsSaving(true);
+        
+        try {
+            // ✅ JASHCHAR ERP - Include all required fields: organization_id, branch_id, session_id
+            const attendanceToSave = Object.entries(attendance).map(([studentId, details]) => ({
+                organization_id: organizationId,
+                branch_id: branchId,
+                session_id: currentSessionId,
+                student_id: studentId,
+                class_id: filters.class_id,
+                section_id: filters.section_id,
+                date: filters.date,
+                status: details.status.toLowerCase().replace(/\s+/g, '_'), // e.g., 'Half Day' -> 'half_day'
+                remark: details.note || null,
+                marked_by: user?.id || null,
+            }));
+            
+            const { error } = await supabase
+                .from('student_attendance')
+                .upsert(attendanceToSave, { onConflict: 'student_id,date,branch_id' });
+
+            if (error) {
+                console.error('Save attendance error:', error);
+                toast({ variant: 'destructive', title: 'Error saving attendance', description: error.message });
+            } else {
+                toast({ title: 'Success', description: `Attendance saved for ${students.length} students.` });
+            }
+        } catch (err) {
+            console.error('Save error:', err);
+            toast({ variant: 'destructive', title: 'Error', description: err.message });
+        }
+        
         setIsSaving(false);
     };
 
     return (
         <DashboardLayout>
             <h1 className="text-2xl font-bold mb-4">Student Attendance</h1>
+            
+            {/* ✅ Permission Warning */}
+            {!hasViewPermission && (
+                <Alert variant="destructive" className="mb-4">
+                    <AlertCircle className="h-4 w-4" />
+                    <span className="ml-2">You don't have permission to view student attendance.</span>
+                </Alert>
+            )}
+            
+            {/* ✅ Branch Warning */}
+            {!branchId && (
+                <Alert variant="destructive" className="mb-4">
+                    <AlertCircle className="h-4 w-4" />
+                    <span className="ml-2">Please select a branch to continue.</span>
+                </Alert>
+            )}
+            
             <Card className="mb-6">
                 <CardHeader>
                     <CardTitle>Select Criteria</CardTitle>
@@ -196,7 +283,9 @@ const StudentAttendance = () => {
                             </Select>
                         </div>
                         <DatePicker label="Date" value={filters.date} onChange={(d) => handleFilterChange('date', d)} />
-                        <Button type="submit" disabled={loading}>{loading ? <Loader2 className="animate-spin mr-2"/> : <Search className="mr-2 h-4 w-4" />} Search</Button>
+                        <Button type="submit" disabled={loading || !hasViewPermission || !branchId}>
+                            {loading ? <Loader2 className="animate-spin mr-2"/> : <Search className="mr-2 h-4 w-4" />} Search
+                        </Button>
                     </form>
                 </CardContent>
             </Card>
@@ -204,13 +293,13 @@ const StudentAttendance = () => {
             {students.length > 0 && (
                 <Card>
                     <CardHeader>
-                        <CardTitle>Mark Attendance</CardTitle>
-                        <div className="flex space-x-2 mt-2">
-                            <Label>Set All as:</Label>
-                            <Button size="sm" variant="outline" onClick={() => handleSetAll('Present')}>Present</Button>
-                            <Button size="sm" variant="outline" onClick={() => handleSetAll('Late')}>Late</Button>
-                            <Button size="sm" variant="outline" onClick={() => handleSetAll('Absent')}>Absent</Button>
-                            <Button size="sm" variant="outline" onClick={() => handleSetAll('Half Day')}>Half Day</Button>
+                        <CardTitle>Mark Attendance ({students.length} Students)</CardTitle>
+                        <div className="flex flex-wrap gap-2 mt-2">
+                            <Label className="flex items-center">Set All as:</Label>
+                            <Button size="sm" variant="outline" onClick={() => handleSetAll('Present')} disabled={!hasAddPermission && !hasEditPermission}>Present</Button>
+                            <Button size="sm" variant="outline" onClick={() => handleSetAll('Late')} disabled={!hasAddPermission && !hasEditPermission}>Late</Button>
+                            <Button size="sm" variant="outline" onClick={() => handleSetAll('Absent')} disabled={!hasAddPermission && !hasEditPermission}>Absent</Button>
+                            <Button size="sm" variant="outline" onClick={() => handleSetAll('Half Day')} disabled={!hasAddPermission && !hasEditPermission}>Half Day</Button>
                         </div>
                     </CardHeader>
                     <CardContent>
@@ -220,27 +309,28 @@ const StudentAttendance = () => {
                                     <tr>
                                         <th className="p-2 text-left">#</th>
                                         <th className="p-2 text-left">Student Name</th>
-                                        <th className="p-2 text-left">Admission No</th>
+                                        <th className="p-2 text-left">Roll No / Code</th>
                                         <th className="p-2 text-left">Attendance</th>
                                         <th className="p-2 text-left">Note</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     {students.map((student, index) => (
-                                        <tr key={student.id} className="border-b">
+                                        <tr key={student.id} className="border-b hover:bg-muted/50">
                                             <td className="p-2">{index + 1}</td>
-                                            <td className="p-2">{student.full_name}</td>
-                                            <td className="p-2">{student.admission_no}</td>
+                                            <td className="p-2 font-medium">{student.full_name}</td>
+                                            <td className="p-2 text-muted-foreground">{student.roll_number || student.school_code || '-'}</td>
                                             <td className="p-2">
                                                 <RadioGroup
                                                     value={attendance[student.id]?.status || 'Present'}
                                                     onValueChange={(v) => handleAttendanceChange(student.id, 'status', v)}
-                                                    className="flex space-x-4"
+                                                    className="flex flex-wrap gap-4"
+                                                    disabled={!hasAddPermission && !hasEditPermission}
                                                 >
-                                                    <div className="flex items-center space-x-2"><RadioGroupItem value="Present" id={`p-${student.id}`} /><Label htmlFor={`p-${student.id}`}>Present</Label></div>
-                                                    <div className="flex items-center space-x-2"><RadioGroupItem value="Late" id={`l-${student.id}`} /><Label htmlFor={`l-${student.id}`}>Late</Label></div>
-                                                    <div className="flex items-center space-x-2"><RadioGroupItem value="Absent" id={`a-${student.id}`} /><Label htmlFor={`a-${student.id}`}>Absent</Label></div>
-                                                    <div className="flex items-center space-x-2"><RadioGroupItem value="Half Day" id={`h-${student.id}`} /><Label htmlFor={`h-${student.id}`}>Half Day</Label></div>
+                                                    <div className="flex items-center space-x-2"><RadioGroupItem value="Present" id={`p-${student.id}`} /><Label htmlFor={`p-${student.id}`} className="text-green-600">Present</Label></div>
+                                                    <div className="flex items-center space-x-2"><RadioGroupItem value="Late" id={`l-${student.id}`} /><Label htmlFor={`l-${student.id}`} className="text-yellow-600">Late</Label></div>
+                                                    <div className="flex items-center space-x-2"><RadioGroupItem value="Absent" id={`a-${student.id}`} /><Label htmlFor={`a-${student.id}`} className="text-red-600">Absent</Label></div>
+                                                    <div className="flex items-center space-x-2"><RadioGroupItem value="Half Day" id={`h-${student.id}`} /><Label htmlFor={`h-${student.id}`} className="text-orange-600">Half Day</Label></div>
                                                 </RadioGroup>
                                             </td>
                                             <td className="p-2">
@@ -249,6 +339,8 @@ const StudentAttendance = () => {
                                                     value={attendance[student.id]?.note || ''}
                                                     onChange={(e) => handleAttendanceChange(student.id, 'note', e.target.value)}
                                                     className="h-8"
+                                                    placeholder="Optional note..."
+                                                    disabled={!hasAddPermission && !hasEditPermission}
                                                 />
                                             </td>
                                         </tr>
@@ -256,11 +348,24 @@ const StudentAttendance = () => {
                                 </tbody>
                             </table>
                         </div>
-                         <div className="flex justify-end mt-6">
-                            <Button onClick={handleSave} disabled={isSaving}>
+                        <div className="flex justify-end mt-6">
+                            <Button 
+                                onClick={handleSave} 
+                                disabled={isSaving || (!hasAddPermission && !hasEditPermission)}
+                                className="min-w-[180px]"
+                            >
                                 {isSaving ? <Loader2 className="animate-spin mr-2" /> : <Save className="mr-2 h-4 w-4" />} Save Attendance
                             </Button>
                         </div>
+                    </CardContent>
+                </Card>
+            )}
+            
+            {/* No students message */}
+            {!loading && students.length === 0 && filters.class_id && filters.section_id && filters.date && (
+                <Card>
+                    <CardContent className="py-8 text-center text-muted-foreground">
+                        <p>No students found. Please search with different criteria.</p>
                     </CardContent>
                 </Card>
             )}

@@ -573,27 +573,13 @@ const StudentAdmission = () => {
                 </Select>
               </SmartField>
             )
+        // PHOTOS ARE NOW RENDERED IN DEDICATED PHOTO GALLERY SECTION AT THE END
+        // Skip rendering here to avoid duplicates
         case 'student_photo':
         case 'father_photo':
         case 'mother_photo':
         case 'guardian_photo':
-            const photoHandlers = {
-                student_photo: { file: profilePictureFile, setFile: setProfilePictureFile, preview: profilePicturePreview, setPreview: setProfilePicturePreview },
-                father_photo: { file: fatherPictureFile, setFile: setFatherPictureFile, preview: fatherPicturePreview, setPreview: setFatherPicturePreview },
-                mother_photo: { file: motherPictureFile, setFile: setMotherPictureFile, preview: motherPicturePreview, setPreview: setMotherPicturePreview },
-                guardian_photo: { file: guardianPictureFile, setFile: setGuardianPictureFile, preview: guardianPicturePreview, setPreview: setGuardianPicturePreview },
-            };
-            const handler = photoHandlers[field.field_name];
-            return (
-                <PhotoUploadCard 
-                  label={label}
-                  preview={handler.preview}
-                  onFileChange={file => handleFileChange(file, handler.setFile, handler.setPreview)}
-                  required={isRequired}
-                  error={errors[field.field_name]}
-                  touched={touched[field.field_name]}
-                />
-            );
+            return null; // Photos moved to Photo Gallery section
         case 'email':
         case 'father_email':
              const isChecking = field.field_name === 'email' ? isStudentEmailChecking : isFatherEmailChecking;
@@ -2559,16 +2545,13 @@ const StudentAdmission = () => {
             combinedTitle = 'Parents Details'; // Combined title
           }
           
-          // Separate photo fields from regular fields for better layout
-          const photoFields = combinedFields.filter(f => ['student_photo', 'father_photo', 'mother_photo', 'guardian_photo'].includes(f.field_name));
+          // PHOTO FIELDS ARE NOW RENDERED IN A SEPARATE "PHOTO GALLERY" SECTION AT THE END
+          // Skip photo fields here - they will be shown in the dedicated photo section
           const regularFields = combinedFields.filter(f => !['student_photo', 'father_photo', 'mother_photo', 'guardian_photo'].includes(f.field_name));
           
           // For combined Parents Details, separate Father and Mother fields for cleaner display
           const fatherFields = regularFields.filter(f => f.section_key === 'father_details');
           const motherFields = regularFields.filter(f => f.section_key === 'mother_details');
-          const fatherPhotos = photoFields.filter(f => f.field_name === 'father_photo');
-          const motherPhotos = photoFields.filter(f => f.field_name === 'mother_photo');
-          const otherPhotos = photoFields.filter(f => !['father_photo', 'mother_photo'].includes(f.field_name));
           const isCombinedParents = section.key === 'father_details' && motherFields.length > 0;
 
           return (
@@ -2585,11 +2568,6 @@ const StudentAdmission = () => {
                       </div>
                       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                         {fatherFields.map(field => (
-                            <React.Fragment key={field.id || field.key}>
-                                {renderDynamicField(field)}
-                            </React.Fragment>
-                        ))}
-                        {fatherPhotos.map(field => (
                             <React.Fragment key={field.id || field.key}>
                                 {renderDynamicField(field)}
                             </React.Fragment>
@@ -2611,24 +2589,13 @@ const StudentAdmission = () => {
                                 {renderDynamicField(field)}
                             </React.Fragment>
                         ))}
-                        {motherPhotos.map(field => (
-                            <React.Fragment key={field.id || field.key}>
-                                {renderDynamicField(field)}
-                            </React.Fragment>
-                        ))}
                       </div>
                     </div>
                   </>
                 ) : (
-                  /* Simple 4-column grid - Photo integrated */
+                  /* Simple 4-column grid - No photos (moved to Photo Gallery) */
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                     {regularFields.map(field => (
-                        <React.Fragment key={field.id || field.key}>
-                            {renderDynamicField(field)}
-                        </React.Fragment>
-                    ))}
-                    {/* Photo in same grid */}
-                    {photoFields.map(field => (
                         <React.Fragment key={field.id || field.key}>
                             {renderDynamicField(field)}
                         </React.Fragment>
@@ -2786,6 +2753,182 @@ const StudentAdmission = () => {
                 <p className="text-xs text-muted-foreground/70 mt-1">Discounts can be configured in Fee Management</p>
               </div>
             )}
+          </div>
+        </SectionBox>
+
+        {/* 📸 PHOTO GALLERY - All Photos in One Place at the End */}
+        <SectionBox icon={Camera} title="Photo Gallery" badge="Upload Photos" badgeColor="info" gradient="purple">
+          <div className="space-y-6">
+            {/* Student Identity Header - Shows who's photos are being uploaded */}
+            <div className="bg-gradient-to-r from-purple-500/10 via-violet-500/10 to-fuchsia-500/10 border-2 border-purple-500/30 rounded-2xl p-5">
+              <div className="flex items-center gap-4">
+                <div className="relative">
+                  <div className="absolute inset-0 bg-gradient-to-br from-purple-500/30 to-violet-500/20 rounded-2xl blur-xl opacity-60" />
+                  <div className="relative bg-gradient-to-br from-purple-500 to-violet-600 p-4 rounded-2xl shadow-xl">
+                    <UserCircle2 className="h-8 w-8 text-white" />
+                  </div>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground font-medium">Uploading photos for</p>
+                  <h3 className="text-2xl font-black text-transparent bg-gradient-to-r from-purple-600 via-violet-600 to-fuchsia-600 dark:from-purple-400 dark:via-violet-400 dark:to-fuchsia-400 bg-clip-text">
+                    {formData.first_name || formData.last_name 
+                      ? `${formData.first_name || ''} ${formData.last_name || ''}`.trim() 
+                      : 'New Student'}
+                  </h3>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {formData.admission_date && `Admission: ${format(new Date(formData.admission_date), 'dd MMM yyyy')}`}
+                    {formData.class_id && classes.find(c => c.id === formData.class_id) && ` • Class: ${classes.find(c => c.id === formData.class_id)?.name}`}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Photo Cards Grid */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-6">
+              {/* Student Photo */}
+              <div className="flex flex-col items-center">
+                <div className={cn(
+                  "relative w-full aspect-[3.5/4.5] rounded-2xl overflow-hidden border-3 transition-all duration-300 shadow-lg group",
+                  profilePicturePreview 
+                    ? "border-emerald-500 bg-emerald-50 dark:bg-emerald-950/30" 
+                    : "border-dashed border-purple-300 dark:border-purple-700 bg-gradient-to-br from-purple-50 to-violet-50 dark:from-purple-950/30 dark:to-violet-950/30 hover:border-purple-500"
+                )}>
+                  <ImageUploader 
+                    onFileChange={file => handleFileChange(file, setProfilePictureFile, setProfilePicturePreview)} 
+                    initialPreview={profilePicturePreview} 
+                    showInstruction={false}
+                    showCamera={false}
+                    aspectRatio={3.5/4.5}
+                    showCrop={true}
+                  />
+                  {profilePicturePreview && (
+                    <div className="absolute top-2 right-2 bg-emerald-500 text-white p-1.5 rounded-full shadow-lg">
+                      <CheckCircle2 className="h-4 w-4" />
+                    </div>
+                  )}
+                </div>
+                <div className="mt-3 text-center">
+                  <p className="text-sm font-bold text-purple-700 dark:text-purple-300 flex items-center justify-center gap-1.5">
+                    <GraduationCap className="h-4 w-4" />
+                    Student Photo
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-0.5">Passport size</p>
+                </div>
+              </div>
+
+              {/* Father Photo */}
+              <div className="flex flex-col items-center">
+                <div className={cn(
+                  "relative w-full aspect-[3.5/4.5] rounded-2xl overflow-hidden border-3 transition-all duration-300 shadow-lg group",
+                  fatherPicturePreview 
+                    ? "border-emerald-500 bg-emerald-50 dark:bg-emerald-950/30" 
+                    : "border-dashed border-blue-300 dark:border-blue-700 bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 hover:border-blue-500"
+                )}>
+                  <ImageUploader 
+                    onFileChange={file => handleFileChange(file, setFatherPictureFile, setFatherPicturePreview)} 
+                    initialPreview={fatherPicturePreview} 
+                    showInstruction={false}
+                    showCamera={false}
+                    aspectRatio={3.5/4.5}
+                    showCrop={true}
+                  />
+                  {fatherPicturePreview && (
+                    <div className="absolute top-2 right-2 bg-emerald-500 text-white p-1.5 rounded-full shadow-lg">
+                      <CheckCircle2 className="h-4 w-4" />
+                    </div>
+                  )}
+                </div>
+                <div className="mt-3 text-center">
+                  <p className="text-sm font-bold text-blue-700 dark:text-blue-300 flex items-center justify-center gap-1.5">
+                    <User className="h-4 w-4" />
+                    Father Photo
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-0.5">{formData.father_name || 'Father'}</p>
+                </div>
+              </div>
+
+              {/* Mother Photo */}
+              <div className="flex flex-col items-center">
+                <div className={cn(
+                  "relative w-full aspect-[3.5/4.5] rounded-2xl overflow-hidden border-3 transition-all duration-300 shadow-lg group",
+                  motherPicturePreview 
+                    ? "border-emerald-500 bg-emerald-50 dark:bg-emerald-950/30" 
+                    : "border-dashed border-pink-300 dark:border-pink-700 bg-gradient-to-br from-pink-50 to-rose-50 dark:from-pink-950/30 dark:to-rose-950/30 hover:border-pink-500"
+                )}>
+                  <ImageUploader 
+                    onFileChange={file => handleFileChange(file, setMotherPictureFile, setMotherPicturePreview)} 
+                    initialPreview={motherPicturePreview} 
+                    showInstruction={false}
+                    showCamera={false}
+                    aspectRatio={3.5/4.5}
+                    showCrop={true}
+                  />
+                  {motherPicturePreview && (
+                    <div className="absolute top-2 right-2 bg-emerald-500 text-white p-1.5 rounded-full shadow-lg">
+                      <CheckCircle2 className="h-4 w-4" />
+                    </div>
+                  )}
+                </div>
+                <div className="mt-3 text-center">
+                  <p className="text-sm font-bold text-pink-700 dark:text-pink-300 flex items-center justify-center gap-1.5">
+                    <Heart className="h-4 w-4" />
+                    Mother Photo
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-0.5">{formData.mother_name || 'Mother'}</p>
+                </div>
+              </div>
+
+              {/* Guardian Photo */}
+              <div className="flex flex-col items-center">
+                <div className={cn(
+                  "relative w-full aspect-[3.5/4.5] rounded-2xl overflow-hidden border-3 transition-all duration-300 shadow-lg group",
+                  guardianPicturePreview 
+                    ? "border-emerald-500 bg-emerald-50 dark:bg-emerald-950/30" 
+                    : "border-dashed border-amber-300 dark:border-amber-700 bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-950/30 dark:to-orange-950/30 hover:border-amber-500"
+                )}>
+                  <ImageUploader 
+                    onFileChange={file => handleFileChange(file, setGuardianPictureFile, setGuardianPicturePreview)} 
+                    initialPreview={guardianPicturePreview} 
+                    showInstruction={false}
+                    showCamera={false}
+                    aspectRatio={3.5/4.5}
+                    showCrop={true}
+                  />
+                  {guardianPicturePreview && (
+                    <div className="absolute top-2 right-2 bg-emerald-500 text-white p-1.5 rounded-full shadow-lg">
+                      <CheckCircle2 className="h-4 w-4" />
+                    </div>
+                  )}
+                </div>
+                <div className="mt-3 text-center">
+                  <p className="text-sm font-bold text-amber-700 dark:text-amber-300 flex items-center justify-center gap-1.5">
+                    <Shield className="h-4 w-4" />
+                    Guardian Photo
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-0.5">{formData.guardian_name || 'Guardian'}</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Upload Status Summary */}
+            <div className="flex items-center justify-center gap-6 pt-4 border-t border-border/30">
+              <div className="flex items-center gap-2 text-sm">
+                <div className={cn("w-3 h-3 rounded-full", profilePicturePreview ? "bg-emerald-500" : "bg-gray-300 dark:bg-gray-600")} />
+                <span className={profilePicturePreview ? "text-emerald-600 dark:text-emerald-400 font-medium" : "text-muted-foreground"}>Student</span>
+              </div>
+              <div className="flex items-center gap-2 text-sm">
+                <div className={cn("w-3 h-3 rounded-full", fatherPicturePreview ? "bg-emerald-500" : "bg-gray-300 dark:bg-gray-600")} />
+                <span className={fatherPicturePreview ? "text-emerald-600 dark:text-emerald-400 font-medium" : "text-muted-foreground"}>Father</span>
+              </div>
+              <div className="flex items-center gap-2 text-sm">
+                <div className={cn("w-3 h-3 rounded-full", motherPicturePreview ? "bg-emerald-500" : "bg-gray-300 dark:bg-gray-600")} />
+                <span className={motherPicturePreview ? "text-emerald-600 dark:text-emerald-400 font-medium" : "text-muted-foreground"}>Mother</span>
+              </div>
+              <div className="flex items-center gap-2 text-sm">
+                <div className={cn("w-3 h-3 rounded-full", guardianPicturePreview ? "bg-emerald-500" : "bg-gray-300 dark:bg-gray-600")} />
+                <span className={guardianPicturePreview ? "text-emerald-600 dark:text-emerald-400 font-medium" : "text-muted-foreground"}>Guardian</span>
+              </div>
+            </div>
           </div>
         </SectionBox>
 

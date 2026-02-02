@@ -62,7 +62,7 @@ const OnlineFeesCollectionReport = () => {
         student:profiles (
           full_name,
           school_code,
-          class:classes (name),
+          class:classes!student_profiles_class_id_fkey(name),
           section:sections (name)
         )
       `)

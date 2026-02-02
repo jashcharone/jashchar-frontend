@@ -178,6 +178,15 @@ export const ROUTES = {
     APPROVE_LEAVE: '/super-admin/attendance/approve-student-leave',
     STAFF_ATTENDANCE: '/super-admin/attendance/staff-attendance',
     ATTENDANCE_REPORT: '/super-admin/attendance/attendance-report',
+    // Advanced Attendance (Futuristic Module)
+    LIVE_ATTENDANCE_DASHBOARD: '/super-admin/attendance/live-dashboard',
+    QR_CODE_GENERATOR: '/super-admin/attendance/qr-generator',
+    DEVICE_MANAGEMENT: '/super-admin/attendance/device-management',
+    CARD_MANAGEMENT: '/super-admin/attendance/card-management',
+    FACE_REGISTRATION: '/super-admin/attendance/face-registration',
+    ATTENDANCE_RULES: '/super-admin/attendance/rules',
+    GEO_FENCE_SETUP: '/super-admin/attendance/geo-fence',
+    ATTENDANCE_ANALYTICS: '/super-admin/attendance/analytics',
     // Examinations
     EXAM_GROUP: '/super-admin/examinations/exam-group',
     EXAM_LIST: '/super-admin/examinations/exam-list',

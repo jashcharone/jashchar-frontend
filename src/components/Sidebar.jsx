@@ -101,6 +101,9 @@ const Sidebar = ({ role, isSidebarOpen, isMobile, toggleSidebar, closeSidebar, o
 
   // --- MENU DATA PREPARATION ---
   const currentMenu = useMemo(() => {
+    // ✅ Normalize role to handle both space and underscore formats
+    const normalizedRole = role?.toLowerCase().replace(/\s+/g, '_') || '';
+    
     // ✅ USE DYNAMIC MENU (includes static + any missing DB modules)
     // The hook already handles merging and uses correct static routes
     let menuItems = dynamicMenu && dynamicMenu.length > 0 ? dynamicMenu : [];
@@ -108,14 +111,14 @@ const Sidebar = ({ role, isSidebarOpen, isMobile, toggleSidebar, closeSidebar, o
     // Fallback to pure static if dynamic failed
     if (menuItems.length === 0) {
       console.log('[Sidebar] Using pure static config');
-      const effectiveRole = (role === 'organization_owner' || role === 'super_admin' || role === 'admin') ? 'super_admin' : role;
+      const effectiveRole = (normalizedRole === 'organization_owner' || normalizedRole === 'super_admin' || normalizedRole === 'admin') ? 'super_admin' : normalizedRole;
       menuItems = BASE_SIDEBAR[effectiveRole] || BASE_SIDEBAR['super_admin'] || [];
     } else {
       console.log('[Sidebar] Using enhanced menu:', menuItems.length, 'items');
     }
     
     // For master_admin, return all modules without filtering
-    if (role === 'master_admin') {
+    if (normalizedRole === 'master_admin') {
       return menuItems;
     }
     

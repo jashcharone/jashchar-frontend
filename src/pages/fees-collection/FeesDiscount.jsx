@@ -92,7 +92,7 @@ const FeesDiscount = () => {
 
         const { data, error } = await supabase
             .from('profiles')
-            .select('id, full_name, roll_number, class_id, section_id, class:classes(name), section:sections(name)')
+            .select('id, full_name, roll_number, class_id, section_id, class:classes!student_profiles_class_id_fkey(name), section:sections!student_profiles_section_id_fkey(name)')
             .eq('branch_id', branchId)
             .eq('role_id', studentRole.id);
         

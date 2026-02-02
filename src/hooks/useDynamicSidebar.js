@@ -241,21 +241,25 @@ export const useDynamicSidebar = (role) => {
     // master_admin stays as master_admin
     // student and parent keep their own sidebar
     // All school staff (organization_owner, super_admin, admin, principal, teacher, accountant, receptionist, librarian) -> super_admin
-    let effectiveRole = role;
+    
+    // Normalize role to handle both underscore and space formats
+    const normalizedInputRole = role?.toLowerCase().replace(/\s+/g, '_') || '';
+    let effectiveRole = normalizedInputRole;
+    
     const schoolStaffRoles = ['organization_owner', 'super_admin', 'admin', 'school_owner', 'principal', 'teacher', 'accountant', 'receptionist', 'librarian'];
     
     // ✅ Student and Parent keep their own sidebar - DO NOT convert to super_admin
-    if (role === 'student' || role === 'parent') {
-      effectiveRole = role;
-    } else if (schoolStaffRoles.includes(role)) {
+    if (normalizedInputRole === 'student' || normalizedInputRole === 'parent') {
+      effectiveRole = normalizedInputRole;
+    } else if (schoolStaffRoles.includes(normalizedInputRole)) {
       effectiveRole = 'super_admin';
     }
     // master_admin keeps its own sidebar
-    if (role === 'master_admin') {
+    if (normalizedInputRole === 'master_admin') {
       effectiveRole = 'master_admin';
     }
     
-    console.log('[useDynamicSidebar] Role:', role, '-> Effective:', effectiveRole);
+    console.log('[useDynamicSidebar] Role:', role, '-> Normalized:', normalizedInputRole, '-> Effective:', effectiveRole);
     
     // Start with static sidebar (has correct routes!)
     const staticMenu = BASE_SIDEBAR[effectiveRole] || BASE_SIDEBAR['super_admin'] || [];

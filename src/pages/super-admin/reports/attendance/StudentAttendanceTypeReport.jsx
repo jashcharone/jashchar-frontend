@@ -65,7 +65,7 @@ const StudentAttendanceTypeReport = () => {
         student:profiles (
           full_name,
           roll_number,
-          class:classes (name),
+          class:classes!student_profiles_class_id_fkey(name),
           section:sections (name)
         )
       `)

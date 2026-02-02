@@ -53,28 +53,27 @@ const FeesDiscount = () => {
     const branchId = user?.profile?.branch_id;
 
     const fetchDropdownData = useCallback(async () => {
-      if (!branchId || !selectedBranch) return;
+      if (!selectedBranch) return;
       const [
         { data: classesData },
         { data: sectionsData },
         { data: categoriesData }
       ] = await Promise.all([
-        supabase.from('classes').select('id, name').eq('branch_id', branchId).eq('branch_id', selectedBranch.id),
-        supabase.from('sections').select('id, name').eq('branch_id', branchId).eq('branch_id', selectedBranch.id),
-        supabase.from('student_categories').select('id, name').eq('branch_id', branchId).eq('branch_id', selectedBranch.id)
+        supabase.from('classes').select('id, name').eq('branch_id', selectedBranch.id),
+        supabase.from('sections').select('id, name').eq('branch_id', selectedBranch.id),
+        supabase.from('student_categories').select('id, name').eq('branch_id', selectedBranch.id)
       ]);
       setClasses(classesData || []);
       setSections(sectionsData || []);
       setCategories(categoriesData || []);
-    }, [branchId, selectedBranch]);
+    }, [selectedBranch]);
 
     const fetchDiscounts = useCallback(async () => {
-        if (!branchId || !selectedBranch) return;
+        if (!selectedBranch) return;
         setLoading(true);
         const { data, error } = await supabase
             .from('discounts')
             .select('*')
-            .eq('branch_id', branchId)
             .eq('branch_id', selectedBranch.id);
         if (error) {
             toast({ variant: 'destructive', title: 'Error fetching discounts', description: error.message });
@@ -82,16 +81,15 @@ const FeesDiscount = () => {
             setDiscounts(data);
         }
         setLoading(false);
-    }, [branchId, selectedBranch, toast]);
+    }, [selectedBranch, toast]);
 
     const fetchStudents = useCallback(async () => {
-        if (!branchId || !selectedBranch) return;
+        if (!selectedBranch) return;
         // No need to fetch role for student_profiles table
         
         const { data, error } = await supabase
             .from('student_profiles')
-            .select('id, full_name, roll_number, class_id, section_id, class:classes(name), section:sections(name)')
-            .eq('branch_id', branchId)
+            .select('id, full_name, roll_number, class_id, section_id, class:classes!student_profiles_class_id_fkey(name), section:sections!student_profiles_section_id_fkey(name)')
             .eq('branch_id', selectedBranch.id);
         
         if (error) {
@@ -100,7 +98,7 @@ const FeesDiscount = () => {
             setStudents(data);
             setFilteredStudents(data);
         }
-    }, [branchId, selectedBranch, toast]);
+    }, [selectedBranch, toast]);
 
 
     useEffect(() => {
@@ -136,8 +134,6 @@ const FeesDiscount = () => {
         const dataToSubmit = {
             ...formData,
             branch_id: selectedBranch.id,
-            session_id: currentSessionId,
-            organization_id: organizationId,
             amount: parseFloat(formData.amount) || 0,
             use_count: formData.use_count ? parseInt(formData.use_count) : null,
         };
@@ -238,8 +234,6 @@ const FeesDiscount = () => {
             discount_id: selectedDiscount.id,
             student_id,
             branch_id: selectedBranch.id,
-            session_id: currentSessionId,
-            organization_id: organizationId,
         }));
         
         if (assignments.length > 0) {

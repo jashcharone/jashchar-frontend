@@ -252,6 +252,15 @@ const LiveClasses = lazy(() => import('@/pages/super-admin/gmeet-live-classes/Li
 const AttendanceByDate = lazy(() => import('@/pages/super-admin/attendance/AttendanceByDate'));
 const ApproveStudentLeave = lazy(() => import('@/pages/super-admin/attendance/ApproveStudentLeave'));
 const StaffAttendance = lazy(() => import('@/pages/super-admin/attendance/StaffAttendance'));
+// Advanced Attendance (Futuristic Module)
+const LiveAttendanceDashboard = lazy(() => import('@/pages/super-admin/attendance/LiveAttendanceDashboard'));
+const QRCodeGenerator = lazy(() => import('@/pages/super-admin/attendance/QRCodeGenerator'));
+const DeviceManagement = lazy(() => import('@/pages/super-admin/attendance/DeviceManagement'));
+const CardManagement = lazy(() => import('@/pages/super-admin/attendance/CardManagement'));
+const FaceRegistration = lazy(() => import('@/pages/super-admin/attendance/FaceRegistration'));
+const AttendanceRules = lazy(() => import('@/pages/super-admin/attendance/AttendanceRules'));
+const GeoFenceSetup = lazy(() => import('@/pages/super-admin/attendance/GeoFenceSetup'));
+const AttendanceAnalytics = lazy(() => import('@/pages/super-admin/attendance/AttendanceAnalytics'));
 
 // Fees (Remaining)
 const FeesGroup = lazy(() => import('@/pages/super-admin/fees-collection/FeesGroup'));
@@ -1186,6 +1195,15 @@ function App() {
             <Route path={ROUTES.SUPER_ADMIN.ATTENDANCE_BY_DATE} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'teacher']} requiredModule="attendance"><AttendanceByDate /></ProtectedRoute>} />
             <Route path={ROUTES.SUPER_ADMIN.APPROVE_LEAVE} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'teacher']} requiredModule="attendance"><ApproveStudentLeave /></ProtectedRoute>} />
             <Route path={ROUTES.SUPER_ADMIN.STAFF_ATTENDANCE} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="attendance"><StaffAttendance /></ProtectedRoute>} />
+            {/* Advanced Attendance (Futuristic) */}
+            <Route path={ROUTES.SUPER_ADMIN.LIVE_ATTENDANCE_DASHBOARD} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="attendance"><LiveAttendanceDashboard /></ProtectedRoute>} />
+            <Route path={ROUTES.SUPER_ADMIN.QR_CODE_GENERATOR} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'teacher']} requiredModule="attendance"><QRCodeGenerator /></ProtectedRoute>} />
+            <Route path={ROUTES.SUPER_ADMIN.DEVICE_MANAGEMENT} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="attendance"><DeviceManagement /></ProtectedRoute>} />
+            <Route path={ROUTES.SUPER_ADMIN.CARD_MANAGEMENT} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="attendance"><CardManagement /></ProtectedRoute>} />
+            <Route path={ROUTES.SUPER_ADMIN.FACE_REGISTRATION} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="attendance"><FaceRegistration /></ProtectedRoute>} />
+            <Route path={ROUTES.SUPER_ADMIN.ATTENDANCE_RULES} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="attendance"><AttendanceRules /></ProtectedRoute>} />
+            <Route path={ROUTES.SUPER_ADMIN.GEO_FENCE_SETUP} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="attendance"><GeoFenceSetup /></ProtectedRoute>} />
+            <Route path={ROUTES.SUPER_ADMIN.ATTENDANCE_ANALYTICS} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'teacher']} requiredModule="attendance"><AttendanceAnalytics /></ProtectedRoute>} />
 
             {/* ? Task Management */}
             <Route path="/super-admin/task-management" element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'teacher', 'principal']} requiredModule="task_management"><TaskDashboard /></ProtectedRoute>} />

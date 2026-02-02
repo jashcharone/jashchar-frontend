@@ -67,21 +67,37 @@ const StudentProfile = () => {
 
              if (!targetId) return;
 
-             // 2. Fetch Student Data
+             // 2. Fetch Student Data (basic profile only)
              const { data, error } = await supabase
                 .from('student_profiles')
                 .select(`
                     *,
                     class:classes!student_profiles_class_id_fkey(name),
                     section:sections!student_profiles_section_id_fkey(name),
-                    category:student_categories(name),
-                    transport:student_transport_details!student_profiles_transport_details_id_fkey(*),
-                    hostel:student_hostel_details!student_profiles_hostel_details_id_fkey(*)
+                    category:student_categories(name)
                 `)
                 .eq('id', targetId)
                 .single();
 
              if (error) throw error;
+             
+             // 2b. Fetch Transport Details separately (FK is on transport table pointing to student)
+             const { data: transportData } = await supabase
+                .from('student_transport_details')
+                .select('*')
+                .eq('student_id', targetId)
+                .maybeSingle();
+             
+             // 2c. Fetch Hostel Details separately (FK is on hostel table pointing to student)
+             const { data: hostelData } = await supabase
+                .from('student_hostel_details')
+                .select('*')
+                .eq('student_id', targetId)
+                .maybeSingle();
+             
+             // Attach transport and hostel to student object
+             data.transport = transportData;
+             data.hostel = hostelData;
              
              setStudent(data);
 

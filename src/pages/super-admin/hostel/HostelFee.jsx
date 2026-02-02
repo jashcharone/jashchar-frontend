@@ -78,13 +78,13 @@ const HostelFee = () => {
     setLoading(true);
     
     // Use explicit FK relationship names to avoid ambiguous relationship error
+    // Note: hostel_details_id doesn't exist in student_profiles - hostel data is in student_hostel_details table
     let query = supabase
       .from('student_profiles')
       .select(`
         id, full_name, admission_no, roll_number,
         classes!student_profiles_class_id_fkey(name),
-        sections!student_profiles_section_id_fkey(name),
-        hostel_details_id
+        sections!student_profiles_section_id_fkey(name)
       `)
       .eq('branch_id', branchId);
 
@@ -219,21 +219,12 @@ const HostelFee = () => {
       error = updateError;
     } else {
       // Insert new record
-      const { data: insertData, error: insertError } = await supabase
+      const { error: insertError } = await supabase
         .from('student_hostel_details')
-        .insert(hostelPayload)
-        .select()
-        .single();
+        .insert(hostelPayload);
       
       error = insertError;
-      
-      // Update student_profiles with hostel_details_id
-      if (!insertError && insertData) {
-        await supabase
-          .from('student_profiles')
-          .update({ hostel_details_id: insertData.id })
-          .eq('id', selectedStudent.id);
-      }
+      // Note: No need to update student_profiles - relationship is via student_id in student_hostel_details
     }
 
     if (error) {

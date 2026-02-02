@@ -233,6 +233,10 @@ const EditStudentProfile = () => {
     // Errors
     const [errors, setErrors] = useState({});
     const [touched, setTouched] = useState({});
+    
+    // Roll Number Auto-Generation
+    const [originalSectionId, setOriginalSectionId] = useState(null);
+    const [isRollNumberLoading, setIsRollNumberLoading] = useState(false);
 
     useEffect(() => {
         if (!user?.profile?.branch_id || !selectedBranch?.id) return;
@@ -352,6 +356,9 @@ const EditStudentProfile = () => {
                     hostel_special_requirements: student.hostel_details?.special_requirements
                 });
                 
+                // Store original section ID to detect changes
+                setOriginalSectionId(student.section_id);
+                
                 if (customData?.custom_data) setCustomFieldValues(customData.custom_data);
                 
                 // Previews
@@ -391,6 +398,49 @@ const EditStudentProfile = () => {
           fetchSections();
         }
     }, [formData.class_id]);
+    
+    // Auto-generate Roll Number when Section Changes (excluding current student)
+    const generateNextRollNumber = async (classId, sectionId) => {
+        if (!classId || !sectionId || !selectedBranch?.id || !formData.session_id) return;
+        
+        setIsRollNumberLoading(true);
+        try {
+            // Get all roll numbers for this class/section/session, excluding current student
+            const { data, error } = await supabase
+                .from('student_profiles')
+                .select('roll_number')
+                .eq('branch_id', selectedBranch.id)
+                .eq('session_id', formData.session_id)
+                .eq('class_id', classId)
+                .eq('section_id', sectionId)
+                .neq('id', studentId) // Exclude current student
+                .not('roll_number', 'is', null)
+                .order('roll_number', { ascending: false })
+                .limit(1);
+            
+            if (error) {
+                console.error('[EditStudentProfile] Roll number fetch error:', error);
+                toast({ variant: 'destructive', title: 'Could not fetch next roll number.' });
+            } else {
+                const lastRoll = data?.[0]?.roll_number;
+                const lastRollNum = lastRoll ? parseInt(lastRoll.replace(/\D/g, ''), 10) : 0;
+                const nextRollNumber = (lastRollNum || 0) + 1;
+                setFormData(prev => ({ ...prev, roll_number: nextRollNumber.toString().padStart(2, '0') }));
+                toast({ title: 'Roll Number Updated', description: `Auto-assigned: ${nextRollNumber.toString().padStart(2, '0')}` });
+            }
+        } catch (err) {
+            console.error('[EditStudentProfile] Roll number error:', err);
+        }
+        setIsRollNumberLoading(false);
+    };
+    
+    // Watch for Section Change and Auto-Generate Roll Number
+    useEffect(() => {
+        // Only trigger if section actually changed from original AND not during initial load
+        if (!loading && originalSectionId && formData.section_id && formData.section_id !== originalSectionId) {
+            generateNextRollNumber(formData.class_id, formData.section_id);
+        }
+    }, [formData.section_id]);
 
     // Handle Route Change -> Update Pickup Points
      useEffect(() => {
@@ -501,13 +551,10 @@ const EditStudentProfile = () => {
                  case 'religion':
                       return <div className="lg:col-span-1">{label}<Select value={formData.religion || ''} onValueChange={v => handleChange('religion', v)}><SelectTrigger><SelectValue placeholder="Select Religion" /></SelectTrigger><SelectContent>{religions.map(r => <SelectItem key={r.name} value={r.name}>{r.name}</SelectItem>)}</SelectContent></Select></div>;
                  
-                 // Login Details - Explicit Handling
+                 // Login Details - SKIP (not editable on Edit page)
                  case 'username': case 'parent_username':
-                    return <div className="lg:col-span-1">{label}<Input value={formData[field.field_name] || ''} readOnly className="bg-muted" /></div>;
                  case 'password': case 'retype_password': case 'parent_password': case 'parent_retype_password':
-                    const isParent = field.field_name.startsWith('parent_');
-                    const updatesKey = field.field_name;
-                    return <div className="lg:col-span-1">{label}<Input type="text" placeholder="Leave blank to keep unchanged" value={formData[updatesKey] || ''} onChange={e => handleChange(updatesKey, e.target.value)} /></div>;
+                    return null; // Don't render login fields on edit page
             }
         }
 
@@ -556,10 +603,35 @@ const EditStudentProfile = () => {
             if(mUrl) updates.mother_photo_url = mUrl;
             if(gUrl) updates.guardian_photo_url = gUrl;
             
-            // Clean up updates object
+            // Clean up updates object - remove fields that don't exist in student_profiles table
             delete updates.transport_details;
             delete updates.hostel_details;
             delete updates.siblings; // not a column
+            
+            // Remove transport-related fields (stored in student_transport_details)
+            delete updates.transport_required;
+            delete updates.transport_route_id;
+            delete updates.transport_pickup_point_id;
+            delete updates.transport_fee;
+            delete updates.pickup_time;
+            delete updates.drop_time;
+            delete updates.vehicle_number;
+            delete updates.driver_name;
+            delete updates.driver_contact;
+            delete updates.transport_special_instructions;
+            
+            // Remove hostel-related fields (stored in student_hostel_details)
+            delete updates.hostel_required;
+            delete updates.hostel_id;
+            delete updates.hostel_room_type;
+            delete updates.room_number;
+            delete updates.bed_number;
+            delete updates.hostel_fee;
+            delete updates.check_in_date;
+            delete updates.check_out_date;
+            delete updates.hostel_guardian_contact;
+            delete updates.hostel_emergency_contact;
+            delete updates.hostel_special_requirements;
             
             const { error: updateError } = await supabase.from('student_profiles').update(updates).eq('id', studentId);
             if(updateError) throw updateError;
@@ -645,6 +717,12 @@ const EditStudentProfile = () => {
             
             <div className="space-y-8">
             {formSections.sort((a,b) => a.order - b.order).map(section => {
+                 // Skip login details sections on Edit page - credentials should not be edited here
+                 if (section.key === 'student_login_details' || section.key === 'parent_login_details' || 
+                     section.key === 'login_details' || section.key === 'student_login' || section.key === 'parent_login') {
+                     return null;
+                 }
+                 
                  if (section.key === 'documents') {
                      // Simplified documents view for edit
                       return (

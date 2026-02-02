@@ -90,14 +90,13 @@ const StudentTransportFees = () => {
     
     setLoading(true);
     
-    // Query students with transport_details_id reference
+    // Query students - transport data is in separate table linked by student_id
     let query = supabase
       .from('student_profiles')
       .select(`
         id, full_name, school_code, roll_number,
         class:classes!student_profiles_class_id_fkey(name),
-        section:sections!student_profiles_section_id_fkey(name),
-        transport_details_id
+        section:sections!student_profiles_section_id_fkey(name)
       `)
       .eq('branch_id', branchId);
 
@@ -121,7 +120,7 @@ const StudentTransportFees = () => {
       return;
     }
 
-    // Get transport details for students who have transport_details_id
+    // Get transport details for students (linked by student_id in student_transport_details)
     const studentIds = studentData?.map(s => s.id) || [];
     let transportMap = {};
 
@@ -297,21 +296,12 @@ const StudentTransportFees = () => {
       error = updateError;
     } else {
       // Insert new record
-      const { data: insertData, error: insertError } = await supabase
+      const { error: insertError } = await supabase
         .from('student_transport_details')
-        .insert(transportPayload)
-        .select()
-        .single();
+        .insert(transportPayload);
       
       error = insertError;
-      
-      // Update student_profiles with transport_details_id
-      if (!insertError && insertData) {
-        await supabase
-          .from('student_profiles')
-          .update({ transport_details_id: insertData.id })
-          .eq('id', selectedStudent.id);
-      }
+      // Note: No need to update student_profiles - relationship is via student_id in student_transport_details
     }
 
     if (error) {

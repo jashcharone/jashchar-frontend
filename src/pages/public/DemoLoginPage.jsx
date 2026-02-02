@@ -8,19 +8,22 @@ import { Loader2, GraduationCap, Sparkles, Play, Building2 } from 'lucide-react'
 import { Helmet } from 'react-helmet';
 
 // Demo credentials for all schools
+// Note: Student login uses admission_number@student.jashchar.local format (lowercase)
+// Parent login uses mobilenumber@parent.jashchar.local format (with 91 prefix)
 const DEMO_SCHOOLS = [
   {
     name: 'Jashchar ICSE School',
     key: 'ICSE School',
     color: '#d97706', // amber
     roles: {
-      'Admin': { email: 'manjunath.gowda@jashcharicse.edu', password: 'Manjunath@123' },
-      'Principal': { email: 'ramesh.kumar@jashcharicse.edu', password: 'Ramesh@123' },
-      'Teacher': { email: 'meena.sharma@jashcharicse.edu', password: 'Meena@123' },
-      'Accountant': { email: 'prasad.rao@jashcharicse.edu', password: 'Prasad@123' },
-      'Librarian': { email: 'librarian@jashcharicse.edu', password: 'Librarian@123' },
-      'Parent': { email: 'parent1@jashcharicse.edu', password: 'Parent@123' },
-      'Student': { email: 'student1@jashcharicse.edu', password: 'Student@123' },
+      'Super Admin': { email: 'jashchar2025@gmail.com', password: '@123456', displayLogin: 'jashchar2025@gmail.com' },
+      'Admin': null, // Need to create admin user via Human Resource module
+      'Principal': null, // Not yet configured - Add staff via Human Resource module
+      'Teacher': null, // Not yet configured - Add staff via Human Resource module
+      'Accountant': null, // Not yet configured - Add staff via Human Resource module
+      'Librarian': null, // Not yet configured - Add staff via Human Resource module
+      'Parent': { email: '917676505840@parent.jashchar.local', password: '789456', displayLogin: '7676505840' },
+      'Student': { email: 'jash-2026-0003@student.jashchar.local', password: '789456', displayLogin: 'JASH-2026-0003' },
     }
   },
   {
@@ -28,18 +31,19 @@ const DEMO_SCHOOLS = [
     key: 'PU College',
     color: '#059669', // emerald
     roles: {
-      'Admin': { email: 'venkatesh.murthy@jashcharpu.edu', password: 'Venkatesh@123' },
-      'Principal': { email: 'venkatesh.murthy@jashcharpu.edu', password: 'Venkatesh@123' },
-      'Teacher': { email: 'priya.nair@jashcharpu.edu', password: 'Priya@123' },
-      'Accountant': { email: 'accountant@jashcharpu.edu', password: 'Accountant@123' },
-      'Librarian': { email: 'ganesh.bhat@jashcharpu.edu', password: 'Ganesh@123' },
-      'Parent': { email: 'parent@jashcharpu.edu', password: 'Parent@123' },
-      'Student': { email: 'student@jashcharpu.edu', password: 'Student@123' },
+      'Super Admin': null, // Not yet configured
+      'Admin': null, // Not yet configured
+      'Principal': null, // Not yet configured
+      'Teacher': null, // Not yet configured
+      'Accountant': null, // Not yet configured
+      'Librarian': null, // Not yet configured
+      'Parent': null, // Not yet configured
+      'Student': null, // Not yet configured
     }
   }
 ];
 
-const ROLE_ORDER = ['Admin', 'Teacher', 'Accountant', 'Librarian', 'Parent', 'Student'];
+const ROLE_ORDER = ['Super Admin', 'Admin', 'Teacher', 'Accountant', 'Librarian', 'Parent', 'Student'];
 
 const DemoLoginPage = () => {
   const navigate = useNavigate();
@@ -117,7 +121,7 @@ const DemoLoginPage = () => {
       sessionStorage.setItem('demo_mode', 'true');
       
       toast({ title: "🚀 Super Admin Access!", description: "Full system access granted" });
-      navigate('/school/dashboard', { replace: true });
+      navigate('/super-admin/dashboard', { replace: true });
     } catch (error) {
       toast({ variant: "destructive", title: "Login Failed", description: error.message });
       setLoading(null);

@@ -1361,7 +1361,8 @@ const StudentAdmission = () => {
     setErrors(newErrors);
     const valid = Object.keys(newErrors).length === 0 && !rollNumberError && !studentEmailError && !fatherEmailError && !aadharError && !studentUsernameError && !parentUsernameError;
     setIsFormValid(valid);
-    return valid;
+    // Return both validity and the errors object for immediate access
+    return { isValid: valid, validationErrors: newErrors };
   }, [formData, customFieldValues, allFields, pincode, rollNumberError, studentEmailError, fatherEmailError, aadharError, masterDocuments, studentUsernameError, parentUsernameError, feeGroups, schoolSettings, profilePictureFile, profilePicturePreview, fatherPictureFile, fatherPicturePreview, motherPictureFile, motherPicturePreview, guardianPictureFile, guardianPicturePreview]);
 
   const handleBlur = (field) => {
@@ -1975,12 +1976,12 @@ const StudentAdmission = () => {
   };
   
   const handleSave = async () => {
-    // Run full validation on save
-    const isValid = validateFullForm();
+    // Run full validation on save - get both validity and errors
+    const { isValid, validationErrors } = validateFullForm();
     
     if (!isValid) {
         // Debug logging to help identify which fields are failing validation
-        console.log('[StudentAdmission] Validation Failed - Errors:', errors);
+        console.log('[StudentAdmission] Validation Failed - Errors:', validationErrors);
         console.log('[StudentAdmission] FormData:', {
           first_name: formData.first_name,
           school_code: formData.school_code,
@@ -1992,14 +1993,14 @@ const StudentAdmission = () => {
           admission_date: formData.admission_date
         });
         
-        const firstErrorField = Object.keys(errors)[0];
+        const firstErrorField = Object.keys(validationErrors)[0];
         if(firstErrorField) {
             const element = document.querySelector(`[name="${firstErrorField}"], [id="${firstErrorField}"]`);
             if(element) element.focus();
         }
         
-        // Detailed error message
-        const missingFields = Object.keys(errors).map(key => {
+        // Detailed error message - use validationErrors directly (not stale state)
+        const missingFields = Object.keys(validationErrors).map(key => {
              // Try to find label from allFields
              const field = allFields.find(f => {
                  const mapped = { 'class_id': 'class', 'section_id': 'section', 'session_id': 'session', 'category_id': 'category', 'school_code': 'admission_no' }[key]; 

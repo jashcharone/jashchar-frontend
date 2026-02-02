@@ -274,7 +274,7 @@ const StudentTransportFees = () => {
       student_id: selectedStudent.id,
       branch_id: branchId,
       session_id: currentSessionId,
-      organization_id: organizationId,
+      // Note: organization_id not in student_transport_details schema
       transport_route_id: formData.transport_route_id || null,
       transport_pickup_point_id: formData.transport_pickup_point_id || null,
       transport_fee: formData.transport_fee ? parseFloat(formData.transport_fee) : null,

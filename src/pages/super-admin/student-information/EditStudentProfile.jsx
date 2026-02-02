@@ -580,7 +580,8 @@ const EditStudentProfile = () => {
                  if (formData.transport_details?.id) {
                      await supabase.from('student_transport_details').update(tData).eq('id', formData.transport_details.id);
                  } else {
-                     await supabase.from('student_transport_details').insert({ ...tData, student_id: studentId, branch_id: user.profile.branch_id, session_id: currentSessionId, organization_id: organizationId });
+                     // Note: organization_id not in student_transport_details schema
+                     await supabase.from('student_transport_details').insert({ ...tData, student_id: studentId, branch_id: user.profile.branch_id, session_id: currentSessionId });
                  }
             } else if (formData.transport_details?.id) {
                 await supabase.from('student_transport_details').delete().eq('id', formData.transport_details.id);

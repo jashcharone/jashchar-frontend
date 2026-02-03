@@ -118,6 +118,85 @@ const SectionBox = ({ icon, title, children, className, collapsible = false, def
   );
 };
 
+// Helper Component to render fields (Moved outside to prevent cursor jumping)
+const FieldRenderer = ({ field, formData, customFieldValues, onChange, masterData, handlePostOfficeChange }) => {
+    if (!field.is_enabled) return null;
+
+    const label = (
+      <Label>
+        {field.field_label} {field.is_required && <span className="text-red-500">*</span>}
+      </Label>
+    );
+
+    // Handle System Fields
+    if (field.is_system) {
+        switch (field.field_name) {
+             case 'admission_no':
+                  return <div className="lg:col-span-1">{label}<Input value={formData.school_code || ''} disabled className="bg-muted" /></div>;
+             case 'session':
+                  return <div className="lg:col-span-1">{label}<Select value={formData.session_id} onValueChange={v => onChange('session_id', v, true)}><SelectTrigger><SelectValue placeholder="Select Session" /></SelectTrigger><SelectContent>{masterData.sessions.map(s => <SelectItem key={s.id} value={s.id}>{s.name} {s.is_active ? '(Active)' : ''}</SelectItem>)}</SelectContent></Select></div>;
+             case 'class':
+                  return <div className="lg:col-span-1">{label}<Select value={formData.class_id} onValueChange={v => onChange('class_id', v, true)}><SelectTrigger><SelectValue placeholder="Select Class" /></SelectTrigger><SelectContent>{masterData.classes.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent></Select></div>;
+             case 'section':
+                  return <div className="lg:col-span-1">{label}<Select value={formData.section_id} onValueChange={v => onChange('section_id', v, true)}><SelectTrigger><SelectValue placeholder="Select Section" /></SelectTrigger><SelectContent>{masterData.sections.map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}</SelectContent></Select></div>;
+             case 'date': case 'dob': case 'admission_date': case 'father_dob': case 'mother_dob':
+                  return <div className="lg:col-span-1"><DatePicker label={field.field_label} required={field.is_required} value={formData[field.field_name]} onChange={date => onChange(field.field_name, date, true)} /></div>;
+             case 'category':
+                  return <div className="lg:col-span-1">{label}<Select value={formData.category_id || ''} onValueChange={v => onChange('category_id', v, true)}><SelectTrigger><SelectValue placeholder="Select Category" /></SelectTrigger><SelectContent>{masterData.categories.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent></Select></div>;
+             case 'caste_category':
+                  return <div className="lg:col-span-1">{label}<Select value={formData.caste_category_id || ''} onValueChange={v => onChange('caste_category_id', v, true)}><SelectTrigger><SelectValue placeholder="Select Caste Category" /></SelectTrigger><SelectContent>{masterData.casteCategories.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent></Select></div>;
+             case 'sub_caste':
+                  // Filter sub-castes based on selected category
+                  const filteredSubCastes = formData.caste_category_id 
+                    ? masterData.subCastes.filter(sc => sc.caste_category_id === formData.caste_category_id)
+                    : []; 
+                  return <div className="lg:col-span-1">{label}<Select value={formData.sub_caste_id || ''} onValueChange={v => onChange('sub_caste_id', v, true)} disabled={!formData.caste_category_id}><SelectTrigger><SelectValue placeholder="Select Sub Caste" /></SelectTrigger><SelectContent>{filteredSubCastes.map(sc => <SelectItem key={sc.id} value={sc.id}>{sc.name}</SelectItem>)}</SelectContent></Select></div>;
+             // PHOTOS ARE NOW RENDERED IN DEDICATED PHOTO GALLERY SECTION AT THE END
+             // Skip rendering here to avoid duplicates
+             case 'student_photo': case 'father_photo': case 'mother_photo': case 'guardian_photo':
+                return null; // Photos moved to Photo Gallery section
+             case 'national_id_no': case 'father_aadhar_no': case 'mother_aadhar_no':
+                 return <div className="lg:col-span-1">{label}<AadharInput value={formData[field.field_name] || ''} onChange={val => onChange(field.field_name, val, true)} /></div>;
+             case 'religion':
+                  return <div className="lg:col-span-1">{label}<Select value={formData.religion || ''} onValueChange={v => onChange('religion', v, true)}><SelectTrigger><SelectValue placeholder="Select Religion" /></SelectTrigger><SelectContent>{masterData.religions.map(r => <SelectItem key={r.name} value={r.name}>{r.name}</SelectItem>)}</SelectContent></Select></div>;
+             case 'mother_tongue':
+                  return <div className="lg:col-span-1">{label}<Select value={formData.mother_tongue || ''} onValueChange={v => onChange('mother_tongue', v, true)}><SelectTrigger><SelectValue placeholder="Select Mother Tongue" /></SelectTrigger><SelectContent>{masterData.motherTongues.map(mt => <SelectItem key={mt.name} value={mt.name}>{mt.name}</SelectItem>)}</SelectContent></Select></div>;
+             
+             // Pincode Handling
+             case 'current_pincode': case 'present_pincode': case 'permanent_pincode':
+             case 'pincode':
+                return <div className="lg:col-span-1">{label}<Input value={formData[field.field_name] || ''} onChange={e => onChange(field.field_name, e.target.value.replace(/\D/g, '').slice(0, 6), true)} maxLength={6} placeholder="6 digits" /></div>;
+
+             // Post Office - If it's a dropdown in logic
+             case 'post_office':
+                return <div className="lg:col-span-1">{label}<Select onValueChange={handlePostOfficeChange} disabled={masterData.postOffices.length === 0}><SelectTrigger><SelectValue placeholder={masterData.postOffices.length > 0 ? "Select Post Office" : "Enter valid pincode"} /></SelectTrigger><SelectContent>{masterData.postOffices.map(po => <SelectItem key={po.Name} value={po.Name}>{po.Name}</SelectItem>)}</SelectContent></Select></div>;
+
+             // Login Details - SKIP (not editable on Edit page)
+             case 'username': case 'parent_username':
+             case 'password': case 'retype_password': case 'parent_password': case 'parent_retype_password':
+                return null; // Don't render login fields on edit page
+        }
+    }
+
+    // Generic
+    const value = field.is_system ? (formData[field.field_name] ?? '') : (customFieldValues[field.field_key] ?? '');
+    const onFieldChange = (val) => onChange(field.is_system ? field.field_name : field.field_key, val, field.is_system);
+
+    if (field.type === 'select' || field.field_type === 'select') {
+       return <div className="lg:col-span-1">{label}<Select value={value} onValueChange={onFieldChange}><SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger><SelectContent>{(field.field_options || []).map((opt, i) => <SelectItem key={i} value={typeof opt === 'object' ? opt.value : opt}>{typeof opt === 'object' ? opt.label : opt}</SelectItem>)}</SelectContent></Select></div>;
+    }
+    if (field.type === 'textarea' || field.field_type === 'textarea') {
+        return <div className="md:col-span-2">{label}<Textarea value={value} onChange={e => onFieldChange(e.target.value)} /></div>;
+    }
+    if (field.type === 'date' || field.field_type === 'date') {
+        return <div className="lg:col-span-1"><DatePicker label={field.field_label} required={field.is_required} value={value} onChange={onFieldChange} /></div>;
+    }
+    if (field.type === 'checkbox' || field.field_type === 'checkbox') {
+         return <div className="flex items-center space-x-2 mt-8"><Checkbox id={field.field_key} checked={!!value} onCheckedChange={onFieldChange} /><label htmlFor={field.field_key} className="text-sm font-medium">{field.field_label}</label></div>;
+    }
+    return <div className="lg:col-span-1">{label}<Input value={value} type={field.type === 'number' || field.field_type === 'number' ? 'number' : 'text'} onChange={e => onFieldChange(e.target.value)} /></div>;
+};
+
 const AddSiblingModal = ({ onSiblingAdd, currentStudentId }) => {
   const { user } = useAuth();
   const { selectedBranch } = useBranch();
@@ -219,6 +298,9 @@ const EditStudentProfile = () => {
     const [casteCategories, setCasteCategories] = useState([]);
     const [subCastes, setSubCastes] = useState([]);
     const [masterDocuments, setMasterDocuments] = useState([]);
+    const [motherTongues, setMotherTongues] = useState([]);
+    const [postOffices, setPostOffices] = useState([]);
+    const [pincodeLoading, setPincodeLoading] = useState(false);
     
     // Photos
     const [profilePictureFile, setProfilePictureFile] = useState(null);
@@ -248,7 +330,7 @@ const EditStudentProfile = () => {
                 // 1. Fetch Settings & Master Data
                 const [
                     customFieldsRes,
-                    classesRes, categoriesRes, routesRes, hostelsRes, hostelRoomTypesRes, religionsRes, castesRes, masterDocsRes, sessionsRes, branchRes
+                    classesRes, categoriesRes, routesRes, hostelsRes, hostelRoomTypesRes, religionsRes, castesRes, motherTonguesRes, masterDocsRes, sessionsRes, branchRes
                 ] = await Promise.all([
                     api.get('/form-settings', { params: { branchId, module: 'student_admission' } }),
                     supabase.from('classes').select('id, name').eq('branch_id', branchId).eq('branch_id', selectedBranch.id),
@@ -258,6 +340,7 @@ const EditStudentProfile = () => {
                     supabase.from('hostel_room_types').select('*').eq('branch_id', branchId),
                     supabase.from('master_religions').select('name'),
                     supabase.from('master_castes').select('name'),
+                    supabase.from('master_mother_tongues').select('name'),
                     supabase.from('master_documents').select('name, is_required'),
                     supabase.from('sessions').select('id, name, is_active').eq('branch_id', branchId).order('name', { ascending: false }),
                     supabase.from('branches').select('state_id').eq('id', branchId).single()
@@ -288,6 +371,7 @@ const EditStudentProfile = () => {
                 setHostelRoomTypes(hostelRoomTypesRes.data || []);
                 setReligions(religionsRes.data || []);
                 setCastes(castesRes.data || []);
+                setMotherTongues(motherTonguesRes.data || []);
                 setMasterDocuments(masterDocsRes.data || []);
                 setSessions(sessionsRes.data || []);
                 setCasteCategories(casteCategoriesData);
@@ -455,7 +539,73 @@ const EditStudentProfile = () => {
       fetchTransportDetails();
     }, [formData.transport_route_id]);
 
-    const handleChange = (key, value) => setFormData(prev => ({ ...prev, [key]: value }));
+    // Handle Pincode Auto-fetch (Logic from StudentAdmission)
+    useEffect(() => {
+        const fetchPincodeData = async () => {
+          // We assume 'pincode' field is named 'pincode' or 'current_pincode' or 'present_pincode'
+          // We can check all pincode-like fields or simpler, just check 'pincode', 'present_pincode'
+          const currentPincode = formData.pincode || formData.current_pincode || formData.present_pincode;
+          
+          if (!currentPincode || currentPincode.length !== 6) {
+            setPostOffices([]);
+            return;
+          }
+          setPincodeLoading(true);
+          try {
+            // Use api.postalpincode.in (allowed in CSP)
+            const response = await fetch(`https://api.postalpincode.in/pincode/${currentPincode}`);
+            const data = await response.json();
+            
+            if (data && data[0] && data[0].Status === 'Success' && Array.isArray(data[0].PostOffice) && data[0].PostOffice.length > 0) {
+              setPostOffices(data[0].PostOffice);
+              const { District, State } = data[0].PostOffice[0];
+              // Update City/State if they are empty or just update them
+              setFormData(prev => ({ ...prev, city: District || prev.city, state: State || prev.state }));
+            } else {
+              setPostOffices([]);
+              // Don't clear city/state automatically to avoid data loss if API fails but user typed it
+              toast({ variant: 'destructive', title: 'Invalid Pincode', description: 'No location found for this pincode.' });
+            }
+          } catch (error) {
+            console.error('Pincode API error:', error);
+            setPostOffices([]);
+            // Silent fail or toast
+          } finally {
+            setPincodeLoading(false);
+          }
+        };
+        const timer = setTimeout(fetchPincodeData, 500);
+        return () => clearTimeout(timer);
+    }, [formData.pincode, formData.current_pincode, formData.present_pincode]);
+
+    const handlePostOfficeChange = (postOfficeName) => {
+        const selected = postOffices.find(po => po.Name === postOfficeName);
+        if (selected) {
+          setFormData(prev => ({
+            ...prev,
+            city: selected.District,
+            state: selected.State,
+            // If there's a post_office field
+            post_office: postOfficeName
+          }));
+        }
+    };
+    
+    // Unified Change Handler
+    const handleFieldChange = (key, value, isSystem) => {
+        if (isSystem) {
+            // Special handling for pincode input to limit length
+            if ((key.includes('pincode')) && value && value.length > 6) return;
+            handleChange(key, value);
+        } else {
+            handleCustomFieldChange(key, value); 
+        }
+    };
+
+    const handleChange = (key, value) => {
+        // If pincode changes, it triggers the useEffect above
+        setFormData(prev => ({ ...prev, [key]: value }));
+    };
     const handleCustomFieldChange = (key, value) => setCustomFieldValues(prev => ({ ...prev, [key]: value }));
     const handleBlur = (key) => setTouched(prev => ({ ...prev, [key]: true }));
 
@@ -505,72 +655,9 @@ const EditStudentProfile = () => {
          }
     };
 
-    const DynamicField = ({ field }) => {
-        if (!field.is_enabled) return null;
-    
-        const label = (
-          <Label>
-            {field.field_label} {field.is_required && <span className="text-red-500">*</span>}
-          </Label>
-        );
-        
-        // Handle System Fields
-        if (field.is_system) {
-            switch (field.field_name) {
-                 case 'admission_no':
-                      return <div className="lg:col-span-1">{label}<Input value={formData.school_code || ''} disabled className="bg-muted" /></div>;
-                 case 'session':
-                      return <div className="lg:col-span-1">{label}<Select value={formData.session_id} onValueChange={v => handleChange('session_id', v)}><SelectTrigger><SelectValue placeholder="Select Session" /></SelectTrigger><SelectContent>{sessions.map(s => <SelectItem key={s.id} value={s.id}>{s.name} {s.is_active ? '(Active)' : ''}</SelectItem>)}</SelectContent></Select></div>;
-                 case 'class':
-                      return <div className="lg:col-span-1">{label}<Select value={formData.class_id} onValueChange={v => handleChange('class_id', v)}><SelectTrigger><SelectValue placeholder="Select Class" /></SelectTrigger><SelectContent>{classes.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent></Select></div>;
-                 case 'section':
-                      return <div className="lg:col-span-1">{label}<Select value={formData.section_id} onValueChange={v => handleChange('section_id', v)}><SelectTrigger><SelectValue placeholder="Select Section" /></SelectTrigger><SelectContent>{sections.map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}</SelectContent></Select></div>;
-                 case 'date': case 'dob': case 'admission_date': case 'father_dob': case 'mother_dob':
-                      return <div className="lg:col-span-1"><DatePicker label={field.field_label} required={field.is_required} value={formData[field.field_name]} onChange={date => handleChange(field.field_name, date)} /></div>;
-                 case 'category':
-                      return <div className="lg:col-span-1">{label}<Select value={formData.category_id || ''} onValueChange={v => handleChange('category_id', v)}><SelectTrigger><SelectValue placeholder="Select Category" /></SelectTrigger><SelectContent>{categories.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent></Select></div>;
-                 case 'caste_category':
-                      return <div className="lg:col-span-1">{label}<Select value={formData.caste_category_id || ''} onValueChange={v => handleChange('caste_category_id', v)}><SelectTrigger><SelectValue placeholder="Select Caste Category" /></SelectTrigger><SelectContent>{casteCategories.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent></Select></div>;
-                 case 'sub_caste':
-                      // Filter sub-castes based on selected category
-                      const filteredSubCastes = formData.caste_category_id 
-                        ? subCastes.filter(sc => sc.caste_category_id === formData.caste_category_id)
-                        : []; 
-                      return <div className="lg:col-span-1">{label}<Select value={formData.sub_caste_id || ''} onValueChange={v => handleChange('sub_caste_id', v)} disabled={!formData.caste_category_id}><SelectTrigger><SelectValue placeholder="Select Sub Caste" /></SelectTrigger><SelectContent>{filteredSubCastes.map(sc => <SelectItem key={sc.id} value={sc.id}>{sc.name}</SelectItem>)}</SelectContent></Select></div>;
-                 // PHOTOS ARE NOW RENDERED IN DEDICATED PHOTO GALLERY SECTION AT THE END
-                 // Skip rendering here to avoid duplicates
-                 case 'student_photo': case 'father_photo': case 'mother_photo': case 'guardian_photo':
-                    return null; // Photos moved to Photo Gallery section
-                 case 'national_id_no': case 'father_aadhar_no': case 'mother_aadhar_no':
-                     return <div className="lg:col-span-1">{label}<AadharInput value={formData[field.field_name] || ''} onChange={val => handleChange(field.field_name, val)} /></div>;
-                 case 'religion':
-                      return <div className="lg:col-span-1">{label}<Select value={formData.religion || ''} onValueChange={v => handleChange('religion', v)}><SelectTrigger><SelectValue placeholder="Select Religion" /></SelectTrigger><SelectContent>{religions.map(r => <SelectItem key={r.name} value={r.name}>{r.name}</SelectItem>)}</SelectContent></Select></div>;
-                 
-                 // Login Details - SKIP (not editable on Edit page)
-                 case 'username': case 'parent_username':
-                 case 'password': case 'retype_password': case 'parent_password': case 'parent_retype_password':
-                    return null; // Don't render login fields on edit page
-            }
-        }
 
-        // Generic
-        const value = field.is_system ? (formData[field.field_name] ?? '') : (customFieldValues[field.field_key] ?? '');
-        const onChange = (val) => field.is_system ? handleChange(field.field_name, val) : handleCustomFieldChange(field.field_key, val);
+    // DynamicField removed - using FieldRenderer
 
-        if (field.type === 'select' || field.field_type === 'select') {
-           return <div className="lg:col-span-1">{label}<Select value={value} onValueChange={onChange}><SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger><SelectContent>{(field.field_options || []).map((opt, i) => <SelectItem key={i} value={typeof opt === 'object' ? opt.value : opt}>{typeof opt === 'object' ? opt.label : opt}</SelectItem>)}</SelectContent></Select></div>;
-        }
-        if (field.type === 'textarea' || field.field_type === 'textarea') {
-            return <div className="md:col-span-2">{label}<Textarea value={value} onChange={e => onChange(e.target.value)} /></div>;
-        }
-        if (field.type === 'date' || field.field_type === 'date') {
-            return <div className="lg:col-span-1"><DatePicker label={field.field_label} required={field.is_required} value={value} onChange={onChange} /></div>;
-        }
-        if (field.type === 'checkbox' || field.field_type === 'checkbox') {
-             return <div className="flex items-center space-x-2 mt-8"><Checkbox id={field.field_key} checked={!!value} onCheckedChange={onChange} /><label htmlFor={field.field_key} className="text-sm font-medium">{field.field_label}</label></div>;
-        }
-        return <div className="lg:col-span-1">{label}<Input value={value} type={field.type === 'number' || field.field_type === 'number' ? 'number' : 'text'} onChange={e => onChange(e.target.value)} /></div>;
-    }
 
     const uploadFile = async (file, bucket) => {
         if (!file) return null;
@@ -704,6 +791,10 @@ const EditStudentProfile = () => {
             setSaving(false);
         }
     };
+
+    
+    // Create master data object for FieldRenderer
+    const masterData = { classes, sections, sessions, categories, casteCategories, subCastes, religions, motherTongues, postOffices };
 
     if (loading) return <DashboardLayout><div className="flex justify-center items-center h-screen"><Loader2 className="w-8 h-8 animate-spin" /></div></DashboardLayout>;
 
@@ -845,7 +936,17 @@ const EditStudentProfile = () => {
 
                  return (
                     <SectionBox key={section.key} icon={ICON_MAP[section.icon] || User} title={section.label}>
-                         {sectionFields.map(field => <DynamicField key={field.id || field.key} field={field} />)}
+                         {sectionFields.map(field => (
+                            <FieldRenderer 
+                                key={field.id || field.key} 
+                                field={field} 
+                                formData={formData} 
+                                customFieldValues={customFieldValues} 
+                                onChange={handleFieldChange} 
+                                masterData={masterData}
+                                handlePostOfficeChange={handlePostOfficeChange}
+                            />
+                         ))}
                          {isAcademic && (
                              <div className="lg:col-span-2 md:col-span-2">
                                 <Label>Siblings</Label>

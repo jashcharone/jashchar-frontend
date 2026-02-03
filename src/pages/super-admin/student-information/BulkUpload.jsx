@@ -1056,12 +1056,13 @@ const BulkUpload = () => {
         const dupes = [];
         
         // Fetch existing admission numbers for duplicate check
+        // Note: In student_profiles, admission_no is stored as 'school_code'
         const { data: existingStudents } = await supabase
             .from('student_profiles')
-            .select('admission_no, aadhar_no, email, phone')
+            .select('school_code, aadhar_no, email, phone')
             .eq('branch_id', branchId);
         
-        const existingAdmNos = new Set(existingStudents?.map(s => s.admission_no?.toLowerCase()).filter(Boolean) || []);
+        const existingAdmNos = new Set(existingStudents?.map(s => s.school_code?.toLowerCase()).filter(Boolean) || []);
         const existingAadhars = new Set(existingStudents?.map(s => s.aadhar_no?.replace(/\s/g, '')).filter(Boolean) || []);
         const existingEmails = new Set(existingStudents?.map(s => s.email?.toLowerCase()).filter(Boolean) || []);
         
@@ -1256,6 +1257,92 @@ const BulkUpload = () => {
     };
 
     // ═══════════════════════════════════════════════════════════════════════════
+    // 🌟 ADMISSION NUMBER GENERATOR (Same as StudentAdmission.jsx)
+    // Format: PREFIX-YEAR-SEQUENCE (e.g., STU-2026-00001)
+    // ═══════════════════════════════════════════════════════════════════════════
+    const generateNextAdmissionNo = async (branchIdParam) => {
+        try {
+            // 🌟 Call Backend API for GLOBAL UNIQUE admission number (same as StudentAdmission.jsx)
+            const response = await api.get(`/students/next-admission-number?branch_id=${branchIdParam}`, {
+                headers: { 'x-branch-id': branchIdParam }
+            });
+            
+            const result = response.data;
+            if (result.success) {
+                console.log(`[BulkUpload] 🌟 Global Unique Admission Number: ${result.admissionNumber}`);
+                return result.admissionNumber;
+            }
+        } catch (error) {
+            console.warn('[BulkUpload] Backend API failed, using local generation:', error.message);
+        }
+        
+        // Fallback to local generation if API fails
+        return await generateNextAdmissionNoLocal(branchIdParam);
+    };
+    
+    const generateNextAdmissionNoLocal = async (branchIdParam) => {
+        // Get branch settings for prefix and digit
+        const { data: branchSettings } = await supabase
+            .from('branches')
+            .select('student_admission_no_prefix, student_admission_no_digit')
+            .eq('id', branchIdParam)
+            .single();
+        
+        const prefix = (branchSettings?.student_admission_no_prefix ?? 'STU').trim();
+        const digit = Number(branchSettings?.student_admission_no_digit) || 5;
+        const currentYear = new Date().getFullYear();
+        const yearPrefix = `${prefix}-${currentYear}-`;
+        
+        // 🌟 Query GLOBALLY for the prefix-year combination (same as StudentAdmission.jsx)
+        const { data } = await supabase
+            .from('student_profiles')
+            .select('school_code')
+            .like('school_code', `${yearPrefix}%`)
+            .order('school_code', { ascending: false })
+            .limit(1);
+        
+        let nextNumber = 1;
+        if (data && data.length > 0 && data[0].school_code) {
+            const latestCode = data[0].school_code;
+            const parts = latestCode.split('-');
+            if (parts.length === 3) {
+                const sequenceNum = parseInt(parts[2], 10);
+                if (!isNaN(sequenceNum)) {
+                    nextNumber = sequenceNum + 1;
+                }
+            }
+        }
+        
+        const newId = `${yearPrefix}${String(nextNumber).padStart(digit, '0')}`;
+        console.log(`[BulkUpload] Local Generated Admission No: ${newId}`);
+        return newId;
+    };
+    
+    // ═══════════════════════════════════════════════════════════════════════════
+    // 🔢 ROLL NUMBER GENERATOR (Same as StudentAdmission.jsx)
+    // Format: Sequential per session + class + section (01, 02, 03...)
+    // ═══════════════════════════════════════════════════════════════════════════
+    const getNextRollNumber = async (branchIdParam, sessionIdParam, classIdParam, sectionIdParam, offset = 0) => {
+        // Get max roll number from student_profiles for this session + class + section
+        const { data } = await supabase
+            .from('student_profiles')
+            .select('roll_number')
+            .eq('branch_id', branchIdParam)
+            .eq('session_id', sessionIdParam)
+            .eq('class_id', classIdParam)
+            .eq('section_id', sectionIdParam)
+            .not('roll_number', 'is', null)
+            .order('roll_number', { ascending: false })
+            .limit(1);
+        
+        const lastRoll = data?.[0]?.roll_number;
+        const lastRollNum = lastRoll ? parseInt(lastRoll.replace(/\D/g, ''), 10) : 0;
+        const nextRollNumber = (lastRollNum || 0) + 1 + offset;
+        
+        return nextRollNumber.toString().padStart(2, '0');
+    };
+
+    // ═══════════════════════════════════════════════════════════════════════════
     // BULK UPLOAD EXECUTION
     // ═══════════════════════════════════════════════════════════════════════════
     const executeUpload = async () => {
@@ -1278,37 +1365,41 @@ const BulkUpload = () => {
         });
         
         const total = recordsToUpload.length;
-        let lastRollNumber = 0;
-        let lastAdmissionNo = 0;
         
-        // Get last roll number and admission number for auto-generation
-        if (autoGenerateRollNo || autoGenerateAdmissionNo) {
-            const { data: lastStudent } = await supabase
-                .from('student_profiles')
-                .select('roll_number, admission_no')
-                .eq('branch_id', branchId)
-                .eq('class_id', selectedClass)
-                .eq('section_id', selectedSection)
-                .order('created_at', { ascending: false })
-                .limit(1)
-                .maybeSingle();
-            
-            if (lastStudent) {
-                lastRollNumber = parseInt(lastStudent.roll_number?.replace(/\D/g, '') || '0', 10);
+        // 🌟 Pre-generate all admission numbers and roll numbers BEFORE upload loop
+        // This ensures globally unique admission numbers using Backend API (same as StudentAdmission.jsx)
+        console.log(`[BulkUpload] 🚀 Pre-generating ${total} admission numbers and roll numbers...`);
+        
+        const generatedAdmissionNos = [];
+        const generatedRollNos = [];
+        
+        if (autoGenerateAdmissionNo) {
+            toast({ title: '🔄 Generating Admission Numbers...', description: `Creating ${total} globally unique IDs` });
+            for (let i = 0; i < total; i++) {
+                if (!recordsToUpload[i].admission_no) {
+                    // Generate via Backend API (globally unique)
+                    const admNo = await generateNextAdmissionNo(branchId);
+                    generatedAdmissionNos[i] = admNo;
+                } else {
+                    generatedAdmissionNos[i] = recordsToUpload[i].admission_no;
+                }
             }
+            console.log(`[BulkUpload] ✅ Generated ${generatedAdmissionNos.length} admission numbers`);
+        }
+        
+        if (autoGenerateRollNo) {
+            // Get base roll number and increment for each record
+            const baseRoll = await getNextRollNumber(branchId, selectedSession, selectedClass, selectedSection, 0);
+            const baseNum = parseInt(baseRoll, 10);
             
-            // Get max admission number across branch
-            const { data: maxAdm } = await supabase
-                .from('student_profiles')
-                .select('admission_no')
-                .eq('branch_id', branchId)
-                .order('admission_no', { ascending: false })
-                .limit(1)
-                .maybeSingle();
-            
-            if (maxAdm) {
-                lastAdmissionNo = parseInt(maxAdm.admission_no?.replace(/\D/g, '') || '0', 10);
+            for (let i = 0; i < total; i++) {
+                if (!recordsToUpload[i].roll_number) {
+                    generatedRollNos[i] = String(baseNum + i).padStart(2, '0');
+                } else {
+                    generatedRollNos[i] = recordsToUpload[i].roll_number;
+                }
             }
+            console.log(`[BulkUpload] ✅ Generated roll numbers: ${generatedRollNos[0]} to ${generatedRollNos[total-1]}`);
         }
         
         for (let i = 0; i < recordsToUpload.length; i++) {
@@ -1335,6 +1426,10 @@ const BulkUpload = () => {
                 }
 
                 // Build student data - CRITICAL: Include organization_id, branch_id, session_id (PROJECT MANIFESTO)
+                // 🌟 Use pre-generated admission_no and roll_number (same format as StudentAdmission.jsx)
+                const admissionNo = autoGenerateAdmissionNo ? generatedAdmissionNos[i] : (record.admission_no || null);
+                const rollNumber = autoGenerateRollNo ? generatedRollNos[i] : (record.roll_number || null);
+                
                 const studentData = {
                     // Multi-tenant (MANDATORY as per PROJECT_MANIFESTO)
                     organization_id: organizationId,
@@ -1345,9 +1440,11 @@ const BulkUpload = () => {
                     section_id: selectedSection,
                     session_id: selectedSession,
                     
-                    // Auto-generate if needed
-                    admission_no: record.admission_no || (autoGenerateAdmissionNo ? `STU${String(++lastAdmissionNo).padStart(5, '0')}` : null),
-                    roll_number: record.roll_number || (autoGenerateRollNo ? String(++lastRollNumber).padStart(2, '0') : null),
+                    // 🌟 school_code = admission_no (as per StudentAdmission.jsx)
+                    // username = admission_no (student username is ALWAYS admission number)
+                    school_code: admissionNo,
+                    username: admissionNo,
+                    roll_number: rollNumber,
                     
                     // Basic Info
                     first_name: record.first_name,

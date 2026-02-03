@@ -47,7 +47,7 @@ const CertificateHistory = () => {
         .select(`
             id,
             generated_date,
-            student_profiles:student_id(full_name, admission_no, classes:class_id(name)),
+            student_profiles:student_id(full_name, admission_no, classes:classes!student_profiles_class_id_fkey(name)),
             certificate_templates:template_id(name, template_html, background_image)
         `)
         .eq('branch_id', user.branch_id)

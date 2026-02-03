@@ -489,8 +489,8 @@ const LiveAttendanceDashboard = () => {
                     class_id,
                     section_id,
                     status,
-                    classes:class_id(name),
-                    sections:section_id(name)
+                    classes:classes!student_profiles_class_id_fkey(name),
+                    sections:sections!student_profiles_section_id_fkey(name)
                 `)
                 .eq('branch_id', branchId)
                 .eq('date', today);

@@ -357,8 +357,8 @@ const QRCodeGenerator = () => {
             .from('student_profiles')
             .select(`
                 id, full_name, school_code, roll_number, photo_url,
-                class:class_id(id, name),
-                section:section_id(id, name)
+                class:classes!student_profiles_class_id_fkey(id, name),
+                section:sections!student_profiles_section_id_fkey(id, name)
             `)
             .eq('branch_id', branchId)
             .or('status.eq.active,status.is.null');

@@ -127,8 +127,8 @@ const StudentIdCard = () => {
                     photo_url,
                     is_disabled,
                     session_id,
-                    classes:class_id(id, name),
-                    sections:section_id(id, name)
+                    classes:classes!student_profiles_class_id_fkey(id, name),
+                    sections:sections!student_profiles_section_id_fkey(id, name)
                 `)
                 .eq('branch_id', branchId)
                 .eq('class_id', filters.class_id)

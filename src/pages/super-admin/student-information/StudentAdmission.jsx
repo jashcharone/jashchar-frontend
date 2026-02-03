@@ -1077,9 +1077,8 @@ const StudentAdmission = () => {
               </SmartField>
              );
         // Name fields - Only allow alphabets and spaces (no numbers/special chars)
-        // Minimum 2 characters required for names
+        // Minimum 2 characters required for names (except last_name which is optional)
         case 'first_name':
-        case 'last_name':
         case 'father_name':
         case 'mother_name':
         case 'guardian_name':
@@ -1088,6 +1087,24 @@ const StudentAdmission = () => {
                  ? 'Minimum 2 characters required' : '');
              return (
               <SmartField label={label} required={isRequired} error={nameError} touched={touched[field.field_name]} icon={User} hint="Letters only (min 2)">
+                <Input 
+                  value={formData[field.field_name]} 
+                  placeholder={`Enter ${label.toLowerCase()}`}
+                  onChange={e => {
+                    // Only allow letters (a-z, A-Z) and spaces - NO dots, numbers, or special chars
+                    const sanitized = e.target.value.replace(/[^a-zA-Z\s]/g, '');
+                    handleChange(field.field_name, sanitized);
+                  }}
+                  onBlur={() => handleBlur(field.field_name)}
+                  className="h-11"
+                />
+              </SmartField>
+             );
+        // Last name - letters only, NO minimum character requirement
+        case 'last_name':
+             const lastNameError = errors[field.field_name] || '';
+             return (
+              <SmartField label={label} required={isRequired} error={lastNameError} touched={touched[field.field_name]} icon={User} hint="Letters only">
                 <Input 
                   value={formData[field.field_name]} 
                   placeholder={`Enter ${label.toLowerCase()}`}
@@ -1348,13 +1365,19 @@ const StudentAdmission = () => {
        if((field.field_name === 'national_id_no' || field.field_name === 'aadhar_no' || field.field_name === 'father_aadhar_no' || field.field_name === 'mother_aadhar_no') && fieldValue && fieldValue.replace(/\s/g, '').length !== 12) {
            newErrors[mappedFieldName] = "Valid 12-digit Aadhar No is required";
        }
-       // TC-20 to TC-24 FIX: Name field validations - alphabets and spaces only, minimum 2 characters
-       if((field.field_name === 'first_name' || field.field_name === 'last_name' || field.field_name === 'father_name' || field.field_name === 'mother_name' || field.field_name === 'guardian_name') && fieldValue) {
+       // TC-20 to TC-24 FIX: Name field validations - alphabets and spaces only, minimum 2 characters (except last_name)
+       if((field.field_name === 'first_name' || field.field_name === 'father_name' || field.field_name === 'mother_name' || field.field_name === 'guardian_name') && fieldValue) {
            const trimmedName = fieldValue.trim();
            if (trimmedName.length < 2) {
                newErrors[mappedFieldName] = `${field.field_label} must be at least 2 characters`;
            } else if (/[^a-zA-Z\s.]/.test(trimmedName)) {
                // Only allow letters, spaces, and periods (for initials like "M.S. Dhoni")
+               newErrors[mappedFieldName] = `${field.field_label} should contain only letters and spaces`;
+           }
+       }
+       // last_name - only validate for letters/spaces, no min length
+       if(field.field_name === 'last_name' && fieldValue) {
+           if (/[^a-zA-Z\s.]/.test(fieldValue.trim())) {
                newErrors[mappedFieldName] = `${field.field_label} should contain only letters and spaces`;
            }
        }

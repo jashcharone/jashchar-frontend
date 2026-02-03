@@ -129,6 +129,32 @@ const findBestFieldMatch = (sourceColumn, targetFields, erpMappings) => {
 
 // Known ERP field mappings for easy migration
 const ERP_FIELD_MAPPINGS = {
+    // MCB ERP / Srishaileshwara Vidyakendra Format
+    'MCB': {
+        'admission_no': ['Admission No/Reference code', 'Reference Code', 'Enrollment Code'],
+        'first_name': ['Student Name', 'StudentName'],
+        'date_of_birth': ['Date Of Birth', 'DOB', 'DateOfBirth'],
+        'gender': ['Gender'],
+        'father_name': ['Father Name', 'FatherName'],
+        'father_phone': ['Father Mobile No', 'Father Mobile', 'FatherMobile'],
+        'father_email': ['Father EmailID', 'Father Email'],
+        'mother_name': ['Mother Name', 'MotherName'],
+        'mother_phone': ['Mother Mobile No', 'Mother Mobile', 'MotherMobile'],
+        'mother_email': ['Mother EmailID', 'Mother Email'],
+        'address': ['Address'],
+        'aadhar_no': ['Student Aadhaar Number', 'Aadhaar Number', 'Aadhaar No'],
+        'phone': ['MobileNumber', 'Mobile Number'],
+        'email': ['Email'],
+        'roll_number': ['GR / EMIS / STS (unique No.)', 'GR No', 'EMIS No'],
+        'religion': ['Religion Name'],
+        'caste': ['Cast Name', 'Sub Caste'],
+        'category': ['Category', 'Reservation Type'],
+        'previous_school': ['Previous School'],
+        'nationality': ['Country Name'],
+        'state': ['State Name'],
+        'city': ['Village Or City'],
+        'mother_tongue': ['Mother Tongue'],
+    },
     'Fedena': {
         'admission_no': ['admission_no', 'admission_number', 'adm_no'],
         'first_name': ['first_name', 'firstname', 'student_name'],
@@ -481,13 +507,37 @@ const SmartSanitizer = {
         return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) ? email : '';
     },
     
-    // Date Sanitizer - Handles multiple formats
+    // Date Sanitizer - Handles multiple formats including MCB ERP format
     date: (val) => {
         if (!val) return null;
         const str = String(val).trim();
         
         // Already in YYYY-MM-DD format
         if (/^\d{4}-\d{2}-\d{2}$/.test(str)) return str;
+        
+        // MCB ERP Format: "08 Oct 2018" or "11 Jun 2018" (DD MMM YYYY)
+        const monthMap = {
+            'jan': '01', 'feb': '02', 'mar': '03', 'apr': '04', 'may': '05', 'jun': '06',
+            'jul': '07', 'aug': '08', 'sep': '09', 'oct': '10', 'nov': '11', 'dec': '12'
+        };
+        const mcbMatch = str.match(/^(\d{1,2})\s+([A-Za-z]{3})\s+(\d{4})$/);
+        if (mcbMatch) {
+            const [, d, m, y] = mcbMatch;
+            const month = monthMap[m.toLowerCase()];
+            if (month) {
+                return `${y}-${month}-${d.padStart(2, '0')}`;
+            }
+        }
+        
+        // Also handle "01 Jan 2024" format
+        const longMonthMatch = str.match(/^(\d{1,2})\s+([A-Za-z]+)\s+(\d{4})$/);
+        if (longMonthMatch) {
+            const [, d, m, y] = longMonthMatch;
+            const month = monthMap[m.toLowerCase().substring(0, 3)];
+            if (month) {
+                return `${y}-${month}-${d.padStart(2, '0')}`;
+            }
+        }
         
         // DD-MM-YYYY or DD/MM/YYYY (Indian format)
         if (/^\d{1,2}[-\/]\d{1,2}[-\/]\d{4}$/.test(str)) {

@@ -97,12 +97,15 @@ export const errorLoggerService = {
      */
     getErrors: async (filters = {}) => {
         try {
+            const { data: { session } } = await supabase.auth.getSession();
             const params = new URLSearchParams();
             if (filters.status && filters.status !== 'All') params.append('status', filters.status);
             if (filters.severity && filters.severity !== 'All') params.append('severity', filters.severity);
             if (filters.search) params.append('search', filters.search);
             
-            const response = await retryWithBackoff(() => axios.get(`${API_URL}/queries-finder/logs?${params.toString()}`));
+            const response = await retryWithBackoff(() => axios.get(`${API_URL}/queries-finder/logs?${params.toString()}`, {
+                headers: { Authorization: `Bearer ${session?.access_token}` }
+            }));
             return response.data.data;
         } catch (error) {
             console.error('Failed to fetch logs:', error);
@@ -111,7 +114,10 @@ export const errorLoggerService = {
     },
 
     updateStatus: async (id, status) => {
-        await retryWithBackoff(() => axios.patch(`${API_URL}/queries-finder/logs/${id}/status`, { status }));
+        const { data: { session } } = await supabase.auth.getSession();
+        await retryWithBackoff(() => axios.patch(`${API_URL}/queries-finder/logs/${id}/status`, { status }, {
+            headers: { Authorization: `Bearer ${session?.access_token}` }
+        }));
     },
 
     getSystemStatus: async () => {

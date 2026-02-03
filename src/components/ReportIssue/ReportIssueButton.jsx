@@ -189,18 +189,56 @@ const ReportDialog = ({ isOpen, onClose }) => {
 
     const handleCaptureScreenshot = async () => {
         setCapturingScreenshot(true);
-        // Close dialog briefly to capture clean screenshot
-        const img = await captureScreenshot();
-        setScreenshot(img);
-        setCapturingScreenshot(false);
-        if (img) {
-            toast({ title: '📸 Screenshot Captured!', description: 'Screenshot attached to your report.' });
-        } else {
+        
+        try {
+            // Hide dialog temporarily to capture clean screenshot
+            const dialogElements = document.querySelectorAll('[role="dialog"], [data-radix-portal]');
+            const overlayElements = document.querySelectorAll('[data-radix-dialog-overlay]');
+            
+            // Store original styles
+            const originalStyles = [];
+            dialogElements.forEach((el, i) => {
+                originalStyles.push({ el, display: el.style.display, visibility: el.style.visibility });
+                el.style.visibility = 'hidden';
+            });
+            overlayElements.forEach(el => {
+                el.style.visibility = 'hidden';
+            });
+            
+            // Wait a moment for styles to apply
+            await new Promise(resolve => setTimeout(resolve, 100));
+            
+            // Capture screenshot
+            const img = await captureScreenshot();
+            
+            // Restore dialog visibility
+            originalStyles.forEach(({ el, display, visibility }) => {
+                el.style.visibility = visibility || '';
+            });
+            overlayElements.forEach(el => {
+                el.style.visibility = '';
+            });
+            
+            setScreenshot(img);
+            
+            if (img) {
+                toast({ title: '📸 Screenshot Captured!', description: 'Screenshot attached to your report.' });
+            } else {
+                toast({ 
+                    title: 'Screenshot not available', 
+                    description: 'You can describe the issue in detail instead.',
+                    variant: 'default'
+                });
+            }
+        } catch (error) {
+            console.error('Screenshot capture error:', error);
             toast({ 
-                title: 'Screenshot not available', 
-                description: 'You can describe the issue in detail instead.',
+                title: 'Screenshot failed', 
+                description: 'Please describe the issue in detail instead.',
                 variant: 'default'
             });
+        } finally {
+            setCapturingScreenshot(false);
         }
     };
 

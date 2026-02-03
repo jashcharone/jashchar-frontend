@@ -47,7 +47,6 @@ const TransportFeesMaster = () => {
                 const existing = feeMap.get(month);
                 return existing || {
                     branch_id: branchId,
-                    session_id: currentSessionId,
                     month: month,
                     due_date: null,
                     fine_type: 'none',
@@ -109,7 +108,6 @@ const TransportFeesMaster = () => {
             const upsertData = feesMaster.map(({ id, ...rest }) => ({
                  ...rest,
                  branch_id: branchId || null,
-                 session_id: currentSessionId,
                  fine_value: rest.fine_type !== 'none' ? rest.fine_value : null,
                  due_date: rest.due_date || null
             }));

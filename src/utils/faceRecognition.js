@@ -118,6 +118,30 @@ export const detectSingleFace = async (input) => {
 };
 
 /**
+ * Detect ALL faces in frame with descriptors - for multi-face attendance
+ * @param {HTMLImageElement|HTMLVideoElement|HTMLCanvasElement} input
+ * @returns {Promise<Array>} Array of face detections with descriptors
+ */
+export const detectAllFacesWithDescriptors = async (input) => {
+    if (!modelsLoaded) {
+        throw new Error('Face models not loaded. Call loadFaceModels() first.');
+    }
+
+    const options = new faceapi.TinyFaceDetectorOptions({
+        inputSize: 512,  // Higher resolution for multiple faces
+        scoreThreshold: 0.4  // Lower threshold to catch more faces
+    });
+
+    const detections = await faceapi
+        .detectAllFaces(input, options)
+        .withFaceLandmarks()
+        .withFaceDescriptors()
+        .withFaceExpressions();
+
+    return detections || [];
+};
+
+/**
  * Get face descriptor (128-dimensional vector) for face matching
  * @param {HTMLImageElement|HTMLVideoElement|HTMLCanvasElement} input
  * @returns {Promise<Float32Array|null>} Face descriptor array
@@ -343,6 +367,7 @@ export default {
     areModelsLoaded,
     detectFaces,
     detectSingleFace,
+    detectAllFacesWithDescriptors,
     getFaceDescriptor,
     compareFaces,
     facesMatch,

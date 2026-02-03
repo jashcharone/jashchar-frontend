@@ -252,6 +252,7 @@ const LiveClasses = lazy(() => import('@/pages/super-admin/gmeet-live-classes/Li
 const AttendanceByDate = lazy(() => import('@/pages/super-admin/attendance/AttendanceByDate'));
 const ApproveStudentLeave = lazy(() => import('@/pages/super-admin/attendance/ApproveStudentLeave'));
 const StaffAttendance = lazy(() => import('@/pages/super-admin/attendance/StaffAttendance'));
+const AttendanceReport = lazy(() => import('@/pages/super-admin/attendance/AttendanceReport'));
 // Advanced Attendance (Futuristic Module)
 const LiveAttendanceDashboard = lazy(() => import('@/pages/super-admin/attendance/LiveAttendanceDashboard'));
 const QRCodeGenerator = lazy(() => import('@/pages/super-admin/attendance/QRCodeGenerator'));
@@ -1197,6 +1198,7 @@ function App() {
             <Route path={ROUTES.SUPER_ADMIN.ATTENDANCE_BY_DATE} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'teacher']} requiredModule="attendance"><AttendanceByDate /></ProtectedRoute>} />
             <Route path={ROUTES.SUPER_ADMIN.APPROVE_LEAVE} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'teacher']} requiredModule="attendance"><ApproveStudentLeave /></ProtectedRoute>} />
             <Route path={ROUTES.SUPER_ADMIN.STAFF_ATTENDANCE} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="attendance"><StaffAttendance /></ProtectedRoute>} />
+            <Route path={ROUTES.SUPER_ADMIN.ATTENDANCE_REPORT} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'teacher']} requiredModule="attendance"><AttendanceReport /></ProtectedRoute>} />
             {/* Advanced Attendance (Futuristic) */}
             <Route path={ROUTES.SUPER_ADMIN.LIVE_ATTENDANCE_DASHBOARD} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="attendance"><LiveAttendanceDashboard /></ProtectedRoute>} />
             <Route path={ROUTES.SUPER_ADMIN.QR_CODE_GENERATOR} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'teacher']} requiredModule="attendance"><QRCodeGenerator /></ProtectedRoute>} />

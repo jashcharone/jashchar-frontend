@@ -28,6 +28,7 @@ import {
     loadFaceModels,
     areModelsLoaded,
     detectSingleFace,
+    detectAllFacesWithDescriptors,
     findBestMatch,
     stringToDescriptor,
     analyzeFaceQuality
@@ -84,10 +85,12 @@ const LiveFaceAttendance = () => {
     const [modelsLoading, setModelsLoading] = useState(true);
     const [modelLoadProgress, setModelLoadProgress] = useState('');
     
-    // Face detection state
+    // Face detection state - MULTIPLE FACES SUPPORT
     const [currentFace, setCurrentFace] = useState(null);
     const [matchedPerson, setMatchedPerson] = useState(null);
     const [matchConfidence, setMatchConfidence] = useState(0);
+    const [detectedFaces, setDetectedFaces] = useState([]); // All faces in frame
+    const [matchedPersons, setMatchedPersons] = useState([]); // All matched persons
     
     // Registered faces database
     const [registeredFaces, setRegisteredFaces] = useState([]);
@@ -100,7 +103,7 @@ const LiveFaceAttendance = () => {
     // Settings
     const [soundEnabled, setSoundEnabled] = useState(true);
     const [autoMark, setAutoMark] = useState(true);
-    const [matchThreshold, setMatchThreshold] = useState(0.6);
+    const [matchThreshold, setMatchThreshold] = useState(0.5); // Lower threshold for better detection
     
     // Recently marked (to prevent duplicates within cooldown)
     const [recentlyMarked, setRecentlyMarked] = useState(new Set());
@@ -317,7 +320,7 @@ const LiveFaceAttendance = () => {
     };
     
     // ═══════════════════════════════════════════════════════════════════════════════════════════════
-    // FACE DETECTION LOOP
+    // FACE DETECTION LOOP - MULTI-FACE SUPPORT
     // ═══════════════════════════════════════════════════════════════════════════════════════════════
     
     useEffect(() => {
@@ -327,7 +330,7 @@ const LiveFaceAttendance = () => {
         const detectAndMatch = async () => {
             if (!isRunning || !videoRef.current || !isScanning || modelsLoading || !areModelsLoaded()) {
                 if (isRunning && isScanning) {
-                    animationId = requestAnimationFrame(() => setTimeout(detectAndMatch, 200));
+                    animationId = requestAnimationFrame(() => setTimeout(detectAndMatch, 100));
                 }
                 return;
             }
@@ -336,40 +339,79 @@ const LiveFaceAttendance = () => {
             if (videoRef.current.readyState < 2) {
                 console.log('[LiveAttendance] Video not ready yet, waiting...');
                 if (isRunning && isScanning) {
-                    animationId = requestAnimationFrame(() => setTimeout(detectAndMatch, 200));
+                    animationId = requestAnimationFrame(() => setTimeout(detectAndMatch, 100));
                 }
                 return;
             }
             
             try {
-                console.log('[LiveAttendance] Running face detection...');
-                const detection = await detectSingleFace(videoRef.current);
+                // Detect ALL faces in frame for multi-face recognition
+                const detections = await detectAllFacesWithDescriptors(videoRef.current);
                 
-                if (detection) {
-                    const quality = analyzeFaceQuality(detection);
-                    setCurrentFace({ detection, quality });
+                if (detections && detections.length > 0) {
+                    console.log(`[LiveAttendance] Detected ${detections.length} faces`);
+                    setDetectedFaces(detections);
                     
-                    // Draw face box
-                    drawFaceBox(detection, quality);
+                    // Process each detected face
+                    const newMatchedPersons = [];
                     
-                    // Try to match if quality is good enough
-                    if (quality.isGood && registeredFaces.length > 0) {
-                        const result = findBestMatch(detection.descriptor, registeredFaces, matchThreshold);
+                    for (const detection of detections) {
+                        const quality = analyzeFaceQuality(detection);
                         
-                        if (result.match) {
-                            setMatchedPerson(result.match);
-                            setMatchConfidence(result.confidence);
+                        // Try to match face with registered faces
+                        if (registeredFaces.length > 0 && detection.descriptor) {
+                            const result = findBestMatch(detection.descriptor, registeredFaces, matchThreshold);
                             
-                            // Auto-mark attendance if enabled
-                            if (autoMark && !recentlyMarked.has(result.match.person_id)) {
-                                await markAttendance(result.match, result.confidence);
+                            if (result.match) {
+                                newMatchedPersons.push({
+                                    detection,
+                                    quality,
+                                    match: result.match,
+                                    confidence: result.confidence
+                                });
+                                
+                                // Auto-mark attendance if enabled
+                                if (autoMark && !recentlyMarked.has(result.match.person_id)) {
+                                    await markAttendance(result.match, result.confidence);
+                                }
+                            } else {
+                                // Unknown face
+                                newMatchedPersons.push({
+                                    detection,
+                                    quality,
+                                    match: null,
+                                    confidence: 0
+                                });
                             }
                         } else {
-                            setMatchedPerson(null);
-                            setMatchConfidence(0);
+                            newMatchedPersons.push({
+                                detection,
+                                quality,
+                                match: null,
+                                confidence: 0
+                            });
                         }
                     }
+                    
+                    setMatchedPersons(newMatchedPersons);
+                    
+                    // For backward compatibility - set first matched person
+                    const firstMatch = newMatchedPersons.find(p => p.match);
+                    if (firstMatch) {
+                        setMatchedPerson(firstMatch.match);
+                        setMatchConfidence(firstMatch.confidence);
+                        setCurrentFace({ detection: firstMatch.detection, quality: firstMatch.quality });
+                    } else if (newMatchedPersons.length > 0) {
+                        setMatchedPerson(null);
+                        setMatchConfidence(0);
+                        setCurrentFace({ detection: newMatchedPersons[0].detection, quality: newMatchedPersons[0].quality });
+                    }
+                    
+                    // Draw all face boxes
+                    drawAllFaceBoxes(newMatchedPersons);
                 } else {
+                    setDetectedFaces([]);
+                    setMatchedPersons([]);
                     setCurrentFace(null);
                     setMatchedPerson(null);
                     setMatchConfidence(0);
@@ -379,8 +421,9 @@ const LiveFaceAttendance = () => {
                 console.error('Detection error:', error);
             }
             
+            // Faster refresh rate for smoother detection (100ms = 10fps)
             if (isRunning && isScanning) {
-                animationId = requestAnimationFrame(() => setTimeout(detectAndMatch, 150));
+                animationId = requestAnimationFrame(() => setTimeout(detectAndMatch, 100));
             }
         };
         
@@ -394,7 +437,11 @@ const LiveFaceAttendance = () => {
         };
     }, [isScanning, modelsLoading, registeredFaces, autoMark, matchThreshold, recentlyMarked]);
     
-    const drawFaceBox = (detection, quality) => {
+    // Draw ALL face boxes - multi-face support
+    // Note: Both video and canvas have CSS scaleX(-1) for mirror effect
+    // Detection runs on original video, so we use original box coordinates
+    // CSS mirror will flip them to match the mirrored video display
+    const drawAllFaceBoxes = (matchedPersons) => {
         if (!overlayCanvasRef.current || !videoRef.current) return;
         
         const canvas = overlayCanvasRef.current;
@@ -404,31 +451,113 @@ const LiveFaceAttendance = () => {
         const ctx = canvas.getContext('2d');
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         
-        const box = detection.detection.box;
-        
-        // Color based on match status
-        let color = '#ffff00'; // Yellow - scanning
-        if (matchedPerson) {
-            color = '#00ff00'; // Green - matched
-        } else if (!quality.isGood) {
-            color = '#ff0000'; // Red - poor quality
-        }
-        
-        ctx.strokeStyle = color;
-        ctx.lineWidth = 4;
-        ctx.strokeRect(canvas.width - box.x - box.width, box.y, box.width, box.height);
-        
-        // Draw label
-        ctx.fillStyle = color;
-        ctx.font = 'bold 18px Arial';
-        const labelX = canvas.width - box.x - box.width;
-        
-        if (matchedPerson) {
-            ctx.fillText(`✓ ${matchedPerson.person_name}`, labelX, box.y - 10);
-            ctx.font = '14px Arial';
-            ctx.fillText(`${Math.round(matchConfidence * 100)}% match`, labelX, box.y + box.height + 20);
-        } else {
-            ctx.fillText('Scanning...', labelX, box.y - 10);
+        for (const person of matchedPersons) {
+            const { detection, quality, match, confidence } = person;
+            const box = detection.detection.box;
+            
+            // Color based on match status
+            let color = '#ffff00'; // Yellow - scanning/unknown
+            if (match) {
+                color = '#00ff00'; // Green - matched
+            } else if (!quality.isGood) {
+                color = '#ff0000'; // Red - poor quality
+            }
+            
+            // Use original box coordinates - CSS scaleX(-1) will mirror them
+            const boxX = box.x;
+            const boxY = box.y;
+            
+            // Draw face box with corner accents
+            ctx.strokeStyle = color;
+            ctx.lineWidth = 3;
+            ctx.strokeRect(boxX, boxY, box.width, box.height);
+            
+            // Draw corner accents for better visibility
+            const cornerLength = Math.min(box.width, box.height) * 0.2;
+            ctx.lineWidth = 4;
+            // Top-left
+            ctx.beginPath();
+            ctx.moveTo(boxX, boxY + cornerLength);
+            ctx.lineTo(boxX, boxY);
+            ctx.lineTo(boxX + cornerLength, boxY);
+            ctx.stroke();
+            // Top-right
+            ctx.beginPath();
+            ctx.moveTo(boxX + box.width - cornerLength, boxY);
+            ctx.lineTo(boxX + box.width, boxY);
+            ctx.lineTo(boxX + box.width, boxY + cornerLength);
+            ctx.stroke();
+            // Bottom-left
+            ctx.beginPath();
+            ctx.moveTo(boxX, boxY + box.height - cornerLength);
+            ctx.lineTo(boxX, boxY + box.height);
+            ctx.lineTo(boxX + cornerLength, boxY + box.height);
+            ctx.stroke();
+            // Bottom-right
+            ctx.beginPath();
+            ctx.moveTo(boxX + box.width - cornerLength, boxY + box.height);
+            ctx.lineTo(boxX + box.width, boxY + box.height);
+            ctx.lineTo(boxX + box.width, boxY + box.height - cornerLength);
+            ctx.stroke();
+            
+            // Draw label above box
+            // Since canvas has CSS scaleX(-1), we need to flip text to make it readable
+            ctx.save();
+            const labelX = boxX + box.width / 2;
+            const labelY = boxY - 10;
+            
+            // Flip text horizontally at label position so CSS mirror makes it readable
+            ctx.translate(labelX, 0);
+            ctx.scale(-1, 1);
+            ctx.translate(-labelX, 0);
+            
+            ctx.font = 'bold 18px Arial';
+            ctx.textAlign = 'center';
+            
+            if (match) {
+                const personName = match.person_name || 'Unknown';
+                const labelText = `✓ ${personName}`;
+                const textWidth = ctx.measureText(labelText).width;
+                
+                // Background
+                ctx.fillStyle = 'rgba(0, 128, 0, 0.85)';
+                ctx.fillRect(labelX - textWidth/2 - 12, labelY - 22, textWidth + 24, 28);
+                
+                // Text
+                ctx.fillStyle = '#ffffff';
+                ctx.fillText(labelText, labelX, labelY);
+                
+                ctx.restore();
+                
+                // Confidence below box
+                ctx.save();
+                const confY = boxY + box.height + 20;
+                ctx.translate(labelX, 0);
+                ctx.scale(-1, 1);
+                ctx.translate(-labelX, 0);
+                
+                ctx.font = '14px Arial';
+                ctx.textAlign = 'center';
+                const confText = `${Math.round(confidence * 100)}%`;
+                const confWidth = ctx.measureText(confText).width;
+                ctx.fillStyle = 'rgba(0, 128, 0, 0.85)';
+                ctx.fillRect(labelX - confWidth/2 - 8, confY - 14, confWidth + 16, 20);
+                ctx.fillStyle = '#ffffff';
+                ctx.fillText(confText, labelX, confY);
+                ctx.restore();
+            } else {
+                const labelText = quality.isGood ? 'Unknown' : 'Move closer';
+                const textWidth = ctx.measureText(labelText).width;
+                
+                // Background
+                ctx.fillStyle = quality.isGood ? 'rgba(200, 150, 0, 0.85)' : 'rgba(200, 0, 0, 0.85)';
+                ctx.fillRect(labelX - textWidth/2 - 12, labelY - 22, textWidth + 24, 28);
+                
+                // Text
+                ctx.fillStyle = '#ffffff';
+                ctx.fillText(labelText, labelX, labelY);
+                ctx.restore();
+            }
         }
     };
     
@@ -698,27 +827,52 @@ const LiveFaceAttendance = () => {
                                                 style={{ transform: 'scaleX(-1)' }}
                                             />
                                             
-                                            {/* Match Result Overlay */}
-                                            {matchedPerson && (
+                                            {/* Match Result Overlay - Shows ALL matched persons */}
+                                            {matchedPersons.filter(p => p.match).length > 0 && (
                                                 <motion.div
                                                     initial={{ opacity: 0, y: 20 }}
                                                     animate={{ opacity: 1, y: 0 }}
                                                     className="absolute bottom-4 left-4 right-4 bg-green-500/90 text-white p-4 rounded-xl"
                                                 >
-                                                    <div className="flex items-center gap-4">
-                                                        <CheckCircle2 className="w-12 h-12" />
-                                                        <div className="flex-1">
-                                                            <p className="text-xl font-bold">{matchedPerson.person_name}</p>
-                                                            <p className="text-sm opacity-90">
-                                                                {matchedPerson.person_type === 'student' ? '🎓 Student' : '💼 Staff'}
-                                                                {' • '}
-                                                                {Math.round(matchConfidence * 100)}% confidence
-                                                            </p>
+                                                    {matchedPersons.filter(p => p.match).length === 1 ? (
+                                                        // Single person matched
+                                                        <div className="flex items-center gap-4">
+                                                            <CheckCircle2 className="w-12 h-12" />
+                                                            <div className="flex-1">
+                                                                <p className="text-xl font-bold">{matchedPersons.find(p => p.match)?.match?.person_name}</p>
+                                                                <p className="text-sm opacity-90">
+                                                                    {matchedPersons.find(p => p.match)?.match?.person_type === 'student' ? '🎓 Student' : '💼 Staff'}
+                                                                    {' • '}
+                                                                    {Math.round((matchedPersons.find(p => p.match)?.confidence || 0) * 100)}% confidence
+                                                                </p>
+                                                            </div>
+                                                            <Badge className="bg-white text-green-600 text-lg px-4 py-2">
+                                                                PRESENT
+                                                            </Badge>
                                                         </div>
-                                                        <Badge className="bg-white text-green-600 text-lg px-4 py-2">
-                                                            PRESENT
-                                                        </Badge>
-                                                    </div>
+                                                    ) : (
+                                                        // Multiple persons matched
+                                                        <div className="space-y-2">
+                                                            <div className="flex items-center gap-2 mb-2">
+                                                                <Users className="w-6 h-6" />
+                                                                <span className="font-bold">{matchedPersons.filter(p => p.match).length} People Recognized</span>
+                                                            </div>
+                                                            <div className="grid grid-cols-2 gap-2">
+                                                                {matchedPersons.filter(p => p.match).slice(0, 4).map((p, idx) => (
+                                                                    <div key={idx} className="flex items-center gap-2 bg-white/20 rounded-lg p-2">
+                                                                        <CheckCircle2 className="w-5 h-5" />
+                                                                        <div className="flex-1 min-w-0">
+                                                                            <p className="font-medium text-sm truncate">{p.match.person_name}</p>
+                                                                            <p className="text-xs opacity-80">{Math.round(p.confidence * 100)}%</p>
+                                                                        </div>
+                                                                    </div>
+                                                                ))}
+                                                            </div>
+                                                            {matchedPersons.filter(p => p.match).length > 4 && (
+                                                                <p className="text-sm opacity-80 text-center">+{matchedPersons.filter(p => p.match).length - 4} more</p>
+                                                            )}
+                                                        </div>
+                                                    )}
                                                 </motion.div>
                                             )}
                                         </>
@@ -788,6 +942,18 @@ const LiveFaceAttendance = () => {
                                         <p className="text-sm text-muted-foreground">Total</p>
                                     </div>
                                 </div>
+                                {/* Currently Detected Faces */}
+                                {isScanning && detectedFaces.length > 0 && (
+                                    <div className="mt-4 p-3 bg-purple-500/10 rounded-lg">
+                                        <p className="text-sm font-medium text-purple-600">
+                                            <ScanFace className="w-4 h-4 inline mr-2" />
+                                            {detectedFaces.length} face{detectedFaces.length !== 1 ? 's' : ''} in frame
+                                        </p>
+                                        <p className="text-xs text-muted-foreground mt-1">
+                                            {matchedPersons.filter(p => p.match).length} recognized
+                                        </p>
+                                    </div>
+                                )}
                             </CardContent>
                         </Card>
                         

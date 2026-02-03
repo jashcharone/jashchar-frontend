@@ -63,12 +63,13 @@ const PublicForgotPassword = () => {
             channel: 'email'
         });
 
-        if (response.data.otp_sent) {
-            toast({ title: "OTP Sent", description: "Please check your Email for the OTP." });
-            setStep(2); // Move to OTP Step
-        } else {
-            throw new Error(response.data.message || 'Failed to send OTP');
-        }
+        // Security: Always show success message (don't reveal if account exists)
+        // Backend returns otp_sent: true/false but we proceed either way for security
+        toast({ 
+          title: "Check your inbox", 
+          description: "If an account exists with this email, you will receive an OTP." 
+        });
+        setStep(2); // Move to OTP Step
 
       } else if (isMobile(identifier)) {
         setMethod('mobile');
@@ -78,12 +79,12 @@ const PublicForgotPassword = () => {
             channel: 'whatsapp'
         });
 
-        if (response.data.otp_sent) {
-            toast({ title: "OTP Sent", description: "Please check your WhatsApp for the OTP." });
-            setStep(2); // Move to OTP Step
-        } else {
-            throw new Error(response.data.message || 'Failed to send OTP');
-        }
+        // Security: Always show success message (don't reveal if account exists)
+        toast({ 
+          title: "Check your WhatsApp", 
+          description: "If an account exists with this number, you will receive an OTP." 
+        });
+        setStep(2); // Move to OTP Step
       } else {
         toast({ variant: 'destructive', title: 'Invalid Input', description: 'Please enter a valid email or mobile number.' });
       }

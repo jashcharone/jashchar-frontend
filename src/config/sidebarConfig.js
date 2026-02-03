@@ -325,13 +325,13 @@ export const BASE_SIDEBAR = {
       title: 'Transport',
       icon: Bus,
       submenu: [
+        { title: 'Fees Master', path: ROUTES.SUPER_ADMIN.TRANSPORT_FEES_MASTER },
+        { title: 'Pickup Points', path: ROUTES.SUPER_ADMIN.PICKUP_POINTS },
         { title: 'Routes', path: ROUTES.SUPER_ADMIN.TRANSPORT_ROUTES },
         { title: 'Vehicles', path: ROUTES.SUPER_ADMIN.TRANSPORT_VEHICLES },
-        { title: 'Pickup Points', path: ROUTES.SUPER_ADMIN.PICKUP_POINTS },
-        { title: 'Route Pickup Points', path: ROUTES.SUPER_ADMIN.ROUTE_PICKUP_POINT },
         { title: 'Assign Vehicle', path: ROUTES.SUPER_ADMIN.ASSIGN_VEHICLE },
+        { title: 'Route Pickup Points', path: ROUTES.SUPER_ADMIN.ROUTE_PICKUP_POINT },
         { title: 'Student Transport Fees', path: ROUTES.SUPER_ADMIN.STUDENT_TRANSPORT_FEES },
-        { title: 'Transport Fee Master', path: ROUTES.SUPER_ADMIN.TRANSPORT_FEES_MASTER },
       ],
     },
     {

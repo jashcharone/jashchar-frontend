@@ -178,8 +178,13 @@ const FuturisticChartCard = ({ title, subtitle, children, gradient = 'primary', 
 // ============================================================================
 const QuickActionCard = ({ name, path, icon: Icon, gradient, description, onClick }) => (
   <button
-    onClick={onClick}
-    className="group relative w-full overflow-hidden rounded-2xl bg-card border border-border/50 p-4 text-left transition-all duration-300 hover:shadow-xl hover:shadow-primary/10 hover:-translate-y-1"
+    type="button"
+    onClick={(e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      if (onClick) onClick();
+    }}
+    className="group relative w-full overflow-hidden rounded-2xl bg-card border border-border/50 p-4 text-left transition-all duration-300 hover:shadow-xl hover:shadow-primary/10 hover:-translate-y-1 cursor-pointer"
   >
     {/* Hover Background Gradient */}
     <div className={cn(
@@ -348,15 +353,16 @@ const SchoolOwnerDashboard = () => {
             .eq('branch_id', branchId)
             .or('is_disabled.is.null,is_disabled.eq.false'),
           supabase
-            .from('fees_collection')
-            .select('amount_paid')
+            .from('fee_payments')
+            .select('amount')
             .eq('branch_id', branchId)
             .gte('payment_date', startOfMonth)
+            .is('reverted_at', null)
         ]);
 
         const totalStudents = studentsRes.count || 0;
         const totalStaff = staffRes.count || 0;
-        const monthlyIncome = incomeRes.data?.reduce((sum, item) => sum + (item.amount_paid || 0), 0) || 0;
+        const monthlyIncome = incomeRes.data?.reduce((sum, item) => sum + (item.amount || 0), 0) || 0;
 
         setStatsData({
           total_students: totalStudents,

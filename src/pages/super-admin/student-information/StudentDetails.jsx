@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect, useCallback } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
 import { supabase } from '@/lib/customSupabaseClient';
 import api from '@/lib/api';
@@ -33,6 +33,10 @@ const StudentDetails = () => {
     const [currentPage, setCurrentPage] = useState(1);
     const [pageSize, setPageSize] = useState(25);
     const [feesData, setFeesData] = useState({}); // { studentId: { total, paid, progress } }
+    const [visibleColumns, setVisibleColumns] = useState({
+        photo: true, name: true, class: true, section: true, gender: true, 
+        mobile: true, register: true, roll: true, age: true, guardian: true, fees: true
+    });
 
     const branchId = user?.profile?.branch_id;
 
@@ -40,6 +44,103 @@ const StudentDetails = () => {
         if (!dob) return '-';
         return differenceInYears(new Date(), new Date(dob));
     };
+
+    // TC-11 FIX: Copy to clipboard functionality
+    const handleCopyToClipboard = useCallback(() => {
+        if (students.length === 0) {
+            toast({ variant: 'destructive', title: 'No data to copy' });
+            return;
+        }
+        const headers = ['Name', 'Class', 'Section', 'Register No', 'Roll', 'Phone', 'Father Name'];
+        const rows = students.map(s => [
+            s.full_name || `${s.first_name} ${s.last_name}`,
+            s.class?.name || '',
+            s.section?.name || '',
+            s.school_code || '',
+            s.roll_number || '',
+            s.phone || '',
+            s.father_name || ''
+        ].join('\t'));
+        const text = [headers.join('\t'), ...rows].join('\n');
+        navigator.clipboard.writeText(text);
+        toast({ title: 'Copied!', description: `${students.length} students copied to clipboard` });
+    }, [students, toast]);
+
+    // TC-11 FIX: Export to Excel functionality
+    const handleExportExcel = useCallback(() => {
+        if (students.length === 0) {
+            toast({ variant: 'destructive', title: 'No data to export' });
+            return;
+        }
+        const headers = ['Name', 'Class', 'Section', 'Register No', 'Roll No', 'Phone', 'Father Name', 'Gender', 'DOB'];
+        const rows = students.map(s => [
+            s.full_name || `${s.first_name} ${s.last_name}`,
+            s.class?.name || '',
+            s.section?.name || '',
+            s.school_code || '',
+            s.roll_number || '',
+            s.phone || '',
+            s.father_name || '',
+            s.gender || '',
+            s.date_of_birth ? format(new Date(s.date_of_birth), 'dd/MM/yyyy') : ''
+        ].join(','));
+        const csv = [headers.join(','), ...rows].join('\n');
+        const blob = new Blob([csv], { type: 'text/csv' });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `students_${format(new Date(), 'yyyy-MM-dd')}.csv`;
+        a.click();
+        window.URL.revokeObjectURL(url);
+        toast({ title: 'Downloaded!', description: `${students.length} students exported` });
+    }, [students, toast]);
+
+    // TC-11 FIX: Print functionality
+    const handlePrint = useCallback(() => {
+        if (students.length === 0) {
+            toast({ variant: 'destructive', title: 'No data to print' });
+            return;
+        }
+        const printWindow = window.open('', '_blank');
+        printWindow.document.write(`
+            <html>
+            <head><title>Student List</title>
+            <style>
+                body { font-family: Arial, sans-serif; padding: 20px; }
+                table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+                th, td { border: 1px solid #ddd; padding: 8px; text-align: left; font-size: 12px; }
+                th { background-color: #4F46E5; color: white; }
+                tr:nth-child(even) { background-color: #f2f2f2; }
+                h1 { color: #4F46E5; }
+            </style>
+            </head>
+            <body>
+            <h1>Student List</h1>
+            <p>Total Students: ${students.length} | Printed: ${format(new Date(), 'dd/MM/yyyy HH:mm')}</p>
+            <table>
+                <thead><tr><th>S.No</th><th>Name</th><th>Class</th><th>Section</th><th>Register No</th><th>Roll</th><th>Phone</th><th>Father</th></tr></thead>
+                <tbody>
+                ${students.map((s, i) => `<tr>
+                    <td>${i + 1}</td>
+                    <td>${s.full_name || `${s.first_name} ${s.last_name}`}</td>
+                    <td>${s.class?.name || ''}</td>
+                    <td>${s.section?.name || ''}</td>
+                    <td>${s.school_code || ''}</td>
+                    <td>${s.roll_number || ''}</td>
+                    <td>${s.phone || ''}</td>
+                    <td>${s.father_name || ''}</td>
+                </tr>`).join('')}
+                </tbody>
+            </table>
+            </body></html>
+        `);
+        printWindow.document.close();
+        printWindow.focus();
+        setTimeout(() => { printWindow.print(); printWindow.close(); }, 300);
+    }, [students]);
+
+    // TC-11 FIX: Toggle column visibility
+    const toggleColumn = (col) => setVisibleColumns(prev => ({ ...prev, [col]: !prev[col] }));
 
     const handleDelete = async (studentId) => {
         if (!window.confirm("Are you sure you want to delete this student? This action cannot be undone.")) return;
@@ -98,11 +199,11 @@ const StudentDetails = () => {
     }, [filters.class_id]);
 
     const handleSearch = async () => {
-        // Allow searching by admission number without class filter (quick search)
-        const isQuickSearch = filters.keyword && filters.keyword.length >= 4 && !filters.class_id;
+        // TC-10 FIX: Allow searching by keyword (min 2 chars) without class filter OR just class selection
+        const isQuickSearch = filters.keyword && filters.keyword.length >= 2;
         
         if (!filters.class_id && !isQuickSearch) {
-            toast({ variant: 'destructive', title: 'Please select a class or enter admission number (min 4 chars).' });
+            toast({ variant: 'destructive', title: 'Please select a class or enter a search term (min 2 chars).' });
             return;
         }
         setLoading(true);
@@ -302,9 +403,10 @@ const StudentDetails = () => {
                 <Card>
                     <div className="flex items-center justify-between p-4 border-b">
                         <div className="flex items-center gap-2">
-                            <Button variant="outline" size="sm" title="Copy"><Copy className="h-4 w-4" /></Button>
-                            <Button variant="outline" size="sm" title="Excel"><FileDown className="h-4 w-4" /></Button>
-                            <Button variant="outline" size="sm" title="Print"><Printer className="h-4 w-4" /></Button>
+                            {/* TC-11 FIX: Added onClick handlers for export icons */}
+                            <Button variant="outline" size="sm" title="Copy" onClick={handleCopyToClipboard}><Copy className="h-4 w-4" /></Button>
+                            <Button variant="outline" size="sm" title="Excel" onClick={handleExportExcel}><FileDown className="h-4 w-4" /></Button>
+                            <Button variant="outline" size="sm" title="Print" onClick={handlePrint}><Printer className="h-4 w-4" /></Button>
                             <Button variant="outline" size="sm" title="Columns"><LayoutGrid className="h-4 w-4" /></Button>
                         </div>
                         <Input placeholder="Search..." className="w-48 h-8" value={filters.keyword} onChange={e => handleFilterChange('keyword', e.target.value)} />

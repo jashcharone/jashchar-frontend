@@ -256,7 +256,8 @@ const Hostels = () => {
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="name">Hostel Name *</Label>
-                    <Input id="name" value={formData.name} onChange={(e) => setFormData({...formData, name: e.target.value})} placeholder="e.g. Boys Hostel A" required />
+                    {/* TC-27 FIX: Only allow letters, spaces, and basic punctuation for hostel names */}
+                    <Input id="name" value={formData.name} onChange={(e) => setFormData({...formData, name: e.target.value.replace(/[^a-zA-Z\s\-']/g, '')})} placeholder="e.g. Boys Hostel A" required />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="type">Hostel Type</Label>

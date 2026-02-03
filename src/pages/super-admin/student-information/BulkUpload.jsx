@@ -1212,7 +1212,7 @@ const BulkUpload = () => {
         setValidatedData(validated);
         setValidationErrors(errors);
         setDuplicates(dupes);
-        setStep(4);
+        setStep(5);  // Go to Validate step (Step 5 = "Validate" results view)
         setLoading(false);
         
         toast({
@@ -1353,7 +1353,7 @@ const BulkUpload = () => {
         
         setUploading(true);
         setProgress(0);
-        setStep(5);
+        setStep(6);  // Go to Import step (Step 6 = "Import" progress view)
         
         const results = { success: 0, failed: 0, errors: [], successRecords: [] };
         
@@ -1564,7 +1564,7 @@ const BulkUpload = () => {
         
         setUploadResults(results);
         setUploading(false);
-        setStep(6);
+        setStep(7);  // Go to Results step (Step 7 = "Results" final view)
         
         toast({
             title: results.failed === 0 ? 'Upload Successful!' : 'Upload Complete with Errors',

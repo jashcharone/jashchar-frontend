@@ -449,8 +449,15 @@ const AddEmployee = () => {
     };
 
 
+    // TC-25, TC-26 FIX: Name fields that should only accept letters and spaces
+    const nameFields = ['first_name', 'middle_name', 'last_name'];
+
     // --- Handlers ---
     const handleChange = (key, value) => {
+        // Filter invalid characters for name fields (only allow letters, spaces, and periods)
+        if (nameFields.includes(key) && value) {
+            value = value.replace(/[^a-zA-Z\s.]/g, '');
+        }
         setFormData(prev => ({ ...prev, [key]: value }));
     };
 

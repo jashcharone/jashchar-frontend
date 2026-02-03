@@ -608,6 +608,20 @@ const Login = () => {
                 {loading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : "Sign In"}
               </Button>
             </form>
+            
+            {/* TC-03 FIX: Contact Support Link */}
+            <div className="mt-6 text-center">
+              <p className="text-sm text-slate-500 dark:text-slate-400">
+                Need help?{' '}
+                <a 
+                  href="mailto:support@jashchar.com" 
+                  className="font-medium text-primary hover:underline"
+                  style={{ color: config.accent_color }}
+                >
+                  Contact Support
+                </a>
+              </p>
+            </div>
           </div>
         </motion.div>
       </div>

@@ -106,17 +106,18 @@ const StudentIdCard = () => {
 
         setLoading(true);
         try {
+            // TC-16 FIX: Corrected column names to match database schema
             let query = supabase
                 .from('student_profiles')
                 .select(`
                     id,
-                    admission_no,
+                    school_code,
                     first_name,
                     last_name,
                     gender,
                     date_of_birth,
                     blood_group,
-                    mobile_number,
+                    phone,
                     father_name,
                     mother_name,
                     current_address,
@@ -124,13 +125,14 @@ const StudentIdCard = () => {
                     state,
                     pincode,
                     photo_url,
-                    student_status,
+                    is_disabled,
+                    session_id,
                     classes:class_id(id, name),
                     sections:section_id(id, name)
                 `)
                 .eq('branch_id', branchId)
                 .eq('class_id', filters.class_id)
-                .eq('student_status', 'active');
+                .or('is_disabled.is.null,is_disabled.eq.false');
             
             if (filters.section_id) {
                 query = query.eq('section_id', filters.section_id);
@@ -273,7 +275,7 @@ const StudentIdCard = () => {
                         <div className="student-name">{fullName}</div>
                         <div className="info-row">
                             <span className="info-label">Adm No:</span>
-                            <span className="info-value">{student.admission_no}</span>
+                            <span className="info-value">{student.school_code}</span>
                         </div>
                         <div className="info-row">
                             <span className="info-label">Class:</span>
@@ -293,7 +295,7 @@ const StudentIdCard = () => {
                         </div>
                         <div className="info-row">
                             <span className="info-label">Phone:</span>
-                            <span className="info-value">{student.mobile_number || 'N/A'}</span>
+                            <span className="info-value">{student.phone || 'N/A'}</span>
                         </div>
                     </div>
                 </div>

@@ -69,10 +69,18 @@ const StudentPromotion = () => {
                 if (error) throw error;
                 setSessions(data || []);
                 
-                // Auto-select current active session
+                // For promotion: Current session = where students ARE (previous session)
+                // Promote to session = active session (new session)
                 const activeSession = data?.find(s => s.is_active);
+                const previousSession = data?.find(s => !s.is_active); // First non-active (likely previous)
+                
+                if (previousSession) {
+                    // Auto-select previous session as "Current" (where students are)
+                    setFilters(prev => ({ ...prev, current_session: previousSession.id }));
+                }
                 if (activeSession) {
-                    setFilters(prev => ({ ...prev, current_session: activeSession.id }));
+                    // Auto-select active session as "Promote To" (new session)
+                    setFilters(prev => ({ ...prev, promote_session: activeSession.id }));
                 }
             } catch (error) {
                 console.error('Error fetching sessions:', error);

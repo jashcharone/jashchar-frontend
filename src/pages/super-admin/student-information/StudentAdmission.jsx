@@ -455,7 +455,14 @@ const StudentAdmission = () => {
     return Boolean(prefix) && Number.isFinite(digit) && digit > 0 && Number.isFinite(startFrom);
   }, []);
 
+  // TC-20 to TC-24 FIX: Name fields that should only accept letters and spaces
+  const nameFields = ['first_name', 'last_name', 'father_name', 'mother_name', 'guardian_name'];
+
   const handleChange = (key, value) => {
+    // Filter invalid characters for name fields (only allow letters, spaces, and periods)
+    if (nameFields.includes(key) && value) {
+      value = value.replace(/[^a-zA-Z\s.]/g, '');
+    }
     setFormData(prev => ({ ...prev, [key]: value }));
   };
 
@@ -622,8 +629,9 @@ const StudentAdmission = () => {
               </SmartField>
             )
         case 'pincode':
+            // TC-06 FIX: Removed auto-fill hint from pincode since user types manually
             return (
-              <SmartField label={label} required={isRequired} error={errors.pincode} touched={touched.pincode} icon={MapPinned} hint="6 digits → Auto-fills">
+              <SmartField label={label} required={isRequired} error={errors.pincode} touched={touched.pincode} icon={MapPinned} hint="6 digits">
                 <div className="relative">
                   <Input
                     value={pincode}
@@ -1032,9 +1040,9 @@ const StudentAdmission = () => {
                 </div>
                 {existingParentData && !parentUsernameError && (
                   <div className="mt-2 p-2 bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800 rounded-lg flex items-center gap-2 text-sm">
-                    <Info className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                    <Info className="h-4 w-4 text-blue-600 dark:text-blue-400 flex-shrink-0" />
                     <span className="text-blue-700 dark:text-blue-300">
-                      ? ???????? ?????? {existingParentData.studentCount} ??????????????????? ({existingParentData.name}) - ???????? ??????????????? ??????????
+                      Existing parent with {existingParentData.studentCount} student(s) - {existingParentData.name}
                     </span>
                   </div>
                 )}
@@ -1340,11 +1348,14 @@ const StudentAdmission = () => {
        if((field.field_name === 'national_id_no' || field.field_name === 'aadhar_no' || field.field_name === 'father_aadhar_no' || field.field_name === 'mother_aadhar_no') && fieldValue && fieldValue.replace(/\s/g, '').length !== 12) {
            newErrors[mappedFieldName] = "Valid 12-digit Aadhar No is required";
        }
-       // Name field validations - minimum 2 characters
+       // TC-20 to TC-24 FIX: Name field validations - alphabets and spaces only, minimum 2 characters
        if((field.field_name === 'first_name' || field.field_name === 'last_name' || field.field_name === 'father_name' || field.field_name === 'mother_name' || field.field_name === 'guardian_name') && fieldValue) {
            const trimmedName = fieldValue.trim();
            if (trimmedName.length < 2) {
                newErrors[mappedFieldName] = `${field.field_label} must be at least 2 characters`;
+           } else if (/[^a-zA-Z\s.]/.test(trimmedName)) {
+               // Only allow letters, spaces, and periods (for initials like "M.S. Dhoni")
+               newErrors[mappedFieldName] = `${field.field_label} should contain only letters and spaces`;
            }
        }
     });

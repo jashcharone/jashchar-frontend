@@ -196,7 +196,7 @@ const RoutePickupPoint = () => {
                                     </div>
                                     <div className="overflow-x-auto">
                                         <table className="w-full text-sm">
-                                            <thead className="text-xs text-muted-foreground uppercase"><tr className="border-b"><th className="px-6 py-3">Pickup Point</th><th className="px-6 py-3">Distance (km)</th><th className="px-6 py-3">Pickup Time</th><th className="px-6 py-3 text-right">Monthly Fees ($)</th></tr></thead>
+                                            <thead className="text-xs text-muted-foreground uppercase"><tr className="border-b"><th className="px-6 py-3">Pickup Point</th><th className="px-6 py-3">Distance (km)</th><th className="px-6 py-3">Pickup Time</th><th className="px-6 py-3 text-right">Monthly Fees (₹)</th></tr></thead>
                                             <tbody>
                                                 {route.pickup_points.map(p => (
                                                     <tr key={p.id} className="border-b last:border-b-0"><td className="px-6 py-3 font-medium">{p.pickup_point.name}</td><td className="px-6 py-3">{p.distance}</td><td className="px-6 py-3">{p.pickup_time}</td><td className="px-6 py-3 text-right">{p.monthly_fees}</td></tr>

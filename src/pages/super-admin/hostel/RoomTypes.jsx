@@ -248,7 +248,8 @@ const RoomTypes = () => {
               <div className="grid gap-4 py-4">
                 <div className="space-y-2">
                   <Label htmlFor="name">Room Type Name *</Label>
-                  <Input id="name" value={formData.name} onChange={(e) => setFormData({...formData, name: e.target.value})} placeholder="e.g. Single Sharing, Double Sharing, Dormitory" required />
+                  {/* TC-28 FIX: Only allow letters, spaces, and basic punctuation for room type names */}
+                  <Input id="name" value={formData.name} onChange={(e) => setFormData({...formData, name: e.target.value.replace(/[^a-zA-Z\s\-']/g, '')})} placeholder="e.g. Single Sharing, Double Sharing, Dormitory" required />
                 </div>
 
                 <div className="space-y-2">

@@ -62,25 +62,56 @@ const StudentPromotion = () => {
             try {
                 const { data, error } = await supabase
                     .from('sessions')
-                    .select('id, name, is_active')
+                    .select('id, name, is_active, start_date, end_date')
                     .eq('branch_id', branchId)
-                    .order('name', { ascending: false });
+                    .order('start_date', { ascending: true }); // Oldest to Newest
                 
                 if (error) throw error;
                 setSessions(data || []);
                 
-                // For promotion: Current session = where students ARE (previous session)
-                // Promote to session = active session (new session)
-                const activeSession = data?.find(s => s.is_active);
-                const previousSession = data?.find(s => !s.is_active); // First non-active (likely previous)
+                // ═══════════════════════════════════════════════════════════════════
+                // 100-YEAR FUTURE-PROOF PROMOTION LOGIC
+                // ═══════════════════════════════════════════════════════════════════
+                // PROMOTION SCENARIO:
+                //   Current Session = Where students ARE NOW (typically the active session)
+                //   Target Session = Where students WILL GO (NEXT session after current)
+                //
+                // Example Timeline:
+                //   2024-2025 (Previous) → 2025-2026 (Active/Current) → 2026-2027 (Next/Target)
+                //
+                // RULES:
+                //   1. Current Session = Active session (where students are studying NOW)
+                //   2. Target Session = Session AFTER current (future session)
+                //   3. Target Session dropdown should EXCLUDE current session
+                //   4. If no future session exists, prompt user to create one
+                // ═══════════════════════════════════════════════════════════════════
                 
-                if (previousSession) {
-                    // Auto-select previous session as "Current" (where students are)
-                    setFilters(prev => ({ ...prev, current_session: previousSession.id }));
-                }
+                const activeSession = data?.find(s => s.is_active);
+                
                 if (activeSession) {
-                    // Auto-select active session as "Promote To" (new session)
-                    setFilters(prev => ({ ...prev, promote_session: activeSession.id }));
+                    // Current = Active session (where students ARE NOW)
+                    setFilters(prev => ({ ...prev, current_session: activeSession.id }));
+                    
+                    // Find NEXT session (session AFTER active by start_date)
+                    // Sessions are sorted ascending, so next is after activeIndex
+                    const activeIndex = data.findIndex(s => s.id === activeSession.id);
+                    const nextSession = data[activeIndex + 1]; // Next session in chronological order
+                    
+                    if (nextSession) {
+                        // Target = Next session (where students WILL GO)
+                        setFilters(prev => ({ ...prev, promote_session: nextSession.id }));
+                    }
+                    // If no next session, leave promote_session empty - user needs to create new session
+                } else if (data && data.length > 0) {
+                    // No active session - use last two sessions by date
+                    const latestSession = data[data.length - 1];
+                    const previousSession = data[data.length - 2];
+                    
+                    setFilters(prev => ({ 
+                        ...prev, 
+                        current_session: previousSession?.id || latestSession?.id || '',
+                        promote_session: previousSession ? latestSession?.id : ''
+                    }));
                 }
             } catch (error) {
                 console.error('Error fetching sessions:', error);
@@ -88,6 +119,19 @@ const StudentPromotion = () => {
         };
         fetchSessions();
     }, [branchId]);
+    
+    // Compute available target sessions (exclude current session)
+    const availableTargetSessions = sessions.filter(s => {
+        // Exclude the currently selected "current_session"
+        if (s.id === filters.current_session) return false;
+        
+        // Only show sessions that are AFTER or EQUAL to current session start_date
+        const currentSession = sessions.find(cs => cs.id === filters.current_session);
+        if (currentSession && s.start_date) {
+            return s.start_date >= currentSession.start_date;
+        }
+        return true;
+    });
 
     // Fetch classes
     useEffect(() => {
@@ -419,16 +463,27 @@ const StudentPromotion = () => {
                                             onValueChange={(value) => setFilters(prev => ({ ...prev, promote_session: value }))}
                                         >
                                             <SelectTrigger>
-                                                <SelectValue placeholder="Select Session" />
+                                                <SelectValue placeholder="Select Target Session" />
                                             </SelectTrigger>
                                             <SelectContent>
-                                                {sessions.map((session) => (
-                                                    <SelectItem key={session.id} value={session.id}>
-                                                        {session.name} {session.is_active && '(Active)'}
+                                                {availableTargetSessions.length === 0 ? (
+                                                    <SelectItem value="_none" disabled>
+                                                        No future sessions available - Create new session first
                                                     </SelectItem>
-                                                ))}
+                                                ) : (
+                                                    availableTargetSessions.map((session) => (
+                                                        <SelectItem key={session.id} value={session.id}>
+                                                            {session.name} {session.is_active && '(Active)'}
+                                                        </SelectItem>
+                                                    ))
+                                                )}
                                             </SelectContent>
                                         </Select>
+                                        {availableTargetSessions.length === 0 && filters.current_session && (
+                                            <p className="text-xs text-amber-600 dark:text-amber-400">
+                                                ⚠️ Please create a new session (e.g., 2026-2027) before promoting students
+                                            </p>
+                                        )}
                                     </div>
                                     
                                     <div className="space-y-2">
@@ -585,7 +640,6 @@ const StudentPromotion = () => {
                                                 />
                                             </TableHead>
                                             <TableHead>Admission No</TableHead>
-                                            <TableHead>Adm No</TableHead>
                                             <TableHead>Roll</TableHead>
                                             <TableHead>Student Name</TableHead>
                                             <TableHead>Gender</TableHead>

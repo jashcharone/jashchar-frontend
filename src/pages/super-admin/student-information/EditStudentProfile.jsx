@@ -167,6 +167,12 @@ const FieldRenderer = ({ field, formData, customFieldValues, onChange, masterDat
              case 'pincode':
                 return <div className="lg:col-span-1">{label}<Input value={formData[field.field_name] || ''} onChange={e => onChange(field.field_name, e.target.value.replace(/\D/g, '').slice(0, 6), true)} maxLength={6} placeholder="6 digits" /></div>;
 
+             // Mobile/Phone Handling - 10 digits only
+             case 'mobile_no': case 'phone': case 'father_phone': case 'mother_phone': 
+             case 'guardian_phone': case 'driver_contact': case 'hostel_guardian_contact': 
+             case 'hostel_emergency_contact':
+                return <div className="lg:col-span-1">{label}<Input value={formData[field.field_name] || ''} onChange={e => onChange(field.field_name, e.target.value.replace(/\D/g, '').slice(0, 10), true)} maxLength={10} placeholder="10 digits" type="tel" /></div>;
+
              // Post Office - If it's a dropdown in logic
              case 'post_office':
                 return <div className="lg:col-span-1">{label}<Select onValueChange={handlePostOfficeChange} disabled={masterData.postOffices.length === 0}><SelectTrigger><SelectValue placeholder={masterData.postOffices.length > 0 ? "Select Post Office" : "Enter valid pincode"} /></SelectTrigger><SelectContent>{masterData.postOffices.map(po => <SelectItem key={po.Name} value={po.Name}>{po.Name}</SelectItem>)}</SelectContent></Select></div>;
@@ -413,9 +419,21 @@ const EditStudentProfile = () => {
                     setSiblings(siblingData || []);
                 }
                 
-                // Map Student Data to Form
+                // Map Student Data to Form (DB columns -> Form field names)
+                // IMPORTANT: Keep field names consistent with StudentAdmission.jsx form
                 setFormData({
                     ...student,
+                    // Date Mapping: DB 'date_of_birth' -> Form 'dob'
+                    dob: student.date_of_birth,
+                    // Address Mapping: DB 'present_address' -> Form 'current_address'
+                    current_address: student.present_address,
+                    // Pincode Mapping: DB 'pincode' -> Form 'current_pincode'  
+                    current_pincode: student.pincode,
+                    // Phone Mapping: DB 'phone' -> Form 'mobile_no'
+                    mobile_no: student.phone,
+                    // Aadhar Mapping: DB 'aadhar_no' -> Form 'national_id_no'
+                    national_id_no: student.aadhar_no,
+                    // Transport Details
                     transport_required: !!student.transport_details,
                     transport_route_id: student.transport_details?.transport_route_id,
                     transport_pickup_point_id: student.transport_details?.transport_pickup_point_id,
@@ -443,7 +461,11 @@ const EditStudentProfile = () => {
                 // Store original section ID to detect changes
                 setOriginalSectionId(student.section_id);
                 
-                if (customData?.custom_data) setCustomFieldValues(customData.custom_data);
+                if (customData?.custom_data) {
+                    setCustomFieldValues(customData.custom_data);
+                    // MERGE custom data into formData for "System" fields that are stored in custom_data (e.g. mother_tongue, mismatched schema fields)
+                    setFormData(prev => ({ ...prev, ...customData.custom_data }));
+                }
                 
                 // Previews
                 if(student.photo_url) setProfilePicturePreview(student.photo_url);
@@ -712,11 +734,76 @@ const EditStudentProfile = () => {
             if(mUrl) updates.mother_photo_url = mUrl;
             if(gUrl) updates.guardian_photo_url = gUrl;
             
-            // Clean up updates object - remove fields that don't exist in student_profiles table
+            // ========================================================================
+            // COMPLETE FIELD MAPPING (Same as StudentAdmission.jsx)
+            // Maps frontend form field names to actual DB column names
+            // ========================================================================
+            
+            // Date of Birth: Form uses 'dob' -> DB uses 'date_of_birth'
+            if (updates.dob) {
+                updates.date_of_birth = updates.dob;
+                delete updates.dob;
+            }
+            
+            // Address: Form uses 'current_address' -> DB uses 'present_address'
+            if (updates.current_address !== undefined) {
+                updates.present_address = updates.current_address;
+                delete updates.current_address;
+            }
+            
+            // Phone: Form uses 'mobile_no' -> DB uses 'phone'
+            if (updates.mobile_no !== undefined) {
+                updates.phone = updates.mobile_no?.replace(/[^0-9]/g, '').slice(0, 10) || null;
+                delete updates.mobile_no;
+            }
+            
+            // Pincode mapping
+            if (updates.current_pincode !== undefined) {
+                updates.pincode = updates.current_pincode;
+                delete updates.current_pincode;
+            }
+            if (updates.present_pincode !== undefined) {
+                updates.pincode = updates.present_pincode;
+                delete updates.present_pincode;
+            }
+            
+            // Aadhar: Form may use 'national_id_no' -> DB uses 'aadhar_no'
+            if (updates.national_id_no !== undefined) {
+                updates.aadhar_no = updates.national_id_no;
+                delete updates.national_id_no;
+            }
+            
+            // ========================================================================
+            // REMOVE RELATIONAL/COMPUTED FIELDS (Not DB columns)
+            // ========================================================================
             delete updates.transport_details;
             delete updates.hostel_details;
-            delete updates.siblings; // not a column
+            delete updates.siblings;
+            delete updates.class; // relational object
+            delete updates.section; // relational object
+            delete updates.session; // relational object
+            delete updates.category; // relational object
             
+            // ========================================================================
+            // FIELDS TO STORE IN custom_data (Not in student_profiles schema)
+            // ========================================================================
+            const fieldsForCustomData = [
+                'post_office', // Pincode API field
+                'father_dob', 'mother_dob', // Parent DOBs not in main table
+                'caste_category', 'sub_caste', // Text variations (IDs exist but text doesn't)
+            ];
+            
+            const extraCustomData = {};
+            fieldsForCustomData.forEach(field => {
+                if (updates[field] !== undefined) {
+                    extraCustomData[field] = updates[field];
+                    delete updates[field];
+                }
+            });
+            
+            // Merge with existing custom values
+            const finalCustomValues = { ...customFieldValues, ...extraCustomData };
+
             // Remove transport-related fields (stored in student_transport_details)
             delete updates.transport_required;
             delete updates.transport_route_id;
@@ -769,7 +856,7 @@ const EditStudentProfile = () => {
             }
             
             // Update Custom Data
-             if (Object.keys(customFieldValues).length > 0) {
+             if (Object.keys(finalCustomValues).length > 0) {
                 await supabase
                   .from('student_custom_data')
                   .upsert({
@@ -777,13 +864,14 @@ const EditStudentProfile = () => {
                     session_id: currentSessionId,
                     organization_id: organizationId,
                     student_id: studentId,
-                    custom_data: customFieldValues,
+                    custom_data: finalCustomValues,
                     updated_at: new Date()
                   }, { onConflict: 'student_id' });
              }
 
             toast({ title: 'Profile Updated' });
-            navigate(-1);
+            // Navigate to student profile page after save
+            navigate(`/super-admin/student-information/profile/${studentId}`);
         } catch (error) {
             console.error(error);
             toast({ variant: 'destructive', title: 'Save Failed', description: error.message });

@@ -334,7 +334,6 @@ export const ROUTES = {
     SETTINGS_ROLE_PERMISSION: '/super-admin/system-settings/role-permission',
     SETTINGS_PROFILE_UPDATE: '/super-admin/system-settings/student-profile-update-settings',
     SETTINGS_PRINT_HEADER: '/super-admin/system-settings/print-header-footer',
-    SETTINGS_ONLINE_ADMISSION: '/super-admin/system-settings/online-admission-setting',
     SETTINGS_EMAIL: '/super-admin/system-settings/email-setting',
     SETTINGS_SMS: '/super-admin/system-settings/sms-setting',
     SETTINGS_NOTIFICATION: '/super-admin/system-settings/notification-setting',

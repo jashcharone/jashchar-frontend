@@ -72,6 +72,14 @@ export const initGlobalErrorHandlers = () => {
         return;
     }
 
+    // Ignore security messages that are not actual errors
+    if (args[0] && typeof args[0] === 'string' && (
+        args[0].includes('If account exists') ||
+        args[0].includes('Check your inbox')
+    )) {
+        return;
+    }
+
     try {
       // Convert args to a meaningful error message
       const message = args.map(arg => 

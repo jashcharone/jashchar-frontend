@@ -65,7 +65,9 @@ const ForgotPassword = () => {
             toast({ title: "OTP Sent", description: "Please check your Email for the OTP." });
             setStep(2); // Move to OTP Step
         } else {
-            throw new Error(response.data.message || 'Failed to send OTP');
+            // Security: Show success toast even if account doesn't exist (don't reveal account existence)
+            toast({ title: "Check your inbox", description: response.data.message || 'If account exists, OTP has been sent.' });
+            setStep(2); // Still move to OTP step for security
         }
 
       } else if (isMobile(identifier)) {
@@ -80,14 +82,19 @@ const ForgotPassword = () => {
             toast({ title: "OTP Sent", description: "Please check your WhatsApp for the OTP." });
             setStep(2); // Move to OTP Step
         } else {
-            throw new Error(response.data.message || 'Failed to send OTP');
+            // Security: Show success toast even if account doesn't exist (don't reveal account existence)
+            toast({ title: "Check your inbox", description: response.data.message || 'If account exists, OTP has been sent.' });
+            setStep(2); // Still move to OTP step for security
         }
       } else {
         toast({ variant: 'destructive', title: 'Invalid Input', description: 'Please enter a valid email or mobile number.' });
       }
 
     } catch (error) {
-      console.error(error);
+      // Only log actual errors, not security messages
+      if (error.response?.status >= 500) {
+        console.error('[ForgotPassword] Server error:', error);
+      }
       toast({ variant: 'destructive', title: 'Error', description: error.response?.data?.message || error.message });
     } finally {
       setLoading(false);

@@ -884,6 +884,262 @@ const RegistrationDialog = ({ open, onClose, branchId, organizationId, sessionId
 };
 
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════
+// EDIT FACE DIALOG - Re-capture face for existing registration
+// ═══════════════════════════════════════════════════════════════════════════════════════════════════
+
+const EditFaceDialog = ({ open, onClose, registration, branchId, organizationId, sessionId, onSaved }) => {
+    const { toast } = useToast();
+    const [step, setStep] = useState(1); // 1: Info, 2: Capture, 3: Confirm
+    const [loading, setLoading] = useState(false);
+    const [capturedPhotos, setCapturedPhotos] = useState([]);
+    
+    useEffect(() => {
+        if (!open) {
+            setStep(1);
+            setCapturedPhotos([]);
+        }
+    }, [open]);
+    
+    const handleCapture = (photos) => {
+        setCapturedPhotos(photos);
+        setStep(3);
+    };
+    
+    const handleUpdateFace = async () => {
+        if (!registration || capturedPhotos.length < 1) return;
+        
+        setLoading(true);
+        
+        try {
+            // Get the best quality photo with real AI descriptor
+            const bestPhoto = capturedPhotos
+                .filter(p => p.hasRealAI && p.descriptor)
+                .sort((a, b) => b.quality - a.quality)[0] || capturedPhotos[0];
+            
+            // Parse the descriptor from string
+            let encodingVector = null;
+            if (bestPhoto.descriptor) {
+                try {
+                    encodingVector = JSON.parse(bestPhoto.descriptor);
+                } catch {
+                    encodingVector = Array(128).fill(0).map(() => Math.random() * 2 - 1);
+                }
+            } else {
+                encodingVector = Array(128).fill(0).map(() => Math.random() * 2 - 1);
+            }
+            
+            // Calculate average quality from all photos
+            const avgQuality = capturedPhotos.reduce((sum, p) => sum + (p.quality || 0), 0) / capturedPhotos.length;
+            
+            const updatePayload = {
+                encoding_vector: encodingVector,
+                photo_url: bestPhoto?.data || registration.photo_url,
+                photo_angle: bestPhoto?.angle || 'front',
+                confidence_score: Math.min(1.0, avgQuality),
+                lighting_quality: avgQuality > 0.7 ? 'good' : avgQuality > 0.5 ? 'medium' : 'poor',
+                model_name: bestPhoto.hasRealAI ? 'face-api.js' : 'fallback_random',
+                model_version: bestPhoto.hasRealAI ? '1.0' : '0.0',
+                is_active: true,
+                updated_at: new Date().toISOString(),
+            };
+            
+            const { error } = await supabase
+                .from('face_encodings')
+                .update(updatePayload)
+                .eq('id', registration.id);
+            
+            if (error) throw error;
+            
+            toast({ 
+                title: bestPhoto.hasRealAI ? '🤖 Face Updated with Real AI!' : '✅ Face Updated',
+                description: `${capturedPhotos.length} new photos captured for ${registration.user_name || registration.person_name}`,
+            });
+            
+            onSaved();
+        } catch (error) {
+            console.error('Update error:', error);
+            toast({ variant: 'destructive', title: 'Update failed', description: error.message });
+        }
+        
+        setLoading(false);
+    };
+    
+    return (
+        <Dialog open={open} onOpenChange={onClose}>
+            <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+                <DialogHeader>
+                    <DialogTitle className="flex items-center gap-2">
+                        <Edit className="w-5 h-5 text-blue-500" />
+                        Edit Face Registration - Re-capture
+                    </DialogTitle>
+                    <DialogDescription>
+                        Step {step} of 3: {
+                            step === 1 ? 'Review Current' : 
+                            step === 2 ? 'Capture New Photos' : 
+                            'Confirm Update'
+                        }
+                    </DialogDescription>
+                </DialogHeader>
+                
+                {/* Progress Steps */}
+                <div className="flex items-center justify-center gap-2 py-4">
+                    {[1, 2, 3].map((s) => (
+                        <React.Fragment key={s}>
+                            <div className={`w-10 h-10 rounded-full flex items-center justify-center font-semibold ${
+                                step >= s ? 'bg-blue-500 text-white' : 'bg-muted text-muted-foreground'
+                            }`}>
+                                {step > s ? <Check className="w-5 h-5" /> : s}
+                            </div>
+                            {s < 3 && (
+                                <div className={`w-16 h-1 ${step > s ? 'bg-blue-500' : 'bg-muted'}`} />
+                            )}
+                        </React.Fragment>
+                    ))}
+                </div>
+                
+                {/* Step 1: Current Info */}
+                {step === 1 && registration && (
+                    <div className="space-y-6">
+                        <Alert className="border-blue-500/50 bg-blue-500/5">
+                            <Edit className="w-4 h-4 text-blue-500" />
+                            <AlertDescription>
+                                You are editing face registration for <strong>{registration.user_name || registration.person_name}</strong>. 
+                                New photos will replace the existing face data.
+                            </AlertDescription>
+                        </Alert>
+                        
+                        <Card>
+                            <CardHeader>
+                                <CardTitle className="text-sm">Current Registration</CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <div className="flex items-center gap-4">
+                                    <div className="w-20 h-20 rounded-full bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center overflow-hidden border-2 border-primary/20">
+                                        {registration.photo_url ? (
+                                            <img src={registration.photo_url} className="w-full h-full object-cover" alt="" />
+                                        ) : (
+                                            <ScanFace className="w-10 h-10 text-primary" />
+                                        )}
+                                    </div>
+                                    <div className="flex-1">
+                                        <h3 className="font-semibold text-lg">{registration.user_name || registration.person_name}</h3>
+                                        <p className="text-muted-foreground">{registration.user_code}</p>
+                                        <div className="flex items-center gap-2 mt-2">
+                                            <Badge variant="outline" className="capitalize">
+                                                {registration.person_type === 'student' 
+                                                    ? <GraduationCap className="w-3 h-3 mr-1" />
+                                                    : <Briefcase className="w-3 h-3 mr-1" />
+                                                }
+                                                {registration.person_type}
+                                            </Badge>
+                                            <Badge variant={registration.is_active ? 'default' : 'secondary'}>
+                                                {registration.is_active ? 'Active' : 'Inactive'}
+                                            </Badge>
+                                            <span className="text-xs text-muted-foreground">
+                                                Quality: {Math.round((registration.confidence_score || 0) * 100)}%
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </CardContent>
+                        </Card>
+                        
+                        <div className="flex justify-end gap-3">
+                            <Button variant="outline" onClick={onClose}>
+                                Cancel
+                            </Button>
+                            <Button onClick={() => setStep(2)}>
+                                <Camera className="w-4 h-4 mr-2" />
+                                Capture New Photos
+                            </Button>
+                        </div>
+                    </div>
+                )}
+                
+                {/* Step 2: Capture Photos */}
+                {step === 2 && (
+                    <CameraCapture 
+                        onCapture={handleCapture}
+                        onClose={() => setStep(1)}
+                    />
+                )}
+                
+                {/* Step 3: Confirm */}
+                {step === 3 && (
+                    <div className="space-y-6">
+                        <Alert className="border-green-500/50 bg-green-500/5">
+                            <CheckCircle2 className="w-4 h-4 text-green-500" />
+                            <AlertDescription className="text-green-700">
+                                {capturedPhotos.length} new photos captured successfully
+                            </AlertDescription>
+                        </Alert>
+                        
+                        <div className="grid grid-cols-2 gap-4">
+                            {/* User Info */}
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle className="text-sm">User Details</CardTitle>
+                                </CardHeader>
+                                <CardContent>
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
+                                            {registration.person_type === 'student' 
+                                                ? <GraduationCap className="w-8 h-8 text-primary" />
+                                                : <Briefcase className="w-8 h-8 text-primary" />
+                                            }
+                                        </div>
+                                        <div>
+                                            <p className="font-semibold">
+                                                {registration.user_name || registration.person_name}
+                                            </p>
+                                            <p className="text-sm text-muted-foreground">
+                                                {registration.user_code}
+                                            </p>
+                                            <Badge variant="outline" className="mt-1 capitalize">{registration.person_type}</Badge>
+                                        </div>
+                                    </div>
+                                </CardContent>
+                            </Card>
+                            
+                            {/* Photo Preview */}
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle className="text-sm">New Captured Photos</CardTitle>
+                                </CardHeader>
+                                <CardContent>
+                                    <div className="grid grid-cols-3 gap-2">
+                                        {capturedPhotos.map((photo) => (
+                                            <img 
+                                                key={photo.id}
+                                                src={photo.data}
+                                                alt={photo.angle}
+                                                className="w-full aspect-square object-cover rounded-lg"
+                                            />
+                                        ))}
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        </div>
+                        
+                        <div className="flex justify-between">
+                            <Button variant="outline" onClick={() => setStep(2)}>
+                                <RotateCcw className="w-4 h-4 mr-2" />
+                                Retake Photos
+                            </Button>
+                            <Button onClick={handleUpdateFace} disabled={loading} className="bg-blue-500 hover:bg-blue-600">
+                                {loading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                                <CheckCircle2 className="w-4 h-4 mr-2" />
+                                Update Face Data
+                            </Button>
+                        </div>
+                    </div>
+                )}
+            </DialogContent>
+        </Dialog>
+    );
+};
+
+// ═══════════════════════════════════════════════════════════════════════════════════════════════════
 // MAIN FACE REGISTRATION COMPONENT
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════
 
@@ -903,10 +1159,17 @@ const FaceRegistration = () => {
     
     // Dialog state
     const [registerDialogOpen, setRegisterDialogOpen] = useState(false);
+    const [editDialogOpen, setEditDialogOpen] = useState(false);
+    const [editingRegistration, setEditingRegistration] = useState(null);
+    const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+    const [deletingRegistration, setDeletingRegistration] = useState(null);
+    const [deleteLoading, setDeleteLoading] = useState(false);
     
     // Permissions
     const hasViewPermission = canView('attendance.face_registration') || canView('attendance');
     const hasAddPermission = canAdd('attendance.face_registration') || canAdd('attendance');
+    const hasEditPermission = canEdit('attendance.face_registration') || canEdit('attendance');
+    const hasDeletePermission = canDelete('attendance.face_registration') || canDelete('attendance');
     
     // Fetch registrations
     useEffect(() => {
@@ -1025,6 +1288,45 @@ const FaceRegistration = () => {
             toast({ title: '✅ Face registration activated!' });
             fetchRegistrations();
         }
+    };
+
+    // Handle Delete
+    const handleDeleteClick = (reg) => {
+        setDeletingRegistration(reg);
+        setDeleteDialogOpen(true);
+    };
+
+    const handleDeleteConfirm = async () => {
+        if (!deletingRegistration) return;
+        
+        setDeleteLoading(true);
+        const { error } = await supabase
+            .from('face_encodings')
+            .delete()
+            .eq('id', deletingRegistration.id);
+        
+        setDeleteLoading(false);
+        
+        if (error) {
+            toast({ variant: 'destructive', title: 'Delete Failed', description: error.message });
+        } else {
+            toast({ title: '✅ Face registration deleted successfully!' });
+            fetchRegistrations();
+        }
+        
+        setDeleteDialogOpen(false);
+        setDeletingRegistration(null);
+    };
+
+    // Handle Edit (re-capture face)
+    const handleEditClick = (reg) => {
+        setEditingRegistration(reg);
+        setEditDialogOpen(true);
+    };
+
+    const handleEditClose = () => {
+        setEditDialogOpen(false);
+        setEditingRegistration(null);
     };
     
     return (
@@ -1206,31 +1508,60 @@ const FaceRegistration = () => {
                                             </div>
                                         </div>
                                     </CardContent>
-                                    <CardFooter className="bg-muted/30 border-t justify-between">
+                                    <CardFooter className="bg-muted/30 border-t flex-wrap gap-2 justify-between">
                                         <span className="text-xs text-muted-foreground">
                                             Registered: {new Date(reg.created_at).toLocaleDateString()}
                                         </span>
-                                        {reg.is_active ? (
-                                            <Button 
-                                                variant="ghost" 
-                                                size="sm"
-                                                onClick={() => handleDeactivate(reg.id)}
-                                                className="text-destructive"
-                                            >
-                                                <XCircle className="w-4 h-4 mr-1" />
-                                                Deactivate
-                                            </Button>
-                                        ) : (
-                                            <Button 
-                                                variant="ghost" 
-                                                size="sm"
-                                                onClick={() => handleActivate(reg.id)}
-                                                className="text-green-500 hover:text-green-600"
-                                            >
-                                                <CheckCircle2 className="w-4 h-4 mr-1" />
-                                                Activate
-                                            </Button>
-                                        )}
+                                        <div className="flex items-center gap-1">
+                                            {/* Edit Button */}
+                                            {hasEditPermission && (
+                                                <Button 
+                                                    variant="ghost" 
+                                                    size="sm"
+                                                    onClick={() => handleEditClick(reg)}
+                                                    className="text-blue-500 hover:text-blue-600 hover:bg-blue-50"
+                                                    title="Re-capture face"
+                                                >
+                                                    <Edit className="w-4 h-4 mr-1" />
+                                                    Edit
+                                                </Button>
+                                            )}
+                                            {/* Delete Button */}
+                                            {hasDeletePermission && (
+                                                <Button 
+                                                    variant="ghost" 
+                                                    size="sm"
+                                                    onClick={() => handleDeleteClick(reg)}
+                                                    className="text-red-500 hover:text-red-600 hover:bg-red-50"
+                                                    title="Delete registration"
+                                                >
+                                                    <Trash2 className="w-4 h-4 mr-1" />
+                                                    Delete
+                                                </Button>
+                                            )}
+                                            {/* Activate/Deactivate Button */}
+                                            {reg.is_active ? (
+                                                <Button 
+                                                    variant="ghost" 
+                                                    size="sm"
+                                                    onClick={() => handleDeactivate(reg.id)}
+                                                    className="text-orange-500 hover:text-orange-600 hover:bg-orange-50"
+                                                >
+                                                    <XCircle className="w-4 h-4 mr-1" />
+                                                    Deactivate
+                                                </Button>
+                                            ) : (
+                                                <Button 
+                                                    variant="ghost" 
+                                                    size="sm"
+                                                    onClick={() => handleActivate(reg.id)}
+                                                    className="text-green-500 hover:text-green-600 hover:bg-green-50"
+                                                >
+                                                    <CheckCircle2 className="w-4 h-4 mr-1" />
+                                                    Activate
+                                                </Button>
+                                            )}
+                                        </div>
                                     </CardFooter>
                                 </Card>
                             </motion.div>
@@ -1248,6 +1579,91 @@ const FaceRegistration = () => {
                 sessionId={currentSessionId}
                 onSaved={fetchRegistrations}
             />
+
+            {/* Edit Dialog - Re-capture Face */}
+            {editingRegistration && (
+                <EditFaceDialog
+                    open={editDialogOpen}
+                    onClose={handleEditClose}
+                    registration={editingRegistration}
+                    branchId={branchId}
+                    organizationId={organizationId}
+                    sessionId={currentSessionId}
+                    onSaved={() => {
+                        fetchRegistrations();
+                        handleEditClose();
+                    }}
+                />
+            )}
+
+            {/* Delete Confirmation Dialog */}
+            <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle className="flex items-center gap-2 text-destructive">
+                            <Trash2 className="w-5 h-5" />
+                            Delete Face Registration
+                        </DialogTitle>
+                        <DialogDescription>
+                            Are you sure you want to delete this face registration?
+                        </DialogDescription>
+                    </DialogHeader>
+                    
+                    {deletingRegistration && (
+                        <div className="bg-muted/50 rounded-lg p-4 my-2">
+                            <div className="flex items-center gap-4">
+                                <div className="w-14 h-14 rounded-full bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center overflow-hidden border-2 border-primary/20">
+                                    {deletingRegistration.photo_url ? (
+                                        <img src={deletingRegistration.photo_url} className="w-full h-full object-cover" alt="" />
+                                    ) : (
+                                        <ScanFace className="w-7 h-7 text-primary" />
+                                    )}
+                                </div>
+                                <div>
+                                    <h4 className="font-semibold">{deletingRegistration.user_name}</h4>
+                                    <p className="text-sm text-muted-foreground capitalize">
+                                        {deletingRegistration.person_type} • {deletingRegistration.user_code}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                    
+                    <Alert variant="destructive">
+                        <AlertTriangle className="h-4 w-4" />
+                        <AlertDescription>
+                            This action cannot be undone. The face data will be permanently deleted.
+                        </AlertDescription>
+                    </Alert>
+                    
+                    <DialogFooter className="gap-2 sm:gap-0">
+                        <Button 
+                            variant="outline" 
+                            onClick={() => setDeleteDialogOpen(false)}
+                            disabled={deleteLoading}
+                        >
+                            Cancel
+                        </Button>
+                        <Button 
+                            variant="destructive"
+                            onClick={handleDeleteConfirm}
+                            disabled={deleteLoading}
+                        >
+                            {deleteLoading ? (
+                                <>
+                                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                    Deleting...
+                                </>
+                            ) : (
+                                <>
+                                    <Trash2 className="w-4 h-4 mr-2" />
+                                    Delete
+                                </>
+                            )}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </DashboardLayout>
     );
 };

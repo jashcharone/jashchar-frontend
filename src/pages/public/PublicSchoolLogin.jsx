@@ -629,10 +629,10 @@ const PublicSchoolLogin = () => {
             )}
           </form>
 
-          {/* Footer Links */}
+          {/* Footer Links - TC-03: Contact Support Page Link */}
           <div className="mt-8 text-center">
             <p className="text-sm text-slate-500">
-              Need help? <a href={`mailto:${settings?.email || 'support@school.com'}`} className="font-medium hover:underline" style={{ color: accentColor }}>Contact Support</a>
+              Need help? <Link to={`/${schoolAlias}/contact`} className="font-medium hover:underline" style={{ color: accentColor }}>Contact Support</Link>
             </p>
           </div>
 

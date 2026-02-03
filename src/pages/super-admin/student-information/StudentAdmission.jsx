@@ -2632,7 +2632,7 @@ const StudentAdmission = () => {
                         </div>
                         <h3 className="text-lg font-bold text-blue-700 dark:text-blue-300">Father Details</h3>
                       </div>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 items-start">
                         {fatherFields.map(field => (
                             <React.Fragment key={field.id || field.key}>
                                 {renderDynamicField(field)}
@@ -2649,7 +2649,7 @@ const StudentAdmission = () => {
                         </div>
                         <h3 className="text-lg font-bold text-pink-700 dark:text-pink-300">Mother Details</h3>
                       </div>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 items-start">
                         {motherFields.map(field => (
                             <React.Fragment key={field.id || field.key}>
                                 {renderDynamicField(field)}
@@ -2660,7 +2660,7 @@ const StudentAdmission = () => {
                   </>
                 ) : (
                   /* Simple 4-column grid - No photos (moved to Photo Gallery) */
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 items-start">
                     {regularFields.map(field => (
                         <React.Fragment key={field.id || field.key}>
                             {renderDynamicField(field)}

@@ -1114,14 +1114,17 @@ const BulkUpload = () => {
                                             <ArrowRight className="h-4 w-4 text-muted-foreground flex-shrink-0" />
                                             <div className="flex-1">
                                                 <Select 
-                                                    value={fieldMappings[field.key] || ''} 
-                                                    onValueChange={val => setFieldMappings(prev => ({ ...prev, [field.key]: val }))}
+                                                    value={fieldMappings[field.key] || '__unmapped__'} 
+                                                    onValueChange={val => setFieldMappings(prev => ({ 
+                                                        ...prev, 
+                                                        [field.key]: val === '__unmapped__' ? '' : val 
+                                                    }))}
                                                 >
                                                     <SelectTrigger className={fieldMappings[field.key] ? "border-green-500" : ""}>
                                                         <SelectValue placeholder="Select source column" />
                                                     </SelectTrigger>
                                                     <SelectContent>
-                                                        <SelectItem value="">-- Not Mapped --</SelectItem>
+                                                        <SelectItem value="__unmapped__">-- Not Mapped --</SelectItem>
                                                         {sourceColumns.map(col => (
                                                             <SelectItem key={col} value={col}>{col}</SelectItem>
                                                         ))}

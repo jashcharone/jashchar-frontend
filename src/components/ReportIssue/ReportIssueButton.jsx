@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
+import html2canvas from 'html2canvas';
 import { 
     Bug, Send, X, Camera, Loader2, AlertCircle, CheckCircle,
     MessageSquare, Zap, Smartphone, Monitor, Globe, User,
@@ -40,17 +41,17 @@ const PRIORITY_OPTIONS = [
 // ==================== SCREENSHOT CAPTURE ====================
 const captureScreenshot = async () => {
     try {
-        // Try using html2canvas if available, otherwise return null
-        if (typeof window !== 'undefined' && window.html2canvas) {
-            const canvas = await window.html2canvas(document.body, {
-                scale: 0.5,
-                logging: false,
-                useCORS: true,
-                allowTaint: true
-            });
-            return canvas.toDataURL('image/jpeg', 0.5);
-        }
-        return null;
+        // Use html2canvas library to capture screenshot
+        const canvas = await html2canvas(document.body, {
+            scale: 0.5,
+            logging: false,
+            useCORS: true,
+            allowTaint: true,
+            backgroundColor: null,
+            windowWidth: document.documentElement.scrollWidth,
+            windowHeight: document.documentElement.scrollHeight
+        });
+        return canvas.toDataURL('image/jpeg', 0.6);
     } catch (err) {
         console.warn('Screenshot capture failed:', err);
         return null;

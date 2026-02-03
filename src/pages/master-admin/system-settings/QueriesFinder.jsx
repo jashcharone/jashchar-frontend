@@ -968,6 +968,73 @@ ${error.stack_trace || 'No stack trace available.'}
                                                                                             </a>
                                                                                         </div>
                                                                                     </div>
+
+                                                                                    {/* USER REPORT DETAILS - Show if source is user_report */}
+                                                                                    {(error.source === 'user_report' || error.error_message?.startsWith('[USER REPORT]')) && error.metadata && (
+                                                                                        <div className="space-y-4 p-4 bg-purple-50 dark:bg-purple-900/20 rounded-lg border border-purple-200 dark:border-purple-800">
+                                                                                            <h4 className="font-semibold text-purple-700 dark:text-purple-300 flex items-center gap-2">
+                                                                                                <User className="h-4 w-4" />
+                                                                                                User Report Details
+                                                                                            </h4>
+                                                                                            
+                                                                                            <div className="grid grid-cols-2 gap-4 text-sm">
+                                                                                                <div>
+                                                                                                    <Label className="text-xs uppercase text-muted-foreground">Category</Label>
+                                                                                                    <p className="mt-1 font-medium capitalize">{error.metadata?.category || 'N/A'}</p>
+                                                                                                </div>
+                                                                                                <div>
+                                                                                                    <Label className="text-xs uppercase text-muted-foreground">Priority</Label>
+                                                                                                    <Badge className={`mt-1 ${
+                                                                                                        error.metadata?.priority === 'critical' ? 'bg-red-500' :
+                                                                                                        error.metadata?.priority === 'high' ? 'bg-orange-500' :
+                                                                                                        error.metadata?.priority === 'medium' ? 'bg-yellow-500' : 'bg-blue-500'
+                                                                                                    }`}>
+                                                                                                        {error.metadata?.priority || 'N/A'}
+                                                                                                    </Badge>
+                                                                                                </div>
+                                                                                                <div>
+                                                                                                    <Label className="text-xs uppercase text-muted-foreground">Reporter Email</Label>
+                                                                                                    <p className="mt-1 text-blue-600">{error.metadata?.reporter_email || 'Not provided'}</p>
+                                                                                                </div>
+                                                                                                <div>
+                                                                                                    <Label className="text-xs uppercase text-muted-foreground">Reporter Name</Label>
+                                                                                                    <p className="mt-1">{error.metadata?.reporter_name || 'N/A'}</p>
+                                                                                                </div>
+                                                                                                <div>
+                                                                                                    <Label className="text-xs uppercase text-muted-foreground">Reported At</Label>
+                                                                                                    <p className="mt-1">{error.metadata?.reported_at ? safeFormat(error.metadata.reported_at, 'dd MMM yyyy HH:mm') : 'N/A'}</p>
+                                                                                                </div>
+                                                                                            </div>
+
+                                                                                            {/* Device Info */}
+                                                                                            {error.metadata?.device && (
+                                                                                                <div className="bg-slate-100 dark:bg-slate-800 p-3 rounded-lg">
+                                                                                                    <Label className="text-xs uppercase text-muted-foreground mb-2 block">Device Information</Label>
+                                                                                                    <div className="grid grid-cols-3 gap-2 text-xs">
+                                                                                                        <div><span className="text-muted-foreground">Browser:</span> {error.metadata.device.browser}</div>
+                                                                                                        <div><span className="text-muted-foreground">OS:</span> {error.metadata.device.os}</div>
+                                                                                                        <div><span className="text-muted-foreground">Screen:</span> {error.metadata.device.screenSize}</div>
+                                                                                                    </div>
+                                                                                                </div>
+                                                                                            )}
+
+                                                                                            {/* Screenshot */}
+                                                                                            {error.metadata?.screenshot_data && (
+                                                                                                <div>
+                                                                                                    <Label className="text-xs uppercase text-muted-foreground mb-2 block">Screenshot</Label>
+                                                                                                    <div className="border border-border rounded-lg overflow-hidden">
+                                                                                                        <img 
+                                                                                                            src={error.metadata.screenshot_data} 
+                                                                                                            alt="User Screenshot" 
+                                                                                                            className="w-full max-h-96 object-contain cursor-pointer hover:opacity-90 transition-opacity"
+                                                                                                            onClick={() => window.open(error.metadata.screenshot_data, '_blank')}
+                                                                                                            title="Click to view full size"
+                                                                                                        />
+                                                                                                    </div>
+                                                                                                </div>
+                                                                                            )}
+                                                                                        </div>
+                                                                                    )}
                                                                                 </div>
                                                                             </SheetContent>
                                                                         </Sheet>

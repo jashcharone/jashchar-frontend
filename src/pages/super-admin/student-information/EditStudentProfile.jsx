@@ -173,6 +173,10 @@ const FieldRenderer = ({ field, formData, customFieldValues, onChange, masterDat
              case 'hostel_emergency_contact':
                 return <div className="lg:col-span-1">{label}<Input value={formData[field.field_name] || ''} onChange={e => onChange(field.field_name, e.target.value.replace(/\D/g, '').slice(0, 10), true)} maxLength={10} placeholder="10 digits" type="tel" /></div>;
 
+             // Name fields - Only allow letters and spaces (min 2 chars)
+             case 'first_name': case 'last_name': case 'father_name': case 'mother_name': case 'guardian_name': case 'full_name':
+                return <div className="lg:col-span-1">{label}<Input value={formData[field.field_name] || ''} onChange={e => onChange(field.field_name, e.target.value.replace(/[^a-zA-Z\s]/g, ''), true)} placeholder="Letters only (min 2)" /></div>;
+
              // Post Office - If it's a dropdown in logic
              case 'post_office':
                 return <div className="lg:col-span-1">{label}<Select onValueChange={handlePostOfficeChange} disabled={masterData.postOffices.length === 0}><SelectTrigger><SelectValue placeholder={masterData.postOffices.length > 0 ? "Select Post Office" : "Enter valid pincode"} /></SelectTrigger><SelectContent>{masterData.postOffices.map(po => <SelectItem key={po.Name} value={po.Name}>{po.Name}</SelectItem>)}</SelectContent></Select></div>;

@@ -62,6 +62,18 @@ const AadharInput = ({ value, onChange, label, required, checkDuplicates = false
     }
   }, [initialError]);
 
+  // Sync formattedValue when external value prop changes (e.g., form reset)
+  useEffect(() => {
+    const newFormatted = formatAadhar(value || '');
+    if (newFormatted !== formattedValue) {
+      setFormattedValue(newFormatted);
+      // Also clear error when value is cleared externally
+      if (!value) {
+        setError('');
+      }
+    }
+  }, [value]);
+
   const handleChange = (e) => {
     const rawValue = e.target.value;
     const numericValue = rawValue.replace(/\D/g, '').slice(0, 12);

@@ -252,11 +252,8 @@ const AIChatbot = () => {
 
   // Don't show chatbot for unauthenticated users (public pages)
   if (!user) {
-    console.log('[AIChatbot] No user, hiding chatbot');
     return null;
   }
-
-  console.log('[AIChatbot] User authenticated, showing chatbot button');
 
   // Floating Button (when closed)
   if (!isOpen) {

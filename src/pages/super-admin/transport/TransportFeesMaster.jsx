@@ -48,7 +48,6 @@ const TransportFeesMaster = () => {
                 return existing || {
                     branch_id: branchId,
                     session_id: currentSessionId,
-                    organization_id: organizationId,
                     month: month,
                     due_date: null,
                     fine_type: 'none',
@@ -111,7 +110,6 @@ const TransportFeesMaster = () => {
                  ...rest,
                  branch_id: branchId || null,
                  session_id: currentSessionId,
-                 organization_id: organizationId,
                  fine_value: rest.fine_type !== 'none' ? rest.fine_value : null,
                  due_date: rest.due_date || null
             }));

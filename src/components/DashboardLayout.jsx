@@ -5,6 +5,7 @@ import Header from "@/components/Header";
 import { useAuth } from "@/contexts/SupabaseAuthContext";
 import { usePermissions } from "@/contexts/PermissionContext";
 import ThemeCustomizer from "@/components/ThemeCustomizer";
+import BugReportButton from "@/components/BugReportButton";
 import { useLocation, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { Loader2 } from "lucide-react";
@@ -120,6 +121,8 @@ const DashboardLayout = ({ children }) => {
           isOpen={isCustomizerOpen}
           onClose={() => setIsCustomizerOpen(false)}
         />
+        {/* Floating Bug Report Button - appears on all dashboard pages */}
+        <BugReportButton />
       </div>
     </div>
   );

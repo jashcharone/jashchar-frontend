@@ -90,8 +90,7 @@ const PickupPoints = () => {
         name: formData.name,
         latitude: formData.latitude || null,
         longitude: formData.longitude || null,
-        branch_id: branchId,
-        session_id: currentSessionId
+        branch_id: branchId
     };
 
     let error;

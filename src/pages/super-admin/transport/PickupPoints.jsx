@@ -30,7 +30,7 @@ import {
 } from '@/components/ui/alert-dialog';
 
 const PickupPoints = () => {
-  const { user, currentSessionId, organizationId } = useAuth();
+  const { user, currentSessionId } = useAuth();
   const { selectedBranch } = useBranch();
   const { toast } = useToast();
   const [points, setPoints] = useState([]);
@@ -91,8 +91,7 @@ const PickupPoints = () => {
         latitude: formData.latitude || null,
         longitude: formData.longitude || null,
         branch_id: branchId,
-        session_id: currentSessionId,
-        organization_id: organizationId
+        session_id: currentSessionId
     };
 
     let error;

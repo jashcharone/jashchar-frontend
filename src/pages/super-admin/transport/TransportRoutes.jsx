@@ -40,17 +40,11 @@ const TransportRoutes = () => {
     if (!branchId) return;
     setLoading(true);
     
-    let query = supabase
+    const { data, error } = await supabase
       .from('transport_routes')
       .select('*')
       .eq('branch_id', branchId)
       .order('created_at', { ascending: false });
-    
-    if (branchId) {
-      query = query.eq('branch_id', branchId);
-    }
-
-    const { data, error } = await query;
 
     if (error) {
       toast({ variant: 'destructive', title: 'Error fetching routes', description: error.message });
@@ -58,7 +52,7 @@ const TransportRoutes = () => {
       setRoutes(data || []);
     }
     setLoading(false);
-  }, [branchId, branchId, toast]);
+  }, [branchId, toast]);
 
   useEffect(() => {
     fetchRoutes();
@@ -159,7 +153,10 @@ const TransportRoutes = () => {
               <IndianRupee className="h-10 w-10 text-green-600 mr-4" />
               <div>
                 <p className="text-2xl font-bold text-green-700">
-                  {routes.length > 0 ? formatCurrency(Math.max(...routes.filter(r => r.fare).map(r => r.fare))) : '₹0'}
+                  {(() => {
+                    const faresWithValues = routes.filter(r => r.fare).map(r => r.fare);
+                    return faresWithValues.length > 0 ? formatCurrency(Math.max(...faresWithValues)) : '₹0';
+                  })()}
                 </p>
                 <p className="text-sm text-green-600">Highest Fare</p>
               </div>

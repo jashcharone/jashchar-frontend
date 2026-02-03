@@ -41,7 +41,91 @@ import JSZip from 'jszip'; // For Photo Upload
 // 8. Parent Account Creation option
 // 9. Error Recovery & Export Failed Records
 // 10. Support for Fedena, Entab, CampusCare migration
+// 11. AI-Powered Fuzzy Column Matching
+// 12. Multi-File Merge Support
+// 13. Intelligent Data Sanitization
 // ═══════════════════════════════════════════════════════════════════════════════
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// AI UTILITIES - FUZZY MATCHING & SIMILARITY
+// ═══════════════════════════════════════════════════════════════════════════════
+
+// Levenshtein Distance - Core AI Algorithm for Fuzzy Matching
+const levenshteinDistance = (str1, str2) => {
+    const m = str1.length;
+    const n = str2.length;
+    const dp = Array(m + 1).fill(null).map(() => Array(n + 1).fill(0));
+    
+    for (let i = 0; i <= m; i++) dp[i][0] = i;
+    for (let j = 0; j <= n; j++) dp[0][j] = j;
+    
+    for (let i = 1; i <= m; i++) {
+        for (let j = 1; j <= n; j++) {
+            if (str1[i - 1] === str2[j - 1]) {
+                dp[i][j] = dp[i - 1][j - 1];
+            } else {
+                dp[i][j] = 1 + Math.min(dp[i - 1][j], dp[i][j - 1], dp[i - 1][j - 1]);
+            }
+        }
+    }
+    return dp[m][n];
+};
+
+// Calculate similarity percentage (0-100)
+const calculateSimilarity = (str1, str2) => {
+    if (!str1 || !str2) return 0;
+    const s1 = str1.toLowerCase().replace(/[^a-z0-9]/g, '');
+    const s2 = str2.toLowerCase().replace(/[^a-z0-9]/g, '');
+    if (s1 === s2) return 100;
+    if (s1.includes(s2) || s2.includes(s1)) return 90;
+    const maxLen = Math.max(s1.length, s2.length);
+    if (maxLen === 0) return 100;
+    const distance = levenshteinDistance(s1, s2);
+    return Math.round((1 - distance / maxLen) * 100);
+};
+
+// AI Field Matcher - Find best match for a source column
+const findBestFieldMatch = (sourceColumn, targetFields, erpMappings) => {
+    const normalized = sourceColumn.toLowerCase().replace(/[^a-z0-9]/g, '');
+    let bestMatch = null;
+    let bestScore = 0;
+    
+    for (const field of targetFields) {
+        // Check exact match first
+        if (normalized === field.key.replace(/_/g, '')) {
+            return { field: field.key, score: 100, confidence: 'high' };
+        }
+        
+        // Check against all ERP mappings
+        for (const [erpName, mappings] of Object.entries(erpMappings)) {
+            const variants = mappings[field.key] || [];
+            for (const variant of variants) {
+                const variantNorm = variant.toLowerCase().replace(/[^a-z0-9]/g, '');
+                if (normalized === variantNorm) {
+                    return { field: field.key, score: 100, confidence: 'high' };
+                }
+                const similarity = calculateSimilarity(sourceColumn, variant);
+                if (similarity > bestScore) {
+                    bestScore = similarity;
+                    bestMatch = field.key;
+                }
+            }
+        }
+        
+        // Also check against field label
+        const labelSimilarity = calculateSimilarity(sourceColumn, field.label);
+        if (labelSimilarity > bestScore) {
+            bestScore = labelSimilarity;
+            bestMatch = field.key;
+        }
+    }
+    
+    return {
+        field: bestMatch,
+        score: bestScore,
+        confidence: bestScore >= 80 ? 'high' : bestScore >= 60 ? 'medium' : 'low'
+    };
+};
 
 // Known ERP field mappings for easy migration
 const ERP_FIELD_MAPPINGS = {
@@ -104,36 +188,172 @@ const ERP_FIELD_MAPPINGS = {
         'email': ['Student_Email', 'Email_ID'],
     },
     'Generic': {
-        'admission_no': ['admission_no', 'admission_number', 'adm_no', 'reg_no', 'registration', 'student_id', 'roll_no', 'id', 'admission no', 'admno'],
-        'first_name': ['first_name', 'firstname', 'fname', 'student_name', 'name', 'student', 'first name', 'first_name *'],
-        'last_name': ['last_name', 'lastname', 'lname', 'surname', 'family_name', 'last name'],
-        'date_of_birth': ['date_of_birth', 'dob', 'birth_date', 'birthday', 'birthdate', 'date of birth'],
-        'gender': ['gender', 'sex', 'gender *'],
-        'father_name': ['father_name', 'fathers_name', 'father', 'dad_name', 'guardian_name', 'guardian', 'father name'],
-        'father_phone': ['father_phone', 'father_mobile', 'father_contact', 'parent_phone', 'guardian_phone', 'guardian_mobile', 'father phone'],
-        'father_occupation': ['father_occupation', 'father_job', 'father_profession', 'father occupation'],
-        'father_email': ['father_email', 'parent_email', 'father email'],
-        'mother_name': ['mother_name', 'mothers_name', 'mother', 'mom_name', 'mother name'],
-        'mother_phone': ['mother_phone', 'mother_mobile', 'mother_contact', 'mother phone'],
-        'mother_occupation': ['mother_occupation', 'mother_job', 'mother_profession', 'mother occupation'],
-        'guardian_name': ['guardian_name', 'guardian', 'guardian name'],
-        'guardian_relation': ['guardian_relation', 'relation', 'guardian relation'],
-        'guardian_phone': ['guardian_phone', 'guardian phone'],
-        'address': ['address', 'permanent_address', 'present_address', 'residential_address', 'home_address', 'street', 'current_address'],
-        'city': ['city', 'town', 'district', 'place'],
-        'state': ['state', 'province', 'region'],
-        'pincode': ['pincode', 'pin_code', 'zip', 'zipcode', 'postal_code'],
-        'phone': ['phone', 'mobile', 'contact_no', 'mobile_no', 'cell', 'telephone'],
-        'email': ['email', 'student_email', 'email_id', 'mail'],
-        'blood_group': ['blood_group', 'blood', 'bloodgroup', 'blood group'],
-        'religion': ['religion', 'faith'],
-        'caste': ['caste', 'community', 'subcaste'],
-        'category': ['category', 'reservation_category', 'reservation', 'quota'],
-        'previous_school': ['previous_school', 'prev_school', 'last_school', 'old_school', 'tc_school', 'previous school'],
-        'aadhar_no': ['aadhar', 'aadhaar', 'aadhar_no', 'aadhaar_no', 'uid', 'aadhar_number', 'aadhar number', 'aadhaar number'],
-        'nationality': ['nationality', 'nation', 'country'],
-        'mother_tongue': ['mother_tongue', 'native_language', 'language', 'mother tongue'],
-        'roll_number': ['roll_number', 'roll_no', 'roll', 'class_roll', 'roll number'],
+        // Admission & ID - Extended patterns
+        'admission_no': [
+            'admission_no', 'admission_number', 'adm_no', 'reg_no', 'registration', 'student_id', 
+            'roll_no', 'id', 'admission no', 'admno', 'admission', 'adm no', 'admn no', 'admn_no',
+            'registration_no', 'registration no', 'enroll_no', 'enrollment_no', 'sr no', 'sr_no',
+            'admission number', 'student code', 'studentid', 'student_code', 'gr no', 'gr_no',
+            'general register no', 'index no', 'index_no', 'scholar no', 'scholar_no'
+        ],
+        
+        // Name fields - Multiple language variations
+        'first_name': [
+            'first_name', 'firstname', 'fname', 'student_name', 'name', 'student', 'first name',
+            'first_name *', 'student name', 'studentname', 'pupil name', 'child name', 'given name',
+            'givenname', 'student first name', 'student_first_name', 'stu_name', 'stuname'
+        ],
+        'last_name': [
+            'last_name', 'lastname', 'lname', 'surname', 'family_name', 'last name', 'familyname',
+            'student surname', 'student_surname', 'second name', 'secondname'
+        ],
+        
+        // Date of Birth - Many Excel export variations
+        'date_of_birth': [
+            'date_of_birth', 'dob', 'birth_date', 'birthday', 'birthdate', 'date of birth',
+            'birth date', 'dateofbirth', 'd.o.b', 'd_o_b', 'student dob', 'student_dob',
+            'dt of birth', 'dt_of_birth', 'born on', 'born_on', 'bday'
+        ],
+        
+        // Gender
+        'gender': [
+            'gender', 'sex', 'gender *', 'student gender', 'student_gender', 'm/f', 'male/female'
+        ],
+        
+        // Father details - Extended
+        'father_name': [
+            'father_name', 'fathers_name', 'father', 'dad_name', 'guardian_name', 'guardian',
+            'father name', 'fathername', 'father\'s name', 'fathers name', 'papa name', 'papa_name',
+            'f/g name', 'f_g_name', 'parent name', 'parentname', 'father full name'
+        ],
+        'father_phone': [
+            'father_phone', 'father_mobile', 'father_contact', 'parent_phone', 'guardian_phone',
+            'guardian_mobile', 'father phone', 'fatherphone', 'father mobile', 'fathermobile',
+            'father contact', 'fathercontact', 'papa mobile', 'papa_mobile', 'parent mobile',
+            'f_mobile', 'f_phone', 'primary contact', 'emergency contact', 'emergency_contact'
+        ],
+        'father_occupation': [
+            'father_occupation', 'father_job', 'father_profession', 'father occupation',
+            'fatheroccupation', 'father\'s occupation', 'papa occupation', 'father work',
+            'f_occupation', 'parent occupation'
+        ],
+        'father_email': ['father_email', 'parent_email', 'father email', 'fatheremail', 'f_email'],
+        
+        // Mother details - Extended
+        'mother_name': [
+            'mother_name', 'mothers_name', 'mother', 'mom_name', 'mother name', 'mothername',
+            'mother\'s name', 'mothers name', 'mummy name', 'mummy_name', 'mama name',
+            'mother full name', 'm_name'
+        ],
+        'mother_phone': [
+            'mother_phone', 'mother_mobile', 'mother_contact', 'mother phone', 'motherphone',
+            'mother mobile', 'mothermobile', 'mother contact', 'mothercontact', 'm_mobile', 'm_phone'
+        ],
+        'mother_occupation': [
+            'mother_occupation', 'mother_job', 'mother_profession', 'mother occupation',
+            'motheroccupation', 'mother\'s occupation', 'm_occupation'
+        ],
+        
+        // Guardian details
+        'guardian_name': [
+            'guardian_name', 'guardian', 'guardian name', 'guardianname', 'local guardian',
+            'local_guardian', 'caretaker', 'caretaker_name'
+        ],
+        'guardian_relation': [
+            'guardian_relation', 'relation', 'guardian relation', 'relationship',
+            'relation with guardian', 'guardian_relationship'
+        ],
+        'guardian_phone': ['guardian_phone', 'guardian phone', 'guardianphone', 'guardian mobile'],
+        
+        // Address fields - Extended
+        'address': [
+            'address', 'permanent_address', 'present_address', 'residential_address', 'home_address',
+            'street', 'current_address', 'full address', 'full_address', 'student address',
+            'student_address', 'res address', 'res_address', 'correspondence address', 'addr',
+            'house address', 'locality', 'street address', 'street_address', 'address line 1',
+            'address_line_1', 'address1'
+        ],
+        'city': [
+            'city', 'town', 'district', 'place', 'city/town', 'city_town', 'village', 'taluka',
+            'taluk', 'tehsil', 'town/city', 'location'
+        ],
+        'state': ['state', 'province', 'region', 'state/province', 'state name', 'statename'],
+        'pincode': [
+            'pincode', 'pin_code', 'zip', 'zipcode', 'postal_code', 'pin code', 'pin',
+            'postal code', 'postalcode', 'zip code', 'area code', 'area_code'
+        ],
+        
+        // Contact - Extended
+        'phone': [
+            'phone', 'mobile', 'contact_no', 'mobile_no', 'cell', 'telephone', 'contact no',
+            'contact', 'mobile number', 'mobile_number', 'phone no', 'phone_no', 'phone number',
+            'phone_number', 'cell phone', 'cellphone', 'student mobile', 'student_mobile',
+            'student phone', 'student_phone', 'contact number', 'contact_number', 'mob no', 'mob_no'
+        ],
+        'email': [
+            'email', 'student_email', 'email_id', 'mail', 'email address', 'email_address',
+            'emailaddress', 'e-mail', 'e_mail', 'student email', 'studentemail', 'mail id',
+            'mail_id', 'mailid'
+        ],
+        
+        // Medical & Personal
+        'blood_group': [
+            'blood_group', 'blood', 'bloodgroup', 'blood group', 'blood type', 'bloodtype',
+            'blood_type', 'bg', 'b_group'
+        ],
+        'religion': ['religion', 'faith', 'student religion', 'student_religion'],
+        'caste': [
+            'caste', 'community', 'subcaste', 'sub caste', 'sub_caste', 'jati', 'caste name',
+            'caste_name', 'castename'
+        ],
+        'category': [
+            'category', 'reservation_category', 'reservation', 'quota', 'social category',
+            'social_category', 'caste category', 'caste_category', 'reservation quota',
+            'gen/obc/sc/st', 'gen_obc_sc_st'
+        ],
+        
+        // Previous Education
+        'previous_school': [
+            'previous_school', 'prev_school', 'last_school', 'old_school', 'tc_school',
+            'previous school', 'prevschool', 'last school', 'lastschool', 'transfer from',
+            'transfer_from', 'school left', 'school_left', 'previous institution',
+            'previous_institution', 'tc from'
+        ],
+        
+        // Identity
+        'aadhar_no': [
+            'aadhar', 'aadhaar', 'aadhar_no', 'aadhaar_no', 'uid', 'aadhar_number',
+            'aadhar number', 'aadhaar number', 'aadhaar_number', 'aadhar no', 'aadhaar no',
+            'unique id', 'unique_id', 'uid no', 'uid_no', 'aadhar card no', 'aadhar_card_no',
+            'uidai', 'uidai no', 'uidai_no'
+        ],
+        
+        // Other
+        'nationality': ['nationality', 'nation', 'country', 'citizen of', 'citizenship'],
+        'mother_tongue': [
+            'mother_tongue', 'native_language', 'language', 'mother tongue', 'mothertongue',
+            'first language', 'first_language', 'native language', 'home language', 'home_language'
+        ],
+        'roll_number': [
+            'roll_number', 'roll_no', 'roll', 'class_roll', 'roll number', 'rollno', 'rollnumber',
+            'class roll', 'class_roll_no', 'section roll', 'section_roll'
+        ],
+        
+        // Fee related - Extended for migration
+        'fee_total_due': [
+            'fee_total_due', 'total_due', 'total due', 'totaldue', 'fee due', 'fee_due',
+            'feeamount', 'fee amount', 'fee_amount', 'total fee', 'total_fee', 'totalfee',
+            'payable', 'amount due', 'amount_due', 'dues', 'fee dues', 'fee_dues'
+        ],
+        'fee_paid_amount': [
+            'fee_paid_amount', 'paid_amount', 'paid amount', 'paidamount', 'fee paid', 'fee_paid',
+            'feepaid', 'amount paid', 'amount_paid', 'payment', 'paid', 'received', 'collected'
+        ],
+        'fee_opening_balance': [
+            'fee_opening_balance', 'opening_balance', 'opening balance', 'openingbalance',
+            'pending', 'pending fee', 'pending_fee', 'balance', 'due balance', 'due_balance',
+            'outstanding', 'arrears', 'carry forward', 'carry_forward'
+        ]
     }
 };
 
@@ -188,34 +408,147 @@ const TARGET_FIELDS = [
 ];
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// AI / SMART SANITIZERS
+// AI / SMART SANITIZERS - COMPREHENSIVE DATA TRANSFORMATION
 // ═══════════════════════════════════════════════════════════════════════════════
 const SmartSanitizer = {
+    // Phone Number Sanitizer - Handles all Indian formats
     phone: (val) => {
         if (!val) return '';
         const digits = String(val).replace(/\D/g, '');
         // Smart fix: If 12 digits and starts with 91, strip 91
         if (digits.length === 12 && digits.startsWith('91')) return digits.slice(2);
-        return digits.slice(-10); // Default to last 10
+        // If 11 digits and starts with 0, strip 0
+        if (digits.length === 11 && digits.startsWith('0')) return digits.slice(1);
+        // If more than 10, take last 10
+        if (digits.length > 10) return digits.slice(-10);
+        return digits;
     },
+    
+    // Gender Sanitizer - Handles variations
     gender: (val) => {
         if (!val) return 'Male'; // Default safety
-        const v = String(val).toLowerCase();
-        if (['m', 'male', 'boy', 'mr', 'master'].some(s => v.includes(s))) return 'Male';
-        if (['f', 'female', 'girl', 'miss', 'mrs', 'ms'].some(s => v.includes(s))) return 'Female';
-        return 'Other';
+        const v = String(val).toLowerCase().trim();
+        if (['m', 'male', 'boy', 'mr', 'master', 'man', 'gents', 'पुरुष', 'ಪುರುಷ'].some(s => v.includes(s))) return 'Male';
+        if (['f', 'female', 'girl', 'miss', 'mrs', 'ms', 'woman', 'ladies', 'महिला', 'ಮಹಿಳೆ'].some(s => v.includes(s))) return 'Female';
+        if (['other', 'transgender', 'trans', 'अन्य', 'ಇತರೆ'].some(s => v.includes(s))) return 'Other';
+        return 'Male'; // Safe default
     },
+    
+    // Blood Group Sanitizer - Normalizes all formats
     bloodGroup: (val) => {
         if (!val) return '';
-        // Normalizes "a pos", "a+", "A +", "A Positive" -> "A+"
-        let v = String(val).toUpperCase().replace(/\s/g, '');
+        let v = String(val).toUpperCase().replace(/\s/g, '').trim();
+        // Handle word forms
         v = v.replace('POSITIVE', '+').replace('POS', '+').replace('NEGATIVE', '-').replace('NEG', '-');
-        return v;
+        v = v.replace('VE', ''); // A+VE -> A+
+        // Validate final format
+        const validGroups = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
+        return validGroups.includes(v) ? v : '';
     },
+    
+    // Fee Amount Sanitizer - Handles currency formats
     feeAmount: (val) => {
-        if (!val) return 0;
-        const num = parseFloat(String(val).replace(/[^0-9.]/g, ''));
-        return isNaN(num) ? 0 : num;
+        if (!val || val === '-' || val === 'N/A' || val === 'NA') return 0;
+        // Remove currency symbols, commas, spaces
+        const num = parseFloat(String(val).replace(/[₹$,\s]/g, '').replace(/[^0-9.-]/g, ''));
+        return isNaN(num) ? 0 : Math.abs(num);
+    },
+    
+    // Name Sanitizer - Proper case, removes special chars
+    name: (val) => {
+        if (!val) return '';
+        // Remove numbers and special chars except spaces
+        let cleaned = String(val).replace(/[^a-zA-Z\s\u0900-\u097F\u0C80-\u0CFF]/g, '').trim();
+        // Proper case each word
+        return cleaned.split(' ')
+            .filter(w => w.length > 0)
+            .map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+            .join(' ');
+    },
+    
+    // Aadhar Sanitizer - Extract 12 digits
+    aadhar: (val) => {
+        if (!val) return '';
+        const digits = String(val).replace(/\D/g, '');
+        return digits.length === 12 ? digits : '';
+    },
+    
+    // Email Sanitizer - Lowercase, trim
+    email: (val) => {
+        if (!val) return '';
+        const email = String(val).toLowerCase().trim();
+        // Basic email validation
+        return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) ? email : '';
+    },
+    
+    // Date Sanitizer - Handles multiple formats
+    date: (val) => {
+        if (!val) return null;
+        const str = String(val).trim();
+        
+        // Already in YYYY-MM-DD format
+        if (/^\d{4}-\d{2}-\d{2}$/.test(str)) return str;
+        
+        // DD-MM-YYYY or DD/MM/YYYY (Indian format)
+        if (/^\d{1,2}[-\/]\d{1,2}[-\/]\d{4}$/.test(str)) {
+            const [d, m, y] = str.split(/[-\/]/);
+            return `${y}-${m.padStart(2, '0')}-${d.padStart(2, '0')}`;
+        }
+        
+        // MM-DD-YYYY or MM/DD/YYYY (US format)
+        if (/^\d{1,2}[-\/]\d{1,2}[-\/]\d{2}$/.test(str)) {
+            const [m, d, y] = str.split(/[-\/]/);
+            const fullYear = parseInt(y) > 50 ? `19${y}` : `20${y}`;
+            return `${fullYear}-${m.padStart(2, '0')}-${d.padStart(2, '0')}`;
+        }
+        
+        // Excel serial date
+        if (/^\d{5}$/.test(str)) {
+            const excelEpoch = new Date(1899, 11, 30);
+            const date = new Date(excelEpoch.getTime() + parseInt(str) * 24 * 60 * 60 * 1000);
+            return date.toISOString().split('T')[0];
+        }
+        
+        // Try native parsing
+        try {
+            const parsed = new Date(str);
+            if (!isNaN(parsed.getTime())) {
+                return parsed.toISOString().split('T')[0];
+            }
+        } catch (e) {}
+        
+        return null;
+    },
+    
+    // Category/Reservation Sanitizer
+    category: (val) => {
+        if (!val) return 'General';
+        const v = String(val).toUpperCase().trim();
+        if (v.includes('GENERAL') || v === 'GEN' || v === 'UR') return 'General';
+        if (v.includes('OBC') || v.includes('OTHER BACKWARD')) return 'OBC';
+        if (v === 'SC' || v.includes('SCHEDULED CASTE')) return 'SC';
+        if (v === 'ST' || v.includes('SCHEDULED TRIBE')) return 'ST';
+        if (v.includes('EWS') || v.includes('ECONOMICALLY WEAKER')) return 'EWS';
+        return 'General';
+    },
+    
+    // Pincode Sanitizer - Extract 6 digits
+    pincode: (val) => {
+        if (!val) return '';
+        const digits = String(val).replace(/\D/g, '');
+        return digits.length === 6 ? digits : '';
+    },
+    
+    // Text Sanitizer - General cleanup
+    text: (val) => {
+        if (!val) return '';
+        return String(val).trim().replace(/\s+/g, ' ');
+    },
+    
+    // Admission Number Sanitizer
+    admissionNo: (val) => {
+        if (!val) return '';
+        return String(val).trim().replace(/\s/g, '').toUpperCase();
     }
 };
 
@@ -284,6 +617,7 @@ const BulkUpload = () => {
     const [rawData, setRawData] = useState([]);
     const [sourceColumns, setSourceColumns] = useState([]);
     const [fieldMappings, setFieldMappings] = useState({});
+    const [mappingConfidence, setMappingConfidence] = useState({}); // AI confidence scores
     const [detectedERP, setDetectedERP] = useState('Generic');
     
     // Validated Data
@@ -497,15 +831,21 @@ const BulkUpload = () => {
                 setSourceColumns(columns);
                 setRawData(jsonData);
                 
-                // Auto-detect ERP and map fields
-                const { erp, mappings } = autoDetectERPAndMap(columns);
+                // Auto-detect ERP and map fields using AI fuzzy matching
+                const { erp, mappings, confidence } = autoDetectERPAndMap(columns);
                 setDetectedERP(erp);
                 setFieldMappings(mappings);
+                setMappingConfidence(confidence || {}); // Store AI confidence scores
+                
+                // Calculate mapping stats
+                const highConfCount = Object.values(confidence || {}).filter(c => c?.confidence === 'high').length;
+                const medConfCount = Object.values(confidence || {}).filter(c => c?.confidence === 'medium').length;
+                const mappedCount = Object.keys(mappings).length;
                 
                 setStep(3); // Go to Photo Step instead of Mapping
                 toast({ 
-                    title: 'File Parsed Successfully', 
-                    description: `Found ${jsonData.length} records. Detected source: ${erp}` 
+                    title: '🤖 AI Analysis Complete', 
+                    description: `${jsonData.length} records, ${mappedCount} fields mapped (${highConfCount} high, ${medConfCount} medium confidence). Source: ${erp}` 
                 });
             } catch (error) {
                 console.error('Parse error:', error);
@@ -559,6 +899,10 @@ const BulkUpload = () => {
         }
     };
 
+    // ═══════════════════════════════════════════════════════════════════════════
+    // AI-POWERED ERP DETECTION & FIELD MAPPING
+    // Uses Levenshtein distance for fuzzy matching
+    // ═══════════════════════════════════════════════════════════════════════════
     const autoDetectERPAndMap = (columns) => {
         const normalizedColumns = columns.map(c => c.toLowerCase().replace(/[^a-z0-9]/g, '_'));
         
@@ -582,27 +926,78 @@ const BulkUpload = () => {
             }
         }
         
-        // Create mappings
+        // Create mappings with AI fuzzy matching
         const mappings = {};
+        const mappingConfidence = {}; // Track confidence scores
         const erpFieldMap = ERP_FIELD_MAPPINGS[bestMatch];
         
         for (const [targetField, sourceVariants] of Object.entries(erpFieldMap)) {
+            // First try exact match
+            let matched = false;
             for (const variant of sourceVariants) {
                 const matchedCol = columns.find(c => 
                     c.toLowerCase().replace(/[^a-z0-9]/g, '_') === variant.toLowerCase().replace(/[^a-z0-9]/g, '_')
                 );
                 if (matchedCol) {
                     mappings[targetField] = matchedCol;
+                    mappingConfidence[targetField] = { score: 100, confidence: 'high' };
+                    matched = true;
                     break;
+                }
+            }
+            
+            // If no exact match, try AI fuzzy matching
+            if (!matched) {
+                const targetFieldDef = TARGET_FIELDS.find(f => f.key === targetField);
+                if (targetFieldDef) {
+                    let bestFuzzyMatch = null;
+                    let bestFuzzyScore = 0;
+                    
+                    for (const col of columns) {
+                        // Skip if already mapped to another field
+                        if (Object.values(mappings).includes(col)) continue;
+                        
+                        // Check similarity with all variants
+                        for (const variant of sourceVariants) {
+                            const similarity = calculateSimilarity(col, variant);
+                            if (similarity > bestFuzzyScore && similarity >= 60) {
+                                bestFuzzyScore = similarity;
+                                bestFuzzyMatch = col;
+                            }
+                        }
+                        
+                        // Also check against target field label
+                        const labelSimilarity = calculateSimilarity(col, targetFieldDef.label);
+                        if (labelSimilarity > bestFuzzyScore && labelSimilarity >= 60) {
+                            bestFuzzyScore = labelSimilarity;
+                            bestFuzzyMatch = col;
+                        }
+                    }
+                    
+                    if (bestFuzzyMatch) {
+                        mappings[targetField] = bestFuzzyMatch;
+                        mappingConfidence[targetField] = {
+                            score: bestFuzzyScore,
+                            confidence: bestFuzzyScore >= 80 ? 'high' : bestFuzzyScore >= 70 ? 'medium' : 'low'
+                        };
+                    }
                 }
             }
         }
         
-        return { erp: bestMatch, mappings };
+        // Log AI matching results for debugging
+        console.log('🤖 AI Column Mapping Results:', {
+            detectedERP: bestMatch,
+            totalColumns: columns.length,
+            mappedFields: Object.keys(mappings).length,
+            confidence: mappingConfidence
+        });
+        
+        return { erp: bestMatch, mappings, confidence: mappingConfidence };
     };
 
     // ═══════════════════════════════════════════════════════════════════════════
-    // DATA VALIDATION
+    // AI-POWERED DATA VALIDATION & TRANSFORMATION
     // ═══════════════════════════════════════════════════════════════════════════
     const validateData = async () => {
         setLoading(true);
@@ -620,58 +1015,110 @@ const BulkUpload = () => {
         const existingAadhars = new Set(existingStudents?.map(s => s.aadhar_no?.replace(/\s/g, '')).filter(Boolean) || []);
         const existingEmails = new Set(existingStudents?.map(s => s.email?.toLowerCase()).filter(Boolean) || []);
         
+        console.log('🤖 AI Validation: Processing', rawData.length, 'records...');
+        
         for (let i = 0; i < rawData.length; i++) {
             const row = rawData[i];
             const rowNum = i + 2; // Excel row (1-indexed + header)
             const rowErrors = [];
             const record = { _rowNum: rowNum, _original: row };
             
-            // Map fields
+            // Map fields with AI sanitization
             for (const field of TARGET_FIELDS) {
                 const sourceCol = fieldMappings[field.key];
                 let value = sourceCol ? row[sourceCol] : '';
                 
-                // Clean and transform value
-                // AI Smart Correction
-                if (value !== null && value !== undefined) {
-                    value = String(value).trim();
-                    
-                    if (field.type === 'phone') value = SmartSanitizer.phone(value);
-                    if (field.key === 'gender') value = SmartSanitizer.gender(value);
-                    if (field.key === 'blood_group') value = SmartSanitizer.bloodGroup(value);
-                    if (field.type === 'currency') value = SmartSanitizer.feeAmount(value);
+                // Skip empty values
+                if (value === null || value === undefined || String(value).trim() === '') {
+                    record[field.key] = null;
+                    if (field.required) {
+                        rowErrors.push(`${field.label} is required`);
+                    }
+                    continue;
                 }
                 
-                // Type-specific transformations
-                if (field.type === 'date' && value) {
-                    const parsed = parseDate(value);
-                    if (parsed) {
-                        value = format(parsed, 'yyyy-MM-dd');
-                    } else if (value) {
-                        rowErrors.push(`Invalid date format for ${field.label}: ${value}`);
-                    }
-                }
+                // AI Smart Sanitization based on field type and key
+                value = String(value).trim();
                 
-                if (field.type === 'phone' && value) {
-                    // Already sanitized by SmartSanitizer
-                    if (value.length !== 10 && value.length > 0) {
-                        rowErrors.push(`Invalid phone for ${field.label}: must be 10 digits`);
-                    }
-                }
-                
-                if (field.key === 'aadhar_no' && value) {
-                    value = value.replace(/\s/g, '');
-                    if (value.length !== 12 || !/^\d+$/.test(value)) {
-                        rowErrors.push('Aadhar must be 12 digits');
-                    }
-                }
-                
-                // Gender already sanitized
-                
-                if (field.key === 'email' && value) {
-                    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
-                        rowErrors.push(`Invalid email format: ${value}`);
-                    }
+                // Apply specific sanitizers
+                switch (field.key) {
+                    case 'first_name':
+                    case 'last_name':
+                    case 'father_name':
+                    case 'mother_name':
+                    case 'guardian_name':
+                        value = SmartSanitizer.name(value);
+                        if (value && value.length < 2) {
+                            rowErrors.push(`${field.label} must be at least 2 characters`);
+                        }
+                        break;
+                        
+                    case 'gender':
+                        value = SmartSanitizer.gender(value);
+                        break;
+                        
+                    case 'blood_group':
+                        value = SmartSanitizer.bloodGroup(value);
+                        break;
+                        
+                    case 'category':
+                        value = SmartSanitizer.category(value);
+                        break;
+                        
+                    case 'aadhar_no':
+                        value = SmartSanitizer.aadhar(value);
+                        if (value && value.length !== 12) {
+                            rowErrors.push('Aadhar must be 12 digits');
+                            value = null;
+                        }
+                        break;
+                        
+                    case 'email':
+                    case 'father_email':
+                        value = SmartSanitizer.email(value);
+                        if (!value && row[sourceCol]) {
+                            rowErrors.push(`Invalid email format: ${row[sourceCol]}`);
+                        }
+                        break;
+                        
+                    case 'pincode':
+                        value = SmartSanitizer.pincode(value);
+                        break;
+                        
+                    case 'admission_no':
+                        value = SmartSanitizer.admissionNo(value);
+                        break;
+                        
+                    case 'date_of_birth':
+                        value = SmartSanitizer.date(value);
+                        if (!value && row[sourceCol]) {
+                            // Try parseDate as fallback
+                            const parsed = parseDate(row[sourceCol]);
+                            if (parsed) {
+                                value = format(parsed, 'yyyy-MM-dd');
+                            } else {
+                                rowErrors.push(`Invalid date format for ${field.label}: ${row[sourceCol]}`);
+                            }
+                        }
+                        break;
+                        
+                    default:
+                        // Phone fields
+                        if (field.type === 'phone') {
+                            value = SmartSanitizer.phone(value);
+                            if (value && value.length !== 10) {
+                                rowErrors.push(`Invalid phone for ${field.label}: must be 10 digits`);
+                            }
+                        }
+                        // Currency/Fee fields
+                        else if (field.type === 'currency') {
+                            value = SmartSanitizer.feeAmount(value);
+                        }
+                        // General text cleanup
+                        else if (field.type === 'text' || field.type === 'textarea') {
+                            value = SmartSanitizer.text(value);
+                        }
+                        break;
                 }
                 
                 // Photo Matching Check
@@ -679,15 +1126,7 @@ const BulkUpload = () => {
                     const photoBlob = unzippedPhotos[value.toLowerCase()];
                     if (photoBlob) {
                         record._hasPhoto = true;
-                    } else {
-                        // Warn but don't error? Or info? 
-                        // rowErrors.push(`Photo file '${value}' not found in ZIP`);
                     }
-                }
-                
-                // Required field check
-                if (field.required && !value) {
-                    rowErrors.push(`${field.label} is required`);
                 }
                 
                 record[field.key] = value || null;
@@ -1029,11 +1468,15 @@ const BulkUpload = () => {
         setRawData([]);
         setSourceColumns([]);
         setFieldMappings({});
+        setMappingConfidence({}); // Reset AI confidence scores
         setValidatedData([]);
         setValidationErrors([]);
         setDuplicates([]);
         setUploadResults({ success: 0, failed: 0, errors: [], successRecords: [] });
         setProgress(0);
+        setPhotoZipFile(null);
+        setUnzippedPhotos({});
+        setPhotoMatchCount(0);
     };
 
     // ═══════════════════════════════════════════════════════════════════════════
@@ -1342,17 +1785,40 @@ const BulkUpload = () => {
                         <CardHeader className="bg-muted/30">
                             <CardTitle className="flex items-center gap-2">
                                 <ArrowUpDown className="h-5 w-5 text-primary" />
-                                Step 4: Map Fields
+                                Step 4: AI Field Mapping
                             </CardTitle>
                             <CardDescription className="flex items-center gap-2">
-                                <Badge variant="secondary">{detectedERP}</Badge>
-                                format detected. Verify and adjust field mappings.
+                                <Badge variant="secondary" className="bg-gradient-to-r from-blue-500 to-purple-500 text-white">
+                                    🤖 {detectedERP}
+                                </Badge>
+                                format detected. AI has auto-mapped fields - verify and adjust if needed.
                             </CardDescription>
                         </CardHeader>
                         <CardContent className="p-6">
+                            {/* AI Confidence Legend */}
+                            <div className="flex items-center gap-4 mb-4 p-3 bg-muted/50 rounded-lg">
+                                <span className="text-sm font-medium">AI Confidence:</span>
+                                <div className="flex items-center gap-2">
+                                    <div className="w-3 h-3 rounded-full bg-green-500" />
+                                    <span className="text-xs">High (80%+)</span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <div className="w-3 h-3 rounded-full bg-yellow-500" />
+                                    <span className="text-xs">Medium (60-79%)</span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <div className="w-3 h-3 rounded-full bg-red-500" />
+                                    <span className="text-xs">Low (&lt;60%)</span>
+                                </div>
+                            </div>
+                            
                             <ScrollArea className="h-[500px] pr-4">
                                 <div className="space-y-3">
-                                    {TARGET_FIELDS.map(field => (
+                                    {TARGET_FIELDS.map(field => {
+                                        const conf = mappingConfidence[field.key];
+                                        const confColor = conf?.confidence === 'high' ? 'bg-green-500' :
+                                                         conf?.confidence === 'medium' ? 'bg-yellow-500' : 'bg-red-500';
+                                        return (
                                         <div key={field.key} className="flex items-center gap-4 p-3 border rounded-lg bg-card hover:bg-muted/50 transition-colors">
                                             <div className="w-1/3">
                                                 <Label className="font-medium flex items-center gap-2">
@@ -1380,20 +1846,31 @@ const BulkUpload = () => {
                                                     </SelectContent>
                                                 </Select>
                                             </div>
-                                            {fieldMappings[field.key] && (
+                                            {fieldMappings[field.key] && conf && (
+                                                <div className="flex items-center gap-1">
+                                                    <div className={`w-2.5 h-2.5 rounded-full ${confColor}`} 
+                                                         title={`AI Confidence: ${conf.score}%`} />
+                                                    <span className="text-xs text-muted-foreground">{conf.score}%</span>
+                                                </div>
+                                            )}
+                                            {fieldMappings[field.key] && !conf && (
                                                 <CheckCircle className="h-5 w-5 text-green-500 flex-shrink-0" />
                                             )}
                                         </div>
-                                    ))}
+                                    )})}
                                 </div>
                             </ScrollArea>
                             
-                            <Alert className="mt-4">
+                            <Alert className="mt-4 bg-gradient-to-r from-blue-500/10 to-purple-500/10">
                                 <Info className="h-4 w-4" />
-                                <AlertTitle>Mapping Summary</AlertTitle>
+                                <AlertTitle>🤖 AI Mapping Summary</AlertTitle>
                                 <AlertDescription>
                                     {Object.keys(fieldMappings).filter(k => fieldMappings[k]).length} of {TARGET_FIELDS.length} fields mapped.
-                                    Required fields: First Name, Gender
+                                    {' '}
+                                    {Object.values(mappingConfidence).filter(c => c?.confidence === 'high').length} high confidence,{' '}
+                                    {Object.values(mappingConfidence).filter(c => c?.confidence === 'medium').length} medium confidence.
+                                    <br />
+                                    <span className="text-yellow-600 font-medium">Required: First Name, Gender</span>
                                 </AlertDescription>
                             </Alert>
                         </CardContent>

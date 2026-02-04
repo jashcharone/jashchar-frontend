@@ -27,35 +27,59 @@ const ApproveStudentLeave = () => {
         setLoading(true);
 
         try {
-            let query = supabase
+            // Get leave requests (no FK join - leave_types not linked)
+            const { data, error } = await supabase
                 .from('leave_requests')
                 .select(`
                     id,
-                    start_date,
-                    end_date,
+                    from_date,
+                    to_date,
                     reason,
                     status,
+                    admin_remark,
                     created_at,
-                    leave_type:leave_types(name),
-                    student:student_profiles!leave_requests_user_id_fkey(full_name, admission_no, classes(name), sections(name)),
-                    staff:profiles!leave_requests_user_id_fkey(full_name)
+                    staff_id,
+                    leave_type_id
                 `)
                 .eq('branch_id', branchId)
                 .order('created_at', { ascending: false });
 
-            if (selectedBranch) {
-                query = query.eq('branch_id', selectedBranch.id);
-            }
-
-            const { data, error } = await query;
-
             if (error) throw error;
             
-            const formattedData = data.map(req => ({
+            // Get leave types separately
+            const leaveTypeIds = [...new Set(data?.filter(r => r.leave_type_id).map(r => r.leave_type_id))];
+            let leaveTypeMap = new Map();
+            
+            if (leaveTypeIds.length > 0) {
+                const { data: ltData } = await supabase
+                    .from('leave_types')
+                    .select('id, name')
+                    .in('id', leaveTypeIds);
+                
+                leaveTypeMap = new Map((ltData || []).map(lt => [lt.id, lt.name]));
+            }
+            
+            // Get staff names for the requests
+            const staffIds = [...new Set(data?.filter(r => r.staff_id).map(r => r.staff_id))];
+            let staffMap = new Map();
+            
+            if (staffIds.length > 0) {
+                const { data: staffData } = await supabase
+                    .from('employee_profiles')
+                    .select('id, full_name')
+                    .in('id', staffIds);
+                
+                staffMap = new Map((staffData || []).map(s => [s.id, s.full_name]));
+            }
+            
+            const formattedData = (data || []).map(req => ({
                 ...req,
-                applicant_name: req.student?.full_name || req.staff?.full_name || 'N/A',
-                class_name: req.student?.classes?.name || 'N/A',
-                section_name: req.student?.sections?.name || 'N/A'
+                start_date: req.from_date,
+                end_date: req.to_date,
+                applicant_name: staffMap.get(req.staff_id) || 'N/A',
+                leave_type: { name: leaveTypeMap.get(req.leave_type_id) || 'General Leave' },
+                class_name: 'Staff',
+                section_name: ''
             }));
 
             setRequests(formattedData);
@@ -73,7 +97,7 @@ const ApproveStudentLeave = () => {
 
     const handleStatusChange = async (leaveId, newStatus) => {
         const { error } = await supabase.from('leave_requests')
-            .update({ status: newStatus, approved_by: user.id })
+            .update({ status: newStatus, updated_at: new Date().toISOString() })
             .eq('id', leaveId);
         
         if (error) {

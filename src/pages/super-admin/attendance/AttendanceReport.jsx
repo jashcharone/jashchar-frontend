@@ -138,8 +138,8 @@ const AttendanceReport = () => {
     const fetchSections = async (classId) => {
         const { data, error } = await supabase
             .from('sections')
-            .select('id, name')
-            .eq('class_id', classId)
+            .select('id, name, class_sections!inner(class_id)')
+            .eq('class_sections.class_id', classId)
             .order('name');
         
         if (!error) setSections(data || []);
@@ -189,12 +189,13 @@ const AttendanceReport = () => {
     };
     
     const fetchStudentAttendance = async (startDate, endDate) => {
-        // First get students
+        // First get active (non-disabled) students in current session
         let studentQuery = supabase
             .from('student_profiles')
             .select('id, full_name, admission_number, roll_number, class_id, section_id, photo_url')
             .eq('branch_id', branchId)
-            .eq('session_id', currentSessionId);
+            .eq('session_id', currentSessionId)  // Filter by current session
+            .or('is_disabled.is.null,is_disabled.eq.false');  // Only active students (not disabled)
         
         if (selectedClass !== 'all') {
             studentQuery = studentQuery.eq('class_id', selectedClass);
@@ -399,22 +400,69 @@ const AttendanceReport = () => {
     // ═══════════════════════════════════════════════════════════════════════════════
     
     const exportToCSV = () => {
+        // School/Branch info header
+        const schoolName = selectedBranch?.name || 'School';
+        const reportDate = format(new Date(), 'dd-MM-yyyy hh:mm a');
+        const periodInfo = reportType === 'daily' 
+            ? format(selectedDate, 'dd MMMM yyyy')
+            : reportType === 'monthly'
+                ? format(selectedDate, 'MMMM yyyy')
+                : `${format(dateRange.from, 'dd MMM yyyy')} to ${format(dateRange.to, 'dd MMM yyyy')}`;
+        
+        // Build comprehensive Excel-compatible CSV
+        const reportTitle = activeTab === 'student' ? 'STUDENT ATTENDANCE REPORT' : 'STAFF ATTENDANCE REPORT';
+        
+        const infoRows = [
+            [reportTitle],
+            [`School: ${schoolName}`],
+            [`Report Period: ${periodInfo}`],
+            [`Generated On: ${reportDate}`],
+            [`Total ${activeTab === 'student' ? 'Students' : 'Staff'}: ${filteredData.length}`],
+            [], // Empty row for spacing
+        ];
+        
+        // Headers with better naming
         const headers = activeTab === 'student'
-            ? ['Name', 'Admission No', 'Class', 'Section', 'Total Days', 'Present', 'Absent', 'Late', 'Leave', 'Attendance %']
-            : ['Name', 'Employee Code', 'Department', 'Total Days', 'Present', 'Absent', 'Late', 'Leave', 'Attendance %'];
+            ? ['S.No', 'Student Name', 'Admission No', 'Class', 'Section', 'Working Days', 'Present (P)', 'Absent (A)', 'Late (L)', 'Leave (Lv)', 'Holiday', 'Attendance %', 'Status']
+            : ['S.No', 'Staff Name', 'Employee ID', 'Department', 'Working Days', 'Present (P)', 'Absent (A)', 'Late (L)', 'Leave (Lv)', 'Holiday', 'Attendance %', 'Status'];
         
-        const rows = filteredData.map(item => activeTab === 'student'
-            ? [item.name, item.code, item.class, item.section, item.totalDays, item.present, item.absent, item.late, item.leave, `${item.percentage}%`]
-            : [item.name, item.code, item.department, item.totalDays, item.present, item.absent, item.late, item.leave, `${item.percentage}%`]
-        );
+        // Data rows with serial number and status
+        const rows = filteredData.map((item, index) => {
+            const statusText = item.percentage >= 75 ? 'Good' : item.percentage >= 50 ? 'Average' : 'Poor';
+            return activeTab === 'student'
+                ? [index + 1, item.name, item.code, item.class, item.section, item.totalDays, item.present, item.absent, item.late, item.leave, item.holiday || 0, `${item.percentage}%`, statusText]
+                : [index + 1, item.name, item.code, item.department, item.totalDays, item.present, item.absent, item.late, item.leave, item.holiday || 0, `${item.percentage}%`, statusText];
+        });
         
-        const csvContent = [headers, ...rows].map(row => row.join(',')).join('\n');
-        const blob = new Blob([csvContent], { type: 'text/csv' });
+        // Summary row
+        const summaryRow = activeTab === 'student'
+            ? ['', 'TOTAL', '', '', '', '', summary.present, summary.absent, summary.late, summary.leave, summary.holiday || 0, `${summary.avgPercentage}%`, '']
+            : ['', 'TOTAL', '', '', '', summary.present, summary.absent, summary.late, summary.leave, summary.holiday || 0, `${summary.avgPercentage}%`, ''];
+        
+        // Combine all rows
+        const allRows = [...infoRows, headers, ...rows, [], summaryRow];
+        
+        // Convert to CSV with proper escaping for Excel
+        const csvContent = allRows.map(row => 
+            row.map(cell => {
+                const cellStr = String(cell ?? '');
+                // Escape quotes and wrap in quotes if contains comma, quote, or newline
+                if (cellStr.includes(',') || cellStr.includes('"') || cellStr.includes('\n')) {
+                    return `"${cellStr.replace(/"/g, '""')}"`;
+                }
+                return cellStr;
+            }).join(',')
+        ).join('\n');
+        
+        // Add BOM for Excel UTF-8 compatibility
+        const BOM = '\uFEFF';
+        const blob = new Blob([BOM + csvContent], { type: 'text/csv;charset=utf-8' });
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `attendance_report_${format(new Date(), 'yyyy-MM-dd')}.csv`;
+        a.download = `${schoolName}_${activeTab}_attendance_${format(new Date(), 'yyyy-MM-dd_HHmm')}.csv`;
         a.click();
+        window.URL.revokeObjectURL(url);
         
         toast({ title: '✅ Report exported successfully!' });
     };
@@ -782,22 +830,22 @@ const AttendanceReport = () => {
                                                 )}
                                                 <TableCell className="text-center">{item.totalDays}</TableCell>
                                                 <TableCell className="text-center">
-                                                    <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                                                    <Badge variant="outline" className="bg-green-500/10 text-green-600 dark:text-green-400 border-green-500/30">
                                                         {item.present}
                                                     </Badge>
                                                 </TableCell>
                                                 <TableCell className="text-center">
-                                                    <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200">
+                                                    <Badge variant="outline" className="bg-red-500/10 text-red-600 dark:text-red-400 border-red-500/30">
                                                         {item.absent}
                                                     </Badge>
                                                 </TableCell>
                                                 <TableCell className="text-center">
-                                                    <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200">
+                                                    <Badge variant="outline" className="bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/30">
                                                         {item.late}
                                                     </Badge>
                                                 </TableCell>
                                                 <TableCell className="text-center">
-                                                    <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+                                                    <Badge variant="outline" className="bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/30">
                                                         {item.leave}
                                                     </Badge>
                                                 </TableCell>
@@ -838,17 +886,17 @@ const AttendanceReport = () => {
                 {/* Quick Stats Cards */}
                 {filteredData.length > 0 && (
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <Card className="border-green-200 bg-green-50/50">
+                        <Card className="border-green-500/30 bg-green-500/5 dark:bg-green-500/10">
                             <CardContent className="pt-6">
                                 <div className="flex items-center justify-between">
                                     <div>
                                         <p className="text-sm text-muted-foreground">Good Attendance (≥75%)</p>
-                                        <p className="text-3xl font-bold text-green-600">
+                                        <p className="text-3xl font-bold text-green-600 dark:text-green-400">
                                             {filteredData.filter(d => d.status === 'good').length}
                                         </p>
                                     </div>
-                                    <div className="p-3 rounded-full bg-green-100">
-                                        <TrendingUp className="w-6 h-6 text-green-600" />
+                                    <div className="p-3 rounded-full bg-green-500/20">
+                                        <TrendingUp className="w-6 h-6 text-green-600 dark:text-green-400" />
                                     </div>
                                 </div>
                                 <Progress 
@@ -858,17 +906,17 @@ const AttendanceReport = () => {
                             </CardContent>
                         </Card>
                         
-                        <Card className="border-amber-200 bg-amber-50/50">
+                        <Card className="border-amber-500/30 bg-amber-500/5 dark:bg-amber-500/10">
                             <CardContent className="pt-6">
                                 <div className="flex items-center justify-between">
                                     <div>
                                         <p className="text-sm text-muted-foreground">Average Attendance (50-75%)</p>
-                                        <p className="text-3xl font-bold text-amber-600">
+                                        <p className="text-3xl font-bold text-amber-600 dark:text-amber-400">
                                             {filteredData.filter(d => d.status === 'average').length}
                                         </p>
                                     </div>
-                                    <div className="p-3 rounded-full bg-amber-100">
-                                        <AlertTriangle className="w-6 h-6 text-amber-600" />
+                                    <div className="p-3 rounded-full bg-amber-500/20">
+                                        <AlertTriangle className="w-6 h-6 text-amber-600 dark:text-amber-400" />
                                     </div>
                                 </div>
                                 <Progress 
@@ -878,17 +926,17 @@ const AttendanceReport = () => {
                             </CardContent>
                         </Card>
                         
-                        <Card className="border-red-200 bg-red-50/50">
+                        <Card className="border-red-500/30 bg-red-500/5 dark:bg-red-500/10">
                             <CardContent className="pt-6">
                                 <div className="flex items-center justify-between">
                                     <div>
                                         <p className="text-sm text-muted-foreground">Poor Attendance (&lt;50%)</p>
-                                        <p className="text-3xl font-bold text-red-600">
+                                        <p className="text-3xl font-bold text-red-600 dark:text-red-400">
                                             {filteredData.filter(d => d.status === 'poor').length}
                                         </p>
                                     </div>
-                                    <div className="p-3 rounded-full bg-red-100">
-                                        <TrendingDown className="w-6 h-6 text-red-600" />
+                                    <div className="p-3 rounded-full bg-red-500/20">
+                                        <TrendingDown className="w-6 h-6 text-red-600 dark:text-red-400" />
                                     </div>
                                 </div>
                                 <Progress 

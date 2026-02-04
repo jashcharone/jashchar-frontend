@@ -1,6 +1,6 @@
 ﻿import React, { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { MessageSquare, Edit, Link as LinkIcon, Send, History, Settings, BarChart3 } from "lucide-react";
+import { MessageSquare, Edit, Link as LinkIcon, Send, History, Settings, BarChart3, Bot, Blocks, Zap, Brain, Building2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
 import api from '@/lib/api';
@@ -14,6 +14,8 @@ import WhatsAppAssignments from './WhatsAppAssignments';
 import WhatsAppSender from './WhatsAppSender';
 import WhatsAppLogs from './WhatsAppLogs';
 import WhatsAppBillingDashboard from './WhatsAppBillingDashboard';
+import WhatsAppModules from './WhatsAppModules';
+import WhatsAppAI from './WhatsAppAI';
 
 const WhatsAppManager = () => {
   const { toast } = useToast();
@@ -71,7 +73,7 @@ const WhatsAppManager = () => {
             WhatsApp Manager
           </h1>
           <p className="text-muted-foreground mt-1">
-            Manage WhatsApp Business Accounts, Templates, Assignments, and Campaigns.
+            AI-Powered WhatsApp Business Manager - Modules, Automation, Chatbots & More
           </p>
         </div>
         <div className="flex gap-2">
@@ -83,24 +85,35 @@ const WhatsAppManager = () => {
       </div>
 
       <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-4">
-        <TabsList className="bg-green-50 dark:bg-green-900/20 p-1 flex flex-wrap h-auto">
-          <TabsTrigger value="accounts" className="data-[state=active]:bg-white data-[state=active]:text-green-700 data-[state=active]:shadow-sm">
+        <TabsList className="bg-green-50 dark:bg-green-900/20 p-1 flex flex-wrap h-auto gap-1">
+          {/* Core Features */}
+          <TabsTrigger value="accounts" className="data-[state=active]:bg-white dark:data-[state=active]:bg-gray-800 data-[state=active]:text-green-700 data-[state=active]:shadow-sm">
             <Settings className="h-4 w-4 mr-2" /> Accounts
           </TabsTrigger>
-          <TabsTrigger value="templates" className="data-[state=active]:bg-white data-[state=active]:text-green-700 data-[state=active]:shadow-sm">
+          <TabsTrigger value="templates" className="data-[state=active]:bg-white dark:data-[state=active]:bg-gray-800 data-[state=active]:text-green-700 data-[state=active]:shadow-sm">
             <Edit className="h-4 w-4 mr-2" /> Templates
           </TabsTrigger>
-          <TabsTrigger value="assignments" className="data-[state=active]:bg-white data-[state=active]:text-green-700 data-[state=active]:shadow-sm">
-            <LinkIcon className="h-4 w-4 mr-2" /> Assignments
-          </TabsTrigger>
-          <TabsTrigger value="send" className="data-[state=active]:bg-white data-[state=active]:text-green-700 data-[state=active]:shadow-sm">
+          <TabsTrigger value="send" className="data-[state=active]:bg-white dark:data-[state=active]:bg-gray-800 data-[state=active]:text-green-700 data-[state=active]:shadow-sm">
             <Send className="h-4 w-4 mr-2" /> Send Message
           </TabsTrigger>
-          <TabsTrigger value="logs" className="data-[state=active]:bg-white data-[state=active]:text-green-700 data-[state=active]:shadow-sm">
+          <TabsTrigger value="logs" className="data-[state=active]:bg-white dark:data-[state=active]:bg-gray-800 data-[state=active]:text-green-700 data-[state=active]:shadow-sm">
             <History className="h-4 w-4 mr-2" /> Logs
           </TabsTrigger>
-          <TabsTrigger value="billing" className="data-[state=active]:bg-white data-[state=active]:text-green-700 data-[state=active]:shadow-sm">
-            <BarChart3 className="h-4 w-4 mr-2" /> Usage & Billing
+          
+          {/* AI & Advanced Features */}
+          <TabsTrigger value="ai" className="data-[state=active]:bg-white dark:data-[state=active]:bg-gray-800 data-[state=active]:text-purple-700 data-[state=active]:shadow-sm bg-purple-50 dark:bg-purple-900/20">
+            <Bot className="h-4 w-4 mr-2" /> AI Chatbot
+          </TabsTrigger>
+          <TabsTrigger value="modules" className="data-[state=active]:bg-white dark:data-[state=active]:bg-gray-800 data-[state=active]:text-blue-700 data-[state=active]:shadow-sm bg-blue-50 dark:bg-blue-900/20">
+            <Blocks className="h-4 w-4 mr-2" /> Modules
+          </TabsTrigger>
+          
+          {/* Admin Features */}
+          <TabsTrigger value="assignments" className="data-[state=active]:bg-white dark:data-[state=active]:bg-gray-800 data-[state=active]:text-green-700 data-[state=active]:shadow-sm">
+            <Building2 className="h-4 w-4 mr-2" /> Branch Assign
+          </TabsTrigger>
+          <TabsTrigger value="billing" className="data-[state=active]:bg-white dark:data-[state=active]:bg-gray-800 data-[state=active]:text-green-700 data-[state=active]:shadow-sm">
+            <BarChart3 className="h-4 w-4 mr-2" /> Billing
           </TabsTrigger>
         </TabsList>
 
@@ -126,6 +139,16 @@ const WhatsAppManager = () => {
 
         <TabsContent value="billing" className="space-y-4">
           <WhatsAppBillingDashboard />
+        </TabsContent>
+
+        {/* NEW: AI Chatbot Tab */}
+        <TabsContent value="ai" className="space-y-4">
+          <WhatsAppAI />
+        </TabsContent>
+
+        {/* NEW: Modules Tab */}
+        <TabsContent value="modules" className="space-y-4">
+          <WhatsAppModules />
         </TabsContent>
       </Tabs>
     </div>

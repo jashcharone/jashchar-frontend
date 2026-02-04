@@ -6,8 +6,9 @@
  * ═══════════════════════════════════════════════════════════════════════════════
  */
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
+import jsPDF from 'jspdf';
 import { supabase } from '@/lib/customSupabaseClient';
 import api from '@/lib/api';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
@@ -186,10 +187,302 @@ const StudentProfile = () => {
   const [feesSummary, setFeesSummary] = useState({ total: 0, paid: 0, balance: 0 });
   const [attendanceSummary, setAttendanceSummary] = useState({ present: 0, absent: 0, total: 0 });
   const [refreshKey, setRefreshKey] = useState(0); // For forcing refresh
+  const [isExporting, setIsExporting] = useState(false); // PDF export loading state
 
   const targetId = studentId || user?.id;
   // Use selectedBranch.id consistently (same as Edit page)
   const branchId = selectedBranch?.id || user?.profile?.branch_id;
+
+  // 🖨️ PDF Export ref and handler
+  const printRef = useRef();
+  
+  // Get school/branch name for PDF
+  const schoolName = selectedBranch?.name || 'Jashchar School';
+  
+  const handleExportPDF = async () => {
+    if (!student) return;
+    
+    setIsExporting(true);
+    toast({
+      title: "Generating PDF...",
+      description: "Please wait while we create your PDF",
+    });
+
+    try {
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      const pageWidth = 210;
+      const pageHeight = 297;
+      const margin = 12;
+      const contentWidth = pageWidth - (margin * 2);
+      let y = margin;
+
+      // Helper functions
+      const addText = (text, x, yPos, options = {}) => {
+        const { fontSize = 10, fontStyle = 'normal', color = [51, 51, 51], align = 'left' } = options;
+        pdf.setFontSize(fontSize);
+        pdf.setFont('helvetica', fontStyle);
+        pdf.setTextColor(...color);
+        pdf.text(text || 'N/A', x, yPos, { align });
+        return yPos;
+      };
+
+      const addLine = (yPos, color = [200, 200, 200]) => {
+        pdf.setDrawColor(...color);
+        pdf.setLineWidth(0.3);
+        pdf.line(margin, yPos, pageWidth - margin, yPos);
+        return yPos + 2;
+      };
+
+      const addSection = (title, yPos) => {
+        if (yPos > pageHeight - 40) {
+          pdf.addPage();
+          yPos = margin + 10;
+        }
+        pdf.setFillColor(30, 64, 175); // Deep blue background
+        pdf.roundedRect(margin, yPos, contentWidth, 7, 1.5, 1.5, 'F');
+        addText(title.toUpperCase(), margin + 4, yPos + 5, { fontSize: 9, fontStyle: 'bold', color: [255, 255, 255] });
+        return yPos + 10;
+      };
+
+      const addField = (label, value, x, yPos, width = 85) => {
+        addText(label + ':', x, yPos, { fontSize: 8, color: [100, 100, 100] });
+        addText(String(value || 'Not Provided'), x + 1, yPos + 4, { fontSize: 9, fontStyle: 'bold', color: [30, 30, 30] });
+        return yPos;
+      };
+
+      const checkPageBreak = (currentY, neededSpace = 30) => {
+        if (currentY + neededSpace > pageHeight - margin) {
+          pdf.addPage();
+          return margin;
+        }
+        return currentY;
+      };
+
+      // ═══════════════════════════════════════════════════════════════════════════
+      // HEADER - School Logo & Title
+      // ═══════════════════════════════════════════════════════════════════════════
+      pdf.setFillColor(30, 64, 175); // Deep blue header
+      pdf.rect(0, 0, pageWidth, 40, 'F');
+      
+      // School Name
+      addText(schoolName.toUpperCase(), pageWidth / 2, 14, { 
+        fontSize: 16, fontStyle: 'bold', color: [255, 255, 255], align: 'center' 
+      });
+      addText('STUDENT PROFILE REPORT', pageWidth / 2, 23, { 
+        fontSize: 12, fontStyle: 'bold', color: [191, 219, 254], align: 'center' 
+      });
+      addText(`Academic Session: ${new Date().getFullYear()}-${new Date().getFullYear() + 1}  |  Generated: ${format(new Date(), 'dd MMM yyyy, hh:mm a')}`, pageWidth / 2, 32, { 
+        fontSize: 8, color: [191, 219, 254], align: 'center' 
+      });
+
+      y = 48;
+
+      // ═══════════════════════════════════════════════════════════════════════════
+      // STUDENT BASIC INFO CARD
+      // ═══════════════════════════════════════════════════════════════════════════
+      pdf.setFillColor(248, 250, 252);
+      pdf.roundedRect(margin, y, contentWidth, 32, 2, 2, 'F');
+      pdf.setDrawColor(200, 210, 230);
+      pdf.setLineWidth(0.5);
+      pdf.roundedRect(margin, y, contentWidth, 32, 2, 2, 'S');
+
+      // Photo placeholder
+      pdf.setFillColor(220, 230, 245);
+      pdf.roundedRect(margin + 4, y + 4, 24, 24, 2, 2, 'F');
+      addText('PHOTO', margin + 9, y + 18, { fontSize: 7, color: [120, 140, 170] });
+
+      // Student Name & Class
+      addText(student.full_name || 'Student Name', margin + 34, y + 10, { fontSize: 14, fontStyle: 'bold', color: [30, 41, 59] });
+      addText(`Class: ${student.class?.name || 'N/A'}  |  Section: ${student.section?.name || 'N/A'}`, margin + 34, y + 17, { fontSize: 9, color: [80, 100, 130] });
+      
+      // Admission & Roll Number
+      addText(`Admission No: ${student.school_code || 'N/A'}  |  Roll No: ${student.roll_number || 'N/A'}`, margin + 34, y + 24, { fontSize: 9, fontStyle: 'bold', color: [50, 70, 100] });
+      
+      // Status Badge
+      pdf.setFillColor(34, 197, 94);
+      pdf.roundedRect(pageWidth - margin - 22, y + 5, 18, 5, 1.5, 1.5, 'F');
+      addText('ACTIVE', pageWidth - margin - 20, y + 8.5, { fontSize: 6, fontStyle: 'bold', color: [255, 255, 255] });
+
+      y += 38;
+
+      // ═══════════════════════════════════════════════════════════════════════════
+      // PERSONAL INFORMATION (No emoji - jsPDF doesn't support it)
+      // ═══════════════════════════════════════════════════════════════════════════
+      y = addSection('PERSONAL INFORMATION', y);
+      
+      const col1 = margin + 3;
+      const col2 = margin + 65;
+      const col3 = margin + 127;
+
+      addField('Full Name', student.full_name, col1, y);
+      addField('Date of Birth', student.date_of_birth ? format(parseISO(student.date_of_birth), 'dd MMMM yyyy') : null, col2, y);
+      addField('Gender', student.gender, col3, y);
+      y += 14;
+
+      addField('Blood Group', student.blood_group, col1, y);
+      addField('Nationality', student.nationality || 'Indian', col2, y);
+      addField('Religion', student.religion, col3, y);
+      y += 14;
+
+      addField('Aadhaar Number', student.aadhaar_number, col1, y);
+      addField('Category', student.category, col2, y);
+      addField('Mother Tongue', student.mother_tongue, col3, y);
+      y += 14;
+
+      addField('Phone', student.phone, col1, y);
+      addField('Email', student.email, col2, y);
+      addField('RTE Student', student.is_rte_student ? 'Yes' : 'No', col3, y);
+      y += 18;
+
+      // ═══════════════════════════════════════════════════════════════════════════
+      // PARENT/GUARDIAN INFORMATION
+      // ═══════════════════════════════════════════════════════════════════════════
+      y = checkPageBreak(y, 60);
+      y = addSection('PARENT / GUARDIAN INFORMATION', y);
+
+      // Father Details
+      pdf.setFillColor(254, 249, 195);
+      pdf.roundedRect(margin, y, contentWidth / 2 - 3, 35, 2, 2, 'F');
+      addText('FATHER DETAILS', margin + 5, y + 6, { fontSize: 8, fontStyle: 'bold', color: [161, 98, 7] });
+      addField('Name', student.father_name, margin + 5, y + 12, 80);
+      addField('Phone', student.father_phone, margin + 5, y + 24, 40);
+      addField('Occupation', student.father_occupation, margin + 50, y + 24, 40);
+
+      // Mother Details
+      const motherX = margin + contentWidth / 2 + 3;
+      pdf.setFillColor(254, 226, 226);
+      pdf.roundedRect(motherX, y, contentWidth / 2 - 3, 35, 2, 2, 'F');
+      addText('MOTHER DETAILS', motherX + 5, y + 6, { fontSize: 8, fontStyle: 'bold', color: [185, 28, 28] });
+      addField('Name', student.mother_name, motherX + 5, y + 12, 80);
+      addField('Phone', student.mother_phone, motherX + 5, y + 24, 40);
+      addField('Occupation', student.mother_occupation, motherX + 50, y + 24, 40);
+
+      y += 42;
+
+      // Guardian Details (if available)
+      if (student.guardian_name) {
+        pdf.setFillColor(219, 234, 254);
+        pdf.roundedRect(margin, y, contentWidth, 20, 2, 2, 'F');
+        addText('GUARDIAN DETAILS', margin + 5, y + 6, { fontSize: 8, fontStyle: 'bold', color: [30, 64, 175] });
+        addField('Name', student.guardian_name, margin + 5, y + 12, 60);
+        addField('Phone', student.guardian_phone, margin + 70, y + 12, 50);
+        addField('Relation', student.guardian_relation, margin + 125, y + 12, 50);
+        y += 26;
+      }
+
+      // ═══════════════════════════════════════════════════════════════════════════
+      // ADDRESS INFORMATION
+      // ═══════════════════════════════════════════════════════════════════════════
+      y = checkPageBreak(y, 50);
+      y = addSection('ADDRESS INFORMATION', y);
+
+      addField('Present Address', student.present_address, col1, y, 170);
+      y += 14;
+      
+      addField('City', student.city, col1, y);
+      addField('State', student.state, col2, y);
+      addField('Pincode', student.pincode, col3, y);
+      y += 14;
+
+      addField('Country', student.country || 'India', col1, y);
+      addField('Permanent Address', student.permanent_address || 'Same as Present', col2, y, 110);
+      y += 18;
+
+      // ═══════════════════════════════════════════════════════════════════════════
+      // ACADEMIC INFORMATION
+      // ═══════════════════════════════════════════════════════════════════════════
+      y = checkPageBreak(y, 45);
+      y = addSection('ACADEMIC INFORMATION', y);
+
+      addField('Class', student.class?.name, col1, y);
+      addField('Section', student.section?.name, col2, y);
+      addField('Roll Number', student.roll_number, col3, y);
+      y += 14;
+
+      addField('Admission Date', student.admission_date ? format(parseISO(student.admission_date), 'dd MMM yyyy') : null, col1, y);
+      addField('Previous School', student.previous_school, col2, y, 110);
+      y += 18;
+
+      // ═══════════════════════════════════════════════════════════════════════════
+      // FEE SUMMARY
+      // ═══════════════════════════════════════════════════════════════════════════
+      y = checkPageBreak(y, 35);
+      y = addSection('FEE SUMMARY (Current Session)', y);
+
+      // Fee boxes
+      const feeBoxWidth = (contentWidth - 10) / 3;
+      
+      // Total Fees
+      pdf.setFillColor(239, 246, 255);
+      pdf.roundedRect(margin, y, feeBoxWidth, 18, 2, 2, 'F');
+      addText('Total Fees', margin + feeBoxWidth / 2, y + 5, { fontSize: 8, color: [59, 130, 246], align: 'center' });
+      addText('Rs. ' + feesSummary.total.toLocaleString(), margin + feeBoxWidth / 2, y + 13, { fontSize: 11, fontStyle: 'bold', color: [30, 64, 175], align: 'center' });
+
+      // Paid
+      pdf.setFillColor(220, 252, 231);
+      pdf.roundedRect(margin + feeBoxWidth + 5, y, feeBoxWidth, 18, 2, 2, 'F');
+      addText('Paid', margin + feeBoxWidth * 1.5 + 5, y + 5, { fontSize: 8, color: [34, 197, 94], align: 'center' });
+      addText('Rs. ' + feesSummary.paid.toLocaleString(), margin + feeBoxWidth * 1.5 + 5, y + 13, { fontSize: 11, fontStyle: 'bold', color: [22, 101, 52], align: 'center' });
+
+      // Balance
+      pdf.setFillColor(254, 226, 226);
+      pdf.roundedRect(margin + (feeBoxWidth + 5) * 2, y, feeBoxWidth, 18, 2, 2, 'F');
+      addText('Balance', margin + feeBoxWidth * 2.5 + 10, y + 5, { fontSize: 8, color: [239, 68, 68], align: 'center' });
+      addText('Rs. ' + feesSummary.balance.toLocaleString(), margin + feeBoxWidth * 2.5 + 10, y + 13, { fontSize: 11, fontStyle: 'bold', color: [153, 27, 27], align: 'center' });
+
+      y += 25;
+
+      // ═══════════════════════════════════════════════════════════════════════════
+      // TRANSPORT DETAILS (if available)
+      // ═══════════════════════════════════════════════════════════════════════════
+      if (student.transport_route || student.pickup_point) {
+        y = checkPageBreak(y, 30);
+        y = addSection('TRANSPORT DETAILS', y);
+        addField('Route', student.transport_route, col1, y);
+        addField('Pickup Point', student.pickup_point, col2, y);
+        addField('Vehicle No', student.vehicle_number, col3, y);
+        y += 18;
+      }
+
+      // ═══════════════════════════════════════════════════════════════════════════
+      // HOSTEL DETAILS (if available)
+      // ═══════════════════════════════════════════════════════════════════════════
+      if (student.hostel || student.room_number) {
+        y = checkPageBreak(y, 30);
+        y = addSection('HOSTEL DETAILS', y);
+        addField('Hostel Name', student.hostel?.name, col1, y);
+        addField('Room Number', student.room_number, col2, y);
+        addField('Bed Number', student.bed_number, col3, y);
+        y += 18;
+      }
+
+      // ═══════════════════════════════════════════════════════════════════════════
+      // FOOTER
+      // ═══════════════════════════════════════════════════════════════════════════
+      const footerY = pageHeight - 12;
+      addLine(footerY - 5, [180, 180, 180]);
+      addText('This is a computer generated document. No signature required.', pageWidth / 2, footerY, { fontSize: 7, color: [130, 130, 130], align: 'center' });
+      addText(schoolName + '  |  Powered by Jashchar ERP', pageWidth / 2, footerY + 4, { fontSize: 7, fontStyle: 'bold', color: [100, 100, 100], align: 'center' });
+
+      // Download the PDF
+      const fileName = `Student-Profile-${student.school_code || student.full_name || 'export'}.pdf`;
+      pdf.save(fileName);
+
+      toast({
+        title: "PDF Downloaded!",
+        description: `${fileName} has been saved successfully`,
+      });
+    } catch (error) {
+      console.error('PDF Export Error:', error);
+      toast({
+        variant: "destructive",
+        title: "Export Failed",
+        description: "Could not generate PDF. Please try again.",
+      });
+    } finally {
+      setIsExporting(false);
+    }
+  };
 
   // Refresh data when page becomes visible (after returning from Edit page)
   useEffect(() => {
@@ -273,13 +566,13 @@ const StudentProfile = () => {
           .from('student_fee_allocations')
           .select('fee_master:fee_masters(amount)')
           .eq('student_id', targetId)
-          .eq('branch_id', selectedBranch.id);
+          .eq('branch_id', branchId);
         
         const { data: paymentsData } = await supabase
           .from('fee_payments')
           .select('amount, discount_amount')
           .eq('student_id', targetId)
-          .eq('branch_id', selectedBranch.id)
+          .eq('branch_id', branchId)
           .is('reverted_at', null);
         
         const totalFees = (feesData || []).reduce((sum, item) => sum + (item.fee_master?.amount || 0), 0);
@@ -382,7 +675,7 @@ const StudentProfile = () => {
 
   return (
     <DashboardLayout>
-      <div className="space-y-6 pb-8">
+      <div ref={printRef} className="space-y-6 pb-8">
         
         {/* ═══════════════════════════════════════════════════════════════════════════════ */}
         {/* 🎯 HERO SECTION */}
@@ -447,7 +740,7 @@ const StudentProfile = () => {
             </div>
             
             {/* Actions */}
-            <div className="flex flex-col gap-3">
+            <div className="flex flex-col gap-3 no-print">
               <Button 
                 variant="secondary" 
                 className="bg-white/20 hover:bg-white/30 text-white border-0 shadow-lg"
@@ -455,11 +748,20 @@ const StudentProfile = () => {
               >
                 <Edit className="mr-2 h-4 w-4" /> Edit Profile
               </Button>
-              <Button variant="secondary" className="bg-white/20 hover:bg-white/30 text-white border-0 shadow-lg">
+              <Button variant="secondary" className="bg-white/20 hover:bg-white/30 text-white border-0 shadow-lg no-print">
                 <Printer className="mr-2 h-4 w-4" /> Print ID Card
               </Button>
-              <Button variant="secondary" className="bg-white/20 hover:bg-white/30 text-white border-0 shadow-lg">
-                <Download className="mr-2 h-4 w-4" /> Export PDF
+              <Button 
+                variant="secondary" 
+                className="bg-white/20 hover:bg-white/30 text-white border-0 shadow-lg"
+                onClick={handleExportPDF}
+                disabled={isExporting}
+              >
+                {isExporting ? (
+                  <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Exporting...</>
+                ) : (
+                  <><Download className="mr-2 h-4 w-4" /> Export PDF</>
+                )}
               </Button>
             </div>
           </div>

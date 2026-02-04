@@ -186,10 +186,11 @@ const AcademicsSections = () => {
             await fetchPrerequisites();
         } catch (error) {
             console.error("API Insert Error:", error);
-            const msg = error.response?.data?.message || error.message;
+            const msg = error.response?.data?.message || error.response?.data?.error || error.message;
             
-            if (msg?.includes('duplicate key')) {
-                toast({ variant: 'destructive', title: 'Duplicate Section', description: 'A section with this name already exists.' });
+            // Handle duplicate errors from both frontend check, backend check, and DB constraint
+            if (msg?.includes('duplicate') || msg?.includes('already exists') || error.response?.status === 409) {
+                toast({ variant: 'destructive', title: 'Duplicate Section', description: msg || 'A section with this name already exists.' });
             } else {
                 toast({ variant: 'destructive', title: 'Failed to add section', description: msg });
             }

@@ -72,6 +72,15 @@ export const initGlobalErrorHandlers = () => {
         return;
     }
 
+    // Ignore Vite HMR WebSocket connection errors (dev-only, not a real issue)
+    if (args[0] && typeof args[0] === 'string' && (
+        args[0].includes('[vite] failed to connect to websocket') ||
+        args[0].includes('WebSocket connection') ||
+        args[0].includes('@vite/client')
+    )) {
+        return;
+    }
+
     // Ignore security messages that are not actual errors
     if (args[0] && typeof args[0] === 'string' && (
         args[0].includes('If account exists') ||

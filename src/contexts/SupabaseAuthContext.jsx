@@ -481,7 +481,25 @@ export const AuthProvider = ({ children }) => {
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
+    // During HMR or initial module load, context may be temporarily undefined
+    // Return a safe default state instead of throwing
+    console.warn('[useAuth] Context undefined - returning loading state. This may happen during HMR.');
+    return {
+      user: null,
+      session: null,
+      school: null,
+      organizationId: null,
+      loading: true,
+      currentSessionId: null,
+      currentSessionName: null,
+      sessionList: [],
+      setCurrentSessionId: () => {},
+      switchSession: () => {},
+      signIn: async () => ({ error: { message: 'Auth not initialized' } }),
+      signOut: async () => {},
+      refreshAuth: async () => {},
+      refreshUserContext: async () => {}
+    };
   }
   return context;
 };

@@ -280,9 +280,15 @@ export default defineConfig({
 		addTransformIndexHtml
 	],
 	server: {
+		port: 3005,
+		host: true,
 		cors: true,
 		hmr: {
 			overlay: true,
+			host: 'localhost',
+			port: 3005,
+			protocol: 'ws',
+			clientPort: 3005,
 		},
 		watch: {
 			usePolling: false,

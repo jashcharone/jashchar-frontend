@@ -158,7 +158,7 @@ const TransportRoutes = () => {
                     return faresWithValues.length > 0 ? formatCurrency(Math.max(...faresWithValues)) : '₹0';
                   })()}
                 </p>
-                <p className="text-sm text-green-600">Highest Fare</p>
+                <p className="text-sm text-green-600">Highest Fee</p>
               </div>
             </CardContent>
           </Card>
@@ -181,7 +181,7 @@ const TransportRoutes = () => {
                   <TableRow className="bg-muted/50">
                     <TableHead className="w-[50px]">#</TableHead>
                     <TableHead>Route Title</TableHead>
-                    <TableHead className="text-right">Fare (₹)</TableHead>
+                    <TableHead className="text-right">Fee (₹)</TableHead>
                     <TableHead className="text-center">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -239,7 +239,7 @@ const TransportRoutes = () => {
                   <Input id="route_title" value={formData.route_title} onChange={(e) => setFormData({...formData, route_title: e.target.value})} placeholder="e.g. Route A - City Center" required />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="fare">Fare (₹)</Label>
+                  <Label htmlFor="fare">Fee (₹)</Label>
                   <Input id="fare" type="number" min="0" step="0.01" value={formData.fare} onChange={(e) => setFormData({...formData, fare: e.target.value})} placeholder="e.g. 1500" />
                 </div>
               </div>

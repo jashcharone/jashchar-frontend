@@ -967,6 +967,8 @@ const StudentProfile = () => {
               <SectionTitle icon={User} title="Personal Details" subtitle="Complete personal information" />
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 <InfoItem icon={User} label="Full Name" value={student.full_name} />
+                <InfoItem icon={User} label="First Name" value={student.first_name} />
+                <InfoItem icon={User} label="Last Name" value={student.last_name} />
                 <InfoItem icon={User} label="First Name (Kannada)" value={student.first_name_kannada} />
                 <InfoItem icon={User} label="Last Name (Kannada)" value={student.last_name_kannada} />
                 <InfoItem icon={Calendar} label="Date of Birth" value={student.date_of_birth ? format(parseISO(student.date_of_birth), 'dd MMMM yyyy') : null} />

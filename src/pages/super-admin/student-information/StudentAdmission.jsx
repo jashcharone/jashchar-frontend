@@ -2268,7 +2268,6 @@ const StudentAdmission = () => {
           .insert({
             branch_id: selectedBranch.id,
             session_id: final_session_id,
-            organization_id: final_organization_id || organizationId,
             student_id: studentId,
             custom_data: customFieldValues
           });

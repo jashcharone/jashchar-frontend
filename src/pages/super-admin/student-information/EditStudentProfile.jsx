@@ -866,7 +866,6 @@ const EditStudentProfile = () => {
                   .upsert({
                     branch_id: user.profile.branch_id,
                     session_id: currentSessionId,
-                    organization_id: organizationId,
                     student_id: studentId,
                     custom_data: finalCustomValues,
                     updated_at: new Date()

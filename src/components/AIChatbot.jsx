@@ -94,9 +94,12 @@ const DataResponseCard = ({ data }) => {
   );
 };
 
-const AIChatbot = () => {
+const AIChatbot = ({ isOpen: externalIsOpen, onClose }) => {
   const { user } = useAuth();
-  const [isOpen, setIsOpen] = useState(false);
+  // Use external control if provided, otherwise internal state
+  const [internalIsOpen, setInternalIsOpen] = useState(false);
+  const isOpen = externalIsOpen !== undefined ? externalIsOpen : internalIsOpen;
+  const setIsOpen = onClose ? (val) => { if (!val) onClose(); } : setInternalIsOpen;
   const [isMinimized, setIsMinimized] = useState(false);
   const [messages, setMessages] = useState([
     {
@@ -255,8 +258,12 @@ const AIChatbot = () => {
     return null;
   }
 
-  // Floating Button (when closed)
+  // Floating Button (when closed) - Only show if NOT externally controlled
   if (!isOpen) {
+    // If externally controlled, don't render the floating button
+    if (externalIsOpen !== undefined) {
+      return null;
+    }
     return (
       <Button
         onClick={() => setIsOpen(true)}

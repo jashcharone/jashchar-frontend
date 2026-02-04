@@ -5,7 +5,7 @@ import Header from "@/components/Header";
 import { useAuth } from "@/contexts/SupabaseAuthContext";
 import { usePermissions } from "@/contexts/PermissionContext";
 import ThemeCustomizer from "@/components/ThemeCustomizer";
-import BugReportButton from "@/components/BugReportButton";
+import AIChatbot from "@/components/AIChatbot";
 import { useLocation, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { Loader2 } from "lucide-react";
@@ -22,6 +22,7 @@ const DashboardLayout = ({ children }) => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(window.innerWidth > 768);
   const [isSidebarHovered, setIsSidebarHovered] = useState(false);
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+  const [isChatbotOpen, setIsChatbotOpen] = useState(false);
 
   useEffect(() => {
     const handleResize = () => {
@@ -105,6 +106,7 @@ const DashboardLayout = ({ children }) => {
           <Header
             toggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
             onThemeSettingsClick={() => setIsCustomizerOpen(true)}
+            onChatbotToggle={() => setIsChatbotOpen(!isChatbotOpen)}
           />
           <main className="flex-1 p-4 sm:p-6 overflow-y-auto" id="main-content">
             <motion.div
@@ -121,8 +123,11 @@ const DashboardLayout = ({ children }) => {
           isOpen={isCustomizerOpen}
           onClose={() => setIsCustomizerOpen(false)}
         />
-        {/* Floating Bug Report Button - appears on all dashboard pages */}
-        <BugReportButton />
+        {/* AI Chatbot - controlled from Header icon */}
+        <AIChatbot 
+          isOpen={isChatbotOpen} 
+          onClose={() => setIsChatbotOpen(false)} 
+        />
       </div>
     </div>
   );

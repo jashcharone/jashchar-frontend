@@ -15,7 +15,7 @@ import { EnvStatusProvider } from '@/contexts/EnvStatusContext';
 import OfflineIndicator from '@/components/OfflineIndicator';
 import EnvWarningBanner from '@/components/EnvWarningBanner';
 import PwaUpdater from '@/components/PwaUpdater';
-import PushNotificationManager from '@/components/PushNotificationManager';
+// PushNotificationManager - Now integrated with Header Bell icon
 import { initDevTools } from '@/utils/devTools';
 import { getSubdomain } from '@/utils/subdomain';
 import LoadingFallback from '@/components/LoadingFallback';
@@ -406,8 +406,7 @@ const TaskPriorities = lazy(() => import('@/pages/super-admin/task-management/Ta
 const AdvancedAnalytics = lazy(() => import('@/pages/super-admin/AdvancedAnalytics'));
 const MasterAdminAnalytics = lazy(() => import('@/pages/master-admin/MasterAdminAnalytics'));
 
-// ? AI Chatbot (Eager load for global access)
-import AIChatbot from '@/components/AIChatbot';
+// AIChatbot moved to DashboardLayout for header control
 
 function App() {
   const { loading } = useAuth();
@@ -433,8 +432,8 @@ function App() {
         <EnvWarningBanner />
         <FaviconUpdater />
         <PwaUpdater />
-        <PushNotificationManager />
-        <AIChatbot />
+        {/* PushNotificationManager moved - Bell icon in Header handles notifications */}
+        {/* AIChatbot moved to DashboardLayout - controlled via Header icon */}
         <PermissionProvider>
           <Suspense fallback={<LoadingFallback />}>
             <Routes>

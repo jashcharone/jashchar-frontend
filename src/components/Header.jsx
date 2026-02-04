@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { LogOut, User, Settings, Sun, Moon, Menu, Clock, Bell, Download, Search, Command, Calendar, Mail, Key, Briefcase } from 'lucide-react';
+import { LogOut, User, Settings, Sun, Moon, Menu, Clock, Bell, Download, Search, Command, Calendar, Mail, Key, Briefcase, Bug, MessageCircle } from 'lucide-react';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { Button } from '@/components/ui/button';
 import SessionSwitcher from './SessionSwitcher';
 import BranchSelector from './BranchSelector';
+import BugReportModal from './BugReportModal';
 import { useToast } from '@/components/ui/use-toast';
 import { cn } from '@/lib/utils';
 import {
@@ -18,13 +19,14 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
-const Header = ({ toggleSidebar, onThemeSettingsClick }) => {
+const Header = ({ toggleSidebar, onThemeSettingsClick, onChatbotToggle }) => {
   const navigate = useNavigate();
   const { user, signOut, school } = useAuth();
   const { settings, toggleMode } = useTheme();
   const { toast } = useToast();
   const [currentDateTime, setCurrentDateTime] = useState(new Date());
   const [canInstall, setCanInstall] = useState(false);
+  const [isBugModalOpen, setIsBugModalOpen] = useState(false);
   
   // Get role from all possible sources for consistency
   const rawRole = user?.role || user?.profile?.role?.name || user?.profile?.role || user?.user_metadata?.role;
@@ -155,6 +157,31 @@ const Header = ({ toggleSidebar, onThemeSettingsClick }) => {
             )}
           </Button>
 
+          {/* AI Chatbot Toggle */}
+          {onChatbotToggle && (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={onChatbotToggle}
+              className="rounded-xl hover:bg-blue-500/10 transition-transform hover:scale-105 relative"
+              title="AI Chatbot"
+            >
+              <MessageCircle className="h-5 w-5 text-blue-500" />
+              <span className="absolute -top-0.5 -right-0.5 h-2.5 w-2.5 bg-green-500 rounded-full border border-background" />
+            </Button>
+          )}
+
+          {/* Bug Report */}
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setIsBugModalOpen(true)}
+            className="rounded-xl hover:bg-pink-500/10 transition-transform hover:scale-105"
+            title="Report Bug/Issue"
+          >
+            <Bug className="h-5 w-5 text-pink-500" />
+          </Button>
+
           {/* Notifications */}
           <Button
             variant="ghost"
@@ -240,6 +267,12 @@ const Header = ({ toggleSidebar, onThemeSettingsClick }) => {
           </DropdownMenu>
         </div>
       </div>
+      
+      {/* Bug Report Modal */}
+      <BugReportModal 
+        isOpen={isBugModalOpen} 
+        onClose={() => setIsBugModalOpen(false)} 
+      />
     </header>
   );
 };

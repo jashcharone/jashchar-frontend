@@ -1,5 +1,6 @@
 ﻿import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { supabase } from '@/lib/customSupabaseClient';
+import { sortClasses, sortSections } from '@/utils/classOrderUtils';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { useToast } from '@/components/ui/use-toast';
 import DashboardLayout from '@/components/DashboardLayout';
@@ -63,8 +64,8 @@ const FeesDiscount = () => {
         supabase.from('sections').select('id, name').eq('branch_id', branchId),
         supabase.from('student_categories').select('id, name').eq('branch_id', branchId)
       ]);
-      setClasses(classesData || []);
-      setSections(sectionsData || []);
+      setClasses(sortClasses(classesData || []));
+      setSections(sortSections(sectionsData || []));
       setCategories(categoriesData || []);
     }, [branchId]);
 

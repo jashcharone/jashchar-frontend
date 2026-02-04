@@ -14,6 +14,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { CreditCard, Printer, Search, Eye, Download, Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
+import { sortClasses, sortSections } from '@/utils/classOrderUtils';
 
 const StudentIdCard = () => {
     const { user, currentSessionId } = useAuth();
@@ -59,11 +60,10 @@ const StudentIdCard = () => {
                 const { data, error } = await supabase
                     .from('classes')
                     .select('id, name')
-                    .eq('branch_id', branchId)
-                    .order('name');
+                    .eq('branch_id', branchId);
                 
                 if (error) throw error;
-                setClasses(data || []);
+                setClasses(sortClasses(data || []));
             } catch (error) {
                 console.error('Error fetching classes:', error);
                 toast({ variant: 'destructive', title: 'Error', description: 'Failed to fetch classes' });
@@ -88,7 +88,8 @@ const StudentIdCard = () => {
                     .eq('class_id', filters.class_id);
                 
                 if (error) throw error;
-                setSections(data ? data.map(item => item.sections).filter(Boolean) : []);
+                const sectionsList = data ? data.map(item => item.sections).filter(Boolean) : [];
+                setSections(sortSections(sectionsList));
             } catch (error) {
                 console.error('Error fetching sections:', error);
                 toast({ variant: 'destructive', title: 'Error', description: 'Failed to fetch sections' });
@@ -106,12 +107,14 @@ const StudentIdCard = () => {
 
         setLoading(true);
         try {
-            // TC-16 FIX: Corrected column names to match database schema
+            // FIXED: Using only columns that exist in database
+            // present_address is the actual column name (not address)
             let query = supabase
                 .from('student_profiles')
                 .select(`
                     id,
                     school_code,
+                    full_name,
                     first_name,
                     last_name,
                     gender,
@@ -120,25 +123,26 @@ const StudentIdCard = () => {
                     phone,
                     father_name,
                     mother_name,
-                    current_address,
+                    present_address,
+                    permanent_address,
                     city,
                     state,
                     pincode,
                     photo_url,
-                    is_disabled,
+                    status,
                     session_id,
                     classes:classes!student_profiles_class_id_fkey(id, name),
                     sections:sections!student_profiles_section_id_fkey(id, name)
                 `)
                 .eq('branch_id', branchId)
                 .eq('class_id', filters.class_id)
-                .or('is_disabled.is.null,is_disabled.eq.false');
+                .or('status.is.null,status.eq.active');
             
             if (filters.section_id) {
                 query = query.eq('section_id', filters.section_id);
             }
             
-            const { data, error } = await query.order('first_name');
+            const { data, error } = await query.order('full_name');
             
             if (error) throw error;
             setStudents(data || []);
@@ -255,13 +259,26 @@ const StudentIdCard = () => {
 
     // ID Card Component
     const IdCard = ({ student }) => {
-        const fullName = `${student.first_name} ${student.last_name || ''}`.trim();
-        const initials = `${student.first_name?.[0] || ''}${student.last_name?.[0] || ''}`;
+        // FIXED: Derive name from full_name OR first_name + last_name
+        const fullName = student.full_name || `${student.first_name || ''} ${student.last_name || ''}`.trim() || 'Unknown';
+        const nameParts = fullName.split(' ');
+        const initials = nameParts.length >= 2 
+            ? `${nameParts[0]?.[0] || ''}${nameParts[nameParts.length - 1]?.[0] || ''}`
+            : fullName.substring(0, 2).toUpperCase();
+        
+        // Get phone number
+        const phoneNumber = student.phone || 'N/A';
+        
+        // Get best available address
+        const displayAddress = student.present_address || student.permanent_address || '';
+        
+        // Get admission number (school_code)
+        const admissionNo = student.school_code || 'N/A';
         
         return (
             <div className="id-card">
                 <div className="card-header">
-                    <div className="school-name">{branchInfo?.branch_name || 'School Name'}</div>
+                    <div className="school-name">{branchInfo?.branch_name || branchInfo?.name || 'School Name'}</div>
                 </div>
                 <div className="card-body">
                     <div className="photo-section">
@@ -275,7 +292,7 @@ const StudentIdCard = () => {
                         <div className="student-name">{fullName}</div>
                         <div className="info-row">
                             <span className="info-label">Adm No:</span>
-                            <span className="info-value">{student.school_code}</span>
+                            <span className="info-value">{admissionNo}</span>
                         </div>
                         <div className="info-row">
                             <span className="info-label">Class:</span>
@@ -295,12 +312,12 @@ const StudentIdCard = () => {
                         </div>
                         <div className="info-row">
                             <span className="info-label">Phone:</span>
-                            <span className="info-value">{student.phone || 'N/A'}</span>
+                            <span className="info-value">{phoneNumber}</span>
                         </div>
                     </div>
                 </div>
                 <div className="card-footer">
-                    {student.current_address ? `${student.current_address}, ${student.city || ''}` : 'Address not provided'}
+                    {displayAddress ? `${displayAddress}${student.city ? ', ' + student.city : ''}` : 'Address not provided'}
                 </div>
             </div>
         );
@@ -415,7 +432,17 @@ const StudentIdCard = () => {
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>
-                                        {students.map((student) => (
+                                        {students.map((student) => {
+                                            // FIXED: Derive display name from full_name OR first_name + last_name
+                                            const displayName = student.full_name || `${student.first_name || ''} ${student.last_name || ''}`.trim() || 'Unknown';
+                                            const nameParts = displayName.split(' ');
+                                            const initials = nameParts.length >= 2 
+                                                ? `${nameParts[0]?.[0] || ''}${nameParts[nameParts.length - 1]?.[0] || ''}`
+                                                : displayName.substring(0, 2).toUpperCase();
+                                            const phoneNumber = student.phone || '-';
+                                            const admissionNo = student.school_code || '-';
+                                            
+                                            return (
                                             <TableRow key={student.id}>
                                                 <TableCell>
                                                     <Checkbox
@@ -426,23 +453,20 @@ const StudentIdCard = () => {
                                                 <TableCell>
                                                     <Avatar className="h-10 w-10">
                                                         <AvatarImage src={student.photo_url} />
-                                                        <AvatarFallback>
-                                                            {student.first_name?.[0]}{student.last_name?.[0]}
-                                                        </AvatarFallback>
+                                                        <AvatarFallback>{initials}</AvatarFallback>
                                                     </Avatar>
                                                 </TableCell>
                                                 <TableCell>
-                                                    <Badge variant="outline">{student.admission_no}</Badge>
+                                                    <Badge variant="outline">{admissionNo}</Badge>
                                                 </TableCell>
-                                                <TableCell className="font-medium">
-                                                    {student.first_name} {student.last_name || ''}
-                                                </TableCell>
+                                                <TableCell className="font-medium">{displayName}</TableCell>
                                                 <TableCell>{student.classes?.name || 'N/A'}</TableCell>
                                                 <TableCell>{student.sections?.name || 'N/A'}</TableCell>
                                                 <TableCell>{student.father_name || '-'}</TableCell>
-                                                <TableCell>{student.mobile_number || '-'}</TableCell>
+                                                <TableCell>{phoneNumber}</TableCell>
                                             </TableRow>
-                                        ))}
+                                            );
+                                        })}
                                     </TableBody>
                                 </Table>
                             </div>

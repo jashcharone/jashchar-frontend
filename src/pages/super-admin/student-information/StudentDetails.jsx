@@ -2,6 +2,7 @@
 import DashboardLayout from '@/components/DashboardLayout';
 import { supabase } from '@/lib/customSupabaseClient';
 import api from '@/lib/api';
+import { sortClasses, sortSections } from '@/utils/classOrderUtils';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { usePermissions } from '@/contexts/PermissionContext';
 import { useBranch } from '@/contexts/BranchContext';
@@ -179,9 +180,8 @@ const StudentDetails = () => {
             const { data: classData } = await supabase
                 .from('classes')
                 .select('id, name')
-                .eq('branch_id', selectedBranch.id)
-                .order('name');
-            setClasses(classData || []);
+                .eq('branch_id', selectedBranch.id);
+            setClasses(sortClasses(classData || []));
         };
         fetchPrereqs();
     }, [branchId, selectedBranch]);
@@ -190,7 +190,8 @@ const StudentDetails = () => {
         if (filters.class_id) {
             const fetchSections = async () => {
                 const { data } = await supabase.from('class_sections').select('sections(id, name)').eq('class_id', filters.class_id);
-                setSections(data ? data.map(item => item.sections).filter(Boolean) : []);
+                const sectionsList = data ? data.map(item => item.sections).filter(Boolean) : [];
+                setSections(sortSections(sectionsList));
             };
             fetchSections();
         } else {
@@ -258,6 +259,16 @@ const StudentDetails = () => {
         
         if (studentsData && studentsData.length > 0) {
             toast({ title: `${count || 0} students found.`});
+            
+            // TC-32 FIX: Derive first_name and last_name from full_name if not present
+            // This handles cases where older student records may not have these fields populated separately
+            studentsData.forEach(s => {
+                if (!s.first_name && s.full_name) {
+                    const nameParts = s.full_name.trim().split(/\s+/);
+                    s.first_name = nameParts[0] || '';
+                    s.last_name = nameParts.length > 1 ? nameParts.slice(1).join(' ') : '';
+                }
+            });
             
             // Fetch fees progress for all students
             const studentIds = studentsData.map(s => s.id);

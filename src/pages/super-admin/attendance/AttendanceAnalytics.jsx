@@ -427,8 +427,8 @@ const AttendanceAnalytics = () => {
                     .from('staff_attendance')
                     .select('*')
                     .eq('branch_id', branchId)
-                    .gte('date', startDate)
-                    .lte('date', endDate);
+                    .gte('attendance_date', startDate)
+                    .lte('attendance_date', endDate);
                 
                 staffData = data || [];
             }

@@ -22,6 +22,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { useToast } from '@/components/ui/use-toast';
 import { supabase } from '@/lib/supabaseClient';
 import { useBranch } from '@/contexts/BranchContext';
+import { sortClasses } from '@/utils/classOrderUtils';
 import frontCmsService from '@/services/frontCmsService';
 import DocumentUploadField from '@/components/common/DocumentUploadField';
 import ReactQuill from 'react-quill';
@@ -252,11 +253,11 @@ const OnlineAdmissionList = () => {
     try {
       const [branchRes, classRes] = await Promise.all([
         supabase.from('schools').select('id, name, slug, branch_code, logo_url'),
-        supabase.from('classes').select('id, name').order('name')
+        supabase.from('classes').select('id, name')
       ]);
       
       if (branchRes.data) setBranches(branchRes.data.map(b => ({ ...b, school_alias: b.slug })));
-      if (classRes.data) setClasses(classRes.data);
+      if (classRes.data) setClasses(sortClasses(classRes.data));
     } catch (error) {
       console.error('Error fetching branches/classes:', error);
     }

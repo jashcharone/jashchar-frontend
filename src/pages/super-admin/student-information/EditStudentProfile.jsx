@@ -2,6 +2,7 @@
 import { useParams, useNavigate } from 'react-router-dom';
 import DashboardLayout from '@/components/DashboardLayout';
 import { supabase } from '@/lib/customSupabaseClient';
+import { sortClasses, sortSections } from '@/utils/classOrderUtils';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { useBranch } from '@/contexts/BranchContext';
 import { useToast } from '@/components/ui/use-toast';
@@ -221,7 +222,7 @@ const AddSiblingModal = ({ onSiblingAdd, currentStudentId }) => {
     if (!user?.profile?.branch_id || !selectedBranch?.id) return;
     const fetchClasses = async () => {
       const { data } = await supabase.from('classes').select('id, name').eq('branch_id', selectedBranch.id);
-      setClasses(data || []);
+      setClasses(sortClasses(data || []));
     };
     fetchClasses();
   }, [user?.profile?.branch_id, selectedBranch]);
@@ -230,7 +231,8 @@ const AddSiblingModal = ({ onSiblingAdd, currentStudentId }) => {
     if (selectedClass) {
       const fetchSections = async () => {
         const { data } = await supabase.from('class_sections').select('sections(id, name)').eq('class_id', selectedClass);
-        setSections(data ? data.map(item => item.sections).filter(Boolean) : []);
+        const sectionsList = data ? data.map(item => item.sections).filter(Boolean) : [];
+        setSections(sortSections(sectionsList));
       };
       fetchSections();
     } else {
@@ -374,7 +376,7 @@ const EditStudentProfile = () => {
                     setFormSections(customFieldsRes.data.sections || []);
                 }
                 
-                setClasses(classesRes.data || []);
+                setClasses(sortClasses(classesRes.data || []));
                 setCategories(categoriesRes.data || []);
                 setRoutes(routesRes.data || []);
                 setHostels(hostelsRes.data || []);

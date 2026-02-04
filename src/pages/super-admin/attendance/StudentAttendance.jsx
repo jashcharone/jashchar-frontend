@@ -3,6 +3,7 @@ import DashboardLayout from '@/components/DashboardLayout';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { useBranch } from '@/contexts/BranchContext';
 import { supabase } from '@/lib/supabaseClient';
+import { sortClasses, sortSections } from '@/utils/classOrderUtils';
 import { useToast } from '@/components/ui/use-toast';
 import { usePermissions } from '@/contexts/PermissionContext';
 import { Button } from '@/components/ui/button';
@@ -48,10 +49,9 @@ const StudentAttendance = () => {
         const { data, error } = await supabase
             .from('classes')
             .select('id, name')
-            .eq('branch_id', branchId)
-            .order('name');
+            .eq('branch_id', branchId);
         if (error) toast({ variant: 'destructive', title: 'Error fetching classes', description: error.message });
-        else setClasses(data || []);
+        else setClasses(sortClasses(data || []));
     }, [branchId, toast]);
 
     const fetchSections = useCallback(async (classId) => {
@@ -63,7 +63,8 @@ const StudentAttendance = () => {
         if (error) {
             toast({ variant: 'destructive', title: 'Error fetching sections', description: error.message });
         } else {
-            setSections((data || []).map(item => item.sections).filter(Boolean));
+            const sectionsList = (data || []).map(item => item.sections).filter(Boolean);
+            setSections(sortSections(sectionsList));
         }
     }, [toast]);
 

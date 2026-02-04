@@ -36,6 +36,7 @@ import {
 import { cn } from '@/lib/utils';
 import { format, parseISO, differenceInYears, differenceInMonths } from 'date-fns';
 import StudentProfileFeesTab from './StudentProfileFeesTab';
+import StudentProfileAttendanceTab from './StudentProfileAttendanceTab';
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // 🎨 PREMIUM COMPONENTS
@@ -526,6 +527,7 @@ const StudentProfile = () => {
         }
 
         // 2. Fetch Student Data with Relations
+        // TC-32 FIX: Added caste_category and sub_caste relations to properly display caste info
         const { data, error } = await supabase
           .from('student_profiles')
           .select(`
@@ -533,7 +535,9 @@ const StudentProfile = () => {
             class:classes!student_profiles_class_id_fkey(id, name),
             section:sections!student_profiles_section_id_fkey(id, name),
             category:student_categories(id, name),
-            session:sessions!student_profiles_session_id_fkey(id, name)
+            session:sessions!student_profiles_session_id_fkey(id, name),
+            caste_category:caste_categories(id, name, reservation_percent),
+            sub_caste:sub_castes(id, name)
           `)
           .eq('id', targetId)
           .single();
@@ -587,6 +591,14 @@ const StudentProfile = () => {
         data.transport = transportData;
         data.hostel = hostelData;
         data.siblings = siblings;
+        
+        // TC-32 FIX: Derive first_name and last_name from full_name if not present
+        // This handles cases where older student records may not have these fields populated separately
+        if (!data.first_name && data.full_name) {
+          const nameParts = data.full_name.trim().split(/\s+/);
+          data.first_name = nameParts[0] || '';
+          data.last_name = nameParts.length > 1 ? nameParts.slice(1).join(' ') : '';
+        }
         
         setStudent(data);
 
@@ -976,7 +988,8 @@ const StudentProfile = () => {
                 <InfoItem icon={User} label="Gender" value={student.gender} />
                 <InfoItem icon={Heart} label="Blood Group" value={student.blood_group} />
                 <InfoItem icon={Globe} label="Religion" value={student.religion} />
-                <InfoItem icon={Flag} label="Caste" value={student.caste} />
+                <InfoItem icon={Flag} label="Caste Category" value={student.caste_category?.name || student.caste} />
+                <InfoItem icon={Flag} label="Sub Caste" value={student.sub_caste?.name} />
                 <InfoItem icon={School} label="Category" value={student.category?.name} />
                 <InfoItem icon={Flag} label="Nationality" value={student.nationality} />
                 <InfoItem icon={Globe} label="Mother Tongue" value={student.mother_tongue} />
@@ -1127,18 +1140,7 @@ const StudentProfile = () => {
           {/* 📅 ATTENDANCE TAB */}
           {/* ═══════════════════════════════════════════════════════════════════════════════ */}
           <TabsContent value="attendance" className="mt-0 space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-            <GlassCard className="p-8">
-              <div className="flex flex-col items-center justify-center text-center py-12">
-                <div className="p-6 bg-gradient-to-br from-emerald-100 to-emerald-50 dark:from-emerald-950/50 dark:to-emerald-900/30 rounded-full mb-6">
-                  <CalendarDays className="h-12 w-12 text-emerald-600" />
-                </div>
-                <h3 className="text-xl font-bold mb-2">Attendance Module</h3>
-                <p className="text-muted-foreground max-w-md">
-                  Detailed attendance records, monthly reports, and attendance calendar will be displayed here.
-                </p>
-                <Badge variant="secondary" className="mt-4">Coming Soon</Badge>
-              </div>
-            </GlassCard>
+            <StudentProfileAttendanceTab studentId={targetId} />
           </TabsContent>
 
           {/* ═══════════════════════════════════════════════════════════════════════════════ */}

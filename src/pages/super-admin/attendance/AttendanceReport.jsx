@@ -296,7 +296,7 @@ const AttendanceReport = () => {
         // First get staff
         let staffQuery = supabase
             .from('employee_profiles')
-            .select('id, full_name, employee_code, phone, department_id, designation_id, photo_url')
+            .select('id, full_name, employee_id, phone, department_id, designation_id, photo_url')
             .eq('branch_id', branchId);
         
         if (selectedDepartment !== 'all') {
@@ -312,8 +312,8 @@ const AttendanceReport = () => {
             .from('staff_attendance')
             .select('*')
             .eq('branch_id', branchId)
-            .gte('date', startDate)
-            .lte('date', endDate);
+            .gte('attendance_date', startDate)
+            .lte('attendance_date', endDate);
         
         if (selectedDepartment !== 'all') {
             attendanceQuery = attendanceQuery.eq('department_id', selectedDepartment);
@@ -349,7 +349,7 @@ const AttendanceReport = () => {
             return {
                 id: employee.id,
                 name: employee.full_name,
-                code: employee.employee_code || employee.phone || '-',
+                code: employee.employee_id || employee.phone || '-',
                 department: deptMap.get(employee.department_id) || '-',
                 photo_url: employee.photo_url,
                 totalDays: recorded,

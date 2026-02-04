@@ -2623,37 +2623,40 @@ const StudentAdmission = () => {
             <SectionBox key={section.key} icon={ICON_MAP[section.icon] || User} title={combinedTitle} gradient={sectionGradients[section.key] || 'blue'}>
                 {isCombinedParents ? (
                   <>
-                    {/* Father Section */}
-                    <div className="mb-6">
-                      <div className="flex items-center gap-3 mb-4 pb-3 border-b border-blue-200 dark:border-blue-800">
-                        <div className="bg-gradient-to-br from-blue-500 to-indigo-600 p-2.5 rounded-xl">
-                          <User className="h-5 w-5 text-white" />
+                    {/* Father & Mother Side-by-Side Layout for better alignment */}
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                      {/* Father Section */}
+                      <div>
+                        <div className="flex items-center gap-3 mb-4 pb-3 border-b border-blue-200 dark:border-blue-800">
+                          <div className="bg-gradient-to-br from-blue-500 to-indigo-600 p-2.5 rounded-xl">
+                            <User className="h-5 w-5 text-white" />
+                          </div>
+                          <h3 className="text-lg font-bold text-blue-700 dark:text-blue-300">Father Details</h3>
                         </div>
-                        <h3 className="text-lg font-bold text-blue-700 dark:text-blue-300">Father Details</h3>
-                      </div>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 items-start">
-                        {fatherFields.map(field => (
-                            <React.Fragment key={field.id || field.key}>
-                                {renderDynamicField(field)}
-                            </React.Fragment>
-                        ))}
-                      </div>
-                    </div>
-                    
-                    {/* Mother Section */}
-                    <div>
-                      <div className="flex items-center gap-3 mb-4 pb-3 border-b border-pink-200 dark:border-pink-800">
-                        <div className="bg-gradient-to-br from-pink-500 to-rose-600 p-2.5 rounded-xl">
-                          <Heart className="h-5 w-5 text-white" />
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                          {fatherFields.map(field => (
+                              <React.Fragment key={field.id || field.key}>
+                                  {renderDynamicField(field)}
+                              </React.Fragment>
+                          ))}
                         </div>
-                        <h3 className="text-lg font-bold text-pink-700 dark:text-pink-300">Mother Details</h3>
                       </div>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 items-start">
-                        {motherFields.map(field => (
-                            <React.Fragment key={field.id || field.key}>
-                                {renderDynamicField(field)}
-                            </React.Fragment>
-                        ))}
+                      
+                      {/* Mother Section */}
+                      <div>
+                        <div className="flex items-center gap-3 mb-4 pb-3 border-b border-pink-200 dark:border-pink-800">
+                          <div className="bg-gradient-to-br from-pink-500 to-rose-600 p-2.5 rounded-xl">
+                            <Heart className="h-5 w-5 text-white" />
+                          </div>
+                          <h3 className="text-lg font-bold text-pink-700 dark:text-pink-300">Mother Details</h3>
+                        </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                          {motherFields.map(field => (
+                              <React.Fragment key={field.id || field.key}>
+                                  {renderDynamicField(field)}
+                              </React.Fragment>
+                          ))}
+                        </div>
                       </div>
                     </div>
                   </>

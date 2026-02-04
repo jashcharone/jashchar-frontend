@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/components/ui/use-toast";
-import { Loader2, Check, X, UserPlus, Building2, Layers, Edit, Save } from 'lucide-react';
+import { Loader2, Check, X, UserPlus, Building2, Layers, Edit, Save, RefreshCcw } from 'lucide-react';
 import { format } from 'date-fns';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -22,6 +22,7 @@ const SchoolRequests = () => {
     const { toast } = useToast();
     const [requests, setRequests] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [syncing, setSyncing] = useState(false);
     const [plans, setPlans] = useState([]);
     const [approvalDialogOpen, setApprovalDialogOpen] = useState(false);
     const [selectedRequest, setSelectedRequest] = useState(null);
@@ -63,9 +64,13 @@ const SchoolRequests = () => {
 
     const fetchRequests = async () => {
         setLoading(true);
+        // CRITICAL: Only fetch NON-approved requests
+        // Approved schools are already in /master-admin/schools page
+        // Filter out: 'Approved', 'approved' (case-insensitive handled in query)
         const { data, error } = await supabase
             .from('school_requests')
             .select('*')
+            .not('status', 'ilike', 'approved') // Exclude all approved requests
             .order('created_at', { ascending: false });
         
         if (error) {
@@ -107,6 +112,23 @@ const SchoolRequests = () => {
             setRequests(processedData);
         }
         setLoading(false);
+    };
+
+    // Sync pending requests with existing schools (fix data inconsistency)
+    const handleSync = async () => {
+        setSyncing(true);
+        try {
+            const result = await apiClient.post('/admin/sync-requests');
+            toast({ 
+                title: "✅ Sync Complete", 
+                description: `${result.syncedCount || 0} requests updated to Approved status` 
+            });
+            fetchRequests(); // Refresh list
+        } catch (error) {
+            toast({ variant: "destructive", title: "Sync Failed", description: error.message });
+        } finally {
+            setSyncing(false);
+        }
     };
 
     const handleStatusUpdate = async (requestId, newStatus) => {
@@ -257,9 +279,20 @@ const SchoolRequests = () => {
                         <h1 className="text-3xl font-bold tracking-tight">School Requests</h1>
                         <p className="text-muted-foreground">Manage incoming school registration requests.</p>
                     </div>
-                    <Button variant="outline" onClick={fetchRequests}>
-                        Refresh
-                    </Button>
+                    <div className="flex gap-2">
+                        <Button 
+                            variant="outline" 
+                            onClick={handleSync}
+                            disabled={syncing}
+                            title="Sync pending requests with existing schools"
+                        >
+                            {syncing ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <RefreshCcw className="h-4 w-4 mr-2" />}
+                            Sync
+                        </Button>
+                        <Button variant="outline" onClick={fetchRequests}>
+                            Refresh
+                        </Button>
+                    </div>
                 </div>
 
                 {/* Tabs for filtering by registration type */}

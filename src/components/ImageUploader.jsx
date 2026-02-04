@@ -1,10 +1,11 @@
 ﻿import React, { useCallback, useState, useEffect, useRef } from 'react';
 import { useDropzone } from 'react-dropzone';
-import { UploadCloud, X, Camera, Crop as CropIcon } from 'lucide-react';
+import { UploadCloud, X, Camera, Crop as CropIcon, Loader2, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import ReactCrop, { centerCrop, makeAspectCrop } from 'react-image-crop';
 import 'react-image-crop/dist/ReactCrop.css';
+import { loadFaceModels, detectSingleFace, areModelsLoaded } from '@/utils/faceRecognition';
 
 // Helper to center the crop initially
 function centerAspectCrop(mediaWidth, mediaHeight, aspect) {
@@ -23,13 +24,19 @@ function centerAspectCrop(mediaWidth, mediaHeight, aspect) {
   )
 }
 
-const ImageUploader = ({ onFileChange, initialPreview, aspectRatio = 3.5 / 4.5, showCrop = true, showCamera = true, showInstruction = true }) => {
+const ImageUploader = ({ onFileChange, initialPreview, aspectRatio = 3.5 / 4.5, showCrop = true, showCamera = true, showInstruction = true, requireFaceDetection = true }) => {
   const [preview, setPreview] = useState(initialPreview);
   const [isCropOpen, setIsCropOpen] = useState(false);
   const [imageSrc, setImageSrc] = useState(null);
   const [crop, setCrop] = useState();
   const [completedCrop, setCompletedCrop] = useState(null);
   const imgRef = useRef(null);
+  
+  // Face detection states
+  const [isDetectingFace, setIsDetectingFace] = useState(false);
+  const [faceDetectionError, setFaceDetectionError] = useState(null);
+  const [faceDetected, setFaceDetected] = useState(false);
+  const [loadingModels, setLoadingModels] = useState(false);
 
   useEffect(() => {
     setPreview(initialPreview);
@@ -109,17 +116,77 @@ const ImageUploader = ({ onFileChange, initialPreview, aspectRatio = 3.5 / 4.5, 
     });
   };
 
+  // Detect face in image
+  const detectFaceInImage = async (imageElement) => {
+    try {
+      // Load models if not already loaded
+      if (!areModelsLoaded()) {
+        setLoadingModels(true);
+        await loadFaceModels((progress) => console.log('[ImageUploader] ' + progress));
+        setLoadingModels(false);
+      }
+
+      setIsDetectingFace(true);
+      setFaceDetectionError(null);
+      setFaceDetected(false);
+
+      const detection = await detectSingleFace(imageElement);
+      
+      if (detection) {
+        console.log('[ImageUploader] Face detected with confidence:', detection.detection.score);
+        setFaceDetected(true);
+        setFaceDetectionError(null);
+        return true;
+      } else {
+        console.log('[ImageUploader] No face detected in image');
+        setFaceDetected(false);
+        setFaceDetectionError('No face detected. Please upload a clear photo with a visible human face.');
+        return false;
+      }
+    } catch (error) {
+      console.error('[ImageUploader] Face detection error:', error);
+      setFaceDetectionError('Face detection failed. Please try again.');
+      return false;
+    } finally {
+      setIsDetectingFace(false);
+    }
+  };
+
   const handleCropSave = async () => {
     if (completedCrop?.width && completedCrop?.height && imgRef.current) {
       try {
         const croppedImageBlob = await getCroppedImg(imgRef.current, completedCrop);
+        
+        // If face detection is required, validate before accepting
+        if (requireFaceDetection) {
+          // Create a temporary image element for face detection
+          const tempImg = new Image();
+          const tempUrl = URL.createObjectURL(croppedImageBlob);
+          
+          await new Promise((resolve, reject) => {
+            tempImg.onload = resolve;
+            tempImg.onerror = reject;
+            tempImg.src = tempUrl;
+          });
+
+          const hasFace = await detectFaceInImage(tempImg);
+          URL.revokeObjectURL(tempUrl);
+          
+          if (!hasFace) {
+            // Don't close the crop dialog, show error
+            return;
+          }
+        }
+
         const file = new File([croppedImageBlob], "profile_photo.jpg", { type: "image/jpeg" });
         onFileChange(file);
         const previewUrl = URL.createObjectURL(croppedImageBlob);
         setPreview(previewUrl);
         setIsCropOpen(false);
+        setFaceDetectionError(null);
       } catch (e) {
         console.error(e);
+        setFaceDetectionError('Error processing image. Please try again.');
       }
     }
   };
@@ -129,6 +196,8 @@ const ImageUploader = ({ onFileChange, initialPreview, aspectRatio = 3.5 / 4.5, 
     setPreview(null);
     onFileChange(null);
     setImageSrc(null);
+    setFaceDetectionError(null);
+    setFaceDetected(false);
   };
 
   return (
@@ -271,12 +340,54 @@ const ImageUploader = ({ onFileChange, initialPreview, aspectRatio = 3.5 / 4.5, 
             )}
           </div>
 
+          {/* Face Detection Status */}
+          {requireFaceDetection && (
+            <div className="px-4">
+              {loadingModels && (
+                <div className="flex items-center justify-center gap-2 p-2 bg-blue-50 dark:bg-blue-950/30 rounded-lg text-blue-600 dark:text-blue-400 text-sm">
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Loading face detection models...
+                </div>
+              )}
+              {isDetectingFace && !loadingModels && (
+                <div className="flex items-center justify-center gap-2 p-2 bg-blue-50 dark:bg-blue-950/30 rounded-lg text-blue-600 dark:text-blue-400 text-sm">
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Detecting face in image...
+                </div>
+              )}
+              {faceDetectionError && (
+                <div className="flex items-center justify-center gap-2 p-3 bg-red-50 dark:bg-red-950/30 rounded-lg text-red-600 dark:text-red-400 text-sm font-medium border border-red-200 dark:border-red-800">
+                  <AlertCircle className="w-5 h-5 flex-shrink-0" />
+                  {faceDetectionError}
+                </div>
+              )}
+              {faceDetected && (
+                <div className="flex items-center justify-center gap-2 p-2 bg-green-50 dark:bg-green-950/30 rounded-lg text-green-600 dark:text-green-400 text-sm">
+                  <CheckCircle2 className="w-4 h-4" />
+                  Face detected successfully!
+                </div>
+              )}
+            </div>
+          )}
+
           <DialogFooter className="sm:justify-center gap-2">
-            <Button variant="outline" onClick={() => setIsCropOpen(false)}>
+            <Button variant="outline" onClick={() => { setIsCropOpen(false); setFaceDetectionError(null); }}>
               Cancel
             </Button>
-            <Button onClick={handleCropSave} className="gap-2 bg-blue-600 hover:bg-blue-700 text-white">
-              <CropIcon className="w-4 h-4" /> Crop & Save Photo
+            <Button 
+              onClick={handleCropSave} 
+              className="gap-2 bg-blue-600 hover:bg-blue-700 text-white"
+              disabled={isDetectingFace || loadingModels}
+            >
+              {isDetectingFace || loadingModels ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" /> Processing...
+                </>
+              ) : (
+                <>
+                  <CropIcon className="w-4 h-4" /> Crop & Save Photo
+                </>
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>

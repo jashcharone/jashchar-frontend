@@ -181,8 +181,8 @@ const SmartField = ({ label, required, error, touched, children, className, hint
   );
 };
 
-// ? Simple Photo Upload Card
-const PhotoUploadCard = ({ label, preview, onFileChange, required, error, touched }) => {
+// ? Simple Photo Upload Card with Face Detection
+const PhotoUploadCard = ({ label, preview, onFileChange, required, error, touched, requireFaceDetection = true }) => {
     return (
       <div className={cn(
         "flex flex-col items-center gap-2 p-2 rounded-xl transition-all duration-300", 
@@ -204,6 +204,7 @@ const PhotoUploadCard = ({ label, preview, onFileChange, required, error, touche
             showCamera={false}
             aspectRatio={3.5/4.5}
             showCrop={true}
+            requireFaceDetection={requireFaceDetection}
           />
           {touched && error && (
             <div className="absolute -bottom-6 left-0 right-0 text-center">

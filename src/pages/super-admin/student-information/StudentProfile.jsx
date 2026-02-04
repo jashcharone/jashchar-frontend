@@ -484,17 +484,10 @@ const StudentProfile = () => {
     }
   };
 
-  // Refresh data when page becomes visible (after returning from Edit page)
-  useEffect(() => {
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === 'visible') {
-        setRefreshKey(prev => prev + 1);
-      }
-    };
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
-  }, []);
-
+  // ✅ FIX: Only refresh when navigating back from Edit page with new state
+  // Removed visibilitychange listener that was causing unwanted refreshes on tab switch
+  // The location.state?.refreshTime check below is sufficient for Edit page returns
+  
   // Refresh when navigating back from Edit page with new state
   useEffect(() => {
     if (location.state?.refreshTime) {

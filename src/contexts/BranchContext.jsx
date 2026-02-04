@@ -1,4 +1,4 @@
-﻿import React, { createContext, useContext, useState, useEffect } from 'react';
+﻿import React, { createContext, useContext, useState, useEffect, useRef, useMemo } from 'react';
 import { useAuth } from './SupabaseAuthContext';
 import { branchService } from '@/services/branchService';
 
@@ -12,17 +12,32 @@ export const BranchProvider = ({ children }) => {
   const [selectedBranch, setSelectedBranch] = useState(null);
   const [school, setSchool] = useState(null);
   const [loading, setLoading] = useState(true);
+  
+  // ✅ FIX: Track if data is already loaded for this user/school combo
+  const loadedForRef = useRef({ userId: null, schoolId: null });
+
+  // ✅ FIX: Use primitive IDs in dependency array instead of objects
+  const userId = user?.id;
+  const schoolId = authSchool?.id;
 
   useEffect(() => {
-    if (user && authSchool) {
-      loadBranchData();
-    } else {
+    // Skip if no user or school
+    if (!userId || !schoolId) {
       setBranches([]);
       setSelectedBranch(null);
       setSchool(null);
       setLoading(false);
+      loadedForRef.current = { userId: null, schoolId: null };
+      return;
     }
-  }, [user, authSchool]);
+    
+    // ✅ FIX: Skip refetch if already loaded for same user/school
+    if (loadedForRef.current.userId === userId && loadedForRef.current.schoolId === schoolId) {
+      return;
+    }
+    
+    loadBranchData();
+  }, [userId, schoolId]);
 
   const loadBranchData = async () => {
     setLoading(true);
@@ -80,6 +95,9 @@ export const BranchProvider = ({ children }) => {
               localStorage.setItem('selectedBranchId', single.id);
           }
       }
+      
+      // ✅ FIX: Mark as loaded for this user/school combo
+      loadedForRef.current = { userId, schoolId };
 
     } catch (error) {
       console.error("Failed to load branch data", error);
@@ -99,14 +117,17 @@ export const BranchProvider = ({ children }) => {
       }
   };
 
+  // ✅ FIX: Memoize context value to prevent unnecessary re-renders
+  const contextValue = useMemo(() => ({ 
+    branches, 
+    selectedBranch, 
+    school, 
+    setSelectedBranch: setSelectedBranchWrapper, 
+    loading 
+  }), [branches, selectedBranch, school, loading]);
+
   return (
-    <BranchContext.Provider value={{ 
-      branches, 
-      selectedBranch, 
-      school, 
-      setSelectedBranch: setSelectedBranchWrapper, 
-      loading 
-    }}>
+    <BranchContext.Provider value={contextValue}>
       {children}
     </BranchContext.Provider>
   );

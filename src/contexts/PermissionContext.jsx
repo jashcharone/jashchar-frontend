@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState, useMemo } from 'react';
+import React, { createContext, useContext, useEffect, useState, useMemo, useRef } from 'react';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { supabase } from '@/lib/supabaseClient'; // SAFE IMPORT
 import { useLoginSafetyCheck } from '@/hooks/useLoginSafetyCheck';
@@ -15,9 +15,18 @@ export const PermissionProvider = ({ children }) => {
   const [permissions, setPermissions] = useState({});
   const [loading, setLoading] = useState(true);
   const [detectedRole, setDetectedRole] = useState(null); // ? Store detected role for sidebar
+  
+  // ✅ FIX: Track if permissions already loaded for this user/school combo
+  const loadedForRef = useRef({ userId: null, schoolId: null, role: null });
 
   // SAFETY: Run auto-repair logic on login
   useLoginSafetyCheck();
+  
+  // ✅ FIX: Extract primitive values for dependency array
+  const userId = user?.id;
+  const schoolId = school?.id;
+  const userRole = user?.user_metadata?.role;
+  const userBranchId = user?.user_metadata?.branch_id;
 
   useEffect(() => {
     let isMounted = true;
@@ -631,6 +640,9 @@ export const PermissionProvider = ({ children }) => {
             });
         }
         
+        // ✅ FIX: Mark as loaded for this user/school/role combo
+        loadedForRef.current = { userId, schoolId, role: userRole };
+        
         if (isMounted) {
           setPermissions(permMap);
           setLoading(false);
@@ -640,10 +652,17 @@ export const PermissionProvider = ({ children }) => {
         if (isMounted) { setPermissions({}); setLoading(false); }
       }
     };
+    
+    // ✅ FIX: Skip refetch if already loaded for same user/school/role
+    if (loadedForRef.current.userId === userId && 
+        loadedForRef.current.schoolId === schoolId && 
+        loadedForRef.current.role === userRole) {
+      return;
+    }
 
     loadPermissions();
     return () => { isMounted = false; };
-  }, [user?.id, user?.user_metadata?.role, user?.user_metadata?.branch_id, school?.id, isReadOnly]);
+  }, [userId, userRole, userBranchId, schoolId, isReadOnly]); // ✅ FIX: Use extracted primitive values
 
   const checkAccess = (moduleSlug, action = 'view') => {
     if (loading) return false;

@@ -22,6 +22,10 @@ const AuthContext = createContext(undefined);
 export const AuthProvider = ({ children }) => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  
+  // ✅ FIX: Use ref for toast to prevent callback recreation
+  const toastRef = useRef(toast);
+  toastRef.current = toast;
 
   const [user, setUser] = useState(null);
   const [session, setSession] = useState(null);
@@ -32,6 +36,9 @@ export const AuthProvider = ({ children }) => {
   const [sessionList, setSessionList] = useState([]);
   const [loading, setLoading] = useState(true);
   const userIdRef = useRef(null);
+  
+  // ✅ FIX: Track if initial load is done to prevent unnecessary refetches
+  const initialLoadDoneRef = useRef(false);
 
   // Optimized Session Handling
   const handleSession = useCallback(async (currentSession) => {
@@ -41,7 +48,16 @@ export const AuthProvider = ({ children }) => {
       setSession(null);
       setSchool(null);
       userIdRef.current = null;
+      initialLoadDoneRef.current = false;
       setLoading(false);
+      return;
+    }
+
+    // ✅ FIX: Skip refetch if same user and initial load already done
+    // This prevents re-fetching when tab is switched or token is silently refreshed
+    if (userIdRef.current === currentSession.user.id && initialLoadDoneRef.current) {
+      // Just update the session token without re-fetching all data
+      setSession(currentSession);
       return;
     }
 
@@ -321,10 +337,13 @@ export const AuthProvider = ({ children }) => {
         const activeSession = sessions.find(s => s.id === activeSessionId);
         setCurrentSessionName(activeSession?.name || '');
       }
+      
+      // ✅ FIX: Mark initial load as done to prevent unnecessary refetches
+      initialLoadDoneRef.current = true;
 
     } catch (error) {
       console.error('Auth Context Critical Error:', error);
-      toast({
+      toastRef.current({
         title: 'Login Error',
         description: 'Could not load user data. Please refresh.',
         variant: 'destructive',
@@ -332,7 +351,7 @@ export const AuthProvider = ({ children }) => {
     } finally {
       setLoading(false);
     }
-  }, [toast]);
+  }, []); // ✅ FIX: Empty dependency array - toast is now accessed via ref
 
   useEffect(() => {
     // Initial Session Check

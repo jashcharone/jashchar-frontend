@@ -739,6 +739,16 @@ const EditStudentProfile = () => {
             if(gUrl) updates.guardian_photo_url = gUrl;
             
             // ========================================================================
+            // CRITICAL FIX: Update full_name when first_name or last_name changes
+            // This ensures Profile page displays correct name after editing
+            // ========================================================================
+            if (updates.first_name || updates.last_name) {
+                const firstName = (updates.first_name || formData.first_name || '').trim();
+                const lastName = (updates.last_name || formData.last_name || '').trim();
+                updates.full_name = lastName ? `${firstName} ${lastName}`.trim() : firstName;
+            }
+            
+            // ========================================================================
             // COMPLETE FIELD MAPPING (Same as StudentAdmission.jsx)
             // Maps frontend form field names to actual DB column names
             // ========================================================================
@@ -873,8 +883,11 @@ const EditStudentProfile = () => {
              }
 
             toast({ title: 'Profile Updated' });
-            // Navigate to student profile page after save
-            navigate(`/super-admin/student-information/profile/${studentId}`);
+            // Navigate to student profile page after save with refresh state
+            navigate(`/super-admin/student-information/profile/${studentId}`, { 
+              state: { refreshTime: Date.now() },
+              replace: true 
+            });
         } catch (error) {
             console.error(error);
             toast({ variant: 'destructive', title: 'Save Failed', description: error.message });

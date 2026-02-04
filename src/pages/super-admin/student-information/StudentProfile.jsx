@@ -7,7 +7,7 @@
  */
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { supabase } from '@/lib/customSupabaseClient';
 import api from '@/lib/api';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
@@ -172,6 +172,7 @@ const TimelineItem = ({ icon: Icon, title, description, date, status = "complete
 const StudentProfile = () => {
   const { studentId } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const { user, currentSessionId } = useAuth();
   const { selectedBranch } = useBranch();
   const { toast } = useToast();
@@ -184,9 +185,29 @@ const StudentProfile = () => {
   const [activeTab, setActiveTab] = useState('overview');
   const [feesSummary, setFeesSummary] = useState({ total: 0, paid: 0, balance: 0 });
   const [attendanceSummary, setAttendanceSummary] = useState({ present: 0, absent: 0, total: 0 });
+  const [refreshKey, setRefreshKey] = useState(0); // For forcing refresh
 
   const targetId = studentId || user?.id;
-  const branchId = user?.profile?.branch_id;
+  // Use selectedBranch.id consistently (same as Edit page)
+  const branchId = selectedBranch?.id || user?.profile?.branch_id;
+
+  // Refresh data when page becomes visible (after returning from Edit page)
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        setRefreshKey(prev => prev + 1);
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+  }, []);
+
+  // Refresh when navigating back from Edit page with new state
+  useEffect(() => {
+    if (location.state?.refreshTime) {
+      setRefreshKey(prev => prev + 1);
+    }
+  }, [location.state?.refreshTime]);
 
   // Calculate age
   const calculateAge = (dob) => {
@@ -201,9 +222,9 @@ const StudentProfile = () => {
     }
   };
 
-  // Fetch Student Data
+  // Fetch Student Data - with refreshKey for forcing refetch after edit
   useEffect(() => {
-    if (!branchId || !selectedBranch?.id || !targetId) return;
+    if (!branchId || !targetId) return;
 
     const init = async () => {
       setLoading(true);
@@ -288,6 +309,7 @@ const StudentProfile = () => {
           .from('student_custom_data')
           .select('custom_data')
           .eq('student_id', targetId)
+          .eq('branch_id', branchId)
           .maybeSingle();
         if (cData?.custom_data) setCustomData(cData.custom_data);
 
@@ -299,7 +321,7 @@ const StudentProfile = () => {
       }
     };
     init();
-  }, [branchId, selectedBranch, targetId, toast]);
+  }, [branchId, targetId, toast, refreshKey]);
 
   // Get field value helper
   const getFieldValue = (field) => {

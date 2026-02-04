@@ -22,11 +22,10 @@ export const staffApi = {
                 full_name, 
                 username, 
                 phone, 
-                email, 
-                designation:designations(name),
-                branch:schools(name) 
-            `) // Note: branch might be schools or branches table depending on schema. 
-               // Assuming 'schools' for now based on 'branch_id'.
+                email,
+                branch_id,
+                designation:designations(name)
+            `)
             .or(`phone.eq.${cleanMobile},phone.eq.+91${cleanMobile},phone.eq.91${cleanMobile}`)
             .maybeSingle();
             

@@ -87,15 +87,12 @@ const FeesDiscount = () => {
     const fetchStudents = useCallback(async () => {
         if (!branchId) return;
         
-        // This is not efficient, but required due to current schema limitations
-        const { data: studentRole } = await supabase.from('roles').select('id').eq('name', 'student').eq('branch_id', branchId).single();
-        if (!studentRole) return;
-
+        // Use student_profiles table directly - more efficient and correct
         const { data, error } = await supabase
-            .from('profiles')
+            .from('student_profiles')
             .select('id, full_name, roll_number, class_id, section_id, class:classes!student_profiles_class_id_fkey(name), section:sections!student_profiles_section_id_fkey(name)')
             .eq('branch_id', branchId)
-            .eq('role_id', studentRole.id);
+            .eq('status', 'active');
         
         if (error) {
             toast({ variant: 'destructive', title: 'Error fetching students', description: error.message });

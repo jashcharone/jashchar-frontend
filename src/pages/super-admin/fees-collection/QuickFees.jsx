@@ -53,7 +53,7 @@ const QuickFees = () => {
     useEffect(() => {
         if (!branchId || !selectedBranch) return;
         const fetchClassesAndSections = async () => {
-            const { data: classesData } = await supabase.from('classes').select('id, name').eq('branch_id', branchId).eq('branch_id', selectedBranch.id);
+            const { data: classesData } = await supabase.from('classes').select('id, name').eq('branch_id', selectedBranch.id);
             setClasses(classesData || []);
         };
         fetchClassesAndSections();
@@ -79,10 +79,9 @@ const QuickFees = () => {
     useEffect(() => {
         if (selectedClass && currentSessionId && selectedBranch) {
             const fetchStudents = async () => {
-                // Filter by current session and branch
-                let query = supabase.from('profiles')
+                // Filter by current session and branch - using student_profiles table
+                let query = supabase.from('student_profiles')
                     .select('id, full_name, school_code, session_id')
-                    .eq('branch_id', branchId)
                     .eq('branch_id', selectedBranch.id)
                     .eq('class_id', selectedClass)
                     .eq('status', 'active')

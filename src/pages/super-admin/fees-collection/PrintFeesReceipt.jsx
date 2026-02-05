@@ -60,21 +60,22 @@ const PrintFeesReceipt = () => {
       const { data: paymentData, error: paymentError } = await paymentQuery;
       if (paymentError) throw paymentError;
 
-      // 3. Fetch Student
+      // 3. Fetch Student - Use student_profiles table directly
       let student = null;
-      const { data: profileData } = await supabase
-        .from('profiles')
-        .select('*, classes(name), sections(name)')
+      const { data: studentProfileData } = await supabase
+        .from('student_profiles')
+        .select('*, classes!student_profiles_class_id_fkey(name), sections!student_profiles_section_id_fkey(name)')
         .eq('id', studentId)
         .eq('branch_id', selectedBranch.id)
         .maybeSingle();
-
-      if (profileData) {
-        student = { ...profileData, class: profileData.classes, section: profileData.sections };
+      
+      if (studentProfileData) {
+        student = { ...studentProfileData, class: studentProfileData.classes, section: studentProfileData.sections };
       } else {
-        const { data: studentProfileData } = await supabase
-          .from('student_profiles')
-          .select('*, classes!student_profiles_class_id_fkey(name), sections!student_profiles_section_id_fkey(name)')
+        // Fallback to profiles table for legacy data
+        const { data: profileData } = await supabase
+          .from('profiles')
+          .select('*, classes(name), sections(name)')
           .eq('id', studentId)
           .eq('branch_id', selectedBranch.id)
           .maybeSingle();

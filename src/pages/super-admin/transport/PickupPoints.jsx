@@ -86,26 +86,41 @@ const PickupPoints = () => {
     }
     setIsSubmitting(true);
 
-    const upsertData = {
-        name: formData.name,
-        latitude: formData.latitude || null,
-        longitude: formData.longitude || null,
-        branch_id: branchId
-    };
-
     let error;
     if (editingPoint) {
+      // UPDATE - only update the fields that changed
+      const updateData = {
+        name: formData.name.trim(),
+        latitude: formData.latitude?.trim() || null,
+        longitude: formData.longitude?.trim() || null,
+        updated_at: new Date().toISOString()
+      };
+      
+      console.log('[PickupPoints] Updating point:', editingPoint.id, updateData);
+      
       ({ error } = await supabase
         .from('transport_pickup_points')
-        .update(upsertData)
-        .eq('id', editingPoint.id));
+        .update(updateData)
+        .eq('id', editingPoint.id)
+        .eq('branch_id', branchId)); // Ensure we only update our branch's data
     } else {
+      // INSERT - include branch_id for new record
+      const insertData = {
+        name: formData.name.trim(),
+        latitude: formData.latitude?.trim() || null,
+        longitude: formData.longitude?.trim() || null,
+        branch_id: branchId
+      };
+      
+      console.log('[PickupPoints] Inserting new point:', insertData);
+      
       ({ error } = await supabase
         .from('transport_pickup_points')
-        .insert(upsertData));
+        .insert(insertData));
     }
 
     if (error) {
+      console.error('[PickupPoints] Error:', error);
       toast({ variant: 'destructive', title: `Error ${editingPoint ? 'updating' : 'creating'} point`, description: error.message });
     } else {
       toast({ title: 'Success!', description: `Pickup point successfully ${editingPoint ? 'updated' : 'created'}.` });

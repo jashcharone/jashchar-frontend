@@ -544,17 +544,15 @@ const StudentAdmission = () => {
         case 'mother_dob':
         case 'as_on_date':
           return (
-            <div className="lg:col-span-1">
+            <SmartField label={label} required={isRequired} error={errors[field.field_name]} touched={touched[field.field_name]} icon={CalendarDays}>
               <DatePicker 
                 id={field.field_name}
-                label={label} 
-                required={isRequired} 
                 value={formData[field.field_name]} 
                 onChange={date => handleChange(field.field_name, date)} 
                 disableFuture={field.field_name !== 'as_on_date'}
+                className="h-11"
               />
-              {touched[field.field_name] && errors[field.field_name] && <span className="text-xs text-red-500">{errors[field.field_name]}</span>}
-            </div>
+            </SmartField>
           );
         case 'roll_number':
            return (

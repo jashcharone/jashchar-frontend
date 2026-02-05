@@ -79,11 +79,11 @@ const DocumentUploadField = ({
 
   return (
     <div className="space-y-2">
-      <Label>{label}</Label>
-      <div className="border rounded-md p-3 bg-white">
+      {label && <Label>{label}</Label>}
+      <div className="border rounded-xl p-4 bg-muted/30 dark:bg-muted/20 border-border transition-colors">
         {uploadedFile ? (
           <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-2 text-green-600 truncate">
+            <div className="flex items-center space-x-2 text-emerald-600 dark:text-emerald-400 truncate">
               <CheckCircle className="h-5 w-5 flex-shrink-0" />
               <span className="text-sm truncate font-medium">{uploadedFile.name}</span>
             </div>
@@ -92,12 +92,12 @@ const DocumentUploadField = ({
             </Button>
           </div>
         ) : (
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
             <Button
               type="button"
               variant="outline"
               size="sm"
-              className="relative"
+              className="relative border-dashed border-2 hover:border-primary hover:bg-primary/5 dark:hover:bg-primary/10"
               disabled={uploading}
             >
               {uploading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Upload className="h-4 w-4 mr-2" />}

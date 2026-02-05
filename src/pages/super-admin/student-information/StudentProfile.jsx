@@ -19,6 +19,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Separator } from '@/components/ui/separator';
@@ -37,6 +40,7 @@ import { cn } from '@/lib/utils';
 import { format, parseISO, differenceInYears, differenceInMonths } from 'date-fns';
 import StudentProfileFeesTab from './StudentProfileFeesTab';
 import StudentProfileAttendanceTab from './StudentProfileAttendanceTab';
+import DocumentUploadField from '@/components/common/DocumentUploadField';
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // 🎨 PREMIUM COMPONENTS
@@ -189,6 +193,10 @@ const StudentProfile = () => {
   const [attendanceSummary, setAttendanceSummary] = useState({ present: 0, absent: 0, total: 0 });
   const [refreshKey, setRefreshKey] = useState(0); // For forcing refresh
   const [isExporting, setIsExporting] = useState(false); // PDF export loading state
+  const [uploadDialogOpen, setUploadDialogOpen] = useState(false); // Document upload dialog
+  const [uploadingDocument, setUploadingDocument] = useState(false);
+  const [newDocumentName, setNewDocumentName] = useState('');
+  const [newDocumentUrl, setNewDocumentUrl] = useState('');
 
   const targetId = studentId || user?.id;
   // Use selectedBranch.id consistently (same as Edit page)
@@ -482,6 +490,79 @@ const StudentProfile = () => {
       });
     } finally {
       setIsExporting(false);
+    }
+  };
+
+  // 📄 Handle Document Upload
+  const handleDocumentUpload = async () => {
+    if (!newDocumentName.trim()) {
+      toast({
+        variant: "destructive",
+        title: "Document name required",
+        description: "Please enter a name for the document"
+      });
+      return;
+    }
+    if (!newDocumentUrl) {
+      toast({
+        variant: "destructive",
+        title: "No file uploaded",
+        description: "Please upload a document first"
+      });
+      return;
+    }
+
+    setUploadingDocument(true);
+    try {
+      // Get current uploaded_documents array or create new one
+      const currentDocs = student.uploaded_documents || [];
+      const newDoc = {
+        name: newDocumentName.trim(),
+        url: newDocumentUrl,
+        uploaded_at: new Date().toISOString()
+      };
+      const updatedDocs = [...currentDocs, newDoc];
+
+      // Also update documents_received checklist
+      const currentReceived = student.documents_received || {};
+      const updatedReceived = { ...currentReceived, [newDocumentName.trim()]: true };
+
+      // Update student profile in database
+      const { error } = await supabase
+        .from('student_profiles')
+        .update({ 
+          uploaded_documents: updatedDocs,
+          documents_received: updatedReceived
+        })
+        .eq('id', targetId);
+
+      if (error) throw error;
+
+      // Update local state
+      setStudent(prev => ({ 
+        ...prev, 
+        uploaded_documents: updatedDocs,
+        documents_received: updatedReceived
+      }));
+
+      toast({
+        title: "Document uploaded!",
+        description: `${newDocumentName} has been saved successfully`
+      });
+
+      // Reset and close dialog
+      setNewDocumentName('');
+      setNewDocumentUrl('');
+      setUploadDialogOpen(false);
+    } catch (error) {
+      console.error('Document upload error:', error);
+      toast({
+        variant: "destructive",
+        title: "Upload failed",
+        description: error.message || "Could not save document. Please try again."
+      });
+    } finally {
+      setUploadingDocument(false);
     }
   };
 
@@ -1240,7 +1321,7 @@ const StudentProfile = () => {
                 title="Documents Received" 
                 subtitle="Submitted documents checklist"
                 action={
-                  <Button variant="outline" size="sm">
+                  <Button variant="outline" size="sm" onClick={() => setUploadDialogOpen(true)}>
                     <Upload className="mr-2 h-4 w-4" /> Upload Document
                   </Button>
                 }
@@ -1250,27 +1331,120 @@ const StudentProfile = () => {
                   <div 
                     key={docName}
                     className={cn(
-                      "flex items-center gap-3 p-4 rounded-xl border transition-all",
+                      "flex items-center gap-3 p-4 rounded-xl border transition-all cursor-pointer hover:shadow-md",
                       received 
                         ? "bg-emerald-50 dark:bg-emerald-950/30 border-emerald-200 dark:border-emerald-800" 
                         : "bg-muted/30 border-border"
                     )}
+                    onClick={() => {
+                      // Find uploaded document URL if exists
+                      const uploadedDoc = student.uploaded_documents?.find(d => d.name === docName);
+                      if (uploadedDoc?.url) {
+                        window.open(uploadedDoc.url, '_blank');
+                      }
+                    }}
                   >
                     {received ? (
                       <CheckCircle2 className="h-5 w-5 text-emerald-600 shrink-0" />
                     ) : (
                       <XCircle className="h-5 w-5 text-muted-foreground shrink-0" />
                     )}
-                    <span className="text-sm font-medium">{docName}</span>
+                    <span className="text-sm font-medium flex-1">{docName}</span>
+                    {student.uploaded_documents?.find(d => d.name === docName)?.url && (
+                      <Eye className="h-4 w-4 text-muted-foreground" />
+                    )}
                   </div>
                 ))}
                 {(!student.documents_received || Object.keys(student.documents_received).length === 0) && (
                   <div className="col-span-full text-center py-8 text-muted-foreground">
-                    No document records found
+                    No document records found. Click "Upload Document" to add documents.
                   </div>
                 )}
               </div>
+
+              {/* Uploaded Documents List */}
+              {student.uploaded_documents && student.uploaded_documents.length > 0 && (
+                <div className="mt-6 pt-6 border-t">
+                  <h4 className="text-sm font-semibold mb-4 flex items-center gap-2">
+                    <FileText className="h-4 w-4" /> Uploaded Files
+                  </h4>
+                  <div className="space-y-2">
+                    {student.uploaded_documents.map((doc, idx) => (
+                      <div key={idx} className="flex items-center justify-between p-3 bg-muted/30 rounded-lg hover:bg-muted/50 transition-colors">
+                        <div className="flex items-center gap-3">
+                          <FileText className="h-5 w-5 text-primary" />
+                          <div>
+                            <p className="text-sm font-medium">{doc.name}</p>
+                            {doc.uploaded_at && (
+                              <p className="text-xs text-muted-foreground">
+                                Uploaded: {format(parseISO(doc.uploaded_at), 'dd MMM yyyy, hh:mm a')}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                        <Button variant="ghost" size="sm" onClick={() => window.open(doc.url, '_blank')}>
+                          <Eye className="h-4 w-4 mr-1" /> View
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </GlassCard>
+
+            {/* Document Upload Dialog */}
+            <Dialog open={uploadDialogOpen} onOpenChange={setUploadDialogOpen}>
+              <DialogContent className="sm:max-w-md">
+                <DialogHeader>
+                  <DialogTitle className="flex items-center gap-2">
+                    <Upload className="h-5 w-5" /> Upload Document
+                  </DialogTitle>
+                  <DialogDescription>
+                    Upload a document for {student?.full_name || 'this student'}
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4 py-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="docName">Document Name *</Label>
+                    <Input 
+                      id="docName"
+                      placeholder="e.g., Birth Certificate, Aadhar Card, TC..."
+                      value={newDocumentName}
+                      onChange={(e) => setNewDocumentName(e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Upload File *</Label>
+                    <DocumentUploadField 
+                      label=""
+                      bucketName="student-photos"
+                      folderPath={`documents/${targetId}/`}
+                      onUploadComplete={(url) => setNewDocumentUrl(url)}
+                    />
+                  </div>
+                </div>
+                <DialogFooter>
+                  <Button variant="outline" onClick={() => {
+                    setUploadDialogOpen(false);
+                    setNewDocumentName('');
+                    setNewDocumentUrl('');
+                  }}>
+                    Cancel
+                  </Button>
+                  <Button onClick={handleDocumentUpload} disabled={uploadingDocument || !newDocumentName || !newDocumentUrl}>
+                    {uploadingDocument ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Saving...
+                      </>
+                    ) : (
+                      <>
+                        <CheckCircle2 className="mr-2 h-4 w-4" /> Save Document
+                      </>
+                    )}
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
           </TabsContent>
 
           {/* ═══════════════════════════════════════════════════════════════════════════════ */}

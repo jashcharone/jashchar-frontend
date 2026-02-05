@@ -168,11 +168,54 @@ const Sidebar = ({ role, isSidebarOpen, isMobile, toggleSidebar, closeSidebar, o
 
   const filteredMenu = useMemo(() => {
     if (!searchTerm) return currentMenu;
-    return currentMenu.filter(item => 
-      item.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (item.submenu && item.submenu.some(sub => sub.title.toLowerCase().includes(searchTerm.toLowerCase())))
-    );
+    const term = searchTerm.toLowerCase();
+    
+    return currentMenu
+      .map(item => {
+        const parentMatches = item.title.toLowerCase().includes(term);
+        
+        // Filter submenus to only show matching items
+        const matchingSubmenus = item.submenu 
+          ? item.submenu.filter(sub => sub.title.toLowerCase().includes(term))
+          : [];
+        
+        // Include item if parent title matches OR has matching submenus
+        if (parentMatches) {
+          // Parent matches - show all submenus
+          return item;
+        } else if (matchingSubmenus.length > 0) {
+          // Only submenus match - show parent with filtered submenus
+          return { ...item, submenu: matchingSubmenus };
+        }
+        
+        return null;
+      })
+      .filter(Boolean);
   }, [currentMenu, searchTerm]);
+
+  // Auto-expand parents when searching or when child is active
+  useEffect(() => {
+    if (searchTerm) {
+      // When searching, auto-expand all parents that have matching submenus
+      const term = searchTerm.toLowerCase();
+      const parentsToExpand = {};
+      
+      currentMenu.forEach(item => {
+        if (item.submenu) {
+          const hasMatchingSubmenu = item.submenu.some(sub => 
+            sub.title.toLowerCase().includes(term)
+          );
+          if (hasMatchingSubmenu) {
+            parentsToExpand[item.title] = true;
+          }
+        }
+      });
+      
+      if (Object.keys(parentsToExpand).length > 0) {
+        setOpenSubmenus(prev => ({ ...prev, ...parentsToExpand }));
+      }
+    }
+  }, [searchTerm, currentMenu]);
 
   // Auto-expand parent if child is active - and keep it expanded
   useEffect(() => {

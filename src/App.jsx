@@ -1,8 +1,9 @@
 import React, { useEffect, Suspense, lazy } from 'react';
-window.deploymentTimestamp = '2025-12-22-force-update';
+window.deploymentTimestamp = '2025-02-05-chunk-retry-fix';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import SecurityHeaders from '@/components/SecurityHeaders';
+import { lazyWithRetry } from '@/utils/lazyWithRetry';
 import { ROUTES } from '@/registry/routeRegistry';
 import { MASTER_ADMIN_ROUTES } from '@/routes/masterAdminRoutes';
 import NewModuleRoutes from '@/routes/routes.new.jsx';
@@ -129,7 +130,7 @@ const SubscriptionTransactions = lazy(() => import('@/pages/master-admin/subscri
 const BillingAudit = lazy(() => import('@/pages/master-admin/subscriptions/BillingAudit'));
 const GenerateBill = lazy(() => import('@/pages/master-admin/subscriptions/GenerateBill'));
 const BulkInvoiceGenerator = lazy(() => import('@/pages/master-admin/subscriptions/BulkInvoiceGenerator'));
-const QueriesFinder = lazy(() => import('@/pages/master-admin/system-settings/QueriesFinder')); // New Module
+const QueriesFinder = lazyWithRetry(() => import('@/pages/master-admin/system-settings/QueriesFinder'), 'QueriesFinder'); // With retry
 const CommunicationSettingsMaster = lazy(() => import('@/pages/master-admin/system-settings/CommunicationSettings'));
 // const WhatsAppManager = lazy(() => import('@/pages/master-admin/whatsapp/WhatsAppManager')); // Already declared above
 const EmailSettingsMaster = lazy(() => import('@/pages/master-admin/system-settings/EmailSettings'));

@@ -53,9 +53,10 @@ const AssignFeeGroup = () => {
     const handleSearch = async () => {
         if (!selectedBranch) return;
         setSearching(true);
-        let query = supabase.from('profiles')
-            .select('id, full_name, school_code, father_name, gender, rte, category_id, category:student_categories(name), role_id(name)')
-            .eq('branch_id', selectedBranch.id);
+        let query = supabase.from('student_profiles')
+            .select('id, full_name, school_code, father_name, gender, rte, category_id, category:student_categories(name)')
+            .eq('branch_id', selectedBranch.id)
+            .eq('status', 'active');
         
         if (filters.gender) query = query.eq('gender', filters.gender);
         if (filters.class_id) query = query.eq('class_id', filters.class_id);
@@ -65,7 +66,7 @@ const AssignFeeGroup = () => {
 
         const { data, error } = await query;
         if (error) toast({ variant: 'destructive', title: 'Error searching students' });
-        else setStudents(data?.filter(s => s.role_id?.name === 'student') || []);
+        else setStudents(data || []);
         setSearching(false);
     };
     

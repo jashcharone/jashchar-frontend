@@ -9,7 +9,14 @@ const DocumentUploadField = ({
   label, 
   bucketName = 'student-photos', // Using existing public bucket
   folderPath = 'documents/', 
-  acceptedTypes = ['application/pdf', 'image/jpeg', 'image/png', 'image/webp'],
+  acceptedTypes = [
+    'application/pdf', 
+    'application/x-pdf',  // PDF alternate MIME type
+    'image/jpeg', 
+    'image/jpg',          // Some browsers use image/jpg
+    'image/png', 
+    'image/webp'
+  ],
   onUploadComplete 
 }) => {
   const { toast } = useToast();
@@ -17,15 +24,41 @@ const DocumentUploadField = ({
   const [uploading, setUploading] = useState(false);
   const [uploadedFile, setUploadedFile] = useState(null);
 
+  // Build accept string for file input - more permissive for browser compatibility
+  const getAcceptString = () => {
+    const types = [...acceptedTypes];
+    // Add file extensions for better browser support
+    if (types.some(t => t.includes('pdf'))) types.push('.pdf');
+    if (types.some(t => t.includes('jpeg') || t.includes('jpg'))) types.push('.jpg', '.jpeg');
+    if (types.some(t => t.includes('png'))) types.push('.png');
+    if (types.some(t => t.includes('webp'))) types.push('.webp');
+    return types.join(',');
+  };
+
+  // Check if file type is valid (more lenient)
+  const isValidFileType = (fileType, fileName) => {
+    // Check MIME type
+    if (acceptedTypes.includes(fileType)) return true;
+    
+    // Check file extension as fallback (some browsers report wrong MIME)
+    const ext = fileName.split('.').pop()?.toLowerCase();
+    if (ext === 'pdf' && acceptedTypes.some(t => t.includes('pdf'))) return true;
+    if ((ext === 'jpg' || ext === 'jpeg') && acceptedTypes.some(t => t.includes('jpeg') || t.includes('jpg'))) return true;
+    if (ext === 'png' && acceptedTypes.some(t => t.includes('png'))) return true;
+    if (ext === 'webp' && acceptedTypes.some(t => t.includes('webp'))) return true;
+    
+    return false;
+  };
+
   const handleFileSelect = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
 
-    if (!acceptedTypes.includes(file.type)) {
+    if (!isValidFileType(file.type, file.name)) {
       toast({
         variant: "destructive",
         title: "Invalid file type",
-        description: `Please upload valid documents (${acceptedTypes.map(t => t.split('/')[1]).join(', ')})`
+        description: `Please upload valid documents (PDF, JPG, PNG, WEBP)`
       });
       return;
     }
@@ -107,11 +140,11 @@ const DocumentUploadField = ({
                 ref={fileInputRef}
                 className="absolute inset-0 w-full h-full opacity-0 cursor-pointer disabled:cursor-not-allowed"
                 onChange={handleFileSelect}
-                accept={acceptedTypes.join(',')}
+                accept={getAcceptString()}
                 disabled={uploading}
               />
             </Button>
-            <span className="text-xs text-muted-foreground">PDF, JPG, PNG (Max 5MB)</span>
+            <span className="text-xs text-muted-foreground">PDF, JPG, PNG, WEBP (Max 5MB)</span>
           </div>
         )}
       </div>

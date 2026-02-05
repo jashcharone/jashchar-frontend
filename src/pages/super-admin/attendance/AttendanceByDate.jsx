@@ -77,13 +77,14 @@ const AttendanceByDate = () => {
 
         try {
             // 1. Fetch students
+            // Note: In student_profiles, admission number is stored as 'school_code'
             let studentQuery = supabase
                 .from('student_profiles')
-                .select('id, full_name, admission_no')
+                .select('id, full_name, school_code, roll_number')
                 .eq('branch_id', branchId)
                 .eq('class_id', filters.class_id)
                 .eq('section_id', filters.section_id)
-                .order('admission_no');
+                .order('roll_number');
 
             if (selectedBranch) {
                 studentQuery = studentQuery.eq('branch_id', selectedBranch.id);

@@ -564,9 +564,9 @@ const StudentAdmission = () => {
                   value={formData.roll_number} 
                   type="text" 
                   placeholder="Auto-assigned" 
-                  onChange={handleRollNumberChange} 
-                  onBlur={() => handleBlur('roll_number')} 
-                  className="h-11"
+                  readOnly
+                  disabled
+                  className="h-11 bg-muted cursor-not-allowed"
                 />
                 {(isRollNumberLoading || isCheckingRollNumber) && (
                   <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-primary" />

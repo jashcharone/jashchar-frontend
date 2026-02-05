@@ -135,7 +135,8 @@ const MasterAdminResetPassword = lazy(() => import('@/pages/master-admin/MasterA
 const SubscriptionPlans = lazy(() => import('@/pages/master-admin/subscriptions/SubscriptionPlans'));
 const AddSubscriptionPlan = lazy(() => import('@/pages/master-admin/subscriptions/AddSubscriptionPlan'));
 const EditSubscriptionPlan = lazy(() => import('@/pages/master-admin/subscriptions/EditSubscriptionPlan'));
-const RolePermission = lazy(() => import('@/pages/master-admin/RolePermission'));
+// 🧬 Permission DNA - Revolutionary Role Permission System
+const RolePermission = lazy(() => import('@/pages/master-admin/role-permission/PermissionDNA'));
 const AssignPermission = lazy(() => import('@/pages/master-admin/AssignPermission'));
 const SchoolRequests = lazy(() => import('@/pages/master-admin/SchoolRequests'));
 const EditSchoolRequest = lazy(() => import('@/pages/master-admin/EditSchoolRequest'));

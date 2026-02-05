@@ -478,9 +478,12 @@ export const PermissionProvider = ({ children }) => {
              
              console.log('DEBUG PERM: Final permMap =', JSON.stringify(permMap, null, 2));
 
-             // Ensure Dashboard/Settings are always there
+             // Ensure Dashboard is always there (required for login)
              permMap['dashboard'] = { can_view: true, can_add: true, can_edit: true, can_delete: true };
-             permMap['system_settings'] = { can_view: true, can_add: true, can_edit: true, can_delete: true };
+             
+             // ⚠️ REMOVED: system_settings should NOT be auto-granted!
+             // It must come from explicit role_permissions in database
+             // permMap['system_settings'] = { can_view: true, can_add: true, can_edit: true, can_delete: true };
 
           } else {
              // CASE B: No Explicit Permissions (Default Behavior)
@@ -498,9 +501,11 @@ export const PermissionProvider = ({ children }) => {
                 }
              });
 
-             // Always allow Dashboard and System Settings
+             // Always allow Dashboard (required for login)
              permMap['dashboard'] = { can_view: true, can_add: true, can_edit: true, can_delete: true };
-             permMap['system_settings'] = { can_view: true, can_add: true, can_edit: true, can_delete: true };
+             
+             // ⚠️ REMOVED: system_settings should only be granted if in plan modules
+             // permMap['system_settings'] = { can_view: true, can_add: true, can_edit: true, can_delete: true };
           }
 
           console.log("PermissionContext: Final Permissions:", Object.keys(permMap).filter(k => !k.startsWith('__')));
@@ -628,9 +633,10 @@ export const PermissionProvider = ({ children }) => {
             if (modulesToGrant.length === 0) {
                 console.warn("PermissionContext: No allowed modules found for fallback role. Granting nothing.");
                 // EMERGENCY FALLBACK: If plan fetch failed, grant basic modules to owner
+                // ⚠️ FIX: Removed system_settings from emergency fallback - must be explicitly assigned
                 if (normalizedRole === 'organization_owner' || normalizedRole === 'school_owner') {
                     console.warn("PermissionContext: Emergency fallback for owner - granting core modules.");
-                    const CORE_MODULES = ['dashboard', 'academics', 'students', 'staff', 'fees', 'transport', 'front_cms', 'system_settings'];
+                    const CORE_MODULES = ['dashboard', 'academics', 'students', 'staff', 'fees', 'transport', 'front_cms'];
                     CORE_MODULES.forEach(slug => {
                         permMap[slug] = { can_view: true, can_add: true, can_edit: true, can_delete: true };
                     });

@@ -148,8 +148,10 @@ const Sidebar = ({ role, isSidebarOpen, isMobile, toggleSidebar, closeSidebar, o
           if (canView(fullSubKey)) return true;
           if (canView(doublePrefix)) return true;
           if (moduleSlug === 'front_cms' && canView('front_cms')) return true;
-          // Fallback: if parent has access, show all children
-          if (hasAccess) return true;
+          
+          // ⚠️ REMOVED FALLBACK: Previously showed all children if parent had access
+          // Now STRICT: Each submodule must have explicit permission
+          // This ensures Permission DNA page controls exactly which sub-modules appear
           return false;
         });
         
@@ -158,7 +160,11 @@ const Sidebar = ({ role, isSidebarOpen, isMobile, toggleSidebar, closeSidebar, o
           return true;
         }
         
-        if (hasAccess) return true;
+        // If no visible submenu but parent has access, show parent without submenu
+        if (hasAccess) {
+          item.submenu = [];
+          return true;
+        }
         return false;
       }
       

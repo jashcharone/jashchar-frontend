@@ -77,7 +77,7 @@ const LeaveManagement = () => {
       // Fetch employees
       const { data: emps } = await supabase
         .from('employee_profiles')
-        .select('id, full_name, first_name, last_name, employee_id')
+        .select('id, full_name, first_name, last_name')
         .eq('branch_id', selectedBranch.id);
       setEmployees(emps || []);
 
@@ -201,11 +201,11 @@ const LeaveManagement = () => {
 
   const filteredApplications = leaveApplications.filter(leave => {
     if (statusFilter !== 'all' && leave.status !== statusFilter) return false;
-    if (employeeFilter !== 'all' && leave.employee_id !== employeeFilter) return false;
+    if (employeeFilter !== 'all' && leave.staff_id !== employeeFilter) return false;
     if (searchTerm) {
       const search = searchTerm.toLowerCase();
       const empName = `${leave.employee?.first_name || ''} ${leave.employee?.last_name || ''}`.toLowerCase();
-      if (!empName.includes(search) && !leave.employee?.employee_id?.toLowerCase().includes(search)) {
+      if (!empName.includes(search)) {
         return false;
       }
     }
@@ -355,7 +355,7 @@ const LeaveManagement = () => {
                           <p className="font-medium">
                             {leave.employee?.first_name} {leave.employee?.last_name}
                           </p>
-                          <p className="text-xs text-gray-500">{leave.employee?.employee_id}</p>
+                          <p className="text-xs text-gray-500">{leave.employee?.full_name}</p>
                         </div>
                       </TableCell>
                       <TableCell>{leave.leave_type?.name || '-'}</TableCell>
@@ -410,8 +410,8 @@ const LeaveManagement = () => {
                     </p>
                   </div>
                   <div>
-                    <p className="text-sm text-gray-500">Employee ID</p>
-                    <p className="font-medium">{selectedLeave.employee?.employee_id || '-'}</p>
+                    <p className="text-sm text-gray-500">Full Name</p>
+                    <p className="font-medium">{selectedLeave.employee?.full_name || '-'}</p>
                   </div>
                   <div>
                     <p className="text-sm text-gray-500">Leave Type</p>

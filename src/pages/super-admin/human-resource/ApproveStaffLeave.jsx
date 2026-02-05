@@ -119,7 +119,7 @@ const ViewLeaveModal = ({ leave, open, setOpen }) => (
             <DialogHeader><DialogTitle>Leave Details</DialogTitle></DialogHeader>
             {leave && <div className="grid grid-cols-2 gap-4 py-4 text-sm">
                 <div><span className="font-semibold">Name:</span> {leave.staff?.full_name}</div>
-                <div><span className="font-semibold">Staff ID:</span> {leave.staff?.school_code}</div>
+                <div><span className="font-semibold">Staff ID:</span> {leave.staff_id?.slice(0, 8)}</div>
                 <div><span className="font-semibold">Submitted By:</span> {leave.staff?.full_name}</div>
                 <div><span className="font-semibold">Leave Type:</span> {leave.leave_type?.name}</div>
                 <div className="col-span-2"><span className="font-semibold">Leave:</span> {format(new Date(leave.from_date), 'dd/MM/yy')} to {format(new Date(leave.to_date), 'dd/MM/yy')} ({differenceInDays(new Date(leave.to_date), new Date(leave.from_date)) + 1} days)</div>
@@ -158,7 +158,7 @@ const ApproveStaffLeave = () => {
         setLoading(true);
         const [rolesRes, staffRes, leaveTypesRes, leavesRes] = await Promise.all([
             supabase.from('roles').select('*').eq('branch_id', branchId).not('name', 'in', '("student","parent")'),
-            supabase.from('employee_profiles').select('id, full_name, role_id, school_code').eq('branch_id', selectedBranch.id),
+            supabase.from('employee_profiles').select('id, full_name, role_id').eq('branch_id', selectedBranch.id),
             supabase.from('leave_types').select('*').eq('branch_id', selectedBranch.id),
             supabase.from('leave_requests').select('*').eq('branch_id', selectedBranch.id).order('created_at', { ascending: false })
         ]);
@@ -254,7 +254,7 @@ const ApproveStaffLeave = () => {
                                     <tr><td colSpan="7" className="text-center p-4"><Loader2 className="animate-spin mx-auto"/></td></tr>
                                 ) : leaves.map(leave => (
                                     <tr key={leave.id} className="border-b hover:bg-muted/30">
-                                        <td className="px-6 py-4 font-medium">{leave.staff?.full_name} <br/><span className="text-xs text-muted-foreground">{leave.staff?.school_code}</span></td>
+                                        <td className="px-6 py-4 font-medium">{leave.staff?.full_name}</td>
                                         <td className="px-6 py-4">{leave.leave_type?.name}</td>
                                         <td className="px-6 py-4">{format(new Date(leave.from_date), 'dd/MM/yy')} - {format(new Date(leave.to_date), 'dd/MM/yy')}</td>
                                         <td className="px-6 py-4">{differenceInDays(new Date(leave.to_date), new Date(leave.from_date)) + 1}</td>

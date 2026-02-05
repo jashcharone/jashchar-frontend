@@ -13,7 +13,7 @@ import DatePicker from '@/components/ui/DatePicker';
 import { format } from 'date-fns';
 
 const ApplyLeave = () => {
-    const { user, currentSessionId } = useAuth();
+    const { user, currentSessionId, organizationId } = useAuth();
     const { toast } = useToast();
     const [leaveTypes, setLeaveTypes] = useState([]);
     const [pastRequests, setPastRequests] = useState([]);
@@ -69,6 +69,7 @@ const ApplyLeave = () => {
         try {
             const { error } = await supabase.from('leave_requests').insert({
                 ...formData,
+                organization_id: organizationId,
                 branch_id: branchId,
                 session_id: currentSessionId,
                 student_id: user.id,

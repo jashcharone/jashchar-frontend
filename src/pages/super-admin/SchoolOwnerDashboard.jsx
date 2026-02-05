@@ -491,21 +491,21 @@ const SchoolOwnerDashboard = () => {
           supabase.from('fee_payments').select('student_id, amount')
             .eq('branch_id', branchId).is('reverted_at', null),
           // Enquiries
-          supabase.from('enquiries').select('id, status').eq('branch_id', branchId),
-          // Library books
-          supabase.from('books').select('id, quantity, available_quantity', { count: 'exact' })
+          supabase.from('admission_enquiries').select('id, status').eq('branch_id', branchId),
+          // Library books - just count, don't rely on specific columns
+          supabase.from('books').select('id', { count: 'exact' })
             .eq('branch_id', branchId),
-          // Book issues
-          supabase.from('book_issues').select('id, return_date, actual_return_date')
-            .eq('branch_id', branchId),
+          // Book issues - just count issued books
+          supabase.from('book_issues').select('id, due_date, return_date')
+            .eq('branch_id', branchId).is('return_date', null),
           // Today's student attendance
           supabase.from('student_attendance').select('id, status')
             .eq('branch_id', branchId).eq('date', today),
           // Today's staff attendance
           supabase.from('staff_attendance').select('id, status')
-            .eq('branch_id', branchId).eq('date', today),
-          // Leave requests
-          supabase.from('leave_requests').select('id, type, status')
+            .eq('branch_id', branchId).eq('attendance_date', today),
+          // Leave requests - use leave_type_id instead of leave_type
+          supabase.from('leave_requests').select('id, leave_type_id, status, employee_id')
             .eq('branch_id', branchId).eq('status', 'approved')
         ]);
 
@@ -549,11 +549,11 @@ const SchoolOwnerDashboard = () => {
         });
         setOverviewData(prev => ({ ...prev, enquiry: enquiryStats }));
 
-        // Calculate library overview
-        const totalBooks = booksRes.data?.reduce((sum, b) => sum + (b.quantity || 0), 0) || 0;
-        const availableBooks = booksRes.data?.reduce((sum, b) => sum + (b.available_quantity || 0), 0) || 0;
-        const issuedBooks = totalBooks - availableBooks;
-        const dueForReturn = bookIssuesRes.data?.filter(i => !i.actual_return_date && new Date(i.return_date) < new Date()).length || 0;
+        // Calculate library overview - simplified since we don't have quantity columns
+        const totalBooks = booksRes.count || 0;
+        const issuedBooks = bookIssuesRes.data?.length || 0; // Books currently issued (not returned)
+        const availableBooks = Math.max(0, totalBooks - issuedBooks);
+        const dueForReturn = bookIssuesRes.data?.filter(i => new Date(i.due_date) < new Date()).length || 0;
         setOverviewData(prev => ({
           ...prev,
           library: { dueReturn: dueForReturn, returned: 0, issued: issuedBooks, available: availableBooks, total: totalBooks }
@@ -574,9 +574,9 @@ const SchoolOwnerDashboard = () => {
         const staffAttendance = staffAttendanceRes.data || [];
         const staffPresentCount = staffAttendance.filter(a => a.status === 'present').length;
 
-        // Leave requests
-        const staffLeaves = leaveRequestsRes.data?.filter(l => l.type === 'staff').length || 0;
-        const studentLeaves = leaveRequestsRes.data?.filter(l => l.type === 'student').length || 0;
+        // Leave requests - all approved leaves are staff leaves in leave_requests table
+        const staffLeaves = leaveRequestsRes.data?.length || 0;
+        const studentLeaves = 0; // Student leaves would be in a different table if any
 
         // Set top stats
         setTopStats({
@@ -652,15 +652,15 @@ const SchoolOwnerDashboard = () => {
 
         // Fetch income by category for pie chart
         const { data: incomeCategories } = await supabase
-          .from('incomes')
-          .select('income_head, amount')
+          .from('income')
+          .select('income_head_id, amount, income_heads(name)')
           .eq('branch_id', branchId)
           .gte('date', startOfMonth);
 
         if (incomeCategories) {
           const categoryData = {};
           incomeCategories.forEach(item => {
-            const category = item.income_head || 'Miscellaneous';
+            const category = item.income_heads?.name || 'Miscellaneous';
             if (!categoryData[category]) categoryData[category] = 0;
             categoryData[category] += parseFloat(item.amount) || 0;
           });
@@ -674,14 +674,14 @@ const SchoolOwnerDashboard = () => {
         // Fetch expense by category for pie chart
         const { data: expenseCategories } = await supabase
           .from('expenses')
-          .select('expense_head, amount')
+          .select('expense_head_id, amount, expense_heads(name)')
           .eq('branch_id', branchId)
           .gte('date', startOfMonth);
 
         if (expenseCategories) {
           const categoryData = {};
           expenseCategories.forEach(item => {
-            const category = item.expense_head || 'Miscellaneous';
+            const category = item.expense_heads?.name || 'Miscellaneous';
             if (!categoryData[category]) categoryData[category] = 0;
             categoryData[category] += parseFloat(item.amount) || 0;
           });

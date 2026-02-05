@@ -23,7 +23,7 @@ const AssignFeeGroup = () => {
     const [sections, setSections] = useState([]);
     const [categories, setCategories] = useState([]);
     const [students, setStudents] = useState([]);
-    const [filters, setFilters] = useState({ class_id: '', section_id: '', category_id: '', gender: '', rte: '' });
+    const [filters, setFilters] = useState({ class_id: '', section_id: '', category_id: '', gender: '', is_rte_student: '' });
     const [selectedStudents, setSelectedStudents] = useState(new Set());
     const [loading, setLoading] = useState(false);
     const [searching, setSearching] = useState(false);
@@ -54,7 +54,7 @@ const AssignFeeGroup = () => {
         if (!selectedBranch) return;
         setSearching(true);
         let query = supabase.from('student_profiles')
-            .select('id, full_name, school_code, father_name, gender, rte, category_id, category:student_categories(name)')
+            .select('id, full_name, school_code, father_name, gender, is_rte_student, category_id, category:student_categories(name)')
             .eq('branch_id', selectedBranch.id)
             .eq('status', 'active');
         
@@ -62,7 +62,7 @@ const AssignFeeGroup = () => {
         if (filters.class_id) query = query.eq('class_id', filters.class_id);
         if (filters.section_id) query = query.eq('section_id', filters.section_id);
         if (filters.category_id) query = query.eq('category_id', filters.category_id);
-        if (filters.rte) query = query.eq('rte', filters.rte === 'yes');
+        if (filters.is_rte_student) query = query.eq('is_rte_student', filters.is_rte_student === 'yes');
 
         const { data, error } = await query;
         if (error) toast({ variant: 'destructive', title: 'Error searching students' });
@@ -117,7 +117,7 @@ const AssignFeeGroup = () => {
                     <div><Label>Section</Label><Select onValueChange={v => setFilters({...filters, section_id: v})}><SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger><SelectContent>{sections.map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}</SelectContent></Select></div>
                     <div><Label>Category</Label><Select onValueChange={v => setFilters({...filters, category_id: v})}><SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger><SelectContent>{categories.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent></Select></div>
                     <div><Label>Gender</Label><Select onValueChange={v => setFilters({...filters, gender: v})}><SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger><SelectContent><SelectItem value="male">Male</SelectItem><SelectItem value="female">Female</SelectItem></SelectContent></Select></div>
-                    <div><Label>RTE</Label><Select onValueChange={v => setFilters({...filters, rte: v})}><SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger><SelectContent><SelectItem value="yes">Yes</SelectItem><SelectItem value="no">No</SelectItem></SelectContent></Select></div>
+                    <div><Label>RTE</Label><Select onValueChange={v => setFilters({...filters, is_rte_student: v})}><SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger><SelectContent><SelectItem value="yes">Yes</SelectItem><SelectItem value="no">No</SelectItem></SelectContent></Select></div>
                     <Button onClick={handleSearch} disabled={searching}><Search className="mr-2 h-4 w-4" />{searching ? 'Searching...' : 'Search'}</Button>
                 </div>
             </div>

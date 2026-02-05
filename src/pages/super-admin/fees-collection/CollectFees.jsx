@@ -97,7 +97,7 @@ const CollectFees = () => {
             // Use student_profiles directly - it's faster and more reliable
             let query = supabase
                 .from('student_profiles')
-                .select('id, full_name, father_name, phone, school_code, session_id, classes!student_profiles_class_id_fkey(name), sections!student_profiles_section_id_fkey(name)')
+                .select('id, full_name, father_name, phone, school_code, session_id, date_of_birth, classes!student_profiles_class_id_fkey(name), sections!student_profiles_section_id_fkey(name)')
                 .eq('branch_id', selectedBranch.id)
                 .eq('class_id', selectedClass);
             
@@ -198,7 +198,7 @@ const CollectFees = () => {
                                                 <td className="p-2 font-medium">{student.full_name}</td>
                                                 <td className="p-2">{student.classes?.name} {student.sections?.name ? `(${student.sections.name})` : ''}</td>
                                                 <td className="p-2">{student.father_name || '-'}</td>
-                                                <td className="p-2">{student.dob ? format(new Date(student.dob), 'dd-MM-yyyy') : 'N/A'}</td>
+                                                <td className="p-2">{student.date_of_birth ? format(new Date(student.date_of_birth), 'dd-MM-yyyy') : 'N/A'}</td>
                                                 <td className="p-2">{student.phone || '-'}</td>
                                                 <td className="p-2 text-right">
                                                     <Button size="sm" onClick={() => navigate(`/super-admin/fees-collection/student-fees/${student.id}`)}>

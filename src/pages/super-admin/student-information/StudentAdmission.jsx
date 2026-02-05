@@ -1990,9 +1990,19 @@ const StudentAdmission = () => {
   const handleSiblingAdd = selectedSibling => {
     setFormData(prev => {
       const newSiblings = [...(prev.siblings || [])];
-      if (!newSiblings.find(s => s.id === selectedSibling.id)) {
-        newSiblings.push(selectedSibling);
+      
+      // Check if sibling is already added
+      if (newSiblings.find(s => s.id === selectedSibling.id)) {
+        toast({ 
+          variant: 'destructive', 
+          title: 'Duplicate Sibling', 
+          description: `${selectedSibling.full_name} is already added as a sibling.` 
+        });
+        return prev; // Return previous state without changes
       }
+      
+      newSiblings.push(selectedSibling);
+      
       let newSiblingGroupId = prev.sibling_group_id;
       const existingSiblingGroupId = newSiblings.map(s => s.sibling_group_id).find(id => id);
       if (existingSiblingGroupId) newSiblingGroupId = existingSiblingGroupId;
@@ -2000,9 +2010,10 @@ const StudentAdmission = () => {
       
       const carryForward = newSiblings.reduce((sum, s) => sum + (Number(s.carry_forward_fees) || 0), 0);
 
+      toast({ title: 'Sibling Added', description: `${selectedSibling.full_name} has been linked.` });
+      
       return { ...prev, siblings: newSiblings, sibling_group_id: newSiblingGroupId, carry_forward_fees: carryForward > 0 ? String(carryForward) : '' };
     });
-    toast({ title: 'Sibling Added', description: `${selectedSibling.full_name} has been linked.` });
   };
   
   const removeSibling = siblingId => {

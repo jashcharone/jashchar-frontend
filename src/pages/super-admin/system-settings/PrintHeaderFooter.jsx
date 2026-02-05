@@ -269,16 +269,11 @@ const PrintHeaderFooter = () => {
       // Prepare data with branch_id for branch-wise storage
       const branchId = currentBranchId && currentBranchId !== 'all' ? currentBranchId : null;
       
-      // Check if record exists for this school + type + branch
-      const { data: existing } = await supabase
-        .from('print_settings')
-        .select('id')
-        .eq('branch_id', branchId)
-        .eq('type', type)
-        .is('branch_id', branchId ? undefined : null);
-      
+      // Check if record exists for this type + branch
       let existingId = null;
+      
       if (branchId) {
+        // Query for specific branch
         const { data: branchExisting } = await supabase
           .from('print_settings')
           .select('id')
@@ -286,8 +281,16 @@ const PrintHeaderFooter = () => {
           .eq('type', type)
           .single();
         existingId = branchExisting?.id;
-      } else if (existing && existing.length > 0) {
-        existingId = existing[0].id;
+      } else {
+        // Query for organization-level (null branch_id)
+        const { data: orgExisting } = await supabase
+          .from('print_settings')
+          .select('id')
+          .is('branch_id', null)
+          .eq('type', type);
+        if (orgExisting && orgExisting.length > 0) {
+          existingId = orgExisting[0].id;
+        }
       }
 
       const saveData = {

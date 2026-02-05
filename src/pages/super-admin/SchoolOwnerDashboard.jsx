@@ -302,6 +302,96 @@ const ActivityFeed = ({ activities }) => (
 // ============================================================================
 // MAIN DASHBOARD COMPONENT
 // ============================================================================
+// ============================================================================
+// TOP STATS BAR COMPONENT (Like in screenshot)
+// ============================================================================
+const topStatsColorMap = {
+  red: { text: 'text-red-600 dark:text-red-400', bg: 'bg-red-100 dark:bg-red-900/30' },
+  orange: { text: 'text-orange-600 dark:text-orange-400', bg: 'bg-orange-100 dark:bg-orange-900/30' },
+  yellow: { text: 'text-yellow-600 dark:text-yellow-400', bg: 'bg-yellow-100 dark:bg-yellow-900/30' },
+  purple: { text: 'text-purple-600 dark:text-purple-400', bg: 'bg-purple-100 dark:bg-purple-900/30' },
+  blue: { text: 'text-blue-600 dark:text-blue-400', bg: 'bg-blue-100 dark:bg-blue-900/30' },
+  green: { text: 'text-green-600 dark:text-green-400', bg: 'bg-green-100 dark:bg-green-900/30' },
+};
+
+const TopStatsBadge = ({ icon: Icon, label, value, total, color = 'blue', bgColor }) => {
+  const colorStyles = topStatsColorMap[color] || topStatsColorMap.blue;
+  const textColor = colorStyles.text;
+  const backgroundColor = bgColor || colorStyles.bg;
+  
+  return (
+    <div className={`flex items-center gap-2 px-4 py-2 rounded-lg ${backgroundColor} border`}>
+      {Icon && <Icon className={`h-4 w-4 ${textColor}`} />}
+      <span className="text-sm font-medium">{label}</span>
+      <Badge variant="secondary" className="ml-auto">{value}/{total}</Badge>
+    </div>
+  );
+};
+
+// ============================================================================
+// OVERVIEW CARD COMPONENT (Fees Overview, Library Overview, etc.)
+// ============================================================================
+const OverviewCard = ({ title, items, icon: Icon, gradient }) => (
+  <Card className="overflow-hidden">
+    <CardHeader className={`py-3 bg-gradient-to-r ${gradient} text-white`}>
+      <CardTitle className="text-sm font-medium flex items-center gap-2">
+        {Icon && <Icon className="h-4 w-4" />}
+        {title}
+      </CardTitle>
+    </CardHeader>
+    <CardContent className="p-4 space-y-2">
+      {items.map((item, idx) => (
+        <div key={idx} className="flex items-center justify-between text-sm">
+          <span className={`font-medium ${item.color || 'text-foreground'}`}>
+            {item.count} {item.label}
+          </span>
+          <span className="text-muted-foreground">{item.percentage}</span>
+        </div>
+      ))}
+    </CardContent>
+  </Card>
+);
+
+// ============================================================================
+// STAFF COUNT CARD
+// ============================================================================
+const colorClasses = {
+  green: 'bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400',
+  red: 'bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400',
+  blue: 'bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400',
+  purple: 'bg-purple-100 text-purple-600 dark:bg-purple-900/30 dark:text-purple-400',
+  indigo: 'bg-indigo-100 text-indigo-600 dark:bg-indigo-900/30 dark:text-indigo-400',
+  cyan: 'bg-cyan-100 text-cyan-600 dark:bg-cyan-900/30 dark:text-cyan-400',
+  amber: 'bg-amber-100 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400',
+  emerald: 'bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400',
+  pink: 'bg-pink-100 text-pink-600 dark:bg-pink-900/30 dark:text-pink-400',
+  violet: 'bg-violet-100 text-violet-600 dark:bg-violet-900/30 dark:text-violet-400',
+};
+
+const StaffCountCard = ({ icon: Icon, label, count, value, bgColor, color = 'blue' }) => {
+  const displayValue = value !== undefined ? value : count;
+  const bgClass = bgColor || colorClasses[color] || 'bg-muted';
+  
+  return (
+    <Card className="hover:shadow-md transition-shadow">
+      <CardContent className="p-4 flex items-center gap-3">
+        {Icon && (
+          <div className={`p-2 rounded-lg ${bgClass}`}>
+            <Icon className="h-5 w-5" />
+          </div>
+        )}
+        <div className={Icon ? '' : 'w-full text-center'}>
+          <p className="text-xs text-muted-foreground">{label}</p>
+          <p className="text-xl font-bold">{displayValue}</p>
+        </div>
+      </CardContent>
+    </Card>
+  );
+};
+
+// ============================================================================
+// MAIN DASHBOARD COMPONENT
+// ============================================================================
 const SchoolOwnerDashboard = () => {
   const { user, currentSessionId, school } = useAuth();
   const { selectedBranch } = useBranch();
@@ -320,7 +410,31 @@ const SchoolOwnerDashboard = () => {
   });
   const [loading, setLoading] = useState(true);
   const [feesChartData, setFeesChartData] = useState([]);
+  const [sessionFeesData, setSessionFeesData] = useState([]);
+  const [incomeData, setIncomeData] = useState([]);
+  const [expenseData, setExpenseData] = useState([]);
   const [currentTime, setCurrentTime] = useState(new Date());
+  
+  // New state for enhanced dashboard
+  const [topStats, setTopStats] = useState({
+    feesAwaiting: { value: 0, total: 0 },
+    staffLeave: { value: 0, total: 0 },
+    studentLeave: { value: 0, total: 0 },
+    convertedLeads: { value: 0, total: 0 },
+    staffPresent: { value: 0, total: 0 },
+    studentPresent: { value: 0, total: 0 }
+  });
+  
+  const [overviewData, setOverviewData] = useState({
+    fees: { unpaid: 0, partial: 0, paid: 0, total: 0 },
+    enquiry: { active: 0, won: 0, passive: 0, lost: 0, dead: 0 },
+    library: { dueReturn: 0, returned: 0, issued: 0, available: 0, total: 0 },
+    attendance: { present: 0, late: 0, absent: 0, halfDay: 0, total: 0 }
+  });
+  
+  const [staffCounts, setStaffCounts] = useState({
+    admin: 0, teacher: 0, accountant: 0, librarian: 0, receptionist: 0, superAdmin: 0
+  });
 
   // Real-time clock
   useEffect(() => {
@@ -328,7 +442,7 @@ const SchoolOwnerDashboard = () => {
     return () => clearInterval(timer);
   }, []);
 
-  // Fetch Data
+  // Fetch Data - Enhanced for all dashboard sections
   useEffect(() => {
     const fetchStats = async () => {
       if (!user?.profile?.branch_id) {
@@ -338,44 +452,154 @@ const SchoolOwnerDashboard = () => {
       
       try {
         const branchId = selectedBranch?.id || user.profile.branch_id;
+        const today = new Date().toISOString().split('T')[0];
         const startOfMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString();
+        const currentYear = new Date().getFullYear();
+        const sessionStart = new Date(currentYear - 1, 3, 1).toISOString(); // April last year
 
-        // Parallel queries
-        const [studentsRes, staffRes, incomeRes] = await Promise.all([
-          supabase
-            .from('student_profiles')
-            .select('*', { count: 'exact', head: true })
-            .eq('branch_id', branchId)
-            .or('is_disabled.is.null,is_disabled.eq.false'),
-          supabase
-            .from('employee_profiles')
-            .select('*', { count: 'exact', head: true })
-            .eq('branch_id', branchId)
-            .or('is_disabled.is.null,is_disabled.eq.false'),
-          supabase
-            .from('fee_payments')
-            .select('amount')
-            .eq('branch_id', branchId)
-            .gte('payment_date', startOfMonth)
-            .is('reverted_at', null)
+        // Parallel queries for all data
+        const [
+          studentsRes, 
+          staffRes, 
+          incomeRes, 
+          expenseRes,
+          feesAllocRes,
+          feesPaidRes,
+          enquiryRes,
+          booksRes,
+          bookIssuesRes,
+          attendanceRes,
+          staffAttendanceRes,
+          leaveRequestsRes
+        ] = await Promise.all([
+          // Students count
+          supabase.from('student_profiles').select('*', { count: 'exact', head: true })
+            .eq('branch_id', branchId).or('is_disabled.is.null,is_disabled.eq.false'),
+          // Staff count with role info
+          supabase.from('employee_profiles').select('id, role_id, roles(name)')
+            .eq('branch_id', branchId).or('is_disabled.is.null,is_disabled.eq.false'),
+          // Monthly income
+          supabase.from('fee_payments').select('amount')
+            .eq('branch_id', branchId).gte('payment_date', startOfMonth).is('reverted_at', null),
+          // Monthly expense
+          supabase.from('expenses').select('amount')
+            .eq('branch_id', branchId).gte('date', startOfMonth),
+          // Fee allocations (total fees assigned)
+          supabase.from('student_fee_allocations').select('id, student_id', { count: 'exact' })
+            .eq('branch_id', branchId),
+          // Fee payments (paid)
+          supabase.from('fee_payments').select('student_id, amount')
+            .eq('branch_id', branchId).is('reverted_at', null),
+          // Enquiries
+          supabase.from('enquiries').select('id, status').eq('branch_id', branchId),
+          // Library books
+          supabase.from('books').select('id, quantity, available_quantity', { count: 'exact' })
+            .eq('branch_id', branchId),
+          // Book issues
+          supabase.from('book_issues').select('id, return_date, actual_return_date')
+            .eq('branch_id', branchId),
+          // Today's student attendance
+          supabase.from('student_attendance').select('id, status')
+            .eq('branch_id', branchId).eq('date', today),
+          // Today's staff attendance
+          supabase.from('staff_attendance').select('id, status')
+            .eq('branch_id', branchId).eq('date', today),
+          // Leave requests
+          supabase.from('leave_requests').select('id, type, status')
+            .eq('branch_id', branchId).eq('status', 'approved')
         ]);
 
         const totalStudents = studentsRes.count || 0;
-        const totalStaff = staffRes.count || 0;
-        const monthlyIncome = incomeRes.data?.reduce((sum, item) => sum + (item.amount || 0), 0) || 0;
+        const totalStaff = staffRes.data?.length || 0;
+        const monthlyIncome = incomeRes.data?.reduce((sum, item) => sum + (parseFloat(item.amount) || 0), 0) || 0;
+        const monthlyExpense = expenseRes.data?.reduce((sum, item) => sum + (parseFloat(item.amount) || 0), 0) || 0;
+
+        // Calculate staff by role
+        const staffByRole = { admin: 0, teacher: 0, accountant: 0, librarian: 0, receptionist: 0, superAdmin: 0 };
+        staffRes.data?.forEach(emp => {
+          const roleName = emp.roles?.name?.toLowerCase() || '';
+          if (roleName.includes('admin') && !roleName.includes('super')) staffByRole.admin++;
+          else if (roleName.includes('super')) staffByRole.superAdmin++;
+          else if (roleName.includes('teacher')) staffByRole.teacher++;
+          else if (roleName.includes('accountant')) staffByRole.accountant++;
+          else if (roleName.includes('librarian')) staffByRole.librarian++;
+          else if (roleName.includes('receptionist')) staffByRole.receptionist++;
+        });
+        setStaffCounts(staffByRole);
+
+        // Calculate fees overview
+        const totalAllocations = feesAllocRes.count || 0;
+        const paidStudents = new Set(feesPaidRes.data?.map(p => p.student_id) || []).size;
+        const unpaidCount = Math.max(0, totalAllocations - paidStudents);
+        setOverviewData(prev => ({
+          ...prev,
+          fees: { unpaid: unpaidCount, partial: 0, paid: paidStudents, total: totalAllocations }
+        }));
+
+        // Calculate enquiry overview
+        const enquiries = enquiryRes.data || [];
+        const enquiryStats = { active: 0, won: 0, passive: 0, lost: 0, dead: 0 };
+        enquiries.forEach(e => {
+          const status = e.status?.toLowerCase() || 'active';
+          if (status === 'active' || status === 'new') enquiryStats.active++;
+          else if (status === 'won' || status === 'converted') enquiryStats.won++;
+          else if (status === 'passive' || status === 'followup') enquiryStats.passive++;
+          else if (status === 'lost') enquiryStats.lost++;
+          else if (status === 'dead') enquiryStats.dead++;
+        });
+        setOverviewData(prev => ({ ...prev, enquiry: enquiryStats }));
+
+        // Calculate library overview
+        const totalBooks = booksRes.data?.reduce((sum, b) => sum + (b.quantity || 0), 0) || 0;
+        const availableBooks = booksRes.data?.reduce((sum, b) => sum + (b.available_quantity || 0), 0) || 0;
+        const issuedBooks = totalBooks - availableBooks;
+        const dueForReturn = bookIssuesRes.data?.filter(i => !i.actual_return_date && new Date(i.return_date) < new Date()).length || 0;
+        setOverviewData(prev => ({
+          ...prev,
+          library: { dueReturn: dueForReturn, returned: 0, issued: issuedBooks, available: availableBooks, total: totalBooks }
+        }));
+
+        // Calculate attendance
+        const todayAttendance = attendanceRes.data || [];
+        const presentCount = todayAttendance.filter(a => a.status === 'present').length;
+        const lateCount = todayAttendance.filter(a => a.status === 'late').length;
+        const absentCount = todayAttendance.filter(a => a.status === 'absent').length;
+        const halfDayCount = todayAttendance.filter(a => a.status === 'half_day').length;
+        setOverviewData(prev => ({
+          ...prev,
+          attendance: { present: presentCount, late: lateCount, absent: absentCount, halfDay: halfDayCount, total: totalStudents }
+        }));
+
+        // Staff attendance
+        const staffAttendance = staffAttendanceRes.data || [];
+        const staffPresentCount = staffAttendance.filter(a => a.status === 'present').length;
+
+        // Leave requests
+        const staffLeaves = leaveRequestsRes.data?.filter(l => l.type === 'staff').length || 0;
+        const studentLeaves = leaveRequestsRes.data?.filter(l => l.type === 'student').length || 0;
+
+        // Set top stats
+        setTopStats({
+          feesAwaiting: { value: unpaidCount, total: totalAllocations },
+          staffLeave: { value: staffLeaves, total: 10 },
+          studentLeave: { value: studentLeaves, total: 6 },
+          convertedLeads: { value: enquiryStats.won, total: enquiries.length },
+          staffPresent: { value: staffPresentCount, total: totalStaff },
+          studentPresent: { value: presentCount, total: totalStudents }
+        });
 
         setStatsData({
           total_students: totalStudents,
           total_staff: totalStaff,
-          today_present: Math.floor(totalStudents * 0.92), // Mock 92% attendance
-          today_absent: Math.floor(totalStudents * 0.08),
+          today_present: presentCount,
+          today_absent: absentCount,
           monthly_income: monthlyIncome,
-          monthly_expense: Math.floor(monthlyIncome * 0.3), // Mock expense
-          attendance_rate: 92,
-          fee_collection_rate: 78
+          monthly_expense: monthlyExpense,
+          attendance_rate: totalStudents > 0 ? Math.round((presentCount / totalStudents) * 100) : 0,
+          fee_collection_rate: totalAllocations > 0 ? Math.round((paidStudents / totalAllocations) * 100) : 0
         });
 
-        // Fetch fee payments for chart
+        // Fetch fee payments for daily chart
         const { data: feesData } = await supabase
           .from('fee_payments')
           .select('payment_date, amount')
@@ -387,21 +611,87 @@ const SchoolOwnerDashboard = () => {
           const dailyCollection = feesData.reduce((acc, item) => {
             const day = new Date(item.payment_date).getDate();
             if (!acc[day]) acc[day] = { day: `${day}`, amount: 0 };
-            acc[day].amount += item.amount;
+            acc[day].amount += parseFloat(item.amount) || 0;
             return acc;
           }, {});
           
-          // Fill in missing days
           const daysInMonth = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).getDate();
           const chartData = [];
           for (let i = 1; i <= Math.min(daysInMonth, new Date().getDate()); i++) {
             chartData.push({
-              day: `${i}`,
+              day: `${i}`.padStart(2, '0'),
               amount: dailyCollection[i]?.amount || 0
             });
           }
           setFeesChartData(chartData);
         }
+
+        // Fetch session-wise fees (monthly)
+        const { data: sessionFeesRaw } = await supabase
+          .from('fee_payments')
+          .select('payment_date, amount')
+          .eq('branch_id', branchId)
+          .gte('payment_date', sessionStart)
+          .is('reverted_at', null);
+
+        if (sessionFeesRaw) {
+          const monthlyData = {};
+          const months = ['Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec', 'Jan', 'Feb', 'Mar'];
+          months.forEach(m => { monthlyData[m] = { month: m, collection: 0, expense: 0 }; });
+          
+          sessionFeesRaw.forEach(item => {
+            const monthIdx = new Date(item.payment_date).getMonth();
+            const monthName = months[(monthIdx + 9) % 12]; // Adjust for Apr start
+            if (monthlyData[monthName]) {
+              monthlyData[monthName].collection += parseFloat(item.amount) || 0;
+            }
+          });
+          
+          setSessionFeesData(Object.values(monthlyData));
+        }
+
+        // Fetch income by category for pie chart
+        const { data: incomeCategories } = await supabase
+          .from('incomes')
+          .select('income_head, amount')
+          .eq('branch_id', branchId)
+          .gte('date', startOfMonth);
+
+        if (incomeCategories) {
+          const categoryData = {};
+          incomeCategories.forEach(item => {
+            const category = item.income_head || 'Miscellaneous';
+            if (!categoryData[category]) categoryData[category] = 0;
+            categoryData[category] += parseFloat(item.amount) || 0;
+          });
+          
+          const pieColors = ['#10B981', '#F97316', '#8B5CF6', '#6B7280', '#3B82F6'];
+          setIncomeData(Object.entries(categoryData).map(([name, value], idx) => ({
+            name, value, color: pieColors[idx % pieColors.length]
+          })));
+        }
+
+        // Fetch expense by category for pie chart
+        const { data: expenseCategories } = await supabase
+          .from('expenses')
+          .select('expense_head, amount')
+          .eq('branch_id', branchId)
+          .gte('date', startOfMonth);
+
+        if (expenseCategories) {
+          const categoryData = {};
+          expenseCategories.forEach(item => {
+            const category = item.expense_head || 'Miscellaneous';
+            if (!categoryData[category]) categoryData[category] = 0;
+            categoryData[category] += parseFloat(item.amount) || 0;
+          });
+          
+          const pieColors = ['#8B5CF6', '#3B82F6', '#10B981', '#6B7280'];
+          setExpenseData(Object.entries(categoryData).map(([name, value], idx) => ({
+            name, value, color: pieColors[idx % pieColors.length]
+          })));
+        }
+
       } catch (err) {
         console.error("Error fetching dashboard stats:", err);
       } finally {
@@ -512,6 +802,48 @@ const SchoolOwnerDashboard = () => {
         </div>
 
         {/* ================================================================ */}
+        {/* TOP STATS BAR - Quick Overview Badges */}
+        {/* ================================================================ */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+          <TopStatsBadge 
+            label="Fees Awaiting Payment" 
+            value={topStats.feesAwaiting.value} 
+            total={topStats.feesAwaiting.total}
+            color="red"
+          />
+          <TopStatsBadge 
+            label="Staff Approved Leave" 
+            value={topStats.staffLeave.value} 
+            total={topStats.staffLeave.total}
+            color="orange"
+          />
+          <TopStatsBadge 
+            label="Student Approved Leave" 
+            value={topStats.studentLeave.value} 
+            total={topStats.studentLeave.total}
+            color="yellow"
+          />
+          <TopStatsBadge 
+            label="Converted Leads" 
+            value={topStats.convertedLeads.value} 
+            total={topStats.convertedLeads.total}
+            color="purple"
+          />
+          <TopStatsBadge 
+            label="Staff Present Today" 
+            value={topStats.staffPresent.value} 
+            total={topStats.staffPresent.total}
+            color="blue"
+          />
+          <TopStatsBadge 
+            label="Student Present Today" 
+            value={topStats.studentPresent.value} 
+            total={topStats.studentPresent.total}
+            color="green"
+          />
+        </div>
+
+        {/* ================================================================ */}
         {/* STATS CARDS WITH ANIMATIONS */}
         {/* ================================================================ */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -553,25 +885,19 @@ const SchoolOwnerDashboard = () => {
         </div>
 
         {/* ================================================================ */}
-        {/* MAIN CONTENT GRID */}
+        {/* CHARTS ROW 1: Fees Collection & Expenses Bar Chart + Pie Charts */}
         {/* ================================================================ */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Fee Collection Chart - 2 columns */}
           <div className="lg:col-span-2">
             <FuturisticChartCard 
-              title="Fee Collection Analytics" 
-              subtitle="Daily collection trend this month"
+              title={`Fees Collection & Expenses For ${new Date().toLocaleString('en-IN', { month: 'long', year: 'numeric' })}`}
+              subtitle="Daily collection trend"
               gradient="primary"
               icon={BarChart3}
             >
-              <ResponsiveContainer width="100%" height={300}>
-                <AreaChart data={feesChartData}>
-                  <defs>
-                    <linearGradient id="colorAmount" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#8B5CF6" stopOpacity={0.8}/>
-                      <stop offset="95%" stopColor="#8B5CF6" stopOpacity={0.1}/>
-                    </linearGradient>
-                  </defs>
+              <ResponsiveContainer width="100%" height={280}>
+                <BarChart data={feesChartData}>
                   <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                   <XAxis dataKey="day" stroke="hsl(var(--muted-foreground))" fontSize={12} />
                   <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} tickFormatter={(val) => `₹${val/1000}k`} />
@@ -585,60 +911,186 @@ const SchoolOwnerDashboard = () => {
                     formatter={(value) => [`₹${value.toLocaleString()}`, 'Collected']}
                     labelFormatter={(label) => `Day ${label}`}
                   />
-                  <Area 
-                    type="monotone" 
-                    dataKey="amount" 
-                    stroke="#8B5CF6" 
-                    strokeWidth={3}
-                    fillOpacity={1} 
-                    fill="url(#colorAmount)" 
+                  <Bar dataKey="amount" fill="#8B5CF6" radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </FuturisticChartCard>
+          </div>
+
+          {/* Income Pie Chart */}
+          <FuturisticChartCard 
+            title={`Income - ${new Date().toLocaleString('en-IN', { month: 'long', year: 'numeric' })}`}
+            subtitle="By category"
+            gradient="success"
+            icon={PieChart}
+          >
+            <div className="flex flex-col items-center gap-4 py-2">
+              <ResponsiveContainer width="100%" height={180}>
+                <RechartsPie>
+                  <Pie
+                    data={incomeData.length > 0 ? incomeData : [{ name: 'No Data', value: 1, color: '#6B7280' }]}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={50}
+                    outerRadius={70}
+                    paddingAngle={3}
+                    dataKey="value"
+                  >
+                    {(incomeData.length > 0 ? incomeData : [{ color: '#6B7280' }]).map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <Tooltip 
+                    formatter={(value) => [`₹${value.toLocaleString()}`, '']}
+                    contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: '8px' }}
                   />
+                </RechartsPie>
+              </ResponsiveContainer>
+              <div className="w-full grid grid-cols-2 gap-2 text-xs">
+                {incomeData.map((item, idx) => (
+                  <div key={idx} className="flex items-center gap-2">
+                    <div className="w-3 h-3 rounded-full" style={{ backgroundColor: item.color }} />
+                    <span className="truncate text-muted-foreground">{item.name}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </FuturisticChartCard>
+        </div>
+
+        {/* ================================================================ */}
+        {/* CHARTS ROW 2: Session Fees Line Chart + Expense Pie Chart */}
+        {/* ================================================================ */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Session Fees Line Chart - 2 columns */}
+          <div className="lg:col-span-2">
+            <FuturisticChartCard 
+              title={`Fees Collection & Expenses For Session ${new Date().getFullYear() - 1}-${new Date().getFullYear().toString().slice(-2)}`}
+              subtitle="Monthly trend (April - March)"
+              gradient="cosmic"
+              icon={TrendingUp}
+            >
+              <ResponsiveContainer width="100%" height={280}>
+                <AreaChart data={sessionFeesData}>
+                  <defs>
+                    <linearGradient id="colorCollection" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#10B981" stopOpacity={0.8}/>
+                      <stop offset="95%" stopColor="#10B981" stopOpacity={0.1}/>
+                    </linearGradient>
+                    <linearGradient id="colorExpense" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#F97316" stopOpacity={0.8}/>
+                      <stop offset="95%" stopColor="#F97316" stopOpacity={0.1}/>
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                  <XAxis dataKey="month" stroke="hsl(var(--muted-foreground))" fontSize={12} />
+                  <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} tickFormatter={(val) => `₹${val/1000}k`} />
+                  <Tooltip 
+                    contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: '12px' }}
+                    formatter={(value, name) => [`₹${value.toLocaleString()}`, name === 'collection' ? 'Collection' : 'Expense']}
+                  />
+                  <Area type="monotone" dataKey="collection" stroke="#10B981" strokeWidth={2} fillOpacity={1} fill="url(#colorCollection)" />
+                  <Area type="monotone" dataKey="expense" stroke="#F97316" strokeWidth={2} fillOpacity={1} fill="url(#colorExpense)" />
                 </AreaChart>
               </ResponsiveContainer>
             </FuturisticChartCard>
           </div>
 
-          {/* Progress Metrics */}
+          {/* Expense Pie Chart */}
           <FuturisticChartCard 
-            title="Performance Metrics" 
-            subtitle="Key indicators"
-            gradient="success"
-            icon={Target}
+            title={`Expense - ${new Date().toLocaleString('en-IN', { month: 'long', year: 'numeric' })}`}
+            subtitle="By category"
+            gradient="warning"
+            icon={PieChart}
           >
-            <div className="flex flex-col items-center gap-6 py-4">
-              <ProgressRing 
-                value={statsData.attendance_rate} 
-                max={100} 
-                label="Attendance Rate" 
-              />
-              <div className="w-full space-y-4">
-                <div>
-                  <div className="flex justify-between text-sm mb-2">
-                    <span className="text-muted-foreground">Fee Collection</span>
-                    <span className="font-semibold">{statsData.fee_collection_rate}%</span>
+            <div className="flex flex-col items-center gap-4 py-2">
+              <ResponsiveContainer width="100%" height={180}>
+                <RechartsPie>
+                  <Pie
+                    data={expenseData.length > 0 ? expenseData : [{ name: 'No Data', value: 1, color: '#6B7280' }]}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={50}
+                    outerRadius={70}
+                    paddingAngle={3}
+                    dataKey="value"
+                  >
+                    {(expenseData.length > 0 ? expenseData : [{ color: '#6B7280' }]).map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <Tooltip 
+                    formatter={(value) => [`₹${value.toLocaleString()}`, '']}
+                    contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: '8px' }}
+                  />
+                </RechartsPie>
+              </ResponsiveContainer>
+              <div className="w-full grid grid-cols-2 gap-2 text-xs">
+                {expenseData.map((item, idx) => (
+                  <div key={idx} className="flex items-center gap-2">
+                    <div className="w-3 h-3 rounded-full" style={{ backgroundColor: item.color }} />
+                    <span className="truncate text-muted-foreground">{item.name}</span>
                   </div>
-                  <div className="h-3 bg-muted/30 rounded-full overflow-hidden">
-                    <div 
-                      className="h-full bg-gradient-to-r from-emerald-500 to-teal-500 rounded-full transition-all duration-1000"
-                      style={{ width: `${statsData.fee_collection_rate}%` }}
-                    />
-                  </div>
-                </div>
-                <div>
-                  <div className="flex justify-between text-sm mb-2">
-                    <span className="text-muted-foreground">Academic Progress</span>
-                    <span className="font-semibold">85%</span>
-                  </div>
-                  <div className="h-3 bg-muted/30 rounded-full overflow-hidden">
-                    <div 
-                      className="h-full bg-gradient-to-r from-violet-500 to-purple-500 rounded-full transition-all duration-1000"
-                      style={{ width: '85%' }}
-                    />
-                  </div>
-                </div>
+                ))}
               </div>
             </div>
           </FuturisticChartCard>
+        </div>
+
+        {/* ================================================================ */}
+        {/* OVERVIEW CARDS - Fees, Enquiry, Library, Attendance */}
+        {/* ================================================================ */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <OverviewCard 
+            title="Fees Overview"
+            items={[
+              { label: 'UNPAID', value: overviewData.fees.unpaid, percent: overviewData.fees.total > 0 ? ((overviewData.fees.unpaid / overviewData.fees.total) * 100).toFixed(2) : 0, color: 'red' },
+              { label: 'PARTIAL', value: overviewData.fees.partial, percent: overviewData.fees.total > 0 ? ((overviewData.fees.partial / overviewData.fees.total) * 100).toFixed(2) : 0, color: 'yellow' },
+              { label: 'PAID', value: overviewData.fees.paid, percent: overviewData.fees.total > 0 ? ((overviewData.fees.paid / overviewData.fees.total) * 100).toFixed(2) : 0, color: 'green' },
+            ]}
+          />
+          <OverviewCard 
+            title="Enquiry Overview"
+            items={[
+              { label: 'ACTIVE', value: overviewData.enquiry.active, percent: 0, color: 'blue' },
+              { label: 'WON', value: overviewData.enquiry.won, percent: 0, color: 'green' },
+              { label: 'PASSIVE', value: overviewData.enquiry.passive, percent: 0, color: 'yellow' },
+              { label: 'LOST', value: overviewData.enquiry.lost, percent: 0, color: 'red' },
+            ]}
+          />
+          <OverviewCard 
+            title="Library Overview"
+            items={[
+              { label: 'DUE FOR RETURN', value: overviewData.library.dueReturn, color: 'orange' },
+              { label: 'ISSUED', value: overviewData.library.issued, suffix: ` OUT OF ${overviewData.library.total}`, color: 'blue' },
+              { label: 'AVAILABLE', value: overviewData.library.available, suffix: ` OUT OF ${overviewData.library.total}`, color: 'green' },
+            ]}
+          />
+          <OverviewCard 
+            title="Student Today Attendance"
+            items={[
+              { label: 'PRESENT', value: overviewData.attendance.present, percent: overviewData.attendance.total > 0 ? ((overviewData.attendance.present / overviewData.attendance.total) * 100).toFixed(2) : 0, color: 'green' },
+              { label: 'LATE', value: overviewData.attendance.late, percent: overviewData.attendance.total > 0 ? ((overviewData.attendance.late / overviewData.attendance.total) * 100).toFixed(2) : 0, color: 'yellow' },
+              { label: 'ABSENT', value: overviewData.attendance.absent, color: 'red' },
+              { label: 'HALF DAY', value: overviewData.attendance.halfDay, percent: 0, color: 'orange' },
+            ]}
+          />
+        </div>
+
+        {/* ================================================================ */}
+        {/* BOTTOM STATS ROW - Monthly Stats + Staff Counts */}
+        {/* ================================================================ */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 xl:grid-cols-10 gap-3">
+          <StaffCountCard label="Monthly Fees Collection" value={`₹${statsData.monthly_income.toLocaleString()}`} color="green" />
+          <StaffCountCard label="Monthly Expenses" value={`₹${statsData.monthly_expense.toLocaleString()}`} color="red" />
+          <StaffCountCard label="Student" value={statsData.total_students} color="blue" />
+          <StaffCountCard label="Student Head Count" value={statsData.total_students} color="purple" />
+          <StaffCountCard label="Admin" value={staffCounts.admin} color="indigo" />
+          <StaffCountCard label="Teacher" value={staffCounts.teacher} color="cyan" />
+          <StaffCountCard label="Accountant" value={staffCounts.accountant} color="amber" />
+          <StaffCountCard label="Librarian" value={staffCounts.librarian} color="emerald" />
+          <StaffCountCard label="Receptionist" value={staffCounts.receptionist} color="pink" />
+          <StaffCountCard label="Super Admin" value={staffCounts.superAdmin} color="violet" />
         </div>
 
         {/* ================================================================ */}

@@ -120,6 +120,8 @@ const getDefaultsForRoleType = (roleName) => {
       return {
         'fees_collection': viewAdd,
         'finance': viewAdd,
+        'student_information': viewOnly,
+        'human_resource': viewOnly,
         '*': { view: false, add: false, edit: false, delete: false }
       };
     case 'librarian':

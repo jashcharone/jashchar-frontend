@@ -183,18 +183,16 @@ const AddEmployee = () => {
     }, [formData.email]);
 
     useEffect(() => {
-        if (!branchId) return;
+        // CRITICAL FIX: Always use selectedBranch.id as the primary source
+        // This ensures the currently selected branch in the header dropdown is used
+        const targetBranchId = selectedBranch?.id || stateBranchId || (branches.length === 1 ? branches[0]?.id : null) || branchId;
         
-        // Auto-select branch if only one exists or if passed in state
-        let targetBranchId = stateBranchId || selectedBranch?.id;
-        
-        if (!targetBranchId && branches.length === 1) {
-            targetBranchId = branches[0].id;
-        }
-        
-        if (targetBranchId && !formData.branch_id) {
+        if (targetBranchId && formData.branch_id !== targetBranchId) {
+            console.log('[AddEmployee] Setting branch_id to:', targetBranchId, '(selectedBranch:', selectedBranch?.name, ')');
             setFormData(prev => ({ ...prev, branch_id: targetBranchId }));
         }
+
+        if (!targetBranchId) return;
 
         const fetchSettingsAndDropdowns = async () => {
             // Settings - fetch from branches table
@@ -843,10 +841,21 @@ const AddEmployee = () => {
             }
 
             // Prepare Payload
+            // CRITICAL: Use formData.branch_id FIRST (user's explicit selection in multi-branch)
+            // then selectedBranch.id (current active branch from context)
+            // then fallbacks
+            const finalBranchId = formData.branch_id || selectedBranch?.id || stateBranchId || branchId;
+            
+            console.log('[AddEmployee] Submitting with branch_id:', finalBranchId, {
+                'formData.branch_id': formData.branch_id,
+                'selectedBranch.id': selectedBranch?.id,
+                'stateBranchId': stateBranchId,
+                'branchId': branchId
+            });
+            
             const payload = {
                 ...formData,
-                branch_id: branchId,
-                branch_id: stateBranchId || selectedBranch?.id,
+                branch_id: finalBranchId,
                 full_name: `${formData.first_name} ${formData.middle_name} ${formData.last_name}`.trim(),
                 photo_url: photoUrl,
                 // Map boolean strings to booleans

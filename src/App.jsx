@@ -98,6 +98,21 @@ const AddExpense = lazy(() => import('@/pages/super-admin/finance/AddExpense'));
 const SearchExpense = lazy(() => import('@/pages/super-admin/finance/SearchExpense'));
 const ExpenseHead = lazy(() => import('@/pages/super-admin/finance/ExpenseHead'));
 
+// ? Finance Reports
+const IncomeReport = lazy(() => import('@/pages/super-admin/reports/finance/IncomeReport'));
+const ExpenseReport = lazy(() => import('@/pages/super-admin/reports/finance/ExpenseReport'));
+const IncomeGroupReport = lazy(() => import('@/pages/super-admin/reports/finance/IncomeGroupReport'));
+const ExpenseGroupReport = lazy(() => import('@/pages/super-admin/reports/finance/ExpenseGroupReport'));
+const IncomeExpenseBalanceReport = lazy(() => import('@/pages/super-admin/reports/finance/IncomeExpenseBalanceReport'));
+const DailyCollectionReport = lazy(() => import('@/pages/super-admin/reports/finance/DailyCollectionReport'));
+const FeesCollectionReport = lazy(() => import('@/pages/super-admin/reports/finance/FeesCollectionReport'));
+const FeesStatementReport = lazy(() => import('@/pages/super-admin/reports/finance/FeesStatementReport'));
+const BalanceFeesReport = lazy(() => import('@/pages/super-admin/reports/finance/BalanceFeesReport'));
+const BalanceFeesStatementReport = lazy(() => import('@/pages/super-admin/reports/finance/BalanceFeesStatementReport'));
+const BalanceFeesWithRemarkReport = lazy(() => import('@/pages/super-admin/reports/finance/BalanceFeesWithRemarkReport'));
+const OnlineFeesCollectionReport = lazy(() => import('@/pages/super-admin/reports/finance/OnlineFeesCollectionReport'));
+const PayrollReport = lazy(() => import('@/pages/super-admin/reports/finance/PayrollReport'));
+
 // ? Fees Collection
 const CollectFees = lazy(() => import('@/pages/super-admin/fees-collection/CollectFees'));
 
@@ -694,7 +709,7 @@ function App() {
             <Route path="/Teacher/dashboard" element={<ProtectedRoute allowedRoles={['teacher']}><SchoolOwnerDashboard /></ProtectedRoute>} />
             <Route path="/Teacher/*" element={<Navigate to="/Teacher/dashboard" replace />} />
             
-            <Route path="/Accountant/dashboard" element={<ProtectedRoute allowedRoles={['accountant']}><SchoolOwnerDashboard /></ProtectedRoute>} />
+            <Route path="/Accountant/dashboard" element={<ProtectedRoute allowedRoles={['accountant']}><AccountantDashboard /></ProtectedRoute>} />
             <Route path="/Accountant/*" element={<Navigate to="/Accountant/dashboard" replace />} />
             
             <Route path="/Receptionist/dashboard" element={<ProtectedRoute allowedRoles={['receptionist']}><SchoolOwnerDashboard /></ProtectedRoute>} />
@@ -1029,6 +1044,21 @@ function App() {
               }
             />
 
+            {/* ? Finance Reports */}
+            <Route path={ROUTES.SUPER_ADMIN.REPORT_INCOME} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'accountant']} requiredModule="finance"><IncomeReport /></ProtectedRoute>} />
+            <Route path={ROUTES.SUPER_ADMIN.REPORT_EXPENSE} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'accountant']} requiredModule="finance"><ExpenseReport /></ProtectedRoute>} />
+            <Route path={ROUTES.SUPER_ADMIN.REPORT_INCOME_GROUP} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'accountant']} requiredModule="finance"><IncomeGroupReport /></ProtectedRoute>} />
+            <Route path={ROUTES.SUPER_ADMIN.REPORT_EXPENSE_GROUP} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'accountant']} requiredModule="finance"><ExpenseGroupReport /></ProtectedRoute>} />
+            <Route path={ROUTES.SUPER_ADMIN.REPORT_INC_EXP_BALANCE} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'accountant']} requiredModule="finance"><IncomeExpenseBalanceReport /></ProtectedRoute>} />
+            <Route path={ROUTES.SUPER_ADMIN.REPORT_DAILY_COLLECTION} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'accountant']} requiredModule="fees_collection"><DailyCollectionReport /></ProtectedRoute>} />
+            <Route path={ROUTES.SUPER_ADMIN.REPORT_FEES_COLLECTION} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'accountant']} requiredModule="fees_collection"><FeesCollectionReport /></ProtectedRoute>} />
+            <Route path={ROUTES.SUPER_ADMIN.REPORT_FEES_STATEMENT} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'accountant']} requiredModule="fees_collection"><FeesStatementReport /></ProtectedRoute>} />
+            <Route path={ROUTES.SUPER_ADMIN.REPORT_BALANCE_FEES} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'accountant']} requiredModule="fees_collection"><BalanceFeesReport /></ProtectedRoute>} />
+            <Route path={ROUTES.SUPER_ADMIN.REPORT_BALANCE_FEES_STATEMENT} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'accountant']} requiredModule="fees_collection"><BalanceFeesStatementReport /></ProtectedRoute>} />
+            <Route path={ROUTES.SUPER_ADMIN.REPORT_BALANCE_FEES_REMARK} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'accountant']} requiredModule="fees_collection"><BalanceFeesWithRemarkReport /></ProtectedRoute>} />
+            <Route path={ROUTES.SUPER_ADMIN.REPORT_ONLINE_FEES} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'accountant']} requiredModule="fees_collection"><OnlineFeesCollectionReport /></ProtectedRoute>} />
+            <Route path={ROUTES.SUPER_ADMIN.REPORT_PAYROLL} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'accountant']} requiredModule="human_resource"><PayrollReport /></ProtectedRoute>} />
+
             {/* ? Fees Collection */}
             <Route
               path={ROUTES.SUPER_ADMIN.COLLECT_FEES}
@@ -1130,8 +1160,8 @@ function App() {
             <Route path="/master-admin/branch-management/schools/:branchId/branches/:branchId/edit" element={<ProtectedRoute allowedRoles={['master_admin']}><EditBranchForSchool /></ProtectedRoute>} />
 
             {/* ? School Owner Profile & Subscription */}
-            <Route path={ROUTES.SUPER_ADMIN.PROFILE} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'organization_owner']}><SchoolOwnerProfile /></ProtectedRoute>} />
-            <Route path={ROUTES.SUPER_ADMIN.RESET_PASSWORD} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'organization_owner']}><SchoolOwnerResetPassword /></ProtectedRoute>} />
+            <Route path={ROUTES.SUPER_ADMIN.PROFILE} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'organization_owner', 'school_owner', 'principal', 'teacher', 'accountant', 'receptionist', 'librarian']}><SchoolOwnerProfile /></ProtectedRoute>} />
+            <Route path={ROUTES.SUPER_ADMIN.RESET_PASSWORD} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'organization_owner', 'school_owner', 'principal', 'teacher', 'accountant', 'receptionist', 'librarian']}><SchoolOwnerResetPassword /></ProtectedRoute>} />
             <Route path={ROUTES.SUPER_ADMIN.MY_SUBSCRIPTION} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'organization_owner']}><MySubscriptionPlan /></ProtectedRoute>} />
 
             {/* ? Front Office */}
@@ -1159,8 +1189,8 @@ function App() {
             {/* ? Student Information */}
             <Route path={ROUTES.SUPER_ADMIN.STUDENT_ADMISSION} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="student_information"><StudentAdmission /></ProtectedRoute>} />
             <Route path={ROUTES.SUPER_ADMIN.ADMISSION_FORM_SETTINGS} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="student_information"><AdmissionFormSettings /></ProtectedRoute>} />
-            <Route path={ROUTES.SUPER_ADMIN.STUDENT_DETAILS} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'teacher']} requiredModule="student_information"><StudentDetails /></ProtectedRoute>} />
-            <Route path={ROUTES.SUPER_ADMIN.STUDENT_PROFILE} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'teacher']} requiredModule="student_information"><StudentProfile /></ProtectedRoute>} />
+            <Route path={ROUTES.SUPER_ADMIN.STUDENT_DETAILS} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'teacher', 'accountant', 'receptionist']} requiredModule="student_information"><StudentDetails /></ProtectedRoute>} />
+            <Route path={ROUTES.SUPER_ADMIN.STUDENT_PROFILE} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'teacher', 'accountant', 'receptionist']} requiredModule="student_information"><StudentProfile /></ProtectedRoute>} />
             <Route path={ROUTES.SUPER_ADMIN.EDIT_STUDENT} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="student_information"><EditStudentProfile /></ProtectedRoute>} />
             <Route path={ROUTES.SUPER_ADMIN.ONLINE_ADMISSION_LIST} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="student_information"><OnlineAdmissionList /></ProtectedRoute>} />
             <Route path={ROUTES.SUPER_ADMIN.EDIT_ONLINE_ADMISSION} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="student_information"><EditOnlineAdmission /></ProtectedRoute>} />

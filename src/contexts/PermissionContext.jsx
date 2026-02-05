@@ -170,6 +170,8 @@ export const PermissionProvider = ({ children }) => {
           'student_information': { can_view: true, can_add: false, can_edit: false, can_delete: false },
           'fees': { can_view: true, can_add: false, can_edit: false, can_delete: false },
           'fees_collection': { can_view: true, can_add: false, can_edit: false, can_delete: false },
+          'finance': { can_view: true, can_add: false, can_edit: false, can_delete: false },
+          'human_resource': { can_view: true, can_add: false, can_edit: false, can_delete: false },
           'academics': { can_view: true, can_add: false, can_edit: false, can_delete: false },
           'examinations': { can_view: true, can_add: false, can_edit: false, can_delete: false },
           'attendance': { can_view: true, can_add: false, can_edit: false, can_delete: false },

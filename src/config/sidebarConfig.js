@@ -580,7 +580,7 @@ export const BASE_SIDEBAR = {
   
   // Accountant Dashboard - Financial Management
   accountant: [
-    { title: 'Dashboard', icon: LayoutDashboard, path: '/accountant/dashboard' },
+    { title: 'Dashboard', icon: LayoutDashboard, path: '/Accountant/dashboard' },
     {
       title: 'Fees Collection',
       icon: CreditCard,
@@ -620,14 +620,21 @@ export const BASE_SIDEBAR = {
       title: 'Reports',
       icon: FileText,
       submenu: [
-        { title: 'Finance Report', path: ROUTES.SUPER_ADMIN.REPORT_INCOME },
+        { title: 'Income Report', path: ROUTES.SUPER_ADMIN.REPORT_INCOME },
+        { title: 'Expense Report', path: ROUTES.SUPER_ADMIN.REPORT_EXPENSE },
+        { title: 'Income/Expense Balance', path: ROUTES.SUPER_ADMIN.REPORT_INC_EXP_BALANCE },
+        { title: 'Daily Collection', path: ROUTES.SUPER_ADMIN.REPORT_DAILY_COLLECTION },
+        { title: 'Fees Collection', path: ROUTES.SUPER_ADMIN.REPORT_FEES_COLLECTION },
+        { title: 'Fees Statement', path: ROUTES.SUPER_ADMIN.REPORT_FEES_STATEMENT },
+        { title: 'Balance Fees', path: ROUTES.SUPER_ADMIN.REPORT_BALANCE_FEES },
+        { title: 'Payroll Report', path: ROUTES.SUPER_ADMIN.REPORT_PAYROLL },
       ]
     },
   ],
   
   // Receptionist Dashboard - Front Office Management
   receptionist: [
-    { title: 'Dashboard', icon: LayoutDashboard, path: '/receptionist/dashboard' },
+    { title: 'Dashboard', icon: LayoutDashboard, path: '/Receptionist/dashboard' },
     {
       title: 'Front Office',
       icon: Building,
@@ -722,7 +729,7 @@ export const BASE_SIDEBAR = {
   
   // Librarian Dashboard
   librarian: [
-    { title: 'Dashboard', icon: LayoutDashboard, path: '/librarian/dashboard' },
+    { title: 'Dashboard', icon: LayoutDashboard, path: '/Librarian/dashboard' },
     {
       title: 'Library',
       icon: Library,

@@ -208,26 +208,26 @@ const Login = () => {
                           }
                           
                           if (role && role !== 'guest' && role !== 'authenticated') {
-                              // Map role to correct dashboard path - All school staff go to /school/
+                              // Map role to correct dashboard path - Each role has their own dashboard
                               const rolePathMap = {
-                                  'super_admin': '/school/dashboard',
-                                  'school_owner': '/school/dashboard',
-                                  'organization_owner': '/school/dashboard',
-                                  'admin': '/school/dashboard',
-                                  'principal': '/school/dashboard',
-                                  'teacher': '/school/dashboard',
-                                  'student': '/student/dashboard',
-                                  'parent': '/parent/dashboard',
-                                  'accountant': '/school/dashboard',
-                                  'receptionist': '/school/dashboard',
-                                  'librarian': '/school/dashboard',
+                                  'super_admin': '/super-admin/dashboard',
+                                  'school_owner': '/super-admin/dashboard',
+                                  'organization_owner': '/super-admin/dashboard',
+                                  'admin': '/Admin/dashboard',
+                                  'principal': '/Principal/dashboard',
+                                  'teacher': '/Teacher/dashboard',
+                                  'student': '/Student/dashboard',
+                                  'parent': '/Parent/dashboard',
+                                  'accountant': '/Accountant/dashboard',
+                                  'receptionist': '/Receptionist/dashboard',
+                                  'librarian': '/Librarian/dashboard',
                                   'master_admin': '/master-admin/dashboard'
                               };
-                              const dashboardPath = rolePathMap[role] || `/school/dashboard`;
+                              const dashboardPath = rolePathMap[role] || `/super-admin/dashboard`;
                               navigate(dashboardPath);
                           } else {
-                              // Default to school dashboard for staff
-                              navigate('/school/dashboard');
+                              // Default to super admin dashboard for staff
+                              navigate('/super-admin/dashboard');
                           }
                       }}>
                           Go to Dashboard

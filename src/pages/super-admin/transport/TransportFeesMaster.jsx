@@ -69,7 +69,13 @@ const TransportFeesMaster = () => {
     const handleInputChange = (index, field, value) => {
         const updatedFeesMaster = [...feesMaster];
         const currentItem = { ...updatedFeesMaster[index] };
-        currentItem[field] = value;
+        
+        // Convert fine_value to number
+        if (field === 'fine_value') {
+            currentItem[field] = value === '' ? null : parseFloat(value);
+        } else {
+            currentItem[field] = value;
+        }
         
         if (field === 'fine_type' && value === 'none') {
             currentItem.fine_value = null;
@@ -108,15 +114,25 @@ const TransportFeesMaster = () => {
             const upsertData = feesMaster.map(({ id, ...rest }) => ({
                  ...rest,
                  branch_id: branchId || null,
-                 fine_value: rest.fine_type !== 'none' ? rest.fine_value : null,
+                 fine_value: rest.fine_type !== 'none' && rest.fine_value != null 
+                     ? parseFloat(rest.fine_value) 
+                     : null,
                  due_date: rest.due_date || null
             }));
 
-            const { error } = await supabase
+            // Delete existing records first, then insert new ones
+            const { error: deleteError } = await supabase
                 .from('transport_fees_master')
-                .upsert(upsertData, { onConflict: 'branch_id, month' });
+                .delete()
+                .eq('branch_id', branchId);
 
-            if (error) throw error;
+            if (deleteError) throw deleteError;
+
+            const { error: insertError } = await supabase
+                .from('transport_fees_master')
+                .insert(upsertData);
+
+            if (insertError) throw insertError;
 
             toast({ title: "Success", description: "Transport fees master saved successfully." });
             fetchFeesMaster();

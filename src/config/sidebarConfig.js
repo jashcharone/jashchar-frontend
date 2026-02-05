@@ -239,6 +239,8 @@ export const BASE_SIDEBAR = {
       submenu: [
         { title: 'Staff Directory', path: ROUTES.SUPER_ADMIN.STAFF_DIRECTORY },
         { title: 'Add Staff', path: ROUTES.SUPER_ADMIN.ADD_EMPLOYEE },
+        { title: 'Department', path: ROUTES.SUPER_ADMIN.DEPARTMENTS },
+        { title: 'Designation', path: ROUTES.SUPER_ADMIN.DESIGNATIONS },
         { title: 'Payroll', path: ROUTES.SUPER_ADMIN.EMPLOYEE_PAYROLL },
         { title: 'Leave Management', path: ROUTES.SUPER_ADMIN.LEAVE_MANAGEMENT },
         { title: 'Approve Leave Request', path: ROUTES.SUPER_ADMIN.APPROVE_STAFF_LEAVE },
@@ -511,6 +513,8 @@ export const BASE_SIDEBAR = {
       icon: Briefcase,
       submenu: [
         { title: 'Staff Directory', path: ROUTES.SUPER_ADMIN.STAFF_DIRECTORY },
+        { title: 'Department', path: ROUTES.SUPER_ADMIN.DEPARTMENTS },
+        { title: 'Designation', path: ROUTES.SUPER_ADMIN.DESIGNATIONS },
         { title: 'Leave Management', path: ROUTES.SUPER_ADMIN.LEAVE_MANAGEMENT },
         { title: 'Approve Leave Request', path: ROUTES.SUPER_ADMIN.APPROVE_STAFF_LEAVE },
       ]

@@ -88,8 +88,18 @@ const AssignVehicle = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!formData.route_id || !formData.vehicle_id) {
+    
+    // Separate validation messages for route and vehicle
+    if (!formData.route_id && !formData.vehicle_id) {
       toast({ variant: 'destructive', title: 'Please select both route and vehicle.' });
+      return;
+    }
+    if (!formData.route_id) {
+      toast({ variant: 'destructive', title: 'Please select route.' });
+      return;
+    }
+    if (!formData.vehicle_id) {
+      toast({ variant: 'destructive', title: 'Please select vehicle.' });
       return;
     }
 

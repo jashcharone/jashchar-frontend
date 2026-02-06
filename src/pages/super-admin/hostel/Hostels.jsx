@@ -87,28 +87,45 @@ const Hostels = () => {
       toast({ variant: 'destructive', title: 'Hostel name is required.' });
       return;
     }
+    
+    // TC-47: Validate negative capacity
+    if (formData.intake && parseInt(formData.intake) < 0) {
+      toast({ variant: 'destructive', title: 'Total capacity cannot be negative.' });
+      return;
+    }
+    
+    if (!branchId) {
+      toast({ variant: 'destructive', title: 'Branch not selected. Please select a branch.' });
+      return;
+    }
+    
     setIsSubmitting(true);
 
     const payload = {
-      name: formData.name,
+      name: formData.name.trim(),
       type: formData.type,
-      address: formData.address || null,
+      address: formData.address?.trim() || null,
       intake: formData.intake ? parseInt(formData.intake) : null,
-      description: formData.description || null,
+      description: formData.description?.trim() || null,
       branch_id: branchId,
       session_id: currentSessionId,
       organization_id: organizationId
     };
 
-    let error;
+    console.log('Hostels - Submitting payload:', payload);
+
+    let result;
     if (editingHostel) {
-      ({ error } = await supabase.from('hostels').update(payload).eq('id', editingHostel.id));
+      result = await supabase.from('hostels').update(payload).eq('id', editingHostel.id).select();
     } else {
-      ({ error } = await supabase.from('hostels').insert(payload));
+      result = await supabase.from('hostels').insert(payload).select();
     }
 
-    if (error) {
-      toast({ variant: 'destructive', title: `Error ${editingHostel ? 'updating' : 'creating'} hostel`, description: error.message });
+    console.log('Hostels - Result:', result);
+
+    if (result.error) {
+      console.error('Hostels - Error:', result.error);
+      toast({ variant: 'destructive', title: `Error ${editingHostel ? 'updating' : 'creating'} hostel`, description: result.error.message });
     } else {
       toast({ title: 'Success!', description: `Hostel successfully ${editingHostel ? 'updated' : 'created'}.` });
       await fetchHostels();

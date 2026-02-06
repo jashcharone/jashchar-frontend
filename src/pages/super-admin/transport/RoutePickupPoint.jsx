@@ -118,29 +118,61 @@ const RoutePickupPoint = () => {
             toast({ variant: 'destructive', title: 'Please select a route.' });
             return;
         }
+        
+        // TC-41: Validate at least one pickup point is selected
+        const validPickupPoints = pickupPointFields.filter(field => field.pickup_point_id);
+        if (validPickupPoints.length === 0) {
+            toast({ variant: 'destructive', title: 'Please select at least one pickup point.' });
+            return;
+        }
+        
+        // Validate for negative fees
+        const hasNegativeFees = pickupPointFields.some(field => field.monthly_fees && parseFloat(field.monthly_fees) < 0);
+        if (hasNegativeFees) {
+            toast({ variant: 'destructive', title: 'Monthly fees cannot be negative.' });
+            return;
+        }
+        
         setIsSubmitting(true);
 
         try {
-            await supabase.from('route_pickup_point_mappings').delete().eq('route_id', selectedRoute);
-
-            const mappingsToInsert = pickupPointFields
-                .filter(field => field.pickup_point_id)
-                .map((field, index) => ({
-                    branch_id: branchId,
-                    session_id: currentSessionId,
-                    organization_id: organizationId,
-                    route_id: selectedRoute,
-                    pickup_point_id: field.pickup_point_id,
-                    distance: field.distance || null,
-                    pickup_time: field.pickup_time || null,
-                    monthly_fees: field.monthly_fees || null,
-                    stop_order: index + 1
-                }));
-
-            if (mappingsToInsert.length > 0) {
-                const { error: insertError } = await supabase.from('route_pickup_point_mappings').insert(mappingsToInsert);
-                if (insertError) throw insertError;
+            // Delete existing mappings for this route
+            const { error: deleteError } = await supabase
+                .from('route_pickup_point_mappings')
+                .delete()
+                .eq('route_id', selectedRoute)
+                .eq('branch_id', branchId);
+            
+            if (deleteError) {
+                console.error('Delete error:', deleteError);
+                // Continue anyway - might be no existing records
             }
+
+            const mappingsToInsert = validPickupPoints.map((field, index) => ({
+                branch_id: branchId,
+                session_id: currentSessionId,
+                organization_id: organizationId,
+                route_id: selectedRoute,
+                pickup_point_id: field.pickup_point_id,
+                distance: field.distance ? parseFloat(field.distance) : null,
+                pickup_time: field.pickup_time || null,
+                monthly_fees: field.monthly_fees ? parseFloat(field.monthly_fees) : null,
+                stop_order: index + 1
+            }));
+
+            console.log('Inserting mappings:', mappingsToInsert);
+
+            const { data: insertedData, error: insertError } = await supabase
+                .from('route_pickup_point_mappings')
+                .insert(mappingsToInsert)
+                .select();
+            
+            if (insertError) {
+                console.error('Insert error:', insertError);
+                throw insertError;
+            }
+            
+            console.log('Inserted successfully:', insertedData);
 
             toast({ title: 'Success', description: 'Route pickup points saved successfully.' });
             resetModal();
@@ -231,7 +263,7 @@ const RoutePickupPoint = () => {
                                     <Select value={field.pickup_point_id} onValueChange={v => handleFieldChange(field.id, 'pickup_point_id', v)}><SelectTrigger><SelectValue placeholder="Select Point"/></SelectTrigger><SelectContent>{allPickupPoints.map(p => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}</SelectContent></Select>
                                     <Input type="text" value={field.distance} onChange={e => handleFieldChange(field.id, 'distance', e.target.value)} />
                                     <Input type="time" value={field.pickup_time} onChange={e => handleFieldChange(field.id, 'pickup_time', e.target.value)} />
-                                    <Input type="number" value={field.monthly_fees} onChange={e => handleFieldChange(field.id, 'monthly_fees', e.target.value)} />
+                                    <Input type="number" min="0" value={field.monthly_fees} onChange={e => handleFieldChange(field.id, 'monthly_fees', e.target.value)} />
                                     {pickupPointFields.length > 1 && <Button variant="ghost" size="icon" onClick={() => handleRemoveField(field.id)}><X className="h-4 w-4 text-destructive" /></Button>}
                                 </div>
                             ))}

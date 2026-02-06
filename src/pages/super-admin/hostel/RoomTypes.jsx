@@ -82,26 +82,44 @@ const RoomTypes = () => {
       toast({ variant: 'destructive', title: 'Room type name is required.' });
       return;
     }
+    
+    if (!branchId) {
+      toast({ variant: 'destructive', title: 'Branch not selected. Please select a branch.' });
+      return;
+    }
+    
     setIsSubmitting(true);
 
     const payload = {
-      name: formData.name,
+      name: formData.name.trim(),
       cost: formData.cost ? parseFloat(formData.cost) : null,
-      description: formData.description || null,
+      description: formData.description?.trim() || null,
       branch_id: branchId,
       session_id: currentSessionId,
       organization_id: organizationId
     };
 
-    let error;
+    console.log('RoomTypes - Submitting payload:', payload);
+
+    let result;
     if (editingRoomType) {
-      ({ error } = await supabase.from('hostel_room_types').update(payload).eq('id', editingRoomType.id));
+      result = await supabase
+        .from('hostel_room_types')
+        .update(payload)
+        .eq('id', editingRoomType.id)
+        .select();
     } else {
-      ({ error } = await supabase.from('hostel_room_types').insert(payload));
+      result = await supabase
+        .from('hostel_room_types')
+        .insert(payload)
+        .select();
     }
 
-    if (error) {
-      toast({ variant: 'destructive', title: `Error ${editingRoomType ? 'updating' : 'creating'} room type`, description: error.message });
+    console.log('RoomTypes - Result:', result);
+
+    if (result.error) {
+      console.error('RoomTypes - Error:', result.error);
+      toast({ variant: 'destructive', title: `Error ${editingRoomType ? 'updating' : 'creating'} room type`, description: result.error.message });
     } else {
       toast({ title: 'Success!', description: `Room type successfully ${editingRoomType ? 'updated' : 'created'}.` });
       await fetchRoomTypes();
@@ -111,7 +129,9 @@ const RoomTypes = () => {
   };
 
   const handleDelete = async (roomTypeId) => {
+    console.log('RoomTypes - Deleting:', roomTypeId);
     const { error } = await supabase.from('hostel_room_types').delete().eq('id', roomTypeId);
+    console.log('RoomTypes - Delete result:', error);
     if (error) {
       toast({ variant: 'destructive', title: 'Error deleting room type', description: error.message });
     } else {

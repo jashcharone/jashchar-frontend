@@ -27,6 +27,7 @@ const StudentTransportFees = () => {
   const [vehicles, setVehicles] = useState([]);
   const [routeVehicles, setRouteVehicles] = useState([]); // Vehicles assigned to selected route
   const [loading, setLoading] = useState(false);
+  const [hasSearched, setHasSearched] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState(null);
@@ -89,6 +90,7 @@ const StudentTransportFees = () => {
     }
     
     setLoading(true);
+    setHasSearched(true);
     
     // Query students - transport data is in separate table linked by student_id
     let query = supabase
@@ -378,7 +380,7 @@ const StudentTransportFees = () => {
             ) : students.length === 0 ? (
               <div className="text-center py-16 text-muted-foreground">
                 <User className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                <p>Search for students to assign transport routes and fees.</p>
+                <p>{hasSearched ? 'No students found matching your search criteria.' : 'Search for students to assign transport routes and fees.'}</p>
               </div>
             ) : (
               <Table>

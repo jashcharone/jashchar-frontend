@@ -64,6 +64,11 @@ const publicCmsService = {
     const response = await axios.get(`${API_URL}/classes/${slug}?branchId=${branchId}`);
     return response.data;
   },
+  // Get student categories by branch ID
+  getCategoriesByBranch: async (slug, branchId) => {
+    const response = await axios.get(`${API_URL}/categories/${slug}?branchId=${branchId}`);
+    return response.data;
+  },
   getBranches: async (slug) => {
     const response = await axios.get(`${API_URL}/branches/${slug}`);
     return response.data;

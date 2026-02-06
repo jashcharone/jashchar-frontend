@@ -26,6 +26,7 @@ const HostelFee = () => {
   const [roomTypes, setRoomTypes] = useState([]);
   const [classes, setClasses] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [hasSearched, setHasSearched] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState(null);
@@ -98,13 +99,17 @@ const HostelFee = () => {
       query = query.or(`full_name.ilike.%${searchFilters.search}%,admission_no.ilike.%${searchFilters.search}%`);
     }
 
+    console.log('HostelFee - Searching students with filters:', searchFilters);
     const { data: studentData, error } = await query.order('full_name');
+    console.log('HostelFee - Search result:', studentData?.length, 'students, error:', error);
 
     if (error) {
       toast({ variant: 'destructive', title: 'Error searching students', description: error.message });
       setLoading(false);
       return;
     }
+
+    setHasSearched(true);
 
     // Get hostel details for students who have hostel_details_id
     const studentIds = studentData?.map(s => s.id) || [];
@@ -305,7 +310,7 @@ const HostelFee = () => {
             ) : students.length === 0 ? (
               <div className="text-center py-16 text-muted-foreground">
                 <User className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                <p>Search for students to assign hostel rooms and fees.</p>
+                <p>{hasSearched ? 'No students found matching your search criteria.' : 'Search for students to assign hostel rooms and fees.'}</p>
               </div>
             ) : (
               <Table>

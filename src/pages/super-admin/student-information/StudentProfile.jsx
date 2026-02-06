@@ -9,6 +9,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import jsPDF from 'jspdf';
+import QRCode from 'qrcode';
 import { supabase } from '@/lib/customSupabaseClient';
 import api from '@/lib/api';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
@@ -197,6 +198,7 @@ const StudentProfile = () => {
   const [uploadingDocument, setUploadingDocument] = useState(false);
   const [newDocumentName, setNewDocumentName] = useState('');
   const [newDocumentUrl, setNewDocumentUrl] = useState('');
+  const [qrCodeDataUrl, setQrCodeDataUrl] = useState(''); // TC-60: QR Code data URL for display
 
   const targetId = studentId || user?.id;
   // Use selectedBranch.id consistently (same as Edit page)
@@ -295,10 +297,46 @@ const StudentProfile = () => {
       pdf.setLineWidth(0.5);
       pdf.roundedRect(margin, y, contentWidth, 32, 2, 2, 'S');
 
-      // Photo placeholder
-      pdf.setFillColor(220, 230, 245);
-      pdf.roundedRect(margin + 4, y + 4, 24, 24, 2, 2, 'F');
-      addText('PHOTO', margin + 9, y + 18, { fontSize: 7, color: [120, 140, 170] });
+      // Photo - TC-59 FIX: Add actual student photo to PDF
+      if (student.photo_url) {
+        try {
+          // Convert image URL to base64 for PDF
+          const response = await fetch(student.photo_url);
+          const blob = await response.blob();
+          const reader = new FileReader();
+          await new Promise((resolve) => {
+            reader.onloadend = () => {
+              try {
+                pdf.addImage(reader.result, 'JPEG', margin + 4, y + 4, 24, 24);
+              } catch (imgError) {
+                console.log('Could not add image to PDF:', imgError);
+                // Fallback to placeholder
+                pdf.setFillColor(220, 230, 245);
+                pdf.roundedRect(margin + 4, y + 4, 24, 24, 2, 2, 'F');
+                addText('PHOTO', margin + 9, y + 18, { fontSize: 7, color: [120, 140, 170] });
+              }
+              resolve();
+            };
+            reader.onerror = () => {
+              pdf.setFillColor(220, 230, 245);
+              pdf.roundedRect(margin + 4, y + 4, 24, 24, 2, 2, 'F');
+              addText('PHOTO', margin + 9, y + 18, { fontSize: 7, color: [120, 140, 170] });
+              resolve();
+            };
+            reader.readAsDataURL(blob);
+          });
+        } catch (photoError) {
+          console.log('Photo fetch error:', photoError);
+          pdf.setFillColor(220, 230, 245);
+          pdf.roundedRect(margin + 4, y + 4, 24, 24, 2, 2, 'F');
+          addText('PHOTO', margin + 9, y + 18, { fontSize: 7, color: [120, 140, 170] });
+        }
+      } else {
+        // No photo - show placeholder
+        pdf.setFillColor(220, 230, 245);
+        pdf.roundedRect(margin + 4, y + 4, 24, 24, 2, 2, 'F');
+        addText('PHOTO', margin + 9, y + 18, { fontSize: 7, color: [120, 140, 170] });
+      }
 
       // Student Name & Class
       addText(student.full_name || 'Student Name', margin + 34, y + 10, { fontSize: 14, fontStyle: 'bold', color: [30, 41, 59] });
@@ -334,7 +372,8 @@ const StudentProfile = () => {
       y += 14;
 
       addField('Aadhaar Number', student.aadhaar_number, col1, y);
-      addField('Category', student.category, col2, y);
+      // TC-59 FIX: Use category.name since category is an object from student_categories relation
+      addField('Category', student.category?.name, col2, y);
       addField('Mother Tongue', student.mother_tongue, col3, y);
       y += 14;
 
@@ -682,6 +721,19 @@ const StudentProfile = () => {
         }
         
         setStudent(data);
+        
+        // TC-60 FIX: Generate QR Code for student profile
+        try {
+          const profileUrl = `${window.location.origin}/super-admin/student-information/profile/${targetId}`;
+          const qrDataUrl = await QRCode.toDataURL(profileUrl, {
+            width: 200,
+            margin: 2,
+            color: { dark: '#000000', light: '#ffffff' }
+          });
+          setQrCodeDataUrl(qrDataUrl);
+        } catch (qrError) {
+          console.log('QR Code generation error:', qrError);
+        }
 
         // 7. Fetch Custom Data
         const { data: cData } = await supabase
@@ -985,14 +1037,23 @@ const StudentProfile = () => {
               
               {/* Right Column - Quick Info */}
               <div className="space-y-6">
-                {/* QR Code Card */}
+                {/* QR Code Card - TC-60 FIX: Display actual scannable QR code */}
                 <GlassCard className="p-6 text-center" gradient>
                   <div className="flex flex-col items-center gap-4">
-                    <div className="p-6 bg-white rounded-xl shadow-inner">
-                      <QrCode className="h-32 w-32 text-gray-800" />
+                    <div className="p-4 bg-white rounded-xl shadow-inner">
+                      {qrCodeDataUrl ? (
+                        <img 
+                          src={qrCodeDataUrl} 
+                          alt="Student Profile QR Code" 
+                          className="h-32 w-32"
+                          title="Scan this QR code to access student profile"
+                        />
+                      ) : (
+                        <QrCode className="h-32 w-32 text-gray-800" />
+                      )}
                     </div>
                     <div>
-                      <p className="font-semibold">{student.school_code}</p>
+                      <p className="font-semibold">{student.school_code || student.roll_number || 'Student ID'}</p>
                       <p className="text-xs text-muted-foreground">Scan for quick access</p>
                     </div>
                   </div>

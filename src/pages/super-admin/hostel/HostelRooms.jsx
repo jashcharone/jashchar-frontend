@@ -115,10 +115,21 @@ const HostelRooms = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!formData.room_number_name.trim() || !formData.hostel_id) {
+    
+    // TC-48: Separate validation messages
+    if (!formData.room_number_name.trim() && !formData.hostel_id) {
       toast({ variant: 'destructive', title: 'Room number and hostel are required.' });
       return;
     }
+    if (!formData.room_number_name.trim()) {
+      toast({ variant: 'destructive', title: 'Room number is required.' });
+      return;
+    }
+    if (!formData.hostel_id) {
+      toast({ variant: 'destructive', title: 'Hostel is required.' });
+      return;
+    }
+    
     setIsSubmitting(true);
 
     const payload = {

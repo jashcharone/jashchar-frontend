@@ -197,7 +197,7 @@ const GlowInput = ({ label, required, icon: Icon, error, className, ...props }) 
   </div>
 );
 
-// Glowing Select Field
+// Glowing Select Field - Fixed z-index for desktop and mobile (TC-50, TC-53, TC-54-58)
 const GlowSelect = ({ label, required, icon: Icon, placeholder, options, value, onChange, error }) => (
   <div className="space-y-2">
     <Label className="text-gray-300 flex items-center gap-2">
@@ -213,16 +213,24 @@ const GlowSelect = ({ label, required, icon: Icon, placeholder, options, value, 
       `}>
         <SelectValue placeholder={placeholder} />
       </SelectTrigger>
-      <SelectContent className="bg-gray-900 border-gray-700">
-        {options.map((opt) => (
-          <SelectItem 
-            key={opt.value} 
-            value={opt.value}
-            className="text-white hover:bg-purple-500/20 focus:bg-purple-500/20"
-          >
-            {opt.label}
-          </SelectItem>
-        ))}
+      <SelectContent 
+        className="bg-gray-900 border-gray-700 z-[9999] max-h-[300px] overflow-y-auto"
+        position="popper"
+        sideOffset={4}
+      >
+        {options && options.length > 0 ? (
+          options.map((opt) => (
+            <SelectItem 
+              key={opt.value} 
+              value={opt.value}
+              className="text-white hover:bg-purple-500/20 focus:bg-purple-500/20 cursor-pointer"
+            >
+              {opt.label}
+            </SelectItem>
+          ))
+        ) : (
+          <div className="text-gray-400 text-sm p-2 text-center">No options available</div>
+        )}
       </SelectContent>
     </Select>
     {error && <p className="text-red-400 text-xs">{error}</p>}
@@ -540,14 +548,23 @@ const OnlineAdmission = () => {
       try {
         // Fetch classes via backend API (secure - no direct Supabase)
         const classesResponse = await publicCmsService.getClassesByBranch(schoolAlias, selectedBranch.id);
+        console.log('Classes fetched:', classesResponse.data);
         setClasses(classesResponse.data || []);
         
-        // Categories also via backend if needed, for now keep empty
-        setCategories([]);
+        // Fetch categories via backend API (TC-53, TC-58)
+        try {
+          const categoriesResponse = await publicCmsService.getCategoriesByBranch(schoolAlias, selectedBranch.id);
+          console.log('Categories fetched:', categoriesResponse.data);
+          setCategories(categoriesResponse.data || []);
+        } catch (catError) {
+          console.log('Categories not available:', catError);
+          setCategories([]);
+        }
         
       } catch (error) {
         console.error('Branch data error:', error);
         setClasses([]);
+        setCategories([]);
       }
     };
     
@@ -607,13 +624,35 @@ const OnlineAdmission = () => {
   
   // ========== HANDLERS ==========
   
+  // Validate name fields for numbers and special characters (TC-51, TC-52)
+  const validateNameField = useCallback((fieldName, value) => {
+    if (!value) return null;
+    if (/\d/.test(value)) {
+      return `${fieldName} should not contain numbers`;
+    }
+    if (/[^a-zA-Z\s]/.test(value)) {
+      return `${fieldName} should not contain special characters`;
+    }
+    return null;
+  }, []);
+  
   const handleChange = useCallback((key, value) => {
     setFormData(prev => ({ ...prev, [key]: value }));
-    // Clear error when field changes
-    if (errors[key]) {
+    
+    // Real-time validation for name fields (TC-51, TC-52)
+    if (key === 'first_name' || key === 'last_name') {
+      const fieldLabel = key === 'first_name' ? 'First name' : 'Last name';
+      const nameError = validateNameField(fieldLabel, value);
+      if (nameError) {
+        setErrors(prev => ({ ...prev, [key]: nameError }));
+      } else if (errors[key]) {
+        setErrors(prev => ({ ...prev, [key]: null }));
+      }
+    } else if (errors[key]) {
+      // Clear error when field changes
       setErrors(prev => ({ ...prev, [key]: null }));
     }
-  }, [errors]);
+  }, [errors, validateNameField]);
   
   const handleBranchSelect = useCallback((branch) => {
     setSelectedBranch(branch);
@@ -630,7 +669,23 @@ const OnlineAdmission = () => {
         break;
         
       case 1: // Student
-        if (!formData.first_name) newErrors.first_name = 'First name is required';
+        if (!formData.first_name) {
+          newErrors.first_name = 'First name is required';
+        } else if (/\d/.test(formData.first_name)) {
+          // TC-51: First name should not accept numbers
+          newErrors.first_name = 'First name should not contain numbers';
+        } else if (/[^a-zA-Z\s]/.test(formData.first_name)) {
+          // TC-52: First name should not accept special characters
+          newErrors.first_name = 'First name should not contain special characters';
+        }
+        // Also validate last name if provided
+        if (formData.last_name) {
+          if (/\d/.test(formData.last_name)) {
+            newErrors.last_name = 'Last name should not contain numbers';
+          } else if (/[^a-zA-Z\s]/.test(formData.last_name)) {
+            newErrors.last_name = 'Last name should not contain special characters';
+          }
+        }
         if (!formData.gender) newErrors.gender = 'Gender is required';
         if (!formData.date_of_birth) newErrors.date_of_birth = 'Date of birth is required';
         if (!formData.class_id) newErrors.class_id = 'Please select a class';
@@ -878,6 +933,7 @@ const OnlineAdmission = () => {
                 icon={User}
                 value={formData.last_name}
                 onChange={(e) => handleChange('last_name', e.target.value)}
+                error={errors.last_name}
                 placeholder="Enter last name"
               />
               

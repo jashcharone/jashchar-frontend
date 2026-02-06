@@ -52,6 +52,11 @@ const ProfileEditTemplate = ({
     email: profile?.email || ''
   });
 
+  // Mobile Number Change State (for Login & Security tab)
+  const [mobileData, setMobileData] = useState({
+    mobile: profile?.phone || ''
+  });
+
   // Initial Mobile Number (to detect changes)
   const [initialPhone, setInitialPhone] = useState(profile?.phone || '');
 
@@ -59,6 +64,7 @@ const ProfileEditTemplate = ({
   React.useEffect(() => {
     if (profile?.phone && !initialPhone) {
         setInitialPhone(profile.phone);
+        setMobileData({ mobile: profile.phone });
     }
     // Also sync email data
     if (profile?.email && !emailData.email) {
@@ -83,6 +89,13 @@ const ProfileEditTemplate = ({
   const handleEmailChange = (e) => {
     const { id, value } = e.target;
     setEmailData(prev => ({...prev, [id]: value}));
+  };
+
+  const handleMobileChange = (e) => {
+    const { id, value } = e.target;
+    // Only allow numbers
+    const numericValue = value.replace(/\D/g, '').slice(0, 10);
+    setMobileData(prev => ({...prev, [id]: numericValue}));
   };
 
   // --- OTP Logic ---
@@ -295,6 +308,45 @@ const ProfileEditTemplate = ({
     } catch (error) {
       toast({ variant: "destructive", title: "Error", description: error.message });
     }
+  };
+
+  // Handler for Login Mobile Number change (Security tab)
+  const onMobileSubmit = async (e) => {
+    e.preventDefault();
+    if (mobileData.mobile === profile.phone) {
+        toast({ variant: "destructive", title: "Error", description: "New mobile number is same as current number" });
+        return;
+    }
+    if (mobileData.mobile.length !== 10) {
+        toast({ variant: "destructive", title: "Error", description: "Mobile number must be 10 digits" });
+        return;
+    }
+
+    if (disableOtp) {
+        // Direct Update for Master Admin
+        setSecurityLoading(true);
+        try {
+            const { error } = await supabase.auth.updateUser({ 
+                phone: mobileData.mobile,
+                data: { phone: mobileData.mobile }
+            });
+            if (error) throw error;
+            
+            // Also update in profile state
+            setProfile(prev => ({ ...prev, phone: mobileData.mobile }));
+            setInitialPhone(mobileData.mobile);
+            
+            toast({ title: "Success", description: "Mobile number updated successfully" });
+        } catch (error) {
+            toast({ variant: "destructive", title: "Error", description: error.message });
+        } finally {
+            setSecurityLoading(false);
+        }
+        return;
+    }
+
+    // Trigger OTP for regular users
+    initiateOtp('mobile', mobileData.mobile);
   };
 
   const onProfileSubmit = async (e) => {
@@ -682,6 +734,36 @@ const ProfileEditTemplate = ({
                   </div>
                   <Button type="submit" disabled={securityLoading} variant="outline" className="w-full">
                     {securityLoading ? 'Updating...' : 'Update Username'}
+                  </Button>
+                </form>
+              </div>
+            </div>
+
+            {/* Change Login Mobile Number Card */}
+            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden h-fit">
+              <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex items-center gap-2 bg-gray-50 dark:bg-gray-800/50">
+                <Phone className="w-5 h-5 text-primary" />
+                <h2 className="font-semibold text-lg">Login Mobile Number</h2>
+              </div>
+              <div className="p-6 space-y-4">
+                <form onSubmit={onMobileSubmit} className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="mobile">Mobile Number <span className="text-red-500">*</span></Label>
+                    <Input 
+                      id="mobile" 
+                      type="tel" 
+                      value={mobileData.mobile} 
+                      onChange={handleMobileChange} 
+                      required 
+                      placeholder="Enter 10-digit mobile number"
+                      maxLength={10}
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Note: Changing your login mobile number will require OTP verification.
+                    </p>
+                  </div>
+                  <Button type="submit" disabled={securityLoading} variant="outline" className="w-full">
+                    {securityLoading ? 'Updating...' : 'Update Mobile Number'}
                   </Button>
                 </form>
               </div>

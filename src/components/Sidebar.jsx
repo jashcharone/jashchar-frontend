@@ -137,6 +137,9 @@ const Sidebar = ({ role, isSidebarOpen, isMobile, toggleSidebar, closeSidebar, o
       
       if (item.submenu && item.submenu.length > 0) {
         const visibleSubmenu = item.submenu.filter(sub => {
+          // Skip disabled items (separators like "── Advanced ──")
+          if (sub.disabled) return false;
+          
           const subSlug = sub.slug || SUBMODULE_OVERRIDES[sub.title] || sub.title.toLowerCase().replace(/\s+/g, '_');
           
           // Try multiple permission key formats:

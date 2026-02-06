@@ -85,7 +85,19 @@ export const SUBMODULE_OVERRIDES = {
   // Task Management
   "All Tasks": "tasks",
   "Create Task": "tasks",
-  "My Tasks": "my_tasks"
+  "My Tasks": "my_tasks",
+  
+  // Attendance Advanced Submodules (emoji titles → DB slugs)
+  "📊 Live Dashboard": "live_dashboard",
+  "📱 QR Code Generator": "qr_code_generator",
+  "🔌 Device Management": "device_management",
+  "💳 Card Management": "card_management",
+  "👤 Face Registration": "face_registration",
+  "🤖 Live Face Attendance": "face_registration", // Maps to face_registration
+  "⌚ Wearable Devices": "wearable_devices",
+  "⚙️ Attendance Rules": "attendance_rules",
+  "📍 Geo-Fence Setup": "geo_fence_setup",
+  "📈 Analytics": "analytics" // DB slug is attendance.analytics
 };
 
 export const DEFAULT_MODULES = Object.keys(MODULE_CATALOG);

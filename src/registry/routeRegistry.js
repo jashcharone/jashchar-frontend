@@ -77,7 +77,6 @@ export const ROUTES = {
     DASHBOARD: '/super-admin/dashboard',
     PROFILE: '/super-admin/profile',
     RESET_PASSWORD: '/super-admin/reset-password',
-    UPGRADE_TO_ORGANIZATION: '/super-admin/upgrade-to-organization',
     MY_SUBSCRIPTION: '/super-admin/my-subscription',
     // Front Office
     SETUP_FRONT_OFFICE: '/super-admin/front-office/setup',
@@ -332,7 +331,6 @@ export const ROUTES = {
     SETTINGS_GENERAL: '/super-admin/system-settings/general-setting',
     SETTINGS_SESSION: '/super-admin/system-settings/session-setting',
     SETTINGS_ROLE_PERMISSION: '/super-admin/system-settings/role-permission',
-    SETTINGS_PROFILE_UPDATE: '/super-admin/system-settings/student-profile-update-settings',
     SETTINGS_PRINT_HEADER: '/super-admin/system-settings/print-header-footer',
     SETTINGS_EMAIL: '/super-admin/system-settings/email-setting',
     SETTINGS_SMS: '/super-admin/system-settings/sms-setting',

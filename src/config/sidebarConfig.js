@@ -437,11 +437,8 @@ export const BASE_SIDEBAR = {
       submenu: [
         { title: 'General Setting', path: ROUTES.SUPER_ADMIN.SETTINGS_GENERAL },
         { title: 'Session Setting', path: ROUTES.SUPER_ADMIN.SETTINGS_SESSION },
-        { title: 'Upgrade to Organization', path: ROUTES.SUPER_ADMIN.UPGRADE_TO_ORGANIZATION },
         { title: 'Roles Permissions', path: ROUTES.SUPER_ADMIN.SETTINGS_ROLE_PERMISSION },
-        { title: 'Student Profile Update', path: ROUTES.SUPER_ADMIN.SETTINGS_PROFILE_UPDATE },
         { title: 'Print Header Footer', path: ROUTES.SUPER_ADMIN.SETTINGS_PRINT_HEADER },
-        { title: 'Online Admission Setting', path: ROUTES.SUPER_ADMIN.SETTINGS_ONLINE_ADMISSION },
         { title: 'Email Setting', path: ROUTES.SUPER_ADMIN.SETTINGS_EMAIL },
         { title: 'SMS Setting', path: ROUTES.SUPER_ADMIN.SETTINGS_SMS },
         { title: 'Notification Setting', path: ROUTES.SUPER_ADMIN.SETTINGS_NOTIFICATION },

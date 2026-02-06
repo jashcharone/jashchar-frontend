@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useCallback } from 'react';
+﻿import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { staffApi } from '@/lib/api/staffApi';
 import { humanResourceApi } from '@/lib/api/humanResourceApi';
@@ -589,6 +589,28 @@ const AddEmployee = () => {
 
     const handleDocumentToggle = (id, val) => {
         setDocuments(prev => prev.map(d => d.id === id ? { ...d, submitted: val === 'yes' } : d));
+    };
+
+    // Document file input refs
+    const fileInputRefs = useRef({});
+
+    // Handle file selection for documents
+    const handleDocumentFileSelect = (docId, event) => {
+        const file = event.target.files?.[0];
+        if (file) {
+            setDocuments(prev => prev.map(d => 
+                d.id === docId ? { ...d, file: file, submitted: true } : d
+            ));
+            toast({
+                title: 'File Selected',
+                description: `${file.name} selected for upload`,
+            });
+        }
+    };
+
+    // Trigger file input click
+    const triggerFileSelect = (docId) => {
+        fileInputRefs.current[docId]?.click();
     };
 
     // Helper: Dynamic Field Properties
@@ -1748,9 +1770,25 @@ const AddEmployee = () => {
                                         </div>
                                     </TableCell>
                                     <TableCell className="text-right">
-                                        <Button variant="outline" size="sm" disabled={!doc.submitted}>
-                                            <Upload className="w-4 h-4 mr-2" /> Upload
+                                        <input
+                                            type="file"
+                                            ref={el => fileInputRefs.current[doc.id] = el}
+                                            onChange={(e) => handleDocumentFileSelect(doc.id, e)}
+                                            accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
+                                            className="hidden"
+                                        />
+                                        <Button 
+                                            variant="outline" 
+                                            size="sm" 
+                                            onClick={() => triggerFileSelect(doc.id)}
+                                        >
+                                            <Upload className="w-4 h-4 mr-2" /> {doc.file ? 'Replace' : 'Upload'}
                                         </Button>
+                                        {doc.file && (
+                                            <span className="ml-2 text-xs text-muted-foreground truncate max-w-[100px] inline-block align-middle" title={doc.file.name}>
+                                                {doc.file.name}
+                                            </span>
+                                        )}
                                     </TableCell>
                                 </TableRow>
                             ))}

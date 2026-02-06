@@ -71,7 +71,6 @@ const EditArticle = lazy(() => import('@/pages/master-admin/articles/EditArticle
 const ViewArticle = lazy(() => import('@/pages/master-admin/articles/ViewArticle'));
 const ArticlesDocumentation = lazy(() => import('@/pages/master-admin/articles/ArticlesDocumentation'));
 const SchoolOwnerDashboard = lazy(() => import('@/pages/super-admin/SchoolOwnerDashboard'));
-const UpgradeToOrganization = lazy(() => import('@/pages/super-admin/UpgradeToOrganization'));
 const BranchList = lazy(() => import('@/pages/super-admin/multi-branch/BranchList'));
 const AddBranch = lazy(() => import('@/pages/super-admin/multi-branch/AddBranch'));
 const EditBranch = lazy(() => import('@/pages/super-admin/multi-branch/EditBranch'));
@@ -373,7 +372,6 @@ const DownloadCenter = lazy(() => import('@/pages/super-admin/DownloadCenter'));
 // System Settings
 const GeneralSetting = lazy(() => import('@/pages/super-admin/system-settings/GeneralSetting'));
 const SchoolOwnerRolePermission = lazy(() => import('@/pages/super-admin/system-settings/RolePermission'));
-const StudentProfileUpdateSettings = lazy(() => import('@/pages/super-admin/system-settings/StudentProfileUpdateSettings'));
 const PrintHeaderFooter = lazy(() => import('@/pages/super-admin/system-settings/PrintHeaderFooter'));
 const AssignPermissionSchoolPage = lazy(() => import('@/pages/super-admin/system-settings/AssignPermission'));
 const SessionSetting = lazy(() => import('@/pages/super-admin/system-settings/SessionSetting'));
@@ -740,14 +738,6 @@ function App() {
               element={
                 <ProtectedRoute allowedRoles={['super_admin', 'admin', 'organization_owner', 'school_owner', 'principal', 'teacher', 'accountant', 'receptionist', 'librarian']}>
                   <SchoolOwnerDashboard />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path={ROUTES.SUPER_ADMIN.UPGRADE_TO_ORGANIZATION}
-              element={
-                <ProtectedRoute allowedRoles={['super_admin', 'admin']}>
-                  <UpgradeToOrganization />
                 </ProtectedRoute>
               }
             />
@@ -1345,7 +1335,6 @@ function App() {
             {/* ? System Settings */}
             <Route path={ROUTES.SUPER_ADMIN.SETTINGS_GENERAL} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="system_settings"><GeneralSetting /></ProtectedRoute>} />
             <Route path={ROUTES.SUPER_ADMIN.SETTINGS_ROLE_PERMISSION} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="system_settings"><SchoolOwnerRolePermission /></ProtectedRoute>} />
-            <Route path={ROUTES.SUPER_ADMIN.SETTINGS_PROFILE_UPDATE} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="system_settings"><StudentProfileUpdateSettings /></ProtectedRoute>} />
             <Route path={ROUTES.SUPER_ADMIN.SETTINGS_PRINT_HEADER} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="system_settings"><PrintHeaderFooter /></ProtectedRoute>} />
             <Route path={ROUTES.SUPER_ADMIN.SETTINGS_SESSION} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="system_settings"><SessionSetting /></ProtectedRoute>} />
 

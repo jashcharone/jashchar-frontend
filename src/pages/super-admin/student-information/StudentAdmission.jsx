@@ -1078,16 +1078,13 @@ const StudentAdmission = () => {
               </SmartField>
              );
         // Name fields - Only allow alphabets and spaces (no numbers/special chars)
-        // Minimum 2 characters required for names (except last_name which is optional)
         case 'first_name':
         case 'father_name':
         case 'mother_name':
         case 'guardian_name':
-             const nameError = errors[field.field_name] || 
-               (touched[field.field_name] && formData[field.field_name] && formData[field.field_name].trim().length < 2 
-                 ? 'Minimum 2 characters required' : '');
+             const nameError = errors[field.field_name] || '';
              return (
-              <SmartField label={label} required={isRequired} error={nameError} touched={touched[field.field_name]} icon={User} hint="Letters only (min 2)">
+              <SmartField label={label} required={isRequired} error={nameError} touched={touched[field.field_name]} icon={User} hint="Letters only">
                 <Input 
                   value={formData[field.field_name]} 
                   placeholder={`Enter ${label.toLowerCase()}`}

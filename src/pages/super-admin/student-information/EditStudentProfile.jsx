@@ -174,9 +174,9 @@ const FieldRenderer = ({ field, formData, customFieldValues, onChange, masterDat
              case 'hostel_emergency_contact':
                 return <div className="lg:col-span-1">{label}<Input value={formData[field.field_name] || ''} onChange={e => onChange(field.field_name, e.target.value.replace(/\D/g, '').slice(0, 10), true)} maxLength={10} placeholder="10 digits" type="tel" /></div>;
 
-             // Name fields - Only allow letters and spaces (min 2 chars)
+             // Name fields - Only allow letters and spaces
              case 'first_name': case 'last_name': case 'father_name': case 'mother_name': case 'guardian_name': case 'full_name':
-                return <div className="lg:col-span-1">{label}<Input value={formData[field.field_name] || ''} onChange={e => onChange(field.field_name, e.target.value.replace(/[^a-zA-Z\s]/g, ''), true)} placeholder="Letters only (min 2)" /></div>;
+                return <div className="lg:col-span-1">{label}<Input value={formData[field.field_name] || ''} onChange={e => onChange(field.field_name, e.target.value.replace(/[^a-zA-Z\s]/g, ''), true)} placeholder="Letters only" /></div>;
 
              // Post Office - If it's a dropdown in logic
              case 'post_office':

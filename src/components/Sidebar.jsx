@@ -18,6 +18,7 @@ import { SIDEBAR_ORDER } from '@/config/sidebarOrder';
 import { useTheme } from '@/contexts/ThemeContext';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useDynamicSidebar } from '@/hooks/useDynamicSidebar';
+import { useBranchAttendanceModules, PATH_TO_ATTENDANCE_MODULE } from '@/hooks/useBranchAttendanceModules';
 
 // --- CONFIGURATION ---
 const SIDEBAR_WIDTH_EXPANDED = "w-[270px]";
@@ -33,6 +34,9 @@ const Sidebar = ({ role, isSidebarOpen, isMobile, toggleSidebar, closeSidebar, o
   
   // ✅ DYNAMIC SIDEBAR - Load modules from database
   const { menu: dynamicMenu, loading: dynamicLoading, error: dynamicError, isDynamic } = useDynamicSidebar(role);
+  
+  // ✅ BRANCH ATTENDANCE MODULES - Filter attendance based on master admin config
+  const { isPathEnabled, hasConfig: hasAttendanceConfig } = useBranchAttendanceModules();
   
   // Local state
   const [isHovered, setIsHovered] = useState(false);
@@ -135,10 +139,20 @@ const Sidebar = ({ role, isSidebarOpen, isMobile, toggleSidebar, closeSidebar, o
       
       const hasAccess = canView(moduleSlug);
       
+      // Check if this is an attendance module
+      const isAttendanceModule = moduleSlug === 'attendance' || item.title?.toLowerCase().includes('attendance');
+      
       if (item.submenu && item.submenu.length > 0) {
         const visibleSubmenu = item.submenu.filter(sub => {
           // Skip disabled items (separators like "── Advanced ──")
           if (sub.disabled) return false;
+          
+          // ✅ ATTENDANCE MODULE FILTERING - Check if path is enabled by Master Admin
+          if (isAttendanceModule && hasAttendanceConfig) {
+            if (!isPathEnabled(sub.path)) {
+              return false;
+            }
+          }
           
           const subSlug = sub.slug || SUBMODULE_OVERRIDES[sub.title] || sub.title.toLowerCase().replace(/\s+/g, '_');
           
@@ -173,7 +187,7 @@ const Sidebar = ({ role, isSidebarOpen, isMobile, toggleSidebar, closeSidebar, o
       
       return hasAccess;
     });
-  }, [role, canView, dynamicMenu]);
+  }, [role, canView, dynamicMenu, isPathEnabled, hasAttendanceConfig]);
 
   const filteredMenu = useMemo(() => {
     if (!searchTerm) return currentMenu;

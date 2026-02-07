@@ -59,6 +59,7 @@ export const ROUTES = {
     SESSION_SETTING: '/master-admin/session-setting',
     EXPORT_IMPORT: '/master-admin/export-import',
     MASTER_DATA_SETTINGS: '/master-admin/master-data-settings',
+    BRANCH_ATTENDANCE_CONFIG: '/master-admin/system-settings/branch-attendance-config', // Branch Attendance Config
     SAAS_WEBSITE_SETTINGS: '/master-admin/saas-website-settings',
     FILE_MANAGER: '/master-admin/file-manager',
 

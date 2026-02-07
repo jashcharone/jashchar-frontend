@@ -39,6 +39,7 @@ export const BASE_SIDEBAR = {
         { title: 'Email Settings', path: ROUTES.MASTER_ADMIN.EMAIL_SETTINGS },
         { title: 'Payment Settings', path: ROUTES.MASTER_ADMIN.PAYMENT_SETTINGS },
         { title: 'Session Settings', path: ROUTES.MASTER_ADMIN.SESSION_SETTING },
+        { title: 'Branch Attendance Config', path: ROUTES.MASTER_ADMIN.BRANCH_ATTENDANCE_CONFIG },
         { title: 'Master Data Settings', path: ROUTES.MASTER_ADMIN.MASTER_DATA_SETTINGS },
         { title: 'Export / Import', path: ROUTES.MASTER_ADMIN.EXPORT_IMPORT },
         { title: 'Module Health', path: ROUTES.MASTER_ADMIN.MODULE_HEALTH },

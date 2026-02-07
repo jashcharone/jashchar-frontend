@@ -377,6 +377,7 @@ const SchoolOwnerRolePermission = lazy(() => import('@/pages/super-admin/system-
 const PrintHeaderFooter = lazy(() => import('@/pages/super-admin/system-settings/PrintHeaderFooter'));
 const AssignPermissionSchoolPage = lazy(() => import('@/pages/super-admin/system-settings/AssignPermission'));
 const SessionSetting = lazy(() => import('@/pages/super-admin/system-settings/SessionSetting'));
+const BranchAttendanceConfig = lazy(() => import('@/pages/master-admin/system-settings/BranchAttendanceConfig')); // Master Admin - Branch Attendance Config
 
 // Homework
 const HomeworkList = lazy(() => import('@/pages/super-admin/homework/HomeworkList'));
@@ -1125,6 +1126,7 @@ function App() {
             <Route path={ROUTES.MASTER_ADMIN.SESSION_SETTING} element={<ProtectedRoute allowedRoles={['master_admin']}><SessionSettingMaster /></ProtectedRoute>} />
             <Route path={ROUTES.MASTER_ADMIN.MASTER_DATA_SETTINGS} element={<ProtectedRoute allowedRoles={['master_admin']}><MasterDataSettings /></ProtectedRoute>} />
             <Route path={ROUTES.MASTER_ADMIN.EXPORT_IMPORT} element={<ProtectedRoute allowedRoles={['master_admin']}><ExportImport /></ProtectedRoute>} />
+            <Route path="/master-admin/system-settings/branch-attendance-config" element={<ProtectedRoute allowedRoles={['master_admin']}><BranchAttendanceConfig /></ProtectedRoute>} />
             <Route path={ROUTES.MASTER_ADMIN.SAAS_WEBSITE_SETTINGS} element={<ProtectedRoute allowedRoles={['master_admin']}><SaasWebsiteSettings /></ProtectedRoute>} />
             <Route path={ROUTES.MASTER_ADMIN.FILE_MANAGER} element={<ProtectedRoute allowedRoles={['master_admin']}><FileManager /></ProtectedRoute>} />
             {/* ? Front CMS - Specific routes first to avoid route conflicts */}
@@ -1346,7 +1348,7 @@ function App() {
             <Route path="/super-admin/system-settings/assign-permission" element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="system_settings"><AssignPermissionSchoolPage /></ProtectedRoute>} />
             <Route path="/super-admin/system-settings/assign-permission/:roleId" element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="system_settings"><AssignPermissionSchoolPage /></ProtectedRoute>} />
 
-            {/* ? Front CMS - Specific routes first to avoid route conflicts */}
+            {/* ? Front CMS - Specific routes first to avoid route conflicts */}}
             <Route path="/super-admin/front-cms/menus/:menuId/items" element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="front_cms"><MenuItems /></ProtectedRoute>} />
             <Route path="/super-admin/front-cms/menus" element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="front_cms"><Menus /></ProtectedRoute>} />
             

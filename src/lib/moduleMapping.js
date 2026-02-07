@@ -38,6 +38,16 @@ export const SUBMODULE_OVERRIDES = {
   "Subject Group": "subject_groups", // Match DB slug
   "Subject Groups": "subject_groups", // Match DB slug
   "General Settings": "general_setting",
+  "General Setting": "general_setting",
+  "Attendance Config": "attendance_config", // 🆕 Branch Attendance Configuration
+  "Session Setting": "session_setting",
+  "Roles Permissions": "roles_permissions",
+  "Print Header Footer": "print_header_footer",
+  "Email Setting": "email_setting",
+  "SMS Setting": "sms_setting", 
+  "Notification Setting": "notification_setting",
+  "Payment Gateway": "payment_gateway",
+  "Backup & Restore": "backup_restore",
   "Promote Students": "promote_students",
   
   // --- FEES COLLECTION FIXES ---

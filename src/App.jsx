@@ -145,6 +145,8 @@ const SubscriptionTransactions = lazy(() => import('@/pages/master-admin/subscri
 const BillingAudit = lazy(() => import('@/pages/master-admin/subscriptions/BillingAudit'));
 const GenerateBill = lazy(() => import('@/pages/master-admin/subscriptions/GenerateBill'));
 const BulkInvoiceGenerator = lazy(() => import('@/pages/master-admin/subscriptions/BulkInvoiceGenerator'));
+const EstimatesList = lazy(() => import('@/pages/master-admin/subscriptions/EstimatesList'));
+const GenerateEstimate = lazy(() => import('@/pages/master-admin/subscriptions/GenerateEstimate'));
 const QueriesFinder = lazyWithRetry(() => import('@/pages/master-admin/system-settings/QueriesFinder'), 'QueriesFinder'); // With retry
 const CommunicationSettingsMaster = lazy(() => import('@/pages/master-admin/system-settings/CommunicationSettings'));
 // const WhatsAppManager = lazy(() => import('@/pages/master-admin/whatsapp/WhatsAppManager')); // Already declared above
@@ -1111,6 +1113,8 @@ function App() {
             <Route path={ROUTES.MASTER_ADMIN.BILLING_AUDIT} element={<ProtectedRoute allowedRoles={['master_admin']}><BillingAudit /></ProtectedRoute>} />
             <Route path={ROUTES.MASTER_ADMIN.GENERATE_BILL} element={<ProtectedRoute allowedRoles={['master_admin']}><GenerateBill /></ProtectedRoute>} />
             <Route path={ROUTES.MASTER_ADMIN.BULK_INVOICE} element={<ProtectedRoute allowedRoles={['master_admin']}><BulkInvoiceGenerator /></ProtectedRoute>} />
+            <Route path={ROUTES.MASTER_ADMIN.ESTIMATES_LIST} element={<ProtectedRoute allowedRoles={['master_admin']}><EstimatesList /></ProtectedRoute>} />
+            <Route path={ROUTES.MASTER_ADMIN.GENERATE_ESTIMATE} element={<ProtectedRoute allowedRoles={['master_admin']}><GenerateEstimate /></ProtectedRoute>} />
             <Route path={ROUTES.MASTER_ADMIN.QUERIES_FINDER} element={<ProtectedRoute allowedRoles={['master_admin']}><QueriesFinder /></ProtectedRoute>} />
             <Route path={ROUTES.MASTER_ADMIN.COMMUNICATION_SETTINGS} element={<ProtectedRoute allowedRoles={['master_admin']}><CommunicationSettingsMaster /></ProtectedRoute>} />
             <Route path={ROUTES.MASTER_ADMIN.EMAIL_SETTINGS} element={<ProtectedRoute allowedRoles={['master_admin']}><EmailSettingsMaster /></ProtectedRoute>} />

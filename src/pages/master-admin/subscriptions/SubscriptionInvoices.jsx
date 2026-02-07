@@ -3,10 +3,10 @@ import { supabase } from '@/lib/customSupabaseClient';
 import DashboardLayout from '@/components/DashboardLayout';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
-import { Loader2, Search, Download, Eye, IndianRupee } from 'lucide-react';
+import { Loader2, Search, Download, Eye, IndianRupee, FileText, Plus } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -280,9 +280,16 @@ const SubscriptionInvoices = () => {
         <DashboardLayout>
              <div className="flex justify-between items-center mb-6">
                 <h1 className="text-3xl font-bold">Subscription Invoices</h1>
-                <div className="relative w-full max-w-sm">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input placeholder="Search by school or invoice number..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-9" />
+                <div className="flex items-center gap-4">
+                    <Link to="/master-admin/estimates">
+                        <Button variant="outline" className="gap-2">
+                            <FileText className="h-4 w-4" /> Estimates / Quotations
+                        </Button>
+                    </Link>
+                    <div className="relative w-64">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                        <Input placeholder="Search..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-9" />
+                    </div>
                 </div>
             </div>
              <div className="bg-card p-6 rounded-xl shadow-lg border">

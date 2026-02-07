@@ -43,6 +43,8 @@ export const ROUTES = {
     BILLING_AUDIT: '/master-admin/billing-audit',
     GENERATE_BILL: '/master-admin/subscriptions/bill/:branchId',
     BULK_INVOICE: '/master-admin/subscriptions/bulk-invoice', // New Bulk Invoice
+    ESTIMATES_LIST: '/master-admin/estimates',
+    GENERATE_ESTIMATE: '/master-admin/estimates/:estimateId',
     ROLE_PERMISSION: '/master-admin/role-permission',
     QUERIES_FINDER: '/master-admin/queries-finder', // New Module
     ASSIGN_PERMISSION: '/master-admin/assign-permission',

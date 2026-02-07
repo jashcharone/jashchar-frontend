@@ -504,8 +504,8 @@ const SchoolOwnerDashboard = () => {
           // Today's staff attendance
           supabase.from('staff_attendance').select('id, status')
             .eq('branch_id', branchId).eq('attendance_date', today),
-          // Leave requests - use leave_type_id instead of leave_type
-          supabase.from('leave_requests').select('id, leave_type_id, status, employee_id')
+          // Leave requests - use staff_id (not employee_id)
+          supabase.from('leave_requests').select('id, leave_type_id, status, staff_id')
             .eq('branch_id', branchId).eq('status', 'approved')
         ]);
 

@@ -15,12 +15,12 @@ import { useBranch } from '@/contexts/BranchContext';
 // These paths MUST match what's in routeRegistry.js SUPER_ADMIN section
 // ═══════════════════════════════════════════════════════════════════════════════
 export const ATTENDANCE_MODULE_TO_PATH = {
-    // Basic Tier - Core attendance
+    // Basic Tier - Core attendance (paths MUST match sidebarConfig.js / routeRegistry.js)
     'manual_student': '/super-admin/attendance/student-attendance',
     'manual_staff': '/super-admin/attendance/staff-attendance',
     'attendance_by_date': '/super-admin/attendance/attendance-by-date',
-    'leave_management': '/super-admin/attendance/approve-leave',
-    'basic_report': '/super-admin/attendance/report',
+    'leave_management': '/super-admin/attendance/approve-student-leave',  // ✅ Fixed path
+    'basic_report': '/super-admin/attendance/attendance-report',           // ✅ Fixed path
     'holiday_management': '/super-admin/holidays',
     
     // Standard Tier - QR & Cards
@@ -123,12 +123,20 @@ export const useBranchAttendanceModules = () => {
     const isPathEnabled = useMemo(() => {
         return (path) => {
             // If no config exists, allow all
-            if (enabledModules.length === 0) return true;
+            if (enabledModules.length === 0) {
+                console.log('[isPathEnabled] No config found, allowing:', path);
+                return true;
+            }
             
             const moduleCode = PATH_TO_ATTENDANCE_MODULE[path];
-            if (!moduleCode) return true; // Path not in attendance modules, allow it
+            if (!moduleCode) {
+                console.log('[isPathEnabled] Path not in attendance mapping, allowing:', path);
+                return true; // Path not in attendance modules, allow it
+            }
             
-            return enabledModules.includes(moduleCode);
+            const isEnabled = enabledModules.includes(moduleCode);
+            console.log(`[isPathEnabled] ${path} -> ${moduleCode} -> ${isEnabled ? '✅ SHOW' : '❌ HIDE'}`);
+            return isEnabled;
         };
     }, [enabledModules]);
 

@@ -142,6 +142,11 @@ const Sidebar = ({ role, isSidebarOpen, isMobile, toggleSidebar, closeSidebar, o
       // Check if this is an attendance module
       const isAttendanceModule = moduleSlug === 'attendance' || item.title?.toLowerCase().includes('attendance');
       
+      // Debug log for attendance module
+      if (isAttendanceModule) {
+        console.log('[Sidebar] Processing Attendance module, hasAttendanceConfig:', hasAttendanceConfig);
+      }
+      
       if (item.submenu && item.submenu.length > 0) {
         const visibleSubmenu = item.submenu.filter(sub => {
           // Skip disabled items (separators like "── Advanced ──")
@@ -149,7 +154,9 @@ const Sidebar = ({ role, isSidebarOpen, isMobile, toggleSidebar, closeSidebar, o
           
           // ✅ ATTENDANCE MODULE FILTERING - Check if path is enabled by Master Admin
           if (isAttendanceModule && hasAttendanceConfig) {
-            if (!isPathEnabled(sub.path)) {
+            const pathEnabled = isPathEnabled(sub.path);
+            console.log(`[Sidebar] Attendance submenu: ${sub.title} (${sub.path}) -> ${pathEnabled ? 'SHOW' : 'HIDE'}`);
+            if (!pathEnabled) {
               return false;
             }
           }

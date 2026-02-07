@@ -308,19 +308,14 @@ const AttendanceReport = () => {
         
         if (staffError) throw staffError;
         
-        // Get attendance records
-        let attendanceQuery = supabase
+        // Get attendance records - note: staff_attendance table doesn't have department_id
+        // We filter by department on employee_profiles, then match by staff_id
+        const { data: attendance, error: attendanceError } = await supabase
             .from('staff_attendance')
             .select('*')
             .eq('branch_id', branchId)
             .gte('attendance_date', startDate)
             .lte('attendance_date', endDate);
-        
-        if (selectedDepartment !== 'all') {
-            attendanceQuery = attendanceQuery.eq('department_id', selectedDepartment);
-        }
-        
-        const { data: attendance, error: attendanceError } = await attendanceQuery;
         
         if (attendanceError) throw attendanceError;
         

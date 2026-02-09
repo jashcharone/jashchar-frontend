@@ -295,6 +295,8 @@ const FeesDiscount = lazy(() => import('@/pages/super-admin/fees-collection/Fees
 const FeesCarryForward = lazy(() => import('@/pages/super-admin/fees-collection/FeesCarryForward'));
 const FeesReminder = lazy(() => import('@/pages/super-admin/fees-collection/FeesReminder'));
 const PrintFeesReceipt = lazy(() => import('@/pages/super-admin/fees-collection/PrintFeesReceipt'));
+const PrintTransportReceipt = lazy(() => import('@/pages/super-admin/fees-collection/PrintTransportReceipt'));
+const PrintHostelReceipt = lazy(() => import('@/pages/super-admin/fees-collection/PrintHostelReceipt'));
 const PrintSelectedFees = lazy(() => import('@/pages/super-admin/fees-collection/PrintSelectedFees'));
 const QuickFees = lazy(() => import('@/pages/super-admin/fees-collection/QuickFees'));
 const OnlinePayment = lazy(() => import('@/pages/super-admin/fees-collection/OnlinePayment'));
@@ -1262,6 +1264,8 @@ function App() {
             <Route path={ROUTES.SUPER_ADMIN.FEES_CARRY_FORWARD} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'accountant']}><FeesCarryForward /></ProtectedRoute>} />
             <Route path={ROUTES.SUPER_ADMIN.FEES_REMINDER} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'accountant']}><FeesReminder /></ProtectedRoute>} />
             <Route path={ROUTES.SUPER_ADMIN.PRINT_FEES_RECEIPT} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'accountant']}><PrintFeesReceipt /></ProtectedRoute>} />
+            <Route path="/super-admin/fees-collection/print-transport-receipt/:paymentId" element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'accountant']}><PrintTransportReceipt /></ProtectedRoute>} />
+            <Route path="/super-admin/fees-collection/print-hostel-receipt/:paymentId" element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'accountant']}><PrintHostelReceipt /></ProtectedRoute>} />
             <Route path={ROUTES.SUPER_ADMIN.PRINT_SELECTED_FEES} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'accountant']}><PrintSelectedFees /></ProtectedRoute>} />
             <Route path={ROUTES.SUPER_ADMIN.QUICK_FEES} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'accountant']}><QuickFees /></ProtectedRoute>} />
             <Route path={ROUTES.SUPER_ADMIN.ONLINE_PAYMENT} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'accountant']}><OnlinePayment /></ProtectedRoute>} />

@@ -17,7 +17,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
     Loader2, User, Printer, RotateCcw, ShieldX, ExternalLink, FileText, CheckCircle, Clock, 
     Phone, Mail, Calendar, CreditCard, Banknote, AlertTriangle, GraduationCap, Users,
-    IndianRupee, Receipt, History, ArrowLeft, Building2
+    IndianRupee, Receipt, History, ArrowLeft, Building2, Bus
 } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { Textarea } from '@/components/ui/textarea';
@@ -78,6 +78,8 @@ const StudentFees = () => {
     const [student, setStudent] = useState(null);
     const [classTeacher, setClassTeacher] = useState(null);
     const [fees, setFees] = useState([]);
+    const [transportDetails, setTransportDetails] = useState(null); // Transport fee details
+    const [hostelDetails, setHostelDetails] = useState(null); // Hostel fee details
     const [payments, setPayments] = useState([]);
     const [loading, setLoading] = useState(true);
     const [paymentLoading, setPaymentLoading] = useState(false);
@@ -92,7 +94,18 @@ const StudentFees = () => {
         note: ''
     });
     const [paymentToRevoke, setPaymentToRevoke] = useState(null);
+    
+    // Transport/Hostel payment state
+    const [transportPaymentDetails, setTransportPaymentDetails] = useState({
+        amount: '', discount: '0', fine: '0', payment_date: new Date(), payment_mode: 'Cash', note: '', payment_month: ''
+    });
+    const [hostelPaymentDetails, setHostelPaymentDetails] = useState({
+        amount: '', discount: '0', fine: '0', payment_date: new Date(), payment_mode: 'Cash', note: '', payment_month: ''
+    });
     const [revokeReason, setRevokeReason] = useState('');
+    
+    // Student assigned discounts
+    const [studentDiscounts, setStudentDiscounts] = useState([]);
 
     const fetchStudentAndFees = useCallback(async () => {
         if (!studentId || !selectedBranch?.id) return;
@@ -208,6 +221,104 @@ const StudentFees = () => {
 
             setFees(processedFees);
 
+            // Fetch transport details for this student
+            const { data: transportData } = await supabase
+                .from('student_transport_details')
+                .select(`
+                    *,
+                    route:transport_route_id(id, route_title),
+                    pickup_point:transport_pickup_point_id(id, name)
+                `)
+                .eq('student_id', studentId)
+                .eq('branch_id', selectedBranch.id)
+                .maybeSingle();
+
+            if (transportData && transportData.transport_fee > 0) {
+                // Check for transport payments
+                const { data: transportPayments } = await supabase
+                    .from('transport_fee_payments')
+                    .select('*')
+                    .eq('student_id', studentId)
+                    .eq('branch_id', selectedBranch.id)
+                    .is('reverted_at', null);
+
+                const transportPaid = (transportPayments || []).reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
+                const transportDiscount = (transportPayments || []).reduce((sum, p) => sum + (Number(p.discount_amount) || 0), 0);
+                const transportFeeAmount = Number(transportData.transport_fee) || 0;
+                const transportBalance = transportFeeAmount - transportPaid - transportDiscount;
+
+                setTransportDetails({
+                    ...transportData,
+                    totalPaid: transportPaid,
+                    totalDiscount: transportDiscount,
+                    balance: transportBalance,
+                    status: transportBalance <= 0 ? 'Paid' : transportPaid > 0 ? 'Partial' : 'Unpaid',
+                    payments: transportPayments || []
+                });
+            } else {
+                setTransportDetails(null);
+            }
+
+            // Fetch hostel details for this student
+            const { data: hostelData } = await supabase
+                .from('student_hostel_details')
+                .select(`
+                    *,
+                    room:room_id(id, room_number_name, cost_per_bed),
+                    room_type:hostel_room_type(id, name, cost)
+                `)
+                .eq('student_id', studentId)
+                .eq('branch_id', selectedBranch.id)
+                .maybeSingle();
+
+            if (hostelData && hostelData.hostel_fee > 0) {
+                // Check for hostel payments
+                const { data: hostelPayments } = await supabase
+                    .from('hostel_fee_payments')
+                    .select('*')
+                    .eq('student_id', studentId)
+                    .eq('branch_id', selectedBranch.id)
+                    .is('reverted_at', null);
+
+                const hostelPaid = (hostelPayments || []).reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
+                const hostelDiscount = (hostelPayments || []).reduce((sum, p) => sum + (Number(p.discount_amount) || 0), 0);
+                const hostelFeeAmount = Number(hostelData.hostel_fee) || 0;
+                const hostelBalance = hostelFeeAmount - hostelPaid - hostelDiscount;
+
+                setHostelDetails({
+                    ...hostelData,
+                    totalPaid: hostelPaid,
+                    totalDiscount: hostelDiscount,
+                    balance: hostelBalance,
+                    status: hostelBalance <= 0 ? 'Paid' : hostelPaid > 0 ? 'Partial' : 'Unpaid',
+                    payments: hostelPayments || []
+                });
+            } else {
+                setHostelDetails(null);
+            }
+
+            // Fetch assigned discounts for this student
+            const { data: discountAssignments } = await supabase
+                .from('student_fee_discounts')
+                .select(`
+                    id,
+                    discount:discount_id(
+                        id, name, discount_code, discount_type, amount, use_count, expire_date, description
+                    )
+                `)
+                .eq('student_id', studentId)
+                .eq('branch_id', selectedBranch.id);
+
+            if (discountAssignments && discountAssignments.length > 0) {
+                const validDiscounts = discountAssignments
+                    .filter(d => d.discount)
+                    .map(d => d.discount)
+                    .filter(d => !d.expire_date || new Date(d.expire_date) >= new Date());
+                setStudentDiscounts(validDiscounts);
+            } else {
+                setStudentDiscounts([]);
+            }
+
         } catch (error) {
             toast({ variant: 'destructive', title: 'Error fetching data', description: error.message });
         } finally {
@@ -246,13 +357,27 @@ const StudentFees = () => {
             }
         });
         
+        // Calculate discount from assigned student discounts
+        let calculatedDiscount = 0;
+        if (studentDiscounts.length > 0 && totalBalance > 0) {
+            studentDiscounts.forEach(discount => {
+                if (discount.discount_type === 'percentage') {
+                    calculatedDiscount += (totalBalance * (parseFloat(discount.amount) || 0)) / 100;
+                } else if (discount.discount_type === 'fix_amount') {
+                    calculatedDiscount += parseFloat(discount.amount) || 0;
+                }
+            });
+            // Ensure discount doesn't exceed balance
+            calculatedDiscount = Math.min(calculatedDiscount, totalBalance);
+        }
+        
         setPaymentDetails(prev => ({
             ...prev,
             amount: totalBalance.toFixed(2),
             fine: totalFine.toFixed(2),
-            discount: '0.00'
+            discount: calculatedDiscount.toFixed(2)
         }));
-    }, [selectedFees, fees]);
+    }, [selectedFees, fees, studentDiscounts]);
 
     const feeSummary = useMemo(() => {
         const totalFees = fees.reduce((sum, f) => sum + f.amount, 0);
@@ -357,6 +482,112 @@ const StudentFees = () => {
     const printReceipt = (payment) => {
         navigate(`/super-admin/fees-collection/print-fees-receipt/${payment.id}`);
     }
+
+    // Collect Transport Fee
+    const collectTransportFee = async () => {
+        if (!transportDetails) return;
+        
+        const amount = parseFloat(transportPaymentDetails.amount) || 0;
+        const discount = parseFloat(transportPaymentDetails.discount) || 0;
+        const fine = parseFloat(transportPaymentDetails.fine) || 0;
+        
+        if (amount + discount <= 0) {
+            toast({ variant: 'destructive', title: 'Invalid amount', description: 'Amount must be greater than zero.' });
+            return;
+        }
+
+        setPaymentLoading(true);
+        try {
+            const branchCode = selectedBranch?.branch_code || selectedBranch?.code || 'TRN';
+            const newTransactionId = await generateTransactionId(supabase, selectedBranch.id, branchCode + '-T');
+
+            const { data, error } = await supabase
+                .from('transport_fee_payments')
+                .insert({
+                    branch_id: selectedBranch.id,
+                    session_id: currentSessionId,
+                    organization_id: organizationId,
+                    student_id: studentId,
+                    amount: amount,
+                    discount_amount: discount,
+                    fine_paid: fine,
+                    payment_date: format(transportPaymentDetails.payment_date, 'yyyy-MM-dd'),
+                    payment_mode: transportPaymentDetails.payment_mode,
+                    payment_month: transportPaymentDetails.payment_month || format(new Date(), 'MMMM yyyy'),
+                    note: transportPaymentDetails.note,
+                    transaction_id: newTransactionId,
+                    collected_by: user.id,
+                })
+                .select()
+                .single();
+
+            if (error) throw error;
+            
+            toast({ title: '✅ Transport fee collected!', description: `Transaction ID: ${newTransactionId}` });
+            await fetchStudentAndFees();
+            setTransportPaymentDetails({ amount: '', discount: '0', fine: '0', payment_date: new Date(), payment_mode: 'Cash', note: '', payment_month: '' });
+            
+            // Print receipt
+            navigate(`/super-admin/fees-collection/print-transport-receipt/${data.id}`);
+        } catch (error) {
+            toast({ variant: 'destructive', title: 'Payment failed', description: error.message });
+        } finally {
+            setPaymentLoading(false);
+        }
+    };
+
+    // Collect Hostel Fee
+    const collectHostelFee = async () => {
+        if (!hostelDetails) return;
+        
+        const amount = parseFloat(hostelPaymentDetails.amount) || 0;
+        const discount = parseFloat(hostelPaymentDetails.discount) || 0;
+        const fine = parseFloat(hostelPaymentDetails.fine) || 0;
+        
+        if (amount + discount <= 0) {
+            toast({ variant: 'destructive', title: 'Invalid amount', description: 'Amount must be greater than zero.' });
+            return;
+        }
+
+        setPaymentLoading(true);
+        try {
+            const branchCode = selectedBranch?.branch_code || selectedBranch?.code || 'HST';
+            const newTransactionId = await generateTransactionId(supabase, selectedBranch.id, branchCode + '-H');
+
+            const { data, error } = await supabase
+                .from('hostel_fee_payments')
+                .insert({
+                    branch_id: selectedBranch.id,
+                    session_id: currentSessionId,
+                    organization_id: organizationId,
+                    student_id: studentId,
+                    amount: amount,
+                    discount_amount: discount,
+                    fine_paid: fine,
+                    payment_date: format(hostelPaymentDetails.payment_date, 'yyyy-MM-dd'),
+                    payment_mode: hostelPaymentDetails.payment_mode,
+                    payment_month: hostelPaymentDetails.payment_month || format(new Date(), 'MMMM yyyy'),
+                    note: hostelPaymentDetails.note,
+                    transaction_id: newTransactionId,
+                    collected_by: user.id,
+                })
+                .select()
+                .single();
+
+            if (error) throw error;
+            
+            toast({ title: '✅ Hostel fee collected!', description: `Transaction ID: ${newTransactionId}` });
+            await fetchStudentAndFees();
+            setHostelPaymentDetails({ amount: '', discount: '0', fine: '0', payment_date: new Date(), payment_mode: 'Cash', note: '', payment_month: '' });
+            
+            // Print receipt
+            navigate(`/super-admin/fees-collection/print-hostel-receipt/${data.id}`);
+        } catch (error) {
+            toast({ variant: 'destructive', title: 'Payment failed', description: error.message });
+        } finally {
+            setPaymentLoading(false);
+        }
+    };
 
     const revokePayment = async () => {
         if (!paymentToRevoke || !revokeReason) {
@@ -541,6 +772,30 @@ const StudentFees = () => {
                         </CardContent>
                     </Card>
 
+                    {/* Assigned Discounts */}
+                    {studentDiscounts.length > 0 && (
+                        <Card className="border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-950">
+                            <CardHeader className="pb-2">
+                                <CardTitle className="text-sm flex items-center gap-2 text-blue-700 dark:text-blue-300">
+                                    <CheckCircle className="h-4 w-4" />Assigned Discounts
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent className="pt-0 space-y-2">
+                                {studentDiscounts.map(d => (
+                                    <div key={d.id} className="flex justify-between items-center text-sm p-2 bg-white dark:bg-gray-800 rounded border">
+                                        <div>
+                                            <p className="font-medium">{d.name}</p>
+                                            <p className="text-xs text-muted-foreground">{d.discount_code}</p>
+                                        </div>
+                                        <Badge variant="secondary" className="bg-green-100 text-green-700">
+                                            {d.discount_type === 'percentage' ? `${d.amount}%` : `${currencySymbol}${d.amount}`}
+                                        </Badge>
+                                    </div>
+                                ))}
+                            </CardContent>
+                        </Card>
+                    )}
+
                     {/* Payment Form */}
                     <Card className="border-primary/50">
                         <CardHeader className="pb-3 bg-primary/5">
@@ -563,7 +818,12 @@ const StudentFees = () => {
                                     />
                                 </div>
                                 <div className="space-y-1">
-                                    <Label className="text-xs">Discount ({currencySymbol})</Label>
+                                    <Label className="text-xs">
+                                        Discount ({currencySymbol})
+                                        {studentDiscounts.length > 0 && (
+                                            <span className="text-green-600 ml-1">(Auto-applied)</span>
+                                        )}
+                                    </Label>
                                     <Input 
                                         type="number" 
                                         value={paymentDetails.discount} 
@@ -768,6 +1028,218 @@ const StudentFees = () => {
                                             )}
                                         </table>
                                     </div>
+
+                                    {/* Transport Fee Section */}
+                                    {transportDetails && (
+                                        <div className="mt-6 border-t pt-4">
+                                            <div className="flex items-center gap-2 mb-4">
+                                                <Bus className="h-5 w-5 text-blue-600" />
+                                                <h3 className="font-semibold">Transport Fee</h3>
+                                            </div>
+                                            <div className="bg-blue-50 dark:bg-blue-950/20 rounded-lg p-4">
+                                                <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+                                                    <div>
+                                                        <p className="text-xs text-muted-foreground">Route</p>
+                                                        <p className="font-medium">{transportDetails.route?.route_title || 'N/A'}</p>
+                                                    </div>
+                                                    <div>
+                                                        <p className="text-xs text-muted-foreground">Pickup Point</p>
+                                                        <p className="font-medium">{transportDetails.pickup_point?.name || 'N/A'}</p>
+                                                    </div>
+                                                    <div>
+                                                        <p className="text-xs text-muted-foreground">Vehicle</p>
+                                                        <p className="font-medium">{transportDetails.vehicle_number || 'N/A'}</p>
+                                                    </div>
+                                                    <div>
+                                                        <p className="text-xs text-muted-foreground">Driver</p>
+                                                        <p className="font-medium">{transportDetails.driver_name || 'N/A'}</p>
+                                                    </div>
+                                                </div>
+                                                <div className="flex items-center justify-between p-3 bg-background rounded-md mb-4">
+                                                    <div className="flex gap-6">
+                                                        <div>
+                                                            <p className="text-xs text-muted-foreground">Monthly Fee</p>
+                                                            <p className="font-bold text-lg">{currencySymbol}{Number(transportDetails.transport_fee || 0).toLocaleString('en-IN')}</p>
+                                                        </div>
+                                                        <div>
+                                                            <p className="text-xs text-muted-foreground">Total Paid</p>
+                                                            <p className="font-bold text-lg text-green-600">{currencySymbol}{transportDetails.totalPaid.toLocaleString('en-IN')}</p>
+                                                        </div>
+                                                        <div>
+                                                            <p className="text-xs text-muted-foreground">Balance</p>
+                                                            <p className={`font-bold text-lg ${transportDetails.balance > 0 ? 'text-red-600' : 'text-green-600'}`}>{currencySymbol}{transportDetails.balance.toLocaleString('en-IN')}</p>
+                                                        </div>
+                                                    </div>
+                                                    <Badge variant={transportDetails.status === 'Paid' ? 'success' : transportDetails.status === 'Partial' ? 'warning' : 'destructive'}>
+                                                        {transportDetails.status}
+                                                    </Badge>
+                                                </div>
+                                                
+                                                {/* Transport Fee Collection Form */}
+                                                {transportDetails.balance > 0 && (
+                                                    <div className="border-t pt-4 mt-4">
+                                                        <p className="text-sm font-medium mb-3">Collect Transport Fee</p>
+                                                        <div className="grid sm:grid-cols-4 gap-3">
+                                                            <div>
+                                                                <Label className="text-xs">Amount ({currencySymbol})</Label>
+                                                                <Input
+                                                                    type="number"
+                                                                    value={transportPaymentDetails.amount}
+                                                                    onChange={e => setTransportPaymentDetails(p => ({...p, amount: e.target.value}))}
+                                                                    placeholder={transportDetails.transport_fee}
+                                                                />
+                                                            </div>
+                                                            <div>
+                                                                <Label className="text-xs">Discount ({currencySymbol})</Label>
+                                                                <Input
+                                                                    type="number"
+                                                                    value={transportPaymentDetails.discount}
+                                                                    onChange={e => setTransportPaymentDetails(p => ({...p, discount: e.target.value}))}
+                                                                />
+                                                            </div>
+                                                            <div>
+                                                                <Label className="text-xs">Payment Mode</Label>
+                                                                <Select value={transportPaymentDetails.payment_mode} onValueChange={v => setTransportPaymentDetails(p => ({...p, payment_mode: v}))}>
+                                                                    <SelectTrigger><SelectValue /></SelectTrigger>
+                                                                    <SelectContent>
+                                                                        <SelectItem value="Cash">Cash</SelectItem>
+                                                                        <SelectItem value="Cheque">Cheque</SelectItem>
+                                                                        <SelectItem value="Online">Online</SelectItem>
+                                                                        <SelectItem value="UPI">UPI</SelectItem>
+                                                                        <SelectItem value="Card">Card</SelectItem>
+                                                                    </SelectContent>
+                                                                </Select>
+                                                            </div>
+                                                            <div>
+                                                                <Label className="text-xs">Month</Label>
+                                                                <Input
+                                                                    value={transportPaymentDetails.payment_month}
+                                                                    onChange={e => setTransportPaymentDetails(p => ({...p, payment_month: e.target.value}))}
+                                                                    placeholder="February 2026"
+                                                                />
+                                                            </div>
+                                                        </div>
+                                                        <div className="mt-3">
+                                                            <Button 
+                                                                onClick={collectTransportFee} 
+                                                                disabled={paymentLoading || !transportPaymentDetails.amount}
+                                                                className="w-full bg-blue-600 hover:bg-blue-700"
+                                                            >
+                                                                {paymentLoading ? <Loader2 className="animate-spin mr-2 h-4 w-4" /> : <Receipt className="mr-2 h-4 w-4" />}
+                                                                Collect & Print Receipt
+                                                            </Button>
+                                                        </div>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* Hostel Fee Section */}
+                                    {hostelDetails && (
+                                        <div className="mt-6 border-t pt-4">
+                                            <div className="flex items-center gap-2 mb-4">
+                                                <Building2 className="h-5 w-5 text-purple-600" />
+                                                <h3 className="font-semibold">Hostel Fee</h3>
+                                            </div>
+                                            <div className="bg-purple-50 dark:bg-purple-950/20 rounded-lg p-4">
+                                                <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+                                                    <div>
+                                                        <p className="text-xs text-muted-foreground">Room</p>
+                                                        <p className="font-medium">{hostelDetails.room?.room_number_name || 'N/A'}</p>
+                                                    </div>
+                                                    <div>
+                                                        <p className="text-xs text-muted-foreground">Room Type</p>
+                                                        <p className="font-medium">{hostelDetails.room_type?.name || 'N/A'}</p>
+                                                    </div>
+                                                    <div>
+                                                        <p className="text-xs text-muted-foreground">Bed Number</p>
+                                                        <p className="font-medium">{hostelDetails.bed_number || 'N/A'}</p>
+                                                    </div>
+                                                    <div>
+                                                        <p className="text-xs text-muted-foreground">Check-in Date</p>
+                                                        <p className="font-medium">{hostelDetails.check_in_date ? format(parseISO(hostelDetails.check_in_date), 'dd MMM yyyy') : 'N/A'}</p>
+                                                    </div>
+                                                </div>
+                                                <div className="flex items-center justify-between p-3 bg-background rounded-md mb-4">
+                                                    <div className="flex gap-6">
+                                                        <div>
+                                                            <p className="text-xs text-muted-foreground">Monthly Fee</p>
+                                                            <p className="font-bold text-lg">{currencySymbol}{Number(hostelDetails.hostel_fee || 0).toLocaleString('en-IN')}</p>
+                                                        </div>
+                                                        <div>
+                                                            <p className="text-xs text-muted-foreground">Total Paid</p>
+                                                            <p className="font-bold text-lg text-green-600">{currencySymbol}{hostelDetails.totalPaid.toLocaleString('en-IN')}</p>
+                                                        </div>
+                                                        <div>
+                                                            <p className="text-xs text-muted-foreground">Balance</p>
+                                                            <p className={`font-bold text-lg ${hostelDetails.balance > 0 ? 'text-red-600' : 'text-green-600'}`}>{currencySymbol}{hostelDetails.balance.toLocaleString('en-IN')}</p>
+                                                        </div>
+                                                    </div>
+                                                    <Badge variant={hostelDetails.status === 'Paid' ? 'success' : hostelDetails.status === 'Partial' ? 'warning' : 'destructive'}>
+                                                        {hostelDetails.status}
+                                                    </Badge>
+                                                </div>
+                                                
+                                                {/* Hostel Fee Collection Form */}
+                                                {hostelDetails.balance > 0 && (
+                                                    <div className="border-t pt-4 mt-4">
+                                                        <p className="text-sm font-medium mb-3">Collect Hostel Fee</p>
+                                                        <div className="grid sm:grid-cols-4 gap-3">
+                                                            <div>
+                                                                <Label className="text-xs">Amount ({currencySymbol})</Label>
+                                                                <Input
+                                                                    type="number"
+                                                                    value={hostelPaymentDetails.amount}
+                                                                    onChange={e => setHostelPaymentDetails(p => ({...p, amount: e.target.value}))}
+                                                                    placeholder={hostelDetails.hostel_fee}
+                                                                />
+                                                            </div>
+                                                            <div>
+                                                                <Label className="text-xs">Discount ({currencySymbol})</Label>
+                                                                <Input
+                                                                    type="number"
+                                                                    value={hostelPaymentDetails.discount}
+                                                                    onChange={e => setHostelPaymentDetails(p => ({...p, discount: e.target.value}))}
+                                                                />
+                                                            </div>
+                                                            <div>
+                                                                <Label className="text-xs">Payment Mode</Label>
+                                                                <Select value={hostelPaymentDetails.payment_mode} onValueChange={v => setHostelPaymentDetails(p => ({...p, payment_mode: v}))}>
+                                                                    <SelectTrigger><SelectValue /></SelectTrigger>
+                                                                    <SelectContent>
+                                                                        <SelectItem value="Cash">Cash</SelectItem>
+                                                                        <SelectItem value="Cheque">Cheque</SelectItem>
+                                                                        <SelectItem value="Online">Online</SelectItem>
+                                                                        <SelectItem value="UPI">UPI</SelectItem>
+                                                                        <SelectItem value="Card">Card</SelectItem>
+                                                                    </SelectContent>
+                                                                </Select>
+                                                            </div>
+                                                            <div>
+                                                                <Label className="text-xs">Month</Label>
+                                                                <Input
+                                                                    value={hostelPaymentDetails.payment_month}
+                                                                    onChange={e => setHostelPaymentDetails(p => ({...p, payment_month: e.target.value}))}
+                                                                    placeholder="February 2026"
+                                                                />
+                                                            </div>
+                                                        </div>
+                                                        <div className="mt-3">
+                                                            <Button 
+                                                                onClick={collectHostelFee} 
+                                                                disabled={paymentLoading || !hostelPaymentDetails.amount}
+                                                                className="w-full bg-purple-600 hover:bg-purple-700"
+                                                            >
+                                                                {paymentLoading ? <Loader2 className="animate-spin mr-2 h-4 w-4" /> : <Receipt className="mr-2 h-4 w-4" />}
+                                                                Collect & Print Receipt
+                                                            </Button>
+                                                        </div>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+                                    )}
                                 </TabsContent>
 
                                 <TabsContent value="history" className="m-0">

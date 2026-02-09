@@ -29,8 +29,8 @@ const FeesCarryForward = () => {
     const fetchPrerequisites = useCallback(async () => {
         if (!branchId || !selectedBranch) return;
         const [classesRes, sectionsRes, settingsRes] = await Promise.all([
-            supabase.from('classes').select('id, name').eq('branch_id', branchId).eq('branch_id', selectedBranch.id),
-            supabase.from('sections').select('id, name').eq('branch_id', branchId).eq('branch_id', selectedBranch.id),
+            supabase.from('classes').select('id, name').eq('branch_id', selectedBranch.id),
+            supabase.from('sections').select('id, name').eq('branch_id', selectedBranch.id),
             supabase.from('schools').select('carry_forward_fees_due_days, current_session_id').eq('id', branchId).single(),
         ]);
         
@@ -58,9 +58,9 @@ const FeesCarryForward = () => {
         setSearched(true);
         
         const { data, error } = await supabase.rpc('get_previous_session_balance', {
-            p_branch_id: branchId,
             p_branch_id: selectedBranch.id,
             p_class_id: selectedClass,
+            p_school_id: selectedBranch.id,
             p_section_id: selectedSection === 'all' ? null : selectedSection
         });
 
@@ -81,7 +81,6 @@ const FeesCarryForward = () => {
         setIsSaving(true);
         
         const { error } = await supabase.rpc('carry_forward_fees', {
-            p_branch_id: branchId,
             p_branch_id: selectedBranch.id,
             p_due_date: dueDate,
             p_students_balance: students

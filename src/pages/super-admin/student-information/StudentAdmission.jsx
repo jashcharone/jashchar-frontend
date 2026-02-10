@@ -1503,6 +1503,55 @@ const StudentAdmission = () => {
   }, [selectedBranch?.id]);
 
   /**
+   * 📋 LOCAL FALLBACK: Generate admission number locally if API fails
+   * Uses GLOBAL query across ALL branches for uniqueness
+   */
+  const generateNextIdLocal = useCallback(async (settings, branchId) => {
+    const prefix = (settings?.student_admission_no_prefix ?? 'STU').trim();
+    const digit = Number(settings?.student_admission_no_digit) || 5;
+    const currentYear = new Date().getFullYear();
+    const yearPrefix = `${prefix}-${currentYear}-`;
+
+    // 🌟 Query GLOBALLY across ALL branches for the prefix-year combination
+    const { data, error } = await supabase
+      .from('student_profiles')
+      .select('school_code')
+      .like('school_code', `${yearPrefix}%`)
+      .order('school_code', { ascending: false })
+      .limit(1);
+    
+    let nextNumber = 1;
+    if (data && data.length > 0 && data[0].school_code) {
+      const latestCode = data[0].school_code;
+      const parts = latestCode.split('-');
+      if (parts.length === 3) {
+        const sequenceNum = parseInt(parts[2], 10);
+        if (!isNaN(sequenceNum)) {
+          nextNumber = sequenceNum + 1;
+        }
+      }
+    }
+    
+    const newId = `${yearPrefix}${String(nextNumber).padStart(digit, '0')}`;
+    console.log(`[StudentAdmission] Local Generated: ${newId}`);
+    
+    // Student username = Admission Number (school_code) - Always auto-set
+    const studentUsername = newId;
+    setFormData(prev => ({
+      ...prev,
+      school_code: newId,
+      username: studentUsername,
+      password: settings.password_auto_generation ? settings.password_default || '' : prev.password,
+      retype_password: settings.password_auto_generation ? settings.password_default || '' : prev.retype_password,
+      parent_password: settings.password_auto_generation ? settings.password_default || '' : prev.parent_password,
+      parent_retype_password: settings.password_auto_generation ? settings.password_default || '' : prev.parent_retype_password
+    }));
+    
+    checkStudentUsernameDuplicate(studentUsername);
+    return newId;
+  }, [checkStudentUsernameDuplicate]);
+
+  /**
    * 🌟 GLOBAL UNIQUE ADMISSION NUMBER GENERATOR
    * Uses Backend API to generate globally unique admission number
    * Format: PREFIX-YEAR-SEQUENCE (e.g., STU-2026-00136)
@@ -1560,56 +1609,7 @@ const StudentAdmission = () => {
       console.warn('[StudentAdmission] Falling back to local generation...');
       return await generateNextIdLocal(settings, branchId);
     }
-  }, [selectedBranch?.id, toast, checkStudentUsernameDuplicate]);
-
-  /**
-   * 📋 LOCAL FALLBACK: Generate admission number locally if API fails
-   * Uses GLOBAL query across ALL branches for uniqueness
-   */
-  const generateNextIdLocal = useCallback(async (settings, branchId) => {
-    const prefix = (settings?.student_admission_no_prefix ?? 'STU').trim();
-    const digit = Number(settings?.student_admission_no_digit) || 5;
-    const currentYear = new Date().getFullYear();
-    const yearPrefix = `${prefix}-${currentYear}-`;
-
-    // 🌟 Query GLOBALLY across ALL branches for the prefix-year combination
-    const { data, error } = await supabase
-      .from('student_profiles')
-      .select('school_code')
-      .like('school_code', `${yearPrefix}%`)
-      .order('school_code', { ascending: false })
-      .limit(1);
-    
-    let nextNumber = 1;
-    if (data && data.length > 0 && data[0].school_code) {
-      const latestCode = data[0].school_code;
-      const parts = latestCode.split('-');
-      if (parts.length === 3) {
-        const sequenceNum = parseInt(parts[2], 10);
-        if (!isNaN(sequenceNum)) {
-          nextNumber = sequenceNum + 1;
-        }
-      }
-    }
-    
-    const newId = `${yearPrefix}${String(nextNumber).padStart(digit, '0')}`;
-    console.log(`[StudentAdmission] Local Generated: ${newId}`);
-    
-    // Student username = Admission Number (school_code) - Always auto-set
-    const studentUsername = newId;
-    setFormData(prev => ({
-      ...prev,
-      school_code: newId,
-      username: studentUsername,
-      password: settings.password_auto_generation ? settings.password_default || '' : prev.password,
-      retype_password: settings.password_auto_generation ? settings.password_default || '' : prev.retype_password,
-      parent_password: settings.password_auto_generation ? settings.password_default || '' : prev.parent_password,
-      parent_retype_password: settings.password_auto_generation ? settings.password_default || '' : prev.parent_retype_password
-    }));
-    
-    checkStudentUsernameDuplicate(studentUsername);
-    return newId;
-  }, [checkStudentUsernameDuplicate]);
+  }, [selectedBranch?.id, toast, checkStudentUsernameDuplicate, generateNextIdLocal]);
   
   const fetchSchoolSettings = useCallback(async () => {
     const branchId = selectedBranch?.id;

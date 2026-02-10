@@ -1,5 +1,6 @@
 // Organization Switcher for Testing Multi-Tenant White-Label Themes
 // ಪ್ರತಿ Organization ಗೆ different branding test ಮಾಡಲು
+// ⚠️ DEVELOPMENT ONLY - Will NOT render in production
 
 import React, { useState } from 'react';
 import { useOrganization } from '../contexts/OrganizationContext';
@@ -7,6 +8,17 @@ import { useOrganization } from '../contexts/OrganizationContext';
 const OrgSwitcher = () => {
   const { orgConfig, loading } = useOrganization();
   const [isOpen, setIsOpen] = useState(false);
+
+  // 🔒 SECURITY: Only show in development (localhost)
+  // Production URLs (jashcharerp.com or any other domain) will NOT show this button
+  const isDevelopment = window.location.hostname === 'localhost' || 
+                        window.location.hostname === '127.0.0.1' ||
+                        window.location.hostname === '';
+  
+  // Hide in production completely
+  if (!isDevelopment) {
+    return null;
+  }
 
   const testOrganizations = [
     { slug: 'demo', name: 'Demo School', color: '#1976d2' },

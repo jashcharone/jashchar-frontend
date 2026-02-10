@@ -974,11 +974,11 @@ function App() {
             <Route path={ROUTES.SUPER_ADMIN.ONLINE_COURSE_SETTING} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="online_course"><OnlineCourseSetting /></ProtectedRoute>} />
             <Route path={ROUTES.SUPER_ADMIN.ONLINE_COURSE_REPORT} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="online_course"><OnlineCourseReport /></ProtectedRoute>} />
 
-            {/* ? Finance */}
+            {/* ? Income */}
             <Route
               path={ROUTES.SUPER_ADMIN.INCOME}
               element={
-                <ProtectedRoute allowedRoles={['super_admin', 'admin', 'accountant']} requiredModule="finance">
+                <ProtectedRoute allowedRoles={['super_admin', 'admin', 'accountant']} requiredModule="income">
                   <Income />
                 </ProtectedRoute>
               }
@@ -986,7 +986,7 @@ function App() {
             <Route
               path={ROUTES.SUPER_ADMIN.ADD_INCOME}
               element={
-                <ProtectedRoute allowedRoles={['super_admin', 'admin', 'accountant']} requiredModule="finance">
+                <ProtectedRoute allowedRoles={['super_admin', 'admin', 'accountant']} requiredModule="income">
                   <AddIncome />
                 </ProtectedRoute>
               }
@@ -994,7 +994,7 @@ function App() {
             <Route
               path={ROUTES.SUPER_ADMIN.SEARCH_INCOME}
               element={
-                <ProtectedRoute allowedRoles={['super_admin', 'admin', 'accountant']} requiredModule="finance">
+                <ProtectedRoute allowedRoles={['super_admin', 'admin', 'accountant']} requiredModule="income">
                   <SearchIncome />
                 </ProtectedRoute>
               }
@@ -1002,15 +1002,16 @@ function App() {
             <Route
               path={ROUTES.SUPER_ADMIN.INCOME_HEAD}
               element={
-                <ProtectedRoute allowedRoles={['super_admin', 'admin', 'accountant']} requiredModule="finance">
+                <ProtectedRoute allowedRoles={['super_admin', 'admin', 'accountant']} requiredModule="income">
                   <IncomeHead />
                 </ProtectedRoute>
               }
             />
+             {/* ? Expenses */}
              <Route
               path={ROUTES.SUPER_ADMIN.EXPENSE}
               element={
-                <ProtectedRoute allowedRoles={['super_admin', 'admin', 'accountant']} requiredModule="finance">
+                <ProtectedRoute allowedRoles={['super_admin', 'admin', 'accountant']} requiredModule="expenses">
                   <Expense />
                 </ProtectedRoute>
               }
@@ -1018,7 +1019,7 @@ function App() {
             <Route
               path={ROUTES.SUPER_ADMIN.ADD_EXPENSE}
               element={
-                <ProtectedRoute allowedRoles={['super_admin', 'admin', 'accountant']} requiredModule="finance">
+                <ProtectedRoute allowedRoles={['super_admin', 'admin', 'accountant']} requiredModule="expenses">
                   <AddExpense />
                 </ProtectedRoute>
               }
@@ -1026,7 +1027,7 @@ function App() {
             <Route
               path={ROUTES.SUPER_ADMIN.SEARCH_EXPENSE}
               element={
-                <ProtectedRoute allowedRoles={['super_admin', 'admin', 'accountant']} requiredModule="finance">
+                <ProtectedRoute allowedRoles={['super_admin', 'admin', 'accountant']} requiredModule="expenses">
                   <SearchExpense />
                 </ProtectedRoute>
               }
@@ -1034,18 +1035,18 @@ function App() {
             <Route
               path={ROUTES.SUPER_ADMIN.EXPENSE_HEAD}
               element={
-                <ProtectedRoute allowedRoles={['super_admin', 'admin', 'accountant']} requiredModule="finance">
+                <ProtectedRoute allowedRoles={['super_admin', 'admin', 'accountant']} requiredModule="expenses">
                   <ExpenseHead />
                 </ProtectedRoute>
               }
             />
 
             {/* ? Finance Reports */}
-            <Route path={ROUTES.SUPER_ADMIN.REPORT_INCOME} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'accountant']} requiredModule="finance"><IncomeReport /></ProtectedRoute>} />
-            <Route path={ROUTES.SUPER_ADMIN.REPORT_EXPENSE} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'accountant']} requiredModule="finance"><ExpenseReport /></ProtectedRoute>} />
-            <Route path={ROUTES.SUPER_ADMIN.REPORT_INCOME_GROUP} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'accountant']} requiredModule="finance"><IncomeGroupReport /></ProtectedRoute>} />
-            <Route path={ROUTES.SUPER_ADMIN.REPORT_EXPENSE_GROUP} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'accountant']} requiredModule="finance"><ExpenseGroupReport /></ProtectedRoute>} />
-            <Route path={ROUTES.SUPER_ADMIN.REPORT_INC_EXP_BALANCE} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'accountant']} requiredModule="finance"><IncomeExpenseBalanceReport /></ProtectedRoute>} />
+            <Route path={ROUTES.SUPER_ADMIN.REPORT_INCOME} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'accountant']} requiredModule="income"><IncomeReport /></ProtectedRoute>} />
+            <Route path={ROUTES.SUPER_ADMIN.REPORT_EXPENSE} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'accountant']} requiredModule="expenses"><ExpenseReport /></ProtectedRoute>} />
+            <Route path={ROUTES.SUPER_ADMIN.REPORT_INCOME_GROUP} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'accountant']} requiredModule="income"><IncomeGroupReport /></ProtectedRoute>} />
+            <Route path={ROUTES.SUPER_ADMIN.REPORT_EXPENSE_GROUP} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'accountant']} requiredModule="expenses"><ExpenseGroupReport /></ProtectedRoute>} />
+            <Route path={ROUTES.SUPER_ADMIN.REPORT_INC_EXP_BALANCE} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'accountant']} requiredModule="income"><IncomeExpenseBalanceReport /></ProtectedRoute>} />
             <Route path={ROUTES.SUPER_ADMIN.REPORT_DAILY_COLLECTION} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'accountant']} requiredModule="fees_collection"><DailyCollectionReport /></ProtectedRoute>} />
             <Route path={ROUTES.SUPER_ADMIN.REPORT_FEES_COLLECTION} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'accountant']} requiredModule="fees_collection"><FeesCollectionReport /></ProtectedRoute>} />
             <Route path={ROUTES.SUPER_ADMIN.REPORT_FEES_STATEMENT} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'accountant']} requiredModule="fees_collection"><FeesStatementReport /></ProtectedRoute>} />

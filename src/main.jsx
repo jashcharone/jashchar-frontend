@@ -6,10 +6,13 @@ import App from './App.jsx';
 import { AuthProvider } from '@/contexts/SupabaseAuthContext.jsx';
 import { ThemeProvider } from '@/contexts/ThemeContext.jsx';
 import { BranchProvider } from '@/contexts/BranchContext.jsx';
+import { OrganizationProvider } from '@/contexts/OrganizationContext.jsx';
 import { Toaster } from '@/components/ui/toaster';
 import { initDevTools } from "@/utils/devTools";
 import { initGlobalErrorHandlers } from "@/lib/globalErrorHandlers";
 import { initSentry } from "@/lib/sentry";
+import PWAInstallPrompt from '@/components/PWAInstallPrompt';
+import OrgSwitcher from '@/components/OrgSwitcher';
 import '@/index.css';
 
 import GlobalErrorBoundary from '@/components/GlobalErrorBoundary';
@@ -25,15 +28,19 @@ ReactDOM.createRoot(document.getElementById('root')).render(
   <>
     <GlobalErrorBoundary>
       <Router>
-        <AuthProvider>
-          <BranchProvider>
-            <ThemeProvider>
-              <App />
-              <Toaster />
-              <ReportIssueButton />
-            </ThemeProvider>
-          </BranchProvider>
-        </AuthProvider>
+        <OrganizationProvider>
+          <AuthProvider>
+            <BranchProvider>
+              <ThemeProvider>
+                <App />
+                <Toaster />
+                <ReportIssueButton />
+                <PWAInstallPrompt />
+                <OrgSwitcher />
+              </ThemeProvider>
+            </BranchProvider>
+          </AuthProvider>
+        </OrganizationProvider>
       </Router>
     </GlobalErrorBoundary>
   </>

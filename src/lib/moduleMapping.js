@@ -12,8 +12,8 @@ const overrides = {
   'Schools': 'schools',
   'Articles': 'articles',
   'Subscriptions': 'subscriptions',
-  'Income': 'finance',
-  'Expenses': 'finance',
+  'Income': 'income',
+  'Expenses': 'expenses',
   'Finance': 'finance',
   'Lesson Plan': 'lesson_planning_adv',
   'Website Manager': 'front_cms', // Mapped to front_cms main module
@@ -49,6 +49,22 @@ export const SUBMODULE_OVERRIDES = {
   "Payment Gateway": "payment_gateway",
   "Backup & Restore": "backup_restore",
   "Promote Students": "promote_students",
+  
+  // --- STUDENT INFORMATION FIXES ---
+  "Promotion": "student_promotion",
+  "ID Card": "student_id_card",
+  "Student ID Card": "student_id_card",
+  "Student Promotion": "student_promotion",
+  
+  // --- INCOME MODULE FIXES ---
+  "Income": "income",
+  "Add Income": "add_income",
+  "Income Head": "income_head",
+  
+  // --- EXPENSES MODULE FIXES ---
+  "Expense": "expense",
+  "Add Expense": "add_expense",
+  "Expense Head": "expense_head",
   
   // --- FEES COLLECTION FIXES ---
   "Fees Group": "fees_group",

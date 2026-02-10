@@ -173,6 +173,9 @@ const Sidebar = ({ role, isSidebarOpen, isMobile, toggleSidebar, closeSidebar, o
           if (canView(doublePrefix)) return true;
           if (moduleSlug === 'front_cms' && canView('front_cms')) return true;
           
+          // ✅ Show all children if parent module has permission (for simple modules)
+          if ((moduleSlug === 'income' || moduleSlug === 'expenses') && canView(moduleSlug)) return true;
+          
           // ⚠️ REMOVED FALLBACK: Previously showed all children if parent had access
           // Now STRICT: Each submodule must have explicit permission
           // This ensures Permission DNA page controls exactly which sub-modules appear

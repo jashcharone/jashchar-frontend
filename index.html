@@ -4,8 +4,65 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: blob: https: http:; font-src 'self' data: https://fonts.gstatic.com; connect-src 'self' https://fleelskwjczkamvphvdf.supabase.co https://fexjccrkgaeafyimpobv.supabase.co https://bjuteyzpcpbittmdzveq.supabase.co https://devapi.jashcharerp.com http://localhost:* https://*.jashchar.in https://*.edunexttechnologies.com https://*.up.railway.app https://api.postalpincode.in https://cdn.jsdelivr.net ws://localhost:* wss://*; frame-src 'self' https://www.youtube.com https://www.youtube-nocookie.com; worker-src 'self' blob:; child-src 'self' blob:; media-src 'self' blob: https: http:;">
+    <meta http-equiv="Content-Security-Policy" content="
+      default-src 'self' http://localhost:*; 
+      script-src 'self' 'unsafe-inline' 'unsafe-eval'; 
+      style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; 
+      img-src 'self' data: blob: https: http:; 
+      font-src 'self' data: https://fonts.gstatic.com; 
+      connect-src 'self' https://fleelskwjczkamvphvdf.supabase.co https://fexjccrkgaeafyimpobv.supabase.co https://bjuteyzpcpbittmdzveq.supabase.co https://devapi.jashcharerp.com http://localhost:* https://*.jashchar.in https://*.edunexttechnologies.com https://*.up.railway.app https://api.postalpincode.in https://cdn.jsdelivr.net ws://localhost:* wss://*; 
+      frame-src 'self' https://www.youtube.com https://www.youtube-nocookie.com; 
+      worker-src 'self' blob:; 
+      child-src 'self' blob:; 
+      media-src 'self' blob: https: http:; 
+      manifest-src 'self' http://localhost:* https://devapi.jashcharerp.com;
+    ">
+    
+    <!-- PWA Dynamic Manifest (will be set by OrganizationContext) -->
+    <link rel="manifest" id="app-manifest" href="/manifest.json" />
+    
+    <!-- PWA Theme Color (will be updated dynamically) -->
+    <meta name="theme-color" content="#1976d2" id="theme-color-meta" />
+    
+    <!-- Apple Touch Icons -->
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    
     <title>School ERP</title>
+    
+    <!-- Dynamic Manifest Setup -->
+    <script>
+      (function() {
+        try {
+          // Extract subdomain for organization
+          const hostname = window.location.hostname;
+          let orgSlug = 'demo';
+          
+          if (hostname !== 'localhost' && hostname !== '127.0.0.1') {
+            const parts = hostname.split('.');
+            if (parts.length >= 3) {
+              orgSlug = parts[0];
+            }
+          } else {
+            // Development mode - check localStorage
+            orgSlug = localStorage.getItem('dev-org-slug') || 'demo';
+          }
+          
+          // Set dynamic manifest URL
+          const apiUrl = window.location.hostname === 'localhost' 
+            ? 'http://localhost:5000'
+            : 'https://devapi.jashcharerp.com';
+          
+          const manifestLink = document.getElementById('app-manifest');
+          if (manifestLink && orgSlug) {
+            manifestLink.href = apiUrl + '/api/public/manifest.json?org=' + orgSlug;
+          }
+        } catch (e) {
+          console.error('Error setting up manifest:', e);
+        }
+      })();
+    </script>
     <!-- Apply theme immediately to prevent flash -->
     <script>
       (function() {

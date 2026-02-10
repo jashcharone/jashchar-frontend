@@ -140,6 +140,35 @@ const FormFieldsSettings = () => {
         });
     };
 
+    // ==================== SECTION OPERATIONS ====================
+    const handleSectionToggle = async (section) => {
+        const newValue = !(section.is_enabled !== false);
+        
+        // Optimistic update
+        setSections(prev => prev.map(s => 
+            s.key === section.key ? { ...s, is_enabled: newValue } : s
+        ));
+
+        try {
+            await api.post('/form-settings/toggle-section', {
+                branch_id: branchId,
+                module: 'student_admission',
+                section_key: section.key,
+                is_enabled: newValue
+            });
+            toast({ 
+                title: newValue ? 'Section Enabled' : 'Section Disabled',
+                description: `${section.label} will ${newValue ? 'appear' : 'not appear'} in admission form`
+            });
+        } catch (error) {
+            // Revert on error
+            setSections(prev => prev.map(s => 
+                s.key === section.key ? { ...s, is_enabled: !newValue } : s
+            ));
+            toast({ variant: 'destructive', title: 'Failed to update section visibility' });
+        }
+    };
+
     // ==================== FIELD OPERATIONS ====================
     const handleToggle = async (field, toggleType) => {
         const isSystem = field.is_system;
@@ -389,34 +418,72 @@ const FormFieldsSettings = () => {
                                         const fields = getFieldsForSection(section.key);
                                         const enabledCount = fields.filter(f => f.is_enabled !== false).length;
                                         const customCount = customFields.filter(f => getSectionKey(f) === section.key).length;
+                                        const isSectionEnabled = section.is_enabled !== false;
+                                        
+                                        // Mandatory sections that cannot be disabled
+                                        const mandatorySections = ['academic_details', 'student_details', 'address_details', 'father_details', 'mother_details'];
+                                        const isMandatory = mandatorySections.includes(section.key);
                                         
                                         return (
-                                            <button
+                                            <div
                                                 key={section.key}
-                                                onClick={() => setActiveSection(section.key)}
                                                 className={cn(
-                                                    "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left transition-all",
-                                                    activeSection === section.key 
-                                                        ? "bg-primary text-primary-foreground shadow-sm" 
-                                                        : "hover:bg-muted"
+                                                    "flex items-center gap-2 rounded-lg transition-all",
+                                                    !isSectionEnabled && "opacity-50"
                                                 )}
                                             >
-                                                <Icon className="h-4 w-4 flex-shrink-0" />
-                                                <div className="flex-1 min-w-0">
-                                                    <p className="text-sm font-medium truncate">{section.label}</p>
-                                                    <p className={cn(
-                                                        "text-xs",
-                                                        activeSection === section.key ? "text-primary-foreground/70" : "text-muted-foreground"
-                                                    )}>
-                                                        {enabledCount}/{fields.length} active
-                                                    </p>
-                                                </div>
-                                                {customCount > 0 && (
-                                                    <Badge variant={activeSection === section.key ? "secondary" : "outline"} className="text-[10px] h-5">
-                                                        +{customCount}
-                                                    </Badge>
+                                                {/* Section Toggle Switch - Only show for non-mandatory sections */}
+                                                {!isMandatory ? (
+                                                    <TooltipProvider>
+                                                        <Tooltip>
+                                                            <TooltipTrigger asChild>
+                                                                <div className="px-1">
+                                                                    <Switch
+                                                                        checked={isSectionEnabled}
+                                                                        onCheckedChange={() => handleSectionToggle(section)}
+                                                                        className="data-[state=checked]:bg-green-500 h-4 w-8"
+                                                                    />
+                                                                </div>
+                                                            </TooltipTrigger>
+                                                            <TooltipContent side="right">
+                                                                <p>{isSectionEnabled ? 'Disable Section' : 'Enable Section'}</p>
+                                                                <p className="text-xs text-muted-foreground">
+                                                                    {isSectionEnabled ? 'Hide from admission form' : 'Show in admission form'}
+                                                                </p>
+                                                            </TooltipContent>
+                                                        </Tooltip>
+                                                    </TooltipProvider>
+                                                ) : (
+                                                    <div className="px-1 w-8" /> /* Spacer for mandatory sections */
                                                 )}
-                                            </button>
+                                                
+                                                {/* Section Button */}
+                                                <button
+                                                    onClick={() => setActiveSection(section.key)}
+                                                    className={cn(
+                                                        "flex-1 flex items-center gap-3 px-3 py-2.5 rounded-lg text-left transition-all",
+                                                        activeSection === section.key 
+                                                            ? "bg-primary text-primary-foreground shadow-sm" 
+                                                            : "hover:bg-muted"
+                                                    )}
+                                                >
+                                                    <Icon className="h-4 w-4 flex-shrink-0" />
+                                                    <div className="flex-1 min-w-0">
+                                                        <p className="text-sm font-medium truncate">{section.label}</p>
+                                                        <p className={cn(
+                                                            "text-xs",
+                                                            activeSection === section.key ? "text-primary-foreground/70" : "text-muted-foreground"
+                                                        )}>
+                                                            {enabledCount}/{fields.length} active
+                                                        </p>
+                                                    </div>
+                                                    {customCount > 0 && (
+                                                        <Badge variant={activeSection === section.key ? "secondary" : "outline"} className="text-[10px] h-5">
+                                                            +{customCount}
+                                                        </Badge>
+                                                    )}
+                                                </button>
+                                            </div>
                                         );
                                     })}
                                     

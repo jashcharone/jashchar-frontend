@@ -712,7 +712,7 @@ const StudentFees = () => {
                                 <InfoRow icon={CreditCard} label="Admission No" value={student.school_code} />
                                 <InfoRow icon={User} label="Father" value={student.father_name} />
                                 <InfoRow icon={Users} label="Mother" value={student.mother_name} />
-                                <InfoRow icon={Calendar} label="DOB" value={student.dob ? format(parseISO(student.dob), 'dd MMM yyyy') : null} />
+                                <InfoRow icon={Calendar} label="DOB" value={student.date_of_birth ? format(parseISO(student.date_of_birth), 'dd MMM yyyy') : null} />
                                 <InfoRow icon={Phone} label="Phone" value={student.phone || student.father_phone} />
                                 <InfoRow icon={Mail} label="Email" value={student.email || student.father_email} />
                             </div>

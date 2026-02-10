@@ -198,7 +198,17 @@ const CollectFees = () => {
                                                 <td className="p-2 font-medium">{student.full_name}</td>
                                                 <td className="p-2">{student.classes?.name} {student.sections?.name ? `(${student.sections.name})` : ''}</td>
                                                 <td className="p-2">{student.father_name || '-'}</td>
-                                                <td className="p-2">{student.date_of_birth ? format(new Date(student.date_of_birth), 'dd-MM-yyyy') : 'N/A'}</td>
+                                                <td className="p-2">
+                                                    {student.date_of_birth ? (
+                                                        (() => {
+                                                            try {
+                                                                return format(new Date(student.date_of_birth), 'dd-MM-yyyy');
+                                                            } catch (e) {
+                                                                return student.date_of_birth; // Fallback to raw value
+                                                            }
+                                                        })()
+                                                    ) : '-'}
+                                                </td>
                                                 <td className="p-2">{student.phone || '-'}</td>
                                                 <td className="p-2 text-right">
                                                     <Button size="sm" onClick={() => navigate(`/super-admin/fees-collection/student-fees/${student.id}`)}>

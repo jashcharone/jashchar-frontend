@@ -81,14 +81,27 @@ const AadharInput = ({ value, onChange, label, required, checkDuplicates = false
     setFormattedValue(formatAadhar(rawValue));
     onChange(numericValue);
 
+    // Clear length error when user starts typing valid digits
+    if (numericValue.length === 12) {
+      setError('');
+    }
+
     if (checkDuplicates) {
       clearTimeout(debounceTimeout.current);
-      setError(''); // Clear previous errors on new input
       if (numericValue.length === 12) {
         debounceTimeout.current = setTimeout(() => {
           validateAadhar(numericValue);
         }, 800);
       }
+    }
+  };
+
+  // TC-70 FIX: Validate on blur to show error for invalid length
+  const handleBlur = () => {
+    const numericValue = (value || '').replace(/\D/g, '');
+    // Only validate if user has entered some digits (not empty)
+    if (numericValue.length > 0 && numericValue.length !== 12) {
+      setError('12-digit Aadhaar number is required');
     }
   };
 
@@ -101,6 +114,7 @@ const AadharInput = ({ value, onChange, label, required, checkDuplicates = false
           type="text"
           value={formattedValue}
           onChange={handleChange}
+          onBlur={handleBlur}
           placeholder="xxxx xxxx xxxx"
           maxLength={14} // 12 digits + 2 spaces
           className={cn(className, error && "border-destructive")}

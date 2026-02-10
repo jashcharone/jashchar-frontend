@@ -1370,7 +1370,7 @@ const StudentAdmission = () => {
            newErrors[mappedFieldName] = "Valid 10-digit Mobile No is required";
        }
        if((field.field_name === 'national_id_no' || field.field_name === 'aadhar_no' || field.field_name === 'father_aadhar_no' || field.field_name === 'mother_aadhar_no') && fieldValue && fieldValue.replace(/\s/g, '').length !== 12) {
-           newErrors[mappedFieldName] = "Valid 12-digit Aadhar No is required";
+           newErrors[mappedFieldName] = "12-digit Aadhaar number is required";
        }
        // TC-20 to TC-24 FIX: Name field validations - alphabets and spaces only, minimum 2 characters (except last_name)
        if((field.field_name === 'first_name' || field.field_name === 'father_name' || field.field_name === 'mother_name' || field.field_name === 'guardian_name') && fieldValue) {

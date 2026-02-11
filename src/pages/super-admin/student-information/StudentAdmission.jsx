@@ -2147,6 +2147,13 @@ const StudentAdmission = () => {
       return;
     }
     
+    // Resolve organization_id BEFORE using it in any insert
+    let final_organization_id = organizationId;
+    if (!final_organization_id && selectedBranch?.id) {
+      const { data: schoolData } = await supabase.from('branches').select('organization_id').eq('id', selectedBranch.id).single();
+      final_organization_id = schoolData?.organization_id || null;
+    }
+    
     try {
       let transport_details_id = null;
       if (formData.transport_required) {
@@ -2155,7 +2162,7 @@ const StudentAdmission = () => {
           .insert({
             branch_id: selectedBranch.id,
             session_id: final_session_id,
-            organization_id: final_organization_id || organizationId,
+            organization_id: final_organization_id,
             transport_route_id: formData.transport_route_id,
             transport_pickup_point_id: formData.transport_pickup_point_id,
             transport_fee: formData.transport_fee,
@@ -2177,7 +2184,7 @@ const StudentAdmission = () => {
           .insert({
             branch_id: selectedBranch.id,
             session_id: final_session_id,
-            organization_id: final_organization_id || organizationId,
+            organization_id: final_organization_id,
             hostel_id: formData.hostel_id,
             room_type: formData.hostel_room_type,
             room_number: formData.room_number,
@@ -2204,12 +2211,6 @@ const StudentAdmission = () => {
         uploadFile(motherPictureFile, 'student-photos'),
         uploadFile(guardianPictureFile, 'student-photos'),
       ]);
-
-      let final_organization_id = organizationId;
-      if (!final_organization_id && selectedBranch?.id) {
-        const { data: schoolData } = await supabase.from('branches').select('organization_id').eq('id', selectedBranch.id).single();
-        final_organization_id = schoolData?.organization_id || null;
-      }
 
       // Build student data for backend API call
       // NOTE: Student login uses ADMISSION NUMBER, NOT email

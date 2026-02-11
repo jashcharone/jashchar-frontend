@@ -83,7 +83,7 @@ const HostelFee = () => {
     let query = supabase
       .from('student_profiles')
       .select(`
-        id, full_name, admission_no, roll_number,
+        id, full_name, school_code, roll_number,
         classes!student_profiles_class_id_fkey(name),
         sections!student_profiles_section_id_fkey(name)
       `)
@@ -96,7 +96,7 @@ const HostelFee = () => {
     }
 
     if (searchFilters.search) {
-      query = query.or(`full_name.ilike.%${searchFilters.search}%,admission_no.ilike.%${searchFilters.search}%`);
+      query = query.or(`full_name.ilike.%${searchFilters.search}%,school_code.ilike.%${searchFilters.search}%`);
     }
 
     console.log('HostelFee - Searching students with filters:', searchFilters);
@@ -334,7 +334,7 @@ const HostelFee = () => {
                       <TableCell className="font-medium">
                         {student.full_name}
                       </TableCell>
-                      <TableCell>{student.admission_no || '-'}</TableCell>
+                      <TableCell>{student.school_code || '-'}</TableCell>
                       <TableCell>
                         {student.classes?.name || '-'}
                         {student.sections?.name ? ` - ${student.sections.name}` : ''}

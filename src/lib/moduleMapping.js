@@ -33,8 +33,8 @@ export const SUBMODULE_OVERRIDES = {
   "Media Manager": "media_manager",
   "Banner Images": "banner_images",
   "Classes": "class",
-  "Teachers Timetable": "teachers_timetable", // Fixed from teacher_timetable
-  "Teacher Timetable": "teachers_timetable", // Fixed from teacher_timetable
+  "Teachers Timetable": "teacher_timetable", // DB key is teacher_timetable (singular)
+  "Teacher Timetable": "teacher_timetable", // DB key is teacher_timetable (singular)
   "Subject Group": "subject_groups", // Match DB slug
   "Subject Groups": "subject_groups", // Match DB slug
   "General Settings": "general_setting",

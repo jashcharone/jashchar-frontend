@@ -111,6 +111,7 @@ const BalanceFeesStatementReport = lazy(() => import('@/pages/super-admin/report
 const BalanceFeesWithRemarkReport = lazy(() => import('@/pages/super-admin/reports/finance/BalanceFeesWithRemarkReport'));
 const OnlineFeesCollectionReport = lazy(() => import('@/pages/super-admin/reports/finance/OnlineFeesCollectionReport'));
 const PayrollReport = lazy(() => import('@/pages/super-admin/reports/finance/PayrollReport'));
+const StudentInformationReport = lazy(() => import('@/pages/super-admin/reports/student-information/StudentInformationReport'));
 
 // ? Fees Collection
 const CollectFees = lazy(() => import('@/pages/super-admin/fees-collection/CollectFees'));
@@ -1054,6 +1055,7 @@ function App() {
             <Route path={ROUTES.SUPER_ADMIN.REPORT_BALANCE_FEES_REMARK} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'accountant']} requiredModule="fees_collection"><BalanceFeesWithRemarkReport /></ProtectedRoute>} />
             <Route path={ROUTES.SUPER_ADMIN.REPORT_ONLINE_FEES} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'accountant']} requiredModule="fees_collection"><OnlineFeesCollectionReport /></ProtectedRoute>} />
             <Route path={ROUTES.SUPER_ADMIN.REPORT_PAYROLL} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'accountant']} requiredModule="human_resource"><PayrollReport /></ProtectedRoute>} />
+            <Route path={ROUTES.SUPER_ADMIN.REPORT_STUDENT_INFO} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']}><StudentInformationReport /></ProtectedRoute>} />
 
             {/* ? Fees Collection */}
             <Route

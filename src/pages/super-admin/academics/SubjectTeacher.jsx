@@ -50,6 +50,7 @@ const SubjectTeacher = () => {
 
   const [loading, setLoading] = useState(false);
   const [isFetching, setIsFetching] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(null);
 
   // BRANCH FIX: Always use selectedBranch.id from BranchContext
   const branchId = selectedBranch?.id;
@@ -81,13 +82,26 @@ const SubjectTeacher = () => {
       });
       setSubjects(subjectsRes.data?.subjects || subjectsRes.data || []);
 
-      // Fetch teachers (staff with role teacher)
+      // Fetch teachers (all staff - user can select who teaches)
       const teachersRes = await api.get('/hr/staff', {
         params: { branchId },
         headers: { 'x-school-id': branchId, 'x-branch-id': branchId }
       });
       const allStaff = teachersRes.data?.staff || teachersRes.data || [];
-      setTeachers(allStaff.filter(s => s.designation?.toLowerCase().includes('teacher') || s.role === 'teacher'));
+      setTeachers(allStaff);
+
+      // Fetch existing subject-teacher assignments
+      try {
+        const assignmentsRes = await api.get('/academics/subject-teachers', {
+          params: { branchId },
+          headers: { 'x-school-id': branchId, 'x-branch-id': branchId }
+        });
+        setAssignments(assignmentsRes.data || []);
+      } catch (err) {
+        // Table may not exist yet - gracefully handle
+        console.warn('Subject teachers fetch failed (table may not exist yet):', err.message);
+        setAssignments([]);
+      }
 
     } catch (error) {
       toast({ 
@@ -101,7 +115,7 @@ const SubjectTeacher = () => {
 
   useEffect(() => {
     fetchInitialData();
-  }, [branchId, selectedBranch]);
+  }, [branchId]);
 
   useEffect(() => {
     if (selectedClass) {
@@ -134,10 +148,21 @@ const SubjectTeacher = () => {
     
     setLoading(true);
     try {
-      // This would call the backend API to save subject-teacher assignments
+      await api.post('/academics/subject-teachers', {
+        branch_id: branchId,
+        class_id: selectedClass,
+        section_id: selectedSection,
+        subject_id: selectedSubject,
+        teacher_ids: selectedTeachers
+      }, {
+        params: { branchId },
+        headers: { 'x-school-id': branchId, 'x-branch-id': branchId }
+      });
       toast({ title: 'Success', description: 'Subject teachers assigned successfully.' });
       setSelectedTeachers([]);
       setSelectedSubject('');
+      // Refresh assignments list
+      await fetchInitialData();
     } catch (error) {
       toast({ 
         variant: 'destructive', 
@@ -146,6 +171,25 @@ const SubjectTeacher = () => {
       });
     }
     setLoading(false);
+  };
+
+  const handleDeleteAssignment = async (id) => {
+    setIsDeleting(id);
+    try {
+      await api.delete(`/academics/subject-teachers/${id}`, {
+        params: { branchId },
+        headers: { 'x-school-id': branchId, 'x-branch-id': branchId }
+      });
+      toast({ title: 'Success', description: 'Assignment removed.' });
+      await fetchInitialData();
+    } catch (error) {
+      toast({ 
+        variant: 'destructive', 
+        title: 'Failed to delete assignment', 
+        description: error.response?.data?.message || error.message 
+      });
+    }
+    setIsDeleting(null);
   };
 
   if (isFetching) {
@@ -285,11 +329,62 @@ const SubjectTeacher = () => {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="text-center py-8 text-muted-foreground">
-                <BookOpen className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                <p>Subject teacher assignment feature coming soon.</p>
-                <p className="text-sm mt-2">This will show all current subject-teacher mappings.</p>
-              </div>
+              {assignments.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  <BookOpen className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                  <p>No subject-teacher assignments yet.</p>
+                  <p className="text-sm mt-2">Use the form to assign teachers to subjects.</p>
+                </div>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Class</TableHead>
+                      <TableHead>Section</TableHead>
+                      <TableHead>Subject</TableHead>
+                      <TableHead>Teacher</TableHead>
+                      <TableHead className="text-right">Action</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {assignments.map((a) => (
+                      <TableRow key={a.id}>
+                        <TableCell className="font-medium">{a.classes?.name || '-'}</TableCell>
+                        <TableCell>{a.sections?.name || '-'}</TableCell>
+                        <TableCell>{a.subjects?.name || '-'}</TableCell>
+                        <TableCell>{a.teacher?.full_name || '-'}</TableCell>
+                        <TableCell className="text-right">
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button variant="ghost" size="icon" disabled={isDeleting === a.id}>
+                                {isDeleting === a.id ? (
+                                  <Loader2 className="h-4 w-4 animate-spin" />
+                                ) : (
+                                  <Trash2 className="h-4 w-4 text-red-600" />
+                                )}
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Remove Assignment?</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  This will remove the teacher from this subject assignment.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction onClick={() => handleDeleteAssignment(a.id)} className="bg-destructive">
+                                  Delete
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
             </CardContent>
           </Card>
         </div>

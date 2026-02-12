@@ -50,7 +50,7 @@ const ClassTeacher = () => {
 
   useEffect(() => {
     fetchClassTeachers();
-  }, [branchId, selectedBranch]);
+  }, [branchId]);
 
   return (
     <DashboardLayout>
@@ -100,7 +100,7 @@ const ClassTeacher = () => {
                         {assignment.section?.name || assignment.sections?.name || '-'}
                       </TableCell>
                       <TableCell>
-                        {assignment.teacher?.full_name || assignment.staff?.full_name || '-'}
+                        {assignment.teachers?.full_name || assignment.teacher?.full_name || '-'}
                       </TableCell>
                       <TableCell>
                         <Badge variant="secondary">Active</Badge>

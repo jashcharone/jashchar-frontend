@@ -99,8 +99,8 @@ const DashboardLayout = ({ children }) => {
         />
         <div
           className={cn(
-            "flex-1 flex flex-col transition-all duration-300 ease-out",
-            isExpanded && !isMobile ? "md:ml-[290px]" : "md:ml-[100px]"
+            "flex-1 flex flex-col transition-all duration-300 ease-out min-w-0",
+            isExpanded && !isMobile ? "md:ml-[270px]" : "md:ml-[80px]"
           )}
         >
           <Header

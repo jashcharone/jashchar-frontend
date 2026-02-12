@@ -1,29 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import DashboardLayout from '@/components/DashboardLayout';
-import api from '@/lib/api';
-import { useAuth } from '@/contexts/SupabaseAuthContext';
-import { useBranch } from '@/contexts/BranchContext';
-import { useToast } from '@/components/ui/use-toast';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Badge } from '@/components/ui/badge';
-import { Calendar, Clock, Loader2 } from 'lucide-react';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { Calendar, Clock } from 'lucide-react';
 
 const Timetable = () => {
-  const { toast } = useToast();
-  const { user, school } = useAuth();
-  const { selectedBranch } = useBranch();
-  const [loading, setLoading] = useState(false);
-
-  const branchId = school?.id || user?.user_metadata?.branch_id || user?.profile?.branch_id;
+  const navigate = useNavigate();
 
   return (
     <DashboardLayout>
@@ -54,7 +37,7 @@ const Timetable = () => {
               <CardContent className="space-y-4">
                 <div className="grid gap-4 md:grid-cols-2">
                   <Card className="border-2 hover:border-primary/50 transition-colors cursor-pointer"
-                    onClick={() => window.location.href = '/super-admin/academics/class-timetable'}>
+                    onClick={() => navigate('/super-admin/academics/class-timetable')}>
                     <CardHeader className="pb-2">
                       <CardTitle className="text-lg">Class Timetable</CardTitle>
                     </CardHeader>
@@ -67,7 +50,7 @@ const Timetable = () => {
                   </Card>
 
                   <Card className="border-2 hover:border-primary/50 transition-colors cursor-pointer"
-                    onClick={() => window.location.href = '/super-admin/academics/teacher-timetable'}>
+                    onClick={() => navigate('/super-admin/academics/teacher-timetable')}>
                     <CardHeader className="pb-2">
                       <CardTitle className="text-lg">Teacher Timetable</CardTitle>
                     </CardHeader>

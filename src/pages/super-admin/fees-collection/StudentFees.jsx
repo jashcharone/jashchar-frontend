@@ -380,15 +380,32 @@ const StudentFees = () => {
     }, [selectedFees, fees, studentDiscounts]);
 
     const feeSummary = useMemo(() => {
-        const totalFees = fees.reduce((sum, f) => sum + f.amount, 0);
-        const totalPaid = payments.filter(p => !p.reverted_at).reduce((sum, p) => sum + Number(p.amount), 0);
-        const totalDiscount = payments.filter(p => !p.reverted_at).reduce((sum, p) => sum + Number(p.discount_amount), 0);
+        // Academic fees
+        const academicTotal = fees.reduce((sum, f) => sum + f.amount, 0);
+        const academicPaid = payments.filter(p => !p.reverted_at).reduce((sum, p) => sum + Number(p.amount), 0);
+        const academicDiscount = payments.filter(p => !p.reverted_at).reduce((sum, p) => sum + Number(p.discount_amount), 0);
+
+        // Transport fees (only if assigned)
+        const transportTotal = transportDetails ? Number(transportDetails.transport_fee || 0) : 0;
+        const transportPaid = transportDetails ? (transportDetails.totalPaid || 0) : 0;
+        const transportDiscount = transportDetails ? (transportDetails.totalDiscount || 0) : 0;
+
+        // Hostel fees (only if assigned)
+        const hostelTotal = hostelDetails ? Number(hostelDetails.hostel_fee || 0) : 0;
+        const hostelPaid = hostelDetails ? (hostelDetails.totalPaid || 0) : 0;
+        const hostelDiscount = hostelDetails ? (hostelDetails.totalDiscount || 0) : 0;
+
+        // Combined totals
+        const totalFees = academicTotal + transportTotal + hostelTotal;
+        const totalPaid = academicPaid + transportPaid + hostelPaid;
+        const totalDiscount = academicDiscount + transportDiscount + hostelDiscount;
         const balance = totalFees - totalPaid - totalDiscount;
+
         const overdueCount = fees.filter(f => f.isOverdue && f.balance > 0).length;
         const unpaidCount = fees.filter(f => f.balance > 0).length;
 
         return { totalFees, totalPaid, totalDiscount, balance, overdueCount, unpaidCount };
-    }, [fees, payments]);
+    }, [fees, payments, transportDetails, hostelDetails]);
 
     const collectFees = async () => {
         if (!selectedFees.length) {
@@ -875,7 +892,6 @@ const StudentFees = () => {
                                     onChange={(e) => setPaymentDetails(p => ({...p, note: e.target.value }))}
                                     rows={2}
                                     placeholder={paymentDetails.payment_mode !== 'Cash' ? 'Enter reference/cheque number and remarks...' : 'Payment remarks...'}
-                                />
                                 />
                             </div>
 

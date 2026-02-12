@@ -7,18 +7,12 @@ import { useToast } from '@/components/ui/use-toast';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent } from "@/components/ui/card";
-import { Plus, Edit, Trash2, Save, Loader2, Route, IndianRupee } from 'lucide-react';
-import {
-  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose
-} from '@/components/ui/dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Edit, Trash2, Save, Loader2, Route, IndianRupee, X, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react';
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger
 } from '@/components/ui/alert-dialog';
-import {
-  Table, TableBody, TableCell, TableHead, TableHeader, TableRow
-} from "@/components/ui/table";
 
 const TransportRoutes = () => {
   const { user, currentSessionId, organizationId } = useAuth();
@@ -27,12 +21,10 @@ const TransportRoutes = () => {
   const [routes, setRoutes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingRoute, setEditingRoute] = useState(null);
-  const [formData, setFormData] = useState({
-    route_title: '',
-    fare: ''
-  });
+  const [formData, setFormData] = useState({ route_title: '', fare: '' });
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
 
   const branchId = selectedBranch?.id || user?.profile?.branch_id;
 
@@ -58,19 +50,13 @@ const TransportRoutes = () => {
     fetchRoutes();
   }, [fetchRoutes]);
 
-  const handleOpenDialog = (route = null) => {
+  const handleEdit = (route) => {
     setEditingRoute(route);
-    setFormData(route ? {
-      route_title: route.route_title || '',
-      fare: route.fare || ''
-    } : {
-      route_title: '', fare: ''
-    });
-    setIsDialogOpen(true);
+    setFormData({ route_title: route.route_title || '', fare: route.fare || '' });
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const handleCloseDialog = () => {
-    setIsDialogOpen(false);
+  const handleCancel = () => {
     setEditingRoute(null);
     setFormData({ route_title: '', fare: '' });
   };
@@ -103,7 +89,7 @@ const TransportRoutes = () => {
     } else {
       toast({ title: 'Success!', description: `Route successfully ${editingRoute ? 'updated' : 'created'}.` });
       await fetchRoutes();
-      handleCloseDialog();
+      handleCancel();
     }
     setIsSubmitting(false);
   };
@@ -122,118 +108,19 @@ const TransportRoutes = () => {
     return amount ? `₹${parseFloat(amount).toLocaleString('en-IN')}` : '-';
   };
 
+  // Pagination
+  const totalPages = Math.ceil(routes.length / itemsPerPage);
+  const paginatedRoutes = routes.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+
   return (
     <DashboardLayout>
-      <div className="p-6 space-y-6">
-        <div className="flex justify-between items-center">
-          <div>
-            <h1 className="text-3xl font-bold flex items-center gap-2">
-              <Route className="h-8 w-8 text-primary" /> Transport Routes
-            </h1>
-            <p className="text-muted-foreground mt-1">Manage bus routes and fares</p>
-          </div>
-          <Button onClick={() => handleOpenDialog()}>
-            <Plus className="mr-2 h-4 w-4" /> Add Route
-          </Button>
-        </div>
-
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <Card className="bg-gradient-to-r from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 border-blue-200 dark:border-blue-800">
-            <CardContent className="flex items-center p-4">
-              <Route className="h-10 w-10 text-blue-600 mr-4" />
-              <div>
-                <p className="text-2xl font-bold text-blue-700">{routes.length}</p>
-                <p className="text-sm text-blue-600">Total Routes</p>
-              </div>
-            </CardContent>
-          </Card>
-          <Card className="bg-gradient-to-r from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20 border-green-200 dark:border-green-800">
-            <CardContent className="flex items-center p-4">
-              <IndianRupee className="h-10 w-10 text-green-600 mr-4" />
-              <div>
-                <p className="text-2xl font-bold text-green-700">
-                  {(() => {
-                    const faresWithValues = routes.filter(r => r.fare).map(r => r.fare);
-                    return faresWithValues.length > 0 ? formatCurrency(Math.max(...faresWithValues)) : '₹0';
-                  })()}
-                </p>
-                <p className="text-sm text-green-600">Highest Fee</p>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        <Card>
-          <CardContent className="p-0">
-            {loading ? (
-              <div className="flex justify-center items-center py-16">
-                <Loader2 className="h-8 w-8 animate-spin text-primary" />
-              </div>
-            ) : routes.length === 0 ? (
-              <div className="text-center py-16 text-muted-foreground">
-                <Route className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                <p>No routes found. Add one to get started.</p>
-              </div>
-            ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow className="bg-muted/50">
-                    <TableHead className="w-[50px]">#</TableHead>
-                    <TableHead>Route Title</TableHead>
-                    <TableHead className="text-right">Fee (₹)</TableHead>
-                    <TableHead className="text-center">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {routes.map((route, index) => (
-                    <TableRow key={route.id}>
-                      <TableCell>{index + 1}</TableCell>
-                      <TableCell className="font-medium">{route.route_title}</TableCell>
-                      <TableCell className="text-right font-semibold text-green-600">
-                        {formatCurrency(route.fare)}
-                      </TableCell>
-                      <TableCell className="text-center space-x-2">
-                        <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => handleOpenDialog(route)}>
-                          <Edit className="h-4 w-4 text-yellow-600" />
-                        </Button>
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <Button variant="destructive" size="icon" className="h-8 w-8">
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>Delete Route?</AlertDialogTitle>
-                              <AlertDialogDescription>
-                                This will permanently delete route "{route.route_title}". This action cannot be undone.
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>Cancel</AlertDialogCancel>
-                              <AlertDialogAction onClick={() => handleDelete(route.id)} className="bg-destructive hover:bg-destructive/90">
-                                Delete
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            )}
-          </CardContent>
-        </Card>
-
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogContent className="sm:max-w-md">
-            <DialogHeader>
-              <DialogTitle>{editingRoute ? 'Edit Route' : 'Add New Route'}</DialogTitle>
-            </DialogHeader>
-            <form onSubmit={handleSubmit}>
-              <div className="grid gap-4 py-4">
+      <div className="p-6">
+        <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+          {/* Left - Add/Edit Form */}
+          <div className="xl:col-span-1">
+            <div className="bg-card text-card-foreground rounded-xl shadow-lg p-6">
+              <h2 className="text-xl font-bold mb-4">{editingRoute ? 'Edit Route' : 'Add Route'}</h2>
+              <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="route_title">Route Title *</Label>
                   <Input id="route_title" value={formData.route_title} onChange={(e) => setFormData({...formData, route_title: e.target.value})} placeholder="e.g. Route A - City Center" required />
@@ -242,19 +129,104 @@ const TransportRoutes = () => {
                   <Label htmlFor="fare">Fee (₹)</Label>
                   <Input id="fare" type="number" min="0" step="0.01" value={formData.fare} onChange={(e) => setFormData({...formData, fare: e.target.value})} placeholder="e.g. 1500" />
                 </div>
-              </div>
-              <DialogFooter>
-                <DialogClose asChild>
-                  <Button type="button" variant="secondary" onClick={handleCloseDialog}>Cancel</Button>
-                </DialogClose>
-                <Button type="submit" disabled={isSubmitting}>
+                <Button type="submit" className="w-full" disabled={isSubmitting}>
                   {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
                   Save
                 </Button>
-              </DialogFooter>
-            </form>
-          </DialogContent>
-        </Dialog>
+                {editingRoute && (
+                  <Button type="button" variant="outline" className="w-full" onClick={handleCancel}>
+                    <X className="mr-2 h-4 w-4" /> Cancel
+                  </Button>
+                )}
+              </form>
+            </div>
+          </div>
+
+          {/* Right - List */}
+          <div className="xl:col-span-2">
+            <div className="bg-card text-card-foreground rounded-xl shadow-lg">
+              <div className="p-6">
+                <h2 className="text-xl font-bold mb-4">Transport Routes List</h2>
+                {loading ? (
+                  <div className="flex justify-center items-center py-10">
+                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                  </div>
+                ) : routes.length === 0 ? (
+                  <div className="text-center py-10 text-muted-foreground">
+                    <Route className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                    <p>No routes found. Add one to get started.</p>
+                  </div>
+                ) : (
+                  <>
+                    <div className="border rounded-lg overflow-hidden max-h-[500px] overflow-y-auto">
+                      <table className="w-full text-sm text-left">
+                        <thead className="text-xs text-foreground uppercase bg-muted/50 sticky top-0 bg-background z-10">
+                          <tr>
+                            <th className="px-4 py-3 w-12">#</th>
+                            <th className="px-4 py-3">Route Title</th>
+                            <th className="px-4 py-3 text-right">Fee (₹)</th>
+                            <th className="px-4 py-3 text-center">Action</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {paginatedRoutes.map((route, index) => (
+                            <tr key={route.id} className="border-b border-border hover:bg-muted/50">
+                              <td className="px-4 py-3">{(currentPage - 1) * itemsPerPage + index + 1}</td>
+                              <td className="px-4 py-3 font-medium">{route.route_title}</td>
+                              <td className="px-4 py-3 text-right font-semibold text-green-600">{formatCurrency(route.fare)}</td>
+                              <td className="px-4 py-3 text-center space-x-2">
+                                <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => handleEdit(route)}>
+                                  <Edit className="h-4 w-4 text-yellow-600" />
+                                </Button>
+                                <AlertDialog>
+                                  <AlertDialogTrigger asChild>
+                                    <Button variant="destructive" size="icon" className="h-8 w-8">
+                                      <Trash2 className="h-4 w-4" />
+                                    </Button>
+                                  </AlertDialogTrigger>
+                                  <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                      <AlertDialogTitle>Delete Route?</AlertDialogTitle>
+                                      <AlertDialogDescription>This will permanently delete route "{route.route_title}". This action cannot be undone.</AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                      <AlertDialogAction onClick={() => handleDelete(route.id)} className="bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction>
+                                    </AlertDialogFooter>
+                                  </AlertDialogContent>
+                                </AlertDialog>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+
+                    {/* Pagination */}
+                    <div className="flex items-center justify-between mt-4 text-sm">
+                      <span className="text-muted-foreground">Showing {(currentPage - 1) * itemsPerPage + 1} to {Math.min(currentPage * itemsPerPage, routes.length)} of {routes.length} entries</span>
+                      <div className="flex items-center gap-2">
+                        <Select value={String(itemsPerPage)} onValueChange={(v) => { setItemsPerPage(Number(v)); setCurrentPage(1); }}>
+                          <SelectTrigger className="w-[70px] h-8"><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="10">10</SelectItem>
+                            <SelectItem value="25">25</SelectItem>
+                            <SelectItem value="50">50</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <Button variant="outline" size="icon" className="h-8 w-8" disabled={currentPage === 1} onClick={() => setCurrentPage(1)}><ChevronsLeft className="h-4 w-4" /></Button>
+                        <Button variant="outline" size="icon" className="h-8 w-8" disabled={currentPage === 1} onClick={() => setCurrentPage(p => p - 1)}><ChevronLeft className="h-4 w-4" /></Button>
+                        <span className="px-2">Page {currentPage} of {totalPages}</span>
+                        <Button variant="outline" size="icon" className="h-8 w-8" disabled={currentPage === totalPages} onClick={() => setCurrentPage(p => p + 1)}><ChevronRight className="h-4 w-4" /></Button>
+                        <Button variant="outline" size="icon" className="h-8 w-8" disabled={currentPage === totalPages} onClick={() => setCurrentPage(totalPages)}><ChevronsRight className="h-4 w-4" /></Button>
+                      </div>
+                    </div>
+                  </>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </DashboardLayout>
   );

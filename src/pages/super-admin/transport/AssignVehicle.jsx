@@ -7,17 +7,11 @@ import { useToast } from '@/components/ui/use-toast';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Plus, Edit, Trash2, Save, Loader2, Bus, Route } from 'lucide-react';
-import {
-  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose
-} from '@/components/ui/dialog';
+import { Edit, Trash2, Save, Loader2, Bus, Route, X, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react';
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger
 } from '@/components/ui/alert-dialog';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Badge } from '@/components/ui/badge';
 
 const AssignVehicle = () => {
     const { user, currentSessionId, organizationId } = useAuth();
@@ -28,8 +22,9 @@ const AssignVehicle = () => {
   const [vehicles, setVehicles] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingAssignment, setEditingAssignment] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
   const [formData, setFormData] = useState({
     route_id: '',
     vehicle_id: ''
@@ -67,21 +62,16 @@ const AssignVehicle = () => {
     fetchData();
   }, [fetchData]);
 
-  const handleOpenDialog = (assignment = null) => {
-    if (routes.length === 0 || vehicles.length === 0) {
-      toast({ variant: 'destructive', title: 'Prerequisites Missing', description: 'Please add routes and vehicles first.' });
-      return;
-    }
+  const handleEdit = (assignment) => {
     setEditingAssignment(assignment);
-    setFormData(assignment ? {
+    setFormData({
       route_id: assignment.route_id,
       vehicle_id: assignment.vehicle_id
-    } : { route_id: '', vehicle_id: '' });
-    setIsDialogOpen(true);
+    });
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const handleCloseDialog = () => {
-    setIsDialogOpen(false);
+  const handleCancel = () => {
     setEditingAssignment(null);
     setFormData({ route_id: '', vehicle_id: '' });
   };
@@ -134,7 +124,7 @@ const AssignVehicle = () => {
     } else {
       toast({ title: 'Success!', description: `Vehicle successfully ${editingAssignment ? 'updated' : 'assigned'} to route.` });
       await fetchData();
-      handleCloseDialog();
+      handleCancel();
     }
     setIsSubmitting(false);
   };
@@ -170,125 +160,19 @@ const AssignVehicle = () => {
     ? vehicles 
     : vehicles.filter(v => !assignedVehicleIds.includes(v.id));
 
+  // Pagination
+  const totalPages = Math.ceil(assignments.length / itemsPerPage);
+  const paginatedAssignments = assignments.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+
   return (
     <DashboardLayout>
-      <div className="p-6 space-y-6">
-        <div className="flex justify-between items-center">
-          <div>
-            <h1 className="text-3xl font-bold flex items-center gap-2">
-              <Bus className="h-8 w-8 text-primary" /> Assign Vehicle to Route
-            </h1>
-            <p className="text-muted-foreground mt-1">Map vehicles to transport routes</p>
-          </div>
-          <Button onClick={() => handleOpenDialog()}>
-            <Plus className="mr-2 h-4 w-4" /> Assign Vehicle
-          </Button>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Card className="bg-blue-50 dark:bg-blue-900/20 border-blue-200">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-blue-700 dark:text-blue-300">Total Routes</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-2xl font-bold text-blue-900 dark:text-blue-100">{routes.length}</p>
-            </CardContent>
-          </Card>
-          <Card className="bg-green-50 dark:bg-green-900/20 border-green-200">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-green-700 dark:text-green-300">Active Vehicles</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-2xl font-bold text-green-900 dark:text-green-100">{vehicles.length}</p>
-            </CardContent>
-          </Card>
-          <Card className="bg-purple-50 dark:bg-purple-900/20 border-purple-200">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-purple-700 dark:text-purple-300">Assigned Routes</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-2xl font-bold text-purple-900 dark:text-purple-100">{assignments.length}</p>
-            </CardContent>
-          </Card>
-        </div>
-
-        <Card>
-          <CardContent className="p-0">
-            {loading ? (
-              <div className="flex justify-center items-center py-16">
-                <Loader2 className="h-8 w-8 animate-spin text-primary" />
-              </div>
-            ) : assignments.length === 0 ? (
-              <div className="text-center py-16 text-muted-foreground">
-                <Route className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                <p>No vehicle assignments found. Assign vehicles to routes to get started.</p>
-              </div>
-            ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow className="bg-muted/50">
-                    <TableHead className="w-[50px]">#</TableHead>
-                    <TableHead>Route</TableHead>
-                    <TableHead>Vehicle Number</TableHead>
-                    <TableHead>Driver</TableHead>
-                    <TableHead className="text-center">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {assignments.map((assignment, index) => (
-                    <TableRow key={assignment.id}>
-                      <TableCell>{index + 1}</TableCell>
-                      <TableCell className="font-medium">
-                        <div className="flex items-center gap-2">
-                          <Route className="h-4 w-4 text-primary" />
-                          {assignment.route?.route_title || 'Unknown Route'}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant="outline">{assignment.vehicle?.vehicle_number || 'N/A'}</Badge>
-                      </TableCell>
-                      <TableCell>{assignment.vehicle?.driver_name || '-'}</TableCell>
-                      <TableCell className="text-center space-x-2">
-                        <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => handleOpenDialog(assignment)}>
-                          <Edit className="h-4 w-4 text-yellow-600" />
-                        </Button>
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <Button variant="destructive" size="icon" className="h-8 w-8">
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>Remove Assignment?</AlertDialogTitle>
-                              <AlertDialogDescription>
-                                This will remove the vehicle from this route. You can reassign later.
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>Cancel</AlertDialogCancel>
-                              <AlertDialogAction onClick={() => handleDelete(assignment.id)} className="bg-destructive hover:bg-destructive/90">
-                                Remove
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            )}
-          </CardContent>
-        </Card>
-
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogContent className="sm:max-w-md">
-            <DialogHeader>
-              <DialogTitle>{editingAssignment ? 'Edit Assignment' : 'Assign Vehicle to Route'}</DialogTitle>
-            </DialogHeader>
-            <form onSubmit={handleSubmit}>
-              <div className="grid gap-4 py-4">
+      <div className="p-6">
+        <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+          {/* Left - Assign Form */}
+          <div className="xl:col-span-1">
+            <div className="bg-card text-card-foreground rounded-xl shadow-lg p-6">
+              <h2 className="text-xl font-bold mb-4">{editingAssignment ? 'Edit Assignment' : 'Assign Vehicle to Route'}</h2>
+              <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="space-y-2">
                   <Label>Route *</Label>
                   <Select value={formData.route_id} onValueChange={(v) => setFormData({...formData, route_id: v})}>
@@ -298,9 +182,7 @@ const AssignVehicle = () => {
                         <SelectItem key={r.id} value={r.id}>{r.route_title}</SelectItem>
                       ))}
                       {availableRoutes.length === 0 && (
-                        <div className="px-2 py-4 text-sm text-muted-foreground text-center">
-                          All routes have vehicles assigned
-                        </div>
+                        <div className="px-2 py-4 text-sm text-muted-foreground text-center">All routes have vehicles assigned</div>
                       )}
                     </SelectContent>
                   </Select>
@@ -316,26 +198,116 @@ const AssignVehicle = () => {
                         </SelectItem>
                       ))}
                       {availableVehicles.length === 0 && (
-                        <div className="px-2 py-4 text-sm text-muted-foreground text-center">
-                          All vehicles are assigned
-                        </div>
+                        <div className="px-2 py-4 text-sm text-muted-foreground text-center">All vehicles are assigned</div>
                       )}
                     </SelectContent>
                   </Select>
                 </div>
-              </div>
-              <DialogFooter>
-                <DialogClose asChild>
-                  <Button type="button" variant="secondary" onClick={handleCloseDialog}>Cancel</Button>
-                </DialogClose>
-                <Button type="submit" disabled={isSubmitting}>
+                <Button type="submit" className="w-full" disabled={isSubmitting}>
                   {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
                   Save
                 </Button>
-              </DialogFooter>
-            </form>
-          </DialogContent>
-        </Dialog>
+                {editingAssignment && (
+                  <Button type="button" variant="outline" className="w-full" onClick={handleCancel}>
+                    <X className="mr-2 h-4 w-4" /> Cancel
+                  </Button>
+                )}
+              </form>
+            </div>
+          </div>
+
+          {/* Right - List */}
+          <div className="xl:col-span-2">
+            <div className="bg-card text-card-foreground rounded-xl shadow-lg">
+              <div className="p-6">
+                <h2 className="text-xl font-bold mb-4">Vehicle Assignments List</h2>
+                {loading ? (
+                  <div className="flex justify-center items-center py-10">
+                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                  </div>
+                ) : assignments.length === 0 ? (
+                  <div className="text-center py-10 text-muted-foreground">
+                    <Route className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                    <p>No assignments found. Assign vehicles to routes to get started.</p>
+                  </div>
+                ) : (
+                  <>
+                    <div className="border rounded-lg overflow-hidden max-h-[500px] overflow-y-auto">
+                      <table className="w-full text-sm text-left">
+                        <thead className="text-xs text-foreground uppercase bg-muted/50 sticky top-0 bg-background z-10">
+                          <tr>
+                            <th className="px-4 py-3 w-12">#</th>
+                            <th className="px-4 py-3">Route</th>
+                            <th className="px-4 py-3">Vehicle Number</th>
+                            <th className="px-4 py-3">Driver</th>
+                            <th className="px-4 py-3 text-center">Action</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {paginatedAssignments.map((assignment, index) => (
+                            <tr key={assignment.id} className="border-b border-border hover:bg-muted/50">
+                              <td className="px-4 py-3">{(currentPage - 1) * itemsPerPage + index + 1}</td>
+                              <td className="px-4 py-3 font-medium">
+                                <div className="flex items-center gap-2">
+                                  <Route className="h-4 w-4 text-primary" />
+                                  {assignment.route?.route_title || 'Unknown Route'}
+                                </div>
+                              </td>
+                              <td className="px-4 py-3">{assignment.vehicle?.vehicle_number || 'N/A'}</td>
+                              <td className="px-4 py-3">{assignment.vehicle?.driver_name || '-'}</td>
+                              <td className="px-4 py-3 text-center space-x-2">
+                                <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => handleEdit(assignment)}>
+                                  <Edit className="h-4 w-4 text-yellow-600" />
+                                </Button>
+                                <AlertDialog>
+                                  <AlertDialogTrigger asChild>
+                                    <Button variant="destructive" size="icon" className="h-8 w-8">
+                                      <Trash2 className="h-4 w-4" />
+                                    </Button>
+                                  </AlertDialogTrigger>
+                                  <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                      <AlertDialogTitle>Remove Assignment?</AlertDialogTitle>
+                                      <AlertDialogDescription>This will remove the vehicle from this route. You can reassign later.</AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                      <AlertDialogAction onClick={() => handleDelete(assignment.id)} className="bg-destructive hover:bg-destructive/90">Remove</AlertDialogAction>
+                                    </AlertDialogFooter>
+                                  </AlertDialogContent>
+                                </AlertDialog>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+
+                    {/* Pagination */}
+                    <div className="flex items-center justify-between mt-4 text-sm">
+                      <span className="text-muted-foreground">Showing {(currentPage - 1) * itemsPerPage + 1} to {Math.min(currentPage * itemsPerPage, assignments.length)} of {assignments.length} entries</span>
+                      <div className="flex items-center gap-2">
+                        <Select value={String(itemsPerPage)} onValueChange={(v) => { setItemsPerPage(Number(v)); setCurrentPage(1); }}>
+                          <SelectTrigger className="w-[70px] h-8"><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="10">10</SelectItem>
+                            <SelectItem value="25">25</SelectItem>
+                            <SelectItem value="50">50</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <Button variant="outline" size="icon" className="h-8 w-8" disabled={currentPage === 1} onClick={() => setCurrentPage(1)}><ChevronsLeft className="h-4 w-4" /></Button>
+                        <Button variant="outline" size="icon" className="h-8 w-8" disabled={currentPage === 1} onClick={() => setCurrentPage(p => p - 1)}><ChevronLeft className="h-4 w-4" /></Button>
+                        <span className="px-2">Page {currentPage} of {totalPages}</span>
+                        <Button variant="outline" size="icon" className="h-8 w-8" disabled={currentPage === totalPages} onClick={() => setCurrentPage(p => p + 1)}><ChevronRight className="h-4 w-4" /></Button>
+                        <Button variant="outline" size="icon" className="h-8 w-8" disabled={currentPage === totalPages} onClick={() => setCurrentPage(totalPages)}><ChevronsRight className="h-4 w-4" /></Button>
+                      </div>
+                    </div>
+                  </>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </DashboardLayout>
   );

@@ -350,7 +350,7 @@ const AddSiblingModal = ({ onSiblingAdd }) => {
   useEffect(() => {
     if (selectedSection && selectedBranch?.id) {
       const fetchStudents = async () => {
-        const { data } = await supabase.from('student_profiles').select('id, full_name, sibling_group_id, carry_forward_fees').eq('class_id', selectedClass).eq('section_id', selectedSection).eq('branch_id', selectedBranch.id);
+        const { data } = await supabase.from('student_profiles').select('id, full_name, sibling_group_id, carry_forward_fees, father_name, father_dob, father_aadhar_no, father_phone, father_occupation, father_income, father_education, father_email, mother_name, mother_dob, mother_aadhar_no, mother_phone, mother_occupation, mother_income, mother_education, guardian_name, guardian_relation, guardian_phone, guardian_occupation').eq('class_id', selectedClass).eq('section_id', selectedSection).eq('branch_id', selectedBranch.id);
         setStudents(data || []);
       };
       fetchStudents();
@@ -2048,9 +2048,52 @@ const StudentAdmission = () => {
       
       const carryForward = newSiblings.reduce((sum, s) => sum + (Number(s.carry_forward_fees) || 0), 0);
 
-      toast({ title: 'Sibling Added', description: `${selectedSibling.full_name} has been linked.` });
+      // Auto-fill parent/guardian details from sibling (only if current fields are empty)
+      const parentFields = {
+        father_name: selectedSibling.father_name || '',
+        father_dob: selectedSibling.father_dob || null,
+        father_aadhar_no: selectedSibling.father_aadhar_no || '',
+        father_phone: selectedSibling.father_phone || '',
+        father_occupation: selectedSibling.father_occupation || '',
+        father_income: selectedSibling.father_income || '',
+        father_education: selectedSibling.father_education || '',
+        father_email: selectedSibling.father_email || '',
+        mother_name: selectedSibling.mother_name || '',
+        mother_dob: selectedSibling.mother_dob || null,
+        mother_aadhar_no: selectedSibling.mother_aadhar_no || '',
+        mother_phone: selectedSibling.mother_phone || '',
+        mother_occupation: selectedSibling.mother_occupation || '',
+        mother_income: selectedSibling.mother_income || '',
+        mother_education: selectedSibling.mother_education || '',
+        guardian_name: selectedSibling.guardian_name || '',
+        guardian_relation: selectedSibling.guardian_relation || '',
+        guardian_phone: selectedSibling.guardian_phone || '',
+        guardian_occupation: selectedSibling.guardian_occupation || '',
+      };
+
+      // Only auto-fill fields that are currently empty in the form
+      const autoFilledFields = {};
+      let fieldsFilledCount = 0;
+      for (const [key, value] of Object.entries(parentFields)) {
+        if (value && !prev[key]) {
+          autoFilledFields[key] = value;
+          fieldsFilledCount++;
+        }
+      }
+
+      // Auto-set parent_username from father_phone (same pattern as father_phone onChange handler)
+      const siblingFatherPhone = selectedSibling.father_phone || '';
+      if (siblingFatherPhone && !prev.parent_username) {
+        autoFilledFields.parent_username = siblingFatherPhone;
+      }
+
+      if (fieldsFilledCount > 0) {
+        toast({ title: 'Sibling Added & Parent Details Auto-filled', description: `${selectedSibling.full_name} linked. Parent/Guardian details copied from sibling.` });
+      } else {
+        toast({ title: 'Sibling Added', description: `${selectedSibling.full_name} has been linked.` });
+      }
       
-      return { ...prev, siblings: newSiblings, sibling_group_id: newSiblingGroupId, carry_forward_fees: carryForward > 0 ? String(carryForward) : '' };
+      return { ...prev, ...autoFilledFields, siblings: newSiblings, sibling_group_id: newSiblingGroupId, carry_forward_fees: carryForward > 0 ? String(carryForward) : '' };
     });
   };
   

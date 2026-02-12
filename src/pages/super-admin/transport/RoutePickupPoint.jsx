@@ -9,7 +9,6 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Plus, Edit, Trash2, Save, X, Loader2 } from 'lucide-react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { v4 as uuidv4 } from 'uuid';
 
@@ -23,7 +22,6 @@ const RoutePickupPoint = () => {
     const [loading, setLoading] = useState(true);
     const [isSubmitting, setIsSubmitting] = useState(false);
     
-    const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingRouteId, setEditingRouteId] = useState(null);
     const [selectedRoute, setSelectedRoute] = useState('');
     const [pickupPointFields, setPickupPointFields] = useState([{ id: uuidv4(), pickup_point_id: '', distance: '', pickup_time: '', monthly_fees: '' }]);
@@ -82,35 +80,23 @@ const RoutePickupPoint = () => {
         setPickupPointFields(pickupPointFields.map(item => item.id === id ? { ...item, [field]: value } : item));
     };
 
-    const resetModal = () => {
-        setIsModalOpen(false);
+    const handleCancel = () => {
         setEditingRouteId(null);
         setSelectedRoute('');
         setPickupPointFields([{ id: uuidv4(), pickup_point_id: '', distance: '', pickup_time: '', monthly_fees: '' }]);
     };
 
-    const handleOpenModal = (route = null) => {
-        if (allRoutes.length === 0 || allPickupPoints.length === 0) {
-            toast({ variant: 'destructive', title: 'Prerequisites Missing', description: 'Please add transport routes and pickup points before assigning them.'});
-            return;
-        }
-
-        if (route) {
-            setEditingRouteId(route.id);
-            setSelectedRoute(route.id);
-            setPickupPointFields(route.pickup_points.map(p => ({
-                id: p.id,
-                pickup_point_id: p.pickup_point_id,
-                distance: p.distance || '',
-                pickup_time: p.pickup_time || '',
-                monthly_fees: p.monthly_fees || ''
-            })));
-        } else {
-            setEditingRouteId(null);
-            setSelectedRoute('');
-            setPickupPointFields([{ id: uuidv4(), pickup_point_id: '', distance: '', pickup_time: '', monthly_fees: '' }]);
-        }
-        setIsModalOpen(true);
+    const handleEdit = (route) => {
+        setEditingRouteId(route.id);
+        setSelectedRoute(route.id);
+        setPickupPointFields(route.pickup_points.map(p => ({
+            id: p.id,
+            pickup_point_id: p.pickup_point_id,
+            distance: p.distance || '',
+            pickup_time: p.pickup_time || '',
+            monthly_fees: p.monthly_fees || ''
+        })));
+        window.scrollTo({ top: 0, behavior: 'smooth' });
     };
 
     const handleSubmit = async () => {
@@ -175,7 +161,7 @@ const RoutePickupPoint = () => {
             console.log('Inserted successfully:', insertedData);
 
             toast({ title: 'Success', description: 'Route pickup points saved successfully.' });
-            resetModal();
+            handleCancel();
             fetchData();
         } catch (error) {
             toast({ variant: 'destructive', title: 'Save failed', description: error.message });
@@ -196,87 +182,130 @@ const RoutePickupPoint = () => {
 
     return (
         <DashboardLayout>
-            <div className="flex justify-between items-center mb-6">
-                <h1 className="text-3xl font-bold">Route Pickup Point</h1>
-                <Button onClick={() => handleOpenModal()}>
-                    <Plus className="mr-2 h-4 w-4" /> Add
-                </Button>
-            </div>
-
-            <div className="bg-card text-card-foreground rounded-xl shadow-lg">
-                <div className="p-6">
-                    {loading ? (
-                        <div className="flex justify-center items-center py-10"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
-                    ) : routesWithPoints.length === 0 ? (
-                        <p className="text-center py-10 text-muted-foreground">No route pickup points defined.</p>
-                    ) : (
-                        <div className="space-y-6">
-                            {routesWithPoints.map(route => (
-                                <div key={route.id} className="border rounded-lg">
-                                    <div className="bg-muted/50 p-4 flex justify-between items-center rounded-t-lg">
-                                        <h3 className="font-semibold text-lg">{route.route_title}</h3>
-                                        <div className="flex items-center space-x-2">
-                                            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleOpenModal(route)}><Edit className="h-4 w-4 text-yellow-500" /></Button>
-                                            <AlertDialog>
-                                                <AlertDialogTrigger asChild><Button variant="destructive" size="icon" className="h-8 w-8"><Trash2 className="h-4 w-4" /></Button></AlertDialogTrigger>
-                                                <AlertDialogContent>
-                                                    <AlertDialogHeader><AlertDialogTitle>Are you sure?</AlertDialogTitle><AlertDialogDescription>This will delete all pickup points for this route.</AlertDialogDescription></AlertDialogHeader>
-                                                    <AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={() => handleDeleteRouteMapping(route.id)}>Delete</AlertDialogAction></AlertDialogFooter>
-                                                </AlertDialogContent>
-                                            </AlertDialog>
-                                        </div>
-                                    </div>
-                                    <div className="overflow-x-auto">
-                                        <table className="w-full text-sm">
-                                            <thead className="text-xs text-muted-foreground uppercase"><tr className="border-b"><th className="px-6 py-3">Pickup Point</th><th className="px-6 py-3">Distance (km)</th><th className="px-6 py-3">Pickup Time</th><th className="px-6 py-3 text-right">Monthly Fees (₹)</th></tr></thead>
-                                            <tbody>
-                                                {route.pickup_points.map(p => (
-                                                    <tr key={p.id} className="border-b last:border-b-0"><td className="px-6 py-3 font-medium">{p.pickup_point.name}</td><td className="px-6 py-3">{p.distance}</td><td className="px-6 py-3">{p.pickup_time}</td><td className="px-6 py-3 text-right">{p.monthly_fees}</td></tr>
-                                                ))}
-                                            </tbody>
-                                        </table>
-                                    </div>
+            <div className="p-6">
+                <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+                    {/* Left - Add/Edit Form */}
+                    <div className="xl:col-span-1">
+                        <div className="bg-card text-card-foreground rounded-xl shadow-lg p-6">
+                            <h2 className="text-xl font-bold mb-4">{editingRouteId ? 'Edit' : 'Add'} Route Pickup Points</h2>
+                            <div className="space-y-4">
+                                <div className="space-y-2">
+                                    <Label>Route *</Label>
+                                    <Select value={selectedRoute} onValueChange={setSelectedRoute} disabled={!!editingRouteId}>
+                                        <SelectTrigger><SelectValue placeholder="Select Route" /></SelectTrigger>
+                                        <SelectContent>{allRoutes.map(r => <SelectItem key={r.id} value={r.id}>{r.route_title}</SelectItem>)}</SelectContent>
+                                    </Select>
                                 </div>
-                            ))}
+
+                                <div className="space-y-3">
+                                    <Label className="text-sm font-semibold">Pickup Points</Label>
+                                    {pickupPointFields.map((field, idx) => (
+                                        <div key={field.id} className="border rounded-lg p-3 space-y-2 bg-muted/30">
+                                            <div className="flex justify-between items-center">
+                                                <span className="text-xs font-medium text-muted-foreground">Stop #{idx + 1}</span>
+                                                {pickupPointFields.length > 1 && (
+                                                    <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => handleRemoveField(field.id)}>
+                                                        <X className="h-3 w-3 text-destructive" />
+                                                    </Button>
+                                                )}
+                                            </div>
+                                            <Select value={field.pickup_point_id} onValueChange={v => handleFieldChange(field.id, 'pickup_point_id', v)}>
+                                                <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Select Point" /></SelectTrigger>
+                                                <SelectContent>{allPickupPoints.map(p => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}</SelectContent>
+                                            </Select>
+                                            <div className="grid grid-cols-3 gap-2">
+                                                <div>
+                                                    <Label className="text-xs">Distance (km)</Label>
+                                                    <Input className="h-8 text-xs" type="text" value={field.distance} onChange={e => handleFieldChange(field.id, 'distance', e.target.value)} />
+                                                </div>
+                                                <div>
+                                                    <Label className="text-xs">Time</Label>
+                                                    <Input className="h-8 text-xs" type="time" value={field.pickup_time} onChange={e => handleFieldChange(field.id, 'pickup_time', e.target.value)} />
+                                                </div>
+                                                <div>
+                                                    <Label className="text-xs">Fees (₹)</Label>
+                                                    <Input className="h-8 text-xs" type="number" min="0" value={field.monthly_fees} onChange={e => handleFieldChange(field.id, 'monthly_fees', e.target.value)} />
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                    <Button variant="outline" size="sm" className="w-full" onClick={handleAddField}>
+                                        <Plus className="mr-2 h-3 w-3" /> Add More Stop
+                                    </Button>
+                                </div>
+
+                                <Button className="w-full" onClick={handleSubmit} disabled={isSubmitting}>
+                                    {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+                                    Save
+                                </Button>
+                                {editingRouteId && (
+                                    <Button type="button" variant="outline" className="w-full" onClick={handleCancel}>
+                                        <X className="mr-2 h-4 w-4" /> Cancel
+                                    </Button>
+                                )}
+                            </div>
                         </div>
-                    )}
+                    </div>
+
+                    {/* Right - Route Pickup Points List */}
+                    <div className="xl:col-span-2">
+                        <div className="bg-card text-card-foreground rounded-xl shadow-lg">
+                            <div className="p-6">
+                                <h2 className="text-xl font-bold mb-4">Route Pickup Points List</h2>
+                                {loading ? (
+                                    <div className="flex justify-center items-center py-10"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
+                                ) : routesWithPoints.length === 0 ? (
+                                    <p className="text-center py-10 text-muted-foreground">No route pickup points defined. Add one to get started.</p>
+                                ) : (
+                                    <div className="space-y-4 max-h-[500px] overflow-y-auto">
+                                        {routesWithPoints.map(route => (
+                                            <div key={route.id} className="border rounded-lg">
+                                                <div className="bg-muted/50 p-4 flex justify-between items-center rounded-t-lg">
+                                                    <h3 className="font-semibold text-lg">{route.route_title}</h3>
+                                                    <div className="flex items-center space-x-2">
+                                                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleEdit(route)}>
+                                                            <Edit className="h-4 w-4 text-yellow-500" />
+                                                        </Button>
+                                                        <AlertDialog>
+                                                            <AlertDialogTrigger asChild><Button variant="destructive" size="icon" className="h-8 w-8"><Trash2 className="h-4 w-4" /></Button></AlertDialogTrigger>
+                                                            <AlertDialogContent>
+                                                                <AlertDialogHeader><AlertDialogTitle>Are you sure?</AlertDialogTitle><AlertDialogDescription>This will delete all pickup points for this route.</AlertDialogDescription></AlertDialogHeader>
+                                                                <AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={() => handleDeleteRouteMapping(route.id)}>Delete</AlertDialogAction></AlertDialogFooter>
+                                                            </AlertDialogContent>
+                                                        </AlertDialog>
+                                                    </div>
+                                                </div>
+                                                <div className="overflow-x-auto">
+                                                    <table className="w-full text-sm">
+                                                        <thead className="text-xs text-muted-foreground uppercase">
+                                                            <tr className="border-b">
+                                                                <th className="px-6 py-3">Pickup Point</th>
+                                                                <th className="px-6 py-3">Distance (km)</th>
+                                                                <th className="px-6 py-3">Pickup Time</th>
+                                                                <th className="px-6 py-3 text-right">Monthly Fees (₹)</th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody>
+                                                            {route.pickup_points.map(p => (
+                                                                <tr key={p.id} className="border-b last:border-b-0">
+                                                                    <td className="px-6 py-3 font-medium">{p.pickup_point?.name || '-'}</td>
+                                                                    <td className="px-6 py-3">{p.distance || '-'}</td>
+                                                                    <td className="px-6 py-3">{p.pickup_time || '-'}</td>
+                                                                    <td className="px-6 py-3 text-right">{p.monthly_fees || '-'}</td>
+                                                                </tr>
+                                                            ))}
+                                                        </tbody>
+                                                    </table>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
-            
-            <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-                <DialogContent className="sm:max-w-4xl">
-                    <DialogHeader><DialogTitle>{editingRouteId ? 'Edit' : 'Add'} Route Pickup Point</DialogTitle></DialogHeader>
-                    <div className="py-4 space-y-4">
-                        <div>
-                            <Label>Route *</Label>
-                            <Select value={selectedRoute} onValueChange={setSelectedRoute} disabled={!!editingRouteId}><SelectTrigger><SelectValue placeholder="Select Route" /></SelectTrigger><SelectContent>{allRoutes.map(r => <SelectItem key={r.id} value={r.id}>{r.route_title}</SelectItem>)}</SelectContent></Select>
-                        </div>
-                        <div className="space-y-2">
-                             <div className="grid grid-cols-[1fr,1fr,1fr,1fr,auto] gap-x-4 items-center">
-                                <Label>Pickup Point *</Label>
-                                <Label>Distance (km)</Label>
-                                <Label>Pickup Time</Label>
-                                <Label>Monthly Fees</Label>
-                            </div>
-                            {pickupPointFields.map((field) => (
-                                <div key={field.id} className="grid grid-cols-[1fr,1fr,1fr,1fr,auto] gap-x-4 items-center">
-                                    <Select value={field.pickup_point_id} onValueChange={v => handleFieldChange(field.id, 'pickup_point_id', v)}><SelectTrigger><SelectValue placeholder="Select Point"/></SelectTrigger><SelectContent>{allPickupPoints.map(p => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}</SelectContent></Select>
-                                    <Input type="text" value={field.distance} onChange={e => handleFieldChange(field.id, 'distance', e.target.value)} />
-                                    <Input type="time" value={field.pickup_time} onChange={e => handleFieldChange(field.id, 'pickup_time', e.target.value)} />
-                                    <Input type="number" min="0" value={field.monthly_fees} onChange={e => handleFieldChange(field.id, 'monthly_fees', e.target.value)} />
-                                    {pickupPointFields.length > 1 && <Button variant="ghost" size="icon" onClick={() => handleRemoveField(field.id)}><X className="h-4 w-4 text-destructive" /></Button>}
-                                </div>
-                            ))}
-                        </div>
-                        <Button variant="outline" onClick={handleAddField}><Plus className="mr-2 h-4 w-4"/>Add More</Button>
-                    </div>
-                    <DialogFooter>
-                        <Button variant="secondary" onClick={resetModal}>Cancel</Button>
-                        <Button onClick={handleSubmit} disabled={isSubmitting}>{isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Save className="mr-2 h-4 w-4"/>}Save</Button>
-                    </DialogFooter>
-                </DialogContent>
-            </Dialog>
-
         </DashboardLayout>
     );
 };

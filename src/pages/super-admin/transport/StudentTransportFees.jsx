@@ -8,13 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Search, Loader2, Bus, User, IndianRupee, MapPin, Save, Clock } from 'lucide-react';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Badge } from '@/components/ui/badge';
-import {
-  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose
-} from '@/components/ui/dialog';
+import { Search, Loader2, Bus, User, IndianRupee, MapPin, Save, Clock, X, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react';
 
 const StudentTransportFees = () => {
   const { user, currentSessionId, organizationId } = useAuth();
@@ -29,8 +23,9 @@ const StudentTransportFees = () => {
   const [loading, setLoading] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
   
   const [searchFilters, setSearchFilters] = useState({
     class_id: '',
@@ -62,13 +57,6 @@ const StudentTransportFees = () => {
     let classesQuery = supabase.from('classes').select('id, name').eq('branch_id', branchId).order('name');
     let vehiclesQuery = supabase.from('transport_vehicles').select('*').eq('branch_id', branchId);
 
-    if (branchId) {
-      routesQuery = routesQuery.eq('branch_id', branchId);
-      pickupQuery = pickupQuery.eq('branch_id', branchId);
-      classesQuery = classesQuery.eq('branch_id', branchId);
-      vehiclesQuery = vehiclesQuery.eq('branch_id', branchId);
-    }
-
     const [routesRes, pickupRes, classesRes, vehiclesRes] = await Promise.all([
       routesQuery, pickupQuery, classesQuery, vehiclesQuery
     ]);
@@ -77,7 +65,7 @@ const StudentTransportFees = () => {
     setPickupPoints(pickupRes.data || []);
     setClasses(classesRes.data || []);
     setVehicles(vehiclesRes.data || []);
-  }, [branchId, branchId]);
+  }, [branchId]);
 
   useEffect(() => {
     fetchInitialData();
@@ -101,10 +89,6 @@ const StudentTransportFees = () => {
         section:sections!student_profiles_section_id_fkey(name)
       `)
       .eq('branch_id', branchId);
-
-    if (branchId) {
-      query = query.eq('branch_id', branchId);
-    }
 
     if (searchFilters.class_id) {
       query = query.eq('class_id', searchFilters.class_id);
@@ -146,11 +130,13 @@ const StudentTransportFees = () => {
     }));
 
     setStudents(studentsWithTransport);
+    setCurrentPage(1);
     setLoading(false);
   };
 
-  const handleOpenDialog = async (student) => {
+  const handleEdit = async (student) => {
     setSelectedStudent(student);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
     
     const transport = student.transport;
     
@@ -168,31 +154,28 @@ const StudentTransportFees = () => {
     
     // Load vehicles assigned to existing route if present
     if (transport?.transport_route_id) {
-      const { data: assignments, error } = await supabase
+      const { data: assignments } = await supabase
         .from('route_vehicle_assignments')
         .select('vehicle_id, vehicle:vehicle_id(*)')
         .eq('route_id', transport.transport_route_id);
       
-      console.log('Route vehicles query:', transport.transport_route_id, assignments, error);
-      
       if (assignments && assignments.length > 0) {
-        const assignedVehicles = assignments
-          .filter(a => a.vehicle)
-          .map(a => a.vehicle);
-        setRouteVehicles(assignedVehicles);
+        setRouteVehicles(assignments.filter(a => a.vehicle).map(a => a.vehicle));
       } else {
         setRouteVehicles([]);
       }
     } else {
       setRouteVehicles([]);
     }
-    
-    setIsDialogOpen(true);
   };
 
-  const handleCloseDialog = () => {
-    setIsDialogOpen(false);
+  const handleCancel = () => {
     setSelectedStudent(null);
+    setFormData({
+      transport_route_id: '', transport_pickup_point_id: '', transport_fee: '',
+      pickup_time: '', drop_time: '', vehicle_number: '',
+      driver_name: '', driver_contact: '', special_instructions: ''
+    });
   };
 
   const handleRouteChange = async (routeId) => {
@@ -216,13 +199,10 @@ const StudentTransportFees = () => {
         .select('vehicle_id, vehicle:vehicle_id(*)')
         .eq('route_id', routeId);
       
-      console.log('Route change - vehicles:', routeId, assignments, error);
+      console.log('Route change - vehicles:', routeId, assignments);
       
       if (assignments && assignments.length > 0) {
-        const assignedVehicles = assignments
-          .filter(a => a.vehicle)
-          .map(a => a.vehicle);
-        setRouteVehicles(assignedVehicles);
+        setRouteVehicles(assignments.filter(a => a.vehicle).map(a => a.vehicle));
       } else {
         setRouteVehicles([]);
       }
@@ -317,7 +297,7 @@ const StudentTransportFees = () => {
           ? { ...s, transport: { ...s.transport, ...transportPayload } }
           : s
       ));
-      handleCloseDialog();
+      handleCancel();
     }
     setIsSubmitting(false);
   };
@@ -325,129 +305,50 @@ const StudentTransportFees = () => {
   const getRouteName = (routeId) => routes.find(r => r.id === routeId)?.route_title || '-';
   const getPickupPointName = (ppId) => pickupPoints.find(p => p.id === ppId)?.name || '-';
 
+  // Pagination
+  const totalPages = Math.ceil(students.length / itemsPerPage);
+  const paginatedStudents = students.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+
   return (
     <DashboardLayout>
-      <div className="p-6 space-y-6">
-        <div>
-          <h1 className="text-3xl font-bold flex items-center gap-2">
-            <Bus className="h-8 w-8 text-primary" /> Student Transport Management
-          </h1>
-          <p className="text-muted-foreground mt-1">Assign transport routes and manage fees for students</p>
-        </div>
-
-        {/* Search Filters */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Search Students</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <div className="space-y-2">
-                <Label>Class</Label>
-                <Select value={searchFilters.class_id || 'all'} onValueChange={(v) => setSearchFilters({...searchFilters, class_id: v === 'all' ? '' : v})}>
-                  <SelectTrigger><SelectValue placeholder="Select Class" /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Classes</SelectItem>
-                    {classes.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2 md:col-span-2">
-                <Label>Search by Name / Admission No</Label>
-                <Input 
-                  placeholder="Enter name or admission number..." 
-                  value={searchFilters.search}
-                  onChange={(e) => setSearchFilters({...searchFilters, search: e.target.value})}
-                />
-              </div>
-              <div className="flex items-end">
+      <div className="p-6">
+        <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+          {/* Left - Search + Form */}
+          <div className="xl:col-span-1 space-y-4">
+            {/* Search Filters */}
+            <div className="bg-card text-card-foreground rounded-xl shadow-lg p-6">
+              <h2 className="text-xl font-bold mb-4">Search Students</h2>
+              <div className="space-y-3">
+                <div className="space-y-2">
+                  <Label>Class</Label>
+                  <Select value={searchFilters.class_id || 'all'} onValueChange={(v) => setSearchFilters({...searchFilters, class_id: v === 'all' ? '' : v})}>
+                    <SelectTrigger><SelectValue placeholder="Select Class" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Classes</SelectItem>
+                      {classes.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label>Name / Admission No</Label>
+                  <Input placeholder="Enter name or admission no..." value={searchFilters.search} onChange={(e) => setSearchFilters({...searchFilters, search: e.target.value})} />
+                </div>
                 <Button onClick={searchStudents} className="w-full" disabled={loading}>
                   {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Search className="mr-2 h-4 w-4" />}
                   Search
                 </Button>
               </div>
             </div>
-          </CardContent>
-        </Card>
 
-        {/* Results */}
-        <Card>
-          <CardContent className="p-0">
-            {loading ? (
-              <div className="flex justify-center items-center py-16">
-                <Loader2 className="h-8 w-8 animate-spin text-primary" />
-              </div>
-            ) : students.length === 0 ? (
-              <div className="text-center py-16 text-muted-foreground">
-                <User className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                <p>{hasSearched ? 'No students found matching your search criteria.' : 'Search for students to assign transport routes and fees.'}</p>
-              </div>
-            ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow className="bg-muted/50">
-                    <TableHead className="w-[50px]">#</TableHead>
-                    <TableHead>Student Name</TableHead>
-                    <TableHead>Admission No.</TableHead>
-                    <TableHead>Class</TableHead>
-                    <TableHead>Route</TableHead>
-                    <TableHead>Pickup Point</TableHead>
-                    <TableHead>Fee</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead className="text-center">Action</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {students.map((student, index) => (
-                    <TableRow key={student.id}>
-                      <TableCell>{index + 1}</TableCell>
-                      <TableCell className="font-medium">
-                        {student.full_name}
-                      </TableCell>
-                      <TableCell>{student.school_code || '-'}</TableCell>
-                      <TableCell>
-                        {student.class?.name || '-'}
-                        {student.section?.name ? ` - ${student.section.name}` : ''}
-                      </TableCell>
-                      <TableCell>{getRouteName(student.transport?.transport_route_id)}</TableCell>
-                      <TableCell>{getPickupPointName(student.transport?.transport_pickup_point_id)}</TableCell>
-                      <TableCell>
-                        {student.transport?.transport_fee ? (
-                          <span className="flex items-center gap-1">
-                            <IndianRupee className="h-3 w-3" />{student.transport.transport_fee}
-                          </span>
-                        ) : '-'}
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant={student.transport ? 'default' : 'secondary'}>
-                          {student.transport ? 'Assigned' : 'Not Assigned'}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-center">
-                        <Button variant="outline" size="sm" onClick={() => handleOpenDialog(student)}>
-                          <MapPin className="h-4 w-4 mr-1" /> {student.transport ? 'Edit' : 'Assign'}
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Assignment Dialog */}
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogContent className="sm:max-w-xl">
-            <DialogHeader>
-              <DialogTitle>
-                Assign Transport - {selectedStudent?.full_name}
-              </DialogTitle>
-            </DialogHeader>
-            <form onSubmit={handleSubmit}>
-              <div className="grid gap-4 py-4">
-                {/* Route Selection */}
-                <div className="grid grid-cols-2 gap-4">
+            {/* Transport Assignment Form - shown when student is selected */}
+            {selectedStudent && (
+              <div className="bg-card text-card-foreground rounded-xl shadow-lg p-6">
+                <div className="flex justify-between items-center mb-4">
+                  <h2 className="text-lg font-bold">Assign Transport</h2>
+                  <Button variant="ghost" size="icon" className="h-7 w-7" onClick={handleCancel}><X className="h-4 w-4" /></Button>
+                </div>
+                <p className="text-sm text-muted-foreground mb-3"><User className="inline h-3 w-3 mr-1" />{selectedStudent.full_name}</p>
+                <form onSubmit={handleSubmit} className="space-y-3">
                   <div className="space-y-2">
                     <Label>Route</Label>
                     <Select value={formData.transport_route_id || 'none'} onValueChange={(v) => handleRouteChange(v === 'none' ? '' : v)}>
@@ -467,104 +368,149 @@ const StudentTransportFees = () => {
                       </SelectContent>
                     </Select>
                   </div>
-                </div>
-
-                {/* Vehicle Selection - Only show vehicles assigned to selected route */}
-                <div className="space-y-2">
-                  <Label>Assign Vehicle (Optional)</Label>
-                  <Select onValueChange={handleVehicleChange} disabled={!formData.transport_route_id}>
-                    <SelectTrigger>
-                      <SelectValue placeholder={!formData.transport_route_id ? "Select Route first" : routeVehicles.length === 0 ? "No vehicles assigned to this route" : "Select Vehicle"} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {routeVehicles.length > 0 ? (
-                        routeVehicles.map(v => <SelectItem key={v.id} value={v.id}>{v.vehicle_number} - {v.driver_name}</SelectItem>)
-                      ) : (
-                        <div className="px-2 py-2 text-sm text-muted-foreground">No vehicles assigned to this route</div>
-                      )}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                {/* Fee and Time */}
-                <div className="grid grid-cols-3 gap-4">
                   <div className="space-y-2">
-                    <Label>Monthly Fee (₹)</Label>
-                    <Input 
-                      type="number" 
-                      value={formData.transport_fee} 
-                      onChange={(e) => setFormData({...formData, transport_fee: e.target.value})}
-                      placeholder="Fee amount"
-                    />
+                    <Label>Assign Vehicle</Label>
+                    <Select onValueChange={handleVehicleChange} disabled={!formData.transport_route_id}>
+                      <SelectTrigger>
+                        <SelectValue placeholder={!formData.transport_route_id ? "Select Route first" : routeVehicles.length === 0 ? "No vehicles for route" : "Select Vehicle"} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {routeVehicles.length > 0 ? (
+                          routeVehicles.map(v => <SelectItem key={v.id} value={v.id}>{v.vehicle_number} - {v.driver_name}</SelectItem>)
+                        ) : (
+                          <div className="px-2 py-2 text-sm text-muted-foreground">No vehicles assigned to route</div>
+                        )}
+                      </SelectContent>
+                    </Select>
                   </div>
-                  <div className="space-y-2">
-                    <Label>Pickup Time</Label>
-                    <Input 
-                      type="time" 
-                      value={formData.pickup_time} 
-                      onChange={(e) => setFormData({...formData, pickup_time: e.target.value})}
-                    />
+                  <div className="grid grid-cols-3 gap-2">
+                    <div className="space-y-1">
+                      <Label className="text-xs">Fee (₹)</Label>
+                      <Input type="number" value={formData.transport_fee} onChange={(e) => setFormData({...formData, transport_fee: e.target.value})} placeholder="Fee" />
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs">Pickup</Label>
+                      <Input type="time" value={formData.pickup_time} onChange={(e) => setFormData({...formData, pickup_time: e.target.value})} />
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs">Drop</Label>
+                      <Input type="time" value={formData.drop_time} onChange={(e) => setFormData({...formData, drop_time: e.target.value})} />
+                    </div>
                   </div>
-                  <div className="space-y-2">
-                    <Label>Drop Time</Label>
-                    <Input 
-                      type="time" 
-                      value={formData.drop_time} 
-                      onChange={(e) => setFormData({...formData, drop_time: e.target.value})}
-                    />
+                  <div className="grid grid-cols-3 gap-2">
+                    <div className="space-y-1">
+                      <Label className="text-xs">Vehicle No.</Label>
+                      <Input value={formData.vehicle_number} onChange={(e) => setFormData({...formData, vehicle_number: e.target.value})} placeholder="KA-01-XX" />
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs">Driver</Label>
+                      <Input value={formData.driver_name} onChange={(e) => setFormData({...formData, driver_name: e.target.value})} placeholder="Name" />
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs">Contact</Label>
+                      <Input value={formData.driver_contact} onChange={(e) => setFormData({...formData, driver_contact: e.target.value})} placeholder="Phone" />
+                    </div>
                   </div>
-                </div>
-
-                {/* Driver Details */}
-                <div className="grid grid-cols-3 gap-4">
-                  <div className="space-y-2">
-                    <Label>Vehicle Number</Label>
-                    <Input 
-                      value={formData.vehicle_number} 
-                      onChange={(e) => setFormData({...formData, vehicle_number: e.target.value})}
-                      placeholder="KA-01-AB-1234"
-                    />
+                  <div className="space-y-1">
+                    <Label className="text-xs">Special Instructions</Label>
+                    <Input value={formData.special_instructions} onChange={(e) => setFormData({...formData, special_instructions: e.target.value})} placeholder="Any special instructions..." />
                   </div>
-                  <div className="space-y-2">
-                    <Label>Driver Name</Label>
-                    <Input 
-                      value={formData.driver_name} 
-                      onChange={(e) => setFormData({...formData, driver_name: e.target.value})}
-                      placeholder="Driver name"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Driver Contact</Label>
-                    <Input 
-                      value={formData.driver_contact} 
-                      onChange={(e) => setFormData({...formData, driver_contact: e.target.value})}
-                      placeholder="9876543210"
-                    />
-                  </div>
-                </div>
-
-                {/* Special Instructions */}
-                <div className="space-y-2">
-                  <Label>Special Instructions</Label>
-                  <Input 
-                    value={formData.special_instructions} 
-                    onChange={(e) => setFormData({...formData, special_instructions: e.target.value})}
-                    placeholder="Any special pickup/drop instructions..."
-                  />
-                </div>
+                  <Button type="submit" className="w-full" disabled={isSubmitting}>
+                    {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+                    Save
+                  </Button>
+                  <Button type="button" variant="outline" className="w-full" onClick={handleCancel}>
+                    <X className="mr-2 h-4 w-4" /> Cancel
+                  </Button>
+                </form>
               </div>
-              <DialogFooter>
-                <DialogClose asChild>
-                  <Button type="button" variant="secondary" onClick={handleCloseDialog}>Cancel</Button>
-                </DialogClose>
-                <Button type="submit" disabled={isSubmitting}>
-                  {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-                  Save
-                </Button>
-              </DialogFooter>
-            </form>
-          </DialogContent>
-        </Dialog>
+            )}
+          </div>
+
+          {/* Right - Student List */}
+          <div className="xl:col-span-2">
+            <div className="bg-card text-card-foreground rounded-xl shadow-lg">
+              <div className="p-6">
+                <h2 className="text-xl font-bold mb-4">Student Transport List</h2>
+                {loading ? (
+                  <div className="flex justify-center items-center py-10">
+                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                  </div>
+                ) : students.length === 0 ? (
+                  <div className="text-center py-10 text-muted-foreground">
+                    <User className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                    <p>{hasSearched ? 'No students found matching your search.' : 'Search for students to assign transport.'}</p>
+                  </div>
+                ) : (
+                  <>
+                    <div className="border rounded-lg overflow-hidden max-h-[500px] overflow-y-auto">
+                      <table className="w-full text-sm text-left">
+                        <thead className="text-xs text-foreground uppercase bg-muted/50 sticky top-0 bg-background z-10">
+                          <tr>
+                            <th className="px-3 py-3 w-10">#</th>
+                            <th className="px-3 py-3">Student</th>
+                            <th className="px-3 py-3">Class</th>
+                            <th className="px-3 py-3">Route</th>
+                            <th className="px-3 py-3">Pickup Point</th>
+                            <th className="px-3 py-3">Fee</th>
+                            <th className="px-3 py-3">Status</th>
+                            <th className="px-3 py-3 text-center">Action</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {paginatedStudents.map((student, index) => (
+                            <tr key={student.id} className={`border-b border-border hover:bg-muted/50 ${selectedStudent?.id === student.id ? 'bg-primary/10' : ''}`}>
+                              <td className="px-3 py-3">{(currentPage - 1) * itemsPerPage + index + 1}</td>
+                              <td className="px-3 py-3 font-medium">{student.full_name}</td>
+                              <td className="px-3 py-3">{student.class?.name || '-'}{student.section?.name ? ` - ${student.section.name}` : ''}</td>
+                              <td className="px-3 py-3">{getRouteName(student.transport?.transport_route_id)}</td>
+                              <td className="px-3 py-3">{getPickupPointName(student.transport?.transport_pickup_point_id)}</td>
+                              <td className="px-3 py-3">
+                                {student.transport?.transport_fee ? (
+                                  <span className="flex items-center gap-1"><IndianRupee className="h-3 w-3" />{student.transport.transport_fee}</span>
+                                ) : '-'}
+                              </td>
+                              <td className="px-3 py-3">
+                                <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${student.transport ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' : 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400'}`}>
+                                  {student.transport ? 'Assigned' : 'Not Assigned'}
+                                </span>
+                              </td>
+                              <td className="px-3 py-3 text-center">
+                                <Button variant="outline" size="sm" onClick={() => handleEdit(student)}>
+                                  <MapPin className="h-4 w-4 mr-1" /> {student.transport ? 'Edit' : 'Assign'}
+                                </Button>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+
+                    {/* Pagination */}
+                    <div className="flex items-center justify-between mt-4 text-sm">
+                      <span className="text-muted-foreground">Showing {(currentPage - 1) * itemsPerPage + 1} to {Math.min(currentPage * itemsPerPage, students.length)} of {students.length} entries</span>
+                      <div className="flex items-center gap-2">
+                        <Select value={String(itemsPerPage)} onValueChange={(v) => { setItemsPerPage(Number(v)); setCurrentPage(1); }}>
+                          <SelectTrigger className="w-[70px] h-8"><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="10">10</SelectItem>
+                            <SelectItem value="25">25</SelectItem>
+                            <SelectItem value="50">50</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <Button variant="outline" size="icon" className="h-8 w-8" disabled={currentPage === 1} onClick={() => setCurrentPage(1)}><ChevronsLeft className="h-4 w-4" /></Button>
+                        <Button variant="outline" size="icon" className="h-8 w-8" disabled={currentPage === 1} onClick={() => setCurrentPage(p => p - 1)}><ChevronLeft className="h-4 w-4" /></Button>
+                        <span className="px-2">Page {currentPage} of {totalPages}</span>
+                        <Button variant="outline" size="icon" className="h-8 w-8" disabled={currentPage === totalPages} onClick={() => setCurrentPage(p => p + 1)}><ChevronRight className="h-4 w-4" /></Button>
+                        <Button variant="outline" size="icon" className="h-8 w-8" disabled={currentPage === totalPages} onClick={() => setCurrentPage(totalPages)}><ChevronsRight className="h-4 w-4" /></Button>
+                      </div>
+                    </div>
+                  </>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </DashboardLayout>
   );

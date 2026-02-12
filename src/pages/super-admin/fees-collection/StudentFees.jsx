@@ -939,7 +939,7 @@ const StudentFees = () => {
                                         </TabsTrigger>
                                         <TabsTrigger value="history" className="gap-2">
                                             <History className="h-4 w-4" />Payment History
-                                            <Badge variant="secondary" className="ml-1">{payments.length}</Badge>
+                                            <Badge variant="secondary" className="ml-1">{payments.length + (transportDetails?.payments?.length || 0) + (hostelDetails?.payments?.length || 0)}</Badge>
                                         </TabsTrigger>
                                     </TabsList>
                                     {activeTab === 'fees' && feeSummary.unpaidCount > 0 && (
@@ -1248,6 +1248,7 @@ const StudentFees = () => {
                                             <thead>
                                                 <tr className="border-b bg-muted/50">
                                                     <th className="p-3 text-left font-medium">Date</th>
+                                                    <th className="p-3 text-left font-medium">Type</th>
                                                     <th className="p-3 text-left font-medium">Transaction ID</th>
                                                     <th className="p-3 text-left font-medium">Mode</th>
                                                     <th className="p-3 text-left font-medium">Reference</th>
@@ -1258,9 +1259,15 @@ const StudentFees = () => {
                                                 </tr>
                                             </thead>
                                             <tbody>
+                                                {/* Academic Fee Payments */}
                                                 {payments.map(p => (
-                                                    <tr key={p.id} className={`border-b ${p.reverted_at ? 'bg-red-50 dark:bg-red-950/20 opacity-60' : 'hover:bg-muted/30'}`}>
+                                                    <tr key={`fee-${p.id}`} className={`border-b ${p.reverted_at ? 'bg-red-50 dark:bg-red-950/20 opacity-60' : 'hover:bg-muted/30'}`}>
                                                         <td className="p-3">{format(parseISO(p.payment_date), 'dd MMM yyyy')}</td>
+                                                        <td className="p-3">
+                                                            <Badge variant="secondary" className="bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300">
+                                                                <FileText className="h-3 w-3 mr-1" />Fees
+                                                            </Badge>
+                                                        </td>
                                                         <td className="p-3">
                                                             <code className="text-xs bg-muted px-2 py-0.5 rounded">{p.transaction_id || '-'}</code>
                                                         </td>
@@ -1289,8 +1296,77 @@ const StudentFees = () => {
                                                         </td>
                                                     </tr>
                                                 ))}
-                                                {payments.length === 0 && (
-                                                    <tr><td colSpan="8" className="p-8 text-center text-muted-foreground">No payment history found.</td></tr>
+
+                                                {/* Transport Fee Payments */}
+                                                {transportDetails?.payments?.map(p => (
+                                                    <tr key={`transport-${p.id}`} className={`border-b ${p.reverted_at ? 'bg-red-50 dark:bg-red-950/20 opacity-60' : 'hover:bg-blue-50/30 dark:hover:bg-blue-950/20'}`}>
+                                                        <td className="p-3">{format(parseISO(p.payment_date), 'dd MMM yyyy')}</td>
+                                                        <td className="p-3">
+                                                            <Badge variant="secondary" className="bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300">
+                                                                <Bus className="h-3 w-3 mr-1" />Transport
+                                                            </Badge>
+                                                        </td>
+                                                        <td className="p-3">
+                                                            <code className="text-xs bg-muted px-2 py-0.5 rounded">{p.transaction_id || '-'}</code>
+                                                        </td>
+                                                        <td className="p-3">
+                                                            <Badge variant="outline">{p.payment_mode}</Badge>
+                                                        </td>
+                                                        <td className="p-3 text-muted-foreground">{p.payment_month || p.note || '-'}</td>
+                                                        <td className="p-3 text-right font-mono">{currencySymbol}{Number(p.amount || 0).toLocaleString('en-IN')}</td>
+                                                        <td className="p-3 text-right font-mono text-blue-600">{currencySymbol}{Number(p.discount_amount || 0).toLocaleString('en-IN')}</td>
+                                                        <td className="p-3 text-right font-mono text-amber-600">{currencySymbol}{Number(p.fine_paid || 0).toLocaleString('en-IN')}</td>
+                                                        <td className="p-3 text-center">
+                                                            {!p.reverted_at && (
+                                                                <Button variant="outline" size="sm" onClick={() => navigate(`/super-admin/fees-collection/print-transport-receipt/${p.id}`)}>
+                                                                    <Printer className="h-3 w-3" />
+                                                                </Button>
+                                                            )}
+                                                            {p.reverted_at && (
+                                                                <span className="text-xs text-red-600">
+                                                                    Reverted {format(parseISO(p.reverted_at), 'dd/MM/yy')}
+                                                                </span>
+                                                            )}
+                                                        </td>
+                                                    </tr>
+                                                ))}
+
+                                                {/* Hostel Fee Payments */}
+                                                {hostelDetails?.payments?.map(p => (
+                                                    <tr key={`hostel-${p.id}`} className={`border-b ${p.reverted_at ? 'bg-red-50 dark:bg-red-950/20 opacity-60' : 'hover:bg-purple-50/30 dark:hover:bg-purple-950/20'}`}>
+                                                        <td className="p-3">{format(parseISO(p.payment_date), 'dd MMM yyyy')}</td>
+                                                        <td className="p-3">
+                                                            <Badge variant="secondary" className="bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300">
+                                                                <Building2 className="h-3 w-3 mr-1" />Hostel
+                                                            </Badge>
+                                                        </td>
+                                                        <td className="p-3">
+                                                            <code className="text-xs bg-muted px-2 py-0.5 rounded">{p.transaction_id || '-'}</code>
+                                                        </td>
+                                                        <td className="p-3">
+                                                            <Badge variant="outline">{p.payment_mode}</Badge>
+                                                        </td>
+                                                        <td className="p-3 text-muted-foreground">{p.payment_month || p.note || '-'}</td>
+                                                        <td className="p-3 text-right font-mono">{currencySymbol}{Number(p.amount || 0).toLocaleString('en-IN')}</td>
+                                                        <td className="p-3 text-right font-mono text-blue-600">{currencySymbol}{Number(p.discount_amount || 0).toLocaleString('en-IN')}</td>
+                                                        <td className="p-3 text-right font-mono text-amber-600">{currencySymbol}{Number(p.fine_paid || 0).toLocaleString('en-IN')}</td>
+                                                        <td className="p-3 text-center">
+                                                            {!p.reverted_at && (
+                                                                <Button variant="outline" size="sm" onClick={() => navigate(`/super-admin/fees-collection/print-hostel-receipt/${p.id}`)}>
+                                                                    <Printer className="h-3 w-3" />
+                                                                </Button>
+                                                            )}
+                                                            {p.reverted_at && (
+                                                                <span className="text-xs text-red-600">
+                                                                    Reverted {format(parseISO(p.reverted_at), 'dd/MM/yy')}
+                                                                </span>
+                                                            )}
+                                                        </td>
+                                                    </tr>
+                                                ))}
+
+                                                {payments.length === 0 && !transportDetails?.payments?.length && !hostelDetails?.payments?.length && (
+                                                    <tr><td colSpan="9" className="p-8 text-center text-muted-foreground">No payment history found.</td></tr>
                                                 )}
                                             </tbody>
                                         </table>

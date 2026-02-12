@@ -7,16 +7,8 @@ import { useToast } from '@/components/ui/use-toast';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Plus, Edit, Trash2, Save, X, MapPin, Loader2 } from 'lucide-react';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-  DialogFooter,
-  DialogClose,
-} from '@/components/ui/dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Edit, Trash2, Save, X, MapPin, Loader2, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -36,9 +28,10 @@ const PickupPoints = () => {
   const [points, setPoints] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingPoint, setEditingPoint] = useState(null);
   const [formData, setFormData] = useState({ name: '', latitude: '', longitude: '' });
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
 
   const branchId = selectedBranch?.id || user?.profile?.branch_id;
 
@@ -66,14 +59,13 @@ const PickupPoints = () => {
     fetchPickupPoints();
   }, [fetchPickupPoints]);
 
-  const handleOpenDialog = (point = null) => {
+  const handleEdit = (point) => {
     setEditingPoint(point);
-    setFormData(point ? { name: point.name, latitude: point.latitude || '', longitude: point.longitude || '' } : { name: '', latitude: '', longitude: '' });
-    setIsDialogOpen(true);
+    setFormData({ name: point.name, latitude: point.latitude || '', longitude: point.longitude || '' });
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const handleCloseDialog = () => {
-    setIsDialogOpen(false);
+  const handleCancel = () => {
     setEditingPoint(null);
     setFormData({ name: '', latitude: '', longitude: '' });
   };
@@ -125,7 +117,7 @@ const PickupPoints = () => {
     } else {
       toast({ title: 'Success!', description: `Pickup point successfully ${editingPoint ? 'updated' : 'created'}.` });
       await fetchPickupPoints();
-      handleCloseDialog();
+      handleCancel();
     }
     setIsSubmitting(false);
   };
@@ -148,22 +140,19 @@ const PickupPoints = () => {
     }
   };
 
+  // Pagination
+  const totalPages = Math.ceil(points.length / itemsPerPage);
+  const paginatedPoints = points.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+
   return (
     <DashboardLayout>
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold">Pickup Points</h1>
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogTrigger asChild>
-            <Button onClick={() => handleOpenDialog()}>
-              <Plus className="mr-2 h-4 w-4" /> Add Pickup Point
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="sm:max-w-md">
-            <DialogHeader>
-              <DialogTitle>{editingPoint ? 'Edit Pickup Point' : 'Add New Pickup Point'}</DialogTitle>
-            </DialogHeader>
-            <form onSubmit={handleSubmit}>
-              <div className="grid gap-4 py-4">
+      <div className="p-6">
+        <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+          {/* Left - Add/Edit Form */}
+          <div className="xl:col-span-1">
+            <div className="bg-card text-card-foreground rounded-xl shadow-lg p-6">
+              <h2 className="text-xl font-bold mb-4">{editingPoint ? 'Edit Pickup Point' : 'Add Pickup Point'}</h2>
+              <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="space-y-1">
                   <a href="https://www.openstreetmap.org/" target="_blank" rel="noopener noreferrer" className="text-sm text-primary hover:underline">
                     Click here to get latitude and longitude (Optional)
@@ -171,7 +160,7 @@ const PickupPoints = () => {
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="name">Pickup Point *</Label>
-                  <Input id="name" value={formData.name} onChange={(e) => setFormData({...formData, name: e.target.value})} required />
+                  <Input id="name" value={formData.name} onChange={(e) => setFormData({...formData, name: e.target.value})} required placeholder="e.g. Main Gate" />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="latitude">Latitude</Label>
@@ -181,85 +170,111 @@ const PickupPoints = () => {
                   <Label htmlFor="longitude">Longitude</Label>
                   <Input id="longitude" value={formData.longitude} onChange={(e) => setFormData({...formData, longitude: e.target.value})} placeholder="e.g. 77.2090" />
                 </div>
-              </div>
-              <DialogFooter>
-                <DialogClose asChild>
-                  <Button type="button" variant="secondary" onClick={handleCloseDialog}>
-                    <X className="mr-2 h-4 w-4" /> Cancel
-                  </Button>
-                </DialogClose>
-                <Button type="submit" disabled={isSubmitting}>
+                <Button type="submit" className="w-full" disabled={isSubmitting}>
                   {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
                   Save
                 </Button>
-              </DialogFooter>
-            </form>
-          </DialogContent>
-        </Dialog>
-      </div>
+                {editingPoint && (
+                  <Button type="button" variant="outline" className="w-full" onClick={handleCancel}>
+                    <X className="mr-2 h-4 w-4" /> Cancel
+                  </Button>
+                )}
+              </form>
+            </div>
+          </div>
 
-      <div className="bg-card text-card-foreground rounded-xl shadow-lg">
-        <div className="p-6">
-          {loading ? (
-            <div className="flex justify-center items-center py-10">
-              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          {/* Right - List */}
+          <div className="xl:col-span-2">
+            <div className="bg-card text-card-foreground rounded-xl shadow-lg">
+              <div className="p-6">
+                <h2 className="text-xl font-bold mb-4">Pickup Points List</h2>
+                {loading ? (
+                  <div className="flex justify-center items-center py-10">
+                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                  </div>
+                ) : points.length === 0 ? (
+                  <p className="text-center py-10 text-muted-foreground">No pickup points found. Add one to get started.</p>
+                ) : (
+                  <>
+                    <div className="border rounded-lg overflow-hidden max-h-[500px] overflow-y-auto">
+                      <table className="w-full text-sm text-left">
+                        <thead className="text-xs text-foreground uppercase bg-muted/50 sticky top-0 bg-background z-10">
+                          <tr>
+                            <th className="px-4 py-3 w-12">#</th>
+                            <th className="px-4 py-3">Pickup Point</th>
+                            <th className="px-4 py-3">Latitude</th>
+                            <th className="px-4 py-3">Longitude</th>
+                            <th className="px-4 py-3 text-center">Action</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {paginatedPoints.map((point, index) => (
+                            <tr key={point.id} className="border-b border-border hover:bg-muted/50">
+                              <td className="px-4 py-3">{(currentPage - 1) * itemsPerPage + index + 1}</td>
+                              <td className="px-4 py-3 font-medium text-foreground">{point.name}</td>
+                              <td className="px-4 py-3">{point.latitude || 'N/A'}</td>
+                              <td className="px-4 py-3">{point.longitude || 'N/A'}</td>
+                              <td className="px-4 py-3 text-center space-x-2">
+                                {point.latitude && point.longitude && (
+                                  <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => openMap(point.latitude, point.longitude)}>
+                                    <MapPin className="h-4 w-4 text-blue-500" />
+                                  </Button>
+                                )}
+                                <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => handleEdit(point)}>
+                                  <Edit className="h-4 w-4 text-yellow-500" />
+                                </Button>
+                                <AlertDialog>
+                                  <AlertDialogTrigger asChild>
+                                    <Button variant="destructive" size="icon" className="h-8 w-8">
+                                      <Trash2 className="h-4 w-4" />
+                                    </Button>
+                                  </AlertDialogTrigger>
+                                  <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                      <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                                      <AlertDialogDescription>
+                                        This action cannot be undone. This will permanently delete the pickup point.
+                                      </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                      <AlertDialogAction onClick={() => handleDelete(point.id)} className="bg-destructive hover:bg-destructive/90">
+                                        Delete
+                                      </AlertDialogAction>
+                                    </AlertDialogFooter>
+                                  </AlertDialogContent>
+                                </AlertDialog>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+
+                    {/* Pagination */}
+                    <div className="flex items-center justify-between mt-4 text-sm">
+                      <span className="text-muted-foreground">Showing {(currentPage - 1) * itemsPerPage + 1} to {Math.min(currentPage * itemsPerPage, points.length)} of {points.length} entries</span>
+                      <div className="flex items-center gap-2">
+                        <Select value={String(itemsPerPage)} onValueChange={(v) => { setItemsPerPage(Number(v)); setCurrentPage(1); }}>
+                          <SelectTrigger className="w-[70px] h-8"><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="10">10</SelectItem>
+                            <SelectItem value="25">25</SelectItem>
+                            <SelectItem value="50">50</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <Button variant="outline" size="icon" className="h-8 w-8" disabled={currentPage === 1} onClick={() => setCurrentPage(1)}><ChevronsLeft className="h-4 w-4" /></Button>
+                        <Button variant="outline" size="icon" className="h-8 w-8" disabled={currentPage === 1} onClick={() => setCurrentPage(p => p - 1)}><ChevronLeft className="h-4 w-4" /></Button>
+                        <span className="px-2">Page {currentPage} of {totalPages}</span>
+                        <Button variant="outline" size="icon" className="h-8 w-8" disabled={currentPage === totalPages} onClick={() => setCurrentPage(p => p + 1)}><ChevronRight className="h-4 w-4" /></Button>
+                        <Button variant="outline" size="icon" className="h-8 w-8" disabled={currentPage === totalPages} onClick={() => setCurrentPage(totalPages)}><ChevronsRight className="h-4 w-4" /></Button>
+                      </div>
+                    </div>
+                  </>
+                )}
+              </div>
             </div>
-          ) : points.length === 0 ? (
-            <p className="text-center py-10 text-muted-foreground">No pickup points found. Add one to get started.</p>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm text-left">
-                <thead className="text-xs text-foreground uppercase bg-muted/50">
-                  <tr>
-                    <th scope="col" className="px-6 py-3">Pickup Point</th>
-                    <th scope="col" className="px-6 py-3">Latitude</th>
-                    <th scope="col" className="px-6 py-3">Longitude</th>
-                    <th scope="col" className="px-6 py-3 text-center">Action</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {points.map((point) => (
-                    <tr key={point.id} className="border-b border-border hover:bg-muted/50">
-                      <td className="px-6 py-4 font-medium text-foreground">{point.name}</td>
-                      <td className="px-6 py-4">{point.latitude || 'N/A'}</td>
-                      <td className="px-6 py-4">{point.longitude || 'N/A'}</td>
-                      <td className="px-6 py-4 text-center space-x-2">
-                        {point.latitude && point.longitude && (
-                          <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => openMap(point.latitude, point.longitude)}>
-                            <MapPin className="h-4 w-4 text-blue-500" />
-                          </Button>
-                        )}
-                        <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => handleOpenDialog(point)}>
-                          <Edit className="h-4 w-4 text-yellow-500" />
-                        </Button>
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <Button variant="destructive" size="icon" className="h-8 w-8">
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                              <AlertDialogDescription>
-                                This action cannot be undone. This will permanently delete the pickup point.
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>Cancel</AlertDialogCancel>
-                              <AlertDialogAction onClick={() => handleDelete(point.id)} className="bg-destructive hover:bg-destructive/90">
-                                Delete
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
+          </div>
         </div>
       </div>
     </DashboardLayout>

@@ -16,6 +16,7 @@ const PrintTransportReceipt = () => {
     const navigate = useNavigate();
     const [paymentDetails, setPaymentDetails] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [printHeaderImage, setPrintHeaderImage] = useState(null);
 
     const fetchDetails = useCallback(async () => {
         if (!paymentId || !selectedBranch?.id) {
@@ -60,6 +61,18 @@ const PrintTransportReceipt = () => {
                 .select('*')
                 .eq('id', selectedBranch.id)
                 .maybeSingle();
+
+            // Fetch print header image from print_settings
+            const { data: printSettings } = await supabase
+                .from('print_settings')
+                .select('header_image_url')
+                .eq('branch_id', selectedBranch.id)
+                .eq('type', 'fees_receipt')
+                .maybeSingle();
+
+            if (printSettings?.header_image_url) {
+                setPrintHeaderImage(printSettings.header_image_url);
+            }
 
             setPaymentDetails({
                 payment,
@@ -111,19 +124,25 @@ const PrintTransportReceipt = () => {
             pageBreakInside: 'avoid'
         }}>
             {/* Header */}
-            <div className='flex justify-between items-center p-3 border-b-2 border-gray-800 bg-blue-50'>
-                <div className='flex items-center gap-3'>
-                    {school?.logo_url && <img src={school.logo_url} alt='Logo' className='h-12' />}
-                    <div>
-                        <h1 className='text-lg font-bold uppercase text-gray-900'>{school?.name || branch?.branch_name}</h1>
-                        <p className='text-xs text-gray-600'>{branch?.branch_name}</p>
+            {printHeaderImage ? (
+                <div className='border-b-2 border-gray-800'>
+                    <img src={printHeaderImage} alt='Header' className='w-full h-auto object-contain' style={{ maxHeight: '120px' }} />
+                </div>
+            ) : (
+                <div className='flex justify-between items-center p-3 border-b-2 border-gray-800 bg-blue-50'>
+                    <div className='flex items-center gap-3'>
+                        {school?.logo_url && <img src={school.logo_url} alt='Logo' className='h-12' />}
+                        <div>
+                            <h1 className='text-lg font-bold uppercase text-gray-900'>{school?.name || branch?.branch_name}</h1>
+                            <p className='text-xs text-gray-600'>{branch?.branch_name}</p>
+                        </div>
+                    </div>
+                    <div className='text-right text-[9px] text-gray-600'>
+                        {school?.address && <p>{school.address}</p>}
+                        {school?.contact_number && <p>Phone: {school.contact_number}</p>}
                     </div>
                 </div>
-                <div className='text-right text-[9px] text-gray-600'>
-                    {school?.address && <p>{school.address}</p>}
-                    {school?.contact_number && <p>Phone: {school.contact_number}</p>}
-                </div>
-            </div>
+            )}
 
             {/* Title Bar */}
             <div className='bg-blue-800 text-white text-center py-1 flex items-center justify-center gap-2'>

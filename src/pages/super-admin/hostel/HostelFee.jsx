@@ -8,13 +8,10 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Search, Loader2, Building2, User, IndianRupee, DoorOpen, Save, Bed } from 'lucide-react';
+import { Card, CardContent } from "@/components/ui/card";
+import { Search, Loader2, Building2, User, IndianRupee, DoorOpen, Save, Bed, Users } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from '@/components/ui/badge';
-import {
-  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose
-} from '@/components/ui/dialog';
 
 const HostelFee = () => {
   const { user, currentSessionId, organizationId } = useAuth();
@@ -28,8 +25,9 @@ const HostelFee = () => {
   const [loading, setLoading] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
   
   const [searchFilters, setSearchFilters] = useState({
     class_id: '',
@@ -50,13 +48,12 @@ const HostelFee = () => {
   const branchId = selectedBranch?.id || user?.profile?.branch_id;
 
   const fetchInitialData = useCallback(async () => {
-    if (!branchId || !branchId) return;
+    if (!branchId) return;
 
-    // Filter hostel data by branch
     const [hostelsRes, roomsRes, roomTypesRes, classesRes] = await Promise.all([
-      supabase.from('hostels').select('*').eq('branch_id', branchId).eq('branch_id', branchId),
-      supabase.from('hostel_rooms').select('*, hostels(name)').eq('branch_id', branchId).eq('branch_id', branchId),
-      supabase.from('hostel_room_types').select('*').eq('branch_id', branchId).eq('branch_id', branchId),
+      supabase.from('hostels').select('*').eq('branch_id', branchId),
+      supabase.from('hostel_rooms').select('*, hostels(name)').eq('branch_id', branchId),
+      supabase.from('hostel_room_types').select('*').eq('branch_id', branchId),
       supabase.from('classes').select('id, name').eq('branch_id', branchId).order('name')
     ]);
 
@@ -64,7 +61,7 @@ const HostelFee = () => {
     setRooms(roomsRes.data || []);
     setRoomTypes(roomTypesRes.data || []);
     setClasses(classesRes.data || []);
-  }, [branchId, branchId]);
+  }, [branchId]);
 
   useEffect(() => {
     fetchInitialData();
@@ -78,8 +75,6 @@ const HostelFee = () => {
     
     setLoading(true);
     
-    // Use explicit FK relationship names to avoid ambiguous relationship error
-    // Note: hostel_details_id doesn't exist in student_profiles - hostel data is in student_hostel_details table
     let query = supabase
       .from('student_profiles')
       .select(`
@@ -89,8 +84,6 @@ const HostelFee = () => {
       `)
       .eq('branch_id', branchId);
 
-    // Note: student_profiles may not have branch_id column
-
     if (searchFilters.class_id) {
       query = query.eq('class_id', searchFilters.class_id);
     }
@@ -99,9 +92,7 @@ const HostelFee = () => {
       query = query.or(`full_name.ilike.%${searchFilters.search}%,school_code.ilike.%${searchFilters.search}%`);
     }
 
-    console.log('HostelFee - Searching students with filters:', searchFilters);
     const { data: studentData, error } = await query.order('full_name');
-    console.log('HostelFee - Search result:', studentData?.length, 'students, error:', error);
 
     if (error) {
       toast({ variant: 'destructive', title: 'Error searching students', description: error.message });
@@ -111,7 +102,6 @@ const HostelFee = () => {
 
     setHasSearched(true);
 
-    // Get hostel details for students who have hostel_details_id
     const studentIds = studentData?.map(s => s.id) || [];
     let hostelMap = {};
 
@@ -128,21 +118,19 @@ const HostelFee = () => {
       }
     }
 
-    // Merge hostel details into students
     const studentsWithHostel = (studentData || []).map(s => ({
       ...s,
       hostel: hostelMap[s.id] || null
     }));
 
     setStudents(studentsWithHostel);
+    setCurrentPage(1);
     setLoading(false);
   };
 
-  const handleOpenDialog = (student) => {
+  const handleSelectStudent = (student) => {
     setSelectedStudent(student);
-    
     const hostel = student.hostel;
-    
     setFormData({
       hostel_id: hostel?.hostel_id || '',
       room_id: hostel?.room_id || '',
@@ -153,20 +141,19 @@ const HostelFee = () => {
       check_out_date: hostel?.check_out_date || '',
       hostel_guardian_contact: hostel?.hostel_guardian_contact || ''
     });
-    setIsDialogOpen(true);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const handleCloseDialog = () => {
-    setIsDialogOpen(false);
+  const handleCancelEdit = () => {
     setSelectedStudent(null);
+    setFormData({
+      hostel_id: '', room_id: '', room_type_id: '', bed_number: '',
+      hostel_fee: '', check_in_date: '', check_out_date: '', hostel_guardian_contact: ''
+    });
   };
 
   const handleHostelChange = (hostelId) => {
-    setFormData(prev => ({ 
-      ...prev, 
-      hostel_id: hostelId, 
-      room_id: ''
-    }));
+    setFormData(prev => ({ ...prev, hostel_id: hostelId, room_id: '' }));
   };
 
   const handleRoomChange = (roomId) => {
@@ -216,34 +203,28 @@ const HostelFee = () => {
     let error;
     
     if (selectedStudent.hostel) {
-      // Update existing record
       const { error: updateError } = await supabase
         .from('student_hostel_details')
         .update(hostelPayload)
         .eq('id', selectedStudent.hostel.id);
       error = updateError;
     } else {
-      // Insert new record
       const { error: insertError } = await supabase
         .from('student_hostel_details')
         .insert(hostelPayload);
-      
       error = insertError;
-      // Note: No need to update student_profiles - relationship is via student_id in student_hostel_details
     }
 
     if (error) {
       toast({ variant: 'destructive', title: 'Error updating hostel info', description: error.message });
     } else {
       toast({ title: 'Success!', description: 'Student hostel information updated.' });
-      
-      // Update local state
       setStudents(prev => prev.map(s => 
         s.id === selectedStudent.id 
           ? { ...s, hostel: { ...s.hostel, ...hostelPayload } }
           : s
       ));
-      handleCloseDialog();
+      handleCancelEdit();
     }
     setIsSubmitting(false);
   };
@@ -255,131 +236,89 @@ const HostelFee = () => {
     ? rooms.filter(r => r.hostel_id === formData.hostel_id)
     : rooms;
 
+  const assignedCount = students.filter(s => s.hostel).length;
+
+  // Pagination
+  const totalPages = Math.ceil(students.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const paginatedStudents = students.slice(startIndex, startIndex + itemsPerPage);
+
   return (
     <DashboardLayout>
       <div className="p-6 space-y-6">
-        <div>
-          <h1 className="text-3xl font-bold flex items-center gap-2">
-            <Building2 className="h-8 w-8 text-primary" /> Student Hostel Management
-          </h1>
-          <p className="text-muted-foreground mt-1">Assign hostel rooms and manage fees for students</p>
-        </div>
+        {/* Stats Cards */}
+        {hasSearched && students.length > 0 && (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <Card className="bg-gradient-to-r from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 border-blue-200">
+              <CardContent className="flex items-center p-4">
+                <Users className="h-10 w-10 text-blue-600 mr-4" />
+                <div>
+                  <p className="text-2xl font-bold text-blue-700">{students.length}</p>
+                  <p className="text-sm text-blue-600">Total Students</p>
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="bg-gradient-to-r from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20 border-green-200">
+              <CardContent className="flex items-center p-4">
+                <Building2 className="h-10 w-10 text-green-600 mr-4" />
+                <div>
+                  <p className="text-2xl font-bold text-green-700">{assignedCount}</p>
+                  <p className="text-sm text-green-600">Hostel Assigned</p>
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="bg-gradient-to-r from-purple-50 to-purple-100 dark:from-purple-900/20 dark:to-purple-800/20 border-purple-200">
+              <CardContent className="flex items-center p-4">
+                <User className="h-10 w-10 text-purple-600 mr-4" />
+                <div>
+                  <p className="text-2xl font-bold text-purple-700">{students.length - assignedCount}</p>
+                  <p className="text-sm text-purple-600">Not Assigned</p>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
 
-        {/* Search Filters */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Search Students</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <div className="space-y-2">
-                <Label>Class</Label>
-                <Select value={searchFilters.class_id || "all"} onValueChange={(v) => setSearchFilters({...searchFilters, class_id: v === "all" ? "" : v})}>
-                  <SelectTrigger><SelectValue placeholder="Select Class" /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Classes</SelectItem>
-                    {classes.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2 md:col-span-2">
-                <Label>Search by Name / Admission No</Label>
-                <Input 
-                  placeholder="Enter name or admission number..." 
-                  value={searchFilters.search}
-                  onChange={(e) => setSearchFilters({...searchFilters, search: e.target.value})}
-                />
-              </div>
-              <div className="flex items-end">
-                <Button onClick={searchStudents} className="w-full" disabled={loading}>
-                  {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Search className="mr-2 h-4 w-4" />}
-                  Search
-                </Button>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+        {/* Main Content: Left Form + Right List */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Left Side - Search + Assignment Form */}
+          <Card className="lg:col-span-1">
+            <CardContent className="p-6">
+              {/* Search Section */}
+              <h2 className="text-lg font-semibold mb-4">
+                {selectedStudent ? `Assign Hostel - ${selectedStudent.full_name}` : 'Search Students'}
+              </h2>
 
-        {/* Results */}
-        <Card>
-          <CardContent className="p-0">
-            {loading ? (
-              <div className="flex justify-center items-center py-16">
-                <Loader2 className="h-8 w-8 animate-spin text-primary" />
-              </div>
-            ) : students.length === 0 ? (
-              <div className="text-center py-16 text-muted-foreground">
-                <User className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                <p>{hasSearched ? 'No students found matching your search criteria.' : 'Search for students to assign hostel rooms and fees.'}</p>
-              </div>
-            ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow className="bg-muted/50">
-                    <TableHead className="w-[50px]">#</TableHead>
-                    <TableHead>Student Name</TableHead>
-                    <TableHead>Admission No.</TableHead>
-                    <TableHead>Class</TableHead>
-                    <TableHead>Hostel</TableHead>
-                    <TableHead>Room</TableHead>
-                    <TableHead>Fee</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead className="text-center">Action</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {students.map((student, index) => (
-                    <TableRow key={student.id}>
-                      <TableCell>{index + 1}</TableCell>
-                      <TableCell className="font-medium">
-                        {student.full_name}
-                      </TableCell>
-                      <TableCell>{student.school_code || '-'}</TableCell>
-                      <TableCell>
-                        {student.classes?.name || '-'}
-                        {student.sections?.name ? ` - ${student.sections.name}` : ''}
-                      </TableCell>
-                      <TableCell>{getHostelName(student.hostel?.hostel_id)}</TableCell>
-                      <TableCell>{getRoomName(student.hostel?.room_id)}</TableCell>
-                      <TableCell>
-                        {student.hostel?.hostel_fee ? (
-                          <span className="flex items-center gap-1">
-                            <IndianRupee className="h-3 w-3" />{student.hostel.hostel_fee}
-                          </span>
-                        ) : '-'}
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant={student.hostel ? 'default' : 'secondary'}>
-                          {student.hostel ? 'Assigned' : 'Not Assigned'}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-center">
-                        <Button variant="outline" size="sm" onClick={() => handleOpenDialog(student)}>
-                          <DoorOpen className="h-4 w-4 mr-1" /> {student.hostel ? 'Edit' : 'Assign'}
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Assignment Dialog */}
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogContent className="sm:max-w-xl">
-            <DialogHeader>
-              <DialogTitle>
-                Assign Hostel - {selectedStudent?.full_name}
-              </DialogTitle>
-            </DialogHeader>
-            <form onSubmit={handleSubmit}>
-              <div className="grid gap-4 py-4">
-                {/* Hostel & Room Selection */}
-                <div className="grid grid-cols-2 gap-4">
+              {!selectedStudent ? (
+                <div className="space-y-4">
                   <div className="space-y-2">
-                    <Label>Hostel</Label>
+                    <Label>Class</Label>
+                    <Select value={searchFilters.class_id || "all"} onValueChange={(v) => setSearchFilters({...searchFilters, class_id: v === "all" ? "" : v})}>
+                      <SelectTrigger><SelectValue placeholder="Select Class" /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Classes</SelectItem>
+                        {classes.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Search by Name / Admission No</Label>
+                    <Input 
+                      placeholder="Enter name or admission number..." 
+                      value={searchFilters.search}
+                      onChange={(e) => setSearchFilters({...searchFilters, search: e.target.value})}
+                    />
+                  </div>
+                  <Button onClick={searchStudents} className="w-full" disabled={loading}>
+                    {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Search className="mr-2 h-4 w-4" />}
+                    Search
+                  </Button>
+                </div>
+              ) : (
+                /* Assignment Form */
+                <form onSubmit={handleSubmit} className="space-y-4">
+                  <div className="space-y-2">
+                    <Label>Hostel *</Label>
                     <Select value={formData.hostel_id} onValueChange={handleHostelChange}>
                       <SelectTrigger><SelectValue placeholder="Select Hostel" /></SelectTrigger>
                       <SelectContent>
@@ -389,8 +328,9 @@ const HostelFee = () => {
                       </SelectContent>
                     </Select>
                   </div>
+
                   <div className="space-y-2">
-                    <Label>Room</Label>
+                    <Label>Room *</Label>
                     <Select value={formData.room_id} onValueChange={handleRoomChange}>
                       <SelectTrigger><SelectValue placeholder="Select Room" /></SelectTrigger>
                       <SelectContent>
@@ -400,10 +340,7 @@ const HostelFee = () => {
                       </SelectContent>
                     </Select>
                   </div>
-                </div>
 
-                {/* Room Type & Bed */}
-                <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label>Room Type</Label>
                     <Select value={formData.room_type_id} onValueChange={handleRoomTypeChange}>
@@ -415,74 +352,139 @@ const HostelFee = () => {
                       </SelectContent>
                     </Select>
                   </div>
+
                   <div className="space-y-2">
                     <Label>Bed Number</Label>
-                    <Input
-                      value={formData.bed_number}
-                      onChange={(e) => setFormData({...formData, bed_number: e.target.value})}
-                      placeholder="e.g. B1"
-                    />
+                    <Input value={formData.bed_number} onChange={(e) => setFormData({...formData, bed_number: e.target.value})} placeholder="e.g. B1" />
                   </div>
-                </div>
 
-                {/* Fee */}
-                <div className="space-y-2">
-                  <Label>Hostel Fee (Monthly)</Label>
-                  <div className="relative">
-                    <IndianRupee className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      type="number"
-                      className="pl-9"
-                      value={formData.hostel_fee}
-                      onChange={(e) => setFormData({...formData, hostel_fee: e.target.value})}
-                      placeholder="Enter monthly fee"
-                    />
+                  <div className="space-y-2">
+                    <Label>Hostel Fee (₹)</Label>
+                    <Input type="number" min="0" value={formData.hostel_fee} onChange={(e) => setFormData({...formData, hostel_fee: e.target.value})} placeholder="e.g. 5000" />
                   </div>
-                </div>
 
-                {/* Dates */}
-                <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label>Check-in Date</Label>
-                    <Input
-                      type="date"
-                      value={formData.check_in_date}
-                      onChange={(e) => setFormData({...formData, check_in_date: e.target.value})}
-                    />
+                    <Input type="date" value={formData.check_in_date} onChange={(e) => setFormData({...formData, check_in_date: e.target.value})} />
                   </div>
+
                   <div className="space-y-2">
                     <Label>Check-out Date</Label>
-                    <Input
-                      type="date"
-                      value={formData.check_out_date}
-                      onChange={(e) => setFormData({...formData, check_out_date: e.target.value})}
-                    />
+                    <Input type="date" value={formData.check_out_date} onChange={(e) => setFormData({...formData, check_out_date: e.target.value})} />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Guardian Contact</Label>
+                    <Input type="tel" value={formData.hostel_guardian_contact} onChange={(e) => setFormData({...formData, hostel_guardian_contact: e.target.value})} placeholder="Phone number" />
+                  </div>
+
+                  <div className="flex gap-2 pt-2">
+                    <Button type="submit" disabled={isSubmitting} className="flex-1">
+                      {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+                      Save
+                    </Button>
+                    <Button type="button" variant="outline" onClick={handleCancelEdit}>
+                      Cancel
+                    </Button>
+                  </div>
+                </form>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Right Side - Student List */}
+          <Card className="lg:col-span-2">
+            <CardContent className="p-6">
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-lg font-semibold">Student Hostel List</h2>
+              </div>
+
+              {loading ? (
+                <div className="flex justify-center items-center py-16">
+                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                </div>
+              ) : students.length === 0 ? (
+                <div className="text-center py-16 text-muted-foreground">
+                  <User className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                  <p>{hasSearched ? 'No students found matching your search.' : 'Search for students to assign hostel rooms and fees.'}</p>
+                </div>
+              ) : (
+                <div className="border rounded-lg overflow-hidden max-h-[500px] overflow-y-auto">
+                  <Table>
+                    <TableHeader className="sticky top-0 bg-background z-10">
+                      <TableRow className="bg-muted/50">
+                        <TableHead className="w-[50px]">#</TableHead>
+                        <TableHead>Student Name</TableHead>
+                        <TableHead>Admission No.</TableHead>
+                        <TableHead>Class</TableHead>
+                        <TableHead>Hostel</TableHead>
+                        <TableHead>Room</TableHead>
+                        <TableHead className="text-right">Fee</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead className="text-center">Action</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {paginatedStudents.map((student, index) => (
+                        <TableRow key={student.id} className={selectedStudent?.id === student.id ? 'bg-primary/10' : ''}>
+                          <TableCell>{startIndex + index + 1}</TableCell>
+                          <TableCell className="font-medium">{student.full_name}</TableCell>
+                          <TableCell>{student.school_code || '-'}</TableCell>
+                          <TableCell>
+                            {student.classes?.name || '-'}
+                            {student.sections?.name ? ` - ${student.sections.name}` : ''}
+                          </TableCell>
+                          <TableCell>{getHostelName(student.hostel?.hostel_id)}</TableCell>
+                          <TableCell>{getRoomName(student.hostel?.room_id)}</TableCell>
+                          <TableCell className="text-right">
+                            {student.hostel?.hostel_fee ? `₹${student.hostel.hostel_fee}` : '-'}
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant={student.hostel ? 'default' : 'secondary'}>
+                              {student.hostel ? 'Assigned' : 'Not Assigned'}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-center">
+                            <Button variant="outline" size="sm" onClick={() => handleSelectStudent(student)}>
+                              <DoorOpen className="h-4 w-4 mr-1" /> {student.hostel ? 'Edit' : 'Assign'}
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
+
+              {/* Pagination */}
+              {students.length > 0 && (
+                <div className="flex items-center justify-between mt-4">
+                  <p className="text-sm text-muted-foreground">
+                    Showing {startIndex + 1} to {Math.min(startIndex + itemsPerPage, students.length)} of {students.length} entries
+                  </p>
+                  <div className="flex items-center gap-2">
+                    <Select value={String(itemsPerPage)} onValueChange={(v) => { setItemsPerPage(Number(v)); setCurrentPage(1); }}>
+                      <SelectTrigger className="w-[80px]"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="10">10</SelectItem>
+                        <SelectItem value="25">25</SelectItem>
+                        <SelectItem value="50">50</SelectItem>
+                        <SelectItem value="100">100</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <div className="flex gap-1">
+                      <Button variant="outline" size="sm" onClick={() => setCurrentPage(1)} disabled={currentPage === 1}>«</Button>
+                      <Button variant="outline" size="sm" onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1}>‹</Button>
+                      <span className="px-3 py-1 text-sm">Page {currentPage} of {totalPages || 1}</span>
+                      <Button variant="outline" size="sm" onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage >= totalPages}>›</Button>
+                      <Button variant="outline" size="sm" onClick={() => setCurrentPage(totalPages)} disabled={currentPage >= totalPages}>»</Button>
+                    </div>
                   </div>
                 </div>
-
-                {/* Guardian Contact */}
-                <div className="space-y-2">
-                  <Label>Guardian Contact (for Hostel)</Label>
-                  <Input
-                    type="tel"
-                    value={formData.hostel_guardian_contact}
-                    onChange={(e) => setFormData({...formData, hostel_guardian_contact: e.target.value})}
-                    placeholder="Enter guardian phone number"
-                  />
-                </div>
-              </div>
-              <DialogFooter>
-                <DialogClose asChild>
-                  <Button type="button" variant="outline">Cancel</Button>
-                </DialogClose>
-                <Button type="submit" disabled={isSubmitting}>
-                  {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-                  Save
-                </Button>
-              </DialogFooter>
-            </form>
-          </DialogContent>
-        </Dialog>
+              )}
+            </CardContent>
+          </Card>
+        </div>
       </div>
     </DashboardLayout>
   );

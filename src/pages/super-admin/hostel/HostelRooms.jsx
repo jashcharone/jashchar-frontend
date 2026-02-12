@@ -12,9 +12,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Card, CardContent } from "@/components/ui/card";
 import { Plus, Edit, Trash2, Save, Loader2, DoorOpen, Building2, Bed, Users } from 'lucide-react';
 import {
-  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose
-} from '@/components/ui/dialog';
-import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger
 } from '@/components/ui/alert-dialog';
@@ -30,9 +27,10 @@ const HostelRooms = () => {
   const [roomTypes, setRoomTypes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingRoom, setEditingRoom] = useState(null);
   const [filterHostel, setFilterHostel] = useState('all');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
   const [formData, setFormData] = useState({
     room_number_name: '',
     hostel_id: '',
@@ -96,12 +94,15 @@ const HostelRooms = () => {
     } : {
       room_number_name: '', hostel_id: '', room_type_id: '', num_of_beds: '', cost_per_bed: '', description: ''
     });
-    setIsDialogOpen(true);
+    // Scroll to top to show form
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleCloseDialog = () => {
-    setIsDialogOpen(false);
     setEditingRoom(null);
+    setFormData({
+      room_number_name: '', hostel_id: '', room_type_id: '', num_of_beds: '', cost_per_bed: '', description: ''
+    });
   };
 
   const handleRoomTypeSelect = (roomTypeId) => {
@@ -156,7 +157,11 @@ const HostelRooms = () => {
     } else {
       toast({ title: 'Success!', description: `Room successfully ${editingRoom ? 'updated' : 'created'}.` });
       await fetchRooms();
-      handleCloseDialog();
+      // Reset form after successful submission
+      setEditingRoom(null);
+      setFormData({
+        room_number_name: '', hostel_id: '', room_type_id: '', num_of_beds: '', cost_per_bed: '', description: ''
+      });
     }
     setIsSubmitting(false);
   };
@@ -175,6 +180,11 @@ const HostelRooms = () => {
 
   const totalBeds = filteredRooms.reduce((sum, r) => sum + (r.num_of_beds || 0), 0);
 
+  // Pagination logic
+  const totalPages = Math.ceil(filteredRooms.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const paginatedRooms = filteredRooms.slice(startIndex, startIndex + itemsPerPage);
+
   const getStatusBadge = (status, capacity, occupied) => {
     if (status === 'Maintenance') return <Badge variant="destructive">Maintenance</Badge>;
     if (occupied >= capacity) return <Badge variant="secondary">Full</Badge>;
@@ -182,22 +192,17 @@ const HostelRooms = () => {
     return <Badge variant="default">Available</Badge>;
   };
 
+  const handleCancelEdit = () => {
+    setEditingRoom(null);
+    setFormData({
+      room_number_name: '', hostel_id: '', room_type_id: '', num_of_beds: '', cost_per_bed: '', description: ''
+    });
+  };
+
   return (
     <DashboardLayout>
       <div className="p-6 space-y-6">
-        <div className="flex justify-between items-center">
-          <div>
-            <h1 className="text-3xl font-bold flex items-center gap-2">
-              <DoorOpen className="h-8 w-8 text-primary" /> Hostel Rooms
-            </h1>
-            <p className="text-muted-foreground mt-1">Manage rooms across hostels</p>
-          </div>
-          <Button onClick={() => handleOpenDialog()}>
-            <Plus className="mr-2 h-4 w-4" /> Add Room
-          </Button>
-        </div>
-
-        {/* Stats Cards */}
+        {/* Stats Cards at Top */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <Card className="bg-gradient-to-r from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 border-blue-200">
             <CardContent className="flex items-center p-4">
@@ -219,110 +224,29 @@ const HostelRooms = () => {
           </Card>
         </div>
 
-        {/* Filter */}
-        <div className="flex items-center gap-4">
-          <Label>Filter by Hostel:</Label>
-          <Select value={filterHostel} onValueChange={setFilterHostel}>
-            <SelectTrigger className="w-[250px]">
-              <SelectValue placeholder="All Hostels" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Hostels</SelectItem>
-              {hostels.map(h => (
-                <SelectItem key={h.id} value={h.id}>{h.name} ({h.type})</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-
-        <Card>
-          <CardContent className="p-0">
-            {loading ? (
-              <div className="flex justify-center items-center py-16">
-                <Loader2 className="h-8 w-8 animate-spin text-primary" />
-              </div>
-            ) : filteredRooms.length === 0 ? (
-              <div className="text-center py-16 text-muted-foreground">
-                <DoorOpen className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                <p>No rooms found. Add one to get started.</p>
-              </div>
-            ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow className="bg-muted/50">
-                    <TableHead className="w-[50px]">#</TableHead>
-                    <TableHead>Room No.</TableHead>
-                    <TableHead>Hostel</TableHead>
-                    <TableHead>Room Type</TableHead>
-                    <TableHead className="text-center">Beds</TableHead>
-                    <TableHead className="text-right">Cost/Bed</TableHead>
-                    <TableHead className="text-center">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredRooms.map((room, index) => (
-                    <TableRow key={room.id}>
-                      <TableCell>{index + 1}</TableCell>
-                      <TableCell className="font-medium">{room.room_number_name}</TableCell>
-                      <TableCell>
-                        <div className="flex flex-col">
-                          <span>{room.hostels?.name || '-'}</span>
-                          <span className="text-xs text-muted-foreground">{room.hostels?.type}</span>
-                        </div>
-                      </TableCell>
-                      <TableCell>{room.hostel_room_types?.name || '-'}</TableCell>
-                      <TableCell className="text-center">{room.num_of_beds || '-'}</TableCell>
-                      <TableCell className="text-right">₹{room.cost_per_bed || '-'}</TableCell>
-                      <TableCell className="text-center space-x-2">
-                        <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => handleOpenDialog(room)}>
-                          <Edit className="h-4 w-4 text-yellow-600" />
-                        </Button>
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <Button variant="destructive" size="icon" className="h-8 w-8">
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>Delete Room?</AlertDialogTitle>
-                              <AlertDialogDescription>
-                                This will permanently delete room "{room.room_number_name}". Students assigned to this room will be affected.
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>Cancel</AlertDialogCancel>
-                              <AlertDialogAction onClick={() => handleDelete(room.id)} className="bg-destructive hover:bg-destructive/90">
-                                Delete
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            )}
-          </CardContent>
-        </Card>
-
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogContent className="sm:max-w-lg">
-            <DialogHeader>
-              <DialogTitle>{editingRoom ? 'Edit Room' : 'Add New Room'}</DialogTitle>
-            </DialogHeader>
-            <form onSubmit={handleSubmit}>
-              <div className="grid gap-4 py-4">
+        {/* Main Content: Form on Left, List on Right */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Left Side - Add/Edit Form */}
+          <Card className="lg:col-span-1">
+            <CardContent className="p-6">
+              <h2 className="text-lg font-semibold mb-4">
+                {editingRoom ? 'Edit Hostel Room' : 'Add Hostel Room'}
+              </h2>
+              <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="room_number_name">Room Number/Name *</Label>
-                  <Input id="room_number_name" value={formData.room_number_name} onChange={(e) => setFormData({...formData, room_number_name: e.target.value})} placeholder="e.g. A-101" required />
+                  <Label htmlFor="room_number_name">Room Number / Name *</Label>
+                  <Input 
+                    id="room_number_name" 
+                    value={formData.room_number_name} 
+                    onChange={(e) => setFormData({...formData, room_number_name: e.target.value})} 
+                    placeholder="e.g. A-101" 
+                  />
                 </div>
 
                 <div className="space-y-2">
                   <Label>Hostel *</Label>
                   <Select value={formData.hostel_id} onValueChange={(v) => setFormData({...formData, hostel_id: v})}>
-                    <SelectTrigger><SelectValue placeholder="Select hostel" /></SelectTrigger>
+                    <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
                     <SelectContent>
                       {hostels.map(h => <SelectItem key={h.id} value={h.id}>{h.name} ({h.type})</SelectItem>)}
                     </SelectContent>
@@ -330,9 +254,9 @@ const HostelRooms = () => {
                 </div>
 
                 <div className="space-y-2">
-                  <Label>Room Type</Label>
+                  <Label>Room Type *</Label>
                   <Select value={formData.room_type_id} onValueChange={handleRoomTypeSelect}>
-                    <SelectTrigger><SelectValue placeholder="Select room type" /></SelectTrigger>
+                    <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
                     <SelectContent>
                       {roomTypes.map(rt => (
                         <SelectItem key={rt.id} value={rt.id}>
@@ -343,34 +267,205 @@ const HostelRooms = () => {
                   </Select>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="num_of_beds">Number of Beds</Label>
-                    <Input id="num_of_beds" type="number" min="1" value={formData.num_of_beds} onChange={(e) => setFormData({...formData, num_of_beds: e.target.value})} placeholder="e.g. 4" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="cost_per_bed">Cost Per Bed (₹)</Label>
-                    <Input id="cost_per_bed" type="number" min="0" value={formData.cost_per_bed} onChange={(e) => setFormData({...formData, cost_per_bed: e.target.value})} placeholder="e.g. 5000" />
-                  </div>
+                <div className="space-y-2">
+                  <Label htmlFor="num_of_beds">Number Of Bed *</Label>
+                  <Input 
+                    id="num_of_beds" 
+                    type="number" 
+                    min="1" 
+                    value={formData.num_of_beds} 
+                    onChange={(e) => setFormData({...formData, num_of_beds: e.target.value})} 
+                    placeholder="e.g. 4" 
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="cost_per_bed">Cost Per Bed *</Label>
+                  <Input 
+                    id="cost_per_bed" 
+                    type="number" 
+                    min="0" 
+                    value={formData.cost_per_bed} 
+                    onChange={(e) => setFormData({...formData, cost_per_bed: e.target.value})} 
+                    placeholder="e.g. 5000" 
+                  />
                 </div>
 
                 <div className="space-y-2">
                   <Label htmlFor="description">Description</Label>
-                  <Textarea id="description" value={formData.description} onChange={(e) => setFormData({...formData, description: e.target.value})} placeholder="Additional details" rows={2} />
+                  <Textarea 
+                    id="description" 
+                    value={formData.description} 
+                    onChange={(e) => setFormData({...formData, description: e.target.value})} 
+                    placeholder="Additional details" 
+                    rows={3} 
+                  />
+                </div>
+
+                <div className="flex gap-2 pt-2">
+                  <Button type="submit" disabled={isSubmitting} className="flex-1">
+                    {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+                    Save
+                  </Button>
+                  {editingRoom && (
+                    <Button type="button" variant="outline" onClick={handleCancelEdit}>
+                      Cancel
+                    </Button>
+                  )}
+                </div>
+              </form>
+            </CardContent>
+          </Card>
+
+          {/* Right Side - Room List */}
+          <Card className="lg:col-span-2">
+            <CardContent className="p-6">
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-lg font-semibold">Hostel Room List</h2>
+                <div className="flex items-center gap-2">
+                  <Select value={filterHostel} onValueChange={setFilterHostel}>
+                    <SelectTrigger className="w-[200px]">
+                      <SelectValue placeholder="All Hostels" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Hostels</SelectItem>
+                      {hostels.map(h => (
+                        <SelectItem key={h.id} value={h.id}>{h.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
-              <DialogFooter>
-                <DialogClose asChild>
-                  <Button type="button" variant="secondary" onClick={handleCloseDialog}>Cancel</Button>
-                </DialogClose>
-                <Button type="submit" disabled={isSubmitting}>
-                  {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-                  Save
-                </Button>
-              </DialogFooter>
-            </form>
-          </DialogContent>
-        </Dialog>
+
+              {loading ? (
+                <div className="flex justify-center items-center py-16">
+                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                </div>
+              ) : filteredRooms.length === 0 ? (
+                <div className="text-center py-16 text-muted-foreground">
+                  <DoorOpen className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                  <p>No rooms found. Add one to get started.</p>
+                </div>
+              ) : (
+                <div className="border rounded-lg overflow-hidden max-h-[500px] overflow-y-auto">
+                  <Table>
+                    <TableHeader className="sticky top-0 bg-background z-10">
+                      <TableRow className="bg-muted/50">
+                        <TableHead className="w-[50px]">#</TableHead>
+                        <TableHead>Room Number / Name</TableHead>
+                        <TableHead>Hostel</TableHead>
+                        <TableHead>Room Type</TableHead>
+                        <TableHead className="text-center">Number Of Bed</TableHead>
+                        <TableHead className="text-right">Cost Per Bed</TableHead>
+                        <TableHead className="text-center">Action</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {paginatedRooms.map((room, index) => (
+                        <TableRow key={room.id}>
+                          <TableCell>{startIndex + index + 1}</TableCell>
+                          <TableCell className="font-medium">{room.room_number_name}</TableCell>
+                          <TableCell>{room.hostels?.name || '-'}</TableCell>
+                          <TableCell>{room.hostel_room_types?.name || '-'}</TableCell>
+                          <TableCell className="text-center">{room.num_of_beds || '-'}</TableCell>
+                          <TableCell className="text-right">₹{room.cost_per_bed || '-'}</TableCell>
+                          <TableCell className="text-center space-x-2">
+                            <Button 
+                              variant="outline" 
+                              size="icon" 
+                              className="h-8 w-8" 
+                              onClick={() => handleOpenDialog(room)}
+                            >
+                              <Edit className="h-4 w-4 text-blue-600" />
+                            </Button>
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <Button variant="destructive" size="icon" className="h-8 w-8">
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>Delete Room?</AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    This will permanently delete room "{room.room_number_name}". Students assigned to this room will be affected.
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                  <AlertDialogAction onClick={() => handleDelete(room.id)} className="bg-destructive hover:bg-destructive/90">
+                                    Delete
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
+              
+              {/* Pagination Controls */}
+              <div className="flex items-center justify-between mt-4">
+                <p className="text-sm text-muted-foreground">
+                  Showing {startIndex + 1} to {Math.min(startIndex + itemsPerPage, filteredRooms.length)} of {filteredRooms.length} entries
+                </p>
+                <div className="flex items-center gap-2">
+                  <Select value={String(itemsPerPage)} onValueChange={(v) => { setItemsPerPage(Number(v)); setCurrentPage(1); }}>
+                    <SelectTrigger className="w-[80px]">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="10">10</SelectItem>
+                      <SelectItem value="25">25</SelectItem>
+                      <SelectItem value="50">50</SelectItem>
+                      <SelectItem value="100">100</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <div className="flex gap-1">
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={() => setCurrentPage(1)} 
+                      disabled={currentPage === 1}
+                    >
+                      «
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={() => setCurrentPage(p => Math.max(1, p - 1))} 
+                      disabled={currentPage === 1}
+                    >
+                      ‹
+                    </Button>
+                    <span className="px-3 py-1 text-sm">
+                      Page {currentPage} of {totalPages || 1}
+                    </span>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} 
+                      disabled={currentPage >= totalPages}
+                    >
+                      ›
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={() => setCurrentPage(totalPages)} 
+                      disabled={currentPage >= totalPages}
+                    >
+                      »
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     </DashboardLayout>
   );

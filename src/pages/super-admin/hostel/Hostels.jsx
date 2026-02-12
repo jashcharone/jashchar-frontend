@@ -56,7 +56,7 @@ const Hostels = () => {
       setHostels(data || []);
     }
     setLoading(false);
-  }, [branchId, branchId, toast]);
+  }, [branchId, toast]);
 
   useEffect(() => {
     fetchHostels();
@@ -107,10 +107,12 @@ const Hostels = () => {
       address: formData.address?.trim() || null,
       intake: formData.intake ? parseInt(formData.intake) : null,
       description: formData.description?.trim() || null,
-      branch_id: branchId,
-      session_id: currentSessionId,
-      organization_id: organizationId
+      branch_id: branchId
     };
+
+    // Multi-tenant keys (columns added via FIX_HOSTELS_TABLE_MISSING_COLUMNS.sql)
+    if (organizationId) payload.organization_id = organizationId;
+    if (currentSessionId) payload.session_id = currentSessionId;
 
     console.log('Hostels - Submitting payload:', payload);
 

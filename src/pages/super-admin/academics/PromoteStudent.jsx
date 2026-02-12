@@ -53,7 +53,27 @@ const PromoteStudent = () => {
     // Results
     const [promotionResults, setPromotionResults] = useState(null);
 
-    const branchId = user?.profile?.branch_id || selectedBranch?.id;
+    const branchId = selectedBranch?.id || user?.profile?.branch_id;
+
+    // Reset all data when branch changes
+    useEffect(() => {
+        setSessions([]);
+        setClasses([]);
+        setSections([]);
+        setTargetClasses([]);
+        setTargetSections([]);
+        setStudents([]);
+        setSelectedStudents([]);
+        setPromotionResults(null);
+        setFilters({
+            current_session: '',
+            promote_session: '',
+            current_class: '',
+            current_section: '',
+            promote_class: '',
+            promote_section: ''
+        });
+    }, [branchId]);
 
     // Fetch sessions
     useEffect(() => {

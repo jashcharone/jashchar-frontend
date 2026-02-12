@@ -99,7 +99,6 @@ export const BASE_SIDEBAR = {
         { title: 'Student Details', path: ROUTES.SUPER_ADMIN.STUDENT_DETAILS },
         { title: 'Online Admission', path: ROUTES.SUPER_ADMIN.ONLINE_ADMISSION_LIST },
         { title: 'Bulk Upload', path: ROUTES.SUPER_ADMIN.STUDENT_BULK_UPLOAD },
-        { title: 'Promotion', path: ROUTES.SUPER_ADMIN.STUDENT_PROMOTION },
         { title: 'ID Card', path: ROUTES.SUPER_ADMIN.STUDENT_ID_CARD },
         { title: 'Disabled Students', path: ROUTES.SUPER_ADMIN.DISABLED_STUDENTS },
         { title: 'Disable Reason', path: ROUTES.SUPER_ADMIN.DISABLE_REASON },

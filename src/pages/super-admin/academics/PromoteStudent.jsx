@@ -1,219 +1,695 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
-import api from '@/lib/api';
+import { supabase } from '@/lib/customSupabaseClient';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { useBranch } from '@/contexts/BranchContext';
 import { useToast } from '@/components/ui/use-toast';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Label } from '@/components/ui/label';
-import { Search, Loader2, Save } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Badge } from '@/components/ui/badge';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Progress } from '@/components/ui/progress';
+import { 
+    GraduationCap, 
+    ArrowRight, 
+    CheckCircle, 
+    AlertTriangle, 
+    Loader2,
+    Users,
+    ArrowUpRight
+} from 'lucide-react';
 
 const PromoteStudent = () => {
-    const { toast } = useToast();
-    const { user, currentSessionId, currentSessionName } = useAuth();
+    const { user, currentSessionId } = useAuth();
     const { selectedBranch } = useBranch();
-    const [classes, setClasses] = useState([]);
-    const [sections, setSections] = useState([]);
-    const [sessions, setSessions] = useState([]);
-    
-    const [filters, setFilters] = useState({ class_id: '', section_id: '' });
-    const [promotionData, setPromotionData] = useState({ session_id: '', class_id: '', section_id: '' });
-    const [students, setStudents] = useState([]);
+    const { toast } = useToast();
     
     const [loading, setLoading] = useState(false);
-    const [isSaving, setIsSaving] = useState(false);
+    const [promoting, setPromoting] = useState(false);
+    const [progress, setProgress] = useState(0);
+    
+    // Data states
+    const [sessions, setSessions] = useState([]);
+    const [classes, setClasses] = useState([]);
+    const [sections, setSections] = useState([]);
+    const [targetClasses, setTargetClasses] = useState([]);
+    const [targetSections, setTargetSections] = useState([]);
+    const [students, setStudents] = useState([]);
+    const [selectedStudents, setSelectedStudents] = useState([]);
+    
+    // Filter states
+    const [filters, setFilters] = useState({
+        current_session: '',
+        promote_session: '',
+        current_class: '',
+        current_section: '',
+        promote_class: '',
+        promote_section: ''
+    });
+    
+    // Results
+    const [promotionResults, setPromotionResults] = useState(null);
 
-    const branchId = user?.profile?.branch_id;
+    const branchId = user?.profile?.branch_id || selectedBranch?.id;
 
+    // Fetch sessions
     useEffect(() => {
-        if (!branchId || !selectedBranch) return;
-        const fetchPrereqs = async () => {
+        if (!branchId) return;
+        const fetchSessions = async () => {
             try {
-                const { data } = await api.get('/academics/promotions/prerequisites', {
-                    params: { branchId, branchId: selectedBranch.id }
-                });
-                setClasses(data.classes || []);
-                setSessions(data.sessions || []);
+                const { data, error } = await supabase
+                    .from('sessions')
+                    .select('id, name, is_active, start_date, end_date')
+                    .eq('branch_id', branchId)
+                    .order('start_date', { ascending: true }); // Oldest to Newest
+                
+                if (error) throw error;
+                setSessions(data || []);
+                
+                // ═══════════════════════════════════════════════════════════════════
+                // 100-YEAR FUTURE-PROOF PROMOTION LOGIC
+                // ═══════════════════════════════════════════════════════════════════
+                // PROMOTION SCENARIO:
+                //   Current Session = Where students ARE NOW (typically the active session)
+                //   Target Session = Where students WILL GO (NEXT session after current)
+                //
+                // Example Timeline:
+                //   2024-2025 (Previous) → 2025-2026 (Active/Current) → 2026-2027 (Next/Target)
+                //
+                // RULES:
+                //   1. Current Session = Active session (where students are studying NOW)
+                //   2. Target Session = Session AFTER current (future session)
+                //   3. Target Session dropdown should EXCLUDE current session
+                //   4. If no future session exists, prompt user to create one
+                // ═══════════════════════════════════════════════════════════════════
+                
+                const activeSession = data?.find(s => s.is_active);
+                
+                if (activeSession) {
+                    // Current = Active session (where students ARE NOW)
+                    setFilters(prev => ({ ...prev, current_session: activeSession.id }));
+                    
+                    // Find NEXT session (session AFTER active by start_date)
+                    // Sessions are sorted ascending, so next is after activeIndex
+                    const activeIndex = data.findIndex(s => s.id === activeSession.id);
+                    const nextSession = data[activeIndex + 1]; // Next session in chronological order
+                    
+                    if (nextSession) {
+                        // Target = Next session (where students WILL GO)
+                        setFilters(prev => ({ ...prev, promote_session: nextSession.id }));
+                    }
+                    // If no next session, leave promote_session empty - user needs to create new session
+                } else if (data && data.length > 0) {
+                    // No active session - use last two sessions by date
+                    const latestSession = data[data.length - 1];
+                    const previousSession = data[data.length - 2];
+                    
+                    setFilters(prev => ({ 
+                        ...prev, 
+                        current_session: previousSession?.id || latestSession?.id || '',
+                        promote_session: previousSession ? latestSession?.id : ''
+                    }));
+                }
             } catch (error) {
-                toast({ variant: 'destructive', title: 'Error loading promotion data', description: error.response?.data?.message || error.message });
-                setClasses([]);
-                setSessions([]);
+                console.error('Error fetching sessions:', error);
             }
         };
-        fetchPrereqs();
-    }, [branchId, selectedBranch]);
-
-    useEffect(() => {
-        if (filters.class_id) {
-            const fetchSections = async () => {
-                try {
-                    const { data } = await api.get('/academics/promotions/sections', {
-                        params: { classId: filters.class_id, branchId: selectedBranch?.id }
-                    });
-                    setSections((data || []).map((item) => item.sections || item).filter(Boolean));
-                } catch (error) {
-                    toast({ variant: 'destructive', title: 'Error loading sections', description: error.response?.data?.message || error.message });
-                    setSections([]);
-                }
-            };
-            fetchSections();
-        } else {
-            // Do not clear sections immediately to allow 'To' dropdowns to use the same list if needed, 
-            // but logic says 'To' class might change, so we need 'To' sections.
-            // The sections list state is shared? No, we should fetch based on the specific dropdown interaction.
-            // Here we are updating sections for the Filter part.
-            // For promotion destination, we need separate logic or shared if classes are same.
-            // Let's assume simple flow: fetch sections for filter. 
-            // Destination sections? We might need a separate state or just allow any section.
-            // Let's reuse setSections for now but be careful. Actually, 'To' sections need to update when 'To' class changes.
-            // I'll add 'toSections' state.
+        fetchSessions();
+    }, [branchId]);
+    
+    // Compute available target sessions (exclude current session)
+    const availableTargetSessions = sessions.filter(s => {
+        // Exclude the currently selected "current_session"
+        if (s.id === filters.current_session) return false;
+        
+        // Only show sessions that are AFTER or EQUAL to current session start_date
+        const currentSession = sessions.find(cs => cs.id === filters.current_session);
+        if (currentSession && s.start_date) {
+            return s.start_date >= currentSession.start_date;
         }
-    }, [filters.class_id]);
+        return true;
+    });
 
-    // State for destination sections
-    const [toSections, setToSections] = useState([]);
+    // Fetch classes
     useEffect(() => {
-        if (promotionData.class_id) {
-             const fetchToSections = async () => {
-                try {
-                    const { data } = await api.get('/academics/promotions/sections', {
-                        params: { classId: promotionData.class_id, branchId: selectedBranch?.id }
-                    });
-                    setToSections((data || []).map((item) => item.sections || item).filter(Boolean));
-                } catch (error) {
-                    toast({ variant: 'destructive', title: 'Error loading destination sections', description: error.response?.data?.message || error.message });
-                    setToSections([]);
-                }
-            };
-            fetchToSections();
-        } else {
-            setToSections([]);
+        if (!branchId) return;
+        const fetchClasses = async () => {
+            try {
+                const { data, error } = await supabase
+                    .from('classes')
+                    .select('id, name')
+                    .eq('branch_id', branchId)
+                    .order('name');
+                
+                if (error) throw error;
+                setClasses(data || []);
+                setTargetClasses(data || []);
+            } catch (error) {
+                console.error('Error fetching classes:', error);
+            }
+        };
+        fetchClasses();
+    }, [branchId]);
+
+    // Fetch sections for current class
+    useEffect(() => {
+        if (!filters.current_class) {
+            setSections([]);
+            return;
         }
-    }, [promotionData.class_id]);
+        const fetchSections = async () => {
+            try {
+                const { data, error } = await supabase
+                    .from('class_sections')
+                    .select('sections(id, name)')
+                    .eq('class_id', filters.current_class);
+                
+                if (error) throw error;
+                setSections(data ? data.map(item => item.sections).filter(Boolean) : []);
+            } catch (error) {
+                console.error('Error fetching sections:', error);
+            }
+        };
+        fetchSections();
+    }, [filters.current_class]);
 
+    // Fetch sections for target class
+    useEffect(() => {
+        if (!filters.promote_class) {
+            setTargetSections([]);
+            return;
+        }
+        const fetchTargetSections = async () => {
+            try {
+                const { data, error } = await supabase
+                    .from('class_sections')
+                    .select('sections(id, name)')
+                    .eq('class_id', filters.promote_class);
+                
+                if (error) throw error;
+                setTargetSections(data ? data.map(item => item.sections).filter(Boolean) : []);
+            } catch (error) {
+                console.error('Error fetching target sections:', error);
+            }
+        };
+        fetchTargetSections();
+    }, [filters.promote_class]);
 
+    // Search students
     const handleSearch = async () => {
-        if (!filters.class_id || !filters.section_id) {
-            toast({ variant: 'destructive', title: 'Please select Class and Section.' });
+        if (!filters.current_class || !filters.current_session) {
+            toast({ variant: 'destructive', title: 'Error', description: 'Please select session and class' });
             return;
         }
-        if (!currentSessionId) {
-            toast({ variant: 'destructive', title: 'No session selected. Please set a current session.' });
-            return;
-        }
+
         setLoading(true);
-        try {
-            const { data } = await api.get('/academics/promotions/students', {
-                params: {
-                    branchId: branchId,
-                    branchId: selectedBranch.id,
-                    classId: filters.class_id,
-                    sectionId: filters.section_id,
-                    sessionId: currentSessionId
-                }
-            });
-
-            setStudents((data || []).map((s) => ({ ...s, result: 'Pass', status: 'Continue' })));
-        } catch (error) {
-            toast({ variant: 'destructive', title: 'Error fetching students', description: error.response?.data?.message || error.message });
-            setStudents([]);
-        }
-        setLoading(false);
-    };
-
-    const handleStudentChange = (id, field, value) => {
-        setStudents(prev => prev.map(s => s.id === id ? { ...s, [field]: value } : s));
-    };
-
-    const handlePromote = async () => {
-        if (!promotionData.session_id || !promotionData.class_id || !promotionData.section_id) {
-            toast({ variant: 'destructive', title: 'Please select promotion Session, Class, and Section.' });
-            return;
-        }
-        setIsSaving(true);
+        setStudents([]);
+        setSelectedStudents([]);
         
         try {
-            await api.post('/academics/promotions', {
-                branch_id: branchId,
-                branch_id: selectedBranch.id,
-                promotion_session_id: promotionData.session_id,
-                promotion_class_id: promotionData.class_id,
-                promotion_section_id: promotionData.section_id,
-                current_class_id: filters.class_id,
-                current_section_id: filters.section_id,
-                students
-            }, {
-                params: { branchId: selectedBranch.id }
-            });
-
-            toast({ title: 'Students promoted successfully!' });
-            setStudents([]);
+            let query = supabase
+                .from('student_profiles')
+                .select(`
+                    id,
+                    school_code,
+                    roll_number,
+                    first_name,
+                    last_name,
+                    gender,
+                    father_name,
+                    phone,
+                    classes:classes!student_profiles_class_id_fkey(id, name),
+                    sections:sections!student_profiles_section_id_fkey(id, name)
+                `)
+                .eq('branch_id', branchId)
+                .eq('session_id', filters.current_session)  // CRITICAL: Filter by session
+                .eq('class_id', filters.current_class)
+                .or('is_disabled.is.null,is_disabled.eq.false');  // Only active students
+            
+            if (filters.current_section) {
+                query = query.eq('section_id', filters.current_section);
+            }
+            
+            const { data, error } = await query.order('roll_number', { ascending: true, nullsFirst: false });
+            
+            if (error) throw error;
+            setStudents(data || []);
+            
+            if (!data || data.length === 0) {
+                toast({ title: 'No Students', description: 'No active students found in selected class/session' });
+            }
         } catch (error) {
-            toast({ variant: 'destructive', title: 'Promotion failed', description: error.response?.data?.message || error.message });
+            console.error('Error fetching students:', error);
+            toast({ variant: 'destructive', title: 'Error', description: 'Failed to fetch students' });
+        } finally {
+            setLoading(false);
         }
-        setIsSaving(false);
+    };
+
+    // Handle select all
+    const handleSelectAll = (checked) => {
+        if (checked) {
+            setSelectedStudents(students.map(s => s.id));
+        } else {
+            setSelectedStudents([]);
+        }
+    };
+
+    // Handle individual selection
+    const handleSelectStudent = (studentId, checked) => {
+        if (checked) {
+            setSelectedStudents(prev => [...prev, studentId]);
+        } else {
+            setSelectedStudents(prev => prev.filter(id => id !== studentId));
+        }
+    };
+
+    // Promote students
+    const handlePromote = async () => {
+        if (selectedStudents.length === 0) {
+            toast({ variant: 'destructive', title: 'Error', description: 'Please select at least one student' });
+            return;
+        }
+        
+        if (!filters.promote_class || !filters.promote_session) {
+            toast({ variant: 'destructive', title: 'Error', description: 'Please select promotion class and session' });
+            return;
+        }
+
+        setPromoting(true);
+        setProgress(0);
+        const results = { success: 0, failed: 0, errors: [] };
+        
+        try {
+            const totalStudents = selectedStudents.length;
+            
+            for (let i = 0; i < totalStudents; i++) {
+                const studentId = selectedStudents[i];
+                const student = students.find(s => s.id === studentId);
+                
+                try {
+                    // Update student with new class, section, and session
+                    // IMPORTANT: Roll number is reset to NULL - new roll will be assigned in new session
+                    const updateData = {
+                        class_id: filters.promote_class,
+                        session_id: filters.promote_session,
+                        roll_number: null,  // Reset roll number for new session - will be re-assigned
+                        updated_at: new Date().toISOString()
+                    };
+                    
+                    if (filters.promote_section) {
+                        updateData.section_id = filters.promote_section;
+                    }
+                    
+                    const { error } = await supabase
+                        .from('student_profiles')
+                        .update(updateData)
+                        .eq('id', studentId);
+                    
+                    if (error) throw error;
+                    results.success++;
+                } catch (err) {
+                    results.failed++;
+                    results.errors.push({
+                        student: `${student?.first_name} ${student?.last_name}`,
+                        school_code: student?.school_code,
+                        error: err.message
+                    });
+                }
+                
+                setProgress(Math.round(((i + 1) / totalStudents) * 100));
+            }
+            
+            setPromotionResults(results);
+            
+            if (results.success > 0) {
+                toast({ 
+                    title: 'Promotion Complete', 
+                    description: `${results.success} students promoted successfully${results.failed > 0 ? `, ${results.failed} failed` : ''}. Roll numbers will be assigned when editing students.` 
+                });
+                // Refresh student list
+                handleSearch();
+            }
+        } catch (error) {
+            console.error('Promotion error:', error);
+            toast({ variant: 'destructive', title: 'Error', description: 'Promotion process failed' });
+        } finally {
+            setPromoting(false);
+        }
+    };
+
+    // Get class name by ID
+    const getClassName = (classId) => {
+        return classes.find(c => c.id === classId)?.name || 'N/A';
+    };
+
+    // Get session name by ID
+    const getSessionName = (sessionId) => {
+        return sessions.find(s => s.id === sessionId)?.name || 'N/A';
     };
 
     return (
         <DashboardLayout>
-            <h1 className="text-3xl font-bold mb-6">Promote Students</h1>
-            <div className="bg-card p-6 rounded-xl shadow-lg mb-6 border">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
-                    <div><Label>Current Class *</Label><Select value={filters.class_id} onValueChange={v => setFilters(p => ({...p, class_id: v}))}><SelectTrigger><SelectValue placeholder="Select Class" /></SelectTrigger><SelectContent>{classes.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent></Select></div>
-                    <div><Label>Current Section *</Label><Select value={filters.section_id} onValueChange={v => setFilters(p => ({...p, section_id: v}))} disabled={!filters.class_id}><SelectTrigger><SelectValue placeholder="Select Section" /></SelectTrigger><SelectContent>{sections.map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}</SelectContent></Select></div>
-                    <Button onClick={handleSearch} disabled={loading}>{loading ? <Loader2 className="animate-spin" /> : <Search />} Search</Button>
+            <div className="container mx-auto py-6 space-y-6">
+                <div className="flex justify-between items-center">
+                    <div>
+                        <h1 className="text-2xl font-bold flex items-center gap-2">
+                            <GraduationCap className="h-6 w-6" />
+                            Student Promotion
+                        </h1>
+                        <p className="text-muted-foreground">Promote students to next class/session</p>
+                    </div>
                 </div>
-            </div>
 
-            {students.length > 0 && (
-                <div className="bg-card p-6 rounded-xl shadow-lg border">
-                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end mb-6 border-b pb-6">
-                        <h3 className="text-lg font-semibold md:col-span-4 text-primary">Promote Students to Next Session</h3>
-                        <div><Label>Promote In Session *</Label><Select value={promotionData.session_id} onValueChange={v => setPromotionData(p => ({...p, session_id: v}))}><SelectTrigger><SelectValue placeholder="Select Session" /></SelectTrigger><SelectContent>{sessions.map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}</SelectContent></Select></div>
-                        <div><Label>Promote to Class *</Label><Select value={promotionData.class_id} onValueChange={v => setPromotionData(p => ({...p, class_id: v}))}><SelectTrigger><SelectValue placeholder="Select Class" /></SelectTrigger><SelectContent>{classes.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent></Select></div>
-                        <div><Label>Promote to Section *</Label><Select value={promotionData.section_id} onValueChange={v => setPromotionData(p => ({...p, section_id: v}))} disabled={!promotionData.class_id}><SelectTrigger><SelectValue placeholder="Select Section" /></SelectTrigger><SelectContent>{toSections.map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}</SelectContent></Select></div>
-                    </div>
-                    <div className="overflow-x-auto">
-                        <table className="w-full text-sm text-left">
-                            <thead className="text-xs uppercase bg-muted/50">
-                                <tr>
-                                    <th className="px-6 py-3">Student Name</th>
-                                    <th className="px-6 py-3">Admission No</th>
-                                    <th className="px-6 py-3">Current Result</th>
-                                    <th className="px-6 py-3">Next Session Status</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {students.map(s => (
-                                    <tr key={s.id} className="border-b hover:bg-muted/50">
-                                        <td className="px-6 py-4">{s.full_name}</td>
-                                        <td className="px-6 py-4">{s.school_code}</td>
-                                        <td className="px-6 py-4">
-                                            <Select value={s.result} onValueChange={v => handleStudentChange(s.id, 'result', v)}>
-                                                <SelectTrigger className="w-32 h-8"><SelectValue /></SelectTrigger>
-                                                <SelectContent><SelectItem value="Pass">Pass</SelectItem><SelectItem value="Fail">Fail</SelectItem></SelectContent>
-                                            </Select>
-                                        </td>
-                                        <td className="px-6 py-4">
-                                            <Select value={s.status} onValueChange={v => handleStudentChange(s.id, 'status', v)}>
-                                                <SelectTrigger className="w-32 h-8"><SelectValue /></SelectTrigger>
-                                                <SelectContent><SelectItem value="Continue">Continue</SelectItem><SelectItem value="Leave">Leave</SelectItem></SelectContent>
-                                            </Select>
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
-                    <div className="flex justify-end mt-6">
-                        <Button onClick={handlePromote} disabled={isSaving} size="lg">
-                            {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />} 
-                            Promote
-                        </Button>
-                    </div>
-                </div>
-            )}
+                {/* Filters Card */}
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Promotion Settings</CardTitle>
+                        <CardDescription>Select current and target class/session for promotion</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            {/* Current Selection */}
+                            <div className="space-y-4 p-4 bg-muted/50 rounded-lg">
+                                <h3 className="font-semibold flex items-center gap-2">
+                                    <Users className="h-4 w-4" />
+                                    Current Class
+                                </h3>
+                                
+                                <div className="space-y-3">
+                                    <div className="space-y-2">
+                                        <label className="text-sm font-medium">Current Session *</label>
+                                        <Select 
+                                            value={filters.current_session} 
+                                            onValueChange={(value) => setFilters(prev => ({ ...prev, current_session: value }))}
+                                        >
+                                            <SelectTrigger>
+                                                <SelectValue placeholder="Select Session" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                {sessions.map((session) => (
+                                                    <SelectItem key={session.id} value={session.id}>
+                                                        {session.name} {session.is_active && '(Active)'}
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                    
+                                    <div className="space-y-2">
+                                        <label className="text-sm font-medium">Current Class *</label>
+                                        <Select 
+                                            value={filters.current_class} 
+                                            onValueChange={(value) => setFilters(prev => ({ 
+                                                ...prev, 
+                                                current_class: value, 
+                                                current_section: '' 
+                                            }))}
+                                        >
+                                            <SelectTrigger>
+                                                <SelectValue placeholder="Select Class" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                {classes.map((cls) => (
+                                                    <SelectItem key={cls.id} value={cls.id}>
+                                                        {cls.name}
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                    
+                                    <div className="space-y-2">
+                                        <label className="text-sm font-medium">Current Section</label>
+                                        <Select 
+                                            value={filters.current_section} 
+                                            onValueChange={(value) => setFilters(prev => ({ 
+                                                ...prev, 
+                                                current_section: value === 'all' ? '' : value 
+                                            }))}
+                                            disabled={!filters.current_class}
+                                        >
+                                            <SelectTrigger>
+                                                <SelectValue placeholder="All Sections" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="all">All Sections</SelectItem>
+                                                {sections.map((sec) => (
+                                                    <SelectItem key={sec.id} value={sec.id}>
+                                                        {sec.name}
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Promotion Target */}
+                            <div className="space-y-4 p-4 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
+                                <h3 className="font-semibold flex items-center gap-2 text-green-700 dark:text-green-400">
+                                    <ArrowUpRight className="h-4 w-4" />
+                                    Promote To
+                                </h3>
+                                
+                                <div className="space-y-3">
+                                    <div className="space-y-2">
+                                        <label className="text-sm font-medium">Target Session *</label>
+                                        <Select 
+                                            value={filters.promote_session} 
+                                            onValueChange={(value) => setFilters(prev => ({ ...prev, promote_session: value }))}
+                                        >
+                                            <SelectTrigger>
+                                                <SelectValue placeholder="Select Target Session" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                {availableTargetSessions.length === 0 ? (
+                                                    <SelectItem value="_none" disabled>
+                                                        No future sessions available - Create new session first
+                                                    </SelectItem>
+                                                ) : (
+                                                    availableTargetSessions.map((session) => (
+                                                        <SelectItem key={session.id} value={session.id}>
+                                                            {session.name} {session.is_active && '(Active)'}
+                                                        </SelectItem>
+                                                    ))
+                                                )}
+                                            </SelectContent>
+                                        </Select>
+                                        {availableTargetSessions.length === 0 && filters.current_session && (
+                                            <p className="text-xs text-amber-600 dark:text-amber-400">
+                                                ⚠️ Please create a new session (e.g., 2026-2027) before promoting students
+                                            </p>
+                                        )}
+                                    </div>
+                                    
+                                    <div className="space-y-2">
+                                        <label className="text-sm font-medium">Target Class *</label>
+                                        <Select 
+                                            value={filters.promote_class} 
+                                            onValueChange={(value) => setFilters(prev => ({ 
+                                                ...prev, 
+                                                promote_class: value, 
+                                                promote_section: '' 
+                                            }))}
+                                        >
+                                            <SelectTrigger>
+                                                <SelectValue placeholder="Select Class" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                {targetClasses.map((cls) => (
+                                                    <SelectItem key={cls.id} value={cls.id}>
+                                                        {cls.name}
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                    
+                                    <div className="space-y-2">
+                                        <label className="text-sm font-medium">Target Section</label>
+                                        <Select 
+                                            value={filters.promote_section} 
+                                            onValueChange={(value) => setFilters(prev => ({ 
+                                                ...prev, 
+                                                promote_section: value === 'all' ? '' : value 
+                                            }))}
+                                            disabled={!filters.promote_class}
+                                        >
+                                            <SelectTrigger>
+                                                <SelectValue placeholder="Select Section" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="all">No Change</SelectItem>
+                                                {targetSections.map((sec) => (
+                                                    <SelectItem key={sec.id} value={sec.id}>
+                                                        {sec.name}
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="mt-4 flex justify-center">
+                            <Button 
+                                onClick={handleSearch} 
+                                disabled={loading || !filters.current_class || !filters.current_session}
+                                size="lg"
+                            >
+                                {loading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Users className="h-4 w-4 mr-2" />}
+                                Search Students
+                            </Button>
+                        </div>
+                    </CardContent>
+                </Card>
+
+                {/* Promotion Progress */}
+                {promoting && (
+                    <Card>
+                        <CardContent className="pt-6">
+                            <div className="space-y-2">
+                                <div className="flex justify-between text-sm">
+                                    <span>Promoting students...</span>
+                                    <span>{progress}%</span>
+                                </div>
+                                <Progress value={progress} />
+                            </div>
+                        </CardContent>
+                    </Card>
+                )}
+
+                {/* Promotion Results */}
+                {promotionResults && (
+                    <Alert className={promotionResults.failed > 0 ? 'border-yellow-500' : 'border-green-500'}>
+                        <CheckCircle className="h-4 w-4" />
+                        <AlertTitle>Promotion Results</AlertTitle>
+                        <AlertDescription>
+                            <div className="space-y-2">
+                                <p>
+                                    <span className="text-green-600 font-semibold">{promotionResults.success} students</span> promoted successfully
+                                    {promotionResults.failed > 0 && (
+                                        <>, <span className="text-red-600 font-semibold">{promotionResults.failed} failed</span></>
+                                    )}
+                                </p>
+                                {promotionResults.errors.length > 0 && (
+                                    <div className="mt-2 text-sm">
+                                        <p className="font-medium">Errors:</p>
+                                        <ul className="list-disc pl-4">
+                                            {promotionResults.errors.slice(0, 5).map((err, i) => (
+                                                <li key={i}>{err.student} ({err.school_code}): {err.error}</li>
+                                            ))}
+                                        </ul>
+                                    </div>
+                                )}
+                            </div>
+                        </AlertDescription>
+                    </Alert>
+                )}
+
+                {/* Students List */}
+                {students.length > 0 && (
+                    <Card>
+                        <CardHeader>
+                            <div className="flex justify-between items-center">
+                                <div>
+                                    <CardTitle>Students ({students.length})</CardTitle>
+                                    <CardDescription>{selectedStudents.length} selected for promotion</CardDescription>
+                                </div>
+                                <Button 
+                                    onClick={handlePromote} 
+                                    disabled={selectedStudents.length === 0 || promoting || !filters.promote_class || !filters.promote_session}
+                                    className="bg-green-600 hover:bg-green-700"
+                                >
+                                    {promoting ? (
+                                        <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                                    ) : (
+                                        <ArrowRight className="h-4 w-4 mr-2" />
+                                    )}
+                                    Promote {selectedStudents.length} Students
+                                </Button>
+                            </div>
+                        </CardHeader>
+                        <CardContent>
+                            {/* Promotion Summary */}
+                            {selectedStudents.length > 0 && filters.promote_class && (
+                                <Alert className="mb-4 bg-blue-50 dark:bg-blue-900/20 border-blue-200">
+                                    <AlertTriangle className="h-4 w-4 text-blue-600" />
+                                    <AlertDescription className="text-blue-800 dark:text-blue-200">
+                                        <strong>{selectedStudents.length} students</strong> will be promoted from{' '}
+                                        <strong>{getClassName(filters.current_class)}</strong> to{' '}
+                                        <strong>{getClassName(filters.promote_class)}</strong>{' '}
+                                        (Session: {getSessionName(filters.promote_session)})
+                                    </AlertDescription>
+                                </Alert>
+                            )}
+                            
+                            <div className="border rounded-lg overflow-auto">
+                                <Table>
+                                    <TableHeader>
+                                        <TableRow>
+                                            <TableHead className="w-12">
+                                                <Checkbox 
+                                                    checked={selectedStudents.length === students.length && students.length > 0}
+                                                    onCheckedChange={handleSelectAll}
+                                                />
+                                            </TableHead>
+                                            <TableHead>Admission No</TableHead>
+                                            <TableHead>Roll</TableHead>
+                                            <TableHead>Student Name</TableHead>
+                                            <TableHead>Gender</TableHead>
+                                            <TableHead>Father Name</TableHead>
+                                            <TableHead>Class</TableHead>
+                                            <TableHead>Section</TableHead>
+                                        </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
+                                        {students.map((student) => (
+                                            <TableRow key={student.id}>
+                                                <TableCell>
+                                                    <Checkbox 
+                                                        checked={selectedStudents.includes(student.id)}
+                                                        onCheckedChange={(checked) => handleSelectStudent(student.id, checked)}
+                                                    />
+                                                </TableCell>
+                                                <TableCell className="font-medium">{student.school_code}</TableCell>
+                                                <TableCell className="font-mono">{student.roll_number || '-'}</TableCell>
+                                                <TableCell>{student.first_name} {student.last_name}</TableCell>
+                                                <TableCell>
+                                                    <Badge variant={student.gender === 'Male' ? 'default' : 'secondary'}>
+                                                        {student.gender}
+                                                    </Badge>
+                                                </TableCell>
+                                                <TableCell>{student.father_name || '-'}</TableCell>
+                                                <TableCell>{student.classes?.name || '-'}</TableCell>
+                                                <TableCell>{student.sections?.name || '-'}</TableCell>
+                                            </TableRow>
+                                        ))}
+                                    </TableBody>
+                                </Table>
+                            </div>
+                        </CardContent>
+                    </Card>
+                )}
+
+                {/* Empty State */}
+                {!loading && students.length === 0 && filters.current_class && (
+                    <Card>
+                        <CardContent className="py-12 text-center">
+                            <Users className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                            <h3 className="text-lg font-semibold">No Students Found</h3>
+                            <p className="text-muted-foreground">
+                                Select a class and search to view students for promotion
+                            </p>
+                        </CardContent>
+                    </Card>
+                )}
+            </div>
         </DashboardLayout>
     );
 };

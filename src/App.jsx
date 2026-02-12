@@ -243,7 +243,6 @@ const MultiClassStudent = lazy(() => import('@/pages/super-admin/student-informa
 const BulkDelete = lazy(() => import('@/pages/super-admin/student-information/BulkDelete'));
 const BulkUpload = lazy(() => import('@/pages/super-admin/student-information/BulkUpload'));
 const StudentIdCard = lazy(() => import('@/pages/super-admin/student-information/StudentIdCard'));
-const StudentPromotion = lazy(() => import('@/pages/super-admin/student-information/StudentPromotion'));
 
 // HR
 const EmployeeFormSettings = lazy(() => import('@/pages/super-admin/human-resource/EmployeeFormSettings.jsx'));
@@ -1201,7 +1200,6 @@ function App() {
             <Route path={ROUTES.SUPER_ADMIN.BULK_DELETE} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="student_information"><BulkDelete /></ProtectedRoute>} />
             <Route path={ROUTES.SUPER_ADMIN.STUDENT_BULK_UPLOAD} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="student_information"><BulkUpload /></ProtectedRoute>} />
             <Route path={ROUTES.SUPER_ADMIN.STUDENT_ID_CARD} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="student_information"><StudentIdCard /></ProtectedRoute>} />
-            <Route path={ROUTES.SUPER_ADMIN.STUDENT_PROMOTION} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="student_information"><StudentPromotion /></ProtectedRoute>} />
 
             {/* ? HR */}
             <Route path={ROUTES.SUPER_ADMIN.EMPLOYEE_FORM_SETTINGS} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="human_resource"><EmployeeFormSettings /></ProtectedRoute>} />

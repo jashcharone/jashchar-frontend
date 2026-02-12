@@ -167,7 +167,6 @@ export const ROUTES = {
     MULTI_CLASS_STUDENT: '/super-admin/student-information/multi-class',
     BULK_DELETE: '/super-admin/student-information/bulk-delete',
     STUDENT_BULK_UPLOAD: '/super-admin/student-information/bulk-upload',
-    STUDENT_PROMOTION: '/super-admin/student-information/promotion',
     STUDENT_ID_CARD: '/super-admin/student-information/id-card',
     // Behaviour
     ASSIGN_INCIDENT: '/super-admin/behaviour-records/assign-incident',

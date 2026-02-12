@@ -40,7 +40,7 @@ const RolePermissionSchool = () => {
         const { data, error } = await supabase
             .from('roles')
             .select('*')
-            .eq('branch_id', branchId)
+            .or(`branch_id.eq.${branchId},branch_id.is.null`)
             .order('name');
         
         if (error) {
@@ -62,7 +62,7 @@ const RolePermissionSchool = () => {
 
             sortedData.forEach(role => {
                 const lowerName = role.name.toLowerCase().replace(/_/g, ' ').trim();
-                if (lowerName === 'school owner') return;
+                if (lowerName === 'school owner' || lowerName === 'super admin') return;
                 if (!seenNames.has(lowerName)) {
                     seenNames.add(lowerName);
                     uniqueRoles.push(role);
@@ -87,9 +87,9 @@ const RolePermissionSchool = () => {
             .insert([{ 
                 name: newRoleName, 
                 branch_id: branchId,
-                session_id: currentSessionId,
-                organization_id: organizationId,
-                description: 'Custom Role' 
+                description: 'Custom Role',
+                is_system_role: false,
+                is_active: true
             }])
             .select()
             .single();

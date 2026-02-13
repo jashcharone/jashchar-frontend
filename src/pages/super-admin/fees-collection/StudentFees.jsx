@@ -19,10 +19,63 @@ import {
     Phone, Mail, Calendar, CreditCard, Banknote, AlertTriangle, GraduationCap, Users,
     IndianRupee, Receipt, History, ArrowLeft, Building2, Bus
 } from 'lucide-react';
-import { format, parseISO } from 'date-fns';
+import { format, parseISO, addMonths, startOfMonth, isBefore, isAfter, isSameMonth } from 'date-fns';
 import { Textarea } from '@/components/ui/textarea';
 import DatePicker from '@/components/ui/DatePicker';
 import { generateTransactionId } from '@/lib/transactionUtils';
+import { Checkbox } from '@/components/ui/checkbox';
+
+// Helper: Generate all months between two dates
+const getSessionMonths = (startDate, endDate) => {
+    const months = [];
+    let current = startOfMonth(new Date(startDate));
+    const end = startOfMonth(new Date(endDate));
+    
+    while (isBefore(current, end) || isSameMonth(current, end)) {
+        months.push({
+            key: format(current, 'yyyy-MM'),
+            label: format(current, 'MMMM yyyy'),
+            shortLabel: format(current, 'MMM yy'),
+            date: new Date(current)
+        });
+        current = addMonths(current, 1);
+    }
+    return months;
+};
+
+// Helper: Extract paid months from payments
+const getPaidMonths = (payments) => {
+    const paid = new Set();
+    (payments || []).forEach(p => {
+        if (p.payment_month) {
+            // Handle formats like "February 2026", "Feb 2026", "2026-02"
+            const monthStr = p.payment_month.toLowerCase().trim();
+            // Try to parse and normalize
+            const months = ['january', 'february', 'march', 'april', 'may', 'june', 
+                           'july', 'august', 'september', 'october', 'november', 'december'];
+            const shortMonths = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 
+                                'jul', 'aug', 'sep', 'oct', 'nov', 'dec'];
+            
+            for (let i = 0; i < months.length; i++) {
+                if (monthStr.includes(months[i]) || monthStr.includes(shortMonths[i])) {
+                    // Extract year
+                    const yearMatch = monthStr.match(/\d{4}/);
+                    if (yearMatch) {
+                        const year = yearMatch[0];
+                        const monthNum = String(i + 1).padStart(2, '0');
+                        paid.add(`${year}-${monthNum}`);
+                    }
+                    break;
+                }
+            }
+            // Also handle yyyy-MM format directly
+            if (monthStr.match(/^\d{4}-\d{2}$/)) {
+                paid.add(monthStr);
+            }
+        }
+    });
+    return paid;
+};
 
 // Summary Card Component with variants
 const SummaryCard = ({ title, amount, icon: Icon, variant = 'default', currencySymbol = '₹' }) => {
@@ -97,11 +150,17 @@ const StudentFees = () => {
     
     // Transport/Hostel payment state
     const [transportPaymentDetails, setTransportPaymentDetails] = useState({
-        amount: '', discount: '0', fine: '0', payment_date: new Date(), payment_mode: 'Cash', note: '', payment_month: ''
+        amount: '', discount: '0', fine: '0', payment_date: new Date(), payment_mode: 'Cash', note: ''
     });
     const [hostelPaymentDetails, setHostelPaymentDetails] = useState({
-        amount: '', discount: '0', fine: '0', payment_date: new Date(), payment_mode: 'Cash', note: '', payment_month: ''
+        amount: '', discount: '0', fine: '0', payment_date: new Date(), payment_mode: 'Cash', note: ''
     });
+    
+    // Monthly fee tracking
+    const [sessionMonths, setSessionMonths] = useState([]); // All months in session
+    const [selectedTransportMonths, setSelectedTransportMonths] = useState([]); // Months selected for payment
+    const [selectedHostelMonths, setSelectedHostelMonths] = useState([]); // Months selected for payment
+    
     const [revokeReason, setRevokeReason] = useState('');
     
     // Student assigned discounts
@@ -221,6 +280,15 @@ const StudentFees = () => {
 
             setFees(processedFees);
 
+            // Calculate session months from student's session data
+            const sessionData = studentRes.data.sessions;
+            let months = [];
+            if (sessionData?.start_date && sessionData?.end_date) {
+                months = getSessionMonths(sessionData.start_date, sessionData.end_date);
+            }
+            setSessionMonths(months);
+            const totalSessionMonths = months.length || 12; // Default 12 if no session data
+
             // Fetch transport details for this student
             const { data: transportData } = await supabase
                 .from('student_transport_details')
@@ -242,19 +310,38 @@ const StudentFees = () => {
                     .eq('branch_id', selectedBranch.id)
                     .is('reverted_at', null);
 
-                const transportPaid = (transportPayments || []).reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
+                const monthlyTransportFee = Number(transportData.transport_fee) || 0;
+                const paidMonthsSet = getPaidMonths(transportPayments);
+                const paidMonthsCount = paidMonthsSet.size;
+                
+                // Calculate totals based on months
+                const totalTransportFee = monthlyTransportFee * totalSessionMonths;
+                const transportPaid = paidMonthsCount * monthlyTransportFee;
                 const transportDiscount = (transportPayments || []).reduce((sum, p) => sum + (Number(p.discount_amount) || 0), 0);
-                const transportFeeAmount = Number(transportData.transport_fee) || 0;
-                const transportBalance = transportFeeAmount - transportPaid - transportDiscount;
+                const unpaidMonthsCount = totalSessionMonths - paidMonthsCount;
+                const transportBalance = unpaidMonthsCount * monthlyTransportFee;
+                
+                // Mark unpaid months
+                const unpaidMonths = months.filter(m => !paidMonthsSet.has(m.key));
 
                 setTransportDetails({
                     ...transportData,
+                    monthlyFee: monthlyTransportFee,
+                    totalMonths: totalSessionMonths,
+                    totalFee: totalTransportFee,
+                    paidMonths: Array.from(paidMonthsSet),
+                    paidMonthsCount,
+                    unpaidMonths,
+                    unpaidMonthsCount,
                     totalPaid: transportPaid,
                     totalDiscount: transportDiscount,
                     balance: transportBalance,
                     status: transportBalance <= 0 ? 'Paid' : transportPaid > 0 ? 'Partial' : 'Unpaid',
                     payments: transportPayments || []
                 });
+                
+                // Reset selected months
+                setSelectedTransportMonths([]);
             } else {
                 setTransportDetails(null);
             }
@@ -280,19 +367,38 @@ const StudentFees = () => {
                     .eq('branch_id', selectedBranch.id)
                     .is('reverted_at', null);
 
-                const hostelPaid = (hostelPayments || []).reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
+                const monthlyHostelFee = Number(hostelData.hostel_fee) || 0;
+                const paidMonthsSet = getPaidMonths(hostelPayments);
+                const paidMonthsCount = paidMonthsSet.size;
+                
+                // Calculate totals based on months
+                const totalHostelFee = monthlyHostelFee * totalSessionMonths;
+                const hostelPaid = paidMonthsCount * monthlyHostelFee;
                 const hostelDiscount = (hostelPayments || []).reduce((sum, p) => sum + (Number(p.discount_amount) || 0), 0);
-                const hostelFeeAmount = Number(hostelData.hostel_fee) || 0;
-                const hostelBalance = hostelFeeAmount - hostelPaid - hostelDiscount;
+                const unpaidMonthsCount = totalSessionMonths - paidMonthsCount;
+                const hostelBalance = unpaidMonthsCount * monthlyHostelFee;
+                
+                // Mark unpaid months
+                const unpaidMonths = months.filter(m => !paidMonthsSet.has(m.key));
 
                 setHostelDetails({
                     ...hostelData,
+                    monthlyFee: monthlyHostelFee,
+                    totalMonths: totalSessionMonths,
+                    totalFee: totalHostelFee,
+                    paidMonths: Array.from(paidMonthsSet),
+                    paidMonthsCount,
+                    unpaidMonths,
+                    unpaidMonthsCount,
                     totalPaid: hostelPaid,
                     totalDiscount: hostelDiscount,
                     balance: hostelBalance,
                     status: hostelBalance <= 0 ? 'Paid' : hostelPaid > 0 ? 'Partial' : 'Unpaid',
                     payments: hostelPayments || []
                 });
+                
+                // Reset selected months
+                setSelectedHostelMonths([]);
             } else {
                 setHostelDetails(null);
             }
@@ -474,9 +580,7 @@ const StudentFees = () => {
             const { data: insertedPayments, error } = await supabase
                 .from('fee_payments')
                 .insert(paymentsToInsert)
-                .select('id')
-                .limit(1)
-                .single();
+                .select('id');
 
             if (error) throw error;
             
@@ -485,8 +589,11 @@ const StudentFees = () => {
             setSelectedFees([]);
             setPaymentDetails(prev => ({ ...prev, note: '' }));
 
-            // Navigate to the new receipt page
-            navigate(`/super-admin/fees-collection/print-fees-receipt/${insertedPayments.id}`);
+            // Navigate to the new receipt page (use first payment's ID)
+            const firstPaymentId = insertedPayments?.[0]?.id;
+            if (firstPaymentId) {
+                navigate(`/super-admin/fees-collection/print-fees-receipt/${firstPaymentId}`);
+            }
 
         } catch (error) {
             console.error("Payment collection error:", error);
@@ -502,13 +609,17 @@ const StudentFees = () => {
 
     // Collect Transport Fee
     const collectTransportFee = async () => {
-        if (!transportDetails) return;
+        if (!transportDetails || selectedTransportMonths.length === 0) {
+            toast({ variant: 'destructive', title: 'Select months', description: 'Please select at least one month to pay.' });
+            return;
+        }
         
-        const amount = parseFloat(transportPaymentDetails.amount) || 0;
+        const monthlyFee = transportDetails.monthlyFee || 0;
+        const totalAmount = selectedTransportMonths.length * monthlyFee;
         const discount = parseFloat(transportPaymentDetails.discount) || 0;
         const fine = parseFloat(transportPaymentDetails.fine) || 0;
         
-        if (amount + discount <= 0) {
+        if (totalAmount <= 0) {
             toast({ variant: 'destructive', title: 'Invalid amount', description: 'Amount must be greater than zero.' });
             return;
         }
@@ -516,36 +627,47 @@ const StudentFees = () => {
         setPaymentLoading(true);
         try {
             const branchCode = selectedBranch?.branch_code || selectedBranch?.code || 'TRN';
-            const newTransactionId = await generateTransactionId(supabase, selectedBranch.id, branchCode + '-T');
-
-            const { data, error } = await supabase
-                .from('transport_fee_payments')
-                .insert({
+            const newTransactionId = await generateTransactionId(supabase, selectedBranch.id, branchCode, 'transport');
+            
+            // Create one payment record per selected month
+            const paymentsToInsert = selectedTransportMonths.map((monthKey, index) => {
+                const monthLabel = sessionMonths.find(m => m.key === monthKey)?.label || monthKey;
+                return {
                     branch_id: selectedBranch.id,
                     session_id: currentSessionId,
                     organization_id: organizationId,
                     student_id: studentId,
-                    amount: amount,
-                    discount_amount: discount,
-                    fine_paid: fine,
-                    payment_date: format(transportPaymentDetails.payment_date, 'yyyy-MM-dd'),
+                    amount: monthlyFee,
+                    discount_amount: index === 0 ? discount : 0, // Apply discount to first payment only
+                    fine_paid: index === 0 ? fine : 0,
+                    payment_date: format(transportPaymentDetails.payment_date || new Date(), 'yyyy-MM-dd'),
                     payment_mode: transportPaymentDetails.payment_mode,
-                    payment_month: transportPaymentDetails.payment_month || format(new Date(), 'MMMM yyyy'),
-                    note: transportPaymentDetails.note,
+                    payment_month: monthLabel,
+                    note: transportPaymentDetails.note || `Payment for ${selectedTransportMonths.length} month(s)`,
                     transaction_id: newTransactionId,
                     collected_by: user.id,
-                })
-                .select()
-                .single();
+                };
+            });
+
+            const { data, error } = await supabase
+                .from('transport_fee_payments')
+                .insert(paymentsToInsert)
+                .select();
 
             if (error) throw error;
             
-            toast({ title: '✅ Transport fee collected!', description: `Transaction ID: ${newTransactionId}` });
+            toast({ 
+                title: '✅ Transport fee collected!', 
+                description: `${selectedTransportMonths.length} month(s) paid. Transaction ID: ${newTransactionId}` 
+            });
             await fetchStudentAndFees();
-            setTransportPaymentDetails({ amount: '', discount: '0', fine: '0', payment_date: new Date(), payment_mode: 'Cash', note: '', payment_month: '' });
+            setTransportPaymentDetails({ amount: '', discount: '0', fine: '0', payment_date: new Date(), payment_mode: 'Cash', note: '' });
+            setSelectedTransportMonths([]);
             
-            // Print receipt
-            navigate(`/super-admin/fees-collection/print-transport-receipt/${data.id}`);
+            // Print receipt (use first payment's ID)
+            if (data && data.length > 0) {
+                navigate(`/super-admin/fees-collection/print-transport-receipt/${data[0].id}`);
+            }
         } catch (error) {
             toast({ variant: 'destructive', title: 'Payment failed', description: error.message });
         } finally {
@@ -555,13 +677,17 @@ const StudentFees = () => {
 
     // Collect Hostel Fee
     const collectHostelFee = async () => {
-        if (!hostelDetails) return;
+        if (!hostelDetails || selectedHostelMonths.length === 0) {
+            toast({ variant: 'destructive', title: 'Select months', description: 'Please select at least one month to pay.' });
+            return;
+        }
         
-        const amount = parseFloat(hostelPaymentDetails.amount) || 0;
+        const monthlyFee = hostelDetails.monthlyFee || 0;
+        const totalAmount = selectedHostelMonths.length * monthlyFee;
         const discount = parseFloat(hostelPaymentDetails.discount) || 0;
         const fine = parseFloat(hostelPaymentDetails.fine) || 0;
         
-        if (amount + discount <= 0) {
+        if (totalAmount <= 0) {
             toast({ variant: 'destructive', title: 'Invalid amount', description: 'Amount must be greater than zero.' });
             return;
         }
@@ -569,36 +695,47 @@ const StudentFees = () => {
         setPaymentLoading(true);
         try {
             const branchCode = selectedBranch?.branch_code || selectedBranch?.code || 'HST';
-            const newTransactionId = await generateTransactionId(supabase, selectedBranch.id, branchCode + '-H');
-
-            const { data, error } = await supabase
-                .from('hostel_fee_payments')
-                .insert({
+            const newTransactionId = await generateTransactionId(supabase, selectedBranch.id, branchCode, 'hostel');
+            
+            // Create one payment record per selected month
+            const paymentsToInsert = selectedHostelMonths.map((monthKey, index) => {
+                const monthLabel = sessionMonths.find(m => m.key === monthKey)?.label || monthKey;
+                return {
                     branch_id: selectedBranch.id,
                     session_id: currentSessionId,
                     organization_id: organizationId,
                     student_id: studentId,
-                    amount: amount,
-                    discount_amount: discount,
-                    fine_paid: fine,
-                    payment_date: format(hostelPaymentDetails.payment_date, 'yyyy-MM-dd'),
+                    amount: monthlyFee,
+                    discount_amount: index === 0 ? discount : 0, // Apply discount to first payment only
+                    fine_paid: index === 0 ? fine : 0,
+                    payment_date: format(hostelPaymentDetails.payment_date || new Date(), 'yyyy-MM-dd'),
                     payment_mode: hostelPaymentDetails.payment_mode,
-                    payment_month: hostelPaymentDetails.payment_month || format(new Date(), 'MMMM yyyy'),
-                    note: hostelPaymentDetails.note,
+                    payment_month: monthLabel,
+                    note: hostelPaymentDetails.note || `Payment for ${selectedHostelMonths.length} month(s)`,
                     transaction_id: newTransactionId,
                     collected_by: user.id,
-                })
-                .select()
-                .single();
+                };
+            });
+
+            const { data, error } = await supabase
+                .from('hostel_fee_payments')
+                .insert(paymentsToInsert)
+                .select();
 
             if (error) throw error;
             
-            toast({ title: '✅ Hostel fee collected!', description: `Transaction ID: ${newTransactionId}` });
+            toast({ 
+                title: '✅ Hostel fee collected!', 
+                description: `${selectedHostelMonths.length} month(s) paid. Transaction ID: ${newTransactionId}` 
+            });
             await fetchStudentAndFees();
-            setHostelPaymentDetails({ amount: '', discount: '0', fine: '0', payment_date: new Date(), payment_mode: 'Cash', note: '', payment_month: '' });
+            setHostelPaymentDetails({ amount: '', discount: '0', fine: '0', payment_date: new Date(), payment_mode: 'Cash', note: '' });
+            setSelectedHostelMonths([]);
             
-            // Print receipt
-            navigate(`/super-admin/fees-collection/print-hostel-receipt/${data.id}`);
+            // Print receipt (use first payment's ID)
+            if (data && data.length > 0) {
+                navigate(`/super-admin/fees-collection/print-hostel-receipt/${data[0].id}`);
+            }
         } catch (error) {
             toast({ variant: 'destructive', title: 'Payment failed', description: error.message });
         } finally {
@@ -1071,19 +1208,29 @@ const StudentFees = () => {
                                                         <p className="font-medium">{transportDetails.driver_name || 'N/A'}</p>
                                                     </div>
                                                 </div>
+                                                
+                                                {/* Monthly Fee Summary */}
                                                 <div className="flex items-center justify-between p-3 bg-background rounded-md mb-4">
-                                                    <div className="flex gap-6">
+                                                    <div className="flex flex-wrap gap-4 lg:gap-6">
                                                         <div>
                                                             <p className="text-xs text-muted-foreground">Monthly Fee</p>
-                                                            <p className="font-bold text-lg">{currencySymbol}{Number(transportDetails.transport_fee || 0).toLocaleString('en-IN')}</p>
+                                                            <p className="font-bold text-lg">{currencySymbol}{(transportDetails.monthlyFee || 0).toLocaleString('en-IN')}</p>
                                                         </div>
                                                         <div>
-                                                            <p className="text-xs text-muted-foreground">Total Paid</p>
-                                                            <p className="font-bold text-lg text-green-600">{currencySymbol}{transportDetails.totalPaid.toLocaleString('en-IN')}</p>
+                                                            <p className="text-xs text-muted-foreground">Session Months</p>
+                                                            <p className="font-bold text-lg">{transportDetails.totalMonths || 12}</p>
                                                         </div>
                                                         <div>
-                                                            <p className="text-xs text-muted-foreground">Balance</p>
-                                                            <p className={`font-bold text-lg ${transportDetails.balance > 0 ? 'text-red-600' : 'text-green-600'}`}>{currencySymbol}{transportDetails.balance.toLocaleString('en-IN')}</p>
+                                                            <p className="text-xs text-muted-foreground">Total Fee</p>
+                                                            <p className="font-bold text-lg">{currencySymbol}{(transportDetails.totalFee || 0).toLocaleString('en-IN')}</p>
+                                                        </div>
+                                                        <div>
+                                                            <p className="text-xs text-muted-foreground">Paid ({transportDetails.paidMonthsCount || 0} months)</p>
+                                                            <p className="font-bold text-lg text-green-600">{currencySymbol}{(transportDetails.totalPaid || 0).toLocaleString('en-IN')}</p>
+                                                        </div>
+                                                        <div>
+                                                            <p className="text-xs text-muted-foreground">Balance ({transportDetails.unpaidMonthsCount || 0} months)</p>
+                                                            <p className={`font-bold text-lg ${transportDetails.balance > 0 ? 'text-red-600' : 'text-green-600'}`}>{currencySymbol}{(transportDetails.balance || 0).toLocaleString('en-IN')}</p>
                                                         </div>
                                                     </div>
                                                     <Badge variant={transportDetails.status === 'Paid' ? 'success' : transportDetails.status === 'Partial' ? 'warning' : 'destructive'}>
@@ -1094,15 +1241,98 @@ const StudentFees = () => {
                                                 {/* Transport Fee Collection Form */}
                                                 {transportDetails.balance > 0 && (
                                                     <div className="border-t pt-4 mt-4">
-                                                        <p className="text-sm font-medium mb-3">Collect Transport Fee</p>
-                                                        <div className="grid sm:grid-cols-4 gap-3">
+                                                        <p className="text-sm font-medium mb-3">Select Months to Pay</p>
+                                                        
+                                                        {/* Month Selection Grid */}
+                                                        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2 mb-4">
+                                                            {sessionMonths.map(month => {
+                                                                const isPaid = transportDetails.paidMonths?.includes(month.key);
+                                                                const isSelected = selectedTransportMonths.includes(month.key);
+                                                                return (
+                                                                    <div 
+                                                                        key={month.key}
+                                                                        onClick={() => {
+                                                                            if (isPaid) return;
+                                                                            setSelectedTransportMonths(prev => 
+                                                                                prev.includes(month.key) 
+                                                                                    ? prev.filter(k => k !== month.key)
+                                                                                    : [...prev, month.key]
+                                                                            );
+                                                                        }}
+                                                                        className={`p-2 text-center rounded-md border cursor-pointer text-sm transition-all ${
+                                                                            isPaid 
+                                                                                ? 'bg-green-100 dark:bg-green-900/30 border-green-300 text-green-700 dark:text-green-400 cursor-not-allowed' 
+                                                                                : isSelected 
+                                                                                    ? 'bg-blue-500 text-white border-blue-600' 
+                                                                                    : 'bg-background hover:bg-muted border-input'
+                                                                        }`}
+                                                                    >
+                                                                        <span className="font-medium">{month.shortLabel}</span>
+                                                                        {isPaid && <CheckCircle className="h-3 w-3 mx-auto mt-1" />}
+                                                                    </div>
+                                                                );
+                                                            })}
+                                                        </div>
+                                                        
+                                                        {/* Quick Select Buttons */}
+                                                        <div className="flex flex-wrap gap-2 mb-4">
+                                                            <Button 
+                                                                variant="outline" 
+                                                                size="sm"
+                                                                onClick={() => setSelectedTransportMonths(transportDetails.unpaidMonths?.map(m => m.key) || [])}
+                                                            >
+                                                                Select All Unpaid
+                                                            </Button>
+                                                            <Button 
+                                                                variant="outline" 
+                                                                size="sm"
+                                                                onClick={() => {
+                                                                    const unpaid = transportDetails.unpaidMonths?.slice(0, 6).map(m => m.key) || [];
+                                                                    setSelectedTransportMonths(unpaid);
+                                                                }}
+                                                            >
+                                                                Select 6 Months
+                                                            </Button>
+                                                            <Button 
+                                                                variant="outline" 
+                                                                size="sm"
+                                                                onClick={() => {
+                                                                    const firstUnpaid = transportDetails.unpaidMonths?.[0]?.key;
+                                                                    setSelectedTransportMonths(firstUnpaid ? [firstUnpaid] : []);
+                                                                }}
+                                                            >
+                                                                Select 1 Month
+                                                            </Button>
+                                                            <Button 
+                                                                variant="ghost" 
+                                                                size="sm"
+                                                                onClick={() => setSelectedTransportMonths([])}
+                                                            >
+                                                                Clear
+                                                            </Button>
+                                                        </div>
+                                                        
+                                                        {/* Payment Summary */}
+                                                        {selectedTransportMonths.length > 0 && (
+                                                            <div className="p-3 bg-blue-100 dark:bg-blue-900/30 rounded-md mb-4">
+                                                                <p className="text-sm">
+                                                                    <span className="font-medium">{selectedTransportMonths.length} month(s) selected</span>
+                                                                    <span className="mx-2">•</span>
+                                                                    Amount: <span className="font-bold">{currencySymbol}{(selectedTransportMonths.length * transportDetails.monthlyFee).toLocaleString('en-IN')}</span>
+                                                                </p>
+                                                            </div>
+                                                        )}
+                                                        
+                                                        <div className="grid sm:grid-cols-3 gap-3">
                                                             <div>
                                                                 <Label className="text-xs">Amount ({currencySymbol})</Label>
                                                                 <Input
                                                                     type="number"
-                                                                    value={transportPaymentDetails.amount}
+                                                                    value={selectedTransportMonths.length > 0 ? selectedTransportMonths.length * transportDetails.monthlyFee : transportPaymentDetails.amount}
                                                                     onChange={e => setTransportPaymentDetails(p => ({...p, amount: e.target.value}))}
-                                                                    placeholder={transportDetails.transport_fee}
+                                                                    placeholder={transportDetails.monthlyFee}
+                                                                    readOnly={selectedTransportMonths.length > 0}
+                                                                    className={selectedTransportMonths.length > 0 ? 'bg-muted' : ''}
                                                                 />
                                                             </div>
                                                             <div>
@@ -1126,23 +1356,15 @@ const StudentFees = () => {
                                                                     </SelectContent>
                                                                 </Select>
                                                             </div>
-                                                            <div>
-                                                                <Label className="text-xs">Month</Label>
-                                                                <Input
-                                                                    value={transportPaymentDetails.payment_month}
-                                                                    onChange={e => setTransportPaymentDetails(p => ({...p, payment_month: e.target.value}))}
-                                                                    placeholder="February 2026"
-                                                                />
-                                                            </div>
                                                         </div>
                                                         <div className="mt-3">
                                                             <Button 
                                                                 onClick={collectTransportFee} 
-                                                                disabled={paymentLoading || !transportPaymentDetails.amount}
+                                                                disabled={paymentLoading || selectedTransportMonths.length === 0}
                                                                 className="w-full bg-blue-600 hover:bg-blue-700"
                                                             >
                                                                 {paymentLoading ? <Loader2 className="animate-spin mr-2 h-4 w-4" /> : <Receipt className="mr-2 h-4 w-4" />}
-                                                                Collect & Print Receipt
+                                                                Collect {selectedTransportMonths.length} Month(s) & Print Receipt
                                                             </Button>
                                                         </div>
                                                     </div>
@@ -1177,19 +1399,29 @@ const StudentFees = () => {
                                                         <p className="font-medium">{hostelDetails.check_in_date ? format(parseISO(hostelDetails.check_in_date), 'dd MMM yyyy') : 'N/A'}</p>
                                                     </div>
                                                 </div>
+                                                
+                                                {/* Monthly Fee Summary */}
                                                 <div className="flex items-center justify-between p-3 bg-background rounded-md mb-4">
-                                                    <div className="flex gap-6">
+                                                    <div className="flex flex-wrap gap-4 lg:gap-6">
                                                         <div>
                                                             <p className="text-xs text-muted-foreground">Monthly Fee</p>
-                                                            <p className="font-bold text-lg">{currencySymbol}{Number(hostelDetails.hostel_fee || 0).toLocaleString('en-IN')}</p>
+                                                            <p className="font-bold text-lg">{currencySymbol}{(hostelDetails.monthlyFee || 0).toLocaleString('en-IN')}</p>
                                                         </div>
                                                         <div>
-                                                            <p className="text-xs text-muted-foreground">Total Paid</p>
-                                                            <p className="font-bold text-lg text-green-600">{currencySymbol}{hostelDetails.totalPaid.toLocaleString('en-IN')}</p>
+                                                            <p className="text-xs text-muted-foreground">Session Months</p>
+                                                            <p className="font-bold text-lg">{hostelDetails.totalMonths || 12}</p>
                                                         </div>
                                                         <div>
-                                                            <p className="text-xs text-muted-foreground">Balance</p>
-                                                            <p className={`font-bold text-lg ${hostelDetails.balance > 0 ? 'text-red-600' : 'text-green-600'}`}>{currencySymbol}{hostelDetails.balance.toLocaleString('en-IN')}</p>
+                                                            <p className="text-xs text-muted-foreground">Total Fee</p>
+                                                            <p className="font-bold text-lg">{currencySymbol}{(hostelDetails.totalFee || 0).toLocaleString('en-IN')}</p>
+                                                        </div>
+                                                        <div>
+                                                            <p className="text-xs text-muted-foreground">Paid ({hostelDetails.paidMonthsCount || 0} months)</p>
+                                                            <p className="font-bold text-lg text-green-600">{currencySymbol}{(hostelDetails.totalPaid || 0).toLocaleString('en-IN')}</p>
+                                                        </div>
+                                                        <div>
+                                                            <p className="text-xs text-muted-foreground">Balance ({hostelDetails.unpaidMonthsCount || 0} months)</p>
+                                                            <p className={`font-bold text-lg ${hostelDetails.balance > 0 ? 'text-red-600' : 'text-green-600'}`}>{currencySymbol}{(hostelDetails.balance || 0).toLocaleString('en-IN')}</p>
                                                         </div>
                                                     </div>
                                                     <Badge variant={hostelDetails.status === 'Paid' ? 'success' : hostelDetails.status === 'Partial' ? 'warning' : 'destructive'}>
@@ -1200,15 +1432,98 @@ const StudentFees = () => {
                                                 {/* Hostel Fee Collection Form */}
                                                 {hostelDetails.balance > 0 && (
                                                     <div className="border-t pt-4 mt-4">
-                                                        <p className="text-sm font-medium mb-3">Collect Hostel Fee</p>
-                                                        <div className="grid sm:grid-cols-4 gap-3">
+                                                        <p className="text-sm font-medium mb-3">Select Months to Pay</p>
+                                                        
+                                                        {/* Month Selection Grid */}
+                                                        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2 mb-4">
+                                                            {sessionMonths.map(month => {
+                                                                const isPaid = hostelDetails.paidMonths?.includes(month.key);
+                                                                const isSelected = selectedHostelMonths.includes(month.key);
+                                                                return (
+                                                                    <div 
+                                                                        key={month.key}
+                                                                        onClick={() => {
+                                                                            if (isPaid) return;
+                                                                            setSelectedHostelMonths(prev => 
+                                                                                prev.includes(month.key) 
+                                                                                    ? prev.filter(k => k !== month.key)
+                                                                                    : [...prev, month.key]
+                                                                            );
+                                                                        }}
+                                                                        className={`p-2 text-center rounded-md border cursor-pointer text-sm transition-all ${
+                                                                            isPaid 
+                                                                                ? 'bg-green-100 dark:bg-green-900/30 border-green-300 text-green-700 dark:text-green-400 cursor-not-allowed' 
+                                                                                : isSelected 
+                                                                                    ? 'bg-purple-500 text-white border-purple-600' 
+                                                                                    : 'bg-background hover:bg-muted border-input'
+                                                                        }`}
+                                                                    >
+                                                                        <span className="font-medium">{month.shortLabel}</span>
+                                                                        {isPaid && <CheckCircle className="h-3 w-3 mx-auto mt-1" />}
+                                                                    </div>
+                                                                );
+                                                            })}
+                                                        </div>
+                                                        
+                                                        {/* Quick Select Buttons */}
+                                                        <div className="flex flex-wrap gap-2 mb-4">
+                                                            <Button 
+                                                                variant="outline" 
+                                                                size="sm"
+                                                                onClick={() => setSelectedHostelMonths(hostelDetails.unpaidMonths?.map(m => m.key) || [])}
+                                                            >
+                                                                Select All Unpaid
+                                                            </Button>
+                                                            <Button 
+                                                                variant="outline" 
+                                                                size="sm"
+                                                                onClick={() => {
+                                                                    const unpaid = hostelDetails.unpaidMonths?.slice(0, 6).map(m => m.key) || [];
+                                                                    setSelectedHostelMonths(unpaid);
+                                                                }}
+                                                            >
+                                                                Select 6 Months
+                                                            </Button>
+                                                            <Button 
+                                                                variant="outline" 
+                                                                size="sm"
+                                                                onClick={() => {
+                                                                    const firstUnpaid = hostelDetails.unpaidMonths?.[0]?.key;
+                                                                    setSelectedHostelMonths(firstUnpaid ? [firstUnpaid] : []);
+                                                                }}
+                                                            >
+                                                                Select 1 Month
+                                                            </Button>
+                                                            <Button 
+                                                                variant="ghost" 
+                                                                size="sm"
+                                                                onClick={() => setSelectedHostelMonths([])}
+                                                            >
+                                                                Clear
+                                                            </Button>
+                                                        </div>
+                                                        
+                                                        {/* Payment Summary */}
+                                                        {selectedHostelMonths.length > 0 && (
+                                                            <div className="p-3 bg-purple-100 dark:bg-purple-900/30 rounded-md mb-4">
+                                                                <p className="text-sm">
+                                                                    <span className="font-medium">{selectedHostelMonths.length} month(s) selected</span>
+                                                                    <span className="mx-2">•</span>
+                                                                    Amount: <span className="font-bold">{currencySymbol}{(selectedHostelMonths.length * hostelDetails.monthlyFee).toLocaleString('en-IN')}</span>
+                                                                </p>
+                                                            </div>
+                                                        )}
+                                                        
+                                                        <div className="grid sm:grid-cols-3 gap-3">
                                                             <div>
                                                                 <Label className="text-xs">Amount ({currencySymbol})</Label>
                                                                 <Input
                                                                     type="number"
-                                                                    value={hostelPaymentDetails.amount}
+                                                                    value={selectedHostelMonths.length > 0 ? selectedHostelMonths.length * hostelDetails.monthlyFee : hostelPaymentDetails.amount}
                                                                     onChange={e => setHostelPaymentDetails(p => ({...p, amount: e.target.value}))}
-                                                                    placeholder={hostelDetails.hostel_fee}
+                                                                    placeholder={hostelDetails.monthlyFee}
+                                                                    readOnly={selectedHostelMonths.length > 0}
+                                                                    className={selectedHostelMonths.length > 0 ? 'bg-muted' : ''}
                                                                 />
                                                             </div>
                                                             <div>
@@ -1232,23 +1547,15 @@ const StudentFees = () => {
                                                                     </SelectContent>
                                                                 </Select>
                                                             </div>
-                                                            <div>
-                                                                <Label className="text-xs">Month</Label>
-                                                                <Input
-                                                                    value={hostelPaymentDetails.payment_month}
-                                                                    onChange={e => setHostelPaymentDetails(p => ({...p, payment_month: e.target.value}))}
-                                                                    placeholder="February 2026"
-                                                                />
-                                                            </div>
                                                         </div>
                                                         <div className="mt-3">
                                                             <Button 
                                                                 onClick={collectHostelFee} 
-                                                                disabled={paymentLoading || !hostelPaymentDetails.amount}
+                                                                disabled={paymentLoading || selectedHostelMonths.length === 0}
                                                                 className="w-full bg-purple-600 hover:bg-purple-700"
                                                             >
                                                                 {paymentLoading ? <Loader2 className="animate-spin mr-2 h-4 w-4" /> : <Receipt className="mr-2 h-4 w-4" />}
-                                                                Collect & Print Receipt
+                                                                Collect {selectedHostelMonths.length} Month(s) & Print Receipt
                                                             </Button>
                                                         </div>
                                                     </div>

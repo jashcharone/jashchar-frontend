@@ -392,6 +392,8 @@ const StudentAdmission = () => {
   const [pickupPoints, setPickupPoints] = useState([]);
   const [hostels, setHostels] = useState([]);
   const [hostelRoomTypes, setHostelRoomTypes] = useState([]);
+  const [hostelRooms, setHostelRooms] = useState([]); // Rooms filtered by hostel + room type
+  const [filteredRoomTypes, setFilteredRoomTypes] = useState([]); // Room types filtered by selected hostel
   const [feeGroups, setFeeGroups] = useState([]);
   const [classAssignedFeeGroupIds, setClassAssignedFeeGroupIds] = useState([]); // Fee groups assigned to selected class
   const [feeDiscounts, setFeeDiscounts] = useState([]);
@@ -1954,6 +1956,63 @@ const StudentAdmission = () => {
     }
   }, [formData.hostel_room_type, hostelRoomTypes]);
 
+  // Track previous hostel and room type values to prevent unnecessary resets
+  const prevHostelIdRef = useRef(formData.hostel_id);
+  const prevRoomTypeRef = useRef(formData.hostel_room_type);
+
+  // Filter room types when hostel is selected
+  useEffect(() => {
+    if (formData.hostel_id && hostelRoomTypes.length > 0) {
+      // For now, show all room types for the branch (hostel_room_types are branch level)
+      setFilteredRoomTypes(hostelRoomTypes);
+    } else {
+      setFilteredRoomTypes([]);
+    }
+    
+    // Reset dependent fields only when hostel actually changes
+    if (prevHostelIdRef.current !== formData.hostel_id && prevHostelIdRef.current) {
+      setFormData(prev => ({ ...prev, hostel_room_type: '', room_number: '', bed_number: '' }));
+      setHostelRooms([]);
+    }
+    prevHostelIdRef.current = formData.hostel_id;
+  }, [formData.hostel_id, hostelRoomTypes]);
+
+  // Fetch rooms when hostel AND room type are selected
+  useEffect(() => {
+    const fetchHostelRooms = async () => {
+      if (!formData.hostel_id || !formData.hostel_room_type) {
+        setHostelRooms([]);
+        return;
+      }
+      
+      const { data, error } = await supabase
+        .from('hostel_rooms')
+        .select('*, hostel_room_types(name, cost)')
+        .eq('hostel_id', formData.hostel_id)
+        .eq('room_type_id', formData.hostel_room_type)
+        .order('room_number_name', { ascending: true });
+      
+      if (error) {
+        console.error('Error fetching hostel rooms:', error);
+        setHostelRooms([]);
+      } else {
+        setHostelRooms(data || []);
+      }
+      
+      // Reset room number and bed number only when room type actually changes
+      if (prevRoomTypeRef.current !== formData.hostel_room_type && prevRoomTypeRef.current) {
+        setFormData(prev => ({ ...prev, room_number: '', bed_number: '' }));
+      }
+      prevRoomTypeRef.current = formData.hostel_room_type;
+    };
+    
+    fetchHostelRooms();
+  }, [formData.hostel_id, formData.hostel_room_type]);
+
+  // Get available beds for selected room
+  const selectedRoom = hostelRooms.find(r => r.room_number_name === formData.room_number);
+  const availableBeds = selectedRoom ? Array.from({ length: selectedRoom.num_of_beds || 4 }, (_, i) => `Bed ${i + 1}`) : [];
+
   useEffect(() => {
     const fetchPincodeData = async () => {
       if (pincode.length !== 6) {
@@ -2643,16 +2702,77 @@ const StudentAdmission = () => {
                           </Select>
                         </SmartField>
                         <SmartField label="Room Type" required error={errors.hostel_room_type} touched={touched.hostel_room_type}>
-                          <Select value={formData.hostel_room_type || ''} onValueChange={v => handleChange('hostel_room_type', v)}>
-                            <SelectTrigger onBlur={() => handleBlur('hostel_room_type')} className="h-11"><SelectValue placeholder="Select Room Type" /></SelectTrigger>
-                            <SelectContent>{hostelRoomTypes.map(rt => <SelectItem key={rt.id} value={rt.id}>{rt.name}</SelectItem>)}</SelectContent>
+                          <Select 
+                            value={formData.hostel_room_type || ''} 
+                            onValueChange={v => handleChange('hostel_room_type', v)}
+                            disabled={!formData.hostel_id}
+                          >
+                            <SelectTrigger onBlur={() => handleBlur('hostel_room_type')} className="h-11">
+                              <SelectValue placeholder={!formData.hostel_id ? "Select Hostel first" : "Select Room Type"} />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {(filteredRoomTypes.length > 0 ? filteredRoomTypes : hostelRoomTypes).map(rt => (
+                                <SelectItem key={rt.id} value={rt.id}>{rt.name} - ₹{rt.cost}/month</SelectItem>
+                              ))}
+                            </SelectContent>
                           </Select>
                         </SmartField>
-                        <SmartField label="Room Number">
-                          <Input value={formData.room_number} onChange={e => handleChange('room_number', e.target.value)} className="h-11" />
+                        <SmartField label="Room Number" hint={hostelRooms.length === 0 && formData.hostel_room_type ? "No rooms in system - enter manually" : ""}>
+                          {hostelRooms.length > 0 ? (
+                            <Select 
+                              value={formData.room_number || ''} 
+                              onValueChange={v => {
+                                handleChange('room_number', v);
+                                handleChange('bed_number', ''); // Reset bed when room changes
+                              }}
+                              disabled={!formData.hostel_room_type}
+                            >
+                              <SelectTrigger className="h-11">
+                                <SelectValue placeholder={!formData.hostel_room_type ? "Select Room Type first" : "Select Room"} />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {hostelRooms.map(room => (
+                                  <SelectItem key={room.id} value={room.room_number_name}>
+                                    {room.room_number_name} ({room.num_of_beds} beds)
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          ) : (
+                            <Input 
+                              value={formData.room_number || ''} 
+                              onChange={e => handleChange('room_number', e.target.value)} 
+                              placeholder={!formData.hostel_room_type ? "Select Room Type first" : "Enter room number (e.g., 101, A-12)"}
+                              disabled={!formData.hostel_room_type}
+                              className="h-11" 
+                            />
+                          )}
                         </SmartField>
                         <SmartField label="Bed Number">
-                          <Input value={formData.bed_number} onChange={e => handleChange('bed_number', e.target.value)} className="h-11" />
+                          {selectedRoom ? (
+                            <Select 
+                              value={formData.bed_number || ''} 
+                              onValueChange={v => handleChange('bed_number', v)}
+                              disabled={!formData.room_number}
+                            >
+                              <SelectTrigger className="h-11">
+                                <SelectValue placeholder={!formData.room_number ? "Select Room first" : "Select Bed"} />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {availableBeds.map(bed => (
+                                  <SelectItem key={bed} value={bed}>{bed}</SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          ) : (
+                            <Input 
+                              value={formData.bed_number || ''} 
+                              onChange={e => handleChange('bed_number', e.target.value)} 
+                              placeholder={!formData.room_number ? "Enter room number first" : "Enter bed number (e.g., 1, A, Lower)"}
+                              disabled={!formData.room_number}
+                              className="h-11" 
+                            />
+                          )}
                         </SmartField>
                         <SmartField label="Hostel Fee" hint="Auto-calculated" icon={IndianRupee}>
                           <Input value={formData.hostel_fee} readOnly disabled className="h-11 bg-purple-50 dark:bg-purple-900/20 border-purple-200 dark:border-purple-800" />
@@ -2814,94 +2934,54 @@ const StudentAdmission = () => {
           );
         })}
 
-        {/* ? Premium Fees Block */}
-        <SectionBox icon={Banknote} title="Fees Details" badge="Optional" badgeColor="info" gradient="green">
-          <div className="space-y-6">
-            {formData.siblings.length > 0 && (
-              <div className="p-5 bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/20 border-2 border-amber-300 dark:border-amber-800 rounded-2xl">
-                <SmartField label="Carry Forward Fees from Siblings" hint="Amount in ₹" icon={IndianRupee}>
-                  <Input 
-                    value={formData.carry_forward_fees} 
-                    type="number" 
-                    placeholder="0.00" 
-                    onChange={e => handleChange('carry_forward_fees', e.target.value)} 
-                    className="h-12 text-lg font-bold"
-                  />
-                </SmartField>
-              </div>
+        {/* ? Fees Details - Simple Informational Display */}
+        <SectionBox icon={Banknote} title="Fees Details" badge="Info" badgeColor="info" gradient="green">
+          <div className="space-y-3">
+            {/* Show message if no class selected */}
+            {!formData.class_id && (
+              <p className="text-sm text-muted-foreground text-center py-4">Select a class to see applicable fees</p>
             )}
             
-            <div className="space-y-4">
-              {feeGroups
-                .filter(group => !group.name.startsWith('Quick Fees'))
-                .filter(group => formData.class_id && classAssignedFeeGroupIds.includes(group.id))
-                .map(group => (
-                <Collapsible key={group.id}>
-                  <div className={cn(
-                    "flex items-center justify-between p-5 rounded-2xl border-2 transition-all duration-300",
-                    formData.fee_groups[group.id] 
-                      ? "border-emerald-500 bg-gradient-to-br from-emerald-50 to-green-50 dark:from-emerald-900/30 dark:to-green-900/20 shadow-lg shadow-emerald-500/10" 
-                      : "border-border hover:border-primary/50 hover:bg-gradient-to-br hover:from-primary/5 hover:to-primary/10 hover:shadow-md"
-                  )}>
-                    <div className="flex items-center gap-4">
-                      <Checkbox 
-                        id={`fee-group-${group.id}`} 
-                        checked={!!formData.fee_groups[group.id]} 
-                        onCheckedChange={checked => handleFeeGroupChange(group.id, checked)}
-                        className="data-[state=checked]:bg-emerald-500 data-[state=checked]:border-emerald-500 h-5 w-5"
-                      />
-                      <label htmlFor={`fee-group-${group.id}`} className="font-bold text-foreground cursor-pointer text-base">{group.name}</label>
-                    </div>
-                    <div className="flex items-center gap-4">
-                      <div className="bg-emerald-100 dark:bg-emerald-900/40 px-4 py-2 rounded-xl">
-                        <span className="font-black text-xl text-emerald-700 dark:text-emerald-300">₹{group.fee_masters.reduce((acc, master) => acc + master.amount, 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
-                      </div>
-                      <CollapsibleTrigger asChild>
-                        <Button variant="ghost" size="sm" className="h-10 w-10 p-0 rounded-xl hover:bg-primary/10">
-                          <ChevronDown className="h-5 w-5" />
-                        </Button>
-                      </CollapsibleTrigger>
-                    </div>
-                  </div>
-                  <CollapsibleContent className="mt-3 ml-10 space-y-2">
-                    {group.fee_masters.map(master => (
-                      <div key={master.id} className="flex justify-between text-sm p-4 rounded-xl bg-gradient-to-r from-muted/50 to-muted/30 hover:from-primary/10 hover:to-primary/5 transition-all duration-200 border border-border/50">
-                        <span className="flex items-center gap-3 text-foreground/80">
-                          <div className="w-2 h-2 rounded-full bg-gradient-to-r from-primary to-primary/50" />
-                          <span className="font-medium">{master.fee_types.name}</span>
-                          <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-md">{master.fee_types.code}</span>
-                        </span>
-                        <div className="flex items-center gap-8">
-                          <span className="text-xs text-muted-foreground flex items-center gap-1.5">
-                            <CalendarDays className="h-3 w-3" />
-                            {new Date(master.due_date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
-                          </span>
-                          <span className="font-bold text-foreground">₹{master.amount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
-                        </div>
-                      </div>
-                    ))}
-                  </CollapsibleContent>
-                </Collapsible>
-              ))}
-              {/* Show message if class selected but no fees assigned */}
-              {formData.class_id && classAssignedFeeGroupIds.length === 0 && feeGroups.length > 0 && (
-                <div className="text-center py-8 bg-amber-50 dark:bg-amber-900/20 rounded-2xl border border-amber-200 dark:border-amber-800">
-                  <AlertCircle className="h-8 w-8 text-amber-600 mx-auto mb-3" />
-                  <p className="text-amber-700 dark:text-amber-300 font-medium">No fees assigned to selected class</p>
-                  <p className="text-xs text-amber-600/70 dark:text-amber-400/70 mt-1">Fee groups can be assigned to classes in Fees Master</p>
+            {/* Show message if class selected but no fees assigned */}
+            {formData.class_id && classAssignedFeeGroupIds.length === 0 && (
+              <p className="text-sm text-amber-600 dark:text-amber-400 text-center py-4">No fees configured for selected class</p>
+            )}
+            
+            {/* Show fees for selected class - Simple Table */}
+            {formData.class_id && classAssignedFeeGroupIds.length > 0 && (
+              <div className="space-y-3">
+                <div className="border rounded-lg overflow-hidden">
+                  <table className="w-full text-sm">
+                    <thead className="bg-muted/50">
+                      <tr>
+                        <th className="text-left p-2 font-medium">Fee Type</th>
+                        <th className="text-right p-2 font-medium">Amount</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {feeGroups
+                        .filter(group => !group.name.startsWith('Quick Fees') && classAssignedFeeGroupIds.includes(group.id))
+                        .flatMap(group => group.fee_masters.map(master => (
+                          <tr key={master.id} className="border-t">
+                            <td className="p-2">{master.fee_types.name}</td>
+                            <td className="p-2 text-right font-medium">₹{master.amount.toLocaleString('en-IN')}</td>
+                          </tr>
+                        )))
+                      }
+                      <tr className="border-t bg-emerald-50 dark:bg-emerald-900/20 font-bold">
+                        <td className="p-2">Total Annual Fees</td>
+                        <td className="p-2 text-right text-emerald-600 dark:text-emerald-400">
+                          ₹{feeGroups
+                            .filter(group => !group.name.startsWith('Quick Fees') && classAssignedFeeGroupIds.includes(group.id))
+                            .reduce((total, group) => total + group.fee_masters.reduce((acc, master) => acc + master.amount, 0), 0)
+                            .toLocaleString('en-IN')}
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
                 </div>
-              )}
-              {/* Show message if no class selected */}
-              {!formData.class_id && feeGroups.length > 0 && (
-                <div className="text-center py-8 bg-muted/50 rounded-2xl border border-border">
-                  <p className="text-muted-foreground">Select a class to see applicable fees</p>
-                </div>
-              )}
-            </div>
-            {errors.fee_groups && (
-              <p className="text-sm text-red-500 flex items-center gap-2 bg-red-50 dark:bg-red-900/20 p-4 rounded-xl border border-red-200 dark:border-red-800">
-                <AlertCircle className="w-5 h-5 flex-shrink-0" />{errors.fee_groups}
-              </p>
+                <p className="text-xs text-muted-foreground">Fee collection will be done from Fees Collection module after admission.</p>
+              </div>
             )}
           </div>
         </SectionBox>

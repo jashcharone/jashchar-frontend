@@ -19,8 +19,8 @@ export const ATTENDANCE_MODULE_TO_PATH = {
     'manual_student': '/super-admin/attendance/student-attendance',
     'manual_staff': '/super-admin/attendance/staff-attendance',
     'attendance_by_date': '/super-admin/attendance/attendance-by-date',
-    'leave_management': '/super-admin/attendance/approve-student-leave',  // ✅ Fixed path
-    'basic_report': '/super-admin/attendance/attendance-report',           // ✅ Fixed path
+    'leave_management': '/super-admin/attendance/approve-student-leave',
+    'basic_report': '/super-admin/attendance/attendance-report',
     'holiday_management': '/super-admin/holidays',
     
     // Standard Tier - QR & Cards
@@ -34,6 +34,7 @@ export const ATTENDANCE_MODULE_TO_PATH = {
     
     // Premium Tier - Biometric & Face
     'fingerprint': '/super-admin/attendance/biometric',
+    'biometric_finger': '/super-admin/attendance/biometric',
     'face_recognition': '/super-admin/attendance/face-registration',
     'face_registration': '/super-admin/attendance/face-registration',
     'live_face_attendance': '/super-admin/attendance/live-face-attendance',
@@ -43,19 +44,23 @@ export const ATTENDANCE_MODULE_TO_PATH = {
     'shift_management': '/super-admin/attendance/shift-management',
     'whatsapp_alerts': '/super-admin/whatsapp',
     'advanced_analytics': '/super-admin/attendance/analytics',
+    'advanced_report': '/super-admin/attendance/analytics',
     
     // Enterprise Tier - GPS & AI
     'geo_fence': '/super-admin/attendance/geo-fence',
     'gps_tracking': '/super-admin/attendance/gps-tracking',
     'smart_classroom': '/super-admin/attendance/smart-classroom',
     'period_attendance': '/super-admin/attendance/period-wise',
+    'period_wise': '/super-admin/attendance/period-wise',
     'ai_camera': '/super-admin/attendance/ai-camera',
+    'ai_cameras': '/super-admin/attendance/ai-camera',
     'voice_recognition': '/super-admin/attendance/voice-recognition',
     'wearable_devices': '/super-admin/attendance/wearable-devices',
     'iot_sensors': '/super-admin/attendance/iot-sensors',
     'proxy_detection': '/super-admin/attendance/proxy-detection',
     'attention_tracking': '/super-admin/attendance/attention-tracking',
     'external_api': '/super-admin/attendance/api-integration',
+    'api_integration': '/super-admin/attendance/api-integration',
     'custom_reports': '/super-admin/attendance/custom-reports'
 };
 

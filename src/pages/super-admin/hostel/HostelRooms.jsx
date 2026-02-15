@@ -54,6 +54,7 @@ const HostelRooms = () => {
         hostel_room_types(name, cost)
       `)
       .eq('branch_id', branchId)
+      .order('hostel_id', { ascending: true })
       .order('room_number_name', { ascending: true });
 
     if (error) {

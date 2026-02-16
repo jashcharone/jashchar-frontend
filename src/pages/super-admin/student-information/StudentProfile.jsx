@@ -202,7 +202,11 @@ const StudentProfile = () => {
 
   const targetId = studentId || user?.id;
   // Use selectedBranch.id consistently (same as Edit page)
-  const branchId = selectedBranch?.id || user?.profile?.branch_id;
+  // For students viewing their own profile, branch_id comes from user_metadata
+  const branchId = selectedBranch?.id || user?.profile?.branch_id || user?.user_metadata?.branch_id;
+  
+  // Check if viewing own profile (student role)
+  const isViewingOwnProfile = !studentId && user?.role === 'student';
 
   // 🖨️ PDF Export ref and handler
   const printRef = useRef();

@@ -8,8 +8,9 @@ import { Loader2, GraduationCap, Sparkles, Play, Building2 } from 'lucide-react'
 import { Helmet } from 'react-helmet';
 
 // Demo credentials for all schools
-// Note: Student login uses admission_number@student.jashchar.local format (lowercase)
-// Parent login uses mobilenumber@parent.jashchar.local format (with 91 prefix)
+// Note: Student login uses admission_number (backend converts to admission_number@student.jashchar.local)
+// Parent login uses MOBILE NUMBER ONLY (backend converts to mobile@parent.jashchar.local)
+// Parent EMAIL is NOT USED - Only mobile number for authentication (per project rule)
 const DEMO_SCHOOLS = [
   {
     name: 'Jashchar ICSE School',
@@ -22,8 +23,8 @@ const DEMO_SCHOOLS = [
       'Teacher': null, // Not yet configured - Add staff via Human Resource module
       'Accountant': null, // Not yet configured - Add staff via Human Resource module
       'Librarian': null, // Not yet configured - Add staff via Human Resource module
-      'Parent': { email: '917676505840@parent.jashchar.local', password: '789456', displayLogin: '7676505840' },
-      'Student': { email: 'jash-2026-0003@student.jashchar.local', password: '789456', displayLogin: 'JASH-2026-0003' },
+      'Parent': { email: '9887654324', password: '789456', displayLogin: '9887654324 (Mobile) - SETUP NEEDED' },
+      'Student': { email: 'JASH-2026-0028', password: '789456', displayLogin: 'JASH-2026-0028 (Admission)' },
     }
   },
   {

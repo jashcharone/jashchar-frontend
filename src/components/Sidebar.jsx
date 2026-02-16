@@ -595,7 +595,7 @@ const Sidebar = ({ role, isSidebarOpen, isMobile, toggleSidebar, closeSidebar, o
                   className="text-sm font-bold truncate"
                   style={{ color: settings.colors.sidebarForeground }}
                 >
-                  {user?.user_metadata?.full_name || user?.email?.split('@')[0]}
+                  {user?.user_metadata?.full_name || user?.user_metadata?.first_name || user?.profile?.full_name || user?.profile?.first_name || (user?.email?.includes('@parent.jashchar.local') ? 'Parent' : user?.email?.split('@')[0])}
                 </span>
                 <span 
                   className="text-[10px] truncate opacity-60 font-medium"

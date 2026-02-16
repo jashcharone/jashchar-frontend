@@ -333,108 +333,35 @@ const ParentDashboard = () => {
       try {
         setLoading(true);
         
-        // Get parent's branch_id from branch_users
-        const { data: branchUser } = await supabase
-          .from('branch_users')
-          .select('branch_id')
-          .eq('user_id', user.id)
-          .maybeSingle();
+        console.log('[ParentDashboard] User:', user.id, 'Email:', user.email);
+        console.log('[ParentDashboard] User metadata:', JSON.stringify(user.user_metadata));
 
-        const branchId = branchUser?.branch_id || school?.id;
-
-        if (!branchId) {
-          console.warn('No branch_id found for parent');
-          setLoading(false);
-          return;
-        }
-
-        // Fetch children linked to this parent
-        // Try multiple approaches to find linked students
+        // Use backend API to fetch children (bypasses RLS using service role)
+        const { data: session } = await supabase.auth.getSession();
+        const token = session?.session?.access_token;
+        const branchId = user.user_metadata?.branch_id || school?.id;
         
-        // Approach 1: Check student_parents junction table
-        let { data: studentParents } = await supabase
-          .from('student_parents')
-          .select('student_id')
-          .eq('parent_user_id', user.id);
+        const response = await fetch('/api/students/parent/children', {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+            'x-branch-id': branchId
+          }
+        });
 
-        let studentIds = studentParents?.map(sp => sp.student_id) || [];
-
-        // Approach 2: Check students table directly for parent_id
-        if (studentIds.length === 0) {
-          const { data: directStudents } = await supabase
-            .from('students')
-            .select('id')
-            .eq('parent_id', user.id);
-          
-          studentIds = directStudents?.map(s => s.id) || [];
+        if (!response.ok) {
+          throw new Error(`API error: ${response.status}`);
         }
 
-        // Approach 3: Check students by parent email
-        if (studentIds.length === 0 && user.email) {
-          const { data: emailStudents } = await supabase
-            .from('students')
-            .select('id')
-            .or(`father_email.eq.${user.email},mother_email.eq.${user.email},guardian_email.eq.${user.email}`);
-          
-          studentIds = emailStudents?.map(s => s.id) || [];
-        }
+        const result = await response.json();
+        console.log('[ParentDashboard] API response:', result);
 
-        if (studentIds.length > 0) {
-          // Fetch full student details
-          const { data: studentsData } = await supabase
-            .from('students')
-            .select(`
-              id,
-              student_id,
-              admission_number,
-              first_name,
-              last_name,
-              full_name,
-              date_of_birth,
-              roll_number,
-              photo_url,
-              class_id,
-              section_id,
-              classes(name),
-              sections(name)
-            `)
-            .in('id', studentIds);
-
-          const formattedChildren = studentsData?.map(s => ({
-            ...s,
-            class_name: s.classes?.name || 'N/A',
-            section_name: s.sections?.name || ''
-          })) || [];
-
-          setChildren(formattedChildren);
+        if (result.children && result.children.length > 0) {
+          setChildren(result.children);
+          setSelectedChild(result.children[0]);
         } else {
-          // Demo data for testing
-          setChildren([
-            {
-              id: 'demo-1',
-              full_name: 'Arjun Kumar',
-              first_name: 'Arjun',
-              last_name: 'Kumar',
-              class_name: 'Six (A)',
-              section_name: 'A',
-              roll_number: '1',
-              admission_number: 'RSM-00001',
-              date_of_birth: '2008-12-29',
-              photo_url: null
-            },
-            {
-              id: 'demo-2',
-              full_name: 'Priya Kumar',
-              first_name: 'Priya',
-              last_name: 'Kumar',
-              class_name: 'Seven (A)',
-              section_name: 'A',
-              roll_number: '2',
-              admission_number: 'RSM-00008',
-              date_of_birth: '2000-07-13',
-              photo_url: null
-            }
-          ]);
+          // No children linked
+          setChildren([]);
         }
 
       } catch (error) {
@@ -475,7 +402,7 @@ const ParentDashboard = () => {
     <DashboardLayout>
       <div className="space-y-6">
         <WelcomeMessage 
-          user={user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'Parent'}
+          user={user?.user_metadata?.full_name || user?.user_metadata?.first_name || user?.profile?.full_name || 'Parent'}
           message="Welcome! Here are your children enrolled in our school."
         />
 

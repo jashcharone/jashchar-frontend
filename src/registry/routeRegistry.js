@@ -387,6 +387,7 @@ export const ROUTES = {
   },
   PARENT: {
     DASHBOARD: '/Parent/dashboard',
+    PROFILE: '/Parent/profile',
   },
   TEACHER: {
     DASHBOARD: '/Teacher/dashboard',

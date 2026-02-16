@@ -80,6 +80,7 @@ const AdminDashboard = lazy(() => import('@/pages/AdminDashboard'));
 const StaffDashboard = lazy(() => import('@/pages/StaffDashboard'));
 const StudentDashboard = lazy(() => import('@/pages/student/StudentDashboard'));
 const ParentDashboard = lazy(() => import('@/pages/ParentDashboard'));
+const ParentProfile = lazy(() => import('@/pages/parent/ParentProfile'));
 // ? Role-specific Dashboards
 const PrincipalDashboard = lazy(() => import('@/pages/PrincipalDashboard'));
 const AccountantDashboard = lazy(() => import('@/pages/AccountantDashboard'));
@@ -723,6 +724,7 @@ function App() {
             <Route path="/Librarian/*" element={<Navigate to="/Librarian/dashboard" replace />} />
             
             <Route path="/Parent/dashboard" element={<ProtectedRoute allowedRoles={['parent']}><ParentDashboard /></ProtectedRoute>} />
+            <Route path={ROUTES.PARENT.PROFILE} element={<ProtectedRoute allowedRoles={['parent']}><ParentProfile /></ProtectedRoute>} />
             <Route path="/Parent/*" element={<Navigate to="/Parent/dashboard" replace />} />
             
             {/* ✅ Student Portal Routes */}

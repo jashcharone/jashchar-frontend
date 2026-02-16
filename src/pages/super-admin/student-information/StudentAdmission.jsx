@@ -1401,13 +1401,17 @@ const StudentAdmission = () => {
       if (formData.parent_password !== formData.parent_retype_password) newErrors.parent_retype_password = "Passwords do not match";
     }
 
-    // Fees - Only validate if there are fee groups assigned to selected class
-    const classFilteredFeeGroups = feeGroups.filter(group => 
-      classAssignedFeeGroupIds.length === 0 || classAssignedFeeGroupIds.includes(group.id)
-    );
-    if (classFilteredFeeGroups.length > 0 && !Object.values(formData.fee_groups).some(v => v)) {
-      newErrors.fee_groups = "At least one fee must be selected";
+    // Fees - Only validate if there are fee groups SPECIFICALLY assigned to selected class
+    // If no fee groups are assigned to the class, fee selection is OPTIONAL
+    if (classAssignedFeeGroupIds.length > 0) {
+      const classFilteredFeeGroups = feeGroups.filter(group => 
+        classAssignedFeeGroupIds.includes(group.id)
+      );
+      if (classFilteredFeeGroups.length > 0 && !Object.values(formData.fee_groups).some(v => v)) {
+        newErrors.fee_groups = "At least one fee must be selected";
+      }
     }
+    // When no fee groups are assigned to the class, fee selection is optional - no validation needed
 
     // Documents - Check required documents
     const missingDocs = masterDocuments

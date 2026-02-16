@@ -1,4 +1,5 @@
 ﻿import React, { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import DashboardLayout from '@/components/DashboardLayout';
 import { supabase } from '@/lib/customSupabaseClient';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
@@ -10,7 +11,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent } from "@/components/ui/card";
-import { Plus, Edit, Trash2, Save, Loader2, DoorOpen, Building2, Bed, Users } from 'lucide-react';
+import { Plus, Edit, Trash2, Save, Loader2, DoorOpen, Building2, Bed, Users, ArrowLeft } from 'lucide-react';
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger
@@ -19,6 +20,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from '@/components/ui/badge';
 
 const HostelRooms = () => {
+  const navigate = useNavigate();
   const { user, currentSessionId, organizationId } = useAuth();
   const { selectedBranch } = useBranch();
   const { toast } = useToast();
@@ -203,6 +205,17 @@ const HostelRooms = () => {
   return (
     <DashboardLayout>
       <div className="p-6 space-y-6">
+        {/* Header with Back Button */}
+        <div className="flex items-center gap-4">
+          <Button variant="outline" size="icon" onClick={() => navigate(-1)} className="h-10 w-10">
+            <ArrowLeft className="h-5 w-5" />
+          </Button>
+          <div>
+            <h1 className="text-2xl font-bold">Hostel Rooms</h1>
+            <p className="text-sm text-muted-foreground">Manage hostel rooms and bed allocations</p>
+          </div>
+        </div>
+
         {/* Stats Cards at Top */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <Card className="bg-gradient-to-r from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 border-blue-200">

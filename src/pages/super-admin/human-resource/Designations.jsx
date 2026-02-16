@@ -20,7 +20,7 @@ import {
 
 const Designations = () => {
     const { toast } = useToast();
-    const { user, currentSessionId, organizationId } = useAuth();
+    const { user, organizationId } = useAuth();
     const { selectedBranch } = useBranch();
     const [designations, setDesignations] = useState([]);
     const [designationName, setDesignationName] = useState('');
@@ -71,7 +71,6 @@ const Designations = () => {
         const payload = {
             name: designationName,
             branch_id: selectedBranch.id,
-            session_id: currentSessionId,
             organization_id: organizationId
         };
 

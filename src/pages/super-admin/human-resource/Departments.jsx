@@ -20,7 +20,7 @@ import {
 
 const Departments = () => {
     const { toast } = useToast();
-    const { user, currentSessionId, organizationId } = useAuth();
+    const { user, organizationId } = useAuth();
     const { selectedBranch } = useBranch();
     const [departments, setDepartments] = useState([]);
     const [departmentName, setDepartmentName] = useState('');
@@ -71,7 +71,6 @@ const Departments = () => {
         const payload = {
             name: departmentName,
             branch_id: selectedBranch.id,
-            session_id: currentSessionId,
             organization_id: organizationId
         };
 

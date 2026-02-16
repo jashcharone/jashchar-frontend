@@ -113,21 +113,21 @@ const ChildDashboard = ({ child, onBack }) => {
   useEffect(() => {
     const fetchChildData = async () => {
       try {
-        // Fetch fee summary for this child
+        // Fetch fee payments for this child (only non-reverted payments)
         const { data: fees } = await supabase
           .from('fee_payments')
-          .select('amount, status, payment_date')
+          .select('amount, payment_date, payment_mode, reverted_at')
           .eq('student_id', child.id)
+          .is('reverted_at', null)  // Only valid (non-reverted) payments
           .order('payment_date', { ascending: false });
 
-        // Calculate fee summary
-        const totalFees = fees?.reduce((sum, f) => sum + (f.amount || 0), 0) || 0;
-        const paidFees = fees?.filter(f => f.status === 'paid').reduce((sum, f) => sum + (f.amount || 0), 0) || 0;
+        // Calculate fee summary - all non-reverted payments are "paid"
+        const paidFees = fees?.reduce((sum, f) => sum + (f.amount || 0), 0) || 0;
         
         setFeeData({
-          total: totalFees,
+          total: paidFees,  // For now, show paid amount as total (will be updated with actual fee allocation)
           paid: paidFees,
-          remaining: totalFees - paidFees,
+          remaining: 0,
           payments: fees || []
         });
 

@@ -29,7 +29,25 @@ const Header = ({ toggleSidebar, onThemeSettingsClick, onChatbotToggle }) => {
   const [isBugModalOpen, setIsBugModalOpen] = useState(false);
   
   // Get role from all possible sources for consistency
-  const rawRole = user?.role || user?.profile?.role?.name || user?.profile?.role || user?.user_metadata?.role;
+  // Note: user?.role might be "authenticated" (Supabase default) - check user_metadata first
+  const getRealRole = () => {
+    // Priority: user_metadata.role > profile.role > app_metadata.role > role (if not "authenticated")
+    const metaRole = user?.user_metadata?.role;
+    if (metaRole && metaRole !== 'authenticated') return metaRole;
+    
+    const profileRole = user?.profile?.role?.name || user?.profile?.role;
+    if (profileRole && profileRole !== 'authenticated') return profileRole;
+    
+    const appRole = user?.app_metadata?.role;
+    if (appRole && appRole !== 'authenticated') return appRole;
+    
+    const directRole = user?.role;
+    if (directRole && directRole !== 'authenticated') return directRole;
+    
+    return null;
+  };
+  
+  const rawRole = getRealRole();
   const role = rawRole?.toLowerCase()?.replace(/\s+/g, '_');
   const userType = user?.userType || user?.profile?.type; // 'owner' or 'staff'
 

@@ -128,7 +128,10 @@ export const OrganizationProvider = ({ children }) => {
             console.log('[Organization] Fetching config for:', orgSlug);
             
             // Fetch organization configuration
-            const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+            // Use relative /api for production (Vercel rewrite), only use VITE_API_URL for local dev
+            const isLocalhost = typeof window !== 'undefined' && 
+                (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+            const apiUrl = isLocalhost ? (import.meta.env.VITE_API_URL || 'http://localhost:5000') : '';
             const response = await axios.get(
                 `${apiUrl}/api/public/org-config?slug=${orgSlug}`
             );

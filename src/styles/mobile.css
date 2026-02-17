@@ -1,0 +1,398 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+ * JASHCHAR ERP - MOBILE SPECIFIC STYLES
+ * CSS optimizations for Capacitor mobile app
+ * ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ─────────────────────────────────────────────────────────────────────────────
+ * SAFE AREA SUPPORT (iPhone Notch, Android Cutouts)
+ * ───────────────────────────────────────────────────────────────────────────── */
+:root {
+  --sat: env(safe-area-inset-top, 0px);
+  --sar: env(safe-area-inset-right, 0px);
+  --sab: env(safe-area-inset-bottom, 0px);
+  --sal: env(safe-area-inset-left, 0px);
+}
+
+/* Safe area padding classes */
+.safe-area-top {
+  padding-top: env(safe-area-inset-top, 0px);
+}
+
+.safe-area-bottom {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+.safe-area-left {
+  padding-left: env(safe-area-inset-left, 0px);
+}
+
+.safe-area-right {
+  padding-right: env(safe-area-inset-right, 0px);
+}
+
+.safe-area-all {
+  padding: env(safe-area-inset-top, 0px) 
+           env(safe-area-inset-right, 0px) 
+           env(safe-area-inset-bottom, 0px) 
+           env(safe-area-inset-left, 0px);
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+ * TOUCH OPTIMIZATIONS
+ * ───────────────────────────────────────────────────────────────────────────── */
+
+/* Prevent text selection on tap */
+.no-select {
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+
+/* Disable tap highlight on iOS */
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Better touch targets */
+.touch-target {
+  min-height: 44px;
+  min-width: 44px;
+}
+
+/* Smooth scrolling for native feel */
+.smooth-scroll {
+  -webkit-overflow-scrolling: touch;
+  scroll-behavior: smooth;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+ * MOBILE TYPOGRAPHY
+ * ───────────────────────────────────────────────────────────────────────────── */
+
+/* Prevent font size adjustment on orientation change */
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+ * MOBILE-SPECIFIC LAYOUTS
+ * ───────────────────────────────────────────────────────────────────────────── */
+
+/* Full viewport height accounting for mobile browser chrome */
+.mobile-vh-full {
+  height: 100vh;
+  height: 100dvh; /* Dynamic viewport height */
+}
+
+/* Mobile container with safe areas */
+.mobile-container {
+  position: relative;
+  width: 100%;
+  min-height: 100vh;
+  min-height: 100dvh;
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* Fixed header/footer with safe areas */
+.mobile-header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 50;
+  padding-top: env(safe-area-inset-top, 0px);
+  background: inherit;
+}
+
+.mobile-footer {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 50;
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  background: inherit;
+}
+
+/* Content area with header/footer spacing */
+.mobile-content {
+  padding-top: calc(56px + env(safe-area-inset-top, 0px));
+  padding-bottom: calc(64px + env(safe-area-inset-bottom, 0px));
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+ * BOTTOM NAVIGATION STYLES
+ * ───────────────────────────────────────────────────────────────────────────── */
+
+.mobile-bottom-nav {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  height: calc(64px + env(safe-area-inset-bottom, 0px));
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  background-color: #ffffff;
+  border-top: 1px solid #e5e7eb;
+  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05);
+}
+
+.dark .mobile-bottom-nav {
+  background-color: #111827;
+  border-top-color: #374151;
+}
+
+.mobile-nav-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  height: 64px;
+  padding: 8px 4px;
+  color: #6b7280;
+  font-size: 10px;
+  font-weight: 500;
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.mobile-nav-item:active {
+  transform: scale(0.95);
+}
+
+.mobile-nav-item.active {
+  color: var(--primary, #3b82f6);
+}
+
+.mobile-nav-item .icon {
+  width: 24px;
+  height: 24px;
+  margin-bottom: 4px;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+ * PULL TO REFRESH
+ * ───────────────────────────────────────────────────────────────────────────── */
+
+.pull-to-refresh-indicator {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.pull-to-refresh-indicator.visible {
+  opacity: 1;
+}
+
+.pull-to-refresh-spinner {
+  width: 24px;
+  height: 24px;
+  border: 2px solid #e5e7eb;
+  border-top-color: var(--primary, #3b82f6);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+ * MOBILE CARD STYLES
+ * ───────────────────────────────────────────────────────────────────────────── */
+
+.mobile-card {
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 16px;
+  margin: 8px 16px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.dark .mobile-card {
+  background: #1f2937;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+ * MOBILE LIST STYLES
+ * ───────────────────────────────────────────────────────────────────────────── */
+
+.mobile-list-item {
+  display: flex;
+  align-items: center;
+  padding: 12px 16px;
+  border-bottom: 1px solid #f3f4f6;
+  background: #ffffff;
+  transition: background 0.15s ease;
+}
+
+.mobile-list-item:active {
+  background: #f9fafb;
+}
+
+.dark .mobile-list-item {
+  border-bottom-color: #374151;
+  background: #1f2937;
+}
+
+.dark .mobile-list-item:active {
+  background: #111827;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+ * MOBILE BUTTON STYLES
+ * ───────────────────────────────────────────────────────────────────────────── */
+
+.mobile-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 48px;
+  padding: 12px 24px;
+  border-radius: 12px;
+  font-weight: 600;
+  font-size: 16px;
+  transition: transform 0.1s ease, background 0.2s ease;
+}
+
+.mobile-btn:active {
+  transform: scale(0.97);
+}
+
+.mobile-btn-primary {
+  background: var(--primary, #3b82f6);
+  color: #ffffff;
+}
+
+.mobile-btn-secondary {
+  background: #f3f4f6;
+  color: #374151;
+}
+
+.dark .mobile-btn-secondary {
+  background: #374151;
+  color: #f3f4f6;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+ * MOBILE FORM STYLES
+ * ───────────────────────────────────────────────────────────────────────────── */
+
+.mobile-input {
+  width: 100%;
+  height: 48px;
+  padding: 12px 16px;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  font-size: 16px; /* Prevents iOS zoom on focus */
+  background: #ffffff;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.mobile-input:focus {
+  outline: none;
+  border-color: var(--primary, #3b82f6);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.dark .mobile-input {
+  background: #1f2937;
+  border-color: #374151;
+  color: #f9fafb;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+ * ANIMATIONS
+ * ───────────────────────────────────────────────────────────────────────────── */
+
+/* Slide up animation for modals */
+@keyframes slideUp {
+  from {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.mobile-slide-up {
+  animation: slideUp 0.3s ease-out;
+}
+
+/* Fade in animation */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.mobile-fade-in {
+  animation: fadeIn 0.2s ease-out;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+ * DARK MODE SUPPORT
+ * ───────────────────────────────────────────────────────────────────────────── */
+
+@media (prefers-color-scheme: dark) {
+  .mobile-auto-dark {
+    background-color: #111827;
+    color: #f9fafb;
+  }
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+ * LANDSCAPE ORIENTATION
+ * ───────────────────────────────────────────────────────────────────────────── */
+
+@media (orientation: landscape) and (max-height: 500px) {
+  .mobile-bottom-nav {
+    height: 48px;
+    padding-bottom: 0;
+  }
+  
+  .mobile-nav-item {
+    height: 48px;
+    padding: 4px;
+  }
+  
+  .mobile-nav-item .label {
+    display: none;
+  }
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+ * HIDE SCROLLBAR BUT KEEP FUNCTIONALITY
+ * ───────────────────────────────────────────────────────────────────────────── */
+
+.mobile-scroll-hidden {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.mobile-scroll-hidden::-webkit-scrollbar {
+  display: none;
+}

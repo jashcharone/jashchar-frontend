@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Jashchar ERP</string>
+    <string name="title_activity_main">Jashchar ERP</string>
+    <string name="package_name">com.jashchar.erp</string>
+    <string name="custom_url_scheme">com.jashchar.erp</string>
+</resources>

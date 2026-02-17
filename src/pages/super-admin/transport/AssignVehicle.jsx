@@ -1,4 +1,5 @@
 ﻿import React, { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import DashboardLayout from '@/components/DashboardLayout';
 import { supabase } from '@/lib/customSupabaseClient';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
@@ -7,14 +8,15 @@ import { useToast } from '@/components/ui/use-toast';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Edit, Trash2, Save, Loader2, Bus, Route, X, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react';
+import { Edit, Trash2, Save, Loader2, Bus, Route, X, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, ArrowLeft } from 'lucide-react';
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger
 } from '@/components/ui/alert-dialog';
 
 const AssignVehicle = () => {
-    const { user, currentSessionId, organizationId } = useAuth();
+  const navigate = useNavigate();
+  const { user, currentSessionId, organizationId } = useAuth();
   const { selectedBranch } = useBranch();
   const { toast } = useToast();
   const [assignments, setAssignments] = useState([]);
@@ -167,6 +169,10 @@ const AssignVehicle = () => {
   return (
     <DashboardLayout>
       <div className="p-6">
+        {/* Back Button */}
+        <Button variant="ghost" size="sm" onClick={() => navigate(-1)} className="mb-4 gap-2 text-muted-foreground hover:text-foreground">
+          <ArrowLeft className="h-4 w-4" /> Back
+        </Button>
         <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
           {/* Left - Assign Form */}
           <div className="xl:col-span-1">

@@ -283,6 +283,7 @@ export const ROUTES = {
     HOSTEL_ROOMS: '/super-admin/hostel/hostel-rooms',
     ROOM_TYPES: '/super-admin/hostel/room-types',
     HOSTEL_FEE: '/super-admin/hostel/hostel-fee',
+    HOSTEL_ANALYSIS: '/super-admin/hostel/hostel-analysis',
     // Transport
     TRANSPORT_ROUTES: '/super-admin/transport/transport-routes',
     TRANSPORT_VEHICLES: '/super-admin/transport/transport-vehicles',
@@ -292,6 +293,7 @@ export const ROUTES = {
     STUDENT_TRANSPORT_FEES: '/super-admin/transport/student-transport-fees',
     TRANSPORT_FEES_MASTER: '/super-admin/transport/transport-fees-master',
     TRANSPORT_FEE: '/super-admin/transport/transport-fee',
+    TRANSPORT_ANALYSIS: '/super-admin/transport/transport-analysis',
     // Communicate
     NOTICE_BOARD: '/super-admin/communicate/notice-board',
     SEND_EMAIL: '/super-admin/communicate/send-email',

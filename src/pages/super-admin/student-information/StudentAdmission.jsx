@@ -385,6 +385,7 @@ const StudentAdmission = () => {
   const { selectedBranch } = useBranch();
   const [formData, setFormData] = useState(initialFormData);
   const [loading, setLoading] = useState(false);
+  const [pageLoading, setPageLoading] = useState(true); // 🔄 Page initial load state
   const [classes, setClasses] = useState([]);
   const [sections, setSections] = useState([]);
   const [categories, setCategories] = useState([]);
@@ -1670,121 +1671,125 @@ const StudentAdmission = () => {
   }, [fetchSchoolSettings, resetStudentEmailValidation, resetFatherEmailValidation, resetAadharValidation]);
   
   useEffect(() => {
-    if (!selectedBranch?.id) return;
+    if (!selectedBranch?.id) {
+      setPageLoading(false);
+      return;
+    }
     const branchId = selectedBranch.id;
     console.log('[StudentAdmission] Loading data for branch:', branchId, selectedBranch?.branch_name);
+    setPageLoading(true); // 🔄 Start loading
     fetchSchoolSettings();
     const fetchPrereqs = async () => {
-      const [
-        classesRes, 
-        categoriesRes, 
-        routesRes, 
-        hostelsRes, 
-        hostelRoomTypesRes, 
-        feeGroupsRes, 
-        feeDiscountsRes,
-        religionsRes,
-        castesRes,
-        bloodGroupsRes,
-        motherTonguesRes,
-        gendersRes,
-        studentHousesRes,
-        masterDocumentsRes,
-        customFieldsRes,
-        sessionsRes
-      ] = await Promise.all([
-        supabase.from('classes').select('id, name').eq('branch_id', branchId),
-        supabase.from('student_categories').select('id, name').eq('branch_id', branchId),
-        supabase.from('transport_routes').select('id, route_title').eq('branch_id', branchId),
-        supabase.from('hostels').select('id, name').eq('branch_id', branchId),
-        supabase.from('hostel_room_types').select('*').eq('branch_id', branchId),
-        supabase.from('fee_groups').select(`id, name, fee_masters (*, fee_types(name, code))`).eq('branch_id', branchId),
-        supabase.from('discounts').select('id, name').eq('branch_id', branchId),
-        supabase.from('master_religions').select('name'),
-        supabase.from('master_castes').select('name'),
-        supabase.from('master_blood_groups').select('name'),
-        supabase.from('master_mother_tongues').select('name'),
-        supabase.from('master_genders').select('name'),
-        supabase.from('student_houses').select('id, name').eq('branch_id', branchId),
-        supabase.from('master_documents').select('name, is_required'),
-        api.get('/form-settings', { params: { branchId, module: 'student_admission' } }),
-        supabase.from('sessions').select('id, name, is_active').eq('branch_id', branchId).order('name', { ascending: false }),
-        // Fetch caste categories based on branch's state
-        supabase.from('branches').select('state_id').eq('id', branchId).single()
-      ]);
+      try {
+        const [
+          classesRes, 
+          categoriesRes, 
+          routesRes, 
+          hostelsRes, 
+          hostelRoomTypesRes, 
+          feeGroupsRes, 
+          feeDiscountsRes,
+          religionsRes,
+          castesRes,
+          bloodGroupsRes,
+          motherTonguesRes,
+          gendersRes,
+          studentHousesRes,
+          masterDocumentsRes,
+          customFieldsRes,
+          sessionsRes,
+          branchStateRes // 🔧 FIX: Capture the branch state result
+        ] = await Promise.all([
+          supabase.from('classes').select('id, name').eq('branch_id', branchId),
+          supabase.from('student_categories').select('id, name').eq('branch_id', branchId),
+          supabase.from('transport_routes').select('id, route_title').eq('branch_id', branchId),
+          supabase.from('hostels').select('id, name').eq('branch_id', branchId),
+          supabase.from('hostel_room_types').select('*').eq('branch_id', branchId),
+          supabase.from('fee_groups').select(`id, name, fee_masters (*, fee_types(name, code))`).eq('branch_id', branchId),
+          supabase.from('discounts').select('id, name').eq('branch_id', branchId),
+          supabase.from('master_religions').select('name'),
+          supabase.from('master_castes').select('name'),
+          supabase.from('master_blood_groups').select('name'),
+          supabase.from('master_mother_tongues').select('name'),
+          supabase.from('master_genders').select('name'),
+          supabase.from('student_houses').select('id, name').eq('branch_id', branchId),
+          supabase.from('master_documents').select('name, is_required'),
+          api.get('/form-settings', { params: { branchId, module: 'student_admission' } }),
+          supabase.from('sessions').select('id, name, is_active').eq('branch_id', branchId).order('name', { ascending: false }),
+          supabase.from('branches').select('state_id').eq('id', branchId).single()
+        ]);
 
-      // Fetch caste categories if branch has state_id
-      let casteCategoriesData = [];
-      let subCastesData = [];
-      if (sessionsRes.data) {
-        // Get state_id from branch (last result in parallel fetch)
-        const branchStateRes = await supabase.from('branches').select('state_id').eq('id', branchId).single();
-        if (branchStateRes.data?.state_id) {
-          // Fetch caste categories for this state
-          const casteCatRes = await supabase
-            .from('caste_categories')
-            .select('id, name, code, reservation_percent')
-            .eq('state_id', branchStateRes.data.state_id)
-            .eq('is_active', true)
-            .order('display_order');
+        // 🔧 FIX: Use branch state from Promise.all (no redundant query!)
+        let casteCategoriesData = [];
+        let subCastesData = [];
+        const stateId = branchStateRes.data?.state_id;
+        
+        if (stateId) {
+          // Parallel fetch caste categories AND sub-castes for this state
+          const [casteCatRes, allSubCastesRes] = await Promise.all([
+            supabase
+              .from('caste_categories')
+              .select('id, name, code, reservation_percent')
+              .eq('state_id', stateId)
+              .eq('is_active', true)
+              .order('display_order'),
+            supabase
+              .from('sub_castes')
+              .select('id, name, caste_category_id, caste_categories!inner(state_id)')
+              .eq('caste_categories.state_id', stateId)
+              .eq('is_active', true)
+              .order('name')
+          ]);
           
           casteCategoriesData = casteCatRes.data || [];
-          
-          // Fetch sub-castes only for the categories from this state
-          if (casteCategoriesData.length > 0) {
-            const categoryIds = casteCategoriesData.map(c => c.id);
-            const subCasteRes = await supabase
-              .from('sub_castes')
-              .select('id, name, caste_category_id')
-              .in('caste_category_id', categoryIds)
-              .eq('is_active', true)
-              .order('name');
-            subCastesData = subCasteRes.data || [];
-          }
-          
-          console.log('Caste Categories:', casteCategoriesData.length);
-          console.log('Sub Castes:', subCastesData.length);
+          subCastesData = allSubCastesRes.data || [];
+          console.log('[StudentAdmission] Caste Categories:', casteCategoriesData.length, 'Sub Castes:', subCastesData.length);
         }
-      }
 
-      setClasses(sortClasses(classesRes.data || []));
-      setCategories(categoriesRes.data || []);
-      setRoutes(routesRes.data || []);
-      setHostels(hostelsRes.data || []);
-      setHostelRoomTypes(hostelRoomTypesRes.data || []);
-      setFeeGroups(feeGroupsRes.data || []);
-      setFeeDiscounts(feeDiscountsRes.data || []);
-      setReligions(religionsRes.data || []);
-      setCastes(castesRes.data || []);
-      setCasteCategories(casteCategoriesData);
-      setSubCastes(subCastesData);
-      setBloodGroups(bloodGroupsRes.data || []);
-      setMotherTongues(motherTonguesRes.data || []);
-      setGenders(gendersRes.data || []);
-      setStudentHouses(studentHousesRes.data || []);
-      setMasterDocuments(masterDocumentsRes.data || []);
-      
-      // Set sessions and auto-select active session
-      const sessionsData = sessionsRes.data || [];
-      setSessions(sessionsData);
-      const activeSession = sessionsData.find(s => s.is_active);
-      if (activeSession) {
-        setFormData(prev => ({ ...prev, session_id: activeSession.id }));
-      }
-      
-      if(customFieldsRes.data && customFieldsRes.data.success) {
-          const systemFields = customFieldsRes.data.systemFields || [];
-          const customFields = customFieldsRes.data.customFields || [];
-          setAllFields([...systemFields, ...customFields]);
-          setFormSections(customFieldsRes.data.sections || []);
+        setClasses(sortClasses(classesRes.data || []));
+        setCategories(categoriesRes.data || []);
+        setRoutes(routesRes.data || []);
+        setHostels(hostelsRes.data || []);
+        setHostelRoomTypes(hostelRoomTypesRes.data || []);
+        setFeeGroups(feeGroupsRes.data || []);
+        setFeeDiscounts(feeDiscountsRes.data || []);
+        setReligions(religionsRes.data || []);
+        setCastes(castesRes.data || []);
+        setCasteCategories(casteCategoriesData);
+        setSubCastes(subCastesData);
+        setBloodGroups(bloodGroupsRes.data || []);
+        setMotherTongues(motherTonguesRes.data || []);
+        setGenders(gendersRes.data || []);
+        setStudentHouses(studentHousesRes.data || []);
+        setMasterDocuments(masterDocumentsRes.data || []);
+        
+        // Set sessions and auto-select active session
+        const sessionsData = sessionsRes.data || [];
+        setSessions(sessionsData);
+        const activeSession = sessionsData.find(s => s.is_active);
+        if (activeSession) {
+          setFormData(prev => ({ ...prev, session_id: activeSession.id }));
+        }
+        
+        if(customFieldsRes.data && customFieldsRes.data.success) {
+            const systemFields = customFieldsRes.data.systemFields || [];
+            const customFields = customFieldsRes.data.customFields || [];
+            setAllFields([...systemFields, ...customFields]);
+            setFormSections(customFieldsRes.data.sections || []);
           
           // Debug: Log required fields
           const requiredFields = [...systemFields, ...customFields].filter(f => f.is_required && f.is_enabled);
           console.log('[StudentAdmission] Required fields loaded:', requiredFields.map(f => ({ name: f.field_name, label: f.field_label })));
+        }
+      } catch (err) {
+        console.error('[StudentAdmission] Error loading prerequisites:', err);
+        toast({ variant: 'destructive', title: 'Failed to load form data', description: 'Please refresh the page.' });
+      } finally {
+        setPageLoading(false); // 🔄 End loading
       }
     };
     fetchPrereqs();
-  }, [user, selectedBranch, fetchSchoolSettings]);
+  }, [user, selectedBranch, fetchSchoolSettings, toast]);
   
   const checkDuplicateRollNumber = useCallback(async (rollNumber, classId, sectionId) => {
     if (!selectedBranch?.id) return false;
@@ -2467,6 +2472,40 @@ const StudentAdmission = () => {
     navigator.clipboard.writeText(text);
     toast({ title: 'Copied!', description: 'Credentials copied to clipboard.' });
   };
+
+  // 🔄 Page Loading Skeleton
+  if (pageLoading) {
+    return (
+      <DashboardLayout>
+        <div className="space-y-6 animate-pulse">
+          {/* Header Skeleton */}
+          <div className="bg-card rounded-3xl p-8 border">
+            <div className="flex items-start gap-5">
+              <div className="w-20 h-20 bg-muted rounded-2xl" />
+              <div className="space-y-3 flex-1">
+                <div className="h-8 w-64 bg-muted rounded-lg" />
+                <div className="h-4 w-48 bg-muted rounded" />
+              </div>
+            </div>
+          </div>
+          {/* Form Section Skeletons */}
+          {[1, 2, 3].map(i => (
+            <div key={i} className="bg-card rounded-2xl p-6 border">
+              <div className="h-6 w-40 bg-muted rounded mb-6" />
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {[1, 2, 3, 4, 5, 6].map(j => (
+                  <div key={j} className="space-y-2">
+                    <div className="h-4 w-24 bg-muted rounded" />
+                    <div className="h-11 w-full bg-muted rounded-lg" />
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      </DashboardLayout>
+    );
+  }
   
   return (
     <DashboardLayout>

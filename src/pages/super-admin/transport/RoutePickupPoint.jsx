@@ -1,4 +1,5 @@
 ﻿import React, { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import DashboardLayout from '@/components/DashboardLayout';
 import { supabase } from '@/lib/customSupabaseClient';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
@@ -8,14 +9,15 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus, Edit, Trash2, Save, X, Loader2 } from 'lucide-react';
+import { Plus, Edit, Trash2, Save, X, Loader2, ArrowLeft } from 'lucide-react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { v4 as uuidv4 } from 'uuid';
 
 const RoutePickupPoint = () => {
+  const navigate = useNavigate();
   const { user, currentSessionId, organizationId } = useAuth();
-    const { selectedBranch } = useBranch();
-    const { toast } = useToast();
+  const { selectedBranch } = useBranch();
+  const { toast } = useToast();
     const [routesWithPoints, setRoutesWithPoints] = useState([]);
     const [allRoutes, setAllRoutes] = useState([]);
     const [allPickupPoints, setAllPickupPoints] = useState([]);
@@ -183,6 +185,10 @@ const RoutePickupPoint = () => {
     return (
         <DashboardLayout>
             <div className="p-6">
+                {/* Back Button */}
+                <Button variant="ghost" size="sm" onClick={() => navigate(-1)} className="mb-4 gap-2 text-muted-foreground hover:text-foreground">
+                  <ArrowLeft className="h-4 w-4" /> Back
+                </Button>
                 <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
                     {/* Left - Add/Edit Form */}
                     <div className="xl:col-span-1">

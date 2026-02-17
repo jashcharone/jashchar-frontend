@@ -333,6 +333,7 @@ export const BASE_SIDEBAR = {
         { title: 'Assign Vehicle', path: ROUTES.SUPER_ADMIN.ASSIGN_VEHICLE },
         { title: 'Route Pickup Points', path: ROUTES.SUPER_ADMIN.ROUTE_PICKUP_POINT },
         { title: 'Student Transport Fees', path: ROUTES.SUPER_ADMIN.STUDENT_TRANSPORT_FEES },
+        { title: 'Transport Analysis', path: ROUTES.SUPER_ADMIN.TRANSPORT_ANALYSIS },
       ],
     },
     {
@@ -343,6 +344,7 @@ export const BASE_SIDEBAR = {
         { title: 'Room Type', path: ROUTES.SUPER_ADMIN.ROOM_TYPES },
         { title: 'Hostel', path: ROUTES.SUPER_ADMIN.HOSTELS },
         { title: 'Hostel Fee', path: ROUTES.SUPER_ADMIN.HOSTEL_FEE },
+        { title: 'Hostel Analysis', path: ROUTES.SUPER_ADMIN.HOSTEL_ANALYSIS },
       ],
     },
     {

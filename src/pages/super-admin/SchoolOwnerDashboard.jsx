@@ -445,7 +445,7 @@ const SchoolOwnerDashboard = () => {
   // Fetch Data - Enhanced for all dashboard sections
   useEffect(() => {
     const fetchStats = async () => {
-      if (!user?.profile?.branch_id) {
+      if (!user?.profile?.branch_id || !currentSessionId) {
         setLoading(false);
         return;
       }
@@ -472,9 +472,11 @@ const SchoolOwnerDashboard = () => {
           staffAttendanceRes,
           leaveRequestsRes
         ] = await Promise.all([
-          // Students count
+          // Students count (session-wise for accurate count)
           supabase.from('student_profiles').select('*', { count: 'exact', head: true })
-            .eq('branch_id', branchId).or('is_disabled.is.null,is_disabled.eq.false'),
+            .eq('branch_id', branchId)
+            .eq('session_id', currentSessionId)
+            .or('is_disabled.is.null,is_disabled.eq.false'),
           // Staff count with role info
           supabase.from('employee_profiles').select('id, role_id, roles(name)')
             .eq('branch_id', branchId).or('is_disabled.is.null,is_disabled.eq.false'),

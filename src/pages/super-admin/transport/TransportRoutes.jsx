@@ -1,4 +1,5 @@
 ﻿import React, { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import DashboardLayout from '@/components/DashboardLayout';
 import { supabase } from '@/lib/customSupabaseClient';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
@@ -8,13 +9,14 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Edit, Trash2, Save, Loader2, Route, IndianRupee, X, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react';
+import { Edit, Trash2, Save, Loader2, Route, IndianRupee, X, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, ArrowLeft } from 'lucide-react';
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger
 } from '@/components/ui/alert-dialog';
 
 const TransportRoutes = () => {
+  const navigate = useNavigate();
   const { user, currentSessionId, organizationId } = useAuth();
   const { selectedBranch } = useBranch();
   const { toast } = useToast();
@@ -69,8 +71,25 @@ const TransportRoutes = () => {
     }
     setIsSubmitting(true);
 
+    // 🔒 Check for duplicate route title (case-insensitive)
+    const normalizedTitle = formData.route_title.trim().toLowerCase();
+    const existingRoute = routes.find(r => 
+      r.route_title?.toLowerCase() === normalizedTitle && 
+      r.id !== editingRoute?.id // Exclude current route when editing
+    );
+    
+    if (existingRoute) {
+      toast({ 
+        variant: 'destructive', 
+        title: 'Duplicate Route!', 
+        description: `"${formData.route_title.trim()}" route already exists. Please use a different name.` 
+      });
+      setIsSubmitting(false);
+      return;
+    }
+
     const payload = {
-      route_title: formData.route_title,
+      route_title: formData.route_title.trim(), // Trim whitespace
       fare: formData.fare ? parseFloat(formData.fare) : null,
       branch_id: branchId,
       session_id: currentSessionId,
@@ -115,6 +134,10 @@ const TransportRoutes = () => {
   return (
     <DashboardLayout>
       <div className="p-6">
+        {/* Back Button */}
+        <Button variant="ghost" size="sm" onClick={() => navigate(-1)} className="mb-4 gap-2 text-muted-foreground hover:text-foreground">
+          <ArrowLeft className="h-4 w-4" /> Back
+        </Button>
         <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
           {/* Left - Add/Edit Form */}
           <div className="xl:col-span-1">

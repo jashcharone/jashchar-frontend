@@ -1,6 +1,7 @@
 ﻿import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
 import api from '@/lib/api';
+import supabase from '@/lib/customSupabaseClient';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { useBranch } from '@/contexts/BranchContext';
 import { useToast } from '@/components/ui/use-toast';
@@ -15,7 +16,7 @@ import {
 import {
   Search, FileSpreadsheet, FileText, Loader2, Users, BookOpen,
   Shield, Clock, Key, UserPlus, Users2, BarChart3, GraduationCap,
-  ChevronLeft, ChevronRight, User
+  ChevronLeft, ChevronRight, User, Calendar
 } from 'lucide-react';
 
 // ═══════════════════════════════════════════════════════════════════
@@ -256,6 +257,7 @@ const StudentInformationReport = () => {
   const [classes, setClasses] = useState([]);
   const [sections, setSections] = useState([]);
   const [categories, setCategories] = useState([]);
+  const [sessions, setSessions] = useState([]);
 
   // Filters
   const [selectedClass, setSelectedClass] = useState('');
@@ -265,6 +267,7 @@ const StudentInformationReport = () => {
   const [selectedRte, setSelectedRte] = useState('');
   const [selectedSearchType, setSelectedSearchType] = useState('this_month');
   const [admissionYear, setAdmissionYear] = useState('');
+  const [selectedSession, setSelectedSession] = useState('');
 
   const branchId = selectedBranch?.id;
 
@@ -273,18 +276,28 @@ const StudentInformationReport = () => {
     if (!branchId) return;
     const loadDropdowns = async () => {
       try {
-        const [classRes, catRes] = await Promise.all([
+        const [classRes, catRes, sessRes] = await Promise.all([
           api.get('/academics/classes'),
-          api.get('/academics/student-categories').catch(() => ({ data: [] }))
+          api.get('/academics/student-categories').catch(() => ({ data: [] })),
+          supabase.from('sessions').select('id, name, is_active').eq('branch_id', branchId).order('name', { ascending: false })
         ]);
         setClasses(Array.isArray(classRes.data) ? classRes.data : classRes.data?.data || []);
         setCategories(Array.isArray(catRes.data) ? catRes.data : catRes.data?.data || []);
+        setSessions(sessRes.data || []);
+        
+        // Auto-select current session
+        if (currentSessionId) {
+          setSelectedSession(currentSessionId);
+        } else {
+          const activeSession = (sessRes.data || []).find(s => s.is_active);
+          if (activeSession) setSelectedSession(activeSession.id);
+        }
       } catch (err) {
         console.error('Failed to load dropdowns:', err);
       }
     };
     loadDropdowns();
-  }, [branchId]);
+  }, [branchId, currentSessionId]);
 
   // Load sections when class changes
   useEffect(() => {
@@ -312,6 +325,7 @@ const StudentInformationReport = () => {
     setSelectedRte('');
     setSelectedSearchType('this_month');
     setAdmissionYear('');
+    // Keep selectedSession as it is - don't reset
   }, [activeReport]);
 
   // ═══════════ FETCH REPORT DATA ═══════════
@@ -326,6 +340,11 @@ const StudentInformationReport = () => {
     try {
       let endpoint = '';
       const params = new URLSearchParams();
+
+      // Add session filter for all reports
+      if (selectedSession) {
+        params.append('sessionId', selectedSession);
+      }
 
       switch (activeReport) {
         case 'student_report':
@@ -403,16 +422,17 @@ const StudentInformationReport = () => {
     } finally {
       setLoading(false);
     }
-  }, [activeReport, branchId, selectedClass, selectedSection, selectedCategory, selectedGender, selectedRte, selectedSearchType, admissionYear, toast]);
+  }, [activeReport, branchId, selectedClass, selectedSection, selectedCategory, selectedGender, selectedRte, selectedSearchType, admissionYear, selectedSession, toast]);
 
   // ═══════════ COLUMN DEFINITIONS ═══════════
   const getColumns = () => {
     switch (activeReport) {
       case 'student_report':
         return [
+          { key: 'class', label: 'Class', accessor: r => r.class?.name || '-' },
           { key: 'section', label: 'Section', accessor: r => r.section?.name || '-' },
           { key: 'admission_no', label: 'Admission No', accessor: 'admission_number' },
-          { key: 'student_name', label: 'Student Name', accessor: r => [r.first_name, r.last_name].filter(Boolean).join(' ') || '-' },
+          { key: 'student_name', label: 'Student Name', accessor: r => [r.first_name, r.last_name].filter(Boolean).join(' ') || r.full_name || '-' },
           { key: 'father_name', label: 'Father Name', accessor: 'father_name' },
           { key: 'dob', label: 'Date Of Birth', accessor: r => r.date_of_birth ? new Date(r.date_of_birth).toLocaleDateString('en-IN') : '-' },
           { key: 'gender', label: 'Gender', accessor: 'gender' },
@@ -424,7 +444,7 @@ const StudentInformationReport = () => {
       case 'student_profile':
         return [
           { key: 'admission_no', label: 'Admission No', accessor: 'admission_number' },
-          { key: 'student_name', label: 'Student Name', accessor: r => [r.first_name, r.last_name].filter(Boolean).join(' ') || '-' },
+          { key: 'student_name', label: 'Student Name', accessor: r => [r.first_name, r.last_name].filter(Boolean).join(' ') || r.full_name || '-' },
           { key: 'class', label: 'Class', accessor: r => r.class?.name || '-' },
           { key: 'section', label: 'Section', accessor: r => r.section?.name || '-' },
           { key: 'father_name', label: 'Father Name', accessor: 'father_name' },
@@ -437,15 +457,15 @@ const StudentInformationReport = () => {
       case 'class_section_report':
         return [
           { key: 'class', label: 'Class', accessor: 'className' },
-          { key: 'students', label: 'Students', accessor: 'totalStudents' },
-          { key: 'sections', label: 'Sections', accessor: r => (r.sections || []).map(s => `${s.sectionName}(${s.students})`).join(', ') || '-' },
+          { key: 'students', label: 'Total Students', accessor: 'totalStudents' },
+          { key: 'sections', label: 'Section Breakdown', accessor: r => (r.sections || []).map(s => `${s.sectionName} (${s.students})`).join(', ') || 'No sections' },
         ];
 
       case 'guardian_report':
         return [
           { key: 'class_section', label: 'Class (Section)', accessor: r => `${r.class?.name || '-'} (${r.section?.name || '-'})` },
           { key: 'admission_no', label: 'Admission No', accessor: 'admission_number' },
-          { key: 'student_name', label: 'Student Name', accessor: r => [r.first_name, r.last_name].filter(Boolean).join(' ') || '-' },
+          { key: 'student_name', label: 'Student Name', accessor: r => [r.first_name, r.last_name].filter(Boolean).join(' ') || r.full_name || '-' },
           { key: 'mobile', label: 'Mobile Number', accessor: 'phone' },
           { key: 'guardian_name', label: 'Guardian Name', accessor: 'guardian_name' },
           { key: 'guardian_relation', label: 'Guardian Relation', accessor: 'guardian_relation' },
@@ -578,6 +598,26 @@ const StudentInformationReport = () => {
   const tableData = getTableData();
   const activeReportInfo = REPORT_TYPES.find(r => r.key === activeReport);
 
+  // Session dropdown component (reusable)
+  const SessionDropdown = () => (
+    <div>
+      <Label className="text-xs font-medium mb-1 block">Session <span className="text-red-500">*</span></Label>
+      <Select value={selectedSession} onValueChange={setSelectedSession}>
+        <SelectTrigger className="h-9">
+          <Calendar className="h-3.5 w-3.5 mr-1 text-muted-foreground" />
+          <SelectValue placeholder="Select Session" />
+        </SelectTrigger>
+        <SelectContent>
+          {sessions.map(s => (
+            <SelectItem key={s.id} value={s.id}>
+              {s.name} {s.is_active ? '(Active)' : ''}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    </div>
+  );
+
   // ═══════════ RENDER FILTER SECTION ═══════════
   const renderFilters = () => {
     switch (activeReport) {
@@ -585,7 +625,8 @@ const StudentInformationReport = () => {
       case 'student_profile':
       case 'class_subject_report':
         return (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3">
+            <SessionDropdown />
             <div>
               <Label className="text-xs font-medium mb-1 block">Class <span className="text-red-500">*</span></Label>
               <Select value={selectedClass} onValueChange={v => { setSelectedClass(v); setSelectedSection(''); }}>
@@ -637,7 +678,7 @@ const StudentInformationReport = () => {
             <div className="flex items-end">
               <Button onClick={fetchReport} className="w-full h-9 bg-blue-600 hover:bg-blue-700" disabled={loading}>
                 {loading ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Search className="h-4 w-4 mr-1" />}
-                Search
+                Generate Report
               </Button>
             </div>
           </div>
@@ -648,7 +689,8 @@ const StudentInformationReport = () => {
       case 'parent_login_credential':
       case 'sibling_report':
         return (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-3">
+            <SessionDropdown />
             <div>
               <Label className="text-xs font-medium mb-1 block">Class <span className="text-red-500">*</span></Label>
               <Select value={selectedClass} onValueChange={v => { setSelectedClass(v); setSelectedSection(''); }}>
@@ -667,10 +709,10 @@ const StudentInformationReport = () => {
                 </SelectContent>
               </Select>
             </div>
-            <div className="flex items-end col-span-1 sm:col-span-2 md:col-span-2">
+            <div className="flex items-end">
               <Button onClick={fetchReport} className="h-9 bg-blue-600 hover:bg-blue-700 px-8" disabled={loading}>
                 {loading ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Search className="h-4 w-4 mr-1" />}
-                Search
+                Generate Report
               </Button>
             </div>
           </div>
@@ -678,7 +720,8 @@ const StudentInformationReport = () => {
 
       case 'student_history':
         return (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-3">
+            <SessionDropdown />
             <div>
               <Label className="text-xs font-medium mb-1 block">Class <span className="text-red-500">*</span></Label>
               <Select value={selectedClass} onValueChange={v => { setSelectedClass(v); setSelectedSection(''); }}>
@@ -699,7 +742,7 @@ const StudentInformationReport = () => {
             <div className="flex items-end col-span-1 sm:col-span-2">
               <Button onClick={fetchReport} className="h-9 bg-blue-600 hover:bg-blue-700 px-8" disabled={loading}>
                 {loading ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Search className="h-4 w-4 mr-1" />}
-                Search
+                Generate Report
               </Button>
             </div>
           </div>
@@ -709,6 +752,7 @@ const StudentInformationReport = () => {
       case 'online_admission_report':
         return (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
+            <SessionDropdown />
             <div>
               <Label className="text-xs font-medium mb-1 block">Search Type <span className="text-red-500">*</span></Label>
               <Select value={selectedSearchType} onValueChange={setSelectedSearchType}>
@@ -726,10 +770,10 @@ const StudentInformationReport = () => {
                 </SelectContent>
               </Select>
             </div>
-            <div className="flex items-end">
+            <div className="flex items-end col-span-2">
               <Button onClick={fetchReport} className="h-9 bg-blue-600 hover:bg-blue-700 px-8" disabled={loading}>
                 {loading ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Search className="h-4 w-4 mr-1" />}
-                Search
+                Generate Report
               </Button>
             </div>
           </div>
@@ -739,11 +783,14 @@ const StudentInformationReport = () => {
       case 'gender_ratio_report':
       case 'student_teacher_ratio':
         return (
-          <div className="flex items-end gap-3">
-            <Button onClick={fetchReport} className="h-9 bg-blue-600 hover:bg-blue-700 px-8" disabled={loading}>
-              {loading ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Search className="h-4 w-4 mr-1" />}
-              Generate Report
-            </Button>
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+            <SessionDropdown />
+            <div className="flex items-end sm:col-span-2">
+              <Button onClick={fetchReport} className="h-9 bg-blue-600 hover:bg-blue-700 px-8" disabled={loading}>
+                {loading ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Search className="h-4 w-4 mr-1" />}
+                Generate Report
+              </Button>
+            </div>
           </div>
         );
 

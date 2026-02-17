@@ -346,6 +346,7 @@ const Hostels = lazy(() => import('@/pages/super-admin/hostel/Hostels'));
 const HostelRooms = lazy(() => import('@/pages/super-admin/hostel/HostelRooms'));
 const RoomTypes = lazy(() => import('@/pages/super-admin/hostel/RoomTypes'));
 const HostelFee = lazy(() => import('@/pages/super-admin/hostel/HostelFee'));
+const HostelAnalysis = lazy(() => import('@/pages/super-admin/hostel/HostelAnalysis'));
 
 // Transport
 const TransportRoutes = lazy(() => import('@/pages/super-admin/transport/TransportRoutes'));
@@ -355,6 +356,7 @@ const RoutePickupPoint = lazy(() => import('@/pages/super-admin/transport/RouteP
 const AssignVehicle = lazy(() => import('@/pages/super-admin/transport/AssignVehicle'));
 const StudentTransportFees = lazy(() => import('@/pages/super-admin/transport/StudentTransportFees'));
 const TransportFeesMaster = lazy(() => import('@/pages/super-admin/transport/TransportFeesMaster'));
+const TransportAnalysis = lazy(() => import('@/pages/super-admin/transport/TransportAnalysis'));
 
 // Communicate
 const NoticeBoard = lazy(() => import('@/pages/super-admin/communicate/NoticeBoard'));
@@ -1317,6 +1319,7 @@ function App() {
             <Route path={ROUTES.SUPER_ADMIN.HOSTEL_ROOMS} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="hostel"><HostelRooms /></ProtectedRoute>} />
             <Route path={ROUTES.SUPER_ADMIN.ROOM_TYPES} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="hostel"><RoomTypes /></ProtectedRoute>} />
             <Route path={ROUTES.SUPER_ADMIN.HOSTEL_FEE} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="hostel"><HostelFee /></ProtectedRoute>} />
+            <Route path={ROUTES.SUPER_ADMIN.HOSTEL_ANALYSIS} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="hostel"><HostelAnalysis /></ProtectedRoute>} />
 
             {/* ? Transport */}
             <Route path={ROUTES.SUPER_ADMIN.TRANSPORT_ROUTES} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="transport"><TransportRoutes /></ProtectedRoute>} />
@@ -1326,6 +1329,7 @@ function App() {
             <Route path={ROUTES.SUPER_ADMIN.ASSIGN_VEHICLE} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="transport"><AssignVehicle /></ProtectedRoute>} />
             <Route path={ROUTES.SUPER_ADMIN.STUDENT_TRANSPORT_FEES} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="transport"><StudentTransportFees /></ProtectedRoute>} />
             <Route path={ROUTES.SUPER_ADMIN.TRANSPORT_FEES_MASTER} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="transport"><TransportFeesMaster /></ProtectedRoute>} />
+            <Route path={ROUTES.SUPER_ADMIN.TRANSPORT_ANALYSIS} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="transport"><TransportAnalysis /></ProtectedRoute>} />
 
             {/* ? Communicate */}
             <Route path={ROUTES.SUPER_ADMIN.NOTICE_BOARD} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'teacher', 'student', 'parent']} requiredModule="communicate"><NoticeBoard /></ProtectedRoute>} />

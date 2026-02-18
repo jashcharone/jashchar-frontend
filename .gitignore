@@ -65,6 +65,18 @@ screenshots/
 # Backup files
 *.backup
 *.bak
+*.bak.*
+*.bak2
+*bak_revert
+*.old
+
+# Test files (all patterns)
+test_*.html
+test_*.js
+test_*.jsx
+test_*.ts
+test_*.tsx
+testModule*.js
 
 # Audit files
 AUDIT_REPORT*

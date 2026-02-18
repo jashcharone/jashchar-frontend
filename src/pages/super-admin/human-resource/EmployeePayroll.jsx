@@ -108,8 +108,7 @@ const EmployeePayroll = () => {
             // 1. Fetch Staff by Role
             const { data: staffData, error: staffError } = await supabase
                 .from('employee_profiles')
-                .select('id, full_name, school_code, role:roles(name), basic_salary, department:departments(name), designation:designations(name), phone')
-                .eq('branch_id', branchId)
+                .select('id, full_name, staff_id, role:roles(name), basic_salary, department:departments(name), designation:designations(name), phone')
                 .eq('branch_id', selectedBranch.id)
                 .eq('role_id', searchParams.role);
             
@@ -428,7 +427,7 @@ const EmployeePayroll = () => {
                                     ) : (
                                         staffList.map(staff => (
                                             <TableRow key={staff.id}>
-                                                <TableCell>{staff.school_code}</TableCell>
+                                                <TableCell>{staff.staff_id}</TableCell>
                                                 <TableCell className="font-medium">{staff.full_name}</TableCell>
                                                 <TableCell>{staff.role?.name}</TableCell>
                                                 <TableCell>{staff.department?.name || '-'}</TableCell>
@@ -605,7 +604,7 @@ const EmployeePayroll = () => {
                         <div className="py-4 space-y-6" id="printable-payslip">
                             <div className="text-center border-b pb-4">
                                 <h2 className="text-xl font-bold uppercase">Payslip for {months.find(m => m.val === searchParams.month)?.label} {searchParams.year}</h2>
-                                <p className="text-muted-foreground">Staff ID: {selectedStaff?.school_code}</p>
+                                <p className="text-muted-foreground">Staff ID: {selectedStaff?.staff_id}</p>
                             </div>
                             
                             <div className="grid grid-cols-2 gap-8">

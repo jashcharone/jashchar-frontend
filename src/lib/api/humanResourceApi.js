@@ -1,46 +1,28 @@
-import axios from 'axios';
-import { supabase } from '../customSupabaseClient';
+import api from '../api';
 
-// Use relative URL - Vercel rewrites /api/* to Railway backend
-const API_URL = '/api';
-
+// Uses shared api instance which auto-attaches auth token + x-school-id header
 export const humanResourceApi = {
     getEmploymentCategories: async (branchId) => {
-        const { data: { session } } = await supabase.auth.getSession();
-        const token = session?.access_token;
+        const params = {};
+        if (branchId) params.branchId = branchId;
         
-        const params = new URLSearchParams();
-        if (branchId) params.append('branchId', branchId);
-        
-        const response = await axios.get(`${API_URL}/human-resource/employment-categories?${params.toString()}`, {
-            headers: { Authorization: `Bearer ${token}` }
-        });
+        const response = await api.get('/human-resource/employment-categories', { params });
         return response.data;
     },
 
     getDepartments: async (branchId) => {
-        const { data: { session } } = await supabase.auth.getSession();
-        const token = session?.access_token;
-        
-        const params = new URLSearchParams();
-        if (branchId) params.append('branchId', branchId);
+        const params = {};
+        if (branchId) params.branchId = branchId;
 
-        const response = await axios.get(`${API_URL}/human-resource/departments?${params.toString()}`, {
-            headers: { Authorization: `Bearer ${token}` }
-        });
+        const response = await api.get('/human-resource/departments', { params });
         return response.data;
     },
 
     getDesignations: async (branchId) => {
-        const { data: { session } } = await supabase.auth.getSession();
-        const token = session?.access_token;
-        
-        const params = new URLSearchParams();
-        if (branchId) params.append('branchId', branchId);
+        const params = {};
+        if (branchId) params.branchId = branchId;
 
-        const response = await axios.get(`${API_URL}/human-resource/designations?${params.toString()}`, {
-            headers: { Authorization: `Bearer ${token}` }
-        });
+        const response = await api.get('/human-resource/designations', { params });
         return response.data;
     }
 };

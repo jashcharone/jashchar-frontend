@@ -103,18 +103,33 @@ export const detectSingleFace = async (input) => {
         throw new Error('Face models not loaded. Call loadFaceModels() first.');
     }
 
-    const options = new faceapi.TinyFaceDetectorOptions({
-        inputSize: 416,
-        scoreThreshold: 0.5
-    });
+    // Try multiple input sizes and thresholds for robustness
+    // Smaller inputSize works better for passport-sized / small images
+    const attempts = [
+        { inputSize: 416, scoreThreshold: 0.3 },
+        { inputSize: 320, scoreThreshold: 0.25 },
+        { inputSize: 224, scoreThreshold: 0.2 },
+    ];
 
-    const detection = await faceapi
-        .detectSingleFace(input, options)
-        .withFaceLandmarks()
-        .withFaceDescriptor()
-        .withFaceExpressions();
+    for (const { inputSize, scoreThreshold } of attempts) {
+        try {
+            const options = new faceapi.TinyFaceDetectorOptions({ inputSize, scoreThreshold });
+            const detection = await faceapi
+                .detectSingleFace(input, options)
+                .withFaceLandmarks()
+                .withFaceDescriptor()
+                .withFaceExpressions();
 
-    return detection || null;
+            if (detection) {
+                console.log(`[FaceAI] Face detected with inputSize=${inputSize}, score=${detection.detection.score}`);
+                return detection;
+            }
+        } catch (err) {
+            console.warn(`[FaceAI] Detection attempt failed (inputSize=${inputSize}):`, err.message);
+        }
+    }
+
+    return null;
 };
 
 /**

@@ -49,22 +49,22 @@ const EditEmployee = () => {
     
     const [formData, setFormData] = useState({});
     
-    let branchId = user?.profile?.branch_id;
+    let branchId = selectedBranch?.id || user?.profile?.branch_id;
     if (!branchId) {
         branchId = sessionStorage.getItem('ma_target_branch_id');
     }
 
     useEffect(() => {
-        if (!branchId || !employeeId || !selectedBranch?.id) return;
+        if (!branchId || !employeeId) return;
         
         const fetchData = async () => {
             setLoading(true);
             try {
                 const [rolesRes, departmentsRes, designationsRes, employeeRes] = await Promise.all([
                     supabase.from('roles').select('id, name').eq('branch_id', branchId),
-                    supabase.from('departments').select('id, name').eq('branch_id', branchId).eq('branch_id', selectedBranch.id),
-                    supabase.from('designations').select('id, name').eq('branch_id', branchId).eq('branch_id', selectedBranch.id),
-                    supabase.from('employee_profiles').select('*').eq('id', employeeId).eq('branch_id', selectedBranch.id).single()
+                    supabase.from('departments').select('id, name').eq('branch_id', branchId),
+                    supabase.from('designations').select('id, name').eq('branch_id', branchId),
+                    supabase.from('employee_profiles').select('*').eq('id', employeeId).single()
                 ]);
                 
                 // Process roles: Filter restricted and deduplicate
@@ -81,7 +81,6 @@ const EditEmployee = () => {
                     if (!uniqueRolesMap.has(key)) {
                         uniqueRolesMap.set(key, r);
                     } else {
-                        // If existing is lowercase and new is Title Case, replace it
                         const current = uniqueRolesMap.get(key);
                         const isNewTitleCase = r.name[0] === r.name[0].toUpperCase();
                         const isCurrentLowerCase = current.name[0] === current.name[0].toLowerCase();
@@ -98,23 +97,37 @@ const EditEmployee = () => {
                 
                 if (employeeRes.data) {
                     const data = employeeRes.data;
-                    const splitName = data.full_name ? data.full_name.split(' ') : ['', ''];
-                    const firstName = splitName[0];
-                    const lastName = splitName.slice(1).join(' ');
+                    
+                    // Use individual name fields from DB; fallback to splitting full_name
+                    let firstName = data.first_name || '';
+                    let middleName = data.middle_name || '';
+                    let lastName = data.last_name || '';
+                    
+                    if (!firstName && data.full_name) {
+                        const splitName = data.full_name.split(' ');
+                        firstName = splitName[0] || '';
+                        lastName = splitName.slice(1).join(' ') || '';
+                    }
                     
                     setFormData({
                         ...data,
                         first_name: firstName,
+                        middle_name: middleName,
                         last_name: lastName,
+                        // Ensure Select components get '' instead of null to avoid React warnings
                         role_id: data.role_id || '',
                         department_id: data.department_id || '',
                         designation_id: data.designation_id || '',
-                        staff_id: data.username, // Assuming username is staff_id here for legacy reasons
+                        gender: data.gender || '',
+                        marital_status: data.marital_status || '',
+                        contract_type: data.contract_type || '',
+                        employment_status: data.employment_status || '',
+                        staff_type: data.staff_type || '',
                     });
                     if (data.photo_url) setPhotoPreview(data.photo_url);
                 } else {
                     toast({ variant: 'destructive', title: 'Employee not found' });
-                    navigate('/super-admin/human-resource/employees');
+                    navigate(-1);
                 }
             } catch (error) {
                 console.error(error);
@@ -124,7 +137,7 @@ const EditEmployee = () => {
             }
         };
         fetchData();
-    }, [branchId, employeeId, selectedBranch?.id, navigate, toast]);
+    }, [branchId, employeeId, navigate, toast]);
     
     // TC-25, TC-26 FIX: Name fields that should only accept letters and spaces
     const nameFields = ['first_name', 'middle_name', 'last_name'];
@@ -160,44 +173,55 @@ const EditEmployee = () => {
                 photoUrl = publicUrl;
             }
 
+            const fullName = [formData.first_name, formData.middle_name, formData.last_name]
+                .filter(Boolean)
+                .join(' ')
+                .trim();
+
             const updates = {
-                full_name: `${formData.first_name} ${formData.last_name}`.trim(),
-                role_id: formData.role_id,
-                designation_id: formData.designation_id,
-                department_id: formData.department_id,
-                date_of_joining: formData.date_of_joining,
+                full_name: fullName,
+                first_name: formData.first_name,
+                middle_name: formData.middle_name || null,
+                last_name: formData.last_name || null,
+                role_id: formData.role_id || null,
+                designation_id: formData.designation_id || null,
+                department_id: formData.department_id || null,
+                date_of_joining: formData.date_of_joining || null,
                 phone: formData.phone,
-                emergency_contact_number: formData.emergency_contact_number,
-                marital_status: formData.marital_status,
-                photo_url: photoUrl,
-                current_address: formData.current_address,
-                permanent_address: formData.permanent_address,
-                qualification: formData.qualification,
-                work_experience: formData.work_experience,
-                note: formData.note,
-                pan_number: formData.pan_number,
-                epf_no: formData.epf_no,
-                basic_salary: formData.basic_salary,
-                contract_type: formData.contract_type,
-                work_shift: formData.work_shift,
-                location: formData.location,
-                medical_leave: formData.medical_leave,
-                casual_leave: formData.casual_leave,
-                maternity_leave: formData.maternity_leave,
-                bank_account_title: formData.bank_account_title,
-                bank_account_number: formData.bank_account_number,
-                bank_name: formData.bank_name,
-                ifsc_code: formData.ifsc_code,
-                bank_branch_name: formData.bank_branch_name,
-                social_facebook_url: formData.social_facebook_url,
-                social_twitter_url: formData.social_twitter_url,
-                social_linkedin_url: formData.social_linkedin_url,
-                social_instagram_url: formData.social_instagram_url,
-                father_name: formData.father_name,
-                mother_name: formData.mother_name,
                 email: formData.email,
-                gender: formData.gender,
-                dob: formData.dob,
+                gender: formData.gender || null,
+                dob: formData.dob || null,
+                emergency_contact_number: formData.emergency_contact_number || null,
+                marital_status: formData.marital_status || null,
+                photo_url: photoUrl,
+                current_address: formData.current_address || null,
+                permanent_address: formData.permanent_address || null,
+                qualification: formData.qualification || null,
+                work_experience: formData.work_experience || null,
+                note: formData.note || null,
+                pan_number: formData.pan_number || null,
+                aadhar_no: formData.aadhar_no || null,
+                epf_no: formData.epf_no || null,
+                basic_salary: formData.basic_salary || null,
+                contract_type: formData.contract_type || null,
+                work_shift: formData.work_shift || null,
+                location: formData.location || null,
+                medical_leave: formData.medical_leave || null,
+                casual_leave: formData.casual_leave || null,
+                maternity_leave: formData.maternity_leave || null,
+                bank_account_title: formData.bank_account_title || null,
+                bank_account_number: formData.bank_account_number || null,
+                bank_name: formData.bank_name || null,
+                ifsc_code: formData.ifsc_code || null,
+                bank_branch_name: formData.bank_branch_name || null,
+                social_facebook_url: formData.social_facebook_url || null,
+                social_twitter_url: formData.social_twitter_url || null,
+                social_linkedin_url: formData.social_linkedin_url || null,
+                social_instagram_url: formData.social_instagram_url || null,
+                father_name: formData.father_name || null,
+                mother_name: formData.mother_name || null,
+                employment_status: formData.employment_status || null,
+                staff_type: formData.staff_type || null,
             };
             
             const { error } = await supabase
@@ -208,7 +232,7 @@ const EditEmployee = () => {
             if (error) throw error;
 
             toast({ title: 'Success', description: 'Employee updated successfully.' });
-            navigate('/school-owner/human-resource/staff-directory');
+            navigate(-1); // Go back to previous page
         } catch (error) {
             console.error("Employee update error:", error);
             toast({ variant: 'destructive', title: 'Failed to update employee', description: error.message });
@@ -226,11 +250,12 @@ const EditEmployee = () => {
             </div>
             <form onSubmit={handleSubmit} className="space-y-8">
                 <SectionBox icon={User} title="Basic Information">
-                    <div className="lg:col-span-1"><Label>Staff ID</Label><Input value={formData.username} disabled /></div>
+                    <div className="lg:col-span-1"><Label>Employee ID</Label><Input value={formData.employee_id || formData.staff_id || '-'} disabled /></div>
                     <div className="lg:col-span-1"><Label required>Role</Label><Select value={formData.role_id} onValueChange={v => handleChange('role_id', v)} required><SelectTrigger><SelectValue placeholder="Select Role" /></SelectTrigger><SelectContent>{roles.map(r => <SelectItem key={r.id} value={r.id}>{r.name}</SelectItem>)}</SelectContent></Select></div>
                     <div className="lg:col-span-1"><Label>Designation</Label><Select value={formData.designation_id} onValueChange={v => handleChange('designation_id', v)}><SelectTrigger><SelectValue placeholder="Select Designation" /></SelectTrigger><SelectContent>{designations.map(d => <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>)}</SelectContent></Select></div>
                     <div className="lg:col-span-1"><Label>Department</Label><Select value={formData.department_id} onValueChange={v => handleChange('department_id', v)}><SelectTrigger><SelectValue placeholder="Select Department" /></SelectTrigger><SelectContent>{departments.map(d => <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>)}</SelectContent></Select></div>
                     <div className="lg:col-span-1"><Label required>First Name</Label><Input value={formData.first_name || ''} onChange={e => handleChange('first_name', e.target.value)} required /></div>
+                    <div className="lg:col-span-1"><Label>Middle Name</Label><Input value={formData.middle_name || ''} onChange={e => handleChange('middle_name', e.target.value)} /></div>
                     <div className="lg:col-span-1"><Label>Last Name</Label><Input value={formData.last_name || ''} onChange={e => handleChange('last_name', e.target.value)} /></div>
                     <div className="lg:col-span-1"><Label>Father's Name</Label><Input value={formData.father_name || ''} onChange={e => handleChange('father_name', e.target.value)} /></div>
                     <div className="lg:col-span-1"><Label>Mother's Name</Label><Input value={formData.mother_name || ''} onChange={e => handleChange('mother_name', e.target.value)} /></div>

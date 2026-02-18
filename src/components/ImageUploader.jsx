@@ -116,6 +116,9 @@ const ImageUploader = ({ onFileChange, initialPreview, aspectRatio = 3.5 / 4.5, 
     });
   };
 
+  // Track pending crop blob for "Save Anyway" functionality
+  const [pendingCropBlob, setPendingCropBlob] = useState(null);
+
   // Detect face in image
   const detectFaceInImage = async (imageElement) => {
     try {
@@ -140,16 +143,27 @@ const ImageUploader = ({ onFileChange, initialPreview, aspectRatio = 3.5 / 4.5, 
       } else {
         console.log('[ImageUploader] No face detected in image');
         setFaceDetected(false);
-        setFaceDetectionError('No face detected. Please upload a clear photo with a visible human face.');
+        setFaceDetectionError('Face not detected automatically. You can still save the photo if it looks correct.');
         return false;
       }
     } catch (error) {
       console.error('[ImageUploader] Face detection error:', error);
-      setFaceDetectionError('Face detection failed. Please try again.');
+      setFaceDetectionError('Face detection failed. You can still save the photo.');
       return false;
     } finally {
       setIsDetectingFace(false);
     }
+  };
+
+  // Save the cropped photo (used by both normal save and "Save Anyway")
+  const saveCroppedPhoto = (croppedImageBlob) => {
+    const file = new File([croppedImageBlob], "profile_photo.jpg", { type: "image/jpeg" });
+    onFileChange(file);
+    const previewUrl = URL.createObjectURL(croppedImageBlob);
+    setPreview(previewUrl);
+    setIsCropOpen(false);
+    setFaceDetectionError(null);
+    setPendingCropBlob(null);
   };
 
   const handleCropSave = async () => {
@@ -173,21 +187,24 @@ const ImageUploader = ({ onFileChange, initialPreview, aspectRatio = 3.5 / 4.5, 
           URL.revokeObjectURL(tempUrl);
           
           if (!hasFace) {
-            // Don't close the crop dialog, show error
+            // Store blob for "Save Anyway" button
+            setPendingCropBlob(croppedImageBlob);
             return;
           }
         }
 
-        const file = new File([croppedImageBlob], "profile_photo.jpg", { type: "image/jpeg" });
-        onFileChange(file);
-        const previewUrl = URL.createObjectURL(croppedImageBlob);
-        setPreview(previewUrl);
-        setIsCropOpen(false);
-        setFaceDetectionError(null);
+        saveCroppedPhoto(croppedImageBlob);
       } catch (e) {
         console.error(e);
         setFaceDetectionError('Error processing image. Please try again.');
       }
+    }
+  };
+
+  // Allow saving photo even if face detection failed
+  const handleSaveAnyway = () => {
+    if (pendingCropBlob) {
+      saveCroppedPhoto(pendingCropBlob);
     }
   };
 
@@ -356,9 +373,11 @@ const ImageUploader = ({ onFileChange, initialPreview, aspectRatio = 3.5 / 4.5, 
                 </div>
               )}
               {faceDetectionError && (
-                <div className="flex items-center justify-center gap-2 p-3 bg-red-50 dark:bg-red-950/30 rounded-lg text-red-600 dark:text-red-400 text-sm font-medium border border-red-200 dark:border-red-800">
-                  <AlertCircle className="w-5 h-5 flex-shrink-0" />
-                  {faceDetectionError}
+                <div className="flex flex-col items-center gap-2 p-3 bg-yellow-50 dark:bg-yellow-950/30 rounded-lg text-yellow-700 dark:text-yellow-400 text-sm font-medium border border-yellow-200 dark:border-yellow-800">
+                  <div className="flex items-center gap-2">
+                    <AlertCircle className="w-5 h-5 flex-shrink-0" />
+                    {faceDetectionError}
+                  </div>
                 </div>
               )}
               {faceDetected && (
@@ -371,9 +390,18 @@ const ImageUploader = ({ onFileChange, initialPreview, aspectRatio = 3.5 / 4.5, 
           )}
 
           <DialogFooter className="sm:justify-center gap-2">
-            <Button variant="outline" onClick={() => { setIsCropOpen(false); setFaceDetectionError(null); }}>
+            <Button variant="outline" onClick={() => { setIsCropOpen(false); setFaceDetectionError(null); setPendingCropBlob(null); }}>
               Cancel
             </Button>
+            {faceDetectionError && pendingCropBlob && (
+              <Button 
+                onClick={handleSaveAnyway} 
+                variant="outline"
+                className="gap-2 border-yellow-500 text-yellow-600 hover:bg-yellow-50 dark:hover:bg-yellow-950/30"
+              >
+                <CheckCircle2 className="w-4 h-4" /> Save Anyway
+              </Button>
+            )}
             <Button 
               onClick={handleCropSave} 
               className="gap-2 bg-blue-600 hover:bg-blue-700 text-white"

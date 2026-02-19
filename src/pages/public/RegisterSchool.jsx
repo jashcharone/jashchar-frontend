@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, SelectGroup, SelectLabel, SelectSeparator } from '@/components/ui/select';
 import { useToast } from '@/components/ui/use-toast';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Loader2, CheckCircle, School, MapPin, Phone, Mail, User, Lock, Globe, FileText, Eye, EyeOff, Building2, Plus, Trash2, GitBranch } from 'lucide-react';
@@ -1030,23 +1030,21 @@ const RegisterSchool = () => {
                       </SelectTrigger>
                       <SelectContent className="max-h-[300px] dark:bg-slate-900 dark:border-slate-800">
                         {boardOptions.length > 0 ? (
-                            <>
-                                {['School Boards (Up to 10th)', 'PUC / 12th Boards', 'Degree / Higher Education', 'Other'].map((category, idx) => {
-                                    const items = boardOptions.filter(b => b.category === category);
-                                    if (items.length === 0) return null;
-                                    
-                                    return (
-                                        <React.Fragment key={idx}>
-                                            <div className={`px-2 py-1.5 text-sm font-semibold text-muted-foreground bg-slate-100 dark:bg-slate-800 sticky top-0 z-10 ${idx > 0 ? 'border-t dark:border-slate-700 mt-1' : ''}`}>
-                                                {category}
-                                            </div>
-                                            {items.map((item, i) => (
-                                                <SelectItem key={`${idx}-${i}`} value={item.value}>{item.name}</SelectItem>
-                                            ))}
-                                        </React.Fragment>
-                                    );
-                                })}
-                            </>
+                            ['School Boards (Up to 10th)', 'PUC / 12th Boards', 'Degree / Higher Education', 'Other'].map((category, idx) => {
+                                const items = boardOptions.filter(b => b.category === category);
+                                if (items.length === 0) return null;
+                                
+                                return (
+                                    <SelectGroup key={idx}>
+                                        <SelectLabel className="bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 font-semibold">
+                                            {category}
+                                        </SelectLabel>
+                                        {items.map((item, i) => (
+                                            <SelectItem key={`${idx}-${i}`} value={item.value}>{item.name}</SelectItem>
+                                        ))}
+                                    </SelectGroup>
+                                );
+                            })
                         ) : (
                             <SelectItem value="Other">Other</SelectItem>
                         )}
@@ -1315,23 +1313,21 @@ const RegisterSchool = () => {
                             </SelectTrigger>
                             <SelectContent className="max-h-[300px] dark:bg-slate-900 dark:border-slate-800">
                                 {boardOptions.length > 0 ? (
-                                    <>
-                                        {['School Boards (Up to 10th)', 'PUC / 12th Boards', 'Degree / Higher Education', 'Other'].map((category, idx) => {
-                                            const items = boardOptions.filter(b => b.category === category);
-                                            if (items.length === 0) return null;
-                                            
-                                            return (
-                                                <React.Fragment key={idx}>
-                                                    <div className={`px-2 py-1.5 text-sm font-semibold text-muted-foreground bg-slate-100 dark:bg-slate-800 sticky top-0 z-10 ${idx > 0 ? 'border-t dark:border-slate-700 mt-1' : ''}`}>
-                                                        {category}
-                                                    </div>
-                                                    {items.map((item, i) => (
-                                                        <SelectItem key={`${idx}-${i}`} value={item.value}>{item.name}</SelectItem>
-                                                    ))}
-                                                </React.Fragment>
-                                            );
-                                        })}
-                                    </>
+                                    ['School Boards (Up to 10th)', 'PUC / 12th Boards', 'Degree / Higher Education', 'Other'].map((category, idx) => {
+                                        const items = boardOptions.filter(b => b.category === category);
+                                        if (items.length === 0) return null;
+                                        
+                                        return (
+                                            <SelectGroup key={idx}>
+                                                <SelectLabel className="bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 font-semibold">
+                                                    {category}
+                                                </SelectLabel>
+                                                {items.map((item, i) => (
+                                                    <SelectItem key={`${idx}-${i}`} value={item.value}>{item.name}</SelectItem>
+                                                ))}
+                                            </SelectGroup>
+                                        );
+                                    })
                                 ) : (
                                     <SelectItem value="Other">Other</SelectItem>
                                 )}

@@ -374,36 +374,20 @@ export const AuthProvider = ({ children }) => {
     return () => subscription.unsubscribe();
   }, [handleSession]);
 
+  /**
+   * UNIFIED SIGN IN
+   * ═══════════════════════════════════════════════════════════════
+   * Handles all user types with cascading auth:
+   * - Student: Admission number only
+   * - Parent: Mobile (primary) OR Email (secondary)
+   * - Staff/Admin/Teacher: Email (primary) OR Mobile (secondary)
+   * ═══════════════════════════════════════════════════════════════
+   */
   const signIn = useCallback(async (identifier, password, rememberMe = true) => {
-    let email = identifier;
-    const isEmail = (str) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(str);
-
-    console.log('[SignIn] Identifier:', identifier, 'IsEmail:', isEmail(identifier));
-
-    if (!isEmail(identifier)) {
-      try {
-        console.log('[SignIn] Calling lookup-email API...');
-        const response = await api.post('/auth/lookup-email', { identifier });
-        console.log('[SignIn] Lookup response:', response.data);
-        if (response.data?.email) {
-          email = response.data.email;
-          console.log('[SignIn] Resolved email:', email);
-        } else {
-          console.log('[SignIn] No email in response');
-          return { error: { message: "User not found." } };
-        }
-      } catch (err) {
-        console.error('[SignIn] Lookup error:', err);
-        return { error: { message: "Error resolving user credentials." } };
-      }
-    }
-
-    console.log('[SignIn] Attempting Supabase login with email:', email);
+    console.log('[SignIn] Starting unified login for:', identifier);
 
     try {
-      // Note: setPersistence is deprecated in Supabase v2+
-      // Session persistence is handled automatically by Supabase
-      // The rememberMe flag can be used for custom UI purposes
+      // Remember me preference
       if (rememberMe) {
         localStorage.setItem('rememberMe', 'true');
       } else {
@@ -413,14 +397,47 @@ export const AuthProvider = ({ children }) => {
       console.warn("Failed to set persistence preference:", err);
     }
 
-    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-    if (error) {
-      toast({ variant: "destructive", title: "Sign in Failed", description: error.message });
-    } else if (data?.session) {
-      // Manually update session to ensure immediate UI update
-      await handleSession(data.session);
+    try {
+      // Call unified login endpoint - handles all login types with cascading
+      console.log('[SignIn] Calling unified-login API...');
+      const response = await api.post('/auth/unified-login', { identifier, password });
+      
+      console.log('[SignIn] Unified login response:', response.data);
+      
+      if (response.data?.success && response.data?.data?.session?.access_token) {
+        const { session, userType } = response.data.data;
+        
+        console.log(`[SignIn] Success! User type: ${userType}`);
+        
+        // Set the session in Supabase client
+        const { data: sessionData, error: setError } = await supabase.auth.setSession({
+          access_token: session.access_token,
+          refresh_token: session.refresh_token
+        });
+        
+        if (setError) {
+          console.error('[SignIn] Error setting session:', setError);
+          toast({ variant: "destructive", title: "Sign in Failed", description: setError.message });
+          return { error: setError };
+        }
+        
+        if (sessionData?.session) {
+          await handleSession(sessionData.session);
+        }
+        
+        return { data: sessionData, error: null };
+      } else {
+        const errorMsg = response.data?.message || 'Authentication failed';
+        console.warn('[SignIn] Unified login failed:', errorMsg);
+        toast({ variant: "destructive", title: "Sign in Failed", description: errorMsg });
+        return { error: { message: errorMsg } };
+      }
+    } catch (err) {
+      console.error('[SignIn] Unified login error:', err);
+      const errorMsg = err.response?.data?.message || err.message || 'Sign in failed';
+      toast({ variant: "destructive", title: "Sign in Failed", description: errorMsg });
+      return { error: { message: errorMsg } };
     }
-    return { data, error };
   }, [toast, handleSession]);
 
   const signOut = useCallback(async (redirectPath) => {

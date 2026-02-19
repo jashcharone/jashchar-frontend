@@ -25,7 +25,7 @@ const OrganizationContext = createContext();
  * Examples:
  * - mangalorecolleg.jashcharerp.com → "mangalorecolleg"
  * - localhost:5173 → "demo" (fallback for development)
- * - master.jashcharerp.com → "master"
+ * - www.jashcharerp.com → null (platform domain, no org config needed)
  */
 const getOrganizationSlug = () => {
     const hostname = window.location.hostname;
@@ -34,18 +34,30 @@ const getOrganizationSlug = () => {
     if (hostname === 'localhost' || hostname === '127.0.0.1') {
         // Check if slug is stored in localStorage for dev
         const devSlug = localStorage.getItem('dev-org-slug');
-        return devSlug || 'demo';
+        return devSlug || null;
+    }
+    
+    // Handle Vercel/Railway deployment domains
+    if (hostname.endsWith('.vercel.app') || hostname.endsWith('.railway.app')) {
+        return null;
     }
     
     // Production: Extract subdomain
     const parts = hostname.split('.');
     if (parts.length >= 3) {
-        // subdomain.jashcharerp.com → subdomain
-        return parts[0];
+        const subdomain = parts[0];
+        
+        // Ignore platform/infrastructure subdomains
+        const PLATFORM_SUBDOMAINS = ['www', 'devapi', 'api', 'app', 'admin', 'platform'];
+        if (PLATFORM_SUBDOMAINS.includes(subdomain)) {
+            return null;  // No org config needed for platform domains
+        }
+        
+        return subdomain;
     }
     
-    // Single domain (might be custom domain)
-    return hostname;
+    // Single domain - return null (custom domain support can be added later)
+    return null;
 };
 
 /**
@@ -124,6 +136,14 @@ export const OrganizationProvider = ({ children }) => {
             // Get organization slug from URL
             const orgSlug = getOrganizationSlug();
             setSlug(orgSlug);
+            
+            // Skip org config fetch for platform domains (www, api, etc.)
+            if (!orgSlug) {
+                console.log('[Organization] Platform domain detected - using default config');
+                setOrgConfig(null);
+                setLoading(false);
+                return;
+            }
             
             console.log('[Organization] Fetching config for:', orgSlug);
             

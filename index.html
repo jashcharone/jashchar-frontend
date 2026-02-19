@@ -37,25 +37,30 @@
         try {
           // Extract subdomain for organization
           const hostname = window.location.hostname;
-          let orgSlug = 'demo';
+          let orgSlug = null;
           
-          if (hostname !== 'localhost' && hostname !== '127.0.0.1') {
+          // Skip for Vercel/Railway deployments
+          if (hostname.endsWith('.vercel.app') || hostname.endsWith('.railway.app')) {
+            orgSlug = null;
+          } else if (hostname !== 'localhost' && hostname !== '127.0.0.1') {
             const parts = hostname.split('.');
             if (parts.length >= 3) {
-              orgSlug = parts[0];
+              const subdomain = parts[0];
+              // Skip platform subdomains
+              const platformSubdomains = ['www', 'devapi', 'api', 'app', 'admin', 'platform'];
+              if (!platformSubdomains.includes(subdomain)) {
+                orgSlug = subdomain;
+              }
             }
           } else {
             // Development mode - check localStorage
-            orgSlug = localStorage.getItem('dev-org-slug') || 'demo';
+            orgSlug = localStorage.getItem('dev-org-slug') || null;
           }
           
-          // Set dynamic manifest URL
-          const apiUrl = window.location.hostname === 'localhost' 
-            ? 'http://localhost:5000'
-            : 'https://devapi.jashcharerp.com';
-          
+          // Set dynamic manifest URL only if we have an org slug
           const manifestLink = document.getElementById('app-manifest');
           if (manifestLink && orgSlug) {
+            const apiUrl = hostname === 'localhost' ? 'http://localhost:5000' : '';
             manifestLink.href = apiUrl + '/api/public/manifest.json?org=' + orgSlug;
           }
         } catch (e) {

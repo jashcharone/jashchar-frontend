@@ -472,6 +472,19 @@ const RegisterSchool = () => {
         return;
     }
 
+    // Mobile number must be exactly 10 digits
+    if (!formData.owner_mobile || formData.owner_mobile.length !== 10) {
+        setErrors(prev => ({ ...prev, owner_mobile: 'Mobile number must be exactly 10 digits' }));
+        toast({ variant: "destructive", title: "Validation Error", description: "Mobile number must be exactly 10 digits." });
+        return;
+    }
+
+    // Owner name validation - must contain only letters
+    if (!formData.owner_name || !/^[A-Za-z\s.\-]+$/.test(formData.owner_name.trim())) {
+        toast({ variant: "destructive", title: "Validation Error", description: "Owner name should contain only letters, spaces, dots, and hyphens." });
+        return;
+    }
+
     if (!formData.board) {
         toast({ variant: "destructive", title: "Validation Error", description: "Board Affiliation is required." });
         return;
@@ -1077,7 +1090,20 @@ const RegisterSchool = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-2">
                     <Label htmlFor="owner_name" className="dark:text-slate-300">Owner/Principal Name <span className="text-red-500">*</span></Label>
-                    <Input id="owner_name" name="owner_name" required value={formData.owner_name} onChange={handleInputChange} className="focus:ring-indigo-500 dark:bg-slate-950 dark:border-slate-700 dark:text-white" />
+                    <Input 
+                        id="owner_name" 
+                        name="owner_name" 
+                        required 
+                        value={formData.owner_name} 
+                        onChange={(e) => {
+                            // Allow only letters, spaces, dots, and hyphens
+                            const value = e.target.value.replace(/[^A-Za-z\s.\-]/g, '');
+                            setFormData(prev => ({ ...prev, owner_name: value }));
+                        }} 
+                        className="focus:ring-indigo-500 dark:bg-slate-950 dark:border-slate-700 dark:text-white"
+                        placeholder="e.g. K. S. Nanavate"
+                    />
+                    <p className="text-xs text-gray-500 dark:text-slate-500">Only letters, spaces, dots and hyphens allowed</p>
                     </div>
 
                     <div className="space-y-2">
@@ -1141,8 +1167,12 @@ const RegisterSchool = () => {
                                     }
                                 }}
                                 onBlur={() => {
-                                  if (formData.owner_mobile && formData.owner_mobile.length === 10) {
-                                    checkDuplicate('owner_mobile', formData.owner_mobile);
+                                  if (formData.owner_mobile) {
+                                    if (formData.owner_mobile.length === 10) {
+                                      checkDuplicate('owner_mobile', formData.owner_mobile);
+                                    } else {
+                                      setErrors(prev => ({ ...prev, owner_mobile: 'Mobile number must be exactly 10 digits' }));
+                                    }
                                   }
                                 }}
                                 className={`pl-10 rounded-l-none dark:bg-slate-950 dark:text-white dark:border-slate-700 ${errors.owner_mobile ? "border-red-500 focus:ring-red-500" : "focus:ring-indigo-500"}`}
@@ -1157,7 +1187,7 @@ const RegisterSchool = () => {
                     {errors.owner_mobile && <p className="text-xs text-red-500 mt-1 flex items-center gap-1">
                       <span> ï¸</span> {errors.owner_mobile}
                     </p>}
-                    <p className="text-xs text-gray-500 dark:text-slate-500 mt-1">You can login using either email or mobile number</p>
+                    <p className="text-xs text-gray-500 dark:text-slate-500 mt-1">Enter exactly 10 digits. You can login using either email or mobile number</p>
                     </div>
 
                     <div className="space-y-2">

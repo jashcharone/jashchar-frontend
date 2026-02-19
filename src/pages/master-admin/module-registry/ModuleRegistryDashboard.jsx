@@ -98,9 +98,22 @@ const ModuleRegistryDashboard = () => {
       const statsData = statsRes?.total_modules !== undefined ? statsRes : (statsRes?.data || {});
       const catData = Array.isArray(catRes) ? catRes : (catRes?.data || []);
       
+      // Log detailed submodule info
+      console.log('📦 Module details:', treeData.map(m => ({
+        slug: m.slug,
+        submodules: m.submodules?.length || 0,
+        submoduleSlugs: m.submodules?.map(s => s.slug) || []
+      })));
+      
       setModuleTree(treeData);
       setStats(statsData);
       setCategories(catData);
+      
+      // Auto-expand all modules that have sub-modules
+      const modulesWithSubs = treeData.filter(m => m.submodules && m.submodules.length > 0);
+      const expandIds = new Set(modulesWithSubs.map(m => m.id));
+      setExpandedModules(expandIds);
+      console.log('🔓 Auto-expanded modules with sub-modules:', expandIds.size);
     } catch (error) {
       console.error('❌ Error loading data:', error);
       toast({ 

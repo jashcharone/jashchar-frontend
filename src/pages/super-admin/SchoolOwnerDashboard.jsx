@@ -12,7 +12,8 @@ import {
   Calendar, FileText, Settings, ChevronRight, Play, Pause,
   Globe, Shield, Database, Cpu, Wifi, Battery, Signal,
   Sun, Moon, Cloud, Droplets, Wind, AlertTriangle, CheckCircle2,
-  Circle, Hexagon, Triangle, Square, Gem, Crown, Flame, Heart
+  Circle, Hexagon, Triangle, Square, Gem, Crown, Flame, Heart,
+  Building2, MapPin
 } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import { AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart as RechartsPie, Pie, Cell, RadialBarChart, RadialBar } from 'recharts';
@@ -46,7 +47,7 @@ const gradients = {
 // ============================================================================
 // ANIMATED STAT CARD COMPONENT
 // ============================================================================
-const AnimatedStatCard = ({ title, value, icon: Icon, gradient, change, changeType, delay = 0, subtitle }) => {
+const AnimatedStatCard = ({ title, value, icon: Icon, gradient, change, changeType, delay = 0, subtitle, splitStats }) => {
   const [isVisible, setIsVisible] = useState(false);
   const [animatedValue, setAnimatedValue] = useState(0);
   
@@ -107,7 +108,22 @@ const AnimatedStatCard = ({ title, value, icon: Icon, gradient, change, changeTy
             <h3 className="text-4xl font-bold tracking-tight mb-2">
               {typeof animatedValue === 'number' ? animatedValue.toLocaleString() : animatedValue}
             </h3>
-            {subtitle && (
+            {/* Split Stats Display - Active/Inactive Pills */}
+            {splitStats && (
+              <div className="flex items-center gap-2 mb-2">
+                <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-green-500/30 backdrop-blur-sm border border-green-300/30">
+                  <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse"></div>
+                  <span className="text-xs font-semibold text-green-100">{splitStats.active} Active</span>
+                </div>
+                {splitStats.inactive > 0 && (
+                  <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-red-500/30 backdrop-blur-sm border border-red-300/30">
+                    <div className="w-2 h-2 rounded-full bg-red-400"></div>
+                    <span className="text-xs font-semibold text-red-100">{splitStats.inactive} Inactive</span>
+                  </div>
+                )}
+              </div>
+            )}
+            {subtitle && !splitStats && (
               <p className="text-xs text-white/70">{subtitle}</p>
             )}
             {change && (
@@ -400,7 +416,9 @@ const SchoolOwnerDashboard = () => {
   
   const [statsData, setStatsData] = useState({
     total_students: 0,
+    inactive_students: 0,
     total_staff: 0,
+    inactive_staff: 0,
     today_present: 0,
     today_absent: 0,
     monthly_income: 0,
@@ -459,8 +477,10 @@ const SchoolOwnerDashboard = () => {
 
         // Parallel queries for all data
         const [
-          studentsRes, 
-          staffRes, 
+          studentsRes,
+          inactiveStudentsRes,
+          staffRes,
+          inactiveStaffRes,
           incomeRes, 
           expenseRes,
           feesAllocRes,
@@ -472,14 +492,22 @@ const SchoolOwnerDashboard = () => {
           staffAttendanceRes,
           leaveRequestsRes
         ] = await Promise.all([
-          // Students count (session-wise for accurate count)
+          // Students count (session-wise for accurate count) - Active students only
           supabase.from('student_profiles').select('*', { count: 'exact', head: true })
             .eq('branch_id', branchId)
             .eq('session_id', currentSessionId)
             .or('is_disabled.is.null,is_disabled.eq.false'),
-          // Staff count with role info
+          // Inactive/Disabled students count
+          supabase.from('student_profiles').select('*', { count: 'exact', head: true })
+            .eq('branch_id', branchId)
+            .eq('session_id', currentSessionId)
+            .eq('is_disabled', true),
+          // Staff count with role info - Active only
           supabase.from('employee_profiles').select('id, role_id, roles(name)')
             .eq('branch_id', branchId).or('is_disabled.is.null,is_disabled.eq.false'),
+          // Inactive/Disabled staff count
+          supabase.from('employee_profiles').select('*', { count: 'exact', head: true })
+            .eq('branch_id', branchId).eq('is_disabled', true),
           // Monthly income
           supabase.from('fee_payments').select('amount')
             .eq('branch_id', branchId).gte('payment_date', startOfMonth).is('reverted_at', null),
@@ -512,7 +540,9 @@ const SchoolOwnerDashboard = () => {
         ]);
 
         const totalStudents = studentsRes.count || 0;
+        const inactiveStudents = inactiveStudentsRes.count || 0;
         const totalStaff = staffRes.data?.length || 0;
+        const inactiveStaff = inactiveStaffRes.count || 0;
         const monthlyIncome = incomeRes.data?.reduce((sum, item) => sum + (parseFloat(item.amount) || 0), 0) || 0;
         const monthlyExpense = expenseRes.data?.reduce((sum, item) => sum + (parseFloat(item.amount) || 0), 0) || 0;
 
@@ -592,7 +622,9 @@ const SchoolOwnerDashboard = () => {
 
         setStatsData({
           total_students: totalStudents,
+          inactive_students: inactiveStudents,
           total_staff: totalStaff,
+          inactive_staff: inactiveStaff,
           today_present: presentCount,
           today_absent: absentCount,
           monthly_income: monthlyIncome,
@@ -773,6 +805,19 @@ const SchoolOwnerDashboard = () => {
           
           <div className="relative flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
             <div>
+              {/* Organization & Branch Info */}
+              <div className="flex items-center gap-2 mb-3">
+                <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/15 backdrop-blur-sm border border-white/20">
+                  <Building2 className="h-4 w-4 text-yellow-300" />
+                  <span className="text-sm font-medium text-white/90">{school?.name || 'Organization'}</span>
+                </div>
+                <div className="text-white/50">•</div>
+                <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/15 backdrop-blur-sm border border-white/20">
+                  <MapPin className="h-4 w-4 text-green-300" />
+                  <span className="text-sm font-medium text-white/90">{selectedBranch?.name || 'Branch'}</span>
+                </div>
+              </div>
+              
               <div className="flex items-center gap-3 mb-2">
                 <span className="text-4xl animate-bounce">👋</span>
                 <Badge className="bg-white/20 text-white border-white/30 backdrop-blur-sm">
@@ -781,10 +826,28 @@ const SchoolOwnerDashboard = () => {
                 </Badge>
               </div>
               <h1 className="text-3xl md:text-4xl font-bold mb-2">
-                Welcome back, {user?.profile?.full_name?.split(' ')[0] || 'Admin'}!
+                Welcome back, {user?.profile?.full_name || 'Admin'}!
               </h1>
-              <p className="text-white/80 text-lg">
-                Here's what's happening at your institution today
+              <p className="text-white/80 text-lg flex items-center gap-2">
+                <Sparkles className="h-5 w-5 text-yellow-300" />
+                {(() => {
+                  const hour = new Date().getHours();
+                  const motivationalQuotes = [
+                    "Your dedication shapes tomorrow's leaders! 🌟",
+                    "Every student's success starts with your effort! 💪",
+                    "Making education better, one day at a time! 📚",
+                    "You're building futures, keep inspiring! ✨",
+                    "Great things happen with great educators like you! 🎯"
+                  ];
+                  const greetings = {
+                    morning: "Good Morning! Start your day with positive energy! ☀️",
+                    afternoon: "Good Afternoon! Keep up the amazing work! 🌤️",
+                    evening: "Good Evening! Another productive day ahead! 🌅"
+                  };
+                  if (hour < 12) return greetings.morning;
+                  if (hour < 17) return greetings.afternoon;
+                  return greetings.evening;
+                })()}
               </p>
             </div>
             
@@ -851,19 +914,20 @@ const SchoolOwnerDashboard = () => {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <AnimatedStatCard
             title="Total Students"
-            value={statsData.total_students}
+            value={statsData.total_students + statsData.inactive_students}
             icon={GraduationCap}
             gradient={gradients.primary}
+            splitStats={{ active: statsData.total_students, inactive: statsData.inactive_students }}
             change={`${statsData.today_present} present today`}
             changeType="increase"
             delay={100}
           />
           <AnimatedStatCard
             title="Total Staff"
-            value={statsData.total_staff}
+            value={statsData.total_staff + statsData.inactive_staff}
             icon={Users}
             gradient={gradients.success}
-            subtitle="Active employees"
+            splitStats={{ active: statsData.total_staff, inactive: statsData.inactive_staff }}
             delay={200}
           />
           <AnimatedStatCard

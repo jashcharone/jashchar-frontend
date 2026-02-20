@@ -14,7 +14,16 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Progress } from '@/components/ui/progress';
-import { Search, Eye, Edit, Trash2, Users, Copy, FileDown, Printer, LayoutGrid, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Search, Eye, Edit, Trash2, Users, Copy, FileDown, Printer, LayoutGrid, ChevronLeft, ChevronRight, UserX, Loader2, RefreshCcw } from 'lucide-react';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { useNavigate } from 'react-router-dom';
 import { format, differenceInYears } from 'date-fns';
 import { ROUTES } from '@/registry/routeRegistry';
@@ -29,7 +38,7 @@ const StudentDetails = () => {
     const [students, setStudents] = useState([]);
     const [classes, setClasses] = useState([]);
     const [sections, setSections] = useState([]);
-    const [filters, setFilters] = useState({ class_id: '', section_id: '', keyword: '' });
+    const [filters, setFilters] = useState({ class_id: '', section_id: '', keyword: '', status: 'active' });
     const [selectedStudents, setSelectedStudents] = useState([]);
     const [currentPage, setCurrentPage] = useState(1);
     const [pageSize, setPageSize] = useState(25);
@@ -38,6 +47,13 @@ const StudentDetails = () => {
         photo: true, name: true, class: true, section: true, gender: true, 
         mobile: true, register: true, roll: true, age: true, guardian: true, fees: true
     });
+    
+    // Disable functionality states
+    const [disableReasons, setDisableReasons] = useState([]);
+    const [isDisableDialogOpen, setIsDisableDialogOpen] = useState(false);
+    const [studentToDisable, setStudentToDisable] = useState(null);
+    const [disableFormData, setDisableFormData] = useState({ reason_id: '', note: '' });
+    const [disableLoading, setDisableLoading] = useState(false);
 
     const branchId = user?.profile?.branch_id;
 
@@ -182,6 +198,14 @@ const StudentDetails = () => {
                 .select('id, name')
                 .eq('branch_id', selectedBranch.id);
             setClasses(sortClasses(classData || []));
+            
+            // Fetch disable reasons for branch
+            const { data: reasonsData } = await supabase
+                .from('disable_reasons')
+                .select('id, reason')
+                .eq('branch_id', selectedBranch.id)
+                .order('reason');
+            setDisableReasons(reasonsData || []);
         };
         fetchPrereqs();
     }, [branchId, selectedBranch]);
@@ -222,13 +246,20 @@ const StudentDetails = () => {
 
         let studentQuery = supabase.from('student_profiles').select(`
             id, full_name, first_name, last_name, school_code, roll_number, gender, date_of_birth, phone, photo_url,
-            father_name, father_phone, guardian_name, guardian_phone, admission_date, session_id,
+            father_name, father_phone, guardian_name, guardian_phone, admission_date, session_id, is_disabled,
             class:classes!student_profiles_class_id_fkey( name ),
             section:sections!student_profiles_section_id_fkey( name )
         `, { count: 'exact' })
         .eq('branch_id', selectedBranch.id)
-        .or('is_disabled.is.null,is_disabled.eq.false')
         .order('roll_number', { ascending: true, nullsFirst: false });
+        
+        // Apply status filter (Active/Inactive/All)
+        if (filters.status === 'active') {
+            studentQuery = studentQuery.or('is_disabled.is.null,is_disabled.eq.false');
+        } else if (filters.status === 'inactive') {
+            studentQuery = studentQuery.eq('is_disabled', true);
+        }
+        // If status is 'all', no filter applied
         
         // Filter by branch's active session (not user's session)
         if (activeSessionId) {
@@ -356,6 +387,77 @@ const StudentDetails = () => {
         setSelectedStudents(prev => prev.includes(id) ? prev.filter(sid => sid !== id) : [...prev, id]);
     };
 
+    // Handle Disable Student
+    const handleDisableStudent = async () => {
+        if (!studentToDisable || !disableFormData.reason_id) {
+            toast({ variant: 'destructive', title: 'Please select a disable reason' });
+            return;
+        }
+        setDisableLoading(true);
+        
+        const { error } = await supabase
+            .from('student_profiles')
+            .update({
+                is_disabled: true,
+                disabled_at: new Date().toISOString(),
+                disable_reason_id: disableFormData.reason_id,
+                disable_note: disableFormData.note || null,
+                status: 'Inactive'
+            })
+            .eq('id', studentToDisable.id);
+        
+        if (error) {
+            toast({ variant: 'destructive', title: 'Error disabling student', description: error.message });
+        } else {
+            toast({ title: 'Success', description: `${studentToDisable.full_name} has been disabled` });
+            // If status filter is 'active', remove from list
+            if (filters.status === 'active') {
+                setStudents(prev => prev.filter(s => s.id !== studentToDisable.id));
+            } else {
+                // Update the student in the list
+                setStudents(prev => prev.map(s => 
+                    s.id === studentToDisable.id ? { ...s, is_disabled: true } : s
+                ));
+            }
+        }
+        
+        setDisableLoading(false);
+        setIsDisableDialogOpen(false);
+        setStudentToDisable(null);
+        setDisableFormData({ reason_id: '', note: '' });
+    };
+
+    // Handle Re-Enable Student
+    const handleEnableStudent = async (student) => {
+        if (!window.confirm(`Are you sure you want to re-enable ${student.full_name}?`)) return;
+        
+        const { error } = await supabase
+            .from('student_profiles')
+            .update({
+                is_disabled: false,
+                disabled_at: null,
+                disable_reason_id: null,
+                disable_note: null,
+                status: 'Active'
+            })
+            .eq('id', student.id);
+        
+        if (error) {
+            toast({ variant: 'destructive', title: 'Error enabling student', description: error.message });
+        } else {
+            toast({ title: 'Success', description: `${student.full_name} has been re-enabled` });
+            // If status filter is 'inactive', remove from list
+            if (filters.status === 'inactive') {
+                setStudents(prev => prev.filter(s => s.id !== student.id));
+            } else {
+                // Update the student in the list
+                setStudents(prev => prev.map(s => 
+                    s.id === student.id ? { ...s, is_disabled: false } : s
+                ));
+            }
+        }
+    };
+
     const getGuardianInfo = (student) => {
         const name = student.father_name || student.guardian_name || '-';
         const phone = student.father_phone || student.guardian_phone || '';
@@ -381,9 +483,9 @@ const StudentDetails = () => {
 
             <Card className="mb-6">
                 <CardContent className="pt-6">
-                    <div className="grid grid-cols-1 md:grid-cols-5 gap-4 items-end">
+                    <div className="grid grid-cols-1 md:grid-cols-6 gap-4 items-end">
                         <div>
-                            <label className="text-sm font-medium mb-1 block">Class *</label>
+                            <label className="text-sm font-medium mb-1 block">Class</label>
                             <Select value={filters.class_id} onValueChange={v => handleFilterChange('class_id', v)}>
                                 <SelectTrigger><SelectValue placeholder="Select Class" /></SelectTrigger>
                                 <SelectContent>{classes.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent>
@@ -396,6 +498,29 @@ const StudentDetails = () => {
                                 <SelectContent>
                                     <SelectItem value="all">All Sections</SelectItem>
                                     {sections.map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
+                                </SelectContent>
+                            </Select>
+                        </div>
+                        <div>
+                            <label className="text-sm font-medium mb-1 block">Status</label>
+                            <Select value={filters.status} onValueChange={v => handleFilterChange('status', v)}>
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Select Status" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="active">
+                                        <span className="flex items-center gap-2">
+                                            <span className="w-2 h-2 rounded-full bg-green-500"></span>
+                                            Active
+                                        </span>
+                                    </SelectItem>
+                                    <SelectItem value="inactive">
+                                        <span className="flex items-center gap-2">
+                                            <span className="w-2 h-2 rounded-full bg-red-500"></span>
+                                            Disabled
+                                        </span>
+                                    </SelectItem>
+                                    <SelectItem value="all">All Students</SelectItem>
                                 </SelectContent>
                             </Select>
                         </div>
@@ -459,7 +584,14 @@ const StudentDetails = () => {
                                                 </Avatar>
                                             </td>
                                             <td className="p-3">
-                                                <span className="font-medium text-primary hover:underline cursor-pointer" onClick={() => navigate(ROUTES.SUPER_ADMIN.STUDENT_PROFILE.replace(':studentId', s.id))}>{s.full_name}</span>
+                                                <div className="flex items-center gap-2">
+                                                    <span className="font-medium text-primary hover:underline cursor-pointer" onClick={() => navigate(ROUTES.SUPER_ADMIN.STUDENT_PROFILE.replace(':studentId', s.id))}>{s.full_name}</span>
+                                                    {s.is_disabled && (
+                                                        <span className="px-1.5 py-0.5 text-[10px] font-medium bg-red-100 text-red-700 rounded dark:bg-red-900 dark:text-red-300">
+                                                            DISABLED
+                                                        </span>
+                                                    )}
+                                                </div>
                                             </td>
                                             <td className="p-3">{s.class?.name}</td>
                                             <td className="p-3">{s.section?.name}</td>
@@ -497,6 +629,17 @@ const StudentDetails = () => {
                                                         <Button variant="ghost" size="icon" className="h-8 w-8 bg-orange-500/10 hover:bg-orange-500/20" onClick={() => navigate(ROUTES.SUPER_ADMIN.EDIT_STUDENT.replace(':id', s.id))} title="Edit">
                                                             <Edit className="h-4 w-4 text-orange-600" />
                                                         </Button>
+                                                    )}
+                                                    {canEdit('student_information.student_details') && (
+                                                        s.is_disabled ? (
+                                                            <Button variant="ghost" size="icon" className="h-8 w-8 bg-green-500/10 hover:bg-green-500/20" onClick={() => handleEnableStudent(s)} title="Re-Enable">
+                                                                <RefreshCcw className="h-4 w-4 text-green-600" />
+                                                            </Button>
+                                                        ) : (
+                                                            <Button variant="ghost" size="icon" className="h-8 w-8 bg-red-500/10 hover:bg-red-500/20" onClick={() => { setStudentToDisable(s); setIsDisableDialogOpen(true); }} title="Disable">
+                                                                <UserX className="h-4 w-4 text-red-600" />
+                                                            </Button>
+                                                        )
                                                     )}
                                                     {canDelete('student_information.student_details') && (
                                                         <Button variant="ghost" size="icon" className="h-8 w-8 bg-red-500/10 hover:bg-red-500/20" onClick={() => handleDelete(s.id)} title="Delete">
@@ -542,6 +685,73 @@ const StudentDetails = () => {
                     </div>
                 </Card>
             )}
+
+            {/* Disable Student Dialog */}
+            <Dialog open={isDisableDialogOpen} onOpenChange={setIsDisableDialogOpen}>
+                <DialogContent className="sm:max-w-md">
+                    <DialogHeader>
+                        <DialogTitle className="flex items-center gap-2">
+                            <UserX className="h-5 w-5 text-red-500" />
+                            Disable Student
+                        </DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-4 py-4">
+                        <div className="p-3 bg-muted rounded-lg">
+                            <p className="font-medium">{studentToDisable?.full_name}</p>
+                            <p className="text-sm text-muted-foreground">
+                                {studentToDisable?.class?.name}-{studentToDisable?.section?.name} | {studentToDisable?.school_code}
+                            </p>
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="disable-reason">Reason *</Label>
+                            <Select 
+                                value={disableFormData.reason_id} 
+                                onValueChange={v => setDisableFormData(prev => ({ ...prev, reason_id: v }))}
+                            >
+                                <SelectTrigger id="disable-reason">
+                                    <SelectValue placeholder="Select a reason" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {disableReasons.map(r => (
+                                        <SelectItem key={r.id} value={r.id}>{r.reason}</SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                            {disableReasons.length === 0 && (
+                                <p className="text-xs text-amber-600">No reasons configured. Please add reasons in Disable Reason page first.</p>
+                            )}
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="disable-note">Additional Note (Optional)</Label>
+                            <Textarea 
+                                id="disable-note"
+                                value={disableFormData.note}
+                                onChange={e => setDisableFormData(prev => ({ ...prev, note: e.target.value }))}
+                                placeholder="Any additional information..."
+                                rows={3}
+                            />
+                        </div>
+                        <div className="p-3 bg-amber-50 dark:bg-amber-950 rounded-lg border border-amber-200">
+                            <p className="text-sm text-amber-800 dark:text-amber-200">
+                                <strong>Warning:</strong> Disabled students will not appear in attendance, fees, or other modules.
+                            </p>
+                        </div>
+                    </div>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setIsDisableDialogOpen(false)} disabled={disableLoading}>
+                            Cancel
+                        </Button>
+                        <Button 
+                            variant="destructive" 
+                            onClick={handleDisableStudent} 
+                            disabled={disableLoading || !disableFormData.reason_id}
+                        >
+                            {disableLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <UserX className="mr-2 h-4 w-4" />}
+                            Disable Student
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </DashboardLayout>
     );
 };

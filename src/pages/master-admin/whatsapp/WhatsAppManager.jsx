@@ -1,6 +1,6 @@
 ﻿import React, { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { MessageSquare, Edit, Link as LinkIcon, Send, History, Settings, BarChart3, Bot, Blocks, Zap, Brain, Building2 } from "lucide-react";
+import { MessageSquare, Edit, Link as LinkIcon, Send, History, Settings, BarChart3, Bot, Blocks, Zap, Brain, Building2, Shield, TrendingUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
 import api from '@/lib/api';
@@ -16,6 +16,8 @@ import WhatsAppLogs from './WhatsAppLogs';
 import WhatsAppBillingDashboard from './WhatsAppBillingDashboard';
 import WhatsAppModules from './WhatsAppModules';
 import WhatsAppAI from './WhatsAppAI';
+import PlatformConfig from './PlatformConfig';
+import OrgUsageOverview from './OrgUsageOverview';
 
 const WhatsAppManager = () => {
   const { toast } = useToast();
@@ -86,6 +88,14 @@ const WhatsAppManager = () => {
 
       <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-4">
         <TabsList className="bg-green-50 dark:bg-green-900/20 p-1 flex flex-wrap h-auto gap-1">
+          {/* 🔒 Platform Admin Features (Master Admin Only) */}
+          <TabsTrigger value="platform-config" className="data-[state=active]:bg-white dark:data-[state=active]:bg-gray-800 data-[state=active]:text-red-700 data-[state=active]:shadow-sm bg-red-50 dark:bg-red-900/20">
+            <Shield className="h-4 w-4 mr-2" /> Platform Config
+          </TabsTrigger>
+          <TabsTrigger value="org-usage" className="data-[state=active]:bg-white dark:data-[state=active]:bg-gray-800 data-[state=active]:text-red-700 data-[state=active]:shadow-sm bg-red-50 dark:bg-red-900/20">
+            <TrendingUp className="h-4 w-4 mr-2" /> Org Usage
+          </TabsTrigger>
+          
           {/* Core Features */}
           <TabsTrigger value="accounts" className="data-[state=active]:bg-white dark:data-[state=active]:bg-gray-800 data-[state=active]:text-green-700 data-[state=active]:shadow-sm">
             <Settings className="h-4 w-4 mr-2" /> Accounts
@@ -116,6 +126,16 @@ const WhatsAppManager = () => {
             <BarChart3 className="h-4 w-4 mr-2" /> Billing
           </TabsTrigger>
         </TabsList>
+
+        {/* 🔒 Platform Config Tab (Master Admin Only) */}
+        <TabsContent value="platform-config" className="space-y-4">
+          <PlatformConfig />
+        </TabsContent>
+
+        {/* 🔒 Org Usage Overview (Master Admin Only) */}
+        <TabsContent value="org-usage" className="space-y-4">
+          <OrgUsageOverview />
+        </TabsContent>
 
         <TabsContent value="accounts" className="space-y-4">
           <WhatsAppAccounts onAccountsChange={handleAccountsUpdate} />

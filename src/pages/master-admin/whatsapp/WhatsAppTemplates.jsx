@@ -430,11 +430,11 @@ const WhatsAppTemplates = ({ accounts = [] }) => {
               ) : (
                 templates.map(t => (
                   <TableRow key={t.id}>
-                    <TableCell className="font-medium">{t.name}</TableCell>
+                    <TableCell className="font-medium">{t.template_name}</TableCell>
                     <TableCell>{t.language}</TableCell>
                     <TableCell><Badge variant="outline">{t.category}</Badge></TableCell>
                     <TableCell>
-                      <Badge className={getStatusColor(t.status)}>{t.status}</Badge>
+                      <Badge className={getStatusColor(t.approval_status)}>{t.approval_status}</Badge>
                     </TableCell>
                     <TableCell>{new Date(t.updated_at).toLocaleDateString()}</TableCell>
                     <TableCell className="text-right">
@@ -756,41 +756,40 @@ Thank you!"
               {/* Status & Info Row */}
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="font-medium">{previewTemplate.name}</p>
+                  <p className="font-medium">{previewTemplate.template_name}</p>
                   <p className="text-xs text-muted-foreground">{previewTemplate.category} • {previewTemplate.language}</p>
                 </div>
-                <Badge className={getStatusColor(previewTemplate.status)}>{previewTemplate.status}</Badge>
+                <Badge className={getStatusColor(previewTemplate.approval_status)}>{previewTemplate.approval_status}</Badge>
               </div>
 
               {/* WhatsApp Style Preview */}
               <div className="bg-[#0b141a] rounded-lg p-4">
                 <div className="bg-[#1f2c34] rounded-lg p-3 max-w-[280px] ml-auto">
                   {/* Header */}
-                  {previewTemplate.components?.find(c => c.type === 'HEADER') && (
+                  {previewTemplate.header_content && (
                     <div className="font-semibold text-white text-sm mb-2 border-b border-gray-600 pb-2">
-                      {previewTemplate.components.find(c => c.type === 'HEADER')?.text || 
-                       previewTemplate.components.find(c => c.type === 'HEADER')?.format}
+                      {previewTemplate.header_content}
                     </div>
                   )}
                   
                   {/* Body */}
-                  {previewTemplate.components?.find(c => c.type === 'BODY') && (
+                  {previewTemplate.body_content && (
                     <div className="text-white text-sm whitespace-pre-wrap leading-relaxed">
-                      {previewTemplate.components.find(c => c.type === 'BODY')?.text}
+                      {previewTemplate.body_content}
                     </div>
                   )}
                   
                   {/* Footer */}
-                  {previewTemplate.components?.find(c => c.type === 'FOOTER') && (
+                  {previewTemplate.footer_content && (
                     <div className="text-gray-400 text-xs mt-2 pt-2 border-t border-gray-600">
-                      {previewTemplate.components.find(c => c.type === 'FOOTER')?.text}
+                      {previewTemplate.footer_content}
                     </div>
                   )}
 
                   {/* Buttons */}
-                  {previewTemplate.components?.find(c => c.type === 'BUTTONS') && (
+                  {previewTemplate.buttons && previewTemplate.buttons.length > 0 && (
                     <div className="mt-3 pt-2 border-t border-gray-600 space-y-1">
-                      {previewTemplate.components.find(c => c.type === 'BUTTONS')?.buttons?.map((btn, idx) => (
+                      {previewTemplate.buttons.map((btn, idx) => (
                         <div key={idx} className="text-center text-blue-400 text-sm py-1 hover:underline cursor-pointer">
                           {btn.type === 'URL' && <ExternalLink className="inline h-3 w-3 mr-1" />}
                           {btn.type === 'PHONE_NUMBER' && <Phone className="inline h-3 w-3 mr-1" />}

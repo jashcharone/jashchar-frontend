@@ -364,6 +364,7 @@ const SendEmail = lazy(() => import('@/pages/super-admin/communicate/SendEmail')
 const SendSms = lazy(() => import('@/pages/super-admin/communicate/SendSms'));
 const ComposeMessage = lazy(() => import('@/pages/super-admin/communicate/ComposeMessage'));
 const EmailSmsLog = lazy(() => import('@/pages/super-admin/communicate/EmailSmsLog'));
+const WhatsAppDashboard = lazy(() => import('@/pages/super-admin/whatsapp/WhatsAppDashboard'));
 
 // QR
 const QrAttendanceSetting = lazy(() => import('@/pages/super-admin/qr-code-attendance/QrAttendanceSetting'));
@@ -1337,6 +1338,7 @@ function App() {
             <Route path={ROUTES.SUPER_ADMIN.SEND_SMS} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="communicate"><SendSms /></ProtectedRoute>} />
             <Route path={ROUTES.SUPER_ADMIN.COMPOSE_MESSAGE} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="communicate"><ComposeMessage /></ProtectedRoute>} />
             <Route path={ROUTES.SUPER_ADMIN.EMAIL_SMS_LOG} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="communicate"><EmailSmsLog /></ProtectedRoute>} />
+            <Route path={ROUTES.SUPER_ADMIN.WHATSAPP} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="communicate"><WhatsAppDashboard /></ProtectedRoute>} />
 
             {/* ? QR Attendance */}
             <Route path={ROUTES.SUPER_ADMIN.QR_ATTENDANCE_SETTING} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="qr_code_attendance"><QrAttendanceSetting /></ProtectedRoute>} />

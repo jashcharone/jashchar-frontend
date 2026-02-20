@@ -100,27 +100,27 @@ const HostelAnalysis = () => {
       // 2. Fetch all hostels
       const { data: hostels } = await supabase
         .from('hostels')
-        .select('id, name, total_capacity')
+        .select('id, name, intake')
         .eq('branch_id', branchId);
 
-      // 3. Fetch all rooms with capacity
+      // 3. Fetch all rooms with capacity (num_of_beds)
       const { data: rooms } = await supabase
         .from('hostel_rooms')
-        .select('id, room_number, capacity, hostel_id')
+        .select('id, room_number_name, num_of_beds, hostel_id')
         .eq('branch_id', branchId);
 
       // 4. Fetch room types
       const { data: roomTypes } = await supabase
         .from('hostel_room_types')
-        .select('id, type_name, capacity')
+        .select('id, name, cost')
         .eq('branch_id', branchId);
 
       // === CALCULATE STATISTICS ===
       const students = hostelStudents || [];
       const totalHostellers = students.length;
       
-      // Calculate total capacity from rooms
-      const totalCapacity = (rooms || []).reduce((sum, r) => sum + (r.capacity || 0), 0);
+      // Calculate total capacity from rooms (num_of_beds)
+      const totalCapacity = (rooms || []).reduce((sum, r) => sum + (r.num_of_beds || 0), 0);
       const occupancyPercent = totalCapacity > 0 ? Math.round((totalHostellers / totalCapacity) * 100) : 0;
       
       const totalRevenue = students.reduce((sum, s) => sum + (parseFloat(s.hostel_fee) || 0), 0);
@@ -181,18 +181,18 @@ const HostelAnalysis = () => {
         hostelMap.set(h.id, {
           hostelId: h.id,
           hostelName: h.name,
-          totalCapacity: h.total_capacity || 0,
+          totalCapacity: h.intake || 0,
           studentCount: 0,
           revenue: 0
         });
       });
 
-      // Calculate capacity per hostel from rooms
+      // Calculate capacity per hostel from rooms (num_of_beds)
       (rooms || []).forEach(r => {
         if (r.hostel_id && hostelMap.has(r.hostel_id)) {
           const hostel = hostelMap.get(r.hostel_id);
           if (!hostel.totalCapacity) {
-            hostel.totalCapacity = (hostel.totalCapacity || 0) + (r.capacity || 0);
+            hostel.totalCapacity = (hostel.totalCapacity || 0) + (r.num_of_beds || 0);
           }
         }
       });
@@ -221,8 +221,8 @@ const HostelAnalysis = () => {
       (roomTypes || []).forEach(rt => {
         roomTypeMap.set(rt.id, {
           typeId: rt.id,
-          typeName: rt.type_name,
-          capacity: rt.capacity || 0,
+          typeName: rt.name,
+          cost: rt.cost || 0,
           count: 0
         });
       });

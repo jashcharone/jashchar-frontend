@@ -96,12 +96,17 @@ const applyThemeColors = (branding) => {
 
 /**
  * Update document title and favicon
+ * Note: Only set title if orgConfig.name is present to avoid overriding 
+ * page-specific titles (e.g., from Helmet in PublicSchoolHomepage)
  */
 const updatePageMeta = (orgConfig) => {
     if (!orgConfig) return;
     
-    // Update page title
-    document.title = orgConfig.name || 'School ERP';
+    // Update page title ONLY if name is explicitly set
+    // Don't override with fallback - let page components (Helmet) handle their own titles
+    if (orgConfig.name) {
+        document.title = orgConfig.name;
+    }
     
     // Update favicon if logo is available
     if (orgConfig.logo) {

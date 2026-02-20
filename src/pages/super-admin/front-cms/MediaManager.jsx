@@ -179,14 +179,31 @@ const MediaManager = () => {
         setUploadProgress(prev => Math.min(prev + 10, 90));
       }, 100);
 
-      const { error: uploadError } = await supabase.storage
+      console.log(`[MediaManager] Uploading to: school-assets/${filePath}`);
+      
+      const { data: uploadData, error: uploadError } = await supabase.storage
         .from('school-assets')
         .upload(filePath, file);
 
       clearInterval(progressInterval);
+      
+      if (uploadError) {
+        console.error('[MediaManager] Upload failed:', uploadError);
+        throw uploadError;
+      }
+      
+      // Verify file was actually uploaded
+      const { data: verifyData, error: verifyError } = await supabase.storage
+        .from('school-assets')
+        .list(`cms/${branchId}`, { search: fileName });
+      
+      if (verifyError || !verifyData || verifyData.length === 0) {
+        console.error('[MediaManager] File verification failed - file not found in storage');
+        throw new Error('File upload verification failed. Please try again.');
+      }
+      
+      console.log('[MediaManager] Upload verified successfully');
       setUploadProgress(100);
-
-      if (uploadError) throw uploadError;
 
       const { data: { publicUrl } } = supabase.storage
         .from('school-assets')

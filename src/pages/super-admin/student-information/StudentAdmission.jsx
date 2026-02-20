@@ -480,6 +480,16 @@ const StudentAdmission = () => {
   // --- Dynamic Field Renderer with Enhanced Styling ---
   // Changed from component to function to prevent re-mounting and focus loss
   const renderDynamicField = (field) => {
+    // DEBUG: Log caste_category field status
+    if (field.field_name === 'caste_category') {
+      console.log('[StudentAdmission] caste_category field:', { 
+        is_enabled: field.is_enabled, 
+        is_system: field.is_system, 
+        section_key: field.section_key,
+        casteCategories_count: casteCategories.length 
+      });
+    }
+    
     if (!field.is_enabled) return null;
 
     const label = field.field_label;
@@ -880,6 +890,17 @@ const StudentAdmission = () => {
             );
         case 'caste_category':
             // New caste category dropdown (state-wise)
+            // DEBUG: Check if caste categories loaded
+            console.log('[StudentAdmission] Rendering caste_category field, categories count:', casteCategories.length);
+            if (casteCategories.length === 0) {
+              return (
+                <SmartField label={label || "Caste Category"} required={isRequired}>
+                  <div className="flex items-center justify-center h-11 px-3 rounded-md border border-dashed border-amber-400 bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-400 text-sm">
+                    <span>⚠️ Branch state not configured - Set state in Branch Settings</span>
+                  </div>
+                </SmartField>
+              );
+            }
             return (
               <SmartField label={label || "Caste Category"} required={isRequired}>
                 <Select 
@@ -1776,6 +1797,14 @@ const StudentAdmission = () => {
             const customFields = customFieldsRes.data.customFields || [];
             setAllFields([...systemFields, ...customFields]);
             setFormSections(customFieldsRes.data.sections || []);
+          
+          // Debug: Log student_details fields specifically (for caste_category debugging)
+          const studentDetailsFields = [...systemFields, ...customFields].filter(f => f.section_key === 'student_details');
+          console.log('[StudentAdmission] student_details section fields:', studentDetailsFields.map(f => ({
+            name: f.field_name, 
+            enabled: f.is_enabled, 
+            label: f.field_label
+          })));
           
           // Debug: Log required fields
           const requiredFields = [...systemFields, ...customFields].filter(f => f.is_required && f.is_enabled);

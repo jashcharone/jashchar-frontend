@@ -155,7 +155,7 @@ const RuleCard = ({ rule, onEdit, onDelete, onToggle }) => {
 // ADD/EDIT RULE DIALOG
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════
 
-const RuleDialog = ({ open, onClose, rule, branchId, organizationId, sessionId, onSaved }) => {
+const RuleDialog = ({ open, onClose, rule, branchId, organizationId, onSaved }) => {
     const { toast } = useToast();
     const [loading, setLoading] = useState(false);
     const [formData, setFormData] = useState({
@@ -249,7 +249,6 @@ const RuleDialog = ({ open, onClose, rule, branchId, organizationId, sessionId, 
             ...formData,
             branch_id: branchId,
             organization_id: organizationId,
-            session_id: sessionId,
         };
         
         try {
@@ -826,7 +825,6 @@ const AttendanceRules = () => {
                 rule={editingRule}
                 branchId={branchId}
                 organizationId={organizationId}
-                sessionId={currentSessionId}
                 onSaved={fetchRules}
             />
             

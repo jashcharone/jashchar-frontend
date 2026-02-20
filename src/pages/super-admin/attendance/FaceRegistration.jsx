@@ -1,10 +1,9 @@
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════
-// JASHCHAR ERP - FACE REGISTRATION
-// Capture and register faces for face recognition attendance
-// REAL AI INTEGRATION using face-api.js
+// JASHCHAR ERP - FACE REGISTRATION (ENHANCED VERSION)
+// Big School Perspective: Class/Section wise student list, Staff management, Registration tracking
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════
 
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { useBranch } from '@/contexts/BranchContext';
@@ -22,11 +21,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Progress } from '@/components/ui/progress';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Checkbox } from '@/components/ui/checkbox';
 import { motion, AnimatePresence } from 'framer-motion';
 
-// ═══════════════════════════════════════════════════════════════════════════════════════════════════
-// REAL AI FACE RECOGNITION IMPORT
-// ═══════════════════════════════════════════════════════════════════════════════════════════════════
+// Real AI Face Recognition
 import {
     loadFaceModels,
     areModelsLoaded,
@@ -35,46 +34,20 @@ import {
     descriptorToString,
     analyzeFaceQuality
 } from '@/utils/faceRecognition';
+
 import {
-    ScanFace,
-    Camera,
-    Plus,
-    Search,
-    RefreshCw,
-    Trash2,
-    Edit,
-    Eye,
-    CheckCircle2,
-    XCircle,
-    AlertTriangle,
-    Loader2,
-    Users,
-    User,
-    GraduationCap,
-    Briefcase,
-    Shield,
-    Calendar,
-    Clock,
-    Download,
-    Upload,
-    Save,
-    X,
-    Circle,
-    Aperture,
-    Maximize2,
-    RotateCcw,
-    ZoomIn,
-    Video,
-    VideoOff,
-    Image,
-    Check
+    ScanFace, Camera, Plus, Search, RefreshCw, Trash2, Edit, Eye, CheckCircle2, XCircle,
+    AlertTriangle, Loader2, Users, User, GraduationCap, Briefcase, Shield, Calendar, Clock,
+    Download, Upload, Save, X, Circle, Aperture, Maximize2, RotateCcw, ZoomIn, Video, VideoOff,
+    Image, Check, Filter, ChevronDown, FileSpreadsheet, BarChart3, Building, School,
+    UserCheck, UserX, Percent, TrendingUp, AlertCircle, CheckCheck, ListFilter
 } from 'lucide-react';
 
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════
 // CAMERA CAPTURE COMPONENT WITH REAL AI FACE DETECTION
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════
 
-const CameraCapture = ({ onCapture, onClose }) => {
+const CameraCapture = ({ onCapture, onClose, personName }) => {
     const videoRef = useRef(null);
     const canvasRef = useRef(null);
     const overlayCanvasRef = useRef(null);
@@ -92,13 +65,6 @@ const CameraCapture = ({ onCapture, onClose }) => {
     const [faceQuality, setFaceQuality] = useState(null);
     const [currentDescriptor, setCurrentDescriptor] = useState(null);
     const [isProcessing, setIsProcessing] = useState(false);
-    
-    // Face detection guide positions for optimal capture
-    const captureAngles = [
-        { id: 1, label: 'Front View', instruction: 'Look straight at the camera' },
-        { id: 2, label: 'Left Turn', instruction: 'Turn head slightly left' },
-        { id: 3, label: 'Right Turn', instruction: 'Turn head slightly right' },
-    ];
     
     // Load AI models on mount
     useEffect(() => {
@@ -150,18 +116,15 @@ const CameraCapture = ({ onCapture, onClose }) => {
                         ctx.clearRect(0, 0, canvas.width, canvas.height);
                         
                         const box = detection.detection.box;
-                        // Draw green box if quality is good, yellow if medium, red if poor
                         ctx.strokeStyle = quality.isGood ? '#00ff00' : quality.score > 0.5 ? '#ffff00' : '#ff0000';
                         ctx.lineWidth = 3;
                         
-                        // Mirror coordinates for selfie camera
                         if (facingMode === 'user') {
                             ctx.strokeRect(canvas.width - box.x - box.width, box.y, box.width, box.height);
                         } else {
                             ctx.strokeRect(box.x, box.y, box.width, box.height);
                         }
                         
-                        // Draw quality label
                         ctx.fillStyle = quality.isGood ? '#00ff00' : '#ffff00';
                         ctx.font = '16px Arial';
                         const labelX = facingMode === 'user' ? canvas.width - box.x - box.width : box.x;
@@ -172,7 +135,6 @@ const CameraCapture = ({ onCapture, onClose }) => {
                     setFaceQuality(null);
                     setCurrentDescriptor(null);
                     
-                    // Clear overlay
                     if (overlayCanvasRef.current) {
                         const ctx = overlayCanvasRef.current.getContext('2d');
                         ctx.clearRect(0, 0, overlayCanvasRef.current.width, overlayCanvasRef.current.height);
@@ -184,7 +146,7 @@ const CameraCapture = ({ onCapture, onClose }) => {
             
             if (isRunning) {
                 animationId = requestAnimationFrame(() => {
-                    setTimeout(detectFace, 100); // Run detection every 100ms
+                    setTimeout(detectFace, 100);
                 });
             }
         };
@@ -201,17 +163,10 @@ const CameraCapture = ({ onCapture, onClose }) => {
     
     const startCamera = async () => {
         try {
-            console.log('[FaceReg] Starting camera...');
             const constraints = {
-                video: {
-                    facingMode,
-                    width: { ideal: 1280 },
-                    height: { ideal: 720 },
-                },
+                video: { facingMode, width: { ideal: 1280 }, height: { ideal: 720 } },
             };
-            
             const mediaStream = await navigator.mediaDevices.getUserMedia(constraints);
-            console.log('[FaceReg] Got media stream');
             setStream(mediaStream);
             setCameraError(null);
         } catch (error) {
@@ -220,16 +175,10 @@ const CameraCapture = ({ onCapture, onClose }) => {
         }
     };
     
-    // Connect stream to video element
     useEffect(() => {
         if (stream && videoRef.current) {
-            console.log('[FaceReg] Connecting stream to video');
             videoRef.current.srcObject = stream;
-            videoRef.current.play().then(() => {
-                console.log('[FaceReg] Video playing');
-            }).catch(err => {
-                console.error('[FaceReg] Video play error:', err);
-            });
+            videoRef.current.play().catch(console.error);
         }
     }, [stream]);
     
@@ -240,38 +189,29 @@ const CameraCapture = ({ onCapture, onClose }) => {
     };
     
     const captureImage = async () => {
-        if (!videoRef.current || !canvasRef.current) return;
-        if (!faceDetected) {
-            console.warn('No face detected - cannot capture');
-            return;
-        }
+        if (!videoRef.current || !canvasRef.current || !faceDetected) return;
         
         setIsProcessing(true);
         
         const canvas = canvasRef.current;
         const video = videoRef.current;
-        
         canvas.width = video.videoWidth;
         canvas.height = video.videoHeight;
         
         const ctx = canvas.getContext('2d');
-        
-        // Mirror for selfie camera
         if (facingMode === 'user') {
             ctx.translate(canvas.width, 0);
             ctx.scale(-1, 1);
         }
-        
         ctx.drawImage(video, 0, 0);
         
-        // Get real face descriptor using AI
         const descriptor = currentDescriptor ? descriptorToString(currentDescriptor) : null;
-        
         const imageData = canvas.toDataURL('image/jpeg', 0.9);
+        
         setCapturedImages(prev => [...prev, {
             id: Date.now(),
             data: imageData,
-            angle: captureAngles[capturedImages.length]?.label || 'Extra',
+            angle: ['Front View', 'Left Turn', 'Right Turn'][capturedImages.length] || 'Extra',
             descriptor: descriptor,
             quality: faceQuality?.score || 0,
             hasRealAI: !!descriptor
@@ -284,19 +224,14 @@ const CameraCapture = ({ onCapture, onClose }) => {
         setIsCapturing(true);
         
         for (let i = 0; i < 3; i++) {
-            // Wait for face to be detected before countdown
             let waitAttempts = 0;
             while (!faceDetected && waitAttempts < 30) {
                 await new Promise(r => setTimeout(r, 200));
                 waitAttempts++;
             }
             
-            if (!faceDetected) {
-                console.warn('Face not detected, skipping capture');
-                continue;
-            }
+            if (!faceDetected) continue;
             
-            // Countdown
             for (let c = 3; c > 0; c--) {
                 setCountdown(c);
                 await new Promise(r => setTimeout(r, 1000));
@@ -320,7 +255,17 @@ const CameraCapture = ({ onCapture, onClose }) => {
     };
     
     return (
-        <div className="space-y-6">
+        <div className="space-y-4">
+            {/* Person Name Banner */}
+            {personName && (
+                <Alert className="border-primary/50 bg-primary/5">
+                    <User className="w-4 h-4" />
+                    <AlertDescription>
+                        Registering face for: <strong>{personName}</strong>
+                    </AlertDescription>
+                </Alert>
+            )}
+            
             {/* AI Model Loading State */}
             {modelsLoading && (
                 <Alert className="border-blue-500/50 bg-blue-500/5">
@@ -333,7 +278,7 @@ const CameraCapture = ({ onCapture, onClose }) => {
             
             {/* AI Status Badge */}
             {!modelsLoading && (
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-wrap">
                     <Badge variant={faceDetected ? "default" : "secondary"} className={faceDetected ? "bg-green-500" : ""}>
                         {faceDetected ? "✅ Face Detected" : "👁️ Scanning..."}
                     </Badge>
@@ -356,8 +301,7 @@ const CameraCapture = ({ onCapture, onClose }) => {
                             <VideoOff className="w-16 h-16 mx-auto text-muted-foreground mb-4" />
                             <p className="text-destructive">{cameraError}</p>
                             <Button variant="outline" className="mt-4" onClick={startCamera}>
-                                <RefreshCw className="w-4 h-4 mr-2" />
-                                Retry
+                                <RefreshCw className="w-4 h-4 mr-2" /> Retry
                             </Button>
                         </div>
                     </div>
@@ -373,21 +317,16 @@ const CameraCapture = ({ onCapture, onClose }) => {
                     <>
                         <video
                             ref={videoRef}
-                            autoPlay
-                            playsInline
-                            muted
+                            autoPlay playsInline muted
                             className="w-full h-full object-cover"
                             style={{ transform: facingMode === 'user' ? 'scaleX(-1)' : 'none' }}
                         />
-                        
-                        {/* AI Face Detection Overlay */}
                         <canvas 
                             ref={overlayCanvasRef}
                             className="absolute inset-0 w-full h-full pointer-events-none"
                             style={{ transform: facingMode === 'user' ? 'scaleX(-1)' : 'none' }}
                         />
                         
-                        {/* Face Guide Overlay (shown only when no face detected) */}
                         {!faceDetected && (
                             <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                                 <div className="w-48 h-64 border-2 border-dashed border-white/50 rounded-[50%] relative">
@@ -398,221 +337,110 @@ const CameraCapture = ({ onCapture, onClose }) => {
                             </div>
                         )}
                         
-                        {/* Quality Issues Warning */}
-                        {faceDetected && faceQuality && faceQuality.issues.length > 0 && (
-                            <div className="absolute bottom-16 left-1/2 -translate-x-1/2 bg-yellow-500/90 px-4 py-2 rounded-lg text-black text-sm max-w-xs text-center">
-                                ⚠️ {faceQuality.issues[0]}
-                            </div>
-                        )}
-                        
-                        {/* Countdown Overlay */}
                         {countdown && (
                             <div className="absolute inset-0 flex items-center justify-center bg-black/50">
-                                <motion.div
-                                    key={countdown}
-                                    initial={{ scale: 2, opacity: 0 }}
-                                    animate={{ scale: 1, opacity: 1 }}
-                                    exit={{ scale: 0, opacity: 0 }}
-                                    className="text-8xl font-bold text-white"
-                                >
-                                    {countdown}
-                                </motion.div>
-                            </div>
-                        )}
-                        
-                        {/* Current instruction */}
-                        {capturedImages.length < 3 && !isCapturing && (
-                            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-black/70 px-4 py-2 rounded-full text-white text-sm">
-                                {captureAngles[capturedImages.length]?.instruction || 'Ready to capture'}
+                                <div className="text-8xl font-bold text-white animate-pulse">{countdown}</div>
                             </div>
                         )}
                     </>
                 )}
-                
-                <canvas ref={canvasRef} className="hidden" />
             </div>
             
-            {/* Camera Controls */}
-            <div className="flex items-center justify-center gap-4">
-                <Button
-                    variant="outline"
-                    size="icon"
-                    onClick={() => setFacingMode(prev => prev === 'user' ? 'environment' : 'user')}
-                    disabled={modelsLoading}
-                >
-                    <RotateCcw className="w-4 h-4" />
-                </Button>
-                
-                <Button
-                    size="lg"
-                    className={`w-16 h-16 rounded-full ${faceDetected ? 'bg-green-500 hover:bg-green-600' : ''}`}
-                    onClick={captureImage}
-                    disabled={isCapturing || cameraError || modelsLoading || !faceDetected || isProcessing}
-                >
-                    {isProcessing ? (
-                        <Loader2 className="w-8 h-8 animate-spin" />
-                    ) : (
-                        <Aperture className="w-8 h-8" />
-                    )}
-                </Button>
-                
-                <Button
-                    variant="outline"
-                    onClick={handleAutoCapture}
-                    disabled={isCapturing || cameraError || capturedImages.length >= 3 || modelsLoading}
-                >
-                    {isCapturing ? (
-                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    ) : (
-                        <Video className="w-4 h-4 mr-2" />
-                    )}
-                    Auto Capture (3)
-                </Button>
-            </div>
+            <canvas ref={canvasRef} className="hidden" />
             
             {/* Captured Images */}
-            <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                    <Label>Captured Images ({capturedImages.length}/3 minimum)</Label>
+            {capturedImages.length > 0 && (
+                <div className="space-y-2">
+                    <Label>Captured Photos ({capturedImages.length}/3)</Label>
+                    <div className="flex gap-2">
+                        {capturedImages.map((img) => (
+                            <div key={img.id} className="relative w-24 h-24 rounded-lg overflow-hidden border-2 border-primary/20">
+                                <img src={img.data} alt={img.angle} className="w-full h-full object-cover" />
+                                <div className="absolute bottom-0 inset-x-0 bg-black/70 text-white text-xs p-1 text-center">
+                                    {Math.round(img.quality * 100)}%
+                                </div>
+                                <button
+                                    onClick={() => removeImage(img.id)}
+                                    className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-0.5"
+                                >
+                                    <X className="w-3 h-3" />
+                                </button>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
+            
+            {/* Controls */}
+            <div className="flex gap-2 justify-between">
+                <Button variant="outline" onClick={onClose}>Cancel</Button>
+                <div className="flex gap-2">
+                    {capturedImages.length < 3 && (
+                        <>
+                            <Button
+                                onClick={captureImage}
+                                disabled={!faceDetected || isProcessing || isCapturing}
+                                variant="outline"
+                            >
+                                <Camera className="w-4 h-4 mr-2" />
+                                Capture ({capturedImages.length}/3)
+                            </Button>
+                            <Button
+                                onClick={handleAutoCapture}
+                                disabled={isCapturing || modelsLoading}
+                            >
+                                {isCapturing ? (
+                                    <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Capturing...</>
+                                ) : (
+                                    <><Aperture className="w-4 h-4 mr-2" /> Auto Capture</>
+                                )}
+                            </Button>
+                        </>
+                    )}
                     {capturedImages.length > 0 && (
-                        <Button variant="ghost" size="sm" onClick={() => setCapturedImages([])}>
-                            <Trash2 className="w-4 h-4 mr-2" />
-                            Clear All
+                        <Button onClick={handleSave} className="bg-green-600 hover:bg-green-700">
+                            <CheckCircle2 className="w-4 h-4 mr-2" />
+                            Save Face Data
                         </Button>
                     )}
                 </div>
-                
-                <div className="grid grid-cols-4 gap-3">
-                    {capturedImages.map((img) => (
-                        <div key={img.id} className="relative group aspect-square rounded-lg overflow-hidden border">
-                            <img src={img.data} alt={img.angle} className="w-full h-full object-cover" />
-                            <div className="absolute bottom-0 left-0 right-0 bg-black/70 text-white text-xs p-1 text-center">
-                                {img.angle}
-                                {img.hasRealAI && <span className="ml-1">🤖</span>}
-                            </div>
-                            {/* AI Quality Badge */}
-                            <div className="absolute top-1 left-1">
-                                <Badge variant="secondary" className={`text-xs ${img.quality > 0.7 ? 'bg-green-500' : 'bg-yellow-500'}`}>
-                                    {Math.round(img.quality * 100)}%
-                                </Badge>
-                            </div>
-                            <button
-                                onClick={() => removeImage(img.id)}
-                                className="absolute top-1 right-1 w-6 h-6 rounded-full bg-red-500 text-white opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"
-                            >
-                                <X className="w-4 h-4" />
-                            </button>
-                        </div>
-                    ))}
-                    
-                    {/* Empty slots */}
-                    {Array.from({ length: Math.max(0, 3 - capturedImages.length) }).map((_, i) => (
-                        <div key={`empty-${i}`} className="aspect-square rounded-lg border-2 border-dashed border-muted-foreground/30 flex items-center justify-center">
-                            <Camera className="w-8 h-8 text-muted-foreground/30" />
-                        </div>
-                    ))}
-                </div>
-            </div>
-            
-            {/* Progress */}
-            <div className="space-y-2">
-                <div className="flex justify-between text-sm">
-                    <span>Registration Quality</span>
-                    <span>{Math.min(100, Math.round(capturedImages.length * 33))}%</span>
-                </div>
-                <Progress value={Math.min(100, capturedImages.length * 33)} />
-            </div>
-            
-            {/* Actions */}
-            <div className="flex justify-end gap-3">
-                <Button variant="outline" onClick={onClose}>
-                    Cancel
-                </Button>
-                <Button onClick={handleSave} disabled={capturedImages.length < 1}>
-                    <Save className="w-4 h-4 mr-2" />
-                    Save {capturedImages.length} Photo{capturedImages.length !== 1 ? 's' : ''}
-                </Button>
             </div>
         </div>
     );
 };
 
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════
-// REGISTRATION DIALOG
+// REGISTRATION DIALOG - Direct capture for selected person
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════
 
-const RegistrationDialog = ({ open, onClose, branchId, organizationId, sessionId, onSaved }) => {
+const QuickRegisterDialog = ({ open, onClose, person, personType, branchId, organizationId, onSaved }) => {
     const { toast } = useToast();
-    const [step, setStep] = useState(1); // 1: Select User, 2: Capture Photos, 3: Confirm
-    const [loading, setLoading] = useState(false);
-    const [searchType, setSearchType] = useState('student');
-    const [searchTerm, setSearchTerm] = useState('');
-    const [searchResults, setSearchResults] = useState([]);
-    const [selectedUser, setSelectedUser] = useState(null);
     const [capturedPhotos, setCapturedPhotos] = useState([]);
+    const [loading, setLoading] = useState(false);
+    const [showCamera, setShowCamera] = useState(true);
     
     useEffect(() => {
         if (!open) {
-            setStep(1);
-            setSearchTerm('');
-            setSearchResults([]);
-            setSelectedUser(null);
             setCapturedPhotos([]);
+            setShowCamera(true);
         }
     }, [open]);
     
-    const searchUsers = async () => {
-        if (!searchTerm || searchTerm.length < 2) return;
-        
-        setLoading(true);
-        // Use correct table names: student_profiles with full_name, employee_profiles (not staff_profiles)
-        const table = searchType === 'student' ? 'student_profiles' : 'employee_profiles';
-        
-        let query;
-        if (searchType === 'student') {
-            query = supabase
-                .from(table)
-                .select('id, full_name, admission_number, class_id, section_id, photo_url')
-                .eq('branch_id', branchId)
-                .or(`full_name.ilike.%${searchTerm}%,admission_number.ilike.%${searchTerm}%`)
-                .limit(20);
-        } else {
-            query = supabase
-                .from(table)
-                .select('id, full_name, phone, designation_id, department_id, photo_url')
-                .eq('branch_id', branchId)
-                .or(`full_name.ilike.%${searchTerm}%,phone.ilike.%${searchTerm}%`)
-                .limit(20);
-        }
-        
-        const { data, error } = await query;
-        
-        if (error) {
-            toast({ variant: 'destructive', title: 'Search failed', description: error.message });
-        } else {
-            setSearchResults(data || []);
-        }
-        
-        setLoading(false);
-    };
-    
     const handleCapture = (photos) => {
         setCapturedPhotos(photos);
-        setStep(3);
+        setShowCamera(false);
     };
     
     const handleSaveFace = async () => {
-        if (!selectedUser || capturedPhotos.length < 1) return;
+        if (!person || capturedPhotos.length < 1) return;
         
         setLoading(true);
         
         try {
-            // Get the best quality photo with real AI descriptor
             const bestPhoto = capturedPhotos
                 .filter(p => p.hasRealAI && p.descriptor)
                 .sort((a, b) => b.quality - a.quality)[0] || capturedPhotos[0];
             
-            // Parse the descriptor from string (already JSON stringified)
             let encodingVector = null;
             if (bestPhoto.descriptor) {
                 try {
@@ -621,23 +449,19 @@ const RegistrationDialog = ({ open, onClose, branchId, organizationId, sessionId
                     encodingVector = Array(128).fill(0).map(() => Math.random() * 2 - 1);
                 }
             } else {
-                // Fallback to dummy if no AI descriptor available
                 encodingVector = Array(128).fill(0).map(() => Math.random() * 2 - 1);
             }
             
-            // Calculate average quality from all photos
             const avgQuality = capturedPhotos.reduce((sum, p) => sum + (p.quality || 0), 0) / capturedPhotos.length;
             
             const payload = {
                 branch_id: branchId,
                 organization_id: organizationId,
-                // Required columns
-                user_id: selectedUser.id,
-                user_type: searchType,
-                // Additional face registration data
-                person_type: searchType,
-                person_id: selectedUser.id,
-                person_name: selectedUser.full_name,
+                user_id: person.id,
+                user_type: personType,
+                person_type: personType,
+                person_id: person.id,
+                person_name: person.full_name,
                 encoding_vector: encodingVector,
                 photo_url: bestPhoto?.data || null,
                 photo_angle: bestPhoto?.angle || 'front',
@@ -648,16 +472,13 @@ const RegistrationDialog = ({ open, onClose, branchId, organizationId, sessionId
                 is_active: true,
             };
             
-            const { error } = await supabase
-                .from('face_encodings')
-                .insert(payload);
+            const { error } = await supabase.from('face_encodings').insert(payload);
             
             if (error) throw error;
             
-            // Show success with AI status
             toast({ 
                 title: bestPhoto.hasRealAI ? '🤖 Real AI Face Registered!' : 'Face registered',
-                description: `${capturedPhotos.length} photos captured for ${selectedUser.full_name}. ${bestPhoto.hasRealAI ? 'AI encoding saved!' : 'Using fallback encoding.'}`,
+                description: `${capturedPhotos.length} photos captured for ${person.full_name}`,
             });
             
             onSaved();
@@ -676,201 +497,44 @@ const RegistrationDialog = ({ open, onClose, branchId, organizationId, sessionId
                 <DialogHeader>
                     <DialogTitle className="flex items-center gap-2">
                         <ScanFace className="w-5 h-5 text-primary" />
-                        Register Face for Attendance
+                        Register Face - {person?.full_name}
                     </DialogTitle>
                     <DialogDescription>
-                        Step {step} of 3: {
-                            step === 1 ? 'Select User' : 
-                            step === 2 ? 'Capture Photos' : 
-                            'Confirm Registration'
-                        }
+                        {personType === 'student' ? 'Student' : 'Staff'} • {person?.admission_number || person?.phone || person?.department}
                     </DialogDescription>
                 </DialogHeader>
                 
-                {/* Progress Steps */}
-                <div className="flex items-center justify-center gap-2 py-4">
-                    {[1, 2, 3].map((s) => (
-                        <React.Fragment key={s}>
-                            <div className={`w-10 h-10 rounded-full flex items-center justify-center font-semibold ${
-                                step >= s ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'
-                            }`}>
-                                {step > s ? <Check className="w-5 h-5" /> : s}
-                            </div>
-                            {s < 3 && (
-                                <div className={`w-16 h-1 ${step > s ? 'bg-primary' : 'bg-muted'}`} />
-                            )}
-                        </React.Fragment>
-                    ))}
-                </div>
-                
-                {/* Step 1: Select User */}
-                {step === 1 && (
-                    <div className="space-y-6">
-                        <Tabs value={searchType} onValueChange={setSearchType} className="w-full">
-                            <TabsList className="grid w-full grid-cols-2">
-                                <TabsTrigger value="student" className="flex items-center gap-2">
-                                    <GraduationCap className="w-4 h-4" />
-                                    Student
-                                </TabsTrigger>
-                                <TabsTrigger value="staff" className="flex items-center gap-2">
-                                    <Briefcase className="w-4 h-4" />
-                                    Staff
-                                </TabsTrigger>
-                            </TabsList>
-                        </Tabs>
-                        
-                        <div className="flex gap-2">
-                            <div className="flex-1 relative">
-                                <Input
-                                    placeholder={`Search ${searchType} by name or ID...`}
-                                    value={searchTerm}
-                                    onChange={(e) => setSearchTerm(e.target.value)}
-                                    onKeyDown={(e) => e.key === 'Enter' && searchUsers()}
-                                    className="pl-10"
-                                />
-                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                            </div>
-                            <Button onClick={searchUsers} disabled={loading}>
-                                {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Search'}
-                            </Button>
-                        </div>
-                        
-                        {/* Search Results */}
-                        <ScrollArea className="h-64 border rounded-lg">
-                            <div className="p-2 space-y-2">
-                                {searchResults.length === 0 ? (
-                                    <div className="text-center text-muted-foreground py-8">
-                                        <Search className="w-12 h-12 mx-auto mb-2 opacity-50" />
-                                        <p>Search for a {searchType} to register</p>
-                                    </div>
-                                ) : (
-                                    searchResults.map((user) => (
-                                        <div
-                                            key={user.id}
-                                            className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-colors ${
-                                                selectedUser?.id === user.id 
-                                                    ? 'bg-primary/10 border-primary border' 
-                                                    : 'hover:bg-muted border border-transparent'
-                                            }`}
-                                            onClick={() => setSelectedUser(user)}
-                                        >
-                                            <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden">
-                                                {user.photo_url ? (
-                                                    <img src={user.photo_url} className="w-full h-full object-cover" />
-                                                ) : searchType === 'student' ? (
-                                                    <GraduationCap className="w-6 h-6 text-primary" />
-                                                ) : (
-                                                    <Briefcase className="w-6 h-6 text-primary" />
-                                                )}
-                                            </div>
-                                            <div className="flex-1">
-                                                <p className="font-medium">
-                                                    {user.full_name}
-                                                </p>
-                                                <p className="text-sm text-muted-foreground">
-                                                    {searchType === 'student' ? user.admission_number : user.phone}
-                                                    {user.class_name && ` • ${user.class_name} ${user.section || ''}`}
-                                                    {user.department && ` • ${user.department}`}
-                                                </p>
-                                            </div>
-                                            {selectedUser?.id === user.id && (
-                                                <CheckCircle2 className="w-5 h-5 text-primary" />
-                                            )}
-                                        </div>
-                                    ))
-                                )}
-                            </div>
-                        </ScrollArea>
-                        
-                        {selectedUser && (
-                            <Alert className="border-primary/50 bg-primary/5">
-                                <User className="w-4 h-4" />
-                                <AlertDescription>
-                                    Selected: <strong>{selectedUser.full_name}</strong>
-                                </AlertDescription>
-                            </Alert>
-                        )}
-                        
-                        <div className="flex justify-end">
-                            <Button onClick={() => setStep(2)} disabled={!selectedUser}>
-                                Continue to Capture
-                                <Camera className="w-4 h-4 ml-2" />
-                            </Button>
-                        </div>
-                    </div>
-                )}
-                
-                {/* Step 2: Capture Photos */}
-                {step === 2 && (
+                {showCamera ? (
                     <CameraCapture 
                         onCapture={handleCapture}
-                        onClose={() => setStep(1)}
+                        onClose={onClose}
+                        personName={person?.full_name}
                     />
-                )}
-                
-                {/* Step 3: Confirm */}
-                {step === 3 && (
-                    <div className="space-y-6">
+                ) : (
+                    <div className="space-y-4">
                         <Alert className="border-green-500/50 bg-green-500/5">
                             <CheckCircle2 className="w-4 h-4 text-green-500" />
                             <AlertDescription className="text-green-700">
-                                {capturedPhotos.length} photos captured successfully
+                                {capturedPhotos.length} photos captured successfully!
                             </AlertDescription>
                         </Alert>
                         
-                        <div className="grid grid-cols-2 gap-4">
-                            {/* User Info */}
-                            <Card>
-                                <CardHeader>
-                                    <CardTitle className="text-sm">User Details</CardTitle>
-                                </CardHeader>
-                                <CardContent>
-                                    <div className="flex items-center gap-3">
-                                        <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
-                                            {searchType === 'student' 
-                                                ? <GraduationCap className="w-8 h-8 text-primary" />
-                                                : <Briefcase className="w-8 h-8 text-primary" />
-                                            }
-                                        </div>
-                                        <div>
-                                            <p className="font-semibold">
-                                                {selectedUser?.full_name}
-                                            </p>
-                                            <p className="text-sm text-muted-foreground">
-                                                {searchType === 'student' ? selectedUser?.admission_number : selectedUser?.phone}
-                                            </p>
-                                            <Badge variant="outline" className="mt-1 capitalize">{searchType}</Badge>
-                                        </div>
+                        <div className="grid grid-cols-3 gap-2">
+                            {capturedPhotos.map((photo) => (
+                                <div key={photo.id} className="relative rounded-lg overflow-hidden">
+                                    <img src={photo.data} alt={photo.angle} className="w-full aspect-square object-cover" />
+                                    <div className="absolute bottom-0 inset-x-0 bg-black/70 text-white text-xs p-1 text-center">
+                                        {photo.angle} • {Math.round(photo.quality * 100)}%
                                     </div>
-                                </CardContent>
-                            </Card>
-                            
-                            {/* Photo Preview */}
-                            <Card>
-                                <CardHeader>
-                                    <CardTitle className="text-sm">Captured Photos</CardTitle>
-                                </CardHeader>
-                                <CardContent>
-                                    <div className="grid grid-cols-3 gap-2">
-                                        {capturedPhotos.map((photo) => (
-                                            <img 
-                                                key={photo.id}
-                                                src={photo.data}
-                                                alt={photo.angle}
-                                                className="w-full aspect-square object-cover rounded-lg"
-                                            />
-                                        ))}
-                                    </div>
-                                </CardContent>
-                            </Card>
+                                </div>
+                            ))}
                         </div>
                         
                         <div className="flex justify-between">
-                            <Button variant="outline" onClick={() => setStep(2)}>
-                                <RotateCcw className="w-4 h-4 mr-2" />
-                                Retake Photos
+                            <Button variant="outline" onClick={() => { setCapturedPhotos([]); setShowCamera(true); }}>
+                                <RotateCcw className="w-4 h-4 mr-2" /> Retake
                             </Button>
-                            <Button onClick={handleSaveFace} disabled={loading}>
+                            <Button onClick={handleSaveFace} disabled={loading} className="bg-green-600 hover:bg-green-700">
                                 {loading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
                                 <CheckCircle2 className="w-4 h-4 mr-2" />
                                 Complete Registration
@@ -884,25 +548,25 @@ const RegistrationDialog = ({ open, onClose, branchId, organizationId, sessionId
 };
 
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════
-// EDIT FACE DIALOG - Re-capture face for existing registration
+// EDIT FACE DIALOG
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════
 
-const EditFaceDialog = ({ open, onClose, registration, branchId, organizationId, sessionId, onSaved }) => {
+const EditFaceDialog = ({ open, onClose, registration, branchId, organizationId, onSaved }) => {
     const { toast } = useToast();
-    const [step, setStep] = useState(1); // 1: Info, 2: Capture, 3: Confirm
-    const [loading, setLoading] = useState(false);
     const [capturedPhotos, setCapturedPhotos] = useState([]);
+    const [loading, setLoading] = useState(false);
+    const [showCamera, setShowCamera] = useState(true);
     
     useEffect(() => {
         if (!open) {
-            setStep(1);
             setCapturedPhotos([]);
+            setShowCamera(true);
         }
     }, [open]);
     
     const handleCapture = (photos) => {
         setCapturedPhotos(photos);
-        setStep(3);
+        setShowCamera(false);
     };
     
     const handleUpdateFace = async () => {
@@ -911,12 +575,10 @@ const EditFaceDialog = ({ open, onClose, registration, branchId, organizationId,
         setLoading(true);
         
         try {
-            // Get the best quality photo with real AI descriptor
             const bestPhoto = capturedPhotos
                 .filter(p => p.hasRealAI && p.descriptor)
                 .sort((a, b) => b.quality - a.quality)[0] || capturedPhotos[0];
             
-            // Parse the descriptor from string
             let encodingVector = null;
             if (bestPhoto.descriptor) {
                 try {
@@ -928,34 +590,32 @@ const EditFaceDialog = ({ open, onClose, registration, branchId, organizationId,
                 encodingVector = Array(128).fill(0).map(() => Math.random() * 2 - 1);
             }
             
-            // Calculate average quality from all photos
             const avgQuality = capturedPhotos.reduce((sum, p) => sum + (p.quality || 0), 0) / capturedPhotos.length;
-            
-            const updatePayload = {
-                encoding_vector: encodingVector,
-                photo_url: bestPhoto?.data || registration.photo_url,
-                photo_angle: bestPhoto?.angle || 'front',
-                confidence_score: Math.min(1.0, avgQuality),
-                lighting_quality: avgQuality > 0.7 ? 'good' : avgQuality > 0.5 ? 'medium' : 'poor',
-                model_name: bestPhoto.hasRealAI ? 'face-api.js' : 'fallback_random',
-                model_version: bestPhoto.hasRealAI ? '1.0' : '0.0',
-                is_active: true,
-                updated_at: new Date().toISOString(),
-            };
             
             const { error } = await supabase
                 .from('face_encodings')
-                .update(updatePayload)
+                .update({
+                    encoding_vector: encodingVector,
+                    photo_url: bestPhoto?.data || registration.photo_url,
+                    photo_angle: bestPhoto?.angle || 'front',
+                    confidence_score: Math.min(1.0, avgQuality),
+                    lighting_quality: avgQuality > 0.7 ? 'good' : avgQuality > 0.5 ? 'medium' : 'poor',
+                    model_name: bestPhoto.hasRealAI ? 'face-api.js' : 'fallback_random',
+                    model_version: bestPhoto.hasRealAI ? '1.0' : '0.0',
+                    is_active: true,
+                    updated_at: new Date().toISOString(),
+                })
                 .eq('id', registration.id);
             
             if (error) throw error;
             
             toast({ 
                 title: bestPhoto.hasRealAI ? '🤖 Face Updated with Real AI!' : '✅ Face Updated',
-                description: `${capturedPhotos.length} new photos captured for ${registration.user_name || registration.person_name}`,
+                description: `${capturedPhotos.length} new photos for ${registration.person_name}`,
             });
             
             onSaved();
+            onClose();
         } catch (error) {
             console.error('Update error:', error);
             toast({ variant: 'destructive', title: 'Update failed', description: error.message });
@@ -970,163 +630,41 @@ const EditFaceDialog = ({ open, onClose, registration, branchId, organizationId,
                 <DialogHeader>
                     <DialogTitle className="flex items-center gap-2">
                         <Edit className="w-5 h-5 text-blue-500" />
-                        Edit Face Registration - Re-capture
+                        Edit Face - {registration?.person_name}
                     </DialogTitle>
-                    <DialogDescription>
-                        Step {step} of 3: {
-                            step === 1 ? 'Review Current' : 
-                            step === 2 ? 'Capture New Photos' : 
-                            'Confirm Update'
-                        }
-                    </DialogDescription>
                 </DialogHeader>
                 
-                {/* Progress Steps */}
-                <div className="flex items-center justify-center gap-2 py-4">
-                    {[1, 2, 3].map((s) => (
-                        <React.Fragment key={s}>
-                            <div className={`w-10 h-10 rounded-full flex items-center justify-center font-semibold ${
-                                step >= s ? 'bg-blue-500 text-white' : 'bg-muted text-muted-foreground'
-                            }`}>
-                                {step > s ? <Check className="w-5 h-5" /> : s}
-                            </div>
-                            {s < 3 && (
-                                <div className={`w-16 h-1 ${step > s ? 'bg-blue-500' : 'bg-muted'}`} />
-                            )}
-                        </React.Fragment>
-                    ))}
-                </div>
-                
-                {/* Step 1: Current Info */}
-                {step === 1 && registration && (
-                    <div className="space-y-6">
-                        <Alert className="border-blue-500/50 bg-blue-500/5">
-                            <Edit className="w-4 h-4 text-blue-500" />
-                            <AlertDescription>
-                                You are editing face registration for <strong>{registration.user_name || registration.person_name}</strong>. 
-                                New photos will replace the existing face data.
-                            </AlertDescription>
-                        </Alert>
-                        
-                        <Card>
-                            <CardHeader>
-                                <CardTitle className="text-sm">Current Registration</CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                                <div className="flex items-center gap-4">
-                                    <div className="w-20 h-20 rounded-full bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center overflow-hidden border-2 border-primary/20">
-                                        {registration.photo_url ? (
-                                            <img src={registration.photo_url} className="w-full h-full object-cover" alt="" />
-                                        ) : (
-                                            <ScanFace className="w-10 h-10 text-primary" />
-                                        )}
-                                    </div>
-                                    <div className="flex-1">
-                                        <h3 className="font-semibold text-lg">{registration.user_name || registration.person_name}</h3>
-                                        <p className="text-muted-foreground">{registration.user_code}</p>
-                                        <div className="flex items-center gap-2 mt-2">
-                                            <Badge variant="outline" className="capitalize">
-                                                {registration.person_type === 'student' 
-                                                    ? <GraduationCap className="w-3 h-3 mr-1" />
-                                                    : <Briefcase className="w-3 h-3 mr-1" />
-                                                }
-                                                {registration.person_type}
-                                            </Badge>
-                                            <Badge variant={registration.is_active ? 'default' : 'secondary'}>
-                                                {registration.is_active ? 'Active' : 'Inactive'}
-                                            </Badge>
-                                            <span className="text-xs text-muted-foreground">
-                                                Quality: {Math.round((registration.confidence_score || 0) * 100)}%
-                                            </span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </CardContent>
-                        </Card>
-                        
-                        <div className="flex justify-end gap-3">
-                            <Button variant="outline" onClick={onClose}>
-                                Cancel
-                            </Button>
-                            <Button onClick={() => setStep(2)}>
-                                <Camera className="w-4 h-4 mr-2" />
-                                Capture New Photos
-                            </Button>
-                        </div>
-                    </div>
-                )}
-                
-                {/* Step 2: Capture Photos */}
-                {step === 2 && (
+                {showCamera ? (
                     <CameraCapture 
                         onCapture={handleCapture}
-                        onClose={() => setStep(1)}
+                        onClose={onClose}
+                        personName={registration?.person_name}
                     />
-                )}
-                
-                {/* Step 3: Confirm */}
-                {step === 3 && (
-                    <div className="space-y-6">
+                ) : (
+                    <div className="space-y-4">
                         <Alert className="border-green-500/50 bg-green-500/5">
                             <CheckCircle2 className="w-4 h-4 text-green-500" />
                             <AlertDescription className="text-green-700">
-                                {capturedPhotos.length} new photos captured successfully
+                                {capturedPhotos.length} new photos captured!
                             </AlertDescription>
                         </Alert>
                         
-                        <div className="grid grid-cols-2 gap-4">
-                            {/* User Info */}
-                            <Card>
-                                <CardHeader>
-                                    <CardTitle className="text-sm">User Details</CardTitle>
-                                </CardHeader>
-                                <CardContent>
-                                    <div className="flex items-center gap-3">
-                                        <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
-                                            {registration.person_type === 'student' 
-                                                ? <GraduationCap className="w-8 h-8 text-primary" />
-                                                : <Briefcase className="w-8 h-8 text-primary" />
-                                            }
-                                        </div>
-                                        <div>
-                                            <p className="font-semibold">
-                                                {registration.user_name || registration.person_name}
-                                            </p>
-                                            <p className="text-sm text-muted-foreground">
-                                                {registration.user_code}
-                                            </p>
-                                            <Badge variant="outline" className="mt-1 capitalize">{registration.person_type}</Badge>
-                                        </div>
+                        <div className="grid grid-cols-3 gap-2">
+                            {capturedPhotos.map((photo) => (
+                                <div key={photo.id} className="relative rounded-lg overflow-hidden">
+                                    <img src={photo.data} alt={photo.angle} className="w-full aspect-square object-cover" />
+                                    <div className="absolute bottom-0 inset-x-0 bg-black/70 text-white text-xs p-1 text-center">
+                                        {Math.round(photo.quality * 100)}%
                                     </div>
-                                </CardContent>
-                            </Card>
-                            
-                            {/* Photo Preview */}
-                            <Card>
-                                <CardHeader>
-                                    <CardTitle className="text-sm">New Captured Photos</CardTitle>
-                                </CardHeader>
-                                <CardContent>
-                                    <div className="grid grid-cols-3 gap-2">
-                                        {capturedPhotos.map((photo) => (
-                                            <img 
-                                                key={photo.id}
-                                                src={photo.data}
-                                                alt={photo.angle}
-                                                className="w-full aspect-square object-cover rounded-lg"
-                                            />
-                                        ))}
-                                    </div>
-                                </CardContent>
-                            </Card>
+                                </div>
+                            ))}
                         </div>
                         
                         <div className="flex justify-between">
-                            <Button variant="outline" onClick={() => setStep(2)}>
-                                <RotateCcw className="w-4 h-4 mr-2" />
-                                Retake Photos
+                            <Button variant="outline" onClick={() => { setCapturedPhotos([]); setShowCamera(true); }}>
+                                <RotateCcw className="w-4 h-4 mr-2" /> Retake
                             </Button>
-                            <Button onClick={handleUpdateFace} disabled={loading} className="bg-blue-500 hover:bg-blue-600">
+                            <Button onClick={handleUpdateFace} disabled={loading} className="bg-blue-600 hover:bg-blue-700">
                                 {loading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
                                 <CheckCircle2 className="w-4 h-4 mr-2" />
                                 Update Face Data
@@ -1140,7 +678,7 @@ const EditFaceDialog = ({ open, onClose, registration, branchId, organizationId,
 };
 
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════
-// MAIN FACE REGISTRATION COMPONENT
+// MAIN FACE REGISTRATION COMPONENT - ENHANCED VERSION
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════
 
 const FaceRegistration = () => {
@@ -1151,19 +689,34 @@ const FaceRegistration = () => {
     
     const branchId = selectedBranch?.id || user?.profile?.branch_id;
     
-    // State
+    // Tab state
+    const [activeTab, setActiveTab] = useState('students');
+    
+    // Class/Section state for students
+    const [classes, setClasses] = useState([]);
+    const [sections, setSections] = useState([]);
+    const [selectedClass, setSelectedClass] = useState('all');
+    const [selectedSection, setSelectedSection] = useState('all');
+    
+    // Staff state
+    const [departments, setDepartments] = useState([]);
+    const [selectedDepartment, setSelectedDepartment] = useState('all');
+    
+    // Data state
+    const [students, setStudents] = useState([]);
+    const [staff, setStaff] = useState([]);
+    const [faceRegistrations, setFaceRegistrations] = useState({});
     const [loading, setLoading] = useState(true);
-    const [registrations, setRegistrations] = useState([]);
+    
+    // Filter state
     const [searchTerm, setSearchTerm] = useState('');
-    const [filterType, setFilterType] = useState('all');
+    const [filterStatus, setFilterStatus] = useState('all'); // all, registered, pending
     
     // Dialog state
     const [registerDialogOpen, setRegisterDialogOpen] = useState(false);
     const [editDialogOpen, setEditDialogOpen] = useState(false);
+    const [selectedPerson, setSelectedPerson] = useState(null);
     const [editingRegistration, setEditingRegistration] = useState(null);
-    const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-    const [deletingRegistration, setDeletingRegistration] = useState(null);
-    const [deleteLoading, setDeleteLoading] = useState(false);
     
     // Permissions
     const hasViewPermission = canView('attendance.face_registration') || canView('attendance');
@@ -1171,163 +724,294 @@ const FaceRegistration = () => {
     const hasEditPermission = canEdit('attendance.face_registration') || canEdit('attendance');
     const hasDeletePermission = canDelete('attendance.face_registration') || canDelete('attendance');
     
-    // Fetch registrations
+    // ═══════════════════════════════════════════════════════════════════════════════════════════════
+    // DATA FETCHING
+    // ═══════════════════════════════════════════════════════════════════════════════════════════════
+    
     useEffect(() => {
         if (branchId) {
-            fetchRegistrations();
+            fetchInitialData();
         }
-    }, [branchId]);
+    }, [branchId, currentSessionId]);
     
-    const fetchRegistrations = async () => {
+    useEffect(() => {
+        if (branchId && selectedClass !== 'all') {
+            fetchSections(selectedClass);
+        } else {
+            setSections([]);
+            setSelectedSection('all');
+        }
+    }, [selectedClass, branchId]);
+    
+    useEffect(() => {
+        if (branchId) {
+            if (activeTab === 'students') {
+                fetchStudents();
+            } else {
+                fetchStaff();
+            }
+        }
+    }, [branchId, currentSessionId, selectedClass, selectedSection, selectedDepartment, activeTab]);
+    
+    const fetchInitialData = async () => {
         setLoading(true);
         
-        // Fetch face_encodings without FK joins (they don't exist)
-        const { data, error } = await supabase
+        // Fetch classes
+        const { data: classData } = await supabase
+            .from('classes')
+            .select('id, name')
+            .eq('branch_id', branchId)
+            .order('name', { ascending: true });
+        
+        setClasses((classData || []).map(c => ({ ...c, class_name: c.name })));
+        
+        // Fetch departments for staff
+        const { data: deptData } = await supabase
+            .from('departments')
+            .select('id, name')
+            .eq('branch_id', branchId);
+        
+        setDepartments((deptData || []).map(d => ({ id: d.id, name: d.name })));
+        
+        // Fetch all face registrations for this branch
+        await fetchFaceRegistrations();
+        
+        setLoading(false);
+    };
+    
+    const fetchSections = async (classId) => {
+        // Sections are linked via class_sections junction table
+        const { data } = await supabase
+            .from('class_sections')
+            .select('section_id, sections(id, name)')
+            .eq('class_id', classId);
+        
+        const sectionsList = (data || [])
+            .filter(d => d.sections)
+            .map(d => ({ id: d.sections.id, section_name: d.sections.name }));
+        setSections(sectionsList);
+    };
+    
+    const fetchFaceRegistrations = async () => {
+        const { data } = await supabase
             .from('face_encodings')
             .select('*')
+            .eq('branch_id', branchId);
+        
+        // Create a map by person_id for quick lookup
+        const regMap = {};
+        (data || []).forEach(reg => {
+            regMap[reg.person_id] = reg;
+        });
+        setFaceRegistrations(regMap);
+    };
+    
+    const fetchStudents = async () => {
+        setLoading(true);
+        
+        let query = supabase
+            .from('student_profiles')
+            .select(`
+                id, full_name, admission_number, photo_url, class_id, section_id
+            `)
             .eq('branch_id', branchId)
-            .order('id', { ascending: false });
+            .eq('is_disabled', false)
+            .order('full_name');
+        
+        // Filter by class
+        if (selectedClass !== 'all') {
+            query = query.eq('class_id', selectedClass);
+            if (selectedSection !== 'all') {
+                query = query.eq('section_id', selectedSection);
+            }
+        }
+        
+        const { data, error } = await query;
         
         if (error) {
-            toast({ variant: 'destructive', title: 'Error fetching data', description: error.message });
+            toast({ variant: 'destructive', title: 'Error', description: error.message });
         } else {
-            // Fetch user details for each registration
-            const processedData = await Promise.all((data || []).map(async (reg) => {
-                let userName = 'Unknown';
-                let userCode = '';
-                let userDetail = '';
-                let photoUrl = null;
-                
-                // Use person_name from record if available
-                if (reg.person_name) {
-                    userName = reg.person_name;
-                }
-                
-                if (reg.person_id) {
-                    if (reg.person_type === 'student') {
-                        const { data: student } = await supabase
-                            .from('student_profiles')
-                            .select('full_name, admission_number, photo_url')
-                            .eq('id', reg.person_id)
-                            .single();
-                        if (student) {
-                            userName = student.full_name;
-                            userCode = student.admission_number || '';
-                            photoUrl = student.photo_url;
-                        }
-                    } else {
-                        const { data: staff } = await supabase
-                            .from('employee_profiles')
-                            .select('full_name, phone, photo_url')
-                            .eq('id', reg.person_id)
-                            .single();
-                        if (staff) {
-                            userName = staff.full_name;
-                            userCode = staff.phone || '';
-                            photoUrl = staff.photo_url;
-                        }
-                    }
-                }
-                
-                return {
-                    ...reg,
-                    user_name: userName,
-                    user_code: userCode,
-                    user_detail: userDetail,
-                    photo_url: photoUrl,
-                };
+            // Get class and section names separately
+            const classIds = [...new Set((data || []).map(s => s.class_id).filter(Boolean))];
+            const sectionIds = [...new Set((data || []).map(s => s.section_id).filter(Boolean))];
+            
+            let classMap = {};
+            let sectionMap = {};
+            
+            if (classIds.length > 0) {
+                const { data: classData } = await supabase
+                    .from('classes')
+                    .select('id, name')
+                    .in('id', classIds);
+                (classData || []).forEach(c => { classMap[c.id] = c.name; });
+            }
+            
+            if (sectionIds.length > 0) {
+                const { data: sectionData } = await supabase
+                    .from('sections')
+                    .select('id, name')
+                    .in('id', sectionIds);
+                (sectionData || []).forEach(s => { sectionMap[s.id] = s.name; });
+            }
+            
+            const enrichedData = (data || []).map(student => ({
+                ...student,
+                classes: { class_name: classMap[student.class_id] || '' },
+                sections: { section_name: sectionMap[student.section_id] || '' },
             }));
-            setRegistrations(processedData);
+            setStudents(enrichedData);
         }
         
         setLoading(false);
     };
     
-    // Filter
-    const filteredRegistrations = registrations.filter(reg => {
-        const matchesSearch = !searchTerm || 
-            reg.user_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            reg.user_code?.toLowerCase().includes(searchTerm.toLowerCase());
+    const fetchStaff = async () => {
+        setLoading(true);
         
-        const matchesType = filterType === 'all' || reg.person_type === filterType;
+        let query = supabase
+            .from('employee_profiles')
+            .select('id, full_name, phone, department_id, designation_id, photo_url')
+            .eq('branch_id', branchId)
+            .eq('is_disabled', false);
         
-        return matchesSearch && matchesType;
-    });
-    
-    // Stats
-    const stats = {
-        total: registrations.length,
-        students: registrations.filter(r => r.person_type === 'student').length,
-        staff: registrations.filter(r => r.person_type === 'staff').length,
-        active: registrations.filter(r => r.is_active).length,
-    };
-    
-    const handleDeactivate = async (id) => {
-        const { error } = await supabase
-            .from('face_encodings')
-            .update({ is_active: false })
-            .eq('id', id);
+        if (selectedDepartment !== 'all') {
+            query = query.eq('department_id', selectedDepartment);
+        }
+        
+        const { data, error } = await query;
         
         if (error) {
             toast({ variant: 'destructive', title: 'Error', description: error.message });
         } else {
-            toast({ title: 'Face registration deactivated' });
-            fetchRegistrations();
+            // Get department names
+            const deptIds = [...new Set((data || []).map(s => s.department_id).filter(Boolean))];
+            let deptMap = {};
+            
+            if (deptIds.length > 0) {
+                const { data: deptData } = await supabase
+                    .from('departments')
+                    .select('id, name')
+                    .in('id', deptIds);
+                (deptData || []).forEach(d => { deptMap[d.id] = d.name; });
+            }
+            
+            const enrichedData = (data || []).map(emp => ({
+                ...emp,
+                department: deptMap[emp.department_id] || '',
+            }));
+            setStaff(enrichedData);
+        }
+        
+        setLoading(false);
+    };
+    
+    // ═══════════════════════════════════════════════════════════════════════════════════════════════
+    // COMPUTED VALUES
+    // ═══════════════════════════════════════════════════════════════════════════════════════════════
+    
+    const filteredStudents = useMemo(() => {
+        return students.filter(s => {
+            const matchesSearch = !searchTerm || 
+                s.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                s.admission_number?.toLowerCase().includes(searchTerm.toLowerCase());
+            
+            const isRegistered = !!faceRegistrations[s.id];
+            const matchesStatus = filterStatus === 'all' || 
+                (filterStatus === 'registered' && isRegistered) ||
+                (filterStatus === 'pending' && !isRegistered);
+            
+            return matchesSearch && matchesStatus;
+        });
+    }, [students, searchTerm, filterStatus, faceRegistrations]);
+    
+    const filteredStaff = useMemo(() => {
+        return staff.filter(s => {
+            const matchesSearch = !searchTerm || 
+                s.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                s.phone?.toLowerCase().includes(searchTerm.toLowerCase());
+            
+            const isRegistered = !!faceRegistrations[s.id];
+            const matchesStatus = filterStatus === 'all' || 
+                (filterStatus === 'registered' && isRegistered) ||
+                (filterStatus === 'pending' && !isRegistered);
+            
+            return matchesSearch && matchesStatus;
+        });
+    }, [staff, searchTerm, filterStatus, faceRegistrations]);
+    
+    const stats = useMemo(() => {
+        const totalStudents = students.length;
+        const registeredStudents = students.filter(s => faceRegistrations[s.id]).length;
+        const totalStaff = staff.length;
+        const registeredStaff = staff.filter(s => faceRegistrations[s.id]).length;
+        
+        return {
+            totalStudents,
+            registeredStudents,
+            pendingStudents: totalStudents - registeredStudents,
+            studentPercent: totalStudents > 0 ? Math.round((registeredStudents / totalStudents) * 100) : 0,
+            totalStaff,
+            registeredStaff,
+            pendingStaff: totalStaff - registeredStaff,
+            staffPercent: totalStaff > 0 ? Math.round((registeredStaff / totalStaff) * 100) : 0,
+        };
+    }, [students, staff, faceRegistrations]);
+    
+    // ═══════════════════════════════════════════════════════════════════════════════════════════════
+    // HANDLERS
+    // ═══════════════════════════════════════════════════════════════════════════════════════════════
+    
+    const handleRegisterClick = (person, type) => {
+        setSelectedPerson({ ...person, personType: type });
+        setRegisterDialogOpen(true);
+    };
+    
+    const handleEditClick = (person, type) => {
+        const registration = faceRegistrations[person.id];
+        if (registration) {
+            setEditingRegistration(registration);
+            setEditDialogOpen(true);
         }
     };
     
-    const handleActivate = async (id) => {
-        const { error } = await supabase
-            .from('face_encodings')
-            .update({ is_active: true })
-            .eq('id', id);
+    const handleDeleteFace = async (personId) => {
+        const registration = faceRegistrations[personId];
+        if (!registration) return;
         
-        if (error) {
-            toast({ variant: 'destructive', title: 'Error', description: error.message });
-        } else {
-            toast({ title: '✅ Face registration activated!' });
-            fetchRegistrations();
-        }
-    };
-
-    // Handle Delete
-    const handleDeleteClick = (reg) => {
-        setDeletingRegistration(reg);
-        setDeleteDialogOpen(true);
-    };
-
-    const handleDeleteConfirm = async () => {
-        if (!deletingRegistration) return;
+        const confirmed = window.confirm('Are you sure you want to delete this face registration?');
+        if (!confirmed) return;
         
-        setDeleteLoading(true);
         const { error } = await supabase
             .from('face_encodings')
             .delete()
-            .eq('id', deletingRegistration.id);
-        
-        setDeleteLoading(false);
+            .eq('id', registration.id);
         
         if (error) {
-            toast({ variant: 'destructive', title: 'Delete Failed', description: error.message });
+            toast({ variant: 'destructive', title: 'Delete failed', description: error.message });
         } else {
-            toast({ title: '✅ Face registration deleted successfully!' });
-            fetchRegistrations();
+            toast({ title: '✅ Face registration deleted' });
+            fetchFaceRegistrations();
         }
-        
-        setDeleteDialogOpen(false);
-        setDeletingRegistration(null);
     };
-
-    // Handle Edit (re-capture face)
-    const handleEditClick = (reg) => {
-        setEditingRegistration(reg);
-        setEditDialogOpen(true);
+    
+    const handleRefresh = async () => {
+        await fetchFaceRegistrations();
+        if (activeTab === 'students') {
+            await fetchStudents();
+        } else {
+            await fetchStaff();
+        }
     };
-
-    const handleEditClose = () => {
-        setEditDialogOpen(false);
-        setEditingRegistration(null);
+    
+    const getQualityColor = (score) => {
+        if (score >= 0.7) return 'text-green-600 bg-green-50 border-green-200';
+        if (score >= 0.5) return 'text-yellow-600 bg-yellow-50 border-yellow-200';
+        return 'text-red-600 bg-red-50 border-red-200';
     };
+    
+    // ═══════════════════════════════════════════════════════════════════════════════════════════════
+    // RENDER
+    // ═══════════════════════════════════════════════════════════════════════════════════════════════
     
     return (
         <DashboardLayout>
@@ -1343,327 +1027,407 @@ const FaceRegistration = () => {
                     </p>
                 </div>
                 <div className="flex items-center gap-2">
-                    <Button variant="outline" onClick={fetchRegistrations}>
-                        <RefreshCw className="w-4 h-4 mr-2" />
-                        Refresh
+                    <Button variant="outline" onClick={handleRefresh}>
+                        <RefreshCw className="w-4 h-4 mr-2" /> Refresh
                     </Button>
-                    {hasAddPermission && (
-                        <Button onClick={() => setRegisterDialogOpen(true)}>
-                            <Plus className="w-4 h-4 mr-2" />
-                            Register Face
-                        </Button>
-                    )}
                 </div>
             </div>
             
-            {/* Stats */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+            {/* Stats Dashboard */}
+            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4 mb-6">
                 <Card>
-                    <CardContent className="pt-6">
-                        <div className="flex items-center gap-4">
-                            <div className="p-3 rounded-xl bg-primary/10">
-                                <ScanFace className="h-6 w-6 text-primary" />
+                    <CardContent className="pt-4 pb-4">
+                        <div className="flex items-center gap-3">
+                            <div className="p-2 rounded-lg bg-blue-500/10">
+                                <GraduationCap className="h-5 w-5 text-blue-500" />
                             </div>
                             <div>
-                                <p className="text-2xl font-bold">{stats.total}</p>
-                                <p className="text-sm text-muted-foreground">Total Registered</p>
+                                <p className="text-2xl font-bold">{stats.totalStudents}</p>
+                                <p className="text-xs text-muted-foreground">Total Students</p>
+                            </div>
+                        </div>
+                    </CardContent>
+                </Card>
+                <Card className="bg-green-50/50 dark:bg-green-950/20">
+                    <CardContent className="pt-4 pb-4">
+                        <div className="flex items-center gap-3">
+                            <div className="p-2 rounded-lg bg-green-500/10">
+                                <UserCheck className="h-5 w-5 text-green-500" />
+                            </div>
+                            <div>
+                                <p className="text-2xl font-bold text-green-600">{stats.registeredStudents}</p>
+                                <p className="text-xs text-muted-foreground">Registered</p>
+                            </div>
+                        </div>
+                    </CardContent>
+                </Card>
+                <Card className="bg-orange-50/50 dark:bg-orange-950/20">
+                    <CardContent className="pt-4 pb-4">
+                        <div className="flex items-center gap-3">
+                            <div className="p-2 rounded-lg bg-orange-500/10">
+                                <UserX className="h-5 w-5 text-orange-500" />
+                            </div>
+                            <div>
+                                <p className="text-2xl font-bold text-orange-600">{stats.pendingStudents}</p>
+                                <p className="text-xs text-muted-foreground">Pending</p>
                             </div>
                         </div>
                     </CardContent>
                 </Card>
                 <Card>
-                    <CardContent className="pt-6">
-                        <div className="flex items-center gap-4">
-                            <div className="p-3 rounded-xl bg-blue-500/10">
-                                <GraduationCap className="h-6 w-6 text-blue-500" />
+                    <CardContent className="pt-4 pb-4">
+                        <div className="flex items-center gap-3">
+                            <div className="p-2 rounded-lg bg-amber-500/10">
+                                <Briefcase className="h-5 w-5 text-amber-500" />
                             </div>
                             <div>
-                                <p className="text-2xl font-bold">{stats.students}</p>
-                                <p className="text-sm text-muted-foreground">Students</p>
+                                <p className="text-2xl font-bold">{stats.totalStaff}</p>
+                                <p className="text-xs text-muted-foreground">Total Staff</p>
+                            </div>
+                        </div>
+                    </CardContent>
+                </Card>
+                <Card className="bg-green-50/50 dark:bg-green-950/20">
+                    <CardContent className="pt-4 pb-4">
+                        <div className="flex items-center gap-3">
+                            <div className="p-2 rounded-lg bg-green-500/10">
+                                <UserCheck className="h-5 w-5 text-green-500" />
+                            </div>
+                            <div>
+                                <p className="text-2xl font-bold text-green-600">{stats.registeredStaff}</p>
+                                <p className="text-xs text-muted-foreground">Staff Reg.</p>
                             </div>
                         </div>
                     </CardContent>
                 </Card>
                 <Card>
-                    <CardContent className="pt-6">
-                        <div className="flex items-center gap-4">
-                            <div className="p-3 rounded-xl bg-amber-500/10">
-                                <Briefcase className="h-6 w-6 text-amber-500" />
+                    <CardContent className="pt-4 pb-4">
+                        <div className="flex items-center gap-3">
+                            <div className="p-2 rounded-lg bg-purple-500/10">
+                                <TrendingUp className="h-5 w-5 text-purple-500" />
                             </div>
                             <div>
-                                <p className="text-2xl font-bold">{stats.staff}</p>
-                                <p className="text-sm text-muted-foreground">Staff</p>
-                            </div>
-                        </div>
-                    </CardContent>
-                </Card>
-                <Card>
-                    <CardContent className="pt-6">
-                        <div className="flex items-center gap-4">
-                            <div className="p-3 rounded-xl bg-green-500/10">
-                                <CheckCircle2 className="h-6 w-6 text-green-500" />
-                            </div>
-                            <div>
-                                <p className="text-2xl font-bold">{stats.active}</p>
-                                <p className="text-sm text-muted-foreground">Active</p>
+                                <p className="text-2xl font-bold">{stats.studentPercent}%</p>
+                                <p className="text-xs text-muted-foreground">Students Done</p>
                             </div>
                         </div>
                     </CardContent>
                 </Card>
             </div>
             
-            {/* Filters */}
-            <Card className="mb-6">
-                <CardContent className="pt-6">
-                    <div className="flex flex-wrap items-center gap-4">
-                        <div className="flex-1 min-w-[200px] relative">
-                            <Input
-                                placeholder="Search by name or ID..."
-                                value={searchTerm}
-                                onChange={(e) => setSearchTerm(e.target.value)}
-                                className="pl-10"
-                            />
-                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            {/* Progress Bars */}
+            <div className="grid md:grid-cols-2 gap-4 mb-6">
+                <Card>
+                    <CardContent className="pt-4">
+                        <div className="flex items-center justify-between mb-2">
+                            <span className="text-sm font-medium flex items-center gap-2">
+                                <GraduationCap className="w-4 h-4" /> Student Registration Progress
+                            </span>
+                            <span className="text-sm text-muted-foreground">{stats.registeredStudents}/{stats.totalStudents}</span>
                         </div>
-                        <Select value={filterType} onValueChange={setFilterType}>
-                            <SelectTrigger className="w-[140px]">
-                                <SelectValue placeholder="User Type" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="all">All Users</SelectItem>
-                                <SelectItem value="student">Students</SelectItem>
-                                <SelectItem value="staff">Staff</SelectItem>
-                            </SelectContent>
-                        </Select>
+                        <Progress value={stats.studentPercent} className="h-2" />
+                    </CardContent>
+                </Card>
+                <Card>
+                    <CardContent className="pt-4">
+                        <div className="flex items-center justify-between mb-2">
+                            <span className="text-sm font-medium flex items-center gap-2">
+                                <Briefcase className="w-4 h-4" /> Staff Registration Progress
+                            </span>
+                            <span className="text-sm text-muted-foreground">{stats.registeredStaff}/{stats.totalStaff}</span>
+                        </div>
+                        <Progress value={stats.staffPercent} className="h-2" />
+                    </CardContent>
+                </Card>
+            </div>
+            
+            {/* Main Content */}
+            <Card>
+                <CardHeader className="pb-4">
+                    <Tabs value={activeTab} onValueChange={setActiveTab}>
+                        <TabsList className="grid w-full max-w-md grid-cols-2">
+                            <TabsTrigger value="students" className="flex items-center gap-2">
+                                <GraduationCap className="w-4 h-4" /> Students
+                                <Badge variant="secondary" className="ml-1">{students.length}</Badge>
+                            </TabsTrigger>
+                            <TabsTrigger value="staff" className="flex items-center gap-2">
+                                <Briefcase className="w-4 h-4" /> Staff
+                                <Badge variant="secondary" className="ml-1">{staff.length}</Badge>
+                            </TabsTrigger>
+                        </TabsList>
+                    </Tabs>
+                </CardHeader>
+                
+                <CardContent>
+                    {/* Filters */}
+                    <div className="flex flex-wrap items-center gap-3 mb-4 p-4 bg-muted/30 rounded-lg">
+                        {activeTab === 'students' ? (
+                            <>
+                                <div className="flex-1 min-w-[150px] max-w-[200px]">
+                                    <Label className="text-xs mb-1 block">Class</Label>
+                                    <Select value={selectedClass} onValueChange={setSelectedClass}>
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="Select Class" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="all">All Classes</SelectItem>
+                                            {classes.map(c => (
+                                                <SelectItem key={c.id} value={c.id}>{c.class_name}</SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                                <div className="flex-1 min-w-[150px] max-w-[200px]">
+                                    <Label className="text-xs mb-1 block">Section</Label>
+                                    <Select 
+                                        value={selectedSection} 
+                                        onValueChange={setSelectedSection}
+                                        disabled={selectedClass === 'all'}
+                                    >
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="Select Section" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="all">All Sections</SelectItem>
+                                            {sections.map(s => (
+                                                <SelectItem key={s.id} value={s.id}>{s.section_name}</SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                            </>
+                        ) : (
+                            <div className="flex-1 min-w-[150px] max-w-[200px]">
+                                <Label className="text-xs mb-1 block">Department</Label>
+                                <Select value={selectedDepartment} onValueChange={setSelectedDepartment}>
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Select Department" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="all">All Departments</SelectItem>
+                                        {departments.map(d => (
+                                            <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                        )}
+                        
+                        <div className="flex-1 min-w-[150px] max-w-[200px]">
+                            <Label className="text-xs mb-1 block">Status</Label>
+                            <Select value={filterStatus} onValueChange={setFilterStatus}>
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Filter Status" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="all">All Status</SelectItem>
+                                    <SelectItem value="registered">✅ Registered</SelectItem>
+                                    <SelectItem value="pending">⏳ Pending</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+                        
+                        <div className="flex-1 min-w-[200px]">
+                            <Label className="text-xs mb-1 block">Search</Label>
+                            <div className="relative">
+                                <Input
+                                    placeholder={`Search ${activeTab}...`}
+                                    value={searchTerm}
+                                    onChange={(e) => setSearchTerm(e.target.value)}
+                                    className="pl-9"
+                                />
+                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                            </div>
+                        </div>
                     </div>
+                    
+                    {/* Data Table */}
+                    {loading ? (
+                        <div className="flex items-center justify-center py-20">
+                            <Loader2 className="w-8 h-8 animate-spin text-primary" />
+                        </div>
+                    ) : (
+                        <div className="border rounded-lg overflow-hidden">
+                            <Table>
+                                <TableHeader>
+                                    <TableRow className="bg-muted/50">
+                                        <TableHead className="w-12">#</TableHead>
+                                        <TableHead>Photo</TableHead>
+                                        <TableHead>Name</TableHead>
+                                        <TableHead>{activeTab === 'students' ? 'Adm No' : 'Phone'}</TableHead>
+                                        {activeTab === 'students' && <TableHead>Class</TableHead>}
+                                        {activeTab === 'staff' && <TableHead>Dept</TableHead>}
+                                        <TableHead className="text-center">Status</TableHead>
+                                        <TableHead className="text-center">Quality</TableHead>
+                                        <TableHead className="text-right">Actions</TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    {(activeTab === 'students' ? filteredStudents : filteredStaff).map((person, index) => {
+                                        const registration = faceRegistrations[person.id];
+                                        const isRegistered = !!registration;
+                                        const quality = registration?.confidence_score || 0;
+                                        
+                                        return (
+                                            <TableRow key={person.id} className={!isRegistered ? 'bg-orange-50/30 dark:bg-orange-950/10' : ''}>
+                                                <TableCell className="font-medium text-muted-foreground">{index + 1}</TableCell>
+                                                <TableCell>
+                                                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center overflow-hidden border">
+                                                        {registration?.photo_url ? (
+                                                            <img src={registration.photo_url} className="w-full h-full object-cover" alt="" />
+                                                        ) : person.photo_url ? (
+                                                            <img src={person.photo_url} className="w-full h-full object-cover" alt="" />
+                                                        ) : activeTab === 'students' ? (
+                                                            <GraduationCap className="w-5 h-5 text-primary/50" />
+                                                        ) : (
+                                                            <Briefcase className="w-5 h-5 text-primary/50" />
+                                                        )}
+                                                    </div>
+                                                </TableCell>
+                                                <TableCell className="font-medium">{person.full_name}</TableCell>
+                                                <TableCell className="text-muted-foreground">
+                                                    {activeTab === 'students' ? person.admission_number : person.phone}
+                                                </TableCell>
+                                                {activeTab === 'students' && (
+                                                    <TableCell>
+                                                        <span className="text-sm">
+                                                            {person.classes?.class_name || '-'} {person.sections?.section_name || ''}
+                                                        </span>
+                                                    </TableCell>
+                                                )}
+                                                {activeTab === 'staff' && (
+                                                    <TableCell>
+                                                        <span className="text-sm">{person.department || '-'}</span>
+                                                    </TableCell>
+                                                )}
+                                                <TableCell className="text-center">
+                                                    {isRegistered ? (
+                                                        <Badge className="bg-green-500">
+                                                            <CheckCircle2 className="w-3 h-3 mr-1" /> Registered
+                                                        </Badge>
+                                                    ) : (
+                                                        <Badge variant="outline" className="text-orange-600 border-orange-300">
+                                                            <AlertCircle className="w-3 h-3 mr-1" /> Pending
+                                                        </Badge>
+                                                    )}
+                                                </TableCell>
+                                                <TableCell className="text-center">
+                                                    {isRegistered ? (
+                                                        <Badge variant="outline" className={getQualityColor(quality)}>
+                                                            {Math.round(quality * 100)}%
+                                                        </Badge>
+                                                    ) : (
+                                                        <span className="text-muted-foreground">-</span>
+                                                    )}
+                                                </TableCell>
+                                                <TableCell className="text-right">
+                                                    <div className="flex items-center justify-end gap-1">
+                                                        {!isRegistered && hasAddPermission && (
+                                                            <Button
+                                                                size="sm"
+                                                                onClick={() => handleRegisterClick(person, activeTab === 'students' ? 'student' : 'staff')}
+                                                                className="bg-green-600 hover:bg-green-700"
+                                                            >
+                                                                <Camera className="w-3 h-3 mr-1" /> Register
+                                                            </Button>
+                                                        )}
+                                                        {isRegistered && hasEditPermission && (
+                                                            <Button
+                                                                size="sm"
+                                                                variant="outline"
+                                                                onClick={() => handleEditClick(person, activeTab === 'students' ? 'student' : 'staff')}
+                                                            >
+                                                                <Edit className="w-3 h-3 mr-1" /> Edit
+                                                            </Button>
+                                                        )}
+                                                        {isRegistered && hasDeletePermission && (
+                                                            <Button
+                                                                size="sm"
+                                                                variant="ghost"
+                                                                className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                                                                onClick={() => handleDeleteFace(person.id)}
+                                                            >
+                                                                <Trash2 className="w-3 h-3" />
+                                                            </Button>
+                                                        )}
+                                                    </div>
+                                                </TableCell>
+                                            </TableRow>
+                                        );
+                                    })}
+                                    {(activeTab === 'students' ? filteredStudents : filteredStaff).length === 0 && (
+                                        <TableRow>
+                                            <TableCell colSpan={8} className="text-center py-10">
+                                                <div className="text-muted-foreground">
+                                                    {activeTab === 'students' ? (
+                                                        <>
+                                                            <GraduationCap className="w-12 h-12 mx-auto mb-2 opacity-30" />
+                                                            <p>No students found. Select a class to view students.</p>
+                                                        </>
+                                                    ) : (
+                                                        <>
+                                                            <Briefcase className="w-12 h-12 mx-auto mb-2 opacity-30" />
+                                                            <p>No staff found. Try changing the filter.</p>
+                                                        </>
+                                                    )}
+                                                </div>
+                                            </TableCell>
+                                        </TableRow>
+                                    )}
+                                </TableBody>
+                            </Table>
+                        </div>
+                    )}
+                    
+                    {/* Summary Footer */}
+                    {(activeTab === 'students' ? filteredStudents : filteredStaff).length > 0 && (
+                        <div className="flex items-center justify-between mt-4 px-2 text-sm text-muted-foreground">
+                            <span>
+                                Showing {(activeTab === 'students' ? filteredStudents : filteredStaff).length} {activeTab}
+                            </span>
+                            <span>
+                                {activeTab === 'students' 
+                                    ? `${filteredStudents.filter(s => faceRegistrations[s.id]).length} registered, ${filteredStudents.filter(s => !faceRegistrations[s.id]).length} pending`
+                                    : `${filteredStaff.filter(s => faceRegistrations[s.id]).length} registered, ${filteredStaff.filter(s => !faceRegistrations[s.id]).length} pending`
+                                }
+                            </span>
+                        </div>
+                    )}
                 </CardContent>
             </Card>
             
-            {/* Registrations Grid */}
-            {loading ? (
-                <div className="flex items-center justify-center py-20">
-                    <Loader2 className="w-8 h-8 animate-spin text-primary" />
-                </div>
-            ) : filteredRegistrations.length === 0 ? (
-                <Card>
-                    <CardContent className="py-20 text-center">
-                        <ScanFace className="w-16 h-16 mx-auto text-muted-foreground mb-4" />
-                        <h3 className="text-xl font-semibold mb-2">No Registrations Found</h3>
-                        <p className="text-muted-foreground mb-4">
-                            {registrations.length === 0 
-                                ? "No faces have been registered yet."
-                                : "No registrations match your search criteria."}
-                        </p>
-                        {hasAddPermission && registrations.length === 0 && (
-                            <Button onClick={() => setRegisterDialogOpen(true)}>
-                                <Plus className="w-4 h-4 mr-2" />
-                                Register First Face
-                            </Button>
-                        )}
-                    </CardContent>
-                </Card>
-            ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    <AnimatePresence>
-                        {filteredRegistrations.map((reg) => (
-                            <motion.div
-                                key={reg.id}
-                                initial={{ opacity: 0, y: 20 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                exit={{ opacity: 0, y: -20 }}
-                            >
-                                <Card className={!reg.is_active ? 'opacity-60' : ''}>
-                                    <CardContent className="pt-6">
-                                        <div className="flex items-center gap-4">
-                                            <div className="w-16 h-16 rounded-full bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center overflow-hidden border-2 border-primary/20">
-                                                {reg.photo_url ? (
-                                                    <img src={reg.photo_url} className="w-full h-full object-cover" />
-                                                ) : (
-                                                    <ScanFace className="w-8 h-8 text-primary" />
-                                                )}
-                                            </div>
-                                            <div className="flex-1">
-                                                <div className="flex items-center gap-2">
-                                                    <h3 className="font-semibold">{reg.user_name}</h3>
-                                                    <Badge variant={reg.is_active ? 'default' : 'secondary'} className="text-xs">
-                                                        {reg.is_active ? 'Active' : 'Inactive'}
-                                                    </Badge>
-                                                </div>
-                                                <p className="text-sm text-muted-foreground">
-                                                    {reg.user_code} {reg.user_detail && `• ${reg.user_detail}`}
-                                                </p>
-                                                <div className="flex items-center gap-2 mt-2 text-xs text-muted-foreground">
-                                                    <Badge variant="outline" className="capitalize">
-                                                        {reg.person_type === 'student' 
-                                                            ? <GraduationCap className="w-3 h-3 mr-1" />
-                                                            : <Briefcase className="w-3 h-3 mr-1" />
-                                                        }
-                                                        {reg.person_type}
-                                                    </Badge>
-                                                    <span>•</span>
-                                                    <span>{reg.photo_angle || 'front'}</span>
-                                                    <span>•</span>
-                                                    <span>{Math.round((reg.confidence_score || 0) * 100)}% quality</span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </CardContent>
-                                    <CardFooter className="bg-muted/30 border-t flex-wrap gap-2 justify-between">
-                                        <span className="text-xs text-muted-foreground">
-                                            Registered: {new Date(reg.created_at).toLocaleDateString()}
-                                        </span>
-                                        <div className="flex items-center gap-1">
-                                            {/* Edit Button */}
-                                            {hasEditPermission && (
-                                                <Button 
-                                                    variant="ghost" 
-                                                    size="sm"
-                                                    onClick={() => handleEditClick(reg)}
-                                                    className="text-blue-500 hover:text-blue-600 hover:bg-blue-50"
-                                                    title="Re-capture face"
-                                                >
-                                                    <Edit className="w-4 h-4 mr-1" />
-                                                    Edit
-                                                </Button>
-                                            )}
-                                            {/* Delete Button */}
-                                            {hasDeletePermission && (
-                                                <Button 
-                                                    variant="ghost" 
-                                                    size="sm"
-                                                    onClick={() => handleDeleteClick(reg)}
-                                                    className="text-red-500 hover:text-red-600 hover:bg-red-50"
-                                                    title="Delete registration"
-                                                >
-                                                    <Trash2 className="w-4 h-4 mr-1" />
-                                                    Delete
-                                                </Button>
-                                            )}
-                                            {/* Activate/Deactivate Button */}
-                                            {reg.is_active ? (
-                                                <Button 
-                                                    variant="ghost" 
-                                                    size="sm"
-                                                    onClick={() => handleDeactivate(reg.id)}
-                                                    className="text-orange-500 hover:text-orange-600 hover:bg-orange-50"
-                                                >
-                                                    <XCircle className="w-4 h-4 mr-1" />
-                                                    Deactivate
-                                                </Button>
-                                            ) : (
-                                                <Button 
-                                                    variant="ghost" 
-                                                    size="sm"
-                                                    onClick={() => handleActivate(reg.id)}
-                                                    className="text-green-500 hover:text-green-600 hover:bg-green-50"
-                                                >
-                                                    <CheckCircle2 className="w-4 h-4 mr-1" />
-                                                    Activate
-                                                </Button>
-                                            )}
-                                        </div>
-                                    </CardFooter>
-                                </Card>
-                            </motion.div>
-                        ))}
-                    </AnimatePresence>
-                </div>
-            )}
-            
-            {/* Registration Dialog */}
-            <RegistrationDialog
-                open={registerDialogOpen}
-                onClose={() => setRegisterDialogOpen(false)}
-                branchId={branchId}
-                organizationId={organizationId}
-                sessionId={currentSessionId}
-                onSaved={fetchRegistrations}
-            />
-
-            {/* Edit Dialog - Re-capture Face */}
-            {editingRegistration && (
-                <EditFaceDialog
-                    open={editDialogOpen}
-                    onClose={handleEditClose}
-                    registration={editingRegistration}
+            {/* Quick Register Dialog */}
+            {selectedPerson && (
+                <QuickRegisterDialog
+                    open={registerDialogOpen}
+                    onClose={() => { setRegisterDialogOpen(false); setSelectedPerson(null); }}
+                    person={selectedPerson}
+                    personType={selectedPerson.personType}
                     branchId={branchId}
                     organizationId={organizationId}
-                    sessionId={currentSessionId}
                     onSaved={() => {
-                        fetchRegistrations();
-                        handleEditClose();
+                        fetchFaceRegistrations();
+                        setRegisterDialogOpen(false);
+                        setSelectedPerson(null);
                     }}
                 />
             )}
-
-            {/* Delete Confirmation Dialog */}
-            <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-                <DialogContent>
-                    <DialogHeader>
-                        <DialogTitle className="flex items-center gap-2 text-destructive">
-                            <Trash2 className="w-5 h-5" />
-                            Delete Face Registration
-                        </DialogTitle>
-                        <DialogDescription>
-                            Are you sure you want to delete this face registration?
-                        </DialogDescription>
-                    </DialogHeader>
-                    
-                    {deletingRegistration && (
-                        <div className="bg-muted/50 rounded-lg p-4 my-2">
-                            <div className="flex items-center gap-4">
-                                <div className="w-14 h-14 rounded-full bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center overflow-hidden border-2 border-primary/20">
-                                    {deletingRegistration.photo_url ? (
-                                        <img src={deletingRegistration.photo_url} className="w-full h-full object-cover" alt="" />
-                                    ) : (
-                                        <ScanFace className="w-7 h-7 text-primary" />
-                                    )}
-                                </div>
-                                <div>
-                                    <h4 className="font-semibold">{deletingRegistration.user_name}</h4>
-                                    <p className="text-sm text-muted-foreground capitalize">
-                                        {deletingRegistration.person_type} • {deletingRegistration.user_code}
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
-                    )}
-                    
-                    <Alert variant="destructive">
-                        <AlertTriangle className="h-4 w-4" />
-                        <AlertDescription>
-                            This action cannot be undone. The face data will be permanently deleted.
-                        </AlertDescription>
-                    </Alert>
-                    
-                    <DialogFooter className="gap-2 sm:gap-0">
-                        <Button 
-                            variant="outline" 
-                            onClick={() => setDeleteDialogOpen(false)}
-                            disabled={deleteLoading}
-                        >
-                            Cancel
-                        </Button>
-                        <Button 
-                            variant="destructive"
-                            onClick={handleDeleteConfirm}
-                            disabled={deleteLoading}
-                        >
-                            {deleteLoading ? (
-                                <>
-                                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                                    Deleting...
-                                </>
-                            ) : (
-                                <>
-                                    <Trash2 className="w-4 h-4 mr-2" />
-                                    Delete
-                                </>
-                            )}
-                        </Button>
-                    </DialogFooter>
-                </DialogContent>
-            </Dialog>
+            
+            {/* Edit Face Dialog */}
+            {editingRegistration && (
+                <EditFaceDialog
+                    open={editDialogOpen}
+                    onClose={() => { setEditDialogOpen(false); setEditingRegistration(null); }}
+                    registration={editingRegistration}
+                    branchId={branchId}
+                    organizationId={organizationId}
+                    onSaved={() => {
+                        fetchFaceRegistrations();
+                        setEditDialogOpen(false);
+                        setEditingRegistration(null);
+                    }}
+                />
+            )}
         </DashboardLayout>
     );
 };

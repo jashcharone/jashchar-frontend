@@ -1,10 +1,9 @@
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════
-// JASHCHAR ERP - LIVE FACE ATTENDANCE
-// Real-time AI-powered face recognition for automatic attendance marking
-// Uses face-api.js for browser-based face detection and matching
+// JASHCHAR ERP - LIVE FACE ATTENDANCE (ENHANCED VERSION)
+// Big School Features: Class Mode, Multi-face detection, Real-time stats, Queue management
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════
 
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { useBranch } from '@/contexts/BranchContext';
@@ -14,62 +13,50 @@ import { usePermissions } from '@/contexts/PermissionContext';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Progress } from '@/components/ui/progress';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Separator } from '@/components/ui/separator';
 import { motion, AnimatePresence } from 'framer-motion';
 
 // Real AI Face Recognition
 import {
     loadFaceModels,
     areModelsLoaded,
-    detectSingleFace,
-    detectAllFacesWithDescriptors,
-    findBestMatch,
+    detectAllFacesWithDescriptors as detectAllFaces,
+    getFaceDescriptor,
     stringToDescriptor,
+    compareFaces,
     analyzeFaceQuality
 } from '@/utils/faceRecognition';
 
 import {
-    ScanFace,
-    Camera,
-    Play,
-    Pause,
-    RefreshCw,
-    CheckCircle2,
-    XCircle,
-    AlertTriangle,
-    Loader2,
-    Users,
-    User,
-    GraduationCap,
-    Briefcase,
-    Clock,
-    Calendar,
-    Video,
-    VideoOff,
-    Volume2,
-    VolumeX,
-    Maximize2,
-    Settings,
-    History,
-    UserCheck,
-    UserX
+    ScanFace, Camera, Video, VideoOff, Users, User, GraduationCap, Briefcase, CheckCircle2, XCircle,
+    AlertTriangle, Loader2, Clock, Calendar, Play, Pause, RefreshCw, Volume2, VolumeX, Settings,
+    BarChart3, History, TrendingUp, UserCheck, UserX, Target, Zap, Maximize2, Minimize2, Filter,
+    ChevronLeft, ChevronRight, CircleDot, Eye, AlertCircle, Bell, BellOff, ArrowRight, School,
+    Shield, Percent, Timer, Activity
 } from 'lucide-react';
 
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════
-// LIVE FACE ATTENDANCE COMPONENT
+// CONSTANTS
+// ═══════════════════════════════════════════════════════════════════════════════════════════════════
+
+const COOLDOWN_MS = 30000; // 30 second cooldown before re-checking same person
+const SCAN_INTERVAL_MS = 200; // Check faces every 200ms
+
+// ═══════════════════════════════════════════════════════════════════════════════════════════════════
+// MAIN COMPONENT
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════
 
 const LiveFaceAttendance = () => {
     const { user, currentSessionId, organizationId } = useAuth();
     const { selectedBranch } = useBranch();
     const { toast } = useToast();
-    const { canView, canAdd } = usePermissions();
+    const { canView } = usePermissions();
     
     const branchId = selectedBranch?.id || user?.profile?.branch_id;
     
@@ -77,171 +64,154 @@ const LiveFaceAttendance = () => {
     const videoRef = useRef(null);
     const canvasRef = useRef(null);
     const overlayCanvasRef = useRef(null);
+    const scanLoopRef = useRef(null);
     
-    // State
-    const [isScanning, setIsScanning] = useState(false);
+    // Camera & AI State
     const [stream, setStream] = useState(null);
     const [cameraError, setCameraError] = useState(null);
     const [modelsLoading, setModelsLoading] = useState(true);
     const [modelLoadProgress, setModelLoadProgress] = useState('');
+    const [isScanning, setIsScanning] = useState(false);
     
-    // Face detection state - MULTIPLE FACES SUPPORT
-    const [currentFace, setCurrentFace] = useState(null);
-    const [matchedPerson, setMatchedPerson] = useState(null);
-    const [matchConfidence, setMatchConfidence] = useState(0);
-    const [detectedFaces, setDetectedFaces] = useState([]); // All faces in frame
-    const [matchedPersons, setMatchedPersons] = useState([]); // All matched persons
-    
-    // Registered faces database
+    // Face Data
     const [registeredFaces, setRegisteredFaces] = useState([]);
-    const [loadingFaces, setLoadingFaces] = useState(true);
+    const [detectedFaces, setDetectedFaces] = useState([]);
+    const [matchedPersons, setMatchedPersons] = useState([]);
+    const [recentlyMarked, setRecentlyMarked] = useState(new Set());
     
-    // Attendance log
-    const [attendanceLog, setAttendanceLog] = useState([]);
-    const [todayStats, setTodayStats] = useState({ total: 0, present: 0, students: 0, staff: 0 });
+    // Class Mode - For focused attendance of specific class
+    const [classMode, setClassMode] = useState(false);
+    const [classes, setClasses] = useState([]);
+    const [sections, setSections] = useState([]);
+    const [selectedClass, setSelectedClass] = useState('');
+    const [selectedSection, setSelectedSection] = useState('');
+    const [classStudents, setClassStudents] = useState([]);
     
     // Settings
     const [soundEnabled, setSoundEnabled] = useState(true);
     const [autoMark, setAutoMark] = useState(true);
-    const [matchThreshold, setMatchThreshold] = useState(0.5); // Lower threshold for better detection
+    const [matchThreshold, setMatchThreshold] = useState(0.5);
+    const [showFullscreen, setShowFullscreen] = useState(false);
     
-    // Recently marked (to prevent duplicates within cooldown)
-    const [recentlyMarked, setRecentlyMarked] = useState(new Set());
-    const COOLDOWN_MS = 30000; // 30 seconds cooldown per person
+    // Stats
+    const [todayStats, setTodayStats] = useState({ total: 0, present: 0, students: 0, staff: 0 });
+    const [classProgress, setClassProgress] = useState({ total: 0, present: 0, percent: 0 });
+    const [attendanceLog, setAttendanceLog] = useState([]);
     
     // Permissions
-    const hasViewPermission = canView('attendance.live_face') || canView('attendance');
-    const hasAddPermission = canAdd('attendance.live_face') || canAdd('attendance');
+    const hasViewPermission = canView('attendance.live_attendance') || canView('attendance');
     
     // ═══════════════════════════════════════════════════════════════════════════════════════════════
     // INITIALIZATION
     // ═══════════════════════════════════════════════════════════════════════════════════════════════
     
-    // Load AI models
     useEffect(() => {
-        const initModels = async () => {
+        const init = async () => {
             try {
                 setModelsLoading(true);
                 await loadFaceModels((progress) => setModelLoadProgress(progress));
                 setModelsLoading(false);
             } catch (error) {
-                console.error('Failed to load AI models:', error);
-                setCameraError('Failed to load AI face recognition models');
+                console.error('AI Models load error:', error);
+                setCameraError('Failed to load AI models. Please refresh.');
                 setModelsLoading(false);
             }
         };
-        initModels();
+        init();
+        
+        return () => {
+            if (scanLoopRef.current) clearInterval(scanLoopRef.current);
+            stopCamera();
+        };
     }, []);
     
-    // Load registered faces from database
     useEffect(() => {
-        if (branchId) {
+        if (branchId && !modelsLoading) {
             fetchRegisteredFaces();
+            fetchClasses();
             fetchTodayStats();
         }
-    }, [branchId]);
+    }, [branchId, modelsLoading, currentSessionId]);
+    
+    useEffect(() => {
+        if (selectedClass) {
+            fetchSections(selectedClass);
+        } else {
+            setSections([]);
+            setSelectedSection('');
+        }
+    }, [selectedClass]);
+    
+    useEffect(() => {
+        if (classMode && selectedClass && selectedSection) {
+            fetchClassStudents();
+        }
+    }, [classMode, selectedClass, selectedSection]);
+    
+    // ═══════════════════════════════════════════════════════════════════════════════════════════════
+    // DATA FETCHING
+    // ═══════════════════════════════════════════════════════════════════════════════════════════════
     
     const fetchRegisteredFaces = async () => {
-        setLoadingFaces(true);
-        
-        // First get face encodings
-        const { data: facesData, error: facesError } = await supabase
+        const { data, error } = await supabase
             .from('face_encodings')
             .select('*')
             .eq('branch_id', branchId)
             .eq('is_active', true);
         
-        if (facesError) {
-            toast({ variant: 'destructive', title: 'Error loading faces', description: facesError.message });
-            setLoadingFaces(false);
+        if (error) {
+            console.error('Fetch faces error:', error);
             return;
         }
         
-        // Get student_ids from faces (Note: DB column is 'person_id', but some older code might use 'student_id')
-        const studentIds = (facesData || []).map(f => f.person_id || f.student_id).filter(Boolean);
+        // Parse encoding vectors for comparison
+        const parsedFaces = (data || []).map(face => ({
+            ...face,
+            descriptor: face.encoding_vector ? Array.isArray(face.encoding_vector) ? face.encoding_vector : null : null
+        })).filter(f => f.descriptor);
         
-        // Fetch student profiles to get class_id and section_id
-        let studentMap = {};
-        if (studentIds.length > 0) {
-            // First try student_profiles
-            const { data: studentsData } = await supabase
-                .from('student_profiles')
-                .select('id, class_id, section_id')
-                .in('id', studentIds);
-            
-            if (studentsData) {
-                studentMap = studentsData.reduce((acc, s) => {
-                    acc[s.id] = { class_id: s.class_id, section_id: s.section_id };
-                    return acc;
-                }, {});
-            }
-            
-            // Also try student_session_assignments for current session (class assignment may be there)
-            if (currentSessionId) {
-                const { data: assignmentsData } = await supabase
-                    .from('student_session_assignments')
-                    .select('student_id, class_id, section_id')
-                    .eq('session_id', currentSessionId)
-                    .in('student_id', studentIds);
-                
-                if (assignmentsData) {
-                    assignmentsData.forEach(a => {
-                        // Override with session assignment data (more current)
-                        if (a.class_id) {
-                            studentMap[a.student_id] = {
-                                ...studentMap[a.student_id],
-                                class_id: a.class_id,
-                                section_id: a.section_id || studentMap[a.student_id]?.section_id
-                            };
-                        }
-                    });
-                }
-            }
-            
-            console.log('[LiveAttendance] Student map:', Object.keys(studentMap).length, 'entries');
-        }
+        setRegisteredFaces(parsedFaces);
+    };
+    
+    const fetchClasses = async () => {
+        const { data } = await supabase
+            .from('classes')
+            .select('id, name')
+            .eq('branch_id', branchId)
+            .order('name');
         
-        // Convert encoding vectors to proper Float32Arrays
-        // Handle: Array, Object with numbered keys, JSON string
-        const processedFaces = (facesData || []).map(face => {
-            const studentId = face.person_id || face.student_id;
-            let descriptor = null;
-            const vec = face.encoding_vector;
-            
-            if (vec) {
-                try {
-                    if (Array.isArray(vec)) {
-                        descriptor = new Float32Array(vec);
-                    } else if (typeof vec === 'string') {
-                        descriptor = new Float32Array(JSON.parse(vec));
-                    } else if (typeof vec === 'object') {
-                        // Object with numbered keys like {0: val, 1: val, ...}
-                        descriptor = new Float32Array(Object.values(vec));
-                    }
-                    console.log(`[LiveAttendance] Face ${studentId}: descriptor length = ${descriptor?.length}`);
-                } catch (e) {
-                    console.error(`[LiveAttendance] Failed to parse descriptor for ${studentId}:`, e);
-                }
-            }
-            
-            // Add class_id and section_id from student_profiles
-            const studentInfo = studentMap[studentId] || {};
-            
-            return { 
-                ...face, 
-                student_id: studentId, // Ensure uniform access later
-                descriptor, 
-                class_id: studentInfo.class_id, 
-                section_id: studentInfo.section_id 
-            };
-        });
+        setClasses((data || []).map(c => ({ ...c, class_name: c.name })));
+    };
+    
+    const fetchSections = async (classId) => {
+        const { data } = await supabase
+            .from('class_sections')
+            .select('section_id, sections(id, name)')
+            .eq('class_id', classId);
         
-        // Filter out faces with invalid descriptors
-        const validFaces = processedFaces.filter(f => f.descriptor && f.descriptor.length === 128);
-        setRegisteredFaces(validFaces);
-        console.log(`[LiveAttendance] Loaded ${validFaces.length} valid registered faces (${processedFaces.length - validFaces.length} invalid)`);
+        const sectionsList = (data || [])
+            .filter(d => d.sections)
+            .map(d => ({ id: d.sections.id, section_name: d.sections.name }));
+        setSections(sectionsList);
+    };
+    
+    const fetchClassStudents = async () => {
+        if (!selectedClass || !selectedSection) return;
         
-        setLoadingFaces(false);
+        // Get students directly by class_id and section_id
+        const { data } = await supabase
+            .from('student_profiles')
+            .select('id, full_name, admission_number, photo_url')
+            .eq('branch_id', branchId)
+            .eq('class_id', selectedClass)
+            .eq('section_id', selectedSection)
+            .eq('is_disabled', false)
+            .order('full_name');
+        
+        setClassStudents(data || []);
+        
+        // Fetch today's attendance for this class
+        updateClassProgress();
     };
     
     const fetchTodayStats = async () => {
@@ -251,311 +221,244 @@ const LiveFaceAttendance = () => {
             .from('student_attendance')
             .select('id, status, student_id')
             .eq('branch_id', branchId)
-            .eq('date', today);
+            .eq('session_id', currentSessionId)
+            .eq('date', today)
+            .eq('status', 'present');
         
-        if (!error && data) {
-            setTodayStats({
-                total: data.length,
-                present: data.filter(a => a.status === 'present').length,
-                students: data.length,
-                staff: 0
-            });
+        if (!error) {
+            setTodayStats(prev => ({
+                ...prev,
+                present: (data || []).length,
+                students: (data || []).length
+            }));
         }
     };
     
+    const updateClassProgress = async () => {
+        if (!selectedClass || !selectedSection) return;
+        
+        const today = new Date().toISOString().split('T')[0];
+        
+        const { data: attendanceData } = await supabase
+            .from('student_attendance')
+            .select('student_id')
+            .eq('branch_id', branchId)
+            .eq('session_id', currentSessionId)
+            .eq('class_id', selectedClass)
+            .eq('section_id', selectedSection)
+            .eq('date', today)
+            .eq('status', 'present');
+        
+        const presentCount = (attendanceData || []).length;
+        const totalCount = classStudents.length;
+        
+        setClassProgress({
+            total: totalCount,
+            present: presentCount,
+            percent: totalCount > 0 ? Math.round((presentCount / totalCount) * 100) : 0
+        });
+    };
+    
     // ═══════════════════════════════════════════════════════════════════════════════════════════════
-    // CAMERA CONTROLS
+    // CAMERA CONTROL
     // ═══════════════════════════════════════════════════════════════════════════════════════════════
     
     const startCamera = async () => {
         try {
-            console.log('[LiveAttendance] Starting camera...');
+            setCameraError(null);
             const constraints = {
-                video: {
-                    facingMode: 'user',
-                    width: { ideal: 1280 },
-                    height: { ideal: 720 },
-                },
+                video: { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 720 } }
             };
-            
             const mediaStream = await navigator.mediaDevices.getUserMedia(constraints);
-            console.log('[LiveAttendance] Got media stream:', mediaStream);
             setStream(mediaStream);
             setIsScanning(true);
-            setCameraError(null);
+            
+            if (videoRef.current) {
+                videoRef.current.srcObject = mediaStream;
+                await videoRef.current.play();
+            }
+            
+            // Start face detection loop
+            startFaceLoop();
         } catch (error) {
             console.error('Camera error:', error);
-            setCameraError(`Unable to access camera: ${error.message}. Please check permissions.`);
+            setCameraError('Unable to access camera. Check permissions.');
         }
     };
-    
-    // Connect stream to video element when both are available
-    useEffect(() => {
-        if (stream && isScanning) {
-            // Small delay to ensure video element is rendered
-            const connectVideo = () => {
-                if (videoRef.current) {
-                    console.log('[LiveAttendance] Connecting stream to video element');
-                    videoRef.current.srcObject = stream;
-                    videoRef.current.play().then(() => {
-                        console.log('[LiveAttendance] Video playing!');
-                    }).catch(err => {
-                        console.error('[LiveAttendance] Video play error:', err);
-                    });
-                } else {
-                    console.log('[LiveAttendance] Video ref not ready, retrying...');
-                    setTimeout(connectVideo, 100);
-                }
-            };
-            setTimeout(connectVideo, 50);
-        }
-    }, [stream, isScanning]);
     
     const stopCamera = () => {
-        setIsScanning(false);
         if (stream) {
-            stream.getTracks().forEach(track => track.stop());
+            stream.getTracks().forEach(t => t.stop());
             setStream(null);
         }
+        if (scanLoopRef.current) {
+            clearInterval(scanLoopRef.current);
+            scanLoopRef.current = null;
+        }
+        setIsScanning(false);
+        setDetectedFaces([]);
+        setMatchedPersons([]);
+        clearOverlay();
     };
     
     // ═══════════════════════════════════════════════════════════════════════════════════════════════
-    // FACE DETECTION LOOP - MULTI-FACE SUPPORT
+    // FACE DETECTION LOOP
     // ═══════════════════════════════════════════════════════════════════════════════════════════════
     
-    useEffect(() => {
-        let animationId;
-        let isRunning = true;
+    const startFaceLoop = () => {
+        if (scanLoopRef.current) clearInterval(scanLoopRef.current);
         
-        const detectAndMatch = async () => {
-            if (!isRunning || !videoRef.current || !isScanning || modelsLoading || !areModelsLoaded()) {
-                if (isRunning && isScanning) {
-                    animationId = requestAnimationFrame(() => setTimeout(detectAndMatch, 100));
-                }
-                return;
-            }
-            
-            // Check if video is ready
-            if (videoRef.current.readyState < 2) {
-                console.log('[LiveAttendance] Video not ready yet, waiting...');
-                if (isRunning && isScanning) {
-                    animationId = requestAnimationFrame(() => setTimeout(detectAndMatch, 100));
-                }
-                return;
-            }
+        scanLoopRef.current = setInterval(async () => {
+            if (!videoRef.current || !areModelsLoaded()) return;
             
             try {
-                // Detect ALL faces in frame for multi-face recognition
-                const detections = await detectAllFacesWithDescriptors(videoRef.current);
+                const detections = await detectAllFaces(videoRef.current);
+                setDetectedFaces(detections);
                 
-                if (detections && detections.length > 0) {
-                    console.log(`[LiveAttendance] Detected ${detections.length} faces`);
-                    setDetectedFaces(detections);
-                    
-                    // Process each detected face
-                    const newMatchedPersons = [];
+                if (detections.length > 0) {
+                    const matches = [];
                     
                     for (const detection of detections) {
                         const quality = analyzeFaceQuality(detection);
+                        const descriptor = detection.descriptor;
                         
-                        // Try to match face with registered faces
-                        if (registeredFaces.length > 0 && detection.descriptor) {
-                            const result = findBestMatch(detection.descriptor, registeredFaces, matchThreshold);
+                        let bestMatch = null;
+                        let bestConfidence = 0;
+                        
+                        // Compare with registered faces
+                        for (const regFace of registeredFaces) {
+                            if (!regFace.descriptor) continue;
                             
-                            if (result.match) {
-                                newMatchedPersons.push({
-                                    detection,
-                                    quality,
-                                    match: result.match,
-                                    confidence: result.confidence
-                                });
-                                
-                                // Auto-mark attendance if enabled
-                                if (autoMark && !recentlyMarked.has(result.match.person_id)) {
-                                    await markAttendance(result.match, result.confidence);
-                                }
-                            } else {
-                                // Unknown face
-                                newMatchedPersons.push({
-                                    detection,
-                                    quality,
-                                    match: null,
-                                    confidence: 0
-                                });
+                            const confidence = compareFaces(descriptor, regFace.descriptor);
+                            if (confidence > matchThreshold && confidence > bestConfidence) {
+                                bestMatch = regFace;
+                                bestConfidence = confidence;
                             }
-                        } else {
-                            newMatchedPersons.push({
-                                detection,
-                                quality,
-                                match: null,
-                                confidence: 0
-                            });
+                        }
+                        
+                        matches.push({
+                            detection,
+                            quality,
+                            match: bestMatch,
+                            confidence: bestConfidence
+                        });
+                        
+                        // Auto-mark if enabled & matched
+                        if (autoMark && bestMatch && bestConfidence > matchThreshold) {
+                            const personId = bestMatch.person_id || bestMatch.user_id;
+                            if (!recentlyMarked.has(personId)) {
+                                // Get class_id and section_id for the matched person
+                                await markAttendance(bestMatch, bestConfidence);
+                            }
                         }
                     }
                     
-                    setMatchedPersons(newMatchedPersons);
-                    
-                    // For backward compatibility - set first matched person
-                    const firstMatch = newMatchedPersons.find(p => p.match);
-                    if (firstMatch) {
-                        setMatchedPerson(firstMatch.match);
-                        setMatchConfidence(firstMatch.confidence);
-                        setCurrentFace({ detection: firstMatch.detection, quality: firstMatch.quality });
-                    } else if (newMatchedPersons.length > 0) {
-                        setMatchedPerson(null);
-                        setMatchConfidence(0);
-                        setCurrentFace({ detection: newMatchedPersons[0].detection, quality: newMatchedPersons[0].quality });
-                    }
-                    
-                    // Draw all face boxes
-                    drawAllFaceBoxes(newMatchedPersons);
+                    setMatchedPersons(matches);
+                    drawFaceBoxes(matches);
                 } else {
-                    setDetectedFaces([]);
                     setMatchedPersons([]);
-                    setCurrentFace(null);
-                    setMatchedPerson(null);
-                    setMatchConfidence(0);
                     clearOverlay();
                 }
             } catch (error) {
-                console.error('Detection error:', error);
+                console.error('Face detection error:', error);
             }
-            
-            // Faster refresh rate for smoother detection (100ms = 10fps)
-            if (isRunning && isScanning) {
-                animationId = requestAnimationFrame(() => setTimeout(detectAndMatch, 100));
-            }
-        };
-        
-        if (isScanning && !modelsLoading) {
-            detectAndMatch();
-        }
-        
-        return () => {
-            isRunning = false;
-            if (animationId) cancelAnimationFrame(animationId);
-        };
-    }, [isScanning, modelsLoading, registeredFaces, autoMark, matchThreshold, recentlyMarked]);
+        }, SCAN_INTERVAL_MS);
+    };
     
-    // Draw ALL face boxes - multi-face support
-    // Note: Both video and canvas have CSS scaleX(-1) for mirror effect
-    // Detection runs on original video, so we use original box coordinates
-    // CSS mirror will flip them to match the mirrored video display
-    const drawAllFaceBoxes = (matchedPersons) => {
+    // ═══════════════════════════════════════════════════════════════════════════════════════════════
+    // DRAWING
+    // ═══════════════════════════════════════════════════════════════════════════════════════════════
+    
+    const drawFaceBoxes = (matches) => {
         if (!overlayCanvasRef.current || !videoRef.current) return;
         
         const canvas = overlayCanvasRef.current;
         const video = videoRef.current;
         canvas.width = video.videoWidth;
         canvas.height = video.videoHeight;
+        
         const ctx = canvas.getContext('2d');
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         
-        for (const person of matchedPersons) {
-            const { detection, quality, match, confidence } = person;
+        for (const { detection, quality, match, confidence } of matches) {
             const box = detection.detection.box;
-            
-            // Color based on match status
-            let color = '#ffff00'; // Yellow - scanning/unknown
-            if (match) {
-                color = '#00ff00'; // Green - matched
-            } else if (!quality.isGood) {
-                color = '#ff0000'; // Red - poor quality
-            }
-            
-            // Use original box coordinates - CSS scaleX(-1) will mirror them
-            const boxX = box.x;
+            const boxX = canvas.width - box.x - box.width; // Mirror flip
             const boxY = box.y;
             
-            // Draw face box with corner accents
+            // Box color based on match status
+            const color = match ? '#00ff00' : quality.isGood ? '#ffcc00' : '#ff0000';
             ctx.strokeStyle = color;
             ctx.lineWidth = 3;
-            ctx.strokeRect(boxX, boxY, box.width, box.height);
             
-            // Draw corner accents for better visibility
-            const cornerLength = Math.min(box.width, box.height) * 0.2;
-            ctx.lineWidth = 4;
-            // Top-left
+            // Draw rounded corners
+            const cornerLength = 20;
             ctx.beginPath();
             ctx.moveTo(boxX, boxY + cornerLength);
             ctx.lineTo(boxX, boxY);
             ctx.lineTo(boxX + cornerLength, boxY);
             ctx.stroke();
-            // Top-right
+            
             ctx.beginPath();
             ctx.moveTo(boxX + box.width - cornerLength, boxY);
             ctx.lineTo(boxX + box.width, boxY);
             ctx.lineTo(boxX + box.width, boxY + cornerLength);
             ctx.stroke();
-            // Bottom-left
+            
             ctx.beginPath();
-            ctx.moveTo(boxX, boxY + box.height - cornerLength);
-            ctx.lineTo(boxX, boxY + box.height);
-            ctx.lineTo(boxX + cornerLength, boxY + box.height);
-            ctx.stroke();
-            // Bottom-right
-            ctx.beginPath();
-            ctx.moveTo(boxX + box.width - cornerLength, boxY + box.height);
+            ctx.moveTo(boxX + box.width, boxY + box.height - cornerLength);
             ctx.lineTo(boxX + box.width, boxY + box.height);
-            ctx.lineTo(boxX + box.width, boxY + box.height - cornerLength);
+            ctx.lineTo(boxX + box.width - cornerLength, boxY + box.height);
             ctx.stroke();
             
-            // Draw label above box
-            // Since canvas has CSS scaleX(-1), we need to flip text to make it readable
+            ctx.beginPath();
+            ctx.moveTo(boxX + cornerLength, boxY + box.height);
+            ctx.lineTo(boxX, boxY + box.height);
+            ctx.lineTo(boxX, boxY + box.height - cornerLength);
+            ctx.stroke();
+            
+            // Label
             ctx.save();
             const labelX = boxX + box.width / 2;
-            const labelY = boxY - 10;
-            
-            // Flip text horizontally at label position so CSS mirror makes it readable
             ctx.translate(labelX, 0);
             ctx.scale(-1, 1);
             ctx.translate(-labelX, 0);
             
-            ctx.font = 'bold 18px Arial';
+            ctx.font = 'bold 16px Arial';
             ctx.textAlign = 'center';
             
             if (match) {
-                const personName = match.person_name || 'Unknown';
-                const labelText = `✓ ${personName}`;
+                const labelText = `✓ ${match.person_name}`;
                 const textWidth = ctx.measureText(labelText).width;
-                
-                // Background
-                ctx.fillStyle = 'rgba(0, 128, 0, 0.85)';
-                ctx.fillRect(labelX - textWidth/2 - 12, labelY - 22, textWidth + 24, 28);
-                
-                // Text
-                ctx.fillStyle = '#ffffff';
-                ctx.fillText(labelText, labelX, labelY);
-                
-                ctx.restore();
-                
-                // Confidence below box
+                ctx.fillStyle = 'rgba(0, 180, 0, 0.9)';
+                ctx.fillRect(labelX - textWidth/2 - 10, boxY - 28, textWidth + 20, 24);
+                ctx.fillStyle = '#fff';
+                ctx.fillText(labelText, labelX, boxY - 10);
+            } else {
+                const labelText = quality.isGood ? 'Unknown' : 'Move closer';
+                const textWidth = ctx.measureText(labelText).width;
+                ctx.fillStyle = quality.isGood ? 'rgba(200, 150, 0, 0.9)' : 'rgba(200, 0, 0, 0.9)';
+                ctx.fillRect(labelX - textWidth/2 - 10, boxY - 28, textWidth + 20, 24);
+                ctx.fillStyle = '#fff';
+                ctx.fillText(labelText, labelX, boxY - 10);
+            }
+            
+            ctx.restore();
+            
+            // Confidence below
+            if (match) {
                 ctx.save();
                 const confY = boxY + box.height + 20;
                 ctx.translate(labelX, 0);
                 ctx.scale(-1, 1);
                 ctx.translate(-labelX, 0);
-                
                 ctx.font = '14px Arial';
                 ctx.textAlign = 'center';
                 const confText = `${Math.round(confidence * 100)}%`;
                 const confWidth = ctx.measureText(confText).width;
-                ctx.fillStyle = 'rgba(0, 128, 0, 0.85)';
+                ctx.fillStyle = 'rgba(0, 180, 0, 0.9)';
                 ctx.fillRect(labelX - confWidth/2 - 8, confY - 14, confWidth + 16, 20);
-                ctx.fillStyle = '#ffffff';
-                ctx.fillText(confText, labelX, confY);
-                ctx.restore();
-            } else {
-                const labelText = quality.isGood ? 'Unknown' : 'Move closer';
-                const textWidth = ctx.measureText(labelText).width;
-                
-                // Background
-                ctx.fillStyle = quality.isGood ? 'rgba(200, 150, 0, 0.85)' : 'rgba(200, 0, 0, 0.85)';
-                ctx.fillRect(labelX - textWidth/2 - 12, labelY - 22, textWidth + 24, 28);
-                
-                // Text
-                ctx.fillStyle = '#ffffff';
-                ctx.fillText(labelText, labelX, labelY);
+                ctx.fillStyle = '#fff';
+                ctx.fillText(confText, confY);
                 ctx.restore();
             }
         }
@@ -575,16 +478,12 @@ const LiveFaceAttendance = () => {
     const markAttendance = async (person, confidence) => {
         if (!person || !branchId) return;
         
-        // Ensure we have a valid ID
-        const personId = person.person_id || person.student_id;
-        
+        const personId = person.person_id || person.user_id;
         const today = new Date().toISOString().split('T')[0];
         const now = new Date();
         
-        // Add to cooldown set
+        // Add to cooldown
         setRecentlyMarked(prev => new Set([...prev, personId]));
-        
-        // Remove from cooldown after timeout
         setTimeout(() => {
             setRecentlyMarked(prev => {
                 const next = new Set(prev);
@@ -594,38 +493,62 @@ const LiveFaceAttendance = () => {
         }, COOLDOWN_MS);
         
         try {
-            // Check if already marked today
-            const { data: existing, error: checkError } = await supabase
+            // Check if already marked
+            const { data: existing } = await supabase
                 .from('student_attendance')
                 .select('id')
                 .eq('branch_id', branchId)
                 .eq('student_id', personId)
                 .eq('date', today)
-                .maybeSingle(); // Use maybeSingle to avoid 406/PGRST116 error if not found
+                .maybeSingle();
             
-            if (checkError) {
-                console.error('Error checking existing attendance:', checkError);
-            }
-
             if (existing) {
-                // Already marked - add to log but don't insert again
                 addToLog(person, 'already', confidence);
                 return;
             }
             
-            // Mark attendance
-            // Format time as HH:MM:SS for PostgreSQL TIME column
-            const timeString = now.toTimeString().split(' ')[0]; // "HH:MM:SS"
+            // Get student details for class_id and section_id
+            let classId = null;
+            let sectionId = null;
             
-            // Get class_id and section_id from person data (fetched separately from student_profiles)
-            const classId = person.class_id;
-            const sectionId = person.section_id;
+            if (person.person_type === 'student') {
+                // First try session assignment
+                if (currentSessionId) {
+                    const { data: assignment } = await supabase
+                        .from('student_session_assignments')
+                        .select('class_id, section_id')
+                        .eq('student_id', personId)
+                        .eq('session_id', currentSessionId)
+                        .maybeSingle();
+                    
+                    if (assignment) {
+                        classId = assignment.class_id;
+                        sectionId = assignment.section_id;
+                    }
+                }
+                
+                // Fallback to student profile
+                if (!classId) {
+                    const { data: student } = await supabase
+                        .from('student_profiles')
+                        .select('class_id, section_id')
+                        .eq('id', personId)
+                        .maybeSingle();
+                    
+                    if (student) {
+                        classId = student.class_id;
+                        sectionId = student.section_id;
+                    }
+                }
+            }
             
-            if (!classId) {
-                console.error('Missing class_id for student:', personId, '- Student may not have class assigned');
+            if (!classId && person.person_type === 'student') {
+                console.error('Missing class_id for student:', personId);
                 addToLog(person, 'error', confidence);
                 return;
             }
+            
+            const timeString = now.toTimeString().split(' ')[0];
             
             const attendanceData = {
                 branch_id: branchId,
@@ -639,14 +562,12 @@ const LiveFaceAttendance = () => {
                 check_in_time: timeString,
                 marked_by: user?.id || null,
                 marked_at: now.toISOString(),
-                remark: `AI Face Recognition (${Math.round(confidence * 100)}% confidence)`,
+                remark: `AI Face Recognition (${Math.round(confidence * 100)}%)`,
                 is_late: now.getHours() >= 9 && now.getMinutes() > 30,
                 late_minutes: now.getHours() >= 9 ? Math.max(0, (now.getHours() - 9) * 60 + now.getMinutes() - 30) : 0
             };
             
-            const { error } = await supabase
-                .from('student_attendance')
-                .insert(attendanceData);
+            const { error } = await supabase.from('student_attendance').insert(attendanceData);
             
             if (error) {
                 console.error('Attendance error:', error);
@@ -654,19 +575,22 @@ const LiveFaceAttendance = () => {
             } else {
                 addToLog(person, 'success', confidence);
                 
-                // Play sound if enabled
-                if (soundEnabled) {
-                    playSuccessSound();
-                }
+                if (soundEnabled) playSuccessSound();
                 
-                // Update stats
                 setTodayStats(prev => ({
                     ...prev,
-                    total: prev.total + 1,
                     present: prev.present + 1,
-                    students: person.person_type === 'student' ? prev.students + 1 : prev.students,
-                    staff: person.person_type === 'staff' ? prev.staff + 1 : prev.staff
+                    students: prev.students + 1
                 }));
+                
+                // Update class progress if in class mode
+                if (classMode) {
+                    setClassProgress(prev => ({
+                        ...prev,
+                        present: prev.present + 1,
+                        percent: prev.total > 0 ? Math.round(((prev.present + 1) / prev.total) * 100) : 0
+                    }));
+                }
                 
                 toast({
                     title: '✅ Attendance Marked',
@@ -688,8 +612,7 @@ const LiveFaceAttendance = () => {
             status,
             time: new Date().toLocaleTimeString()
         };
-        
-        setAttendanceLog(prev => [logEntry, ...prev.slice(0, 49)]); // Keep last 50
+        setAttendanceLog(prev => [logEntry, ...prev.slice(0, 99)]);
     };
     
     const playSuccessSound = () => {
@@ -699,6 +622,14 @@ const LiveFaceAttendance = () => {
             audio.play().catch(() => {});
         } catch {}
     };
+    
+    // ═══════════════════════════════════════════════════════════════════════════════════════════════
+    // COMPUTED VALUES
+    // ═══════════════════════════════════════════════════════════════════════════════════════════════
+    
+    const markedStudentIds = useMemo(() => {
+        return new Set(attendanceLog.filter(l => l.status === 'success').map(l => l.person_name));
+    }, [attendanceLog]);
     
     // ═══════════════════════════════════════════════════════════════════════════════════════════════
     // RENDER
@@ -718,32 +649,45 @@ const LiveFaceAttendance = () => {
         );
     }
     
+    const selectedClassName = classes.find(c => c.id === selectedClass)?.class_name || '';
+    const selectedSectionName = sections.find(s => s.id === selectedSection)?.section_name || '';
+    
     return (
         <DashboardLayout>
-            <div className="p-6 space-y-6">
+            <div className="p-4 md:p-6 space-y-4">
                 {/* Header */}
                 <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
                     <div>
-                        <h1 className="text-2xl font-bold flex items-center gap-2">
-                            <ScanFace className="w-8 h-8 text-primary" />
+                        <h1 className="text-2xl md:text-3xl font-bold flex items-center gap-2">
+                            <ScanFace className="w-7 h-7 md:w-8 md:h-8 text-primary" />
                             Live Face Attendance
                         </h1>
                         <p className="text-muted-foreground mt-1">
-                            🤖 Real AI-powered face recognition for automatic attendance
+                            🤖 Real AI face recognition • Multi-face detection
                         </p>
                     </div>
                     
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 flex-wrap">
                         <Badge variant="outline" className="text-sm">
-                            {registeredFaces.length} faces registered
+                            <Users className="w-3 h-3 mr-1" />
+                            {registeredFaces.length} registered
                         </Badge>
-                        <Badge variant={isScanning ? "default" : "secondary"} className={isScanning ? "bg-green-500 animate-pulse" : ""}>
-                            {isScanning ? "🔴 LIVE" : "⏸️ Paused"}
+                        <Badge 
+                            variant={isScanning ? "default" : "secondary"} 
+                            className={isScanning ? "bg-green-500 animate-pulse" : ""}
+                        >
+                            {isScanning ? "🔴 SCANNING" : "⏸️ Paused"}
                         </Badge>
+                        {classMode && selectedClass && (
+                            <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+                                <School className="w-3 h-3 mr-1" />
+                                {selectedClassName} {selectedSectionName}
+                            </Badge>
+                        )}
                     </div>
                 </div>
                 
-                {/* AI Model Loading */}
+                {/* AI Loading */}
                 {modelsLoading && (
                     <Alert className="border-blue-500/50 bg-blue-500/5">
                         <Loader2 className="w-4 h-4 animate-spin text-blue-500" />
@@ -753,8 +697,67 @@ const LiveFaceAttendance = () => {
                     </Alert>
                 )}
                 
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    {/* Camera Feed - 2/3 width */}
+                {/* Stats Cards */}
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    <Card className="bg-gradient-to-br from-green-50 to-green-100/50 dark:from-green-950/30 dark:to-green-900/20">
+                        <CardContent className="pt-4 pb-4">
+                            <div className="flex items-center gap-3">
+                                <div className="p-2.5 rounded-xl bg-green-500/20">
+                                    <UserCheck className="h-5 w-5 text-green-600" />
+                                </div>
+                                <div>
+                                    <p className="text-2xl font-bold text-green-700">{todayStats.present}</p>
+                                    <p className="text-xs text-green-600/80">Present Today</p>
+                                </div>
+                            </div>
+                        </CardContent>
+                    </Card>
+                    
+                    <Card>
+                        <CardContent className="pt-4 pb-4">
+                            <div className="flex items-center gap-3">
+                                <div className="p-2.5 rounded-xl bg-purple-500/20">
+                                    <Activity className="h-5 w-5 text-purple-600" />
+                                </div>
+                                <div>
+                                    <p className="text-2xl font-bold">{detectedFaces.length}</p>
+                                    <p className="text-xs text-muted-foreground">Faces in Frame</p>
+                                </div>
+                            </div>
+                        </CardContent>
+                    </Card>
+                    
+                    <Card>
+                        <CardContent className="pt-4 pb-4">
+                            <div className="flex items-center gap-3">
+                                <div className="p-2.5 rounded-xl bg-blue-500/20">
+                                    <Target className="h-5 w-5 text-blue-600" />
+                                </div>
+                                <div>
+                                    <p className="text-2xl font-bold">{matchedPersons.filter(m => m.match).length}</p>
+                                    <p className="text-xs text-muted-foreground">Recognized</p>
+                                </div>
+                            </div>
+                        </CardContent>
+                    </Card>
+                    
+                    <Card>
+                        <CardContent className="pt-4 pb-4">
+                            <div className="flex items-center gap-3">
+                                <div className="p-2.5 rounded-xl bg-orange-500/20">
+                                    <History className="h-5 w-5 text-orange-600" />
+                                </div>
+                                <div>
+                                    <p className="text-2xl font-bold">{attendanceLog.length}</p>
+                                    <p className="text-xs text-muted-foreground">Log Entries</p>
+                                </div>
+                            </div>
+                        </CardContent>
+                    </Card>
+                </div>
+                
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                    {/* Camera Feed - 2/3 */}
                     <div className="lg:col-span-2 space-y-4">
                         <Card>
                             <CardHeader className="pb-2">
@@ -762,12 +765,18 @@ const LiveFaceAttendance = () => {
                                     <CardTitle className="text-lg flex items-center gap-2">
                                         <Video className="w-5 h-5" />
                                         Camera Feed
+                                        {detectedFaces.length > 0 && (
+                                            <Badge variant="secondary" className="ml-2">
+                                                {detectedFaces.length} face{detectedFaces.length !== 1 ? 's' : ''}
+                                            </Badge>
+                                        )}
                                     </CardTitle>
                                     <div className="flex items-center gap-2">
                                         <Button
                                             variant="outline"
                                             size="icon"
                                             onClick={() => setSoundEnabled(!soundEnabled)}
+                                            title={soundEnabled ? "Mute" : "Unmute"}
                                         >
                                             {soundEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
                                         </Button>
@@ -793,8 +802,7 @@ const LiveFaceAttendance = () => {
                                                 <VideoOff className="w-16 h-16 mx-auto text-muted-foreground mb-4" />
                                                 <p className="text-destructive">{cameraError}</p>
                                                 <Button variant="outline" className="mt-4" onClick={startCamera}>
-                                                    <RefreshCw className="w-4 h-4 mr-2" />
-                                                    Retry
+                                                    <RefreshCw className="w-4 h-4 mr-2" /> Retry
                                                 </Button>
                                             </div>
                                         </div>
@@ -802,24 +810,17 @@ const LiveFaceAttendance = () => {
                                         <div className="absolute inset-0 flex items-center justify-center bg-muted/80">
                                             <div className="text-center">
                                                 <Camera className="w-20 h-20 mx-auto text-muted-foreground mb-4" />
-                                                <p className="text-lg font-medium">Camera Paused</p>
-                                                <p className="text-sm text-muted-foreground mt-1">
-                                                    Click "Start" to begin face scanning
-                                                </p>
+                                                <p className="text-lg font-medium">Camera Ready</p>
+                                                <p className="text-sm text-muted-foreground mt-1">Click "Start" to begin scanning</p>
                                             </div>
                                         </div>
                                     ) : (
                                         <>
                                             <video
                                                 ref={videoRef}
-                                                autoPlay
-                                                playsInline
-                                                muted
+                                                autoPlay playsInline muted
                                                 className="w-full h-full object-cover"
                                                 style={{ transform: 'scaleX(-1)' }}
-                                                onLoadedData={() => console.log('[Video] Data loaded')}
-                                                onPlay={() => console.log('[Video] Playing')}
-                                                onError={(e) => console.error('[Video] Error:', e)}
                                             />
                                             <canvas
                                                 ref={overlayCanvasRef}
@@ -827,54 +828,51 @@ const LiveFaceAttendance = () => {
                                                 style={{ transform: 'scaleX(-1)' }}
                                             />
                                             
-                                            {/* Match Result Overlay - Shows ALL matched persons */}
-                                            {matchedPersons.filter(p => p.match).length > 0 && (
-                                                <motion.div
-                                                    initial={{ opacity: 0, y: 20 }}
-                                                    animate={{ opacity: 1, y: 0 }}
-                                                    className="absolute bottom-4 left-4 right-4 bg-green-500/90 text-white p-4 rounded-xl"
-                                                >
-                                                    {matchedPersons.filter(p => p.match).length === 1 ? (
-                                                        // Single person matched
-                                                        <div className="flex items-center gap-4">
-                                                            <CheckCircle2 className="w-12 h-12" />
-                                                            <div className="flex-1">
-                                                                <p className="text-xl font-bold">{matchedPersons.find(p => p.match)?.match?.person_name}</p>
-                                                                <p className="text-sm opacity-90">
-                                                                    {matchedPersons.find(p => p.match)?.match?.person_type === 'student' ? '🎓 Student' : '💼 Staff'}
-                                                                    {' • '}
-                                                                    {Math.round((matchedPersons.find(p => p.match)?.confidence || 0) * 100)}% confidence
-                                                                </p>
+                                            {/* Multi-face match overlay */}
+                                            <AnimatePresence>
+                                                {matchedPersons.filter(p => p.match).length > 0 && (
+                                                    <motion.div
+                                                        initial={{ opacity: 0, y: 20 }}
+                                                        animate={{ opacity: 1, y: 0 }}
+                                                        exit={{ opacity: 0, y: 20 }}
+                                                        className="absolute bottom-4 left-4 right-4 bg-green-500/95 text-white p-4 rounded-xl shadow-lg"
+                                                    >
+                                                        {matchedPersons.filter(p => p.match).length === 1 ? (
+                                                            <div className="flex items-center gap-4">
+                                                                <CheckCircle2 className="w-10 h-10 flex-shrink-0" />
+                                                                <div className="flex-1 min-w-0">
+                                                                    <p className="text-xl font-bold truncate">
+                                                                        {matchedPersons.find(p => p.match)?.match?.person_name}
+                                                                    </p>
+                                                                    <p className="text-sm opacity-90">
+                                                                        {Math.round((matchedPersons.find(p => p.match)?.confidence || 0) * 100)}% confidence
+                                                                    </p>
+                                                                </div>
+                                                                <Badge className="bg-white text-green-600 text-lg px-4 py-2 flex-shrink-0">
+                                                                    PRESENT
+                                                                </Badge>
                                                             </div>
-                                                            <Badge className="bg-white text-green-600 text-lg px-4 py-2">
-                                                                PRESENT
-                                                            </Badge>
-                                                        </div>
-                                                    ) : (
-                                                        // Multiple persons matched
-                                                        <div className="space-y-2">
-                                                            <div className="flex items-center gap-2 mb-2">
-                                                                <Users className="w-6 h-6" />
-                                                                <span className="font-bold">{matchedPersons.filter(p => p.match).length} People Recognized</span>
-                                                            </div>
-                                                            <div className="grid grid-cols-2 gap-2">
-                                                                {matchedPersons.filter(p => p.match).slice(0, 4).map((p, idx) => (
-                                                                    <div key={idx} className="flex items-center gap-2 bg-white/20 rounded-lg p-2">
-                                                                        <CheckCircle2 className="w-5 h-5" />
-                                                                        <div className="flex-1 min-w-0">
-                                                                            <p className="font-medium text-sm truncate">{p.match.person_name}</p>
-                                                                            <p className="text-xs opacity-80">{Math.round(p.confidence * 100)}%</p>
+                                                        ) : (
+                                                            <div className="space-y-2">
+                                                                <div className="flex items-center gap-2">
+                                                                    <Users className="w-6 h-6" />
+                                                                    <span className="font-bold">
+                                                                        {matchedPersons.filter(p => p.match).length} People Recognized
+                                                                    </span>
+                                                                </div>
+                                                                <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                                                                    {matchedPersons.filter(p => p.match).slice(0, 6).map((p, idx) => (
+                                                                        <div key={idx} className="flex items-center gap-2 bg-white/20 rounded-lg p-2">
+                                                                            <CheckCircle2 className="w-4 h-4 flex-shrink-0" />
+                                                                            <span className="text-sm truncate">{p.match.person_name}</span>
                                                                         </div>
-                                                                    </div>
-                                                                ))}
+                                                                    ))}
+                                                                </div>
                                                             </div>
-                                                            {matchedPersons.filter(p => p.match).length > 4 && (
-                                                                <p className="text-sm opacity-80 text-center">+{matchedPersons.filter(p => p.match).length - 4} more</p>
-                                                            )}
-                                                        </div>
-                                                    )}
-                                                </motion.div>
-                                            )}
+                                                        )}
+                                                    </motion.div>
+                                                )}
+                                            </AnimatePresence>
                                         </>
                                     )}
                                 </div>
@@ -882,13 +880,24 @@ const LiveFaceAttendance = () => {
                             </CardContent>
                         </Card>
                         
-                        {/* Settings */}
+                        {/* Settings & Class Mode */}
                         <Card>
                             <CardHeader className="pb-2">
-                                <CardTitle className="text-sm flex items-center gap-2">
-                                    <Settings className="w-4 h-4" />
-                                    Settings
-                                </CardTitle>
+                                <div className="flex items-center justify-between">
+                                    <CardTitle className="text-sm flex items-center gap-2">
+                                        <Settings className="w-4 h-4" /> Settings
+                                    </CardTitle>
+                                    <div className="flex items-center gap-2">
+                                        <Label htmlFor="classMode" className="text-sm font-normal">Class Mode</Label>
+                                        <input
+                                            type="checkbox"
+                                            id="classMode"
+                                            checked={classMode}
+                                            onChange={(e) => setClassMode(e.target.checked)}
+                                            className="rounded"
+                                        />
+                                    </div>
+                                </div>
                             </CardHeader>
                             <CardContent>
                                 <div className="flex flex-wrap items-center gap-4">
@@ -900,79 +909,108 @@ const LiveFaceAttendance = () => {
                                             onChange={(e) => setAutoMark(e.target.checked)}
                                             className="rounded"
                                         />
-                                        <Label htmlFor="autoMark" className="text-sm">Auto-mark attendance</Label>
+                                        <Label htmlFor="autoMark" className="text-sm">Auto-mark</Label>
                                     </div>
                                     <div className="flex items-center gap-2">
-                                        <Label className="text-sm">Match threshold:</Label>
+                                        <Label className="text-sm">Threshold:</Label>
                                         <Select value={String(matchThreshold)} onValueChange={(v) => setMatchThreshold(parseFloat(v))}>
-                                            <SelectTrigger className="w-24">
+                                            <SelectTrigger className="w-28">
                                                 <SelectValue />
                                             </SelectTrigger>
                                             <SelectContent>
-                                                <SelectItem value="0.4">40% (Loose)</SelectItem>
-                                                <SelectItem value="0.5">50% (Normal)</SelectItem>
-                                                <SelectItem value="0.6">60% (Strict)</SelectItem>
-                                                <SelectItem value="0.7">70% (Very Strict)</SelectItem>
+                                                <SelectItem value="0.4">40% Loose</SelectItem>
+                                                <SelectItem value="0.5">50% Normal</SelectItem>
+                                                <SelectItem value="0.6">60% Strict</SelectItem>
+                                                <SelectItem value="0.7">70% Very Strict</SelectItem>
                                             </SelectContent>
                                         </Select>
                                     </div>
                                 </div>
-                            </CardContent>
-                        </Card>
-                    </div>
-                    
-                    {/* Right Panel - 1/3 width */}
-                    <div className="space-y-4">
-                        {/* Today's Stats */}
-                        <Card>
-                            <CardHeader className="pb-2">
-                                <CardTitle className="text-sm flex items-center gap-2">
-                                    <Calendar className="w-4 h-4" />
-                                    Today's Stats
-                                </CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div className="text-center p-3 bg-green-500/10 rounded-lg">
-                                        <p className="text-3xl font-bold text-green-600">{todayStats.present}</p>
-                                        <p className="text-sm text-muted-foreground">Present</p>
-                                    </div>
-                                    <div className="text-center p-3 bg-blue-500/10 rounded-lg">
-                                        <p className="text-3xl font-bold text-blue-600">{todayStats.total}</p>
-                                        <p className="text-sm text-muted-foreground">Total</p>
-                                    </div>
-                                </div>
-                                {/* Currently Detected Faces */}
-                                {isScanning && detectedFaces.length > 0 && (
-                                    <div className="mt-4 p-3 bg-purple-500/10 rounded-lg">
-                                        <p className="text-sm font-medium text-purple-600">
-                                            <ScanFace className="w-4 h-4 inline mr-2" />
-                                            {detectedFaces.length} face{detectedFaces.length !== 1 ? 's' : ''} in frame
-                                        </p>
-                                        <p className="text-xs text-muted-foreground mt-1">
-                                            {matchedPersons.filter(p => p.match).length} recognized
-                                        </p>
+                                
+                                {/* Class Mode Filters */}
+                                {classMode && (
+                                    <div className="mt-4 pt-4 border-t">
+                                        <div className="flex items-center gap-2 mb-3">
+                                            <School className="w-4 h-4 text-primary" />
+                                            <span className="text-sm font-medium">Class Mode - Focus on specific class</span>
+                                        </div>
+                                        <div className="grid grid-cols-2 gap-3">
+                                            <div>
+                                                <Label className="text-xs mb-1 block">Class</Label>
+                                                <Select value={selectedClass} onValueChange={setSelectedClass}>
+                                                    <SelectTrigger>
+                                                        <SelectValue placeholder="Select Class" />
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                        {classes.map(c => (
+                                                            <SelectItem key={c.id} value={c.id}>{c.class_name}</SelectItem>
+                                                        ))}
+                                                    </SelectContent>
+                                                </Select>
+                                            </div>
+                                            <div>
+                                                <Label className="text-xs mb-1 block">Section</Label>
+                                                <Select 
+                                                    value={selectedSection} 
+                                                    onValueChange={setSelectedSection}
+                                                    disabled={!selectedClass}
+                                                >
+                                                    <SelectTrigger>
+                                                        <SelectValue placeholder="Select Section" />
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                        {sections.map(s => (
+                                                            <SelectItem key={s.id} value={s.id}>{s.section_name}</SelectItem>
+                                                        ))}
+                                                    </SelectContent>
+                                                </Select>
+                                            </div>
+                                        </div>
+                                        
+                                        {/* Class Progress */}
+                                        {selectedClass && selectedSection && (
+                                            <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-950/30 rounded-lg">
+                                                <div className="flex justify-between items-center mb-2">
+                                                    <span className="text-sm font-medium">
+                                                        {selectedClassName} {selectedSectionName} Progress
+                                                    </span>
+                                                    <span className="text-sm text-muted-foreground">
+                                                        {classProgress.present}/{classProgress.total}
+                                                    </span>
+                                                </div>
+                                                <Progress value={classProgress.percent} className="h-2" />
+                                                <p className="text-xs text-muted-foreground mt-1">
+                                                    {classProgress.percent}% students marked present
+                                                </p>
+                                            </div>
+                                        )}
                                     </div>
                                 )}
                             </CardContent>
                         </Card>
-                        
+                    </div>
+                    
+                    {/* Right Panel - 1/3 */}
+                    <div className="space-y-4">
                         {/* Live Log */}
-                        <Card className="flex-1">
+                        <Card className="h-fit">
                             <CardHeader className="pb-2">
                                 <CardTitle className="text-sm flex items-center gap-2">
                                     <History className="w-4 h-4" />
                                     Live Attendance Log
+                                    {attendanceLog.length > 0 && (
+                                        <Badge variant="secondary" className="ml-auto">{attendanceLog.length}</Badge>
+                                    )}
                                 </CardTitle>
                             </CardHeader>
                             <CardContent>
-                                <ScrollArea className="h-80">
+                                <ScrollArea className="h-[400px] lg:h-[500px]">
                                     <div className="space-y-2">
                                         {attendanceLog.length === 0 ? (
-                                            <div className="text-center text-muted-foreground py-8">
-                                                <Clock className="w-12 h-12 mx-auto opacity-50 mb-2" />
-                                                <p>No attendance marked yet</p>
-                                                <p className="text-sm">Start scanning to see entries</p>
+                                            <div className="text-center text-muted-foreground py-12">
+                                                <Clock className="w-12 h-12 mx-auto opacity-50 mb-3" />
+                                                <p className="font-medium">No entries yet</p>
+                                                <p className="text-sm">Start scanning to see attendance</p>
                                             </div>
                                         ) : (
                                             attendanceLog.map((log) => (
@@ -980,26 +1018,33 @@ const LiveFaceAttendance = () => {
                                                     key={log.id}
                                                     initial={{ opacity: 0, x: -20 }}
                                                     animate={{ opacity: 1, x: 0 }}
-                                                    className={`flex items-center gap-3 p-2 rounded-lg ${
-                                                        log.status === 'success' ? 'bg-green-500/10' :
-                                                        log.status === 'already' ? 'bg-yellow-500/10' :
-                                                        'bg-red-500/10'
+                                                    className={`flex items-center gap-3 p-2.5 rounded-lg border ${
+                                                        log.status === 'success' ? 'bg-green-50 border-green-200 dark:bg-green-950/30 dark:border-green-800' :
+                                                        log.status === 'already' ? 'bg-yellow-50 border-yellow-200 dark:bg-yellow-950/30 dark:border-yellow-800' :
+                                                        'bg-red-50 border-red-200 dark:bg-red-950/30 dark:border-red-800'
                                                     }`}
                                                 >
                                                     {log.status === 'success' ? (
-                                                        <UserCheck className="w-5 h-5 text-green-500" />
+                                                        <UserCheck className="w-5 h-5 text-green-600 flex-shrink-0" />
                                                     ) : log.status === 'already' ? (
-                                                        <User className="w-5 h-5 text-yellow-500" />
+                                                        <User className="w-5 h-5 text-yellow-600 flex-shrink-0" />
                                                     ) : (
-                                                        <UserX className="w-5 h-5 text-red-500" />
+                                                        <UserX className="w-5 h-5 text-red-600 flex-shrink-0" />
                                                     )}
                                                     <div className="flex-1 min-w-0">
-                                                        <p className="font-medium truncate">{log.person_name}</p>
+                                                        <p className="font-medium truncate text-sm">{log.person_name}</p>
                                                         <p className="text-xs text-muted-foreground">
                                                             {log.confidence}% • {log.time}
                                                         </p>
                                                     </div>
-                                                    <Badge variant="outline" className="text-xs">
+                                                    <Badge 
+                                                        variant="outline" 
+                                                        className={`text-xs flex-shrink-0 ${
+                                                            log.status === 'success' ? 'border-green-500 text-green-600' :
+                                                            log.status === 'already' ? 'border-yellow-500 text-yellow-600' :
+                                                            'border-red-500 text-red-600'
+                                                        }`}
+                                                    >
                                                         {log.status === 'success' ? '✓ Marked' :
                                                          log.status === 'already' ? 'Already' : 'Error'}
                                                     </Badge>
@@ -1010,6 +1055,53 @@ const LiveFaceAttendance = () => {
                                 </ScrollArea>
                             </CardContent>
                         </Card>
+                        
+                        {/* Class Students List (when in class mode) */}
+                        {classMode && selectedClass && selectedSection && classStudents.length > 0 && (
+                            <Card>
+                                <CardHeader className="pb-2">
+                                    <CardTitle className="text-sm flex items-center gap-2">
+                                        <GraduationCap className="w-4 h-4" />
+                                        {selectedClassName} {selectedSectionName} Students
+                                        <Badge variant="secondary" className="ml-auto">{classStudents.length}</Badge>
+                                    </CardTitle>
+                                </CardHeader>
+                                <CardContent>
+                                    <ScrollArea className="h-[250px]">
+                                        <div className="space-y-1">
+                                            {classStudents.map((student) => {
+                                                const isMarked = markedStudentIds.has(student.full_name);
+                                                const hasFaceReg = registeredFaces.some(f => f.person_id === student.id);
+                                                
+                                                return (
+                                                    <div
+                                                        key={student.id}
+                                                        className={`flex items-center gap-2 p-2 rounded text-sm ${
+                                                            isMarked ? 'bg-green-50 dark:bg-green-950/30' : 'hover:bg-muted/50'
+                                                        }`}
+                                                    >
+                                                        <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs ${
+                                                            isMarked ? 'bg-green-500 text-white' : 
+                                                            hasFaceReg ? 'bg-blue-100 text-blue-600' : 'bg-muted text-muted-foreground'
+                                                        }`}>
+                                                            {isMarked ? '✓' : hasFaceReg ? '👤' : '?'}
+                                                        </div>
+                                                        <span className={`flex-1 truncate ${isMarked ? 'text-green-700 font-medium' : ''}`}>
+                                                            {student.full_name}
+                                                        </span>
+                                                        {!hasFaceReg && (
+                                                            <Badge variant="outline" className="text-xs text-orange-500 border-orange-300">
+                                                                No Face
+                                                            </Badge>
+                                                        )}
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    </ScrollArea>
+                                </CardContent>
+                            </Card>
+                        )}
                     </div>
                 </div>
             </div>

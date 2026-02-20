@@ -20,6 +20,13 @@ export const BranchProvider = ({ children }) => {
   const userId = user?.id;
   const schoolId = authSchool?.id;
 
+  // ✅ Update document title when selected branch changes
+  useEffect(() => {
+    if (selectedBranch?.branch_name) {
+      document.title = selectedBranch.branch_name;
+    }
+  }, [selectedBranch]);
+
   useEffect(() => {
     // Skip if no user or school
     if (!userId || !schoolId) {

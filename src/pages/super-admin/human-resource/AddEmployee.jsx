@@ -1287,7 +1287,7 @@ const AddEmployee = () => {
                              <Input value={formData.last_name} onChange={e => handleChange('last_name', e.target.value)} placeholder="Last Name" />
                         </div>
                     </div>
-                     <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mt-6">
+                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
                          <div className="space-y-2">
                              <Label>Gender <span className="text-red-500">*</span></Label>
                              <Select value={formData.gender} onValueChange={v => handleChange('gender', v)}>
@@ -1306,12 +1306,6 @@ const AddEmployee = () => {
                          <div className="space-y-2">
                              <Label>Emergency Contact</Label>
                              <Input value={formData.emergency_contact_number} onChange={e => handleChange('emergency_contact_number', e.target.value)} placeholder="Phone" />
-                         </div>
-                         <div className="space-y-2">
-                            <Label>Profile Photo</Label>
-                             <div className="flex items-center gap-2">
-                                <ImageUploader onFileChange={setPhotoFile} initialPreview={photoPreview} circular={true} size="sm" />
-                             </div>
                          </div>
                      </div>
                  </div>
@@ -1438,6 +1432,48 @@ const AddEmployee = () => {
                     {/* Embedded Custom Fields for Step 2 */}
                     {renderEmbeddedCustomFields('personal_details')}
                     {renderEmbeddedCustomFields('contact_details')}
+                 </div>
+
+                 {/* Section: Profile Photo - Moved to End Like Student Admission */}
+                 <div>
+                    <h3 className="text-sm font-bold text-muted-foreground uppercase tracking-wider mb-4 border-b pb-2 flex items-center gap-2">
+                        <User className="w-4 h-4" /> Profile Photo
+                    </h3>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        {/* Staff Photo Card */}
+                        <div className="flex flex-col items-center">
+                            <Label className="mb-2">Profile Photo</Label>
+                            <p className="text-xs text-muted-foreground mb-3 text-center">
+                                Please upload your passport size photo (H:4.5cm x W:3.5cm)
+                            </p>
+                            <div className={`relative w-full max-w-[200px] aspect-[3.5/4.5] rounded-2xl overflow-hidden border-3 transition-all duration-300 shadow-lg group ${
+                                photoPreview 
+                                    ? "border-emerald-500 bg-emerald-50 dark:bg-emerald-950/30" 
+                                    : "border-dashed border-purple-300 dark:border-purple-700 bg-gradient-to-br from-purple-50 to-violet-50 dark:from-purple-950/30 dark:to-violet-950/30 hover:border-purple-500"
+                            }`}>
+                                <ImageUploader 
+                                    onFileChange={setPhotoFile} 
+                                    initialPreview={photoPreview}
+                                    showInstruction={false}
+                                    showCamera={true}
+                                    showCrop={true}
+                                    aspectRatio={3.5/4.5}
+                                />
+                                {photoPreview && (
+                                    <div className="absolute top-2 right-2 bg-emerald-500 text-white p-1.5 rounded-full shadow-lg">
+                                        <CheckCircle2 className="h-4 w-4" />
+                                    </div>
+                                )}
+                            </div>
+                            <div className="mt-3 text-center">
+                                <p className="text-sm font-bold text-purple-700 dark:text-purple-300 flex items-center justify-center gap-1.5">
+                                    <Briefcase className="h-4 w-4" />
+                                    Staff Photo
+                                </p>
+                                <p className="text-xs text-muted-foreground mt-0.5">Passport size</p>
+                            </div>
+                        </div>
+                    </div>
                  </div>
             </CardContent>
         </Card>

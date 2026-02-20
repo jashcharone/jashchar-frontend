@@ -35,7 +35,7 @@ import {
 } from "@/components/ui/alert-dialog";
 
 const DisableReason = () => {
-  const { user, currentSessionId, organizationId } = useAuth();
+  const { user, organizationId } = useAuth();
   const { selectedBranch } = useBranch();
   const { toast } = useToast();
   const [reasons, setReasons] = useState([]);
@@ -81,7 +81,6 @@ const DisableReason = () => {
       .from('disable_reasons')
       .insert([{
         branch_id: selectedBranch.id,
-        session_id: currentSessionId,
         organization_id: organizationId,
         reason: formData.reason.trim()
       }]);

@@ -48,6 +48,7 @@ const MediaManager = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [filterType, setFilterType] = useState('all');
   const [selectedMedia, setSelectedMedia] = useState(null);
+  const [imageLoadErrors, setImageLoadErrors] = useState(0); // Track image loading failures
   const [viewMode, setViewMode] = useState('grid');
   const [acceptString, setAcceptString] = useState('image/*,video/*,audio/*,.pdf,.doc,.docx,.xls,.xlsx');
   const fileInputRef = useRef(null);
@@ -87,6 +88,7 @@ const MediaManager = () => {
       return;
     }
     setLoading(true);
+    setImageLoadErrors(0); // Reset error count on fresh load
     try {
       const response = await frontCmsService.getMedia(branchId);
       if (response.success) {
@@ -312,6 +314,17 @@ const MediaManager = () => {
     <DashboardLayout>
       <div className="p-4 md:p-6 space-y-6">
         <MasterAdminSchoolHeader />
+        
+        {/* Image Load Error Alert */}
+        {imageLoadErrors > 0 && (
+          <Alert variant="destructive" className="bg-red-50 dark:bg-red-950/30 border-red-200 dark:border-red-800">
+            <AlertTriangle className="h-4 w-4" />
+            <AlertTitle>Images Not Loading ({imageLoadErrors} failed)</AlertTitle>
+            <AlertDescription>
+              Storage bucket may not be configured as public. Go to <strong>Supabase Dashboard → Storage → school-assets → Edit bucket → Enable "Public bucket"</strong>
+            </AlertDescription>
+          </Alert>
+        )}
         
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -573,6 +586,13 @@ const MediaManager = () => {
                       alt={item.filename || item.file_name} 
                       className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" 
                       loading="lazy"
+                      onError={(e) => {
+                        // Track error count for showing alert
+                        setImageLoadErrors(prev => prev + 1);
+                        // Show broken image icon when image fails to load
+                        e.target.style.display = 'none';
+                        e.target.parentElement.innerHTML = '<div class="flex flex-col items-center justify-center w-full h-full bg-red-50 dark:bg-red-950/30 text-red-500"><svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/><line x1="4" y1="4" x2="20" y2="20"/></svg><span class="text-xs mt-2">Image Load Failed</span><span class="text-[10px] mt-1 opacity-70">Check Storage Settings</span></div>';
+                      }}
                     />
                   ) : (item.mime_type || item.file_type) === 'video/youtube' ? (
                     <div className="w-full h-full relative">
@@ -675,7 +695,16 @@ const MediaManager = () => {
                 {/* Thumbnail */}
                 <div className="w-14 h-14 rounded-lg bg-muted/50 flex items-center justify-center overflow-hidden shrink-0">
                   {(item.mime_type || item.file_type)?.startsWith('image/') ? (
-                    <img src={item.url} alt="" className="w-full h-full object-cover" loading="lazy" />
+                    <img 
+                      src={item.url} 
+                      alt="" 
+                      className="w-full h-full object-cover" 
+                      loading="lazy"
+                      onError={(e) => {
+                        e.target.style.display = 'none';
+                        e.target.parentElement.innerHTML = '<div class="flex items-center justify-center w-full h-full bg-red-50 dark:bg-red-950/30 text-red-500"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/><line x1="4" y1="4" x2="20" y2="20"/></svg></div>';
+                      }}
+                    />
                   ) : (item.mime_type || item.file_type) === 'video/youtube' && getYoutubeId(item.url) ? (
                     <img src={`https://img.youtube.com/vi/${getYoutubeId(item.url)}/0.jpg`} alt="" className="w-full h-full object-cover" loading="lazy" />
                   ) : (

@@ -294,7 +294,7 @@ const SubjectTeacher = () => {
                             {teacher.full_name || teacher.first_name}
                             {teacher.designation && (
                               <span className="text-muted-foreground ml-2">
-                                ({teacher.designation})
+                                ({typeof teacher.designation === 'object' ? teacher.designation.name : teacher.designation})
                               </span>
                             )}
                           </label>

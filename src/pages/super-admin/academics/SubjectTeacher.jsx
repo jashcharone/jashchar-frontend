@@ -291,7 +291,7 @@ const SubjectTeacher = () => {
                             htmlFor={`teacher-${teacher.id}`}
                             className="text-sm cursor-pointer"
                           >
-                            {teacher.full_name || teacher.first_name}
+                            {typeof teacher.full_name === 'object' ? teacher.full_name?.name : (teacher.full_name || teacher.first_name || 'Unknown')}
                             {teacher.designation && (
                               <span className="text-muted-foreground ml-2">
                                 ({typeof teacher.designation === 'object' ? teacher.designation.name : teacher.designation})

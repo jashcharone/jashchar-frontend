@@ -18,6 +18,7 @@ const FeesCarryForward = () => {
 
     const [classes, setClasses] = useState([]);
     const [sections, setSections] = useState([]);
+    const [filteredSections, setFilteredSections] = useState([]);
     const [selectedClass, setSelectedClass] = useState('');
     const [selectedSection, setSelectedSection] = useState('all');
     const [students, setStudents] = useState([]);
@@ -48,6 +49,25 @@ const FeesCarryForward = () => {
     useEffect(() => {
         fetchPrerequisites();
     }, [fetchPrerequisites]);
+
+    // Fetch sections when class changes
+    const fetchSectionsForClass = useCallback(async (classId) => {
+        if (!classId) {
+            setFilteredSections([]);
+            return;
+        }
+        const { data } = await supabase
+            .from('class_sections')
+            .select('sections(id, name)')
+            .eq('class_id', classId);
+        const sectionsData = data?.map(d => d.sections).filter(Boolean) || [];
+        setFilteredSections(sectionsData);
+    }, []);
+
+    useEffect(() => {
+        fetchSectionsForClass(selectedClass);
+        setSelectedSection('all'); // Reset section when class changes
+    }, [selectedClass, fetchSectionsForClass]);
 
     const handleSearch = async () => {
         if (!selectedClass || !selectedBranch) {
@@ -108,7 +128,7 @@ const FeesCarryForward = () => {
                         </div>
                         <div>
                              <label className="text-sm font-medium">Section</label>
-                            <Select value={selectedSection} onValueChange={setSelectedSection}><SelectTrigger><SelectValue placeholder="Select Section" /></SelectTrigger><SelectContent><SelectItem value="all">All Sections</SelectItem>{sections.map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}</SelectContent></Select>
+                            <Select value={selectedSection} onValueChange={setSelectedSection} disabled={!selectedClass}><SelectTrigger><SelectValue placeholder="Select Section" /></SelectTrigger><SelectContent><SelectItem value="all">All Sections</SelectItem>{filteredSections.map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}</SelectContent></Select>
                         </div>
                         <Button onClick={handleSearch} disabled={loading}>{loading ? <Loader2 className="animate-spin" /> : <Search className="mr-2 h-4 w-4" />} Search</Button>
                     </div>

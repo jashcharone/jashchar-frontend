@@ -2259,24 +2259,26 @@ const StudentAdmission = () => {
     return publicUrl;
   };
 
-  // 📄 Download Admission Form PDF Handler
+  // 📄 Download AI-Powered Admission Form PDF Handler
   const handleDownloadAdmissionForm = async () => {
     try {
       toast({
-        title: "Generating PDF...",
-        description: "Please wait while we create the admission form",
+        title: "AI Generating PDF...",
+        description: "Creating admission form based on your active form settings",
       });
       
-      // Fetch organization name from database
+      // Fetch organization name and phone from database
       let orgName = 'Educational Institution';
+      let orgPhone = '';
       if (organizationId) {
         const { data: orgData } = await supabase
           .from('organizations')
-          .select('name, org_name')
+          .select('name, org_name, contact_phone, office_phone')
           .eq('id', organizationId)
           .single();
         if (orgData) {
           orgName = orgData.org_name || orgData.name || 'Educational Institution';
+          orgPhone = orgData.office_phone || orgData.contact_phone || '';
         }
       }
       
@@ -2289,19 +2291,24 @@ const StudentAdmission = () => {
         branchShortName = branchFullName;
       }
       
+      // AI ENGINE: Pass allFields and formSections for dynamic PDF generation
       await generateAdmissionFormPDF({
         organizationName: orgName,
         branchName: branchShortName,
         branchAddress: selectedBranch?.address || '',
         contactPhone: selectedBranch?.phone || selectedBranch?.contact_phone || '',
         contactEmail: selectedBranch?.email || selectedBranch?.contact_email || '',
+        officePhone: orgPhone,  // Organization office phone
         academicSession: sessions.find(s => s.id === currentSessionId)?.name || `${new Date().getFullYear()}-${new Date().getFullYear() + 1}`,
         formTitle: 'STUDENT ADMISSION APPLICATION FORM',
+        // AI Parameters - Dynamic field generation based on Form Settings
+        allFields: allFields,       // All fields with is_enabled status
+        formSections: formSections, // All sections with is_enabled status
       });
       
       toast({
         title: "PDF Downloaded!",
-        description: "Admission form has been downloaded successfully",
+        description: `AI-generated form with ${allFields.filter(f => f.is_enabled !== false).length} active fields`,
         variant: "success",
       });
     } catch (error) {
@@ -2687,14 +2694,14 @@ const StudentAdmission = () => {
               
               {/* Right Side - Status Cards */}
               <div className="flex items-center gap-3 flex-wrap">
-                {/* 📄 Download Form Button */}
+                {/* 🤖 AI Download Form Button */}
                 <Button
                   onClick={handleDownloadAdmissionForm}
                   variant="outline"
                   className="hidden sm:flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-purple-500/10 to-violet-500/10 hover:from-purple-500/20 hover:to-violet-500/20 border-purple-500/30 hover:border-purple-500/50 text-purple-700 dark:text-purple-300 rounded-xl shadow-lg shadow-purple-500/5 transition-all duration-300"
                 >
                   <FileDown className="h-4 w-4" />
-                  <span className="text-sm font-bold">Download Form</span>
+                  <span className="text-sm font-bold">🤖 AI Form</span>
                 </Button>
                 
                 {/* Quick Fill Badge */}
@@ -3187,12 +3194,12 @@ const StudentAdmission = () => {
                 ))}
               </div>
             ) : (
-              <div className="text-center py-12">
-                <div className="bg-gradient-to-br from-muted to-muted/50 p-4 rounded-2xl w-fit mx-auto mb-4">
-                  <Tag className="h-8 w-8 text-muted-foreground" />
+              <div className="text-center py-4">
+                <div className="bg-gradient-to-br from-muted to-muted/50 p-2.5 rounded-xl w-fit mx-auto mb-2">
+                  <Tag className="h-5 w-5 text-muted-foreground" />
                 </div>
-                <p className="text-muted-foreground font-medium">No fee discounts available</p>
-                <p className="text-xs text-muted-foreground/70 mt-1">Discounts can be configured in Fee Management</p>
+                <p className="text-sm text-muted-foreground font-medium">No fee discounts available</p>
+                <p className="text-xs text-muted-foreground/70">Discounts can be configured in Fee Management</p>
               </div>
             )}
           </div>

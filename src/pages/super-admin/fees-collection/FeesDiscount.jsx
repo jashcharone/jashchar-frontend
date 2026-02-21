@@ -22,7 +22,18 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import DatePicker from '@/components/ui/DatePicker';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { format } from 'date-fns';
+import { format, parseISO, isValid } from 'date-fns';
+
+// Helper function to ensure valid Date object
+const toValidDate = (date) => {
+    if (!date) return null;
+    if (date instanceof Date && isValid(date)) return date;
+    if (typeof date === 'string') {
+        const parsed = parseISO(date);
+        return isValid(parsed) ? parsed : null;
+    }
+    return null;
+};
 
 const FeesDiscount = () => {
     const { user, currentSessionId, organizationId } = useAuth();
@@ -55,6 +66,7 @@ const FeesDiscount = () => {
     const [filters, setFilters] = useState({ class_id: '', section_id: '', category_id: '', gender: '', rte: '' });
     const [classes, setClasses] = useState([]);
     const [sections, setSections] = useState([]);
+    const [filteredSections, setFilteredSections] = useState([]);
     const [categories, setCategories] = useState([]);
     
     const branchId = user?.profile?.branch_id;
@@ -172,13 +184,16 @@ const FeesDiscount = () => {
         }
 
         // Prepare data based on discount type
+        // Convert date properly
+        const expireDate = toValidDate(formData.expire_date);
+        
         const dataToSubmit = {
             name: formData.name,
             discount_code: formData.discount_code,
             discount_type: formData.discount_type,
             amount: formData.discount_type === 'fix_amount' ? (parseFloat(formData.amount) || 0) : (parseFloat(formData.percentage) || 0),
             use_count: formData.use_count ? parseInt(formData.use_count) : null,
-            expire_date: formData.expire_date ? format(formData.expire_date, 'yyyy-MM-dd') : null,
+            expire_date: expireDate ? format(expireDate, 'yyyy-MM-dd') : null,
             description: formData.description,
             branch_id: selectedBranch.id,
         };
@@ -209,7 +224,7 @@ const FeesDiscount = () => {
             percentage: discount.discount_type === 'percentage' ? discount.amount : '',
             amount: discount.discount_type === 'fix_amount' ? discount.amount : '',
             use_count: discount.use_count || '',
-            expire_date: discount.expire_date ? new Date(discount.expire_date) : null,
+            expire_date: toValidDate(discount.expire_date),
             description: discount.description || ''
         });
     };
@@ -233,6 +248,9 @@ const FeesDiscount = () => {
     
     const handleAssignClick = async (discount) => {
         setSelectedDiscount(discount);
+        // Reset filters and sections when modal opens
+        setFilters({ class_id: '', section_id: '', category_id: '', gender: '', rte: '' });
+        setFilteredSections([]);
         
         const { data, error } = await supabase
             .from('student_fee_discounts')
@@ -248,8 +266,20 @@ const FeesDiscount = () => {
         setAssignModalOpen(true);
     };
 
-    const handleFilterChange = (key, value) => {
+    const handleFilterChange = async (key, value) => {
         setFilters(prev => ({...prev, [key]: value}));
+        
+        // When class changes, fetch sections for that class
+        if (key === 'class_id' && value) {
+            const { data } = await supabase
+                .from('class_sections')
+                .select('sections(id, name)')
+                .eq('class_id', value);
+            const sectionsData = data?.map(d => d.sections).filter(Boolean) || [];
+            setFilteredSections(sectionsData);
+            // Reset section selection when class changes
+            setFilters(prev => ({...prev, section_id: ''}));
+        }
     };
     
     useEffect(() => {
@@ -588,7 +618,7 @@ const FeesDiscount = () => {
                                                         )}
                                                     </td>
                                                     <td className="p-3">
-                                                        {d.expire_date ? format(new Date(d.expire_date), 'MM/dd/yyyy') : ''}
+                                                        {toValidDate(d.expire_date) ? format(toValidDate(d.expire_date), 'MM/dd/yyyy') : ''}
                                                     </td>
                                                     <td className="p-3">
                                                         <div className="flex justify-center gap-1">
@@ -674,8 +704,8 @@ const FeesDiscount = () => {
                     )}
                     
                     <div className="grid grid-cols-1 md:grid-cols-5 gap-4 my-4 p-4 border rounded-lg">
-                        <Select onValueChange={(v) => handleFilterChange('class_id', v)}><SelectTrigger><SelectValue placeholder="Select Class" /></SelectTrigger><SelectContent>{classes.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent></Select>
-                        <Select onValueChange={(v) => handleFilterChange('section_id', v)}><SelectTrigger><SelectValue placeholder="Select Section" /></SelectTrigger><SelectContent>{sections.map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}</SelectContent></Select>
+                        <Select value={filters.class_id} onValueChange={(v) => handleFilterChange('class_id', v)}><SelectTrigger><SelectValue placeholder="Select Class" /></SelectTrigger><SelectContent>{classes.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent></Select>
+                        <Select value={filters.section_id} onValueChange={(v) => handleFilterChange('section_id', v)} disabled={!filters.class_id}><SelectTrigger><SelectValue placeholder="Select Section" /></SelectTrigger><SelectContent>{filteredSections.map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}</SelectContent></Select>
                         <Select onValueChange={(v) => handleFilterChange('category_id', v)}><SelectTrigger><SelectValue placeholder="Select Category" /></SelectTrigger><SelectContent>{categories.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent></Select>
                         <Select onValueChange={(v) => handleFilterChange('gender', v)}><SelectTrigger><SelectValue placeholder="Select Gender" /></SelectTrigger><SelectContent><SelectItem value="Male">Male</SelectItem><SelectItem value="Female">Female</SelectItem></SelectContent></Select>
                         <Button>Search</Button>
@@ -767,8 +797,8 @@ const FeesDiscount = () => {
                                 <div>
                                     <Label className="text-muted-foreground">Expiry Date</Label>
                                     <p className="font-medium">
-                                        {selectedDiscount.expire_date 
-                                            ? format(new Date(selectedDiscount.expire_date), 'dd MMM yyyy') 
+                                        {toValidDate(selectedDiscount.expire_date) 
+                                            ? format(toValidDate(selectedDiscount.expire_date), 'dd MMM yyyy') 
                                             : 'No Expiry'}
                                     </p>
                                 </div>

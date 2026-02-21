@@ -11,8 +11,19 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Textarea } from '@/components/ui/textarea';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
-import { format } from 'date-fns';
+import { format, parseISO, isValid } from 'date-fns';
 import { Plus, Edit, Trash, UserPlus, Calendar as CalendarIcon, Loader2 } from 'lucide-react';
+
+// Helper function to ensure valid Date object
+const toValidDate = (date) => {
+    if (!date) return null;
+    if (date instanceof Date && isValid(date)) return date;
+    if (typeof date === 'string') {
+        const parsed = parseISO(date);
+        return isValid(parsed) ? parsed : null;
+    }
+    return null;
+};
 import {
   Dialog,
   DialogContent,
@@ -127,10 +138,13 @@ const FeesDiscount = () => {
         e.preventDefault();
         setIsSubmitting(true);
         
+        // Convert date properly
+        const expireDate = toValidDate(formData.expire_date);
+        
         const dataToSubmit = {
             ...formData,
             branch_id: branchId,
-            expire_date: formData.expire_date ? format(formData.expire_date, 'yyyy-MM-dd') : null
+            expire_date: expireDate ? format(expireDate, 'yyyy-MM-dd') : null
         };
         
         let error;
@@ -154,7 +168,7 @@ const FeesDiscount = () => {
         setEditingDiscount(discount);
         setFormData({
             ...discount,
-            expire_date: discount.expire_date ? new Date(discount.expire_date) : null
+            expire_date: toValidDate(discount.expire_date)
         });
     };
 
@@ -265,7 +279,7 @@ const FeesDiscount = () => {
                         <div><Label htmlFor="use_count" required>Number of Use Count</Label><Input type="number" id="use_count" name="use_count" value={formData.use_count} onChange={handleInputChange} required /></div>
                         <div>
                             <Label>Expire Date</Label>
-                            <Popover><PopoverTrigger asChild><Button variant="outline" className="w-full justify-start text-left font-normal"><CalendarIcon className="mr-2 h-4 w-4" />{formData.expire_date ? format(formData.expire_date, 'PPP') : <span>Pick a date</span>}</Button></PopoverTrigger><PopoverContent className="w-auto p-0"><Calendar mode="single" selected={formData.expire_date} onSelect={handleDateChange} initialFocus /></PopoverContent></Popover>
+                            <Popover><PopoverTrigger asChild><Button variant="outline" className="w-full justify-start text-left font-normal"><CalendarIcon className="mr-2 h-4 w-4" />{toValidDate(formData.expire_date) ? format(toValidDate(formData.expire_date), 'PPP') : <span>Pick a date</span>}</Button></PopoverTrigger><PopoverContent className="w-auto p-0"><Calendar mode="single" selected={formData.expire_date} onSelect={handleDateChange} initialFocus /></PopoverContent></Popover>
                         </div>
                         <div><Label htmlFor="description">Description</Label><Textarea id="description" name="description" value={formData.description} onChange={handleInputChange} /></div>
                         <div className="flex justify-end space-x-2">

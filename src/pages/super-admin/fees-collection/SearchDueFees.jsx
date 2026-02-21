@@ -35,9 +35,9 @@ const SearchDueFees = () => {
     const fetchPrerequisites = useCallback(async () => {
         if (!branchId || !selectedBranch) return;
         const [groupsRes, classesRes, sectionsRes] = await Promise.all([
-            supabase.from('fee_groups').select('id, name').eq('branch_id', branchId).eq('branch_id', selectedBranch.id),
-            supabase.from('classes').select('id, name').eq('branch_id', branchId).eq('branch_id', selectedBranch.id),
-            supabase.from('sections').select('id, name').eq('branch_id', branchId).eq('branch_id', selectedBranch.id),
+            supabase.from('fee_groups').select('id, name').eq('branch_id', selectedBranch.id),
+            supabase.from('classes').select('id, name').eq('branch_id', selectedBranch.id),
+            supabase.from('sections').select('id, name').eq('branch_id', selectedBranch.id),
         ]);
         setFeeGroups(groupsRes.data || []);
         setClasses(classesRes.data || []);
@@ -63,7 +63,7 @@ const SearchDueFees = () => {
         setSearched(true);
 
         const { data, error } = await supabase.rpc('get_due_fees_students', {
-            p_branch_id: branchId,
+            p_school_id: selectedBranch.id,
             p_branch_id: selectedBranch.id,
             p_class_id: selectedClass,
             p_section_id: selectedSection === 'all' ? null : selectedSection,

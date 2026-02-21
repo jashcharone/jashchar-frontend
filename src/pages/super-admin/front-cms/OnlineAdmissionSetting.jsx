@@ -22,12 +22,12 @@ const OnlineAdmissionSetting = () => {
   const [saving, setSaving] = useState(false);
   
   const [formData, setFormData] = useState({
-    is_enabled: false,
-    is_payment_enabled: false,
+    online_admission_enabled: false,
+    payment_option_enabled: false,
     form_fees: 0,
     instructions: '',
     terms_conditions: '',
-    application_form_path: '',
+    admission_form_file_url: '',
     visible_fields: {}
   });
 
@@ -128,7 +128,7 @@ const OnlineAdmissionSetting = () => {
           // Actually, let's use the standard pattern:
           const file = files[0];
           if (file.url) {
-              setFormData(prev => ({ ...prev, application_form_path: file.url }));
+              setFormData(prev => ({ ...prev, admission_form_file_url: file.url }));
           }
       }
   };
@@ -168,8 +168,8 @@ const OnlineAdmissionSetting = () => {
                                     <p className="text-sm text-muted-foreground">Enable or disable online admission module</p>
                                 </div>
                                 <Switch 
-                                    checked={formData.is_enabled}
-                                    onCheckedChange={(checked) => setFormData(prev => ({ ...prev, is_enabled: checked }))}
+                                    checked={formData.online_admission_enabled}
+                                    onCheckedChange={(checked) => setFormData(prev => ({ ...prev, online_admission_enabled: checked }))}
                                 />
                             </div>
                             
@@ -179,12 +179,12 @@ const OnlineAdmissionSetting = () => {
                                     <p className="text-sm text-muted-foreground">Enable online payment for admission</p>
                                 </div>
                                 <Switch 
-                                    checked={formData.is_payment_enabled}
-                                    onCheckedChange={(checked) => setFormData(prev => ({ ...prev, is_payment_enabled: checked }))}
+                                    checked={formData.payment_option_enabled}
+                                    onCheckedChange={(checked) => setFormData(prev => ({ ...prev, payment_option_enabled: checked }))}
                                 />
                             </div>
 
-                            {formData.is_payment_enabled && (
+                            {formData.payment_option_enabled && (
                                 <div className="space-y-2">
                                     <Label>Online Admission Form Fees</Label>
                                     <Input 
@@ -201,8 +201,8 @@ const OnlineAdmissionSetting = () => {
                                     <div className="flex-1">
                                         <DocumentUploadField onUpload={handleFileUpload} />
                                     </div>
-                                    {formData.application_form_path && (
-                                        <Button type="button" variant="outline" size="icon" onClick={() => window.open(formData.application_form_path, '_blank')}>
+                                    {formData.admission_form_file_url && (
+                                        <Button type="button" variant="outline" size="icon" onClick={() => window.open(formData.admission_form_file_url, '_blank')}>
                                             <Download className="h-4 w-4" />
                                         </Button>
                                     )}

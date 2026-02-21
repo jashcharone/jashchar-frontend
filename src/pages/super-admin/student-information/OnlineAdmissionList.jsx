@@ -301,16 +301,23 @@ const OnlineAdmissionList = () => {
 
   const fetchSettings = async () => {
     try {
-      const settings = await frontCmsService.getOnlineAdmissionSettings(currentBranchId);
+      const response = await frontCmsService.getOnlineAdmissionSettings(currentBranchId);
+      console.log('[OnlineAdmission] Settings response:', response);
+      // API returns { success: true, data: {...} }
+      const settings = response?.data || response;
       if (settings) {
         setAdmissionSettings(prev => ({
           ...prev,
           ...settings,
           visible_fields: settings.visible_fields || ADMISSION_FIELDS.map(f => f.id)
         }));
+        console.log('[OnlineAdmission] Settings loaded:', { 
+          online_admission_enabled: settings.online_admission_enabled,
+          payment_option_enabled: settings.payment_option_enabled 
+        });
       }
     } catch (error) {
-      console.error('Error fetching settings:', error);
+      console.error('[OnlineAdmission] Error fetching settings:', error);
     }
   };
 
@@ -695,12 +702,17 @@ const OnlineAdmissionList = () => {
     
     setSavingSettings(true);
     try {
+      console.log('[OnlineAdmission] Saving settings:', {
+        online_admission_enabled: admissionSettings.online_admission_enabled,
+        payment_option_enabled: admissionSettings.payment_option_enabled
+      });
       // Save settings for the current branch only
-      await frontCmsService.updateOnlineAdmissionSettings(admissionSettings, currentBranchId);
+      const response = await frontCmsService.updateOnlineAdmissionSettings(admissionSettings, currentBranchId);
+      console.log('[OnlineAdmission] Save response:', response);
       toast({ title: 'Success', description: `Settings saved for ${currentBranchName}!` });
     } catch (error) {
       toast({ title: 'Error', description: 'Failed to save settings', variant: 'destructive' });
-      console.error(error);
+      console.error('[OnlineAdmission] Save error:', error);
     } finally {
       setSavingSettings(false);
     }

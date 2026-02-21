@@ -51,7 +51,7 @@ import {
   QrCode, Download, Phone, Mail, Calendar, Upload, Star,
   ChevronRight, ChevronDown, Info, Zap, Award, Heart,
   Camera, Home, BookOpen, Briefcase, UserCheck, Check,
-  CircleDot, Circle, Rocket, Brain, Cpu
+  CircleDot, Circle, Rocket, Brain, Cpu, XCircle
 } from 'lucide-react';
 
 // ============================================================================
@@ -1610,6 +1610,32 @@ const OnlineAdmission = () => {
       </div>
     );
   }
+
+  // Check if online admission is disabled
+  if (settings && settings.online_admission_enabled === false) {
+    return (
+      <div className={`min-h-screen ${GRADIENT_BG} relative flex items-center justify-center`}>
+        <AnimatedBackground />
+        <div className="relative z-10 text-center p-8">
+          <div className="bg-white/10 backdrop-blur-xl rounded-3xl p-12 border border-white/20 max-w-lg mx-auto">
+            <div className="w-20 h-20 bg-red-500/20 rounded-full flex items-center justify-center mx-auto mb-6">
+              <XCircle className="w-10 h-10 text-red-400" />
+            </div>
+            <h2 className="text-3xl font-bold text-white mb-4">Admissions Closed</h2>
+            <p className="text-gray-400 text-lg mb-6">
+              Online admissions are currently not available. Please check back later or contact the institution directly.
+            </p>
+            <Button
+              onClick={() => window.history.back()}
+              className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700"
+            >
+              Go Back
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
   
   return (
     <div className={`min-h-screen ${GRADIENT_BG} relative`}>
@@ -1618,46 +1644,54 @@ const OnlineAdmission = () => {
         <meta name="description" content="Apply for admission online with our futuristic admission portal" />
       </Helmet>
       
+      {/* Full Website Header */}
+      <TopBar settings={siteSettings} news={[]} />
+      <PublicHeader 
+        settings={siteSettings} 
+        menus={menus} 
+        mobileMenuOpen={mobileMenuOpen} 
+        setMobileMenuOpen={setMobileMenuOpen} 
+        slug={schoolAlias} 
+      />
+      
       <AnimatedBackground />
       
       <div className="relative z-10 min-h-screen flex flex-col">
-        {/* Header */}
-        <header className="backdrop-blur-md bg-black/20 border-b border-white/10 sticky top-0 z-50">
-          <div className="max-w-7xl mx-auto px-4 py-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-4">
-                {organization?.logo_url && (
-                  <img 
-                    src={organization.logo_url} 
-                    alt="Logo" 
-                    className="h-12 w-12 rounded-xl object-contain bg-white/10 p-1"
-                  />
-                )}
-                <div>
-                  <h1 className="text-xl font-bold text-white">
-                    {organization?.name || siteSettings?.school_name}
-                  </h1>
-                  <p className="text-sm text-gray-400">Online Admission Portal</p>
-                </div>
-              </div>
-              
-              <div className="flex items-center gap-4">
-                <Badge className="bg-purple-500/20 text-purple-300 border-purple-500/30 hidden sm:flex">
-                  <Sparkles className="w-3 h-3 mr-1" />
-                  Powered by AI
-                </Badge>
-                <Button 
-                  variant="ghost" 
+        {/* Admission Portal Header Bar */}
+        <div className="bg-gradient-to-r from-purple-600 to-indigo-600 py-4 px-4">
+          <div className="max-w-5xl mx-auto flex items-center justify-between flex-wrap gap-4">
+            <div className="flex items-center gap-3">
+              <Badge className="bg-white/20 text-white border-white/30">
+                <Sparkles className="w-3 h-3 mr-1" />
+                Online Admission Portal
+              </Badge>
+            </div>
+            
+            <div className="flex items-center gap-3">
+              {/* Download Admission Form Button */}
+              {settings?.admission_form_file_url && (
+                <Button
+                  variant="outline"
                   size="sm"
-                  className="text-gray-300 hover:text-white hover:bg-white/10"
+                  className="bg-white/10 border-white/30 text-white hover:bg-white/20"
+                  onClick={() => window.open(settings.admission_form_file_url, '_blank')}
                 >
-                  <QrCode className="w-4 h-4 mr-2" />
-                  Track Status
+                  <Download className="w-4 h-4 mr-2" />
+                  Download Form
                 </Button>
-              </div>
+              )}
+              
+              <Button 
+                variant="outline" 
+                size="sm"
+                className="bg-white/10 border-white/30 text-white hover:bg-white/20"
+              >
+                <QrCode className="w-4 h-4 mr-2" />
+                Track Status
+              </Button>
             </div>
           </div>
-        </header>
+        </div>
         
         {/* Main Content */}
         <main className="flex-1 py-8 px-4">

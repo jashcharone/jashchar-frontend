@@ -22,6 +22,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { useToast } from '@/components/ui/use-toast';
 import { supabase } from '@/lib/supabaseClient';
 import { useBranch } from '@/contexts/BranchContext';
+import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { sortClasses } from '@/utils/classOrderUtils';
 import frontCmsService from '@/services/frontCmsService';
 import DocumentUploadField from '@/components/common/DocumentUploadField';
@@ -194,6 +195,7 @@ const OnlineAdmissionList = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { selectedBranch } = useBranch();
+  const { organizationId } = useAuth();
   const qrRef = useRef(null);
   const printRef = useRef(null);
   
@@ -205,6 +207,7 @@ const OnlineAdmissionList = () => {
   // State Management
   const [loading, setLoading] = useState(true);
   const [admissions, setAdmissions] = useState([]);
+  // Direct Links branches - fetched from schools table (same as public page)
   const [branches, setBranches] = useState([]);
   const [classes, setClasses] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
@@ -222,6 +225,9 @@ const OnlineAdmissionList = () => {
   
   // Settings State
   const [settingsSearchTerm, setSettingsSearchTerm] = useState('');
+  // Convert array to object format for visible_fields
+  const defaultVisibleFields = ADMISSION_FIELDS.reduce((acc, f) => ({ ...acc, [f.id]: true }), {});
+  
   const [admissionSettings, setAdmissionSettings] = useState({
     online_admission_enabled: false,
     payment_option_enabled: false,
@@ -229,7 +235,7 @@ const OnlineAdmissionList = () => {
     instructions: '',
     terms_conditions: '',
     admission_form_file_url: '',
-    visible_fields: ADMISSION_FIELDS.map(f => f.id)
+    visible_fields: defaultVisibleFields
   });
   const [savingSettings, setSavingSettings] = useState(false);
   
@@ -245,21 +251,39 @@ const OnlineAdmissionList = () => {
     if (currentBranchId) {
       fetchAdmissions();
       fetchSettings();
-      fetchBranchesAndClasses();
+      fetchClasses();
     }
   }, [statusFilter, currentBranchId]);
 
-  const fetchBranchesAndClasses = async () => {
+  // Fetch branches for Direct Links from schools table (same as public page)
+  useEffect(() => {
+    const fetchDirectLinkBranches = async () => {
+      if (!organizationId) return;
+      try {
+        const { data, error } = await supabase
+          .from('schools')
+          .select('id, name, slug, branch_code, logo_url, is_primary')
+          .eq('organization_id', organizationId)
+          .order('is_primary', { ascending: false });
+        
+        if (!error && data) setBranches(data);
+      } catch (error) {
+        console.error('Error fetching direct link branches:', error);
+      }
+    };
+    fetchDirectLinkBranches();
+  }, [organizationId]);
+
+  const fetchClasses = async () => {
     try {
-      const [branchRes, classRes] = await Promise.all([
-        supabase.from('schools').select('id, name, slug, branch_code, logo_url'),
-        supabase.from('classes').select('id, name')
-      ]);
+      const { data, error } = await supabase
+        .from('classes')
+        .select('id, name')
+        .eq('branch_id', currentBranchId);
       
-      if (branchRes.data) setBranches(branchRes.data.map(b => ({ ...b, school_alias: b.slug })));
-      if (classRes.data) setClasses(sortClasses(classRes.data));
+      if (!error && data) setClasses(sortClasses(data));
     } catch (error) {
-      console.error('Error fetching branches/classes:', error);
+      console.error('Error fetching classes:', error);
     }
   };
 
@@ -306,10 +330,25 @@ const OnlineAdmissionList = () => {
       // API returns { success: true, data: {...} }
       const settings = response?.data || response;
       if (settings) {
+        // Parse visible_fields if it's a string (from database JSON column)
+        let visibleFields = settings.visible_fields;
+        if (typeof visibleFields === 'string') {
+          try {
+            visibleFields = JSON.parse(visibleFields);
+          } catch (e) {
+            console.warn('[OnlineAdmission] Failed to parse visible_fields:', e);
+            visibleFields = defaultVisibleFields;
+          }
+        }
+        // Ensure visibleFields is valid object/array, fallback to defaults
+        if (!visibleFields || (typeof visibleFields !== 'object')) {
+          visibleFields = defaultVisibleFields;
+        }
+        
         setAdmissionSettings(prev => ({
           ...prev,
           ...settings,
-          visible_fields: settings.visible_fields || ADMISSION_FIELDS.map(f => f.id)
+          visible_fields: visibleFields
         }));
         console.log('[OnlineAdmission] Settings loaded:', { 
           online_admission_enabled: settings.online_admission_enabled,
@@ -743,17 +782,40 @@ const OnlineAdmissionList = () => {
     toast({ title: 'Success', description: 'Exported to CSV' });
   };
 
-  // Field visibility helpers
+  // Field visibility helpers - supports both array and object formats
   const toggleField = (fieldId) => {
-    setAdmissionSettings(prev => ({
-      ...prev,
-      visible_fields: prev.visible_fields.includes(fieldId)
-        ? prev.visible_fields.filter(f => f !== fieldId)
-        : [...prev.visible_fields, fieldId]
-    }));
+    setAdmissionSettings(prev => {
+      const currentFields = prev.visible_fields;
+      // Handle object format (from database)
+      if (currentFields && typeof currentFields === 'object' && !Array.isArray(currentFields)) {
+        return {
+          ...prev,
+          visible_fields: {
+            ...currentFields,
+            [fieldId]: !currentFields[fieldId]
+          }
+        };
+      }
+      // Handle array format (legacy)
+      const fieldsArray = Array.isArray(currentFields) ? currentFields : [];
+      return {
+        ...prev,
+        visible_fields: fieldsArray.includes(fieldId)
+          ? fieldsArray.filter(f => f !== fieldId)
+          : [...fieldsArray, fieldId]
+      };
+    });
   };
 
-  const isFieldVisible = (fieldId) => admissionSettings.visible_fields?.includes(fieldId);
+  const isFieldVisible = (fieldId) => {
+    const fields = admissionSettings.visible_fields;
+    // Handle object format (from database)
+    if (fields && typeof fields === 'object' && !Array.isArray(fields)) {
+      return fields[fieldId] === true;
+    }
+    // Handle array format (legacy)
+    return Array.isArray(fields) && fields.includes(fieldId);
+  };
 
   const groupedFields = useMemo(() => {
     const filtered = ADMISSION_FIELDS.filter(f => 
@@ -1310,13 +1372,13 @@ const OnlineAdmissionList = () => {
                         size="sm"
                         className="bg-white/20 hover:bg-white/30 text-white border-0"
                         onClick={() => {
-                          const link = `${window.location.origin}/${branch.school_alias}/online-admission`;
+                          const link = `${window.location.origin}/${branch.slug}/online-admission`;
                           navigator.clipboard.writeText(link);
                           toast({ title: 'Copied!', description: `Link copied for ${branch.name}` });
                         }}
                       >
                         <Copy className="mr-1 h-3 w-3" />
-                        {branch.branch_code || branch.name?.substring(0, 10)}
+                        {branch.slug?.toUpperCase() || branch.name?.substring(0, 10)}
                       </Button>
                     ))}
                   </div>
@@ -1505,7 +1567,19 @@ const OnlineAdmissionList = () => {
                     <Switch
                       id="online_admission"
                       checked={admissionSettings.online_admission_enabled}
-                      onCheckedChange={(checked) => setAdmissionSettings(prev => ({ ...prev, online_admission_enabled: checked }))}
+                      onCheckedChange={async (checked) => {
+                        setAdmissionSettings(prev => ({ ...prev, online_admission_enabled: checked }));
+                        // Auto-save when toggle changes
+                        try {
+                          await frontCmsService.updateOnlineAdmissionSettings(
+                            { ...admissionSettings, online_admission_enabled: checked },
+                            currentBranchId
+                          );
+                          toast({ title: checked ? 'Enabled' : 'Disabled', description: `Online admission ${checked ? 'enabled' : 'disabled'} successfully!` });
+                        } catch (error) {
+                          toast({ title: 'Error', description: 'Failed to save', variant: 'destructive' });
+                        }
+                      }}
                       className="data-[state=checked]:bg-green-600"
                     />
                   </div>
@@ -1523,7 +1597,19 @@ const OnlineAdmissionList = () => {
                     <Switch
                       id="payment_option"
                       checked={admissionSettings.payment_option_enabled}
-                      onCheckedChange={(checked) => setAdmissionSettings(prev => ({ ...prev, payment_option_enabled: checked }))}
+                      onCheckedChange={async (checked) => {
+                        setAdmissionSettings(prev => ({ ...prev, payment_option_enabled: checked }));
+                        // Auto-save when toggle changes
+                        try {
+                          await frontCmsService.updateOnlineAdmissionSettings(
+                            { ...admissionSettings, payment_option_enabled: checked },
+                            currentBranchId
+                          );
+                          toast({ title: checked ? 'Enabled' : 'Disabled', description: `Payment option ${checked ? 'enabled' : 'disabled'} successfully!` });
+                        } catch (error) {
+                          toast({ title: 'Error', description: 'Failed to save', variant: 'destructive' });
+                        }
+                      }}
                       className="data-[state=checked]:bg-blue-600"
                     />
                   </div>

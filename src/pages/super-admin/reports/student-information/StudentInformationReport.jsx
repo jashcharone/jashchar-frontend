@@ -436,7 +436,7 @@ const StudentInformationReport = () => {
           { key: 'father_name', label: 'Father Name', accessor: 'father_name' },
           { key: 'dob', label: 'Date Of Birth', accessor: r => r.date_of_birth ? new Date(r.date_of_birth).toLocaleDateString('en-IN') : '-' },
           { key: 'gender', label: 'Gender', accessor: 'gender' },
-          { key: 'category', label: 'Category', accessor: r => r.category?.name || '-' },
+          { key: 'category', label: 'Admission Type', accessor: r => r.category?.name || '-' },
           { key: 'mobile', label: 'Mobile Number', accessor: 'phone' },
           { key: 'aadhaar', label: 'National ID (Aadhaar)', accessor: 'aadhar_no' },
         ];
@@ -521,7 +521,7 @@ const StudentInformationReport = () => {
           { key: 'dob', label: 'Date Of Birth', accessor: r => r.date_of_birth ? new Date(r.date_of_birth).toLocaleDateString('en-IN') : '-' },
           { key: 'admission_date', label: 'Admission Date', accessor: r => r.admission_date ? new Date(r.admission_date).toLocaleDateString('en-IN') : '-' },
           { key: 'gender', label: 'Gender', accessor: 'gender' },
-          { key: 'category', label: 'Category', accessor: r => r.category?.name || '-' },
+          { key: 'category', label: 'Admission Type', accessor: r => r.category?.name || '-' },
           { key: 'mobile', label: 'Mobile Number', accessor: 'phone' },
         ];
 

@@ -171,6 +171,7 @@ const FormFieldsSettings = () => {
 
     // ==================== FIELD OPERATIONS ====================
     const handleToggle = async (field, toggleType) => {
+        console.log('🔧 handleToggle START:', { field, toggleType }); // FIRST LINE DEBUG
         const isSystem = field.is_system;
         const currentValue = toggleType === 'is_enabled' ? (field.is_enabled !== false) : !!field.is_required;
         const newValue = !currentValue;
@@ -193,8 +194,16 @@ const FormFieldsSettings = () => {
         }
 
         try {
+            console.log('[AdmissionFormSettings] handleToggle called:', { branchId, field: field.key || field.id, toggleType, newValue });
+            
+            if (!branchId) {
+                console.error('[AdmissionFormSettings] branchId is undefined!');
+                toast({ variant: 'destructive', title: 'Error: Branch not selected' });
+                return;
+            }
+            
             if (isSystem) {
-                await api.post('/form-settings/save', {
+                const payload = {
                     branch_id: branchId,
                     module: 'student_admission',
                     settings: [{
@@ -206,7 +215,10 @@ const FormFieldsSettings = () => {
                         section_key: getSectionKey(field),
                         sort_order: field.sort_order || field.order || 0
                     }]
-                });
+                };
+                console.log('[AdmissionFormSettings] Saving system field:', payload);
+                const response = await api.post('/form-settings/save', payload);
+                console.log('[AdmissionFormSettings] Save response:', response.data);
             } else {
                 await api.put(`/form-settings/custom-field/${field.id}`, { 
                     [toggleType]: newValue,
@@ -215,7 +227,8 @@ const FormFieldsSettings = () => {
                 });
             }
         } catch (error) {
-            toast({ variant: 'destructive', title: 'Error saving' });
+            console.error('[AdmissionFormSettings] Save error:', error.response?.data || error.message);
+            toast({ variant: 'destructive', title: 'Error saving', description: error.response?.data?.message || error.message });
             fetchSettings();
         }
     };
@@ -599,14 +612,14 @@ const FormFieldsSettings = () => {
                                                                 <TableCell className="text-center">
                                                                     <Switch
                                                                         checked={isEnabled}
-                                                                        onCheckedChange={() => handleToggle(field, 'is_enabled')}
+                                                                        onCheckedChange={() => { console.log('🎯 Visible switch clicked!', field.key || field.id); handleToggle(field, 'is_enabled'); }}
                                                                         className="data-[state=checked]:bg-green-500"
                                                                     />
                                                                 </TableCell>
                                                                 <TableCell className="text-center">
                                                                     <Switch
                                                                         checked={!!field.is_required}
-                                                                        onCheckedChange={() => handleToggle(field, 'is_required')}
+                                                                        onCheckedChange={() => { console.log('🎯 Required switch clicked!', field.key || field.id); handleToggle(field, 'is_required'); }}
                                                                         disabled={!isEnabled}
                                                                         className="data-[state=checked]:bg-red-500"
                                                                     />

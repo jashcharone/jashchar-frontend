@@ -8,8 +8,9 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Input } from '@/components/ui/input';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter } from '@/components/ui/card';
-import { Save, Trash2, Loader2, UserCheck, BookOpen } from 'lucide-react';
+import { Save, Trash2, Loader2, UserCheck, BookOpen, Search, Edit2, X, CheckCircle2, Users, GraduationCap } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -30,6 +31,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from '@/components/ui/badge';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 const SubjectTeacher = () => {
   const { toast } = useToast();
@@ -47,10 +49,15 @@ const SubjectTeacher = () => {
   const [selectedSection, setSelectedSection] = useState('');
   const [selectedSubject, setSelectedSubject] = useState('');
   const [selectedTeachers, setSelectedTeachers] = useState([]);
+  const [teacherSearch, setTeacherSearch] = useState('');
 
   const [loading, setLoading] = useState(false);
   const [isFetching, setIsFetching] = useState(false);
   const [isDeleting, setIsDeleting] = useState(null);
+  
+  // Edit mode states
+  const [editingAssignment, setEditingAssignment] = useState(null);
+  const [editTeachers, setEditTeachers] = useState([]);
 
   // BRANCH FIX: Always use selectedBranch.id from BranchContext
   const branchId = selectedBranch?.id;
@@ -60,48 +67,23 @@ const SubjectTeacher = () => {
     
     setIsFetching(true);
     try {
-      // BRANCH FIX: Use ONLY selectedBranch.id for all requests
-      // Fetch classes
-      const classesRes = await api.get('/academics/classes', {
-        params: { branchId },
-        headers: { 'x-school-id': branchId, 'x-branch-id': branchId }
-      });
+      // PERFORMANCE FIX: Fetch ALL data in parallel using Promise.all
+      const headers = { 'x-school-id': branchId, 'x-branch-id': branchId };
+      const params = { branchId };
+
+      const [classesRes, sectionsRes, subjectsRes, teachersRes, assignmentsRes] = await Promise.all([
+        api.get('/academics/classes', { params, headers }),
+        api.get('/academics/sections', { params, headers }),
+        api.get('/academics/subjects', { params, headers }),
+        api.get('/hr/staff', { params, headers }),
+        api.get('/academics/subject-teachers', { params, headers }).catch(() => ({ data: [] }))
+      ]);
+
       setClasses(classesRes.data?.classes || classesRes.data || []);
-
-      // Fetch sections
-      const sectionsRes = await api.get('/academics/sections', {
-        params: { branchId },
-        headers: { 'x-school-id': branchId, 'x-branch-id': branchId }
-      });
       setAllSections(sectionsRes.data?.sections || sectionsRes.data || []);
-
-      // Fetch subjects
-      const subjectsRes = await api.get('/academics/subjects', {
-        params: { branchId },
-        headers: { 'x-school-id': branchId, 'x-branch-id': branchId }
-      });
       setSubjects(subjectsRes.data?.subjects || subjectsRes.data || []);
-
-      // Fetch teachers (all staff - user can select who teaches)
-      const teachersRes = await api.get('/hr/staff', {
-        params: { branchId },
-        headers: { 'x-school-id': branchId, 'x-branch-id': branchId }
-      });
-      const allStaff = teachersRes.data?.staff || teachersRes.data || [];
-      setTeachers(allStaff);
-
-      // Fetch existing subject-teacher assignments
-      try {
-        const assignmentsRes = await api.get('/academics/subject-teachers', {
-          params: { branchId },
-          headers: { 'x-school-id': branchId, 'x-branch-id': branchId }
-        });
-        setAssignments(assignmentsRes.data || []);
-      } catch (err) {
-        // Table may not exist yet - gracefully handle
-        console.warn('Subject teachers fetch failed (table may not exist yet):', err.message);
-        setAssignments([]);
-      }
+      setTeachers(teachersRes.data?.staff || teachersRes.data || []);
+      setAssignments(assignmentsRes.data || []);
 
     } catch (error) {
       toast({ 
@@ -131,8 +113,35 @@ const SubjectTeacher = () => {
     }
   }, [selectedClass, allSections]);
 
+  // Filter teachers based on search
+  const filteredTeachers = teachers.filter(teacher => {
+    const name = getTeacherName(teacher);
+    return name.toLowerCase().includes(teacherSearch.toLowerCase());
+  });
+
+  // Get teacher initials for avatar fallback
+  const getInitials = (name) => {
+    if (!name) return '?';
+    const cleanName = typeof name === 'object' ? name.name : name;
+    return cleanName?.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() || '?';
+  };
+
+  // Get teacher display name safely
+  function getTeacherName(teacher) {
+    if (!teacher) return 'Unknown';
+    return typeof teacher.full_name === 'object' ? teacher.full_name?.name : (teacher.full_name || teacher.first_name || 'Unknown');
+  }
+
   const handleTeacherToggle = (teacherId) => {
     setSelectedTeachers(prev => 
+      prev.includes(teacherId) 
+        ? prev.filter(id => id !== teacherId) 
+        : [...prev, teacherId]
+    );
+  };
+
+  const handleEditTeacherToggle = (teacherId) => {
+    setEditTeachers(prev => 
       prev.includes(teacherId) 
         ? prev.filter(id => id !== teacherId) 
         : [...prev, teacherId]
@@ -192,11 +201,58 @@ const SubjectTeacher = () => {
     setIsDeleting(null);
   };
 
+  // Start editing an assignment
+  const startEdit = (assignment) => {
+    setEditingAssignment(assignment);
+    setEditTeachers([assignment.teacher_id]);
+  };
+
+  // Cancel editing
+  const cancelEdit = () => {
+    setEditingAssignment(null);
+    setEditTeachers([]);
+  };
+
+  // Save edit
+  const saveEdit = async () => {
+    if (!editingAssignment || editTeachers.length === 0) {
+      toast({ variant: 'destructive', title: 'Please select at least one teacher.' });
+      return;
+    }
+    
+    setLoading(true);
+    try {
+      // Delete old and create new
+      await api.delete(`/academics/subject-teachers/${editingAssignment.id}`, {
+        params: { branchId },
+        headers: { 'x-school-id': branchId, 'x-branch-id': branchId }
+      });
+      await api.post('/academics/subject-teachers', {
+        branch_id: branchId,
+        class_id: editingAssignment.class_id,
+        section_id: editingAssignment.section_id,
+        subject_id: editingAssignment.subject_id,
+        teacher_ids: editTeachers
+      }, {
+        params: { branchId },
+        headers: { 'x-school-id': branchId, 'x-branch-id': branchId }
+      });
+      
+      toast({ title: 'Updated', description: 'Assignment updated successfully!' });
+      cancelEdit();
+      await fetchInitialData();
+    } catch (error) {
+      toast({ variant: 'destructive', title: 'Failed to update assignment.' });
+    }
+    setLoading(false);
+  };
+
   if (isFetching) {
     return (
       <DashboardLayout>
-        <div className="flex justify-center items-center h-[60vh]">
-          <Loader2 className="h-8 w-8 animate-spin" />
+        <div className="flex flex-col justify-center items-center h-[60vh] space-y-4">
+          <Loader2 className="h-12 w-12 animate-spin text-primary" />
+          <p className="text-muted-foreground">Loading Subject Teachers...</p>
         </div>
       </DashboardLayout>
     );
@@ -205,30 +261,47 @@ const SubjectTeacher = () => {
   return (
     <DashboardLayout>
       <div className="space-y-6 p-6">
-        <div>
-          <h1 className="text-2xl font-bold">Subject Teacher</h1>
-          <p className="text-muted-foreground">Assign teachers to specific subjects for each class and section</p>
+        {/* Enhanced Header */}
+        <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+              Subject Teachers
+            </h1>
+            <p className="text-muted-foreground mt-1">
+              Assign teachers to subjects for each class and section
+            </p>
+          </div>
+          <div className="flex items-center gap-3">
+            <Badge variant="outline" className="px-3 py-1.5 bg-blue-50 border-blue-200">
+              <Users className="h-4 w-4 mr-1.5 text-blue-600" />
+              <span className="text-blue-700">{teachers.length} Teachers</span>
+            </Badge>
+            <Badge variant="outline" className="px-3 py-1.5 bg-green-50 border-green-200">
+              <BookOpen className="h-4 w-4 mr-1.5 text-green-600" />
+              <span className="text-green-700">{assignments.length} Assignments</span>
+            </Badge>
+          </div>
         </div>
 
         <div className="grid gap-6 lg:grid-cols-2">
-          {/* Assignment Form */}
-          <Card>
-            <CardHeader>
+          {/* Assignment Form - Enhanced */}
+          <Card className="shadow-lg border-0 bg-gradient-to-br from-white to-blue-50/30">
+            <CardHeader className="bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-t-lg">
               <CardTitle className="flex items-center gap-2">
-                <UserCheck className="h-5 w-5" />
+                <GraduationCap className="h-5 w-5" />
                 Assign Subject Teacher
               </CardTitle>
-              <CardDescription>
+              <CardDescription className="text-blue-100">
                 Select class, section, subject and teachers to create an assignment
               </CardDescription>
             </CardHeader>
-            <CardContent>
-              <form onSubmit={handleSubmit} className="space-y-4">
+            <CardContent className="pt-6">
+              <form onSubmit={handleSubmit} className="space-y-5">
                 <div className="grid gap-4 md:grid-cols-2">
                   <div className="space-y-2">
-                    <Label>Class *</Label>
+                    <Label className="text-sm font-medium">Class *</Label>
                     <Select value={selectedClass} onValueChange={setSelectedClass}>
-                      <SelectTrigger>
+                      <SelectTrigger className="h-11 border-gray-200 focus:border-blue-500 focus:ring-blue-500">
                         <SelectValue placeholder="Select class" />
                       </SelectTrigger>
                       <SelectContent>
@@ -242,9 +315,9 @@ const SubjectTeacher = () => {
                   </div>
 
                   <div className="space-y-2">
-                    <Label>Section *</Label>
+                    <Label className="text-sm font-medium">Section *</Label>
                     <Select value={selectedSection} onValueChange={setSelectedSection} disabled={!selectedClass}>
-                      <SelectTrigger>
+                      <SelectTrigger className="h-11 border-gray-200 focus:border-blue-500 focus:ring-blue-500">
                         <SelectValue placeholder="Select section" />
                       </SelectTrigger>
                       <SelectContent>
@@ -259,9 +332,9 @@ const SubjectTeacher = () => {
                 </div>
 
                 <div className="space-y-2">
-                  <Label>Subject *</Label>
+                  <Label className="text-sm font-medium">Subject *</Label>
                   <Select value={selectedSubject} onValueChange={setSelectedSubject}>
-                    <SelectTrigger>
+                    <SelectTrigger className="h-11 border-gray-200 focus:border-blue-500 focus:ring-blue-500">
                       <SelectValue placeholder="Select subject" />
                     </SelectTrigger>
                     <SelectContent>
@@ -274,39 +347,70 @@ const SubjectTeacher = () => {
                   </Select>
                 </div>
 
-                <div className="space-y-2">
-                  <Label>Teachers *</Label>
-                  <div className="border rounded-md p-4 max-h-48 overflow-y-auto space-y-2">
-                    {teachers.length === 0 ? (
-                      <p className="text-sm text-muted-foreground">No teachers found</p>
+                <div className="space-y-3">
+                  <Label className="text-sm font-medium">Teachers *</Label>
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                    <Input
+                      placeholder="Search teachers..."
+                      value={teacherSearch}
+                      onChange={(e) => setTeacherSearch(e.target.value)}
+                      className="pl-9 h-11 border-gray-200 focus:border-blue-500 focus:ring-blue-500"
+                    />
+                  </div>
+                  <div className="border rounded-lg p-4 max-h-64 overflow-y-auto bg-white space-y-1">
+                    {filteredTeachers.length === 0 ? (
+                      <p className="text-sm text-muted-foreground text-center py-4">No teachers found</p>
                     ) : (
-                      teachers.map((teacher) => (
-                        <div key={teacher.id} className="flex items-center space-x-2">
+                      filteredTeachers.map((teacher) => (
+                        <div 
+                          key={teacher.id} 
+                          className={`flex items-center gap-3 p-2.5 rounded-lg cursor-pointer transition-all ${
+                            selectedTeachers.includes(teacher.id) 
+                              ? 'bg-blue-50 border border-blue-200' 
+                              : 'hover:bg-gray-50 border border-transparent'
+                          }`}
+                          onClick={() => handleTeacherToggle(teacher.id)}
+                        >
                           <Checkbox
                             id={`teacher-${teacher.id}`}
                             checked={selectedTeachers.includes(teacher.id)}
                             onCheckedChange={() => handleTeacherToggle(teacher.id)}
+                            className="data-[state=checked]:bg-blue-600 data-[state=checked]:border-blue-600"
                           />
-                          <label
-                            htmlFor={`teacher-${teacher.id}`}
-                            className="text-sm cursor-pointer"
-                          >
-                            {typeof teacher.full_name === 'object' ? teacher.full_name?.name : (teacher.full_name || teacher.first_name || 'Unknown')}
+                          <Avatar className="h-9 w-9 border-2 border-white shadow-sm">
+                            <AvatarImage src={teacher.photo_url} alt={getTeacherName(teacher)} />
+                            <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-500 text-white text-xs font-medium">
+                              {getInitials(teacher.full_name)}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium truncate">{getTeacherName(teacher)}</p>
                             {teacher.designation && (
-                              <span className="text-muted-foreground ml-2">
-                                ({typeof teacher.designation === 'object' ? teacher.designation.name : teacher.designation})
-                              </span>
+                              <p className="text-xs text-muted-foreground truncate">
+                                {typeof teacher.designation === 'object' ? teacher.designation.name : teacher.designation}
+                              </p>
                             )}
-                          </label>
+                          </div>
+                          {selectedTeachers.includes(teacher.id) && (
+                            <CheckCircle2 className="h-5 w-5 text-blue-600 flex-shrink-0" />
+                          )}
                         </div>
                       ))
                     )}
                   </div>
+                  {selectedTeachers.length > 0 && (
+                    <p className="text-xs text-blue-600 font-medium">{selectedTeachers.length} teacher(s) selected</p>
+                  )}
                 </div>
               </form>
             </CardContent>
-            <CardFooter>
-              <Button onClick={handleSubmit} disabled={loading} className="w-full">
+            <CardFooter className="bg-gray-50/50 rounded-b-lg">
+              <Button 
+                onClick={handleSubmit} 
+                disabled={loading} 
+                className="w-full h-11 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 shadow-md"
+              >
                 {loading ? (
                   <Loader2 className="h-4 w-4 animate-spin mr-2" />
                 ) : (
@@ -317,77 +421,170 @@ const SubjectTeacher = () => {
             </CardFooter>
           </Card>
 
-          {/* Assignments List */}
-          <Card>
-            <CardHeader>
+          {/* Assignments List - Enhanced */}
+          <Card className="shadow-lg border-0">
+            <CardHeader className="bg-gradient-to-r from-green-600 to-teal-600 text-white rounded-t-lg">
               <CardTitle className="flex items-center gap-2">
                 <BookOpen className="h-5 w-5" />
                 Current Assignments
               </CardTitle>
-              <CardDescription>
-                List of subject-teacher assignments
+              <CardDescription className="text-green-100">
+                View and manage subject-teacher assignments
               </CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="p-0">
               {assignments.length === 0 ? (
-                <div className="text-center py-8 text-muted-foreground">
-                  <BookOpen className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                  <p>No subject-teacher assignments yet.</p>
-                  <p className="text-sm mt-2">Use the form to assign teachers to subjects.</p>
+                <div className="text-center py-12 px-4">
+                  <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gray-100 mb-4">
+                    <BookOpen className="h-8 w-8 text-gray-400" />
+                  </div>
+                  <p className="text-gray-500 font-medium">No assignments yet</p>
+                  <p className="text-sm text-gray-400 mt-1">Use the form to assign teachers to subjects</p>
                 </div>
               ) : (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Class</TableHead>
-                      <TableHead>Section</TableHead>
-                      <TableHead>Subject</TableHead>
-                      <TableHead>Teacher</TableHead>
-                      <TableHead className="text-right">Action</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {assignments.map((a) => (
-                      <TableRow key={a.id}>
-                        <TableCell className="font-medium">{a.classes?.name || '-'}</TableCell>
-                        <TableCell>{a.sections?.name || '-'}</TableCell>
-                        <TableCell>{a.subjects?.name || '-'}</TableCell>
-                        <TableCell>{a.teacher?.full_name || '-'}</TableCell>
-                        <TableCell className="text-right">
-                          <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                              <Button variant="ghost" size="icon" disabled={isDeleting === a.id}>
-                                {isDeleting === a.id ? (
-                                  <Loader2 className="h-4 w-4 animate-spin" />
-                                ) : (
-                                  <Trash2 className="h-4 w-4 text-red-600" />
-                                )}
-                              </Button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent>
-                              <AlertDialogHeader>
-                                <AlertDialogTitle>Remove Assignment?</AlertDialogTitle>
-                                <AlertDialogDescription>
-                                  This will remove the teacher from this subject assignment.
-                                </AlertDialogDescription>
-                              </AlertDialogHeader>
-                              <AlertDialogFooter>
-                                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                <AlertDialogAction onClick={() => handleDeleteAssignment(a.id)} className="bg-destructive">
-                                  Delete
-                                </AlertDialogAction>
-                              </AlertDialogFooter>
-                            </AlertDialogContent>
-                          </AlertDialog>
-                        </TableCell>
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow className="bg-gray-50/80">
+                        <TableHead className="font-semibold">Class</TableHead>
+                        <TableHead className="font-semibold">Section</TableHead>
+                        <TableHead className="font-semibold">Subject</TableHead>
+                        <TableHead className="font-semibold">Teacher</TableHead>
+                        <TableHead className="text-right font-semibold">Actions</TableHead>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+                    </TableHeader>
+                    <TableBody>
+                      {assignments.map((a) => (
+                        <TableRow key={a.id} className="hover:bg-blue-50/30 transition-colors">
+                          <TableCell>
+                            <Badge variant="secondary" className="bg-blue-100 text-blue-700 font-medium">
+                              {a.classes?.name || '-'}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant="outline" className="border-gray-300">
+                              {a.sections?.name || '-'}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <span className="font-medium text-gray-700">{a.subjects?.name || '-'}</span>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center gap-2">
+                              <Avatar className="h-8 w-8 border border-gray-200">
+                                <AvatarImage src={a.teacher?.photo_url} alt={a.teacher?.full_name} />
+                                <AvatarFallback className="bg-gradient-to-br from-green-500 to-teal-500 text-white text-xs">
+                                  {getInitials(a.teacher?.full_name)}
+                                </AvatarFallback>
+                              </Avatar>
+                              <span className="text-sm font-medium">{a.teacher?.full_name || '-'}</span>
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <div className="flex items-center justify-end gap-1">
+                              <Button 
+                                variant="ghost" 
+                                size="icon" 
+                                onClick={() => startEdit(a)}
+                                className="h-8 w-8 hover:bg-blue-100 hover:text-blue-600"
+                              >
+                                <Edit2 className="h-4 w-4" />
+                              </Button>
+                              <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                  <Button 
+                                    variant="ghost" 
+                                    size="icon" 
+                                    disabled={isDeleting === a.id}
+                                    className="h-8 w-8 hover:bg-red-100 hover:text-red-600"
+                                  >
+                                    {isDeleting === a.id ? (
+                                      <Loader2 className="h-4 w-4 animate-spin" />
+                                    ) : (
+                                      <Trash2 className="h-4 w-4" />
+                                    )}
+                                  </Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                  <AlertDialogHeader>
+                                    <AlertDialogTitle>Remove Assignment?</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                      This will remove <strong>{a.teacher?.full_name}</strong> from teaching <strong>{a.subjects?.name}</strong> in <strong>{a.classes?.name} - {a.sections?.name}</strong>.
+                                    </AlertDialogDescription>
+                                  </AlertDialogHeader>
+                                  <AlertDialogFooter>
+                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                    <AlertDialogAction onClick={() => handleDeleteAssignment(a.id)} className="bg-red-600 hover:bg-red-700">
+                                      Delete
+                                    </AlertDialogAction>
+                                  </AlertDialogFooter>
+                                </AlertDialogContent>
+                              </AlertDialog>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
               )}
             </CardContent>
           </Card>
         </div>
+
+        {/* Edit Assignment Dialog */}
+        <AlertDialog open={!!editingAssignment} onOpenChange={(open) => !open && cancelEdit()}>
+          <AlertDialogContent className="max-w-lg">
+            <AlertDialogHeader>
+              <AlertDialogTitle className="flex items-center gap-2">
+                <Edit2 className="h-5 w-5 text-blue-600" />
+                Edit Assignment
+              </AlertDialogTitle>
+              <AlertDialogDescription>
+                Change teacher for <strong>{editingAssignment?.subjects?.name}</strong> in{' '}
+                <strong>{editingAssignment?.classes?.name} - {editingAssignment?.sections?.name}</strong>
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <div className="py-4">
+              <Label className="text-sm font-medium mb-3 block">Select New Teacher</Label>
+              <div className="border rounded-lg p-3 max-h-64 overflow-y-auto space-y-1">
+                {teachers.map((teacher) => (
+                  <div 
+                    key={teacher.id} 
+                    className={`flex items-center gap-3 p-2.5 rounded-lg cursor-pointer transition-all ${
+                      editTeachers.includes(teacher.id) 
+                        ? 'bg-blue-50 border border-blue-200' 
+                        : 'hover:bg-gray-50 border border-transparent'
+                    }`}
+                    onClick={() => handleEditTeacherToggle(teacher.id)}
+                  >
+                    <Checkbox
+                      checked={editTeachers.includes(teacher.id)}
+                      onCheckedChange={() => handleEditTeacherToggle(teacher.id)}
+                      className="data-[state=checked]:bg-blue-600 data-[state=checked]:border-blue-600"
+                    />
+                    <Avatar className="h-8 w-8 border border-gray-200">
+                      <AvatarImage src={teacher.photo_url} alt={getTeacherName(teacher)} />
+                      <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-500 text-white text-xs">
+                        {getInitials(teacher.full_name)}
+                      </AvatarFallback>
+                    </Avatar>
+                    <span className="text-sm font-medium">{getTeacherName(teacher)}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <AlertDialogFooter>
+              <AlertDialogCancel onClick={cancelEdit} className="gap-2">
+                <X className="h-4 w-4" /> Cancel
+              </AlertDialogCancel>
+              <Button onClick={saveEdit} disabled={loading || editTeachers.length === 0} className="bg-blue-600 hover:bg-blue-700 gap-2">
+                {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                Save Changes
+              </Button>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </DashboardLayout>
   );

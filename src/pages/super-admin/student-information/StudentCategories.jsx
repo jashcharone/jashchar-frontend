@@ -66,7 +66,7 @@ const StudentCategories = ({ embedded = false }) => {
       .order('name');
     
     if (error) {
-      toast({ variant: 'destructive', title: 'Error fetching categories', description: error.message });
+      toast({ variant: 'destructive', title: 'Error fetching admission types', description: error.message });
     } else {
       setCategories(data || []);
     }
@@ -86,9 +86,9 @@ const StudentCategories = ({ embedded = false }) => {
       }]);
 
     if (error) {
-      toast({ variant: 'destructive', title: 'Error adding category', description: error.message });
+      toast({ variant: 'destructive', title: 'Error adding admission type', description: error.message });
     } else {
-      toast({ title: 'Success', description: 'Category added successfully' });
+      toast({ title: 'Success', description: 'Admission type added successfully' });
       setIsAddOpen(false);
       setFormData({ name: '' });
       fetchCategories();
@@ -106,9 +106,9 @@ const StudentCategories = ({ embedded = false }) => {
       .eq('id', currentCategory.id);
 
     if (error) {
-      toast({ variant: 'destructive', title: 'Error updating category', description: error.message });
+      toast({ variant: 'destructive', title: 'Error updating admission type', description: error.message });
     } else {
-      toast({ title: 'Success', description: 'Category updated successfully' });
+      toast({ title: 'Success', description: 'Admission type updated successfully' });
       setIsEditOpen(false);
       setCurrentCategory(null);
       setFormData({ name: '' });
@@ -127,9 +127,9 @@ const StudentCategories = ({ embedded = false }) => {
       .eq('id', currentCategory.id);
 
     if (error) {
-      toast({ variant: 'destructive', title: 'Error deleting category', description: error.message });
+      toast({ variant: 'destructive', title: 'Error deleting admission type', description: error.message });
     } else {
-      toast({ title: 'Success', description: 'Category deleted successfully' });
+      toast({ title: 'Success', description: 'Admission type deleted successfully' });
       setIsDeleteOpen(false);
       setCurrentCategory(null);
       fetchCategories();
@@ -151,9 +151,9 @@ const StudentCategories = ({ embedded = false }) => {
   const content = (
       <div className="p-6">
         <div className="flex justify-between items-center mb-6">
-          <h1 className="text-2xl font-bold">Student Categories</h1>
+          <h1 className="text-2xl font-bold">Admission Types</h1>
           <Button onClick={() => { setFormData({ name: '' }); setIsAddOpen(true); }}>
-            <Plus className="mr-2 h-4 w-4" /> Add Category
+            <Plus className="mr-2 h-4 w-4" /> Add Admission Type
           </Button>
         </div>
 
@@ -164,7 +164,7 @@ const StudentCategories = ({ embedded = false }) => {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Category Name</TableHead>
+                  <TableHead>Admission Type</TableHead>
                   <TableHead className="text-right">Action</TableHead>
                 </TableRow>
               </TableHeader>
@@ -172,7 +172,7 @@ const StudentCategories = ({ embedded = false }) => {
                 {categories.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={2} className="text-center py-8 text-muted-foreground">
-                      No categories found. Add one to get started.
+                      No admission types found. Add one to get started.
                     </TableCell>
                   </TableRow>
                 ) : (
@@ -200,13 +200,13 @@ const StudentCategories = ({ embedded = false }) => {
         {/* Add Dialog */}
         <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
           <DialogContent>
-            <DialogHeader><DialogTitle>Add Category</DialogTitle></DialogHeader>
+            <DialogHeader><DialogTitle>Add Admission Type</DialogTitle></DialogHeader>
             <div className="py-4">
-              <Label>Category Name</Label>
+              <Label>Admission Type Name</Label>
               <Input 
                 value={formData.name} 
                 onChange={e => setFormData({ ...formData, name: e.target.value })} 
-                placeholder="e.g. General, OBC"
+                placeholder="e.g. Day Scholar, Hosteller, RTE"
               />
             </div>
             <DialogFooter>
@@ -221,9 +221,9 @@ const StudentCategories = ({ embedded = false }) => {
         {/* Edit Dialog */}
         <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
           <DialogContent>
-            <DialogHeader><DialogTitle>Edit Category</DialogTitle></DialogHeader>
+            <DialogHeader><DialogTitle>Edit Admission Type</DialogTitle></DialogHeader>
             <div className="py-4">
-              <Label>Category Name</Label>
+              <Label>Admission Type Name</Label>
               <Input 
                 value={formData.name} 
                 onChange={e => setFormData({ ...formData, name: e.target.value })} 
@@ -244,7 +244,7 @@ const StudentCategories = ({ embedded = false }) => {
             <AlertDialogHeader>
               <AlertDialogTitle>Are you sure?</AlertDialogTitle>
               <AlertDialogDescription>
-                This action cannot be undone. This will permanently delete the category "{currentCategory?.name}".
+                This action cannot be undone. This will permanently delete the admission type "{currentCategory?.name}".
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>

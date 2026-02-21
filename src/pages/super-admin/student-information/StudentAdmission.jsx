@@ -403,6 +403,7 @@ const StudentAdmission = () => {
   // Master Data States
   const [religions, setReligions] = useState([]);
   const [castes, setCastes] = useState([]);
+  const [indianStates, setIndianStates] = useState([]);  // All Indian states for domicile selection
   const [casteCategories, setCasteCategories] = useState([]);
   const [subCastes, setSubCastes] = useState([]);
   const [filteredSubCastes, setFilteredSubCastes] = useState([]);
@@ -590,7 +591,7 @@ const StudentAdmission = () => {
             return (
               <SmartField label={label} required={isRequired} error={errors.category_id} touched={touched.category_id}>
                 <Select value={formData.category_id || ''} onValueChange={v => handleChange('category_id', v)}>
-                  <SelectTrigger onBlur={() => handleBlur('category_id')} className="h-11"><SelectValue placeholder="Select Category" /></SelectTrigger>
+                  <SelectTrigger onBlur={() => handleBlur('category_id')} className="h-11"><SelectValue placeholder="Select Admission Type" /></SelectTrigger>
                   <SelectContent>{categories.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent>
                 </Select>
               </SmartField>
@@ -888,6 +889,44 @@ const StudentAdmission = () => {
                 </Select>
               </SmartField>
             );
+        case 'domicile_state_id':
+            // 🔧 Domicile State Selection - student can be from ANY state
+            return (
+              <SmartField label={label || "Domicile State"} required={isRequired}>
+                <Select 
+                  value={formData.domicile_state_id || ''} 
+                  onValueChange={async (v) => {
+                    handleChange('domicile_state_id', v);
+                    handleChange('caste_category_id', null); // Reset category when state changes
+                    handleChange('sub_caste_id', null); // Reset sub-caste
+                    setFilteredSubCastes([]);
+                    
+                    // Load caste categories for selected state
+                    if (v) {
+                      const [catRes, subRes] = await Promise.all([
+                        supabase.from('caste_categories').select('id, name, code, reservation_percent').eq('state_id', v).eq('is_active', true).order('display_order'),
+                        supabase.from('sub_castes').select('id, name, caste_category_id, caste_categories!inner(state_id)').eq('caste_categories.state_id', v).eq('is_active', true).order('name')
+                      ]);
+                      setCasteCategories(catRes.data || []);
+                      setSubCastes(subRes.data || []);
+                      console.log('[StudentAdmission] Loaded caste data for state:', v, 'Categories:', catRes.data?.length, 'SubCastes:', subRes.data?.length);
+                    } else {
+                      setCasteCategories([]);
+                      setSubCastes([]);
+                    }
+                  }}
+                >
+                  <SelectTrigger className="h-11"><SelectValue placeholder="Select Domicile State" /></SelectTrigger>
+                  <SelectContent className="max-h-60">
+                    {indianStates.map(state => (
+                      <SelectItem key={state.id} value={state.id}>
+                        {state.name} ({state.code})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </SmartField>
+            );
         case 'caste_category':
             // New caste category dropdown (state-wise)
             // DEBUG: Check if caste categories loaded
@@ -895,8 +934,8 @@ const StudentAdmission = () => {
             if (casteCategories.length === 0) {
               return (
                 <SmartField label={label || "Caste Category"} required={isRequired}>
-                  <div className="flex items-center justify-center h-11 px-3 rounded-md border border-dashed border-amber-400 bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-400 text-sm">
-                    <span>⚠️ Branch state not configured - Set state in Branch Settings</span>
+                  <div className="flex items-center justify-center h-11 px-3 rounded-md border border-dashed border-blue-400 bg-blue-50 dark:bg-blue-950/30 text-blue-700 dark:text-blue-400 text-sm">
+                    <span>ℹ️ Select Domicile State first to load categories</span>
                   </div>
                 </SmartField>
               );
@@ -1719,7 +1758,8 @@ const StudentAdmission = () => {
           masterDocumentsRes,
           customFieldsRes,
           sessionsRes,
-          branchStateRes // 🔧 FIX: Capture the branch state result
+          branchStateRes, // 🔧 FIX: Capture the branch state result
+          indianStatesRes // 🔧 All states for domicile selection
         ] = await Promise.all([
           supabase.from('classes').select('id, name').eq('branch_id', branchId),
           supabase.from('student_categories').select('id, name').eq('branch_id', branchId),
@@ -1737,35 +1777,17 @@ const StudentAdmission = () => {
           supabase.from('master_documents').select('name, is_required'),
           api.get('/form-settings', { params: { branchId, module: 'student_admission' } }),
           supabase.from('sessions').select('id, name, is_active').eq('branch_id', branchId).order('name', { ascending: false }),
-          supabase.from('branches').select('state_id').eq('id', branchId).single()
+          supabase.from('branches').select('state_id').eq('id', branchId).single(),
+          supabase.from('indian_states').select('id, name, code').eq('is_active', true).order('name')
         ]);
 
-        // 🔧 FIX: Use branch state from Promise.all (no redundant query!)
-        let casteCategoriesData = [];
-        let subCastesData = [];
-        const stateId = branchStateRes.data?.state_id;
-        
-        if (stateId) {
-          // Parallel fetch caste categories AND sub-castes for this state
-          const [casteCatRes, allSubCastesRes] = await Promise.all([
-            supabase
-              .from('caste_categories')
-              .select('id, name, code, reservation_percent')
-              .eq('state_id', stateId)
-              .eq('is_active', true)
-              .order('display_order'),
-            supabase
-              .from('sub_castes')
-              .select('id, name, caste_category_id, caste_categories!inner(state_id)')
-              .eq('caste_categories.state_id', stateId)
-              .eq('is_active', true)
-              .order('name')
-          ]);
-          
-          casteCategoriesData = casteCatRes.data || [];
-          subCastesData = allSubCastesRes.data || [];
-          console.log('[StudentAdmission] Caste Categories:', casteCategoriesData.length, 'Sub Castes:', subCastesData.length);
-        }
+        // 🔧 FIX: Don't pre-load caste categories - user will select domicile state first
+        // The domicile_state onChange handler will load categories for the selected state
+        const casteCategoriesData = [];
+        const subCastesData = [];
+        // Branch state can be used as default IF available
+        const branchStateId = branchStateRes.data?.state_id;
+        console.log('[StudentAdmission] Branch state:', branchStateId, 'States loaded:', indianStatesRes.data?.length);
 
         setClasses(sortClasses(classesRes.data || []));
         setCategories(categoriesRes.data || []);
@@ -1783,6 +1805,20 @@ const StudentAdmission = () => {
         setGenders(gendersRes.data || []);
         setStudentHouses(studentHousesRes.data || []);
         setMasterDocuments(masterDocumentsRes.data || []);
+        setIndianStates(indianStatesRes.data || []); // 🔧 All Indian states for domicile selection
+        
+        // 🔧 Auto-select branch state as default domicile AND pre-load caste categories if branch has state
+        if (branchStateId) {
+          setFormData(prev => ({ ...prev, domicile_state_id: branchStateId }));
+          // Pre-load caste categories for branch's state
+          const [catRes, subRes] = await Promise.all([
+            supabase.from('caste_categories').select('id, name, code, reservation_percent').eq('state_id', branchStateId).eq('is_active', true).order('display_order'),
+            supabase.from('sub_castes').select('id, name, caste_category_id, caste_categories!inner(state_id)').eq('caste_categories.state_id', branchStateId).eq('is_active', true).order('name')
+          ]);
+          setCasteCategories(catRes.data || []);
+          setSubCastes(subRes.data || []);
+          console.log('[StudentAdmission] Pre-loaded caste data for branch state:', branchStateId, 'Categories:', catRes.data?.length);
+        }
         
         // Set sessions and auto-select active session
         const sessionsData = sessionsRes.data || [];

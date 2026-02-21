@@ -377,7 +377,7 @@ const StudentProfile = () => {
 
       addField('Aadhaar Number', student.aadhaar_number, col1, y);
       // TC-59 FIX: Use category.name since category is an object from student_categories relation
-      addField('Category', student.category?.name, col2, y);
+      addField('Admission Type', student.category?.name, col2, y);
       addField('Mother Tongue', student.mother_tongue, col3, y);
       y += 14;
 
@@ -1022,7 +1022,7 @@ const StudentProfile = () => {
                     <InfoItem icon={Flag} label="Nationality" value={student.nationality || 'Indian'} />
                     <InfoItem icon={Globe} label="Religion" value={student.religion} />
                     <InfoItem icon={Fingerprint} label="Aadhaar Number" value={student.aadhar_no} copyable />
-                    <InfoItem icon={School} label="Category" value={student.category?.name} />
+                    <InfoItem icon={School} label="Admission Type" value={student.category?.name} />
                   </div>
                 </GlassCard>
 
@@ -1136,7 +1136,7 @@ const StudentProfile = () => {
                 <InfoItem icon={Globe} label="Religion" value={student.religion} />
                 <InfoItem icon={Flag} label="Caste Category" value={student.caste_category?.name || student.caste} />
                 <InfoItem icon={Flag} label="Sub Caste" value={student.sub_caste?.name} />
-                <InfoItem icon={School} label="Category" value={student.category?.name} />
+                <InfoItem icon={School} label="Admission Type" value={student.category?.name} />
                 <InfoItem icon={Flag} label="Nationality" value={student.nationality} />
                 <InfoItem icon={Globe} label="Mother Tongue" value={student.mother_tongue} />
                 <InfoItem icon={Fingerprint} label="Aadhaar Number" value={student.aadhar_no} copyable />

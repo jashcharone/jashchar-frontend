@@ -143,7 +143,7 @@ const FieldRenderer = ({ field, formData, customFieldValues, onChange, masterDat
              case 'date': case 'dob': case 'admission_date': case 'father_dob': case 'mother_dob':
                   return <div className="lg:col-span-1"><DatePicker label={field.field_label} required={field.is_required} value={formData[field.field_name]} onChange={date => onChange(field.field_name, date, true)} /></div>;
              case 'category':
-                  return <div className="lg:col-span-1">{label}<Select value={formData.category_id || ''} onValueChange={v => onChange('category_id', v, true)}><SelectTrigger><SelectValue placeholder="Select Category" /></SelectTrigger><SelectContent>{masterData.categories.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent></Select></div>;
+                  return <div className="lg:col-span-1">{label}<Select value={formData.category_id || ''} onValueChange={v => onChange('category_id', v, true)}><SelectTrigger><SelectValue placeholder="Select Admission Type" /></SelectTrigger><SelectContent>{masterData.categories.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent></Select></div>;
              case 'caste_category':
                   return <div className="lg:col-span-1">{label}<Select value={formData.caste_category_id || ''} onValueChange={v => onChange('caste_category_id', v, true)}><SelectTrigger><SelectValue placeholder="Select Caste Category" /></SelectTrigger><SelectContent>{masterData.casteCategories.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent></Select></div>;
              case 'sub_caste':

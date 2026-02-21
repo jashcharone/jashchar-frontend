@@ -14,7 +14,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogContent, AlertDialogDescription, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
-import { BookOpen, User, Key, Users, Bus, FileText, UserCog, Save, Shield, Loader2, UserPlus, FileCheck2, Copy, Percent, Wallet, AlertCircle, Building, X, Sparkles, BedDouble, GraduationCap, Phone, MapPin, Files, CheckCircle2, ChevronDown, ChevronUp, Camera, Mail, CreditCard, Home, Heart, School, CalendarDays, Hash, Globe, FileUp, Info, Zap, Search, Star, Award, BadgeCheck, Fingerprint, UserCircle2, MapPinned, Landmark, ShieldCheck, Clock, FileImage, Upload, Eye, EyeOff, Lock, Unlock, IndianRupee, Gift, Truck, Building2, Bed, PhoneCall, AlertTriangle, CircleDot, ArrowRight, Check, Ban, Banknote, Receipt, Tag, Percent as PercentIcon, MessageCircle, Send } from 'lucide-react';
+import { BookOpen, User, Key, Users, Bus, FileText, UserCog, Save, Shield, Loader2, UserPlus, FileCheck2, Copy, Percent, Wallet, AlertCircle, Building, X, Sparkles, BedDouble, GraduationCap, Phone, MapPin, Files, CheckCircle2, ChevronDown, ChevronUp, Camera, Mail, CreditCard, Home, Heart, School, CalendarDays, Hash, Globe, FileUp, Info, Zap, Search, Star, Award, BadgeCheck, Fingerprint, UserCircle2, MapPinned, Landmark, ShieldCheck, Clock, FileImage, Upload, Eye, EyeOff, Lock, Unlock, IndianRupee, Gift, Truck, Building2, Bed, PhoneCall, AlertTriangle, CircleDot, ArrowRight, Check, Ban, Banknote, Receipt, Tag, Percent as PercentIcon, MessageCircle, Send, Download, FileDown } from 'lucide-react';
 import ImageUploader from '@/components/ImageUploader';
 import { v4 as uuidv4 } from 'uuid';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
@@ -26,6 +26,7 @@ import { format } from 'date-fns';
 import { Switch } from '@/components/ui/switch';
 import api from '@/lib/api';
 import { cn } from '@/lib/utils';
+import { generateAdmissionFormPDF } from '@/utils/admissionFormPDF';
 
 // Icon mapping
 const ICON_MAP = {
@@ -2257,6 +2258,61 @@ const StudentAdmission = () => {
     const { data: { publicUrl } } = supabase.storage.from(bucket).getPublicUrl(data.path);
     return publicUrl;
   };
+
+  // 📄 Download Admission Form PDF Handler
+  const handleDownloadAdmissionForm = async () => {
+    try {
+      toast({
+        title: "Generating PDF...",
+        description: "Please wait while we create the admission form",
+      });
+      
+      // Fetch organization name from database
+      let orgName = 'Educational Institution';
+      if (organizationId) {
+        const { data: orgData } = await supabase
+          .from('organizations')
+          .select('name, org_name')
+          .eq('id', organizationId)
+          .single();
+        if (orgData) {
+          orgName = orgData.org_name || orgData.name || 'Educational Institution';
+        }
+      }
+      
+      // Get branch short code (e.g., SSVK from "Srishaileshwara Vidyakendra - SSVK")
+      let branchShortName = '';
+      const branchFullName = selectedBranch?.branch_name || selectedBranch?.name || '';
+      if (branchFullName.includes(' - ')) {
+        branchShortName = branchFullName.split(' - ').pop(); // Get "SSVK" part
+      } else {
+        branchShortName = branchFullName;
+      }
+      
+      await generateAdmissionFormPDF({
+        organizationName: orgName,
+        branchName: branchShortName,
+        branchAddress: selectedBranch?.address || '',
+        contactPhone: selectedBranch?.phone || selectedBranch?.contact_phone || '',
+        contactEmail: selectedBranch?.email || selectedBranch?.contact_email || '',
+        academicSession: sessions.find(s => s.id === currentSessionId)?.name || `${new Date().getFullYear()}-${new Date().getFullYear() + 1}`,
+        formTitle: 'STUDENT ADMISSION APPLICATION FORM',
+      });
+      
+      toast({
+        title: "PDF Downloaded!",
+        description: "Admission form has been downloaded successfully",
+        variant: "success",
+      });
+    } catch (error) {
+      console.error('[StudentAdmission] PDF generation error:', error);
+      toast({
+        title: "Error",
+        description: "Failed to generate admission form PDF",
+        variant: "destructive",
+      });
+    }
+  };
   
   const handleSave = async () => {
     // Run full validation on save - get both validity and errors
@@ -2631,6 +2687,16 @@ const StudentAdmission = () => {
               
               {/* Right Side - Status Cards */}
               <div className="flex items-center gap-3 flex-wrap">
+                {/* 📄 Download Form Button */}
+                <Button
+                  onClick={handleDownloadAdmissionForm}
+                  variant="outline"
+                  className="hidden sm:flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-purple-500/10 to-violet-500/10 hover:from-purple-500/20 hover:to-violet-500/20 border-purple-500/30 hover:border-purple-500/50 text-purple-700 dark:text-purple-300 rounded-xl shadow-lg shadow-purple-500/5 transition-all duration-300"
+                >
+                  <FileDown className="h-4 w-4" />
+                  <span className="text-sm font-bold">Download Form</span>
+                </Button>
+                
                 {/* Quick Fill Badge */}
                 <div className="hidden md:flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-blue-500/10 to-indigo-500/10 rounded-xl border border-blue-500/20 shadow-lg shadow-blue-500/5">
                   <div className="relative">

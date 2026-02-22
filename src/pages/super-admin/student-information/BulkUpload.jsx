@@ -1459,14 +1459,15 @@ const BulkUpload = () => {
                     // Basic Info
                     first_name: record.first_name,
                     last_name: record.last_name || null,
-                    full_name: `${record.first_name || ''} ${record.last_name || ''}`.trim(),
+                    // NOTE: 'full_name' removed - backend/DB computes it (StudentAdmission.jsx doesn't send it)
+                    // full_name: `${record.first_name || ''} ${record.last_name || ''}`.trim(),
                     gender: record.gender?.toLowerCase() || 'male',
                     date_of_birth: record.date_of_birth || null,
                     blood_group: record.blood_group || null,
                     religion: record.religion || null,
-                    caste: record.caste || null,
-                    // NOTE: 'category' and 'nationality' columns removed - don't exist in PRODUCTION student_profiles table
-                    // nationality: record.nationality || 'Indian', // Column doesn't exist in production
+                    // NOTE: 'caste', 'category', 'nationality' columns removed - don't exist in PRODUCTION student_profiles table
+                    // caste: record.caste || null,
+                    // nationality: record.nationality || 'Indian',
                     mother_tongue: record.mother_tongue || null,
                     aadhar_no: record.aadhar_no || null,
                     photo_url: photoUrl, // NOTE: Column is 'photo_url' not 'student_photo'
@@ -1497,9 +1498,7 @@ const BulkUpload = () => {
                     admission_date: format(new Date(), 'yyyy-MM-dd'),
                     status: 'active',
                     
-                    // Metadata
-                    created_at: new Date().toISOString(),
-                    updated_at: new Date().toISOString(),
+                    // NOTE: created_at and updated_at removed - database handles these with DEFAULT NOW()
                 };
                 
                 let studentId = null;

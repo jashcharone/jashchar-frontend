@@ -1376,13 +1376,9 @@ const BulkUpload = () => {
         if (autoGenerateAdmissionNo) {
             toast({ title: '🔄 Generating Admission Numbers...', description: `Creating ${total} globally unique IDs` });
             for (let i = 0; i < total; i++) {
-                if (!recordsToUpload[i].admission_no) {
-                    // Generate via Backend API (globally unique)
-                    const admNo = await generateNextAdmissionNo(branchId);
-                    generatedAdmissionNos[i] = admNo;
-                } else {
-                    generatedAdmissionNos[i] = recordsToUpload[i].admission_no;
-                }
+                // ALWAYS generate - ignore Excel value (as per user requirement)
+                const admNo = await generateNextAdmissionNo(branchId);
+                generatedAdmissionNos[i] = admNo;
             }
             console.log(`[BulkUpload] ✅ Generated ${generatedAdmissionNos.length} admission numbers`);
         }
@@ -1393,11 +1389,8 @@ const BulkUpload = () => {
             const baseNum = parseInt(baseRoll, 10);
             
             for (let i = 0; i < total; i++) {
-                if (!recordsToUpload[i].roll_number) {
-                    generatedRollNos[i] = String(baseNum + i).padStart(2, '0');
-                } else {
-                    generatedRollNos[i] = recordsToUpload[i].roll_number;
-                }
+                // ALWAYS generate - ignore Excel value (as per user requirement)
+                generatedRollNos[i] = String(baseNum + i).padStart(2, '0');
             }
             console.log(`[BulkUpload] ✅ Generated roll numbers: ${generatedRollNos[0]} to ${generatedRollNos[total-1]}`);
         }
@@ -1414,13 +1407,31 @@ const BulkUpload = () => {
                    
                    if (blob) {
                        const filePath = `${branchId}/${organizationId}/${Date.now()}_${cleanFilename}`;
+                       
+                       // ✅ FIX: Determine proper content-type based on file extension (Supabase rejects application/octet-stream)
+                       const ext = cleanFilename.split('.').pop()?.toLowerCase();
+                       const mimeTypes = {
+                           'jpg': 'image/jpeg',
+                           'jpeg': 'image/jpeg', 
+                           'png': 'image/png',
+                           'gif': 'image/gif',
+                           'webp': 'image/webp',
+                           'bmp': 'image/bmp'
+                       };
+                       const contentType = mimeTypes[ext] || 'image/png';
+                       
                        const { data: uploadData, error: uploadError } = await supabase.storage
                            .from('student-photos')
-                           .upload(filePath, blob);
+                           .upload(filePath, blob, {
+                               contentType: contentType,
+                               upsert: false
+                           });
                            
                        if (!uploadError) {
                            const { data: urlData } = supabase.storage.from('student-photos').getPublicUrl(filePath);
                            photoUrl = urlData.publicUrl;
+                       } else {
+                           console.error(`Photo upload error for ${cleanFilename}:`, uploadError.message);
                        }
                    }
                 }
@@ -1441,9 +1452,8 @@ const BulkUpload = () => {
                     session_id: selectedSession,
                     
                     // 🌟 school_code = admission_no (as per StudentAdmission.jsx)
-                    // username = admission_no (student username is ALWAYS admission number)
+                    // NOTE: username column removed - doesn't exist in student_profiles table (only used in auth.users)
                     school_code: admissionNo,
-                    username: admissionNo,
                     roll_number: rollNumber,
                     
                     // Basic Info
@@ -1455,11 +1465,11 @@ const BulkUpload = () => {
                     blood_group: record.blood_group || null,
                     religion: record.religion || null,
                     caste: record.caste || null,
-                    category: record.category || null,
+                    // NOTE: 'category' column removed - doesn't exist in student_profiles table
                     nationality: record.nationality || 'Indian',
                     mother_tongue: record.mother_tongue || null,
                     aadhar_no: record.aadhar_no || null,
-                    student_photo: photoUrl, // NEW: Photo URL
+                    photo_url: photoUrl, // NOTE: Column is 'photo_url' not 'student_photo'
                     
                     // Contact
                     email: record.email || null,
@@ -1482,7 +1492,7 @@ const BulkUpload = () => {
                     guardian_phone: record.guardian_phone || null,
                     
                     // School Info
-                    previous_school_name: record.previous_school || null,
+                    previous_school: record.previous_school || null, // Column is 'previous_school' not 'previous_school_name'
                     admission_date: format(new Date(), 'yyyy-MM-dd'),
                     status: 'active',
                     
@@ -1735,14 +1745,14 @@ const BulkUpload = () => {
                                     <div className="flex items-center justify-between p-3 bg-card rounded-lg border">
                                         <div>
                                             <Label className="font-medium">Auto-generate Admission No</Label>
-                                            <p className="text-xs text-muted-foreground">If blank in file</p>
+                                            <p className="text-xs text-muted-foreground">Like Student Admission (ignore Excel)</p>
                                         </div>
                                         <Switch checked={autoGenerateAdmissionNo} onCheckedChange={setAutoGenerateAdmissionNo} />
                                     </div>
                                     <div className="flex items-center justify-between p-3 bg-card rounded-lg border">
                                         <div>
                                             <Label className="font-medium">Auto-generate Roll No</Label>
-                                            <p className="text-xs text-muted-foreground">Sequential roll numbers</p>
+                                            <p className="text-xs text-muted-foreground">Sequential roll numbers (ignore Excel)</p>
                                         </div>
                                         <Switch checked={autoGenerateRollNo} onCheckedChange={setAutoGenerateRollNo} />
                                     </div>

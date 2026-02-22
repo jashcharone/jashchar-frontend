@@ -17,11 +17,15 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { getSchoolOwnerModules } from '@/services/schoolOwnerModulesLoader';
 
+// 21 Comprehensive System Roles - Cannot be deleted
 const SYSTEM_ROLES = [
-    'Super Admin', 'Admin', 'Principal', 'Accountant', 'Receptionist', 'Teacher', 'Librarian', 'Parent', 'Student'
+    'Super Admin', 'Admin', 'Principal', 'Vice Principal', 'Coordinator',
+    'Accountant', 'Cashier', 'Receptionist', 'Teacher', 'Class Teacher',
+    'Subject Teacher', 'Librarian', 'Lab Assistant', 'Driver', 'Hostel Warden',
+    'Sports Coach', 'Security Guard', 'Maintenance Staff', 'Peon', 'Student', 'Parent'
 ];
 
-// Default Permission Templates
+// Default Permission Templates - 21 Comprehensive Roles (All with Task Management)
 const ROLE_TEMPLATES = {
     'Super Admin': {
         modules: 'all',
@@ -35,28 +39,76 @@ const ROLE_TEMPLATES = {
         modules: 'all',
         permissions: { view: true, add: true, edit: true, delete: true }
     },
+    'Vice Principal': {
+        modules: ['student_information', 'academics', 'attendance', 'examinations', 'reports', 'communicate', 'behaviour_records', 'task_management'],
+        permissions: { view: true, add: true, edit: true, delete: false }
+    },
+    'Coordinator': {
+        modules: ['student_information', 'academics', 'attendance', 'examinations', 'lesson_planning_adv', 'communicate', 'task_management'],
+        permissions: { view: true, add: true, edit: true, delete: false }
+    },
     'Teacher': {
-        modules: ['academics', 'homework', 'examination', 'lesson_plan', 'student_information', 'communicate', 'download_center'],
+        modules: ['academics', 'homework', 'examination', 'lesson_plan', 'student_information', 'communicate', 'download_center', 'attendance', 'task_management'],
+        permissions: { view: true, add: true, edit: true, delete: false }
+    },
+    'Class Teacher': {
+        modules: ['student_information', 'academics', 'attendance', 'examinations', 'behaviour_records', 'communicate', 'fees_collection', 'task_management'],
+        permissions: { view: true, add: true, edit: true, delete: false }
+    },
+    'Subject Teacher': {
+        modules: ['student_information', 'academics', 'attendance', 'examinations', 'lesson_planning_adv', 'communicate', 'task_management'],
         permissions: { view: true, add: true, edit: true, delete: false }
     },
     'Accountant': {
-        modules: ['fees_collection', 'income', 'expenses', 'student_information'],
-        permissions: { view: true, add: true, edit: true, delete: false }
-    },
-    'Librarian': {
-        modules: ['library', 'student_information'],
+        modules: ['fees_collection', 'finance', 'income', 'expenses', 'student_information', 'reports', 'hostel', 'transport', 'task_management'],
         permissions: { view: true, add: true, edit: true, delete: true }
     },
-    'Receptionist': {
-        modules: ['front_office', 'student_information', 'communicate'],
+    'Cashier': {
+        modules: ['fees_collection', 'student_information', 'reports', 'task_management'],
+        permissions: { view: true, add: true, edit: false, delete: false }
+    },
+    'Librarian': {
+        modules: ['library', 'student_information', 'reports', 'task_management'],
+        permissions: { view: true, add: true, edit: true, delete: true }
+    },
+    'Lab Assistant': {
+        modules: ['inventory', 'academics', 'task_management'],
         permissions: { view: true, add: true, edit: true, delete: false }
     },
+    'Receptionist': {
+        modules: ['front_office', 'student_information', 'communicate', 'certificate', 'task_management'],
+        permissions: { view: true, add: true, edit: true, delete: false }
+    },
+    'Driver': {
+        modules: ['transport', 'student_information', 'attendance', 'task_management'],
+        permissions: { view: true, add: true, edit: true, delete: false }
+    },
+    'Hostel Warden': {
+        modules: ['hostel', 'student_information', 'attendance', 'communicate', 'inventory', 'task_management'],
+        permissions: { view: true, add: true, edit: true, delete: true }
+    },
+    'Sports Coach': {
+        modules: ['student_information', 'attendance', 'academics', 'inventory', 'annual_calendar', 'task_management'],
+        permissions: { view: true, add: true, edit: true, delete: false }
+    },
+    'Security Guard': {
+        modules: ['front_office', 'attendance', 'transport', 'task_management'],
+        permissions: { view: true, add: true, edit: true, delete: false }
+    },
+    'Maintenance Staff': {
+        modules: ['inventory', 'task_management'],
+        permissions: { view: true, add: true, edit: true, delete: false }
+    },
+    'Peon': {
+        modules: ['task_management'],
+        permissions: { view: true, add: false, edit: false, delete: false }
+    },
     'Parent': {
-        modules: ['student_information', 'fees_collection', 'homework', 'examination', 'communicate'],
+        modules: ['student_information', 'fees_collection', 'homework', 'examination', 'communicate', 'hostel', 'transport', 'certificate'],
         permissions: { view: true, add: false, edit: false, delete: false }
     },
     'Student': {
-        modules: ['student_information', 'homework', 'examination', 'lesson_plan', 'download_center', 'communicate'],
+        modules: ['student_information', 'homework', 'examination', 'lesson_plan', 'download_center', 'communicate', 'library', 'hostel', 'transport', 'certificate'],
         permissions: { view: true, add: false, edit: false, delete: false }
     }
 };

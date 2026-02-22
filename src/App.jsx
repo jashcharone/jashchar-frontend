@@ -87,6 +87,18 @@ const AccountantDashboard = lazy(() => import('@/pages/AccountantDashboard'));
 const ReceptionistDashboard = lazy(() => import('@/pages/ReceptionistDashboard'));
 const TeacherDashboard = lazy(() => import('@/pages/TeacherDashboard'));
 const LibrarianDashboard = lazy(() => import('@/pages/LibrarianDashboard'));
+// New Role-specific Dashboards (21 Comprehensive System Roles)
+const VicePrincipalDashboard = lazy(() => import('@/pages/VicePrincipalDashboard'));
+const CoordinatorDashboard = lazy(() => import('@/pages/CoordinatorDashboard'));
+const CashierDashboard = lazy(() => import('@/pages/CashierDashboard'));
+const ClassTeacherDashboard = lazy(() => import('@/pages/ClassTeacherDashboard'));
+const LabAssistantDashboard = lazy(() => import('@/pages/LabAssistantDashboard'));
+const DriverDashboard = lazy(() => import('@/pages/DriverDashboard'));
+const HostelWardenDashboard = lazy(() => import('@/pages/HostelWardenDashboard'));
+const SportsCoachDashboard = lazy(() => import('@/pages/SportsCoachDashboard'));
+const SecurityGuardDashboard = lazy(() => import('@/pages/SecurityGuardDashboard'));
+const MaintenanceStaffDashboard = lazy(() => import('@/pages/MaintenanceStaffDashboard'));
+const PeonDashboard = lazy(() => import('@/pages/PeonDashboard'));
 
 // ? Finance
 const Income = lazy(() => import('@/pages/super-admin/finance/Income'));
@@ -711,20 +723,56 @@ function App() {
             <Route path="/Admin/dashboard" element={<ProtectedRoute allowedRoles={['admin']}><SchoolOwnerDashboard /></ProtectedRoute>} />
             <Route path="/Admin/*" element={<Navigate to="/Admin/dashboard" replace />} />
             
-            <Route path="/Principal/dashboard" element={<ProtectedRoute allowedRoles={['principal']}><SchoolOwnerDashboard /></ProtectedRoute>} />
+            <Route path="/Principal/dashboard" element={<ProtectedRoute allowedRoles={['principal']}><PrincipalDashboard /></ProtectedRoute>} />
             <Route path="/Principal/*" element={<Navigate to="/Principal/dashboard" replace />} />
             
-            <Route path="/Teacher/dashboard" element={<ProtectedRoute allowedRoles={['teacher']}><SchoolOwnerDashboard /></ProtectedRoute>} />
+            <Route path="/VicePrincipal/dashboard" element={<ProtectedRoute allowedRoles={['vice_principal']}><VicePrincipalDashboard /></ProtectedRoute>} />
+            <Route path="/VicePrincipal/*" element={<Navigate to="/VicePrincipal/dashboard" replace />} />
+            
+            <Route path="/Coordinator/dashboard" element={<ProtectedRoute allowedRoles={['coordinator']}><CoordinatorDashboard /></ProtectedRoute>} />
+            <Route path="/Coordinator/*" element={<Navigate to="/Coordinator/dashboard" replace />} />
+            
+            <Route path="/Teacher/dashboard" element={<ProtectedRoute allowedRoles={['teacher']}><TeacherDashboard /></ProtectedRoute>} />
             <Route path="/Teacher/*" element={<Navigate to="/Teacher/dashboard" replace />} />
+            
+            <Route path="/ClassTeacher/dashboard" element={<ProtectedRoute allowedRoles={['class_teacher']}><ClassTeacherDashboard /></ProtectedRoute>} />
+            <Route path="/ClassTeacher/*" element={<Navigate to="/ClassTeacher/dashboard" replace />} />
+            
+            <Route path="/SubjectTeacher/dashboard" element={<ProtectedRoute allowedRoles={['subject_teacher']}><TeacherDashboard /></ProtectedRoute>} />
+            <Route path="/SubjectTeacher/*" element={<Navigate to="/SubjectTeacher/dashboard" replace />} />
             
             <Route path="/Accountant/dashboard" element={<ProtectedRoute allowedRoles={['accountant']}><AccountantDashboard /></ProtectedRoute>} />
             <Route path="/Accountant/*" element={<Navigate to="/Accountant/dashboard" replace />} />
             
-            <Route path="/Receptionist/dashboard" element={<ProtectedRoute allowedRoles={['receptionist']}><SchoolOwnerDashboard /></ProtectedRoute>} />
+            <Route path="/Cashier/dashboard" element={<ProtectedRoute allowedRoles={['cashier']}><CashierDashboard /></ProtectedRoute>} />
+            <Route path="/Cashier/*" element={<Navigate to="/Cashier/dashboard" replace />} />
+            
+            <Route path="/Receptionist/dashboard" element={<ProtectedRoute allowedRoles={['receptionist']}><ReceptionistDashboard /></ProtectedRoute>} />
             <Route path="/Receptionist/*" element={<Navigate to="/Receptionist/dashboard" replace />} />
             
-            <Route path="/Librarian/dashboard" element={<ProtectedRoute allowedRoles={['librarian']}><SchoolOwnerDashboard /></ProtectedRoute>} />
+            <Route path="/Librarian/dashboard" element={<ProtectedRoute allowedRoles={['librarian']}><LibrarianDashboard /></ProtectedRoute>} />
             <Route path="/Librarian/*" element={<Navigate to="/Librarian/dashboard" replace />} />
+            
+            <Route path="/LabAssistant/dashboard" element={<ProtectedRoute allowedRoles={['lab_assistant']}><LabAssistantDashboard /></ProtectedRoute>} />
+            <Route path="/LabAssistant/*" element={<Navigate to="/LabAssistant/dashboard" replace />} />
+            
+            <Route path="/Driver/dashboard" element={<ProtectedRoute allowedRoles={['driver']}><DriverDashboard /></ProtectedRoute>} />
+            <Route path="/Driver/*" element={<Navigate to="/Driver/dashboard" replace />} />
+            
+            <Route path="/HostelWarden/dashboard" element={<ProtectedRoute allowedRoles={['hostel_warden']}><HostelWardenDashboard /></ProtectedRoute>} />
+            <Route path="/HostelWarden/*" element={<Navigate to="/HostelWarden/dashboard" replace />} />
+            
+            <Route path="/SportsCoach/dashboard" element={<ProtectedRoute allowedRoles={['sports_coach']}><SportsCoachDashboard /></ProtectedRoute>} />
+            <Route path="/SportsCoach/*" element={<Navigate to="/SportsCoach/dashboard" replace />} />
+            
+            <Route path="/SecurityGuard/dashboard" element={<ProtectedRoute allowedRoles={['security_guard']}><SecurityGuardDashboard /></ProtectedRoute>} />
+            <Route path="/SecurityGuard/*" element={<Navigate to="/SecurityGuard/dashboard" replace />} />
+            
+            <Route path="/MaintenanceStaff/dashboard" element={<ProtectedRoute allowedRoles={['maintenance']}><MaintenanceStaffDashboard /></ProtectedRoute>} />
+            <Route path="/MaintenanceStaff/*" element={<Navigate to="/MaintenanceStaff/dashboard" replace />} />
+            
+            <Route path="/Peon/dashboard" element={<ProtectedRoute allowedRoles={['peon']}><PeonDashboard /></ProtectedRoute>} />
+            <Route path="/Peon/*" element={<Navigate to="/Peon/dashboard" replace />} />
             
             <Route path="/Parent/dashboard" element={<ProtectedRoute allowedRoles={['parent']}><ParentDashboard /></ProtectedRoute>} />
             <Route path={ROUTES.PARENT.PROFILE} element={<ProtectedRoute allowedRoles={['parent']}><ParentProfile /></ProtectedRoute>} />
@@ -1245,16 +1293,16 @@ function App() {
             <Route path={ROUTES.SUPER_ADMIN.WEARABLE_DEVICES} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="attendance"><WearableDevices /></ProtectedRoute>} />
             <Route path={ROUTES.SUPER_ADMIN.ATTENDANCE_ANALYTICS} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'teacher']} requiredModule="attendance"><AttendanceAnalytics /></ProtectedRoute>} />
 
-            {/* ? Task Management */}
-            <Route path="/super-admin/task-management" element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'teacher', 'principal']} requiredModule="task_management"><TaskDashboard /></ProtectedRoute>} />
-            <Route path="/super-admin/task-management/dashboard" element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'teacher', 'principal']} requiredModule="task_management.dashboard"><TaskDashboard /></ProtectedRoute>} />
-            <Route path="/super-admin/task-management/tasks" element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'teacher', 'principal']} requiredModule="task_management.tasks"><TaskList /></ProtectedRoute>} />
-            <Route path="/super-admin/task-management/tasks/create" element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'teacher', 'principal']} requiredModule="task_management.tasks"><CreateEditTask /></ProtectedRoute>} />
-            <Route path="/super-admin/task-management/tasks/:taskId" element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'teacher', 'principal']} requiredModule="task_management.tasks"><TaskDetail /></ProtectedRoute>} />
-            <Route path="/super-admin/task-management/tasks/:taskId/edit" element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'teacher', 'principal']} requiredModule="task_management.tasks"><CreateEditTask /></ProtectedRoute>} />
-            <Route path="/super-admin/task-management/my-tasks" element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'teacher', 'principal', 'employee', 'staff']} requiredModule="task_management.my_tasks"><MyTasks /></ProtectedRoute>} />
-            <Route path="/super-admin/task-management/categories" element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="task_management.categories"><TaskCategories /></ProtectedRoute>} />
-            <Route path="/super-admin/task-management/priorities" element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="task_management.priorities"><TaskPriorities /></ProtectedRoute>} />
+            {/* ? Task Management - Available to ALL 21 Staff Roles */}
+            <Route path="/super-admin/task-management" element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'principal', 'vice_principal', 'coordinator', 'accountant', 'cashier', 'receptionist', 'teacher', 'class_teacher', 'subject_teacher', 'librarian', 'lab_assistant', 'driver', 'hostel_warden', 'sports_coach', 'security_guard', 'maintenance_staff', 'peon']} requiredModule="task_management"><TaskDashboard /></ProtectedRoute>} />
+            <Route path="/super-admin/task-management/dashboard" element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'principal', 'vice_principal', 'coordinator', 'accountant', 'cashier', 'receptionist', 'teacher', 'class_teacher', 'subject_teacher', 'librarian', 'lab_assistant', 'driver', 'hostel_warden', 'sports_coach', 'security_guard', 'maintenance_staff', 'peon']} requiredModule="task_management.dashboard"><TaskDashboard /></ProtectedRoute>} />
+            <Route path="/super-admin/task-management/tasks" element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'principal', 'vice_principal', 'coordinator', 'accountant', 'cashier', 'receptionist', 'teacher', 'class_teacher', 'subject_teacher', 'librarian', 'lab_assistant', 'driver', 'hostel_warden', 'sports_coach', 'security_guard', 'maintenance_staff', 'peon']} requiredModule="task_management.tasks"><TaskList /></ProtectedRoute>} />
+            <Route path="/super-admin/task-management/tasks/create" element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'principal', 'vice_principal', 'coordinator']} requiredModule="task_management.tasks"><CreateEditTask /></ProtectedRoute>} />
+            <Route path="/super-admin/task-management/tasks/:taskId" element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'principal', 'vice_principal', 'coordinator', 'accountant', 'cashier', 'receptionist', 'teacher', 'class_teacher', 'subject_teacher', 'librarian', 'lab_assistant', 'driver', 'hostel_warden', 'sports_coach', 'security_guard', 'maintenance_staff', 'peon']} requiredModule="task_management.tasks"><TaskDetail /></ProtectedRoute>} />
+            <Route path="/super-admin/task-management/tasks/:taskId/edit" element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'principal', 'vice_principal', 'coordinator']} requiredModule="task_management.tasks"><CreateEditTask /></ProtectedRoute>} />
+            <Route path="/super-admin/task-management/my-tasks" element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'principal', 'vice_principal', 'coordinator', 'accountant', 'cashier', 'receptionist', 'teacher', 'class_teacher', 'subject_teacher', 'librarian', 'lab_assistant', 'driver', 'hostel_warden', 'sports_coach', 'security_guard', 'maintenance_staff', 'peon', 'employee', 'staff']} requiredModule="task_management.my_tasks"><MyTasks /></ProtectedRoute>} />
+            <Route path="/super-admin/task-management/categories" element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'principal']} requiredModule="task_management.categories"><TaskCategories /></ProtectedRoute>} />
+            <Route path="/super-admin/task-management/priorities" element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'principal']} requiredModule="task_management.priorities"><TaskPriorities /></ProtectedRoute>} />
 
             {/* ? Fees (Remaining) */}
             <Route path={ROUTES.SUPER_ADMIN.COLLECT_FEES} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'accountant']}><CollectFees /></ProtectedRoute>} />

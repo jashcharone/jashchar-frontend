@@ -125,6 +125,16 @@ const LiveFaceAttendance = () => {
         };
     }, []);
     
+    // ═══════════════════════════════════════════════════════════════════════════════════════════════
+    // FIX: Handle video stream assignment after video element is rendered
+    // ═══════════════════════════════════════════════════════════════════════════════════════════════
+    useEffect(() => {
+        if (stream && isScanning && videoRef.current) {
+            videoRef.current.srcObject = stream;
+            videoRef.current.play().catch(err => console.error('Video play error:', err));
+        }
+    }, [stream, isScanning]);
+    
     useEffect(() => {
         if (branchId && !modelsLoading) {
             fetchRegisteredFaces();

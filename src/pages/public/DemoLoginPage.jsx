@@ -87,7 +87,7 @@ const DemoLoginPage = () => {
         }
       }
 
-      // Each role has their own dashboard URL
+      // Each role has their own dashboard URL (21 System Roles)
       const roleDashboards = {
         'super_admin': '/super-admin/dashboard',
         'school_owner': '/super-admin/dashboard',
@@ -95,12 +95,24 @@ const DemoLoginPage = () => {
         'master_admin': '/master-admin/dashboard',
         'admin': '/Admin/dashboard',
         'principal': '/Principal/dashboard',
+        'vice_principal': '/VicePrincipal/dashboard',
+        'coordinator': '/Coordinator/dashboard',
         'teacher': '/Teacher/dashboard',
-        'student': '/Student/dashboard',
-        'parent': '/Parent/dashboard',
+        'class_teacher': '/ClassTeacher/dashboard',
+        'subject_teacher': '/SubjectTeacher/dashboard',
         'accountant': '/Accountant/dashboard',
+        'cashier': '/Cashier/dashboard',
         'receptionist': '/Receptionist/dashboard',
-        'librarian': '/Librarian/dashboard'
+        'librarian': '/Librarian/dashboard',
+        'lab_assistant': '/LabAssistant/dashboard',
+        'driver': '/Driver/dashboard',
+        'hostel_warden': '/HostelWarden/dashboard',
+        'sports_coach': '/SportsCoach/dashboard',
+        'security_guard': '/SecurityGuard/dashboard',
+        'maintenance_staff': '/MaintenanceStaff/dashboard',
+        'peon': '/Peon/dashboard',
+        'student': '/Student/dashboard',
+        'parent': '/Parent/dashboard'
       };
       
       const target = roleDashboards[userRole] || '/super-admin/dashboard';

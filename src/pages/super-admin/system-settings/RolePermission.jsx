@@ -29,8 +29,13 @@ const RolePermissionSchool = () => {
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [loading, setLoading] = useState(false);
 
-    // System roles that cannot be deleted
-    const SYSTEM_ROLES = ['Super Admin', 'Admin', 'Principal', 'Teacher', 'Student', 'Parent', 'Accountant', 'Receptionist', 'Librarian'];
+    // System roles that cannot be deleted - 21 comprehensive roles
+    const SYSTEM_ROLES = [
+        'Super Admin', 'Admin', 'Principal', 'Vice Principal', 'Coordinator',
+        'Accountant', 'Cashier', 'Receptionist', 'Teacher', 'Class Teacher',
+        'Subject Teacher', 'Librarian', 'Lab Assistant', 'Driver', 'Hostel Warden',
+        'Sports Coach', 'Security Guard', 'Maintenance Staff', 'Peon', 'Student', 'Parent'
+    ];
 
     // Fetch Roles when branch changes
     const fetchRoles = useCallback(async () => {

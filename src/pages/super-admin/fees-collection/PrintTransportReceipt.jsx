@@ -25,8 +25,8 @@ const PrintTransportReceipt = () => {
         }
         setLoading(true);
         try {
-            // Fetch payment
-            const { data: payment, error: paymentError } = await supabase
+            // Fetch payment to get transaction_id
+            const { data: initialPayment, error: paymentError } = await supabase
                 .from('transport_fee_payments')
                 .select('*')
                 .eq('id', paymentId)
@@ -34,7 +34,19 @@ const PrintTransportReceipt = () => {
                 .single();
 
             if (paymentError) throw paymentError;
-            if (!payment) throw new Error('Payment not found');
+            if (!initialPayment) throw new Error('Payment not found');
+
+            // Fetch ALL payments with same transaction_id (for multi-month payments)
+            const { data: transactionPayments } = await supabase
+                .from('transport_fee_payments')
+                .select('*')
+                .eq('transaction_id', initialPayment.transaction_id)
+                .eq('branch_id', selectedBranch.id)
+                .order('created_at', { ascending: true });
+
+            // Use all payments from same transaction, or fallback to single payment
+            const payments = transactionPayments && transactionPayments.length > 0 ? transactionPayments : [initialPayment];
+            const payment = payments[0]; // For backward compatibility
 
             // Fetch student
             const { data: student } = await supabase
@@ -74,12 +86,50 @@ const PrintTransportReceipt = () => {
                 setPrintHeaderImage(printSettings.header_image_url);
             }
 
+            // Fetch ALL transport payments for this student to calculate summary
+            const { data: allTransportPayments } = await supabase
+                .from('transport_fee_payments')
+                .select('*')
+                .eq('student_id', payment.student_id)
+                .eq('branch_id', selectedBranch.id)
+                .is('reverted_at', null);
+
+            // Calculate transport fee summary
+            let transportSummary = null;
+            if (transport && transport.transport_fee > 0) {
+                const monthlyFee = Number(transport.transport_fee) || 0;
+                const totalMonths = 12; // Default 12 months
+                const totalFee = monthlyFee * totalMonths;
+                const totalPaid = (allTransportPayments || []).reduce((sum, p) => sum + Number(p.amount || 0), 0);
+                const totalDiscount = (allTransportPayments || []).reduce((sum, p) => sum + Number(p.discount_amount || 0), 0);
+                const paidMonthsCount = (allTransportPayments || []).length;
+                const balance = Math.max(0, totalFee - totalPaid - totalDiscount);
+                
+                // Get paid months list
+                const paidMonths = (allTransportPayments || []).map(p => p.payment_month).filter(Boolean);
+
+                transportSummary = {
+                    monthlyFee,
+                    totalMonths,
+                    totalFee,
+                    totalPaid,
+                    totalDiscount,
+                    balance,
+                    paidMonthsCount,
+                    unpaidMonthsCount: totalMonths - paidMonthsCount,
+                    paidMonths,
+                    status: balance <= 0 ? 'Paid' : totalPaid > 0 ? 'Partial' : 'Unpaid'
+                };
+            }
+
             setPaymentDetails({
                 payment,
+                payments, // Array of all payments in this transaction
                 student,
                 transport,
                 school,
-                branch: selectedBranch
+                branch: selectedBranch,
+                transportSummary
             });
         } catch (error) {
             console.error('Error:', error);
@@ -113,8 +163,14 @@ const PrintTransportReceipt = () => {
         );
     }
 
-    const { payment, student, transport, school, branch } = paymentDetails;
+    const { payment, payments = [payment], student, transport, school, branch, transportSummary } = paymentDetails;
     const currencySymbol = '₹';
+
+    // Calculate totals from all payments in this transaction
+    const totalAmount = payments.reduce((sum, p) => sum + Number(p.amount || 0), 0);
+    const totalDiscount = payments.reduce((sum, p) => sum + Number(p.discount_amount || 0), 0);
+    const totalFine = payments.reduce((sum, p) => sum + Number(p.fine_paid || 0), 0);
+    const totalPaid = totalAmount - totalDiscount + totalFine;
 
     const Receipt = ({ copyType }) => (
         <div className='receipt-box bg-white text-black border border-gray-400' style={{ 
@@ -212,37 +268,36 @@ const PrintTransportReceipt = () => {
                 <table className='w-full border-collapse text-[11px] mb-3'>
                     <thead>
                         <tr className='bg-gray-200'>
-                            <th className='border border-gray-400 p-1.5 text-left'>Description</th>
-                            <th className='border border-gray-400 p-1.5 text-center'>Month</th>
-                            <th className='border border-gray-400 p-1.5 text-right w-24'>Amount</th>
+                            <th className='border border-gray-400 p-1.5 text-center w-10'>S.No</th>
+                            <th className='border border-gray-400 p-1.5 text-left'>Fee Particulars</th>
+                            <th className='border border-gray-400 p-1.5 text-right'>Total Fee (₹)</th>
+                            <th className='border border-gray-400 p-1.5 text-right'>Discount (₹)</th>
+                            <th className='border border-gray-400 p-1.5 text-right'>Fine (₹)</th>
+                            <th className='border border-gray-400 p-1.5 text-right'>Paid (₹)</th>
+                            <th className='border border-gray-400 p-1.5 text-right'>Balance (₹)</th>
                         </tr>
                     </thead>
                     <tbody>
-                        <tr>
-                            <td className='border border-gray-400 p-1.5'>Transport Fee</td>
-                            <td className='border border-gray-400 p-1.5 text-center'>{payment.payment_month || '-'}</td>
-                            <td className='border border-gray-400 p-1.5 text-right font-mono'>{currencySymbol}{Number(payment.amount).toLocaleString('en-IN')}</td>
-                        </tr>
-                        {Number(payment.discount_amount) > 0 && (
-                            <tr>
-                                <td className='border border-gray-400 p-1.5'>Discount</td>
-                                <td className='border border-gray-400 p-1.5 text-center'>-</td>
-                                <td className='border border-gray-400 p-1.5 text-right font-mono text-green-700'>-{currencySymbol}{Number(payment.discount_amount).toLocaleString('en-IN')}</td>
+                        {payments.map((p, idx) => (
+                            <tr key={p.id || idx}>
+                                <td className='border border-gray-400 p-1.5 text-center'>{idx + 1}</td>
+                                <td className='border border-gray-400 p-1.5'>Transport Fee {p.payment_month ? `(${p.payment_month})` : ''}</td>
+                                <td className='border border-gray-400 p-1.5 text-right font-mono'>{Number(p.amount).toLocaleString('en-IN')}</td>
+                                <td className='border border-gray-400 p-1.5 text-right font-mono text-green-700'>{Number(p.discount_amount || 0).toLocaleString('en-IN')}</td>
+                                <td className='border border-gray-400 p-1.5 text-right font-mono text-red-700'>{Number(p.fine_paid || 0).toLocaleString('en-IN')}</td>
+                                <td className='border border-gray-400 p-1.5 text-right font-mono text-blue-700'>{(Number(p.amount) - Number(p.discount_amount || 0) + Number(p.fine_paid || 0)).toLocaleString('en-IN')}</td>
+                                <td className='border border-gray-400 p-1.5 text-right font-mono text-orange-700'>{idx === payments.length - 1 && transportSummary ? Number(transportSummary.balance).toLocaleString('en-IN') : '-'}</td>
                             </tr>
-                        )}
-                        {Number(payment.fine_paid) > 0 && (
-                            <tr>
-                                <td className='border border-gray-400 p-1.5'>Fine</td>
-                                <td className='border border-gray-400 p-1.5 text-center'>-</td>
-                                <td className='border border-gray-400 p-1.5 text-right font-mono text-red-700'>+{currencySymbol}{Number(payment.fine_paid).toLocaleString('en-IN')}</td>
-                            </tr>
-                        )}
+                        ))}
                     </tbody>
                     <tfoot>
                         <tr className='bg-blue-100 font-bold'>
-                            <td colSpan='2' className='border border-gray-400 p-1.5 text-right'>TOTAL PAID</td>
+                            <td colSpan='5' className='border border-gray-400 p-1.5 text-right'>TOTAL ({payments.length} month{payments.length > 1 ? 's' : ''})</td>
                             <td className='border border-gray-400 p-1.5 text-right font-mono text-blue-800'>
-                                {currencySymbol}{(Number(payment.amount) - Number(payment.discount_amount || 0) + Number(payment.fine_paid || 0)).toLocaleString('en-IN')}
+                                {currencySymbol}{totalPaid.toLocaleString('en-IN')}
+                            </td>
+                            <td className='border border-gray-400 p-1.5 text-right font-mono text-orange-800'>
+                                {currencySymbol}{transportSummary ? Number(transportSummary.balance).toLocaleString('en-IN') : '0'}
                             </td>
                         </tr>
                     </tfoot>
@@ -261,6 +316,47 @@ const PrintTransportReceipt = () => {
                         </div>
                     )}
                 </div>
+
+                {/* Transport Fee Summary */}
+                {transportSummary && (
+                    <div className='mt-2 mb-3 border-t border-blue-300 pt-2'>
+                        <div className='text-[9px] font-semibold text-blue-700 mb-1 flex justify-between items-center'>
+                            <span>🚌 TRANSPORT FEE SUMMARY (All Months)</span>
+                            <span className={`px-1.5 py-0.5 rounded text-[7px] font-bold ${
+                                transportSummary.status === 'Paid' ? 'bg-green-100 text-green-700' : 
+                                transportSummary.status === 'Partial' ? 'bg-yellow-100 text-yellow-700' : 
+                                'bg-red-100 text-red-700'
+                            }`}>{transportSummary.status}</span>
+                        </div>
+                        <div className='grid grid-cols-2 gap-2 text-[8px]'>
+                            <div className='bg-blue-50 p-1.5 rounded'>
+                                <div className='text-gray-500'>Route: <span className='text-blue-800 font-medium'>{transport?.route?.route_title || 'N/A'}</span></div>
+                                <div className='text-gray-500'>Pickup: <span className='text-blue-800 font-medium'>{transport?.pickup_point?.name || 'N/A'}</span></div>
+                                {transportSummary.paidMonths && transportSummary.paidMonths.length > 0 && (
+                                    <div className='text-gray-500 mt-1'>Paid Months: <span className='text-green-700 font-medium'>{transportSummary.paidMonths.join(', ')}</span></div>
+                                )}
+                            </div>
+                            <div className='bg-blue-50 p-1.5 rounded'>
+                                <div className='flex justify-between'>
+                                    <span className='text-gray-500'>Monthly Fee:</span>
+                                    <span className='font-mono'>₹{transportSummary.monthlyFee.toLocaleString('en-IN')}</span>
+                                </div>
+                                <div className='flex justify-between'>
+                                    <span className='text-gray-500'>Total ({transportSummary.totalMonths} months):</span>
+                                    <span className='font-mono'>₹{transportSummary.totalFee.toLocaleString('en-IN')}</span>
+                                </div>
+                                <div className='flex justify-between text-green-600'>
+                                    <span>Paid ({transportSummary.paidMonthsCount} months):</span>
+                                    <span className='font-mono font-semibold'>₹{transportSummary.totalPaid.toLocaleString('en-IN')}</span>
+                                </div>
+                                <div className='flex justify-between text-red-600 font-semibold'>
+                                    <span>Balance ({transportSummary.unpaidMonthsCount} months):</span>
+                                    <span className='font-mono'>₹{transportSummary.balance.toLocaleString('en-IN')}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )}
 
                 {/* Signature */}
                 <div className='flex justify-between items-end pt-4 text-[10px]'>

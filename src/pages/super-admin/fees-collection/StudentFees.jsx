@@ -491,13 +491,13 @@ const StudentFees = () => {
         const academicPaid = payments.filter(p => !p.reverted_at).reduce((sum, p) => sum + Number(p.amount), 0);
         const academicDiscount = payments.filter(p => !p.reverted_at).reduce((sum, p) => sum + Number(p.discount_amount), 0);
 
-        // Transport fees (only if assigned)
-        const transportTotal = transportDetails ? Number(transportDetails.transport_fee || 0) : 0;
+        // Transport fees (only if assigned) - Use totalFee (annual) not transport_fee (monthly)
+        const transportTotal = transportDetails ? Number(transportDetails.totalFee || 0) : 0;
         const transportPaid = transportDetails ? (transportDetails.totalPaid || 0) : 0;
         const transportDiscount = transportDetails ? (transportDetails.totalDiscount || 0) : 0;
 
-        // Hostel fees (only if assigned)
-        const hostelTotal = hostelDetails ? Number(hostelDetails.hostel_fee || 0) : 0;
+        // Hostel fees (only if assigned) - Use totalFee (annual) not hostel_fee (monthly)
+        const hostelTotal = hostelDetails ? Number(hostelDetails.totalFee || 0) : 0;
         const hostelPaid = hostelDetails ? (hostelDetails.totalPaid || 0) : 0;
         const hostelDiscount = hostelDetails ? (hostelDetails.totalDiscount || 0) : 0;
 

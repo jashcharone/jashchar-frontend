@@ -1492,7 +1492,8 @@ const BulkUpload = () => {
                     guardian_phone: record.guardian_phone || null,
                     
                     // School Info
-                    previous_school: record.previous_school || null, // Column is 'previous_school' not 'previous_school_name'
+                    // NOTE: 'previous_school' column removed - doesn't exist in PRODUCTION student_profiles table
+                    // previous_school: record.previous_school || null,
                     admission_date: format(new Date(), 'yyyy-MM-dd'),
                     status: 'active',
                     

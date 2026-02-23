@@ -81,20 +81,60 @@ export const AuthProvider = ({ children }) => {
         metaSchoolId !== '00000000-0000-0000-0000-000000000000' &&
         /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(metaSchoolId);
 
-      // 1. Define Promises
-      const profilePromise = Promise.any([
-        supabase.from('profiles').select('*').eq('id', userId).maybeSingle().then(r => r.data ? { ...r.data, type: 'staff' } : Promise.reject()),
-        supabase.from('school_owner_profiles').select('*').eq('id', userId).maybeSingle().then(r => r.data ? { ...r.data, type: 'owner' } : Promise.reject()),
-        supabase.from('master_admin_profiles').select('*').eq('id', userId).maybeSingle().then(r => r.data ? { ...r.data, type: 'master_admin' } : Promise.reject()),
-        // Include employee_profiles and resolve role_id to role name
-        supabase.from('employee_profiles').select('*, role:roles(name)').eq('id', userId).maybeSingle().then(r => {
-          if (r.data) {
-            const roleName = r.data.role?.name?.toLowerCase() || 'staff';
-            return { ...r.data, type: 'employee', role: roleName };
+      // 1. Define Promises - PRIORITY-BASED PROFILE FETCHING
+      // ⚠️ CRITICAL: Use priority order, NOT race condition (Promise.any)
+      // Priority: 
+      //   1. metadata.role === 'master_admin' → check master_admin_profiles ONLY
+      //   2. Otherwise → school_owner_profiles > employee_profiles > profiles
+      // This prevents super_admin users from accidentally getting master_admin sidebar
+      
+      const metadataRole = currentUser.user_metadata?.role?.toLowerCase();
+      let profilePromise;
+      
+      if (metadataRole === 'master_admin') {
+        // Only master_admin role should check master_admin_profiles
+        profilePromise = supabase
+          .from('master_admin_profiles')
+          .select('*')
+          .eq('id', userId)
+          .maybeSingle()
+          .then(r => r.data ? { ...r.data, type: 'master_admin' } : null);
+      } else {
+        // For all other users: Priority-based sequential check
+        // 1. School Owner (super_admin)
+        // 2. Employee (staff with role)
+        // 3. Generic profiles
+        profilePromise = (async () => {
+          // Check school_owner_profiles first (School Owner / Super Admin)
+          const { data: ownerData } = await supabase
+            .from('school_owner_profiles')
+            .select('*')
+            .eq('id', userId)
+            .maybeSingle();
+          if (ownerData) return { ...ownerData, type: 'owner' };
+          
+          // Check employee_profiles (Staff with role)
+          const { data: empData } = await supabase
+            .from('employee_profiles')
+            .select('*, role:roles(name)')
+            .eq('id', userId)
+            .maybeSingle();
+          if (empData) {
+            const roleName = empData.role?.name?.toLowerCase() || 'staff';
+            return { ...empData, type: 'employee', role: roleName };
           }
-          return Promise.reject();
-        })
-      ]).catch(() => null);
+          
+          // Check generic profiles (Legacy staff)
+          const { data: profileData } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', userId)
+            .maybeSingle();
+          if (profileData) return { ...profileData, type: 'staff' };
+          
+          return null;
+        })();
+      }
 
       // Fetch school if we have valid ID in metadata (fastest path)
       // Use maybeSingle() to gracefully handle missing records instead of throwing PGRST116

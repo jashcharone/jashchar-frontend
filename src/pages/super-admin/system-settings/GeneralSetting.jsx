@@ -515,22 +515,34 @@ const GeneralSetting = () => {
         console.log('[GeneralSetting] Fetching settings for branch:', branchId);
         setIsFetching(true);
         
-        // Get settings from branches table directly
-        const { data, error } = await supabase
+        // Get branch info
+        const { data: branchData } = await supabase
             .from('branches')
-            .select('*')
+            .select('id, branch_name')
             .eq('id', branchId)
             .single();
+        
+        // Get settings from branch_settings table
+        const { data, error } = await supabase
+            .from('branch_settings')
+            .select('*')
+            .eq('branch_id', branchId)
+            .maybeSingle();
         
         if (error) {
             console.error('[GeneralSetting] Error fetching settings:', error);
             toast({ variant: 'destructive', title: 'Failed to fetch settings', description: error.message });
-        } else if (data) {
-            console.log('[GeneralSetting] Settings loaded for:', data.branch_name, data);
-            setSettings({ ...data, branch_id: branchId });
+        } else {
+            const mergedSettings = { 
+                ...data, 
+                branch_id: branchId,
+                branch_name: branchData?.branch_name || selectedBranch?.branch_name 
+            };
+            console.log('[GeneralSetting] Settings loaded for:', mergedSettings.branch_name, mergedSettings);
+            setSettings(mergedSettings);
         }
         setIsFetching(false);
-    }, [branchId, toast]);
+    }, [branchId, toast, selectedBranch]);
 
     useEffect(() => {
         fetchSettings();
@@ -545,18 +557,41 @@ const GeneralSetting = () => {
     const handleSave = async () => {
         setLoading(true);
         
-        // Save to branches table
+        // Save to branch_settings table
         if (branchId) {
             // Remove non-updatable fields
-            const { id, branch_id, created_at, organization_id, ...updateData } = settings;
+            const { id, branch_id, branch_name, created_at, organization_id, ...updateData } = settings;
             
-            const { error } = await supabase
-                .from('branches')
-                .update({
-                    ...updateData,
-                    updated_at: new Date().toISOString()
-                })
-                .eq('id', branchId);
+            // Check if settings exist
+            const { data: existingSettings } = await supabase
+                .from('branch_settings')
+                .select('id')
+                .eq('branch_id', branchId)
+                .maybeSingle();
+            
+            let error;
+            if (existingSettings) {
+                // Update existing settings
+                const result = await supabase
+                    .from('branch_settings')
+                    .update({
+                        ...updateData,
+                        updated_at: new Date().toISOString()
+                    })
+                    .eq('branch_id', branchId);
+                error = result.error;
+            } else {
+                // Insert new settings
+                const result = await supabase
+                    .from('branch_settings')
+                    .insert({
+                        branch_id: branchId,
+                        ...updateData,
+                        created_at: new Date().toISOString(),
+                        updated_at: new Date().toISOString()
+                    });
+                error = result.error;
+            }
             
             if (error) {
                 toast({ variant: 'destructive', title: 'Failed to save settings', description: error.message });

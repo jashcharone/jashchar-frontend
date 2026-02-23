@@ -472,8 +472,6 @@ const SchoolOwnerDashboard = () => {
         const branchId = selectedBranch?.id || user.profile.branch_id;
         const today = new Date().toISOString().split('T')[0];
         const startOfMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString();
-        const currentYear = new Date().getFullYear();
-        const sessionStart = new Date(currentYear - 1, 3, 1).toISOString(); // April last year
 
         // Parallel queries for all data
         const [
@@ -508,18 +506,18 @@ const SchoolOwnerDashboard = () => {
           // Inactive/Disabled staff count
           supabase.from('employee_profiles').select('*', { count: 'exact', head: true })
             .eq('branch_id', branchId).eq('is_disabled', true),
-          // Monthly income
+          // Monthly income (session-wise)
           supabase.from('fee_payments').select('amount')
-            .eq('branch_id', branchId).gte('payment_date', startOfMonth).is('reverted_at', null),
-          // Monthly expense
+            .eq('branch_id', branchId).eq('session_id', currentSessionId).gte('payment_date', startOfMonth).is('reverted_at', null),
+          // Monthly expense (session-wise)
           supabase.from('expenses').select('amount')
-            .eq('branch_id', branchId).gte('date', startOfMonth),
-          // Fee allocations (total fees assigned)
+            .eq('branch_id', branchId).eq('session_id', currentSessionId).gte('date', startOfMonth),
+          // Fee allocations (total fees assigned - session-wise)
           supabase.from('student_fee_allocations').select('id, student_id', { count: 'exact' })
-            .eq('branch_id', branchId),
-          // Fee payments (paid)
+            .eq('branch_id', branchId).eq('session_id', currentSessionId),
+          // Fee payments (paid - session-wise)
           supabase.from('fee_payments').select('student_id, amount')
-            .eq('branch_id', branchId).is('reverted_at', null),
+            .eq('branch_id', branchId).eq('session_id', currentSessionId).is('reverted_at', null),
           // Enquiries
           supabase.from('admission_enquiries').select('id, status').eq('branch_id', branchId),
           // Library books - just count, don't rely on specific columns
@@ -528,12 +526,12 @@ const SchoolOwnerDashboard = () => {
           // Book issues - just count issued books
           supabase.from('book_issues').select('id, due_date, return_date')
             .eq('branch_id', branchId).is('return_date', null),
-          // Today's student attendance
+          // Today's student attendance (session-wise)
           supabase.from('student_attendance').select('id, status')
-            .eq('branch_id', branchId).eq('date', today),
-          // Today's staff attendance
+            .eq('branch_id', branchId).eq('session_id', currentSessionId).eq('date', today),
+          // Today's staff attendance (session-wise)
           supabase.from('staff_attendance').select('id, status')
-            .eq('branch_id', branchId).eq('attendance_date', today),
+            .eq('branch_id', branchId).eq('session_id', currentSessionId).eq('attendance_date', today),
           // Leave requests - use staff_id (not employee_id)
           supabase.from('leave_requests').select('id, leave_type_id, status, staff_id')
             .eq('branch_id', branchId).eq('status', 'approved')
@@ -633,11 +631,12 @@ const SchoolOwnerDashboard = () => {
           fee_collection_rate: totalAllocations > 0 ? Math.round((paidStudents / totalAllocations) * 100) : 0
         });
 
-        // Fetch fee payments for daily chart
+        // Fetch fee payments for daily chart (session-wise)
         const { data: feesData } = await supabase
           .from('fee_payments')
           .select('payment_date, amount')
           .eq('branch_id', branchId)
+          .eq('session_id', currentSessionId)
           .gte('payment_date', startOfMonth)
           .is('reverted_at', null);
 
@@ -665,7 +664,7 @@ const SchoolOwnerDashboard = () => {
           .from('fee_payments')
           .select('payment_date, amount')
           .eq('branch_id', branchId)
-          .gte('payment_date', sessionStart)
+          .eq('session_id', currentSessionId)
           .is('reverted_at', null);
 
         if (sessionFeesRaw) {
@@ -684,11 +683,12 @@ const SchoolOwnerDashboard = () => {
           setSessionFeesData(Object.values(monthlyData));
         }
 
-        // Fetch income by category for pie chart
+        // Fetch income by category for pie chart (session-wise)
         const { data: incomeCategories } = await supabase
           .from('income')
           .select('income_head_id, amount, income_heads(name)')
           .eq('branch_id', branchId)
+          .eq('session_id', currentSessionId)
           .gte('date', startOfMonth);
 
         if (incomeCategories) {
@@ -705,11 +705,12 @@ const SchoolOwnerDashboard = () => {
           })));
         }
 
-        // Fetch expense by category for pie chart
+        // Fetch expense by category for pie chart (session-wise)
         const { data: expenseCategories } = await supabase
           .from('expenses')
           .select('expense_head_id, amount, expense_heads(name)')
           .eq('branch_id', branchId)
+          .eq('session_id', currentSessionId)
           .gte('date', startOfMonth);
 
         if (expenseCategories) {

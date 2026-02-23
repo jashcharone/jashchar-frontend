@@ -43,6 +43,7 @@ const StudentDetails = () => {
     const [currentPage, setCurrentPage] = useState(1);
     const [pageSize, setPageSize] = useState(25);
     const [feesData, setFeesData] = useState({}); // { studentId: { total, paid, progress } }
+    const [initialLoadDone, setInitialLoadDone] = useState(false); // For auto-load on page open
     const [visibleColumns, setVisibleColumns] = useState({
         photo: true, name: true, class: true, section: true, gender: true, 
         mobile: true, register: true, roll: true, age: true, guardian: true, fees: true
@@ -210,6 +211,15 @@ const StudentDetails = () => {
         fetchPrereqs();
     }, [branchId, selectedBranch]);
 
+    // Auto-load: Select first class and trigger search when classes are loaded
+    useEffect(() => {
+        if (classes.length > 0 && !initialLoadDone && !filters.class_id) {
+            const firstClassId = classes[0].id;
+            setFilters(prev => ({ ...prev, class_id: firstClassId }));
+            setInitialLoadDone(true);
+        }
+    }, [classes, initialLoadDone, filters.class_id]);
+
     useEffect(() => {
         if (filters.class_id) {
             const fetchSections = async () => {
@@ -312,6 +322,13 @@ const StudentDetails = () => {
         setSelectedStudents([]);
         setLoading(false);
     };
+
+    // Auto-search: Trigger search automatically when first class is auto-selected on page load
+    useEffect(() => {
+        if (initialLoadDone && filters.class_id && students.length === 0 && !loading) {
+            handleSearch();
+        }
+    }, [initialLoadDone, filters.class_id]);
 
     // Fetch fees progress for students
     const fetchFeesProgress = async (studentIds) => {

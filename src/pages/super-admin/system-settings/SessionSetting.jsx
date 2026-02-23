@@ -232,6 +232,12 @@ const SessionSetting = () => {
                 .update({ is_active: true })
                 .eq('id', sessionId);
 
+            // ✅ CRITICAL: Also update schools.current_session_id to keep in sync
+            await supabase
+                .from('schools')
+                .update({ current_session_id: sessionId })
+                .eq('id', branchId);
+
             toast({ title: 'Success', description: `Session "${sessionName}" is now active for ${branchName}` });
             fetchData();
         } catch (error) {

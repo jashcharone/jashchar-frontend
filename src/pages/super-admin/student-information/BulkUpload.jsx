@@ -26,6 +26,7 @@ import api from '@/lib/api';
 import { cn } from '@/lib/utils';
 import { format, parse, isValid } from 'date-fns';
 import JSZip from 'jszip'; // For Photo Upload
+import { v4 as uuidv4 } from 'uuid';
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // JASHCHAR ERP - WORLD-CLASS BULK UPLOAD SYSTEM (AI-POWERED)
@@ -1260,7 +1261,7 @@ const BulkUpload = () => {
     // 🌟 ADMISSION NUMBER GENERATOR (Same as StudentAdmission.jsx)
     // Format: PREFIX-YEAR-SEQUENCE (e.g., STU-2026-00001)
     // ═══════════════════════════════════════════════════════════════════════════
-    const generateNextAdmissionNo = async (branchIdParam) => {
+    const generateNextAdmissionNo = async (branchIdParam, offset = 0) => {
         try {
             // 🌟 Call Backend API for GLOBAL UNIQUE admission number (same as StudentAdmission.jsx)
             const response = await api.get(`/students/next-admission-number?branch_id=${branchIdParam}`, {
@@ -1269,6 +1270,17 @@ const BulkUpload = () => {
             
             const result = response.data;
             if (result.success) {
+                // Apply offset to the returned admission number for bulk uniqueness
+                if (offset > 0) {
+                    const parts = result.admissionNumber.split('-');
+                    if (parts.length === 3) {
+                        const baseNum = parseInt(parts[2], 10);
+                        parts[2] = String(baseNum + offset).padStart(parts[2].length, '0');
+                        const offsetAdmNo = parts.join('-');
+                        console.log(`[BulkUpload] 🌟 Global Unique Admission Number: ${offsetAdmNo} (offset: ${offset})`);
+                        return offsetAdmNo;
+                    }
+                }
                 console.log(`[BulkUpload] 🌟 Global Unique Admission Number: ${result.admissionNumber}`);
                 return result.admissionNumber;
             }
@@ -1277,10 +1289,10 @@ const BulkUpload = () => {
         }
         
         // Fallback to local generation if API fails
-        return await generateNextAdmissionNoLocal(branchIdParam);
+        return await generateNextAdmissionNoLocal(branchIdParam, offset);
     };
     
-    const generateNextAdmissionNoLocal = async (branchIdParam) => {
+    const generateNextAdmissionNoLocal = async (branchIdParam, offset = 0) => {
         // Get branch settings for prefix and digit
         const { data: branchSettings } = await supabase
             .from('branches')
@@ -1312,6 +1324,9 @@ const BulkUpload = () => {
                 }
             }
         }
+        
+        // Apply offset for bulk generation (ensures unique numbers per batch)
+        nextNumber += offset;
         
         const newId = `${yearPrefix}${String(nextNumber).padStart(digit, '0')}`;
         console.log(`[BulkUpload] Local Generated Admission No: ${newId}`);
@@ -1375,10 +1390,22 @@ const BulkUpload = () => {
         
         if (autoGenerateAdmissionNo) {
             toast({ title: '🔄 Generating Admission Numbers...', description: `Creating ${total} globally unique IDs` });
-            for (let i = 0; i < total; i++) {
-                // ALWAYS generate - ignore Excel value (as per user requirement)
-                const admNo = await generateNextAdmissionNo(branchId);
-                generatedAdmissionNos[i] = admNo;
+            // 🌟 FIX: Call API once to get base number, then apply offset for each record
+            // This prevents all records from getting the same admission number
+            const baseAdmNo = await generateNextAdmissionNo(branchId, 0);
+            generatedAdmissionNos[0] = baseAdmNo;
+            
+            for (let i = 1; i < total; i++) {
+                // Apply offset from base number for unique sequential admission numbers
+                const parts = baseAdmNo.split('-');
+                if (parts.length === 3) {
+                    const baseNum = parseInt(parts[2], 10);
+                    parts[2] = String(baseNum + i).padStart(parts[2].length, '0');
+                    generatedAdmissionNos[i] = parts.join('-');
+                } else {
+                    // Fallback: generate individually with offset
+                    generatedAdmissionNos[i] = await generateNextAdmissionNo(branchId, i);
+                }
             }
             console.log(`[BulkUpload] ✅ Generated ${generatedAdmissionNos.length} admission numbers`);
         }
@@ -1393,6 +1420,45 @@ const BulkUpload = () => {
                 generatedRollNos[i] = String(baseNum + i).padStart(2, '0');
             }
             console.log(`[BulkUpload] ✅ Generated roll numbers: ${generatedRollNos[0]} to ${generatedRollNos[total-1]}`);
+        }
+        
+        // 🌟 PRE-FETCH FEE MASTERS for fee import (if enabled)
+        let feeImportData = null;
+        if (importFees) {
+            const className = classes.find(c => c.id === selectedClass)?.name;
+            if (className) {
+                console.log(`[Fee Import] 🔍 Looking for fee group matching class: "${className}" in session ${selectedSession}`);
+                const { data: feeGroups } = await supabase
+                    .from('fee_groups')
+                    .select('id, name')
+                    .eq('branch_id', branchId)
+                    .eq('session_id', selectedSession)
+                    .ilike('name', className);
+                
+                const feeGroup = feeGroups?.[0];
+                if (feeGroup) {
+                    const { data: feeMasters } = await supabase
+                        .from('fee_masters')
+                        .select('id, fee_type_id, amount, due_date')
+                        .eq('fee_group_id', feeGroup.id)
+                        .eq('branch_id', branchId)
+                        .eq('session_id', selectedSession)
+                        .order('due_date', { ascending: true });
+                    
+                    if (feeMasters?.length > 0) {
+                        feeImportData = { feeGroup, feeMasters };
+                        const totalFeeAmount = feeMasters.reduce((sum, fm) => sum + parseFloat(fm.amount), 0);
+                        console.log(`[Fee Import] ✅ Found ${feeMasters.length} fee masters for "${className}" (Total: ₹${totalFeeAmount})`);
+                        toast({ title: '💰 Fee Import Ready', description: `${feeMasters.length} fee items found for ${className} (₹${totalFeeAmount})` });
+                    } else {
+                        console.warn(`[Fee Import] ⚠️ No fee masters found for class: ${className}`);
+                        toast({ variant: 'destructive', title: 'Fee Import Warning', description: `No fee masters found for "${className}". Fees will NOT be imported.` });
+                    }
+                } else {
+                    console.warn(`[Fee Import] ⚠️ No fee group found matching: ${className}`);
+                    toast({ variant: 'destructive', title: 'Fee Import Warning', description: `No fee group found for "${className}". Create fee group first.` });
+                }
+            }
         }
         
         for (let i = 0; i < recordsToUpload.length; i++) {
@@ -1420,9 +1486,13 @@ const BulkUpload = () => {
                        };
                        const contentType = mimeTypes[ext] || 'image/png';
                        
+                       // ✅ FIX: JSZip returns blob with application/octet-stream MIME type
+                       // Re-create the Blob with the correct MIME type so Supabase accepts it
+                       const typedBlob = new Blob([blob], { type: contentType });
+                       
                        const { data: uploadData, error: uploadError } = await supabase.storage
                            .from('student-photos')
-                           .upload(filePath, blob, {
+                           .upload(filePath, typedBlob, {
                                contentType: contentType,
                                upsert: false
                            });
@@ -1442,6 +1512,9 @@ const BulkUpload = () => {
                 const rollNumber = autoGenerateRollNo ? generatedRollNos[i] : (record.roll_number || null);
                 
                 const studentData = {
+                    // ✅ FIX: Generate UUID for id column (student_profiles.id has no default)
+                    id: uuidv4(),
+                    
                     // Multi-tenant (MANDATORY as per PROJECT_MANIFESTO)
                     organization_id: organizationId,
                     branch_id: branchId,
@@ -1459,8 +1532,7 @@ const BulkUpload = () => {
                     // Basic Info
                     first_name: record.first_name,
                     last_name: record.last_name || null,
-                    // NOTE: 'full_name' removed - backend/DB computes it (StudentAdmission.jsx doesn't send it)
-                    // full_name: `${record.first_name || ''} ${record.last_name || ''}`.trim(),
+                    full_name: `${record.first_name || ''} ${record.last_name || ''}`.trim() || record.first_name,
                     gender: record.gender?.toLowerCase() || 'male',
                     date_of_birth: record.date_of_birth || null,
                     blood_group: record.blood_group || null,
@@ -1528,26 +1600,72 @@ const BulkUpload = () => {
                 }
                 
                 // FEE MIGRATION INSERT
-                if (importFees && studentId && (record.fee_total_due || record.fee_opening_balance)) {
-                    // Create a fee record or opening balance
-                    // This is simplified. Real world needs fee_structure linking.
-                    // For migration, we might just log it or insert into a 'legacy_fees' table if it existed,
-                    // but here we will try to insert into fee_collections or similar if possible.
-                    // Since schema is unknown for 'legacy fees', we'll assume we insert into 'student_fees' with adhoc mode if supported.
-                    // For now, allow simple "Due Balance" mapping to adhoc fees.
+                if (importFees && studentId && feeImportData) {
+                    const { feeMasters } = feeImportData;
                     
-                    if (record.fee_opening_balance > 0) {
-                         /* 
-                         await supabase.from('fee_payments').insert({
+                    try {
+                        // 1. Create student_fee_allocations for ALL fee_masters of this class
+                        const allocations = feeMasters.map(fm => ({
                             student_id: studentId,
-                            amount: record.fee_paid_amount || 0,
-                            payment_date: new Date(),
-                            payment_mode: 'Migration Import',
-                            remarks: 'Imported from previous ERP'
-                         });
-                         */
-                         // NOTE: Actual Fee implementation depends on schema. Keeping it placeholder for safety.
-                         console.log(`[Fee Import] Logic needed for student ${studentId}: Due ${record.fee_total_due}, Paid ${record.fee_paid_amount}`);
+                            fee_master_id: fm.id,
+                            branch_id: branchId,
+                            session_id: selectedSession,
+                            organization_id: organizationId,
+                        }));
+                        
+                        const { error: allocError } = await supabase
+                            .from('student_fee_allocations')
+                            .insert(allocations);
+                        
+                        if (allocError) {
+                            console.error(`[Fee Import] Allocation error for student ${studentId}:`, allocError.message);
+                        } else {
+                            console.log(`[Fee Import] ✅ Allocated ${allocations.length} fee masters to student ${studentId} (all shown as DUE)`);
+                        }
+                        
+                        // 2. Record fee payments if fee_paid_amount > 0 (from old ERP migration data)
+                        // This ensures: Total Due - Paid = Balance (which can be carried forward to next session)
+                        const paidAmount = parseFloat(record.fee_paid_amount) || 0;
+                        if (paidAmount > 0) {
+                            let remaining = paidAmount;
+                            const payments = [];
+                            
+                            // Distribute paid amount across fee_masters in due_date order
+                            for (const fm of feeMasters) {
+                                if (remaining <= 0) break;
+                                const fmAmount = parseFloat(fm.amount);
+                                const payAmount = Math.min(remaining, fmAmount);
+                                
+                                payments.push({
+                                    student_id: studentId,
+                                    fee_master_id: fm.id,
+                                    amount: payAmount,
+                                    payment_date: new Date().toISOString().split('T')[0],
+                                    payment_mode: 'Migration Import',
+                                    note: 'Imported from previous ERP (MCB)',
+                                    branch_id: branchId,
+                                    session_id: selectedSession,
+                                    organization_id: organizationId,
+                                });
+                                
+                                remaining -= payAmount;
+                            }
+                            
+                            if (payments.length > 0) {
+                                const { error: payError } = await supabase
+                                    .from('fee_payments')
+                                    .insert(payments);
+                                
+                                if (payError) {
+                                    console.error(`[Fee Import] Payment error for student ${studentId}:`, payError.message);
+                                } else {
+                                    console.log(`[Fee Import] ✅ Paid ₹${paidAmount}, Balance ₹${(parseFloat(record.fee_total_due) || 0) - paidAmount} for student ${studentId}`);
+                                }
+                            }
+                        }
+                    } catch (feeError) {
+                        console.error(`[Fee Import] Error for student ${studentId}:`, feeError.message);
+                        // Don't fail the student upload because of fee error
                     }
                 }
                 
@@ -1555,8 +1673,8 @@ const BulkUpload = () => {
                 results.successRecords.push({
                     row: record._rowNum,
                     name: `${record.first_name} ${record.last_name || ''}`.trim(),
-                    admission_no: studentData.admission_no,
-                    roll_number: studentData.roll_number
+                    admission_no: admissionNo || studentData.school_code,
+                    roll_number: rollNumber || studentData.roll_number
                 });
                 
             } catch (error) {
@@ -1892,7 +2010,7 @@ const BulkUpload = () => {
                                     <h3 className="font-semibold text-lg">Instructions</h3>
                                     <ul className="space-y-2 text-sm text-muted-foreground list-disc pl-4">
                                         <li>Photos inside ZIP must match the filenames in your Excel sheet.</li>
-                                        <li>Example: Excel says <code>student_01.jpg</code> -> ZIP must contain <code>student_01.jpg</code>.</li>
+                                        <li>Example: Excel says <code>student_01.jpg</code> {'->'} ZIP must contain <code>student_01.jpg</code>.</li>
                                         <li>Supported formats: JPG, PNG.</li>
                                         <li>Max size per photo: 2MB recommended.</li>
                                     </ul>
@@ -2395,7 +2513,7 @@ const BulkUpload = () => {
                                 Upload More Students
                             </Button>
                             <Button 
-                                onClick={() => window.location.href = '/super-admin/student-information/students'}
+                                onClick={() => window.location.href = '/super-admin/student-information/details'}
                                 className="gap-2"
                             >
                                 View All Students <ArrowRight className="h-4 w-4" />

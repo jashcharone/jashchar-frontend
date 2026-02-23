@@ -46,7 +46,7 @@ import {
 // ============================================================================
 
 const FeesMaster = () => {
-    const { user, school, currentSessionId, organizationId } = useAuth();
+    const { user, school, currentSessionId, currentSessionName, organizationId } = useAuth();
     const { selectedBranch } = useBranch();
     const currencySymbol = school?.currency_symbol || '₹';
     const { toast } = useToast();
@@ -522,13 +522,8 @@ const FeesMaster = () => {
         return `${currencySymbol}${master.fine_value}`;
     };
 
-    // Get current session year
-    const sessionYear = useMemo(() => {
-        const year = new Date().getFullYear();
-        const month = new Date().getMonth();
-        if (month < 3) return `${year - 1}-${year.toString().slice(-2)}`;
-        return `${year}-${(year + 1).toString().slice(-2)}`;
-    }, []);
+    // Get current session year from auth context (actual selected session name)
+    const sessionYear = currentSessionName || '';
 
     return (
         <DashboardLayout>

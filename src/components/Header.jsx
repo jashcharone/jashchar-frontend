@@ -134,9 +134,10 @@ const Header = ({ toggleSidebar, onThemeSettingsClick, onChatbotToggle }) => {
                 </span>
              </div>
              
-             <div className="flex items-center gap-2">
-                {/* Session Switcher Removed as per request */}
-             </div>
+             {/* Session Switcher - Only for super_admin & school_owner roles */}
+             {(role === 'super_admin' || role === 'school_owner' || role === 'organization_owner' || role === 'master_admin') && (
+               <SessionSwitcher />
+             )}
           </div>
         </div>
 

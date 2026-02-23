@@ -1,4 +1,4 @@
-﻿import React, { useEffect } from 'react';
+﻿import React from 'react';
 import { useSupabaseAuth } from '@/contexts/SupabaseAuthContext';
 import {
   Select,
@@ -11,19 +11,8 @@ import {
 const SessionSwitcher = () => {
   const { currentSessionId, switchSession, sessionList, loading } = useSupabaseAuth();
 
-  // Filter to show only active sessions as per requirement
-  const activeSessions = sessionList?.filter(s => s.is_active) || [];
-  const sessionsToShow = activeSessions.length > 0 ? activeSessions : sessionList;
-
-  // Ensure the current session is one of the visible sessions
-  useEffect(() => {
-    if (!loading && sessionsToShow && sessionsToShow.length > 0 && currentSessionId) {
-      const isCurrentInList = sessionsToShow.some(s => s.id === currentSessionId);
-      if (!isCurrentInList) {
-        switchSession(sessionsToShow[0].id);
-      }
-    }
-  }, [loading, sessionsToShow, currentSessionId, switchSession]);
+  // ✅ Show ALL sessions (both active & inactive) so user can switch freely
+  const sessionsToShow = sessionList || [];
 
   if (loading) {
     return <div className="text-sm text-muted-foreground">Loading...</div>;
@@ -63,7 +52,10 @@ const SessionSwitcher = () => {
         <SelectContent>
           {sessionsToShow.map((session) => (
             <SelectItem key={session.id} value={session.id.toString()}>
-              {session.name} {session.is_active ? '(Active)' : ''}
+              <span className="flex items-center gap-2">
+                <span className={`h-2 w-2 rounded-full ${session.is_active ? 'bg-green-500' : 'bg-gray-400'}`} />
+                {session.name} {session.is_active ? '(Active)' : ''}
+              </span>
             </SelectItem>
           ))}
         </SelectContent>

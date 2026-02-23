@@ -8,7 +8,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
-import { supabase } from '@/lib/supabaseClient';
+import { useParentChild } from '@/contexts/ParentChildContext';
 import { useToast } from '@/components/ui/use-toast';
 import DashboardLayout from '@/components/DashboardLayout';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -85,69 +85,36 @@ const ChildCard = ({ child, onClick }) => {
 const ParentProfile = () => {
   const navigate = useNavigate();
   const { user, school } = useAuth();
+  const { children: contextChildren, loading: childrenLoading } = useParentChild();
   const { toast } = useToast();
   
   const [loading, setLoading] = useState(true);
   const [parentData, setParentData] = useState(null);
-  const [children, setChildren] = useState([]);
+  // Use children from ParentChildContext (already fetched via backend API, bypasses RLS)
+  const children = contextChildren || [];
 
   useEffect(() => {
-    const fetchParentProfile = async () => {
-      if (!user) return;
+    if (!user) return;
 
-      try {
-        setLoading(true);
-
-        // Get parent info from user metadata
-        const parentInfo = {
-          id: user.id,
-          full_name: user.user_metadata?.full_name || 
-                     `${user.user_metadata?.first_name || ''} ${user.user_metadata?.last_name || ''}`.trim() ||
-                     user.user_metadata?.father_name ||
-                     'Parent',
-          phone: user.user_metadata?.phone || user.email?.split('@')[0] || '',
-          email: user.user_metadata?.real_email || user.email,
-          role: user.user_metadata?.role || 'parent',
-          branch_id: user.user_metadata?.branch_id,
-          created_at: user.created_at
-        };
-
-        setParentData(parentInfo);
-
-        // Fetch linked children using backend API (same as ParentDashboard)
-        const { data: session } = await supabase.auth.getSession();
-        const token = session?.session?.access_token;
-        const branchId = user.user_metadata?.branch_id || school?.id;
-
-        const response = await fetch('/api/students/parent/children', {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json',
-            'x-branch-id': branchId
-          }
-        });
-
-        if (response.ok) {
-          const result = await response.json();
-          setChildren(result.children || []);
-        }
-
-      } catch (error) {
-        console.error('Error fetching parent profile:', error);
-        toast({
-          variant: "destructive",
-          title: "Error",
-          description: "Failed to load profile data"
-        });
-      } finally {
-        setLoading(false);
-      }
+    // Get parent info from user metadata
+    const parentInfo = {
+      id: user.id,
+      full_name: user.user_metadata?.full_name || 
+                 `${user.user_metadata?.first_name || ''} ${user.user_metadata?.last_name || ''}`.trim() ||
+                 user.user_metadata?.father_name ||
+                 'Parent',
+      phone: user.user_metadata?.phone || user.email?.split('@')[0] || '',
+      email: user.user_metadata?.real_email || user.email,
+      role: user.user_metadata?.role || 'parent',
+      branch_id: user.user_metadata?.branch_id,
+      created_at: user.created_at
     };
 
-    fetchParentProfile();
-  }, [user, school, toast]);
+    setParentData(parentInfo);
+    setLoading(false);
+  }, [user]);
 
-  if (loading) {
+  if (loading || childrenLoading) {
     return (
       <DashboardLayout>
         <div className="flex items-center justify-center min-h-[400px]">

@@ -848,14 +848,16 @@ const SchoolPublicHome = () => {
                // We need a way to get pages by slug or all pages. 
                // publicCmsService.getPages is not defined in the snippet I saw earlier, but let's check if it exists or use getPublicPage
                // Actually, let's just fetch the two specific pages we need
-               const [welcomeRes, aboutRes] = await Promise.all([
+               const [welcomeRes, aboutRes, achievementsRes] = await Promise.all([
                  publicCmsService.getPublicPage(schoolSlug, 'home-welcome'),
-                 publicCmsService.getPublicPage(schoolSlug, 'home-about')
+                 publicCmsService.getPublicPage(schoolSlug, 'home-about'),
+                 publicCmsService.getPublicPage(schoolSlug, 'home-achievements')
                ]);
                
                const newPages = {};
                if (welcomeRes.success && welcomeRes.data.page) newPages['home-welcome'] = welcomeRes.data.page;
                if (aboutRes.success && aboutRes.data.page) newPages['home-about'] = aboutRes.data.page;
+               if (achievementsRes.success && achievementsRes.data.page) newPages['home-achievements'] = achievementsRes.data.page;
                setPages(newPages);
             }
 

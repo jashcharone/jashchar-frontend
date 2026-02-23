@@ -184,8 +184,11 @@ const FeatureBar = ({ primaryColor = DEFAULT_PRIMARY }) => {
   );
 };
 
-const AboutSection = ({ content, primaryColor = DEFAULT_PRIMARY }) => {
+const AboutSection = ({ content, primaryColor = DEFAULT_PRIMARY, title, schoolName }) => {
   // Merged Welcome/About section to match reference layout (Image Left, Accordion Right)
+  // Title comes from Front CMS 'home-welcome' page title, fallback to school name
+  const displayTitle = title || (schoolName ? `WELCOME TO ${schoolName.toUpperCase()}` : 'WELCOME');
+  
   return (
     <section className="py-16 bg-white dark:bg-gray-900 transition-colors duration-300">
       <div className="container mx-auto px-4">
@@ -212,7 +215,7 @@ const AboutSection = ({ content, primaryColor = DEFAULT_PRIMARY }) => {
               <span className="font-bold uppercase tracking-wider text-base" style={{ color: primaryColor }}>Welcome</span>
             </div>
             <h2 className="text-4xl md:text-5xl font-bold mb-4 text-gray-900 dark:text-white leading-tight">
-              WELCOME TO MOUNT CARMEL
+              {displayTitle}
             </h2>
             <div dangerouslySetInnerHTML={{ __html: content || "<p>We are dedicated to providing a nurturing environment where students can grow academically, socially, and emotionally. Our holistic approach ensures that every child receives the attention they need to succeed.</p>" }} 
                  className="text-gray-600 dark:text-gray-300 mb-6 leading-relaxed text-lg prose dark:prose-invert max-w-none" />
@@ -880,6 +883,8 @@ const SchoolPublicHome = () => {
         {/* Welcome / About Section */}
         <AboutSection 
             content={pages['home-welcome']?.content_html || pages['home-welcome']?.content} 
+            title={pages['home-welcome']?.title}
+            schoolName={settings?.homepage_title || school?.name}
             primaryColor={primaryColor} 
         />
         

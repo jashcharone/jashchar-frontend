@@ -82,6 +82,37 @@ const getIcon = (iconName) => {
 };
 
 /**
+ * ⚠️ MASTER ADMIN ONLY MODULES - These should NEVER appear in super_admin/school sidebar
+ * These are platform-level modules for Jashchar ERP administrators only
+ */
+const MASTER_ADMIN_ONLY_SLUGS = [
+  'module_registry',
+  'branches',
+  'organization_requests',
+  'branch_management',
+  'whatsapp_manager',
+  'subscriptions',
+  'subscription_plans',
+  'subscription_invoices',
+  'subscription_transactions',
+  'billing_audit',
+  'bulk_invoice',
+  'website_management',
+  'website_manager',
+  'saas_website_settings',
+  'login_page_settings',
+  'file_type_settings',
+  'enterprise_health',
+  'module_health',
+  'demo_automation',
+  'school_owner_diagnostics',
+  'branch_diagnostics',
+  'master_data_settings',
+  'communication_settings',
+  'queries_finder',
+];
+
+/**
  * Convert slug to display name
  */
 const slugToDisplayName = (slug) => {
@@ -125,9 +156,34 @@ const fetchModulesFromDB = async () => {
 /**
  * Find missing modules that are in DB but not in static sidebar
  * Returns modules that should be ADDED to sidebar
+ * @param {Array} dbModules - Modules from database
+ * @param {Array} staticSidebar - Static sidebar config
+ * @param {string} effectiveRole - The effective role (master_admin, super_admin, etc.)
  */
-const findMissingModules = (dbModules, staticSidebar) => {
+const findMissingModules = (dbModules, staticSidebar, effectiveRole = 'super_admin') => {
   if (!dbModules || !staticSidebar) return { missingParents: [], missingSubsByParent: {} };
+  
+  // ⚠️ CRITICAL: Filter out master_admin-only modules for non-master_admin roles
+  let filteredDbModules = dbModules;
+  if (effectiveRole !== 'master_admin') {
+    filteredDbModules = dbModules.filter(m => {
+      const slug = m.slug?.toLowerCase() || '';
+      const lastPart = slug.split('.').pop();
+      
+      // Check if module is master_admin-only
+      const isMasterAdminOnly = MASTER_ADMIN_ONLY_SLUGS.some(maSlug => 
+        slug === maSlug || 
+        lastPart === maSlug ||
+        slug.includes(maSlug)
+      );
+      
+      if (isMasterAdminOnly) {
+        console.log('[useDynamicSidebar] Filtering out master_admin module:', slug);
+        return false;
+      }
+      return true;
+    });
+  }
   
   // Build set of existing slugs from static sidebar (multiple variations)
   const existingSlugs = new Set();
@@ -175,14 +231,14 @@ const findMissingModules = (dbModules, staticSidebar) => {
     return false;
   };
   
-  // Find parent modules not in static config
-  const missingParents = dbModules.filter(m => 
+  // Find parent modules not in static config (use filtered modules)
+  const missingParents = filteredDbModules.filter(m => 
     !m.parent_slug && !slugExists(m.slug, m.name || m.display_name)
   );
   
-  // Group missing submodules by parent
+  // Group missing submodules by parent (use filtered modules)
   const missingSubsByParent = {};
-  dbModules.filter(m => m.parent_slug).forEach(sub => {
+  filteredDbModules.filter(m => m.parent_slug).forEach(sub => {
     const fullSlug = sub.slug;
     if (!slugExists(fullSlug, sub.name || sub.display_name)) {
       if (!missingSubsByParent[sub.parent_slug]) {
@@ -285,8 +341,8 @@ export const useDynamicSidebar = (role) => {
       return staticMenu;
     }
     
-    // Find what's missing
-    const { missingParents, missingSubsByParent } = findMissingModules(additionalModules, staticMenu);
+    // Find what's missing (pass effectiveRole to filter out master_admin modules)
+    const { missingParents, missingSubsByParent } = findMissingModules(additionalModules, staticMenu, effectiveRole);
     
     // Clone static menu to avoid mutations
     let enhancedMenu = staticMenu.map(item => ({

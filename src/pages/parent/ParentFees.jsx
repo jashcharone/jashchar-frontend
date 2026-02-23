@@ -32,20 +32,14 @@ const ParentFees = () => {
       setLoading(true);
       try {
         const studentId = selectedChild.id;
-        const branchId = selectedChild.branch_id;
 
-        const [studentRes, allocationsRes, paymentsRes] = await Promise.all([
-          supabase.from('student_profiles').select('*, photo_url, full_name, school_code, father_name, phone, roll_number, class:classes!student_profiles_class_id_fkey(name), section:sections!student_profiles_section_id_fkey(name)').eq('id', studentId).single(),
+        // Use selectedChild data instead of querying student_profiles (RLS blocks parent access)
+        setStudent(selectedChild);
+
+        const [allocationsRes, paymentsRes] = await Promise.all([
           supabase.from('student_fee_allocations').select('fee_master_id').eq('student_id', studentId),
           supabase.from('fee_payments').select('*').eq('student_id', studentId).order('payment_date', { ascending: false }),
         ]);
-
-        if (studentRes.error) {
-          toast({ variant: 'destructive', title: 'Error fetching student data' });
-          setLoading(false);
-          return;
-        }
-        setStudent(studentRes.data);
 
         if (allocationsRes.data) {
           const masterIds = allocationsRes.data.map(a => a.fee_master_id);

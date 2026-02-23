@@ -25,36 +25,22 @@ const ParentHostel = () => {
 
       setLoading(true);
       try {
-        // First check if child has hostel_details_id in their profile
-        const { data: studentData, error: studentError } = await supabase
-          .from('student_profiles')
-          .select('hostel_details_id')
-          .eq('id', selectedChild.id)
-          .single();
-
-        if (studentError) throw studentError;
-
-        if (!studentData?.hostel_details_id) {
-          setHostelDetails(null);
-          setLoading(false);
-          return;
-        }
-
+        // Query student_hostel_details directly by student_id (avoids RLS issue on student_profiles)
         const { data: hostelData, error: hostelError } = await supabase
           .from('student_hostel_details')
           .select(`
             *,
-            room:hostel_rooms(
-              *,
-              hostel:hostels(name),
+            hostel:hostels(name),
+            room:hostel_rooms!room_id(
+              room_number_name, no_of_bed, cost_per_bed,
               room_type:hostel_room_types(name)
             )
           `)
-          .eq('id', studentData.hostel_details_id)
-          .single();
+          .eq('student_id', selectedChild.id)
+          .maybeSingle();
 
         if (hostelError) throw hostelError;
-        setHostelDetails(hostelData?.room ? hostelData : null);
+        setHostelDetails(hostelData || null);
       } catch (error) {
         console.error('Error fetching hostel details:', error);
         toast({ variant: 'destructive', title: 'Error fetching hostel details', description: error.message });
@@ -98,7 +84,7 @@ const ParentHostel = () => {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Hotel className="h-5 w-5" />
-                Room {hostelDetails.room.room_number_name}
+                Room {hostelDetails.room?.room_number_name || hostelDetails.room_number || 'N/A'}
               </CardTitle>
             </CardHeader>
             <CardContent className="grid gap-4 md:grid-cols-2">
@@ -106,28 +92,32 @@ const ParentHostel = () => {
                 <p className="text-sm text-muted-foreground flex items-center gap-1">
                   <Building className="h-3 w-3" /> Hostel
                 </p>
-                <p className="font-medium">{hostelDetails.room.hostel?.name || 'N/A'}</p>
+                <p className="font-medium">{hostelDetails.hostel?.name || 'N/A'}</p>
               </div>
               <div className="space-y-1">
                 <p className="text-sm text-muted-foreground flex items-center gap-1">
                   <Bed className="h-3 w-3" /> Room Type
                 </p>
-                <p className="font-medium">{hostelDetails.room.room_type?.name || 'N/A'}</p>
+                <p className="font-medium">{hostelDetails.room?.room_type?.name || hostelDetails.room_type || 'N/A'}</p>
               </div>
               <div className="space-y-1">
                 <p className="text-sm text-muted-foreground">Room Number</p>
-                <p className="font-medium">{hostelDetails.room.room_number_name || 'N/A'}</p>
+                <p className="font-medium">{hostelDetails.room?.room_number_name || hostelDetails.room_number || 'N/A'}</p>
+              </div>
+              <div className="space-y-1">
+                <p className="text-sm text-muted-foreground">Bed Number</p>
+                <p className="font-medium">{hostelDetails.bed_number || 'N/A'}</p>
               </div>
               <div className="space-y-1">
                 <p className="text-sm text-muted-foreground">Total Beds</p>
-                <p className="font-medium">{hostelDetails.room.no_of_bed || 'N/A'}</p>
+                <p className="font-medium">{hostelDetails.room?.no_of_bed || 'N/A'}</p>
               </div>
-              {hostelDetails.room.cost_per_bed && (
+              {(hostelDetails.hostel_fee || hostelDetails.room?.cost_per_bed) && (
                 <div className="space-y-1">
                   <p className="text-sm text-muted-foreground flex items-center gap-1">
-                    <IndianRupee className="h-3 w-3" /> Cost per Bed
+                    <IndianRupee className="h-3 w-3" /> Hostel Fee
                   </p>
-                  <p className="font-medium">₹{Number(hostelDetails.room.cost_per_bed).toLocaleString()}</p>
+                  <p className="font-medium">₹{Number(hostelDetails.hostel_fee || hostelDetails.room?.cost_per_bed).toLocaleString()}</p>
                 </div>
               )}
               <div className="space-y-1">

@@ -25,28 +25,27 @@ const ParentExamResult = () => {
 
       setLoading(true);
       try {
-        // Fetch published exam results for the child
-        const { data: examResults, error } = await supabase
-          .from('exam_results')
+        // Fetch marks from exam_marks table with exam_subjects join
+        const { data: examMarks, error } = await supabase
+          .from('exam_marks')
           .select(`
-            id, obtained_marks, grade, is_absent, is_pass,
+            id, marks, is_absent, note,
             exam_subject:exam_subjects (
-              max_marks, min_marks,
-              exam:exams (id, name, is_publish),
+              id, max_marks, min_marks,
+              exam:exams (id, name, is_publish_result),
               subject:subjects (name, code)
             )
           `)
-          .eq('student_id', selectedChild.id)
-          .order('created_at', { ascending: false });
+          .eq('student_id', selectedChild.id);
 
         if (error) throw error;
 
-        // Group by exam
+        // Group by exam - only show published results
         const examMap = {};
-        (examResults || []).forEach(r => {
+        (examMarks || []).forEach(r => {
           const examName = r.exam_subject?.exam?.name || 'Unknown Exam';
           const examId = r.exam_subject?.exam?.id;
-          const isPublished = r.exam_subject?.exam?.is_publish;
+          const isPublished = r.exam_subject?.exam?.is_publish_result;
           
           if (!isPublished) return; // Only show published results
 
@@ -59,16 +58,17 @@ const ParentExamResult = () => {
             };
           }
 
-          const obtained = r.is_absent ? 0 : Number(r.obtained_marks || 0);
+          const obtained = r.is_absent ? 0 : Number(r.marks || 0);
           const maxMarks = Number(r.exam_subject?.max_marks || 0);
+          const minMarks = Number(r.exam_subject?.min_marks || 0);
 
           examMap[examId].subjects.push({
             name: r.exam_subject?.subject?.name || '-',
             max: maxMarks,
             obtained: obtained,
-            grade: r.grade || '-',
+            grade: '-',
             is_absent: r.is_absent,
-            is_pass: r.is_pass,
+            is_pass: r.is_absent ? false : obtained >= minMarks,
           });
           examMap[examId].total_max += maxMarks;
           examMap[examId].total_obtained += obtained;

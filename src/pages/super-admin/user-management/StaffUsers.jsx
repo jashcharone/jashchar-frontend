@@ -27,7 +27,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+
 import { useToast } from "@/components/ui/use-toast";
 import DashboardLayout from '@/components/DashboardLayout';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
@@ -62,7 +62,6 @@ const StaffUsers = () => {
     const [createLoginDialog, setCreateLoginDialog] = useState(false);
     const [resetPasswordDialog, setResetPasswordDialog] = useState(false);
     const [defaultPassword, setDefaultPassword] = useState('123456');
-    const [usernameType, setUsernameType] = useState('email'); // email, phone, employee_id
     const [processing, setProcessing] = useState(false);
 
     // Fetch departments from API
@@ -153,8 +152,7 @@ const StaffUsers = () => {
         try {
             const response = await api.post('/user-management/staff/bulk-create-logins', {
                 staff_ids: staffWithoutLogin,
-                default_password: defaultPassword,
-                username_type: usernameType
+                default_password: defaultPassword
             });
 
             if (response.data.success) {
@@ -483,28 +481,19 @@ const StaffUsers = () => {
                         </DialogDescription>
                     </DialogHeader>
                     <div className="space-y-4 py-4">
-                        <div className="space-y-2">
-                            <Label>Username Type</Label>
-                            <RadioGroup value={usernameType} onValueChange={setUsernameType}>
-                                <div className="flex items-center space-x-2">
-                                    <RadioGroupItem value="email" id="email" />
-                                    <Label htmlFor="email" className="font-normal">
-                                        Email (ramya@school.com)
-                                    </Label>
-                                </div>
-                                <div className="flex items-center space-x-2">
-                                    <RadioGroupItem value="phone" id="phone" />
-                                    <Label htmlFor="phone" className="font-normal">
-                                        Phone Number (9876543210)
-                                    </Label>
-                                </div>
-                                <div className="flex items-center space-x-2">
-                                    <RadioGroupItem value="employee_id" id="employee_id" />
-                                    <Label htmlFor="employee_id" className="font-normal">
-                                        Employee ID (EMP001)
-                                    </Label>
-                                </div>
-                            </RadioGroup>
+                        <div className="bg-green-50 dark:bg-green-900/20 p-3 rounded-lg text-sm border border-green-200 dark:border-green-800">
+                            <p className="font-medium text-green-700 dark:text-green-400 flex items-center gap-2">
+                                <CheckCircle className="h-4 w-4" />
+                                Login ಎರಡೂ ರೀತಿ ಕೆಲಸ ಮಾಡುತ್ತದೆ
+                            </p>
+                            <div className="mt-2 space-y-1 text-green-600 dark:text-green-300">
+                                <p className="flex items-center gap-2">
+                                    <Phone className="h-3 w-3" /> Mobile Number ಇಂದ Login
+                                </p>
+                                <p className="flex items-center gap-2">
+                                    <Mail className="h-3 w-3" /> Email ID ಇಂದ Login
+                                </p>
+                            </div>
                         </div>
 
                         <div className="space-y-2">
@@ -514,18 +503,20 @@ const StaffUsers = () => {
                                 onChange={(e) => setDefaultPassword(e.target.value)}
                                 placeholder="Enter default password"
                             />
-                            <p className="text-xs text-gray-500">
+                            <p className="text-xs text-gray-500 dark:text-gray-400">
                                 This password will be set for all new accounts.
                             </p>
                         </div>
 
-                        <div className="bg-purple-50 p-3 rounded-lg text-sm">
-                            <p className="font-medium text-purple-700">Login Credentials:</p>
-                            <p className="text-purple-600">
-                                Username: {usernameType === 'email' ? 'Email Address' : 
-                                          usernameType === 'phone' ? 'Phone Number' : 'Employee ID'}
+                        <div className="bg-purple-50 dark:bg-purple-900/20 p-3 rounded-lg text-sm border border-purple-200 dark:border-purple-800">
+                            <p className="font-medium text-purple-700 dark:text-purple-400">Login Credentials:</p>
+                            <p className="text-purple-600 dark:text-purple-300 flex items-center gap-1">
+                                <Phone className="h-3 w-3" /> Primary: Mobile Number
                             </p>
-                            <p className="text-purple-600">Password: {defaultPassword}</p>
+                            <p className="text-purple-600 dark:text-purple-300 flex items-center gap-1">
+                                <Mail className="h-3 w-3" /> Secondary: Email Address
+                            </p>
+                            <p className="text-purple-600 dark:text-purple-300">Password: {defaultPassword}</p>
                         </div>
                     </div>
                     <DialogFooter>

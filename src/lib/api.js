@@ -90,18 +90,44 @@ api.interceptors.request.use(async (config) => {
   return config;
 });
 
-// Response Interceptor for Global Error Logging
+// Response Interceptor for Global Error Logging & Session Expiry Handling
 api.interceptors.response.use(
   (response) => response,
-  (error) => {
-    // Log error to Queries Finder
-    if (error.response?.status !== 401) { // Ignore 401 (Auth) to avoid spam during session expiry
-      errorLoggerService.logError(error, { componentStack: 'API Interceptor' }, {
-        type: 'API_ERROR',
-        module: 'backend',
-        dashboard: 'unknown'
-      });
+  async (error) => {
+    // Handle 401 Unauthorized - Session expired
+    if (error.response?.status === 401) {
+      console.warn('[API] Session expired or unauthorized. Redirecting to login...');
+      
+      // Clear stored auth data
+      localStorage.removeItem('selectedSchoolId');
+      localStorage.removeItem('branchId');
+      localStorage.removeItem('selectedOrganizationId');
+      localStorage.removeItem('selectedBranchId');
+      localStorage.removeItem('selectedSessionId');
+      sessionStorage.removeItem('ma_target_branch_id');
+      
+      // Sign out from Supabase to clear session
+      try {
+        await supabase.auth.signOut();
+      } catch (signOutErr) {
+        console.error('[API] Error during sign out:', signOutErr);
+      }
+      
+      // Redirect to login if not already there
+      if (typeof window !== 'undefined' && !window.location.pathname.includes('/login')) {
+        window.location.href = '/login?session_expired=true';
+      }
+      
+      return Promise.reject(error);
     }
+    
+    // Log other errors to Queries Finder
+    errorLoggerService.logError(error, { componentStack: 'API Interceptor' }, {
+      type: 'API_ERROR',
+      module: 'backend',
+      dashboard: 'unknown'
+    });
+    
     return Promise.reject(error);
   }
 );

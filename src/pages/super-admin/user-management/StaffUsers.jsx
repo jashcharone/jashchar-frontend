@@ -45,6 +45,7 @@ const StaffUsers = () => {
     const [loading, setLoading] = useState(true);
     const [selectedStaff, setSelectedStaff] = useState([]);
     const [departments, setDepartments] = useState([]);
+    const [branchesList, setBranchesList] = useState([]);
     
     // Pagination
     const [pagination, setPagination] = useState({ total: 0, page: 1, limit: 50, totalPages: 0 });
@@ -64,16 +65,27 @@ const StaffUsers = () => {
     const [usernameType, setUsernameType] = useState('email'); // email, phone, employee_id
     const [processing, setProcessing] = useState(false);
 
-    // Fetch unique departments
+    // Fetch departments from API
     const fetchDepartments = async () => {
         try {
-            const response = await api.get('/user-management/staff?limit=1000');
+            const response = await api.get('/user-management/departments');
             if (response.data.success) {
-                const uniqueDepts = [...new Set(response.data.data.map(s => s.department).filter(Boolean))];
-                setDepartments(uniqueDepts);
+                setDepartments(response.data.data || []);
             }
         } catch (error) {
             console.error('Failed to fetch departments:', error);
+        }
+    };
+
+    // Fetch branches from API
+    const fetchBranches = async () => {
+        try {
+            const response = await api.get('/user-management/branches');
+            if (response.data.success) {
+                setBranchesList(response.data.data || []);
+            }
+        } catch (error) {
+            console.error('Failed to fetch branches:', error);
         }
     };
 
@@ -105,6 +117,7 @@ const StaffUsers = () => {
     useEffect(() => {
         fetchStaff();
         fetchDepartments();
+        fetchBranches();
     }, [fetchStaff]);
 
     // Handle select all
@@ -229,7 +242,7 @@ const StaffUsers = () => {
                             </SelectTrigger>
                             <SelectContent>
                                 <SelectItem value="all">All Branches</SelectItem>
-                                {branches?.map(b => (
+                                {branchesList.map(b => (
                                     <SelectItem key={b.id} value={b.id}>{b.name}</SelectItem>
                                 ))}
                             </SelectContent>
@@ -245,7 +258,7 @@ const StaffUsers = () => {
                             <SelectContent>
                                 <SelectItem value="all">All Departments</SelectItem>
                                 {departments.map(d => (
-                                    <SelectItem key={d} value={d}>{d}</SelectItem>
+                                    <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>
                                 ))}
                             </SelectContent>
                         </Select>
@@ -389,9 +402,9 @@ const StaffUsers = () => {
                                                     {member.employee_id || '-'}
                                                 </code>
                                             </td>
-                                            <td className="p-3 text-sm text-muted-foreground">{member.department_id || '-'}</td>
-                                            <td className="p-3 text-sm text-muted-foreground">{member.designation_id || '-'}</td>
-                                            <td className="p-3 text-sm">{member.branch_name}</td>
+                                            <td className="p-3 text-sm text-muted-foreground">{member.department_name || '-'}</td>
+                                            <td className="p-3 text-sm text-muted-foreground">{member.designation_name || '-'}</td>
+                                            <td className="p-3 text-sm">{member.branch_name || '-'}</td>
                                             <td className="p-3">
                                                 {member.has_login ? (
                                                     <Badge className="bg-green-100 text-green-700">

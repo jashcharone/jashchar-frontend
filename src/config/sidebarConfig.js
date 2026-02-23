@@ -739,6 +739,15 @@ export const BASE_SIDEBAR = {
     },
     { title: 'Online Course', icon: MonitorPlay, path: ROUTES.SUPER_ADMIN.ONLINE_COURSE },
     { title: 'Notice Board', icon: MessageSquare, path: ROUTES.SUPER_ADMIN.NOTICE_BOARD },
+    {
+      title: 'Leave',
+      icon: Calendar,
+      submenu: [
+        { title: 'Apply Leave', path: ROUTES.SUPER_ADMIN.STAFF_APPLY_LEAVE },
+        { title: 'Leave Management', path: ROUTES.SUPER_ADMIN.LEAVE_MANAGEMENT },
+      ]
+    },
+    { title: 'My Profile', icon: Users, path: ROUTES.SUPER_ADMIN.PROFILE },
   ],
   
   // Librarian Dashboard

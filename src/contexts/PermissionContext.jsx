@@ -646,6 +646,48 @@ export const PermissionProvider = ({ children }) => {
             modulesToGrant.forEach(slug => {
                 permMap[slug] = { can_view: true, can_add: true, can_edit: true, can_delete: true };
             });
+        } else if (normalizedRole === 'teacher') {
+            // ✅ TEACHER DEFAULT PERMISSIONS
+            // When no explicit permissions exist in DB, grant default teaching-related modules
+            // This ensures teacher sidebar works immediately after user creation
+            // These can be overridden by explicit role_permissions in the Permission DNA page
+            console.log('PermissionContext: Granting default teacher permissions (no explicit permissions found)');
+            
+            const TEACHER_DEFAULTS = {
+              'dashboard':           { can_view: true, can_add: false, can_edit: false, can_delete: false },
+              'academics':           { can_view: true, can_add: true,  can_edit: true,  can_delete: false },
+              'my_timetable':        { can_view: true, can_add: false, can_edit: false, can_delete: false },
+              'student_information': { can_view: true, can_add: false, can_edit: false, can_delete: false },
+              'students':            { can_view: true, can_add: false, can_edit: false, can_delete: false },
+              'attendance':          { can_view: true, can_add: true,  can_edit: true,  can_delete: false },
+              'homework':            { can_view: true, can_add: true,  can_edit: true,  can_delete: true  },
+              'lesson_plan':         { can_view: true, can_add: true,  can_edit: true,  can_delete: false },
+              'lesson_planning_adv': { can_view: true, can_add: true,  can_edit: true,  can_delete: false },
+              'examinations':        { can_view: true, can_add: true,  can_edit: true,  can_delete: false },
+              'behaviour_records':   { can_view: true, can_add: true,  can_edit: true,  can_delete: false },
+              'gmeet_live_classes':  { can_view: true, can_add: true,  can_edit: true,  can_delete: false },
+              'live_classes':        { can_view: true, can_add: true,  can_edit: true,  can_delete: false },
+              'online_course':       { can_view: true, can_add: true,  can_edit: false, can_delete: false },
+              'communicate':         { can_view: true, can_add: false, can_edit: false, can_delete: false },
+              'notice_board':        { can_view: true, can_add: false, can_edit: false, can_delete: false },
+              'human_resource':      { can_view: true, can_add: true,  can_edit: false, can_delete: false },
+              'leave':               { can_view: true, can_add: true,  can_edit: false, can_delete: false },
+              'my_profile':          { can_view: true, can_add: false, can_edit: true,  can_delete: false },
+            };
+            
+            Object.entries(TEACHER_DEFAULTS).forEach(([slug, perms]) => {
+              // Only grant if module is in the school's subscription plan (or plan info unavailable)
+              const isInPlan = allowedModules.length === 0 || 
+                allowedModules.some(m => {
+                  const normalized = m.toLowerCase().replace(/ /g, '_');
+                  return normalized === slug || m === slug;
+                });
+              if (isInPlan) {
+                permMap[slug] = perms;
+              }
+            });
+            
+            console.log('PermissionContext: Teacher default permissions granted:', Object.keys(permMap).length);
         }
         
         // ✅ FIX: Mark as loaded for this user/school/role combo

@@ -375,10 +375,10 @@ const StudentDetails = () => {
                 });
             }
             
-            // Calculate percentage
+            // Calculate percentage (cap at 100% to prevent overflow from migration data)
             Object.keys(progressMap).forEach(id => {
                 const { total, paid } = progressMap[id];
-                progressMap[id].progress = total > 0 ? Math.round((paid / total) * 100) : 0;
+                progressMap[id].progress = total > 0 ? Math.min(100, Math.round((paid / total) * 100)) : 0;
             });
             
             setFeesData(progressMap);

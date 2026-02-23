@@ -455,9 +455,15 @@ const SmartSanitizer = {
     gender: (val) => {
         if (!val) return 'Male'; // Default safety
         const v = String(val).toLowerCase().trim();
-        if (['m', 'male', 'boy', 'mr', 'master', 'man', 'gents', 'पुरुष', 'ಪುರುಷ'].some(s => v.includes(s))) return 'Male';
-        if (['f', 'female', 'girl', 'miss', 'mrs', 'ms', 'woman', 'ladies', 'महिला', 'ಮಹಿಳೆ'].some(s => v.includes(s))) return 'Female';
-        if (['other', 'transgender', 'trans', 'अन्य', 'ಇತರೆ'].some(s => v.includes(s))) return 'Other';
+        // 🛡️ Check female FIRST (before male) because "female" contains "m" and "male"
+        if (['female', 'girl', 'miss', 'mrs', 'ms', 'woman', 'ladies', 'महिला', 'ಮಹಿಳೆ'].some(s => v === s)) return 'Female';
+        if (['f'].includes(v)) return 'Female'; // Single letter 'f' = female
+        if (['male', 'boy', 'mr', 'master', 'man', 'gents', 'पुरुष', 'ಪುರುಷ'].some(s => v === s)) return 'Male';
+        if (['m'].includes(v)) return 'Male'; // Single letter 'm' = male
+        if (['other', 'transgender', 'trans', 'अन्य', 'ಇತರೆ'].some(s => v === s || v.includes(s))) return 'Other';
+        // Fallback: partial match (but check female before male)
+        if (v.includes('female') || v.includes('girl') || v.includes('woman')) return 'Female';
+        if (v.includes('male') || v.includes('boy') || v.includes('man')) return 'Male';
         return 'Male'; // Safe default
     },
     
@@ -509,8 +515,19 @@ const SmartSanitizer = {
     },
     
     // Date Sanitizer - Handles multiple formats including MCB ERP format
+    // Also handles JavaScript Date objects (from XLSX cellDates:true)
     date: (val) => {
         if (!val) return null;
+        
+        // 🌟 Handle JavaScript Date object directly (from XLSX cellDates:true)
+        if (val instanceof Date && !isNaN(val.getTime())) {
+            // Use UTC to avoid timezone shift (Excel dates are dateless)
+            const y = val.getFullYear();
+            const m = String(val.getMonth() + 1).padStart(2, '0');
+            const d = String(val.getDate()).padStart(2, '0');
+            return `${y}-${m}-${d}`;
+        }
+        
         const str = String(val).trim();
         
         // Already in YYYY-MM-DD format
@@ -982,6 +999,22 @@ const BulkUpload = () => {
         const mappingConfidence = {}; // Track confidence scores
         const erpFieldMap = ERP_FIELD_MAPPINGS[bestMatch];
         
+        // 🛡️ Pre-build a set of columns that are EXACT matches for any target field
+        // This prevents fuzzy matching from stealing columns meant for other fields
+        // e.g., prevents "father_name" column from fuzzy-matching to "last_name" (via "family_name" variant at 60%)
+        const exactMatchReserved = new Set();
+        for (const [, sourceVariants] of Object.entries(erpFieldMap)) {
+            for (const variant of sourceVariants) {
+                const matchedCol = columns.find(c =>
+                    c.toLowerCase().replace(/[^a-z0-9]/g, '_') === variant.toLowerCase().replace(/[^a-z0-9]/g, '_')
+                );
+                if (matchedCol) {
+                    exactMatchReserved.add(matchedCol);
+                    break;
+                }
+            }
+        }
+        
         for (const [targetField, sourceVariants] of Object.entries(erpFieldMap)) {
             // First try exact match
             let matched = false;
@@ -1008,10 +1041,16 @@ const BulkUpload = () => {
                         // Skip if already mapped to another field
                         if (Object.values(mappings).includes(col)) continue;
                         
-                        // Check similarity with all variants
+                        // 🛡️ Skip columns reserved for exact match with OTHER fields
+                        // This prevents "father_name" column from being fuzzy-matched to "last_name"
+                        if (exactMatchReserved.has(col) && !sourceVariants.some(v => 
+                            col.toLowerCase().replace(/[^a-z0-9]/g, '_') === v.toLowerCase().replace(/[^a-z0-9]/g, '_')
+                        )) continue;
+                        
+                        // Check similarity with all variants (threshold raised from 60 to 70)
                         for (const variant of sourceVariants) {
                             const similarity = calculateSimilarity(col, variant);
-                            if (similarity > bestFuzzyScore && similarity >= 60) {
+                            if (similarity > bestFuzzyScore && similarity >= 70) {
                                 bestFuzzyScore = similarity;
                                 bestFuzzyMatch = col;
                             }
@@ -1019,7 +1058,7 @@ const BulkUpload = () => {
                         
                         // Also check against target field label
                         const labelSimilarity = calculateSimilarity(col, targetFieldDef.label);
-                        if (labelSimilarity > bestFuzzyScore && labelSimilarity >= 60) {
+                        if (labelSimilarity > bestFuzzyScore && labelSimilarity >= 70) {
                             bestFuzzyScore = labelSimilarity;
                             bestFuzzyMatch = col;
                         }
@@ -1032,6 +1071,24 @@ const BulkUpload = () => {
                             confidence: bestFuzzyScore >= 80 ? 'high' : bestFuzzyScore >= 70 ? 'medium' : 'low'
                         };
                     }
+                }
+            }
+        }
+        
+        // 🛡️ Post-mapping deduplication: if two target fields point to same column, exact match wins
+        const columnUsage = {};
+        for (const [targetField, col] of Object.entries(mappings)) {
+            if (!columnUsage[col]) columnUsage[col] = [];
+            columnUsage[col].push({ targetField, score: mappingConfidence[targetField]?.score || 0 });
+        }
+        for (const [col, users] of Object.entries(columnUsage)) {
+            if (users.length > 1) {
+                // Keep the highest confidence mapping, remove others
+                users.sort((a, b) => b.score - a.score);
+                for (let i = 1; i < users.length; i++) {
+                    console.warn(`⚠️ Duplicate column mapping: "${col}" was mapped to both "${users[0].targetField}" (score:${users[0].score}) and "${users[i].targetField}" (score:${users[i].score}). Keeping "${users[0].targetField}".`);
+                    delete mappings[users[i].targetField];
+                    delete mappingConfidence[users[i].targetField];
                 }
             }
         }
@@ -1090,7 +1147,11 @@ const BulkUpload = () => {
                 }
                 
                 // AI Smart Sanitization based on field type and key
-                value = String(value).trim();
+                // 🌟 Don't convert Date objects to string prematurely (for date_of_birth)
+                const rawValue = value; // Preserve original type (Date object from XLSX)
+                if (!(value instanceof Date)) {
+                    value = String(value).trim();
+                }
                 
                 // Apply specific sanitizers
                 switch (field.key) {
@@ -1142,7 +1203,7 @@ const BulkUpload = () => {
                         break;
                         
                     case 'date_of_birth':
-                        value = SmartSanitizer.date(value);
+                        value = SmartSanitizer.date(rawValue); // Use rawValue to preserve Date object
                         if (!value && row[sourceCol]) {
                             // Try parseDate as fallback
                             const parsed = parseDate(row[sourceCol]);
@@ -1540,9 +1601,13 @@ const BulkUpload = () => {
                     
                     // Basic Info
                     first_name: record.first_name,
-                    last_name: record.last_name || null,
-                    full_name: `${record.first_name || ''} ${record.last_name || ''}`.trim() || record.first_name,
-                    gender: record.gender?.toLowerCase() || 'male',
+                    // 🛡️ Safety: if last_name equals father_name, it's a mapping error - don't use it
+                    last_name: (record.last_name && record.last_name !== record.father_name) ? record.last_name : null,
+                    full_name: (() => {
+                        const lastName = (record.last_name && record.last_name !== record.father_name) ? record.last_name : '';
+                        return `${record.first_name || ''} ${lastName}`.trim() || record.first_name;
+                    })(),
+                    gender: record.gender || 'Male', // Already sanitized by SmartSanitizer.gender - returns 'Male'/'Female'/'Other'
                     date_of_birth: record.date_of_birth || null,
                     blood_group: record.blood_group || null,
                     religion: record.religion || null,

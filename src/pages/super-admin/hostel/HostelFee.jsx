@@ -42,6 +42,7 @@ const HostelFee = () => {
     room_type_id: '',
     bed_number: '',
     hostel_fee: '',
+    billing_cycle: 'monthly',
     check_in_date: '',
     check_out_date: '',
     hostel_guardian_contact: ''
@@ -139,6 +140,7 @@ const HostelFee = () => {
       room_type_id: hostel?.room_type_id || '',
       bed_number: hostel?.bed_number || '',
       hostel_fee: hostel?.hostel_fee || '',
+      billing_cycle: hostel?.billing_cycle || 'monthly',
       check_in_date: hostel?.check_in_date || '',
       check_out_date: hostel?.check_out_date || '',
       hostel_guardian_contact: hostel?.hostel_guardian_contact || ''
@@ -150,7 +152,7 @@ const HostelFee = () => {
     setSelectedStudent(null);
     setFormData({
       hostel_id: '', room_id: '', room_type_id: '', bed_number: '',
-      hostel_fee: '', check_in_date: '', check_out_date: '', hostel_guardian_contact: ''
+      hostel_fee: '', billing_cycle: 'monthly', check_in_date: '', check_out_date: '', hostel_guardian_contact: ''
     });
   };
 
@@ -176,7 +178,8 @@ const HostelFee = () => {
       setFormData(prev => ({
         ...prev,
         room_type_id: roomTypeId,
-        hostel_fee: roomType.cost || prev.hostel_fee
+        hostel_fee: roomType.cost || prev.hostel_fee,
+        billing_cycle: roomType.billing_cycle || 'monthly'
       }));
     }
   };
@@ -197,6 +200,7 @@ const HostelFee = () => {
       room_type_id: formData.room_type_id || null,
       bed_number: formData.bed_number || null,
       hostel_fee: formData.hostel_fee ? parseFloat(formData.hostel_fee) : null,
+      billing_cycle: formData.billing_cycle || 'monthly',
       check_in_date: formData.check_in_date || null,
       check_out_date: formData.check_out_date || null,
       hostel_guardian_contact: formData.hostel_guardian_contact || null

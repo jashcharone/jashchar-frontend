@@ -14,7 +14,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { Save, Loader2, Settings, CreditCard, UserCog, Hash, Building2 } from 'lucide-react';
+import { Save, Loader2, Settings, CreditCard, UserCog, Hash, Building2, Receipt } from 'lucide-react';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
 
@@ -414,6 +414,58 @@ const FeesSettings = ({ settings, handleChange, handleQuillChange }) => (
                             </div>
                         </RadioGroup>
                     </div>
+                </div>
+            </CardContent>
+        </Card>
+
+        {/* Transport & Hostel Receipt Format */}
+        <Card className="border-border/50 shadow-sm">
+            <CardHeader className="pb-4">
+                <div className="flex items-center gap-3">
+                    <div className="p-2 rounded-lg bg-purple-500/10 dark:bg-purple-500/20">
+                        <Receipt className="h-5 w-5 text-purple-600 dark:text-purple-400" />
+                    </div>
+                    <div>
+                        <CardTitle className="text-base">Transport & Hostel Receipt Format</CardTitle>
+                        <CardDescription>Choose receipt format for Transport and Hostel fee payments</CardDescription>
+                    </div>
+                </div>
+            </CardHeader>
+            <CardContent className="space-y-4">
+                <div className="p-4 rounded-lg bg-muted/30 border border-border/50">
+                    <Label className="font-medium mb-3 block">Receipt Display Format</Label>
+                    <RadioGroup 
+                        value={settings.transport_hostel_receipt_format || 'detailed'} 
+                        onValueChange={(v) => handleChange('transport_hostel_receipt_format', v)} 
+                        className="grid gap-4"
+                    >
+                        <div className="flex items-start space-x-3 p-3 rounded-lg border border-border/50 bg-card hover:bg-muted/50 cursor-pointer">
+                            <RadioGroupItem value="detailed" id="receipt-detailed" className="mt-1" />
+                            <div className="flex-1">
+                                <Label htmlFor="receipt-detailed" className="font-medium cursor-pointer">
+                                    📋 Detailed (Month-wise)
+                                </Label>
+                                <p className="text-sm text-muted-foreground mt-1">
+                                    Shows each month as separate row with full summary section.
+                                    <br />
+                                    <span className="text-xs text-blue-600">Example: Apr ₹500, May ₹500, Jun ₹500 (3 rows)</span>
+                                </p>
+                            </div>
+                        </div>
+                        <div className="flex items-start space-x-3 p-3 rounded-lg border border-border/50 bg-card hover:bg-muted/50 cursor-pointer">
+                            <RadioGroupItem value="summary" id="receipt-summary" className="mt-1" />
+                            <div className="flex-1">
+                                <Label htmlFor="receipt-summary" className="font-medium cursor-pointer">
+                                    📄 Summary (Installment-wise)
+                                </Label>
+                                <p className="text-sm text-muted-foreground mt-1">
+                                    Clean receipt showing billing cycle and installment total only.
+                                    <br />
+                                    <span className="text-xs text-green-600">Example: Quarterly Fee (Apr-Jun) ₹1,500 (1 row)</span>
+                                </p>
+                            </div>
+                        </div>
+                    </RadioGroup>
                 </div>
             </CardContent>
         </Card>

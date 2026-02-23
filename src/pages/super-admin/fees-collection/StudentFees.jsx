@@ -77,6 +77,47 @@ const getPaidMonths = (payments) => {
     return paid;
 };
 
+// Helper: Calculate annual fee based on billing cycle
+// billing_cycle determines how the fee amount is interpreted:
+// - monthly: fee × sessionMonths (e.g., ₹5000/month × 12 = ₹60,000/year)
+// - quarterly: fee × ceil(sessionMonths/3) (e.g., ₹15000/quarter × 4 = ₹60,000/year)
+// - half_yearly: fee × ceil(sessionMonths/6) (e.g., ₹30000/semester × 2 = ₹60,000/year)
+// - annual: fee × 1 (e.g., ₹60,000/year)
+// - one_time: fee × 1 (e.g., ₹10,000 one-time)
+const calculateFeeDetails = (fee, billingCycle = 'monthly', sessionMonths = 12) => {
+    const periods = {
+        monthly: sessionMonths,
+        quarterly: Math.ceil(sessionMonths / 3),
+        half_yearly: Math.ceil(sessionMonths / 6),
+        annual: 1,
+        one_time: 1
+    };
+    const periodsCount = periods[billingCycle] || sessionMonths; // Default to monthly if unknown
+    const totalFee = fee * periodsCount;
+    const perMonthEquivalent = totalFee / sessionMonths;
+    
+    return {
+        periodFee: fee,          // Fee per billing period
+        billingCycle,            // The billing cycle
+        periodsCount,            // Number of periods in session
+        totalFee,                // Total fee for full session
+        perMonthEquivalent,      // Monthly equivalent for month-based collection
+        isMonthlyChargeable: billingCycle === 'monthly' // Whether to show month selection UI
+    };
+};
+
+// Helper: Get billing cycle label for display
+const getBillingCycleLabel = (cycle) => {
+    const labels = {
+        monthly: 'Monthly',
+        quarterly: 'Quarterly',
+        half_yearly: 'Half-Yearly',
+        annual: 'Annual',
+        one_time: 'One-Time'
+    };
+    return labels[cycle] || cycle;
+};
+
 // Summary Card Component with variants
 const SummaryCard = ({ title, amount, icon: Icon, variant = 'default', currencySymbol = '₹' }) => {
     const variants = {
@@ -310,23 +351,32 @@ const StudentFees = () => {
                     .eq('branch_id', selectedBranch.id)
                     .is('reverted_at', null);
 
-                const monthlyTransportFee = Number(transportData.transport_fee) || 0;
+                // Get billing cycle from student_transport_details or default to monthly
+                const billingCycle = transportData.billing_cycle || 'monthly';
+                const periodFee = Number(transportData.transport_fee) || 0;
+                
+                // Calculate fee details based on billing cycle
+                const feeDetails = calculateFeeDetails(periodFee, billingCycle, totalSessionMonths);
+                const { totalFee: totalTransportFee, perMonthEquivalent } = feeDetails;
+                
+                // For collection, we use monthly equivalent for month-based tracking
                 const paidMonthsSet = getPaidMonths(transportPayments);
                 const paidMonthsCount = paidMonthsSet.size;
                 
-                // Calculate totals based on months
-                const totalTransportFee = monthlyTransportFee * totalSessionMonths;
-                const transportPaid = paidMonthsCount * monthlyTransportFee;
+                // Calculate paid and balance based on monthly equivalent
+                const transportPaid = paidMonthsCount * perMonthEquivalent;
                 const transportDiscount = (transportPayments || []).reduce((sum, p) => sum + (Number(p.discount_amount) || 0), 0);
                 const unpaidMonthsCount = totalSessionMonths - paidMonthsCount;
-                const transportBalance = unpaidMonthsCount * monthlyTransportFee;
+                const transportBalance = unpaidMonthsCount * perMonthEquivalent;
                 
                 // Mark unpaid months
                 const unpaidMonths = months.filter(m => !paidMonthsSet.has(m.key));
 
                 setTransportDetails({
                     ...transportData,
-                    monthlyFee: monthlyTransportFee,
+                    billingCycle,
+                    periodFee,                          // Fee per billing period
+                    monthlyFee: perMonthEquivalent,     // Monthly equivalent for collection
                     totalMonths: totalSessionMonths,
                     totalFee: totalTransportFee,
                     paidMonths: Array.from(paidMonthsSet),
@@ -367,23 +417,32 @@ const StudentFees = () => {
                     .eq('branch_id', selectedBranch.id)
                     .is('reverted_at', null);
 
-                const monthlyHostelFee = Number(hostelData.hostel_fee) || 0;
+                // Get billing cycle from student_hostel_details or default to monthly
+                const billingCycle = hostelData.billing_cycle || 'monthly';
+                const periodFee = Number(hostelData.hostel_fee) || 0;
+                
+                // Calculate fee details based on billing cycle
+                const feeDetails = calculateFeeDetails(periodFee, billingCycle, totalSessionMonths);
+                const { totalFee: totalHostelFee, perMonthEquivalent } = feeDetails;
+                
+                // For collection, we use monthly equivalent for month-based tracking
                 const paidMonthsSet = getPaidMonths(hostelPayments);
                 const paidMonthsCount = paidMonthsSet.size;
                 
-                // Calculate totals based on months
-                const totalHostelFee = monthlyHostelFee * totalSessionMonths;
-                const hostelPaid = paidMonthsCount * monthlyHostelFee;
+                // Calculate paid and balance based on monthly equivalent
+                const hostelPaid = paidMonthsCount * perMonthEquivalent;
                 const hostelDiscount = (hostelPayments || []).reduce((sum, p) => sum + (Number(p.discount_amount) || 0), 0);
                 const unpaidMonthsCount = totalSessionMonths - paidMonthsCount;
-                const hostelBalance = unpaidMonthsCount * monthlyHostelFee;
+                const hostelBalance = unpaidMonthsCount * perMonthEquivalent;
                 
                 // Mark unpaid months
                 const unpaidMonths = months.filter(m => !paidMonthsSet.has(m.key));
 
                 setHostelDetails({
                     ...hostelData,
-                    monthlyFee: monthlyHostelFee,
+                    billingCycle,
+                    periodFee,                          // Fee per billing period
+                    monthlyFee: perMonthEquivalent,     // Monthly equivalent for collection
                     totalMonths: totalSessionMonths,
                     totalFee: totalHostelFee,
                     paidMonths: Array.from(paidMonthsSet),
@@ -1209,19 +1268,19 @@ const StudentFees = () => {
                                                     </div>
                                                 </div>
                                                 
-                                                {/* Monthly Fee Summary */}
+                                                {/* Fee Summary */}
                                                 <div className="flex items-center justify-between p-3 bg-background rounded-md mb-4">
                                                     <div className="flex flex-wrap gap-4 lg:gap-6">
                                                         <div>
-                                                            <p className="text-xs text-muted-foreground">Monthly Fee</p>
+                                                            <p className="text-xs text-muted-foreground">Fee ({getBillingCycleLabel(transportDetails.billingCycle)})</p>
+                                                            <p className="font-bold text-lg">{currencySymbol}{(transportDetails.periodFee || 0).toLocaleString('en-IN')}</p>
+                                                        </div>
+                                                        <div>
+                                                            <p className="text-xs text-muted-foreground">Monthly Equivalent</p>
                                                             <p className="font-bold text-lg">{currencySymbol}{(transportDetails.monthlyFee || 0).toLocaleString('en-IN')}</p>
                                                         </div>
                                                         <div>
-                                                            <p className="text-xs text-muted-foreground">Session Months</p>
-                                                            <p className="font-bold text-lg">{transportDetails.totalMonths || 12}</p>
-                                                        </div>
-                                                        <div>
-                                                            <p className="text-xs text-muted-foreground">Total Fee</p>
+                                                            <p className="text-xs text-muted-foreground">Total Fee ({transportDetails.totalMonths || 12} months)</p>
                                                             <p className="font-bold text-lg">{currencySymbol}{(transportDetails.totalFee || 0).toLocaleString('en-IN')}</p>
                                                         </div>
                                                         <div>
@@ -1400,19 +1459,19 @@ const StudentFees = () => {
                                                     </div>
                                                 </div>
                                                 
-                                                {/* Monthly Fee Summary */}
+                                                {/* Fee Summary */}
                                                 <div className="flex items-center justify-between p-3 bg-background rounded-md mb-4">
                                                     <div className="flex flex-wrap gap-4 lg:gap-6">
                                                         <div>
-                                                            <p className="text-xs text-muted-foreground">Monthly Fee</p>
+                                                            <p className="text-xs text-muted-foreground">Fee ({getBillingCycleLabel(hostelDetails.billingCycle)})</p>
+                                                            <p className="font-bold text-lg">{currencySymbol}{(hostelDetails.periodFee || 0).toLocaleString('en-IN')}</p>
+                                                        </div>
+                                                        <div>
+                                                            <p className="text-xs text-muted-foreground">Monthly Equivalent</p>
                                                             <p className="font-bold text-lg">{currencySymbol}{(hostelDetails.monthlyFee || 0).toLocaleString('en-IN')}</p>
                                                         </div>
                                                         <div>
-                                                            <p className="text-xs text-muted-foreground">Session Months</p>
-                                                            <p className="font-bold text-lg">{hostelDetails.totalMonths || 12}</p>
-                                                        </div>
-                                                        <div>
-                                                            <p className="text-xs text-muted-foreground">Total Fee</p>
+                                                            <p className="text-xs text-muted-foreground">Total Fee ({hostelDetails.totalMonths || 12} months)</p>
                                                             <p className="font-bold text-lg">{currencySymbol}{(hostelDetails.totalFee || 0).toLocaleString('en-IN')}</p>
                                                         </div>
                                                         <div>

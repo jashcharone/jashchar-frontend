@@ -24,9 +24,23 @@ const TransportRoutes = () => {
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [editingRoute, setEditingRoute] = useState(null);
-  const [formData, setFormData] = useState({ route_title: '', fare: '' });
+  const [formData, setFormData] = useState({ route_title: '', fare: '', billing_cycle: 'monthly' });
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
+
+  // Billing Cycle Options for dropdown
+  const BILLING_CYCLE_OPTIONS = [
+    { value: 'monthly', label: 'Monthly', hint: 'Fee per month' },
+    { value: 'quarterly', label: 'Quarterly', hint: 'Fee per 3 months' },
+    { value: 'half_yearly', label: 'Half-Yearly', hint: 'Fee per 6 months' },
+    { value: 'annual', label: 'Annual', hint: 'Fee per year' },
+    { value: 'one_time', label: 'One-Time', hint: 'Single payment' }
+  ];
+
+  // Helper to get billing cycle label
+  const getBillingCycleLabel = (value) => {
+    return BILLING_CYCLE_OPTIONS.find(opt => opt.value === value)?.label || value;
+  };
 
   const branchId = selectedBranch?.id || user?.profile?.branch_id;
 
@@ -54,13 +68,17 @@ const TransportRoutes = () => {
 
   const handleEdit = (route) => {
     setEditingRoute(route);
-    setFormData({ route_title: route.route_title || '', fare: route.fare || '' });
+    setFormData({ 
+      route_title: route.route_title || '', 
+      fare: route.fare || '', 
+      billing_cycle: route.billing_cycle || 'monthly' 
+    });
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleCancel = () => {
     setEditingRoute(null);
-    setFormData({ route_title: '', fare: '' });
+    setFormData({ route_title: '', fare: '', billing_cycle: 'monthly' });
   };
 
   const handleSubmit = async (e) => {
@@ -91,6 +109,7 @@ const TransportRoutes = () => {
     const payload = {
       route_title: formData.route_title.trim(), // Trim whitespace
       fare: formData.fare ? parseFloat(formData.fare) : null,
+      billing_cycle: formData.billing_cycle || 'monthly',
       branch_id: branchId,
       session_id: currentSessionId,
       organization_id: organizationId
@@ -152,6 +171,29 @@ const TransportRoutes = () => {
                   <Label htmlFor="fare">Fee (₹)</Label>
                   <Input id="fare" type="number" min="0" step="0.01" value={formData.fare} onChange={(e) => setFormData({...formData, fare: e.target.value})} placeholder="e.g. 1500" />
                 </div>
+                <div className="space-y-2">
+                  <Label htmlFor="billing_cycle">Billing Cycle *</Label>
+                  <Select value={formData.billing_cycle} onValueChange={(v) => setFormData({...formData, billing_cycle: v})}>
+                    <SelectTrigger id="billing_cycle">
+                      <SelectValue placeholder="Select billing cycle" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {BILLING_CYCLE_OPTIONS.map(opt => (
+                        <SelectItem key={opt.value} value={opt.value}>
+                          <span className="font-medium">{opt.label}</span>
+                          <span className="text-xs text-muted-foreground ml-2">({opt.hint})</span>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-muted-foreground">
+                    {formData.billing_cycle === 'monthly' && 'Fee will be charged every month'}
+                    {formData.billing_cycle === 'quarterly' && 'Fee will be charged every 3 months'}
+                    {formData.billing_cycle === 'half_yearly' && 'Fee will be charged every 6 months'}
+                    {formData.billing_cycle === 'annual' && 'Fee will be charged once per year'}
+                    {formData.billing_cycle === 'one_time' && 'One-time payment only'}
+                  </p>
+                </div>
                 <Button type="submit" className="w-full" disabled={isSubmitting}>
                   {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
                   Save
@@ -188,6 +230,7 @@ const TransportRoutes = () => {
                             <th className="px-4 py-3 w-12">#</th>
                             <th className="px-4 py-3">Route Title</th>
                             <th className="px-4 py-3 text-right">Fee (₹)</th>
+                            <th className="px-4 py-3">Billing Cycle</th>
                             <th className="px-4 py-3 text-center">Action</th>
                           </tr>
                         </thead>
@@ -197,6 +240,11 @@ const TransportRoutes = () => {
                               <td className="px-4 py-3">{(currentPage - 1) * itemsPerPage + index + 1}</td>
                               <td className="px-4 py-3 font-medium">{route.route_title}</td>
                               <td className="px-4 py-3 text-right font-semibold text-green-600">{formatCurrency(route.fare)}</td>
+                              <td className="px-4 py-3">
+                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
+                                  {getBillingCycleLabel(route.billing_cycle)}
+                                </span>
+                              </td>
                               <td className="px-4 py-3 text-center space-x-2">
                                 <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => handleEdit(route)}>
                                   <Edit className="h-4 w-4 text-yellow-600" />

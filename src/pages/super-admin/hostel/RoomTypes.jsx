@@ -32,8 +32,23 @@ const RoomTypes = () => {
   const [formData, setFormData] = useState({
     name: '',
     cost: '',
+    billing_cycle: 'monthly',
     description: ''
   });
+
+  // Billing Cycle Options for dropdown
+  const BILLING_CYCLE_OPTIONS = [
+    { value: 'monthly', label: 'Monthly', hint: 'Fee per month' },
+    { value: 'quarterly', label: 'Quarterly', hint: 'Fee per 3 months' },
+    { value: 'half_yearly', label: 'Half-Yearly', hint: 'Fee per 6 months' },
+    { value: 'annual', label: 'Annual', hint: 'Fee per year' },
+    { value: 'one_time', label: 'One-Time', hint: 'Single payment' }
+  ];
+
+  // Helper to get billing cycle label
+  const getBillingCycleLabel = (value) => {
+    return BILLING_CYCLE_OPTIONS.find(opt => opt.value === value)?.label || value;
+  };
 
   const branchId = selectedBranch?.id || user?.profile?.branch_id;
 
@@ -64,16 +79,17 @@ const RoomTypes = () => {
     setFormData(roomType ? {
       name: roomType.name || '',
       cost: roomType.cost || '',
+      billing_cycle: roomType.billing_cycle || 'monthly',
       description: roomType.description || ''
     } : {
-      name: '', cost: '', description: ''
+      name: '', cost: '', billing_cycle: 'monthly', description: ''
     });
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleCancelEdit = () => {
     setEditingRoomType(null);
-    setFormData({ name: '', cost: '', description: '' });
+    setFormData({ name: '', cost: '', billing_cycle: 'monthly', description: '' });
   };
 
   const handleSubmit = async (e) => {
@@ -93,6 +109,7 @@ const RoomTypes = () => {
     const payload = {
       name: formData.name.trim(),
       cost: formData.cost ? parseFloat(formData.cost) : null,
+      billing_cycle: formData.billing_cycle || 'monthly',
       description: formData.description?.trim() || null,
       branch_id: branchId
     };
@@ -113,7 +130,7 @@ const RoomTypes = () => {
       toast({ title: 'Success!', description: `Room type successfully ${editingRoomType ? 'updated' : 'created'}.` });
       await fetchRoomTypes();
       setEditingRoomType(null);
-      setFormData({ name: '', cost: '', description: '' });
+      setFormData({ name: '', cost: '', billing_cycle: 'monthly', description: '' });
     }
     setIsSubmitting(false);
   };
@@ -206,6 +223,30 @@ const RoomTypes = () => {
                 </div>
 
                 <div className="space-y-2">
+                  <Label htmlFor="billing_cycle">Billing Cycle *</Label>
+                  <Select value={formData.billing_cycle} onValueChange={(v) => setFormData({...formData, billing_cycle: v})}>
+                    <SelectTrigger id="billing_cycle">
+                      <SelectValue placeholder="Select billing cycle" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {BILLING_CYCLE_OPTIONS.map(opt => (
+                        <SelectItem key={opt.value} value={opt.value}>
+                          <span className="font-medium">{opt.label}</span>
+                          <span className="text-xs text-muted-foreground ml-2">({opt.hint})</span>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-muted-foreground">
+                    {formData.billing_cycle === 'monthly' && 'Cost will be charged every month'}
+                    {formData.billing_cycle === 'quarterly' && 'Cost will be charged every 3 months'}
+                    {formData.billing_cycle === 'half_yearly' && 'Cost will be charged every 6 months'}
+                    {formData.billing_cycle === 'annual' && 'Cost will be charged once per year'}
+                    {formData.billing_cycle === 'one_time' && 'One-time payment only'}
+                  </p>
+                </div>
+
+                <div className="space-y-2">
                   <Label htmlFor="description">Description</Label>
                   <Textarea id="description" value={formData.description} onChange={(e) => setFormData({...formData, description: e.target.value})} placeholder="Additional details" rows={3} />
                 </div>
@@ -249,6 +290,7 @@ const RoomTypes = () => {
                         <TableHead className="w-[50px]">#</TableHead>
                         <TableHead>Room Type</TableHead>
                         <TableHead className="text-right">Cost (₹)</TableHead>
+                        <TableHead>Billing Cycle</TableHead>
                         <TableHead>Description</TableHead>
                         <TableHead className="text-center">Action</TableHead>
                       </TableRow>
@@ -260,6 +302,11 @@ const RoomTypes = () => {
                           <TableCell className="font-medium">{roomType.name}</TableCell>
                           <TableCell className="text-right font-semibold text-green-600">
                             {formatCurrency(roomType.cost)}
+                          </TableCell>
+                          <TableCell>
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
+                              {getBillingCycleLabel(roomType.billing_cycle)}
+                            </span>
                           </TableCell>
                           <TableCell className="max-w-[200px] truncate">{roomType.description || '-'}</TableCell>
                           <TableCell className="text-center space-x-2">

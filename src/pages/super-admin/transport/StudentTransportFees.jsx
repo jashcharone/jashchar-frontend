@@ -41,6 +41,7 @@ const StudentTransportFees = () => {
     transport_route_id: '',
     transport_pickup_point_id: '',
     transport_fee: '',
+    billing_cycle: 'monthly',
     pickup_time: '',
     drop_time: '',
     vehicle_number: '',
@@ -146,6 +147,7 @@ const StudentTransportFees = () => {
       transport_route_id: transport?.transport_route_id || '',
       transport_pickup_point_id: transport?.transport_pickup_point_id || '',
       transport_fee: transport?.transport_fee || '',
+      billing_cycle: transport?.billing_cycle || 'monthly',
       pickup_time: transport?.pickup_time || '',
       drop_time: transport?.drop_time || '',
       vehicle_number: transport?.vehicle_number || '',
@@ -175,7 +177,7 @@ const StudentTransportFees = () => {
     setSelectedStudent(null);
     setFormData({
       transport_route_id: '', transport_pickup_point_id: '', transport_fee: '',
-      pickup_time: '', drop_time: '', vehicle_number: '',
+      billing_cycle: 'monthly', pickup_time: '', drop_time: '', vehicle_number: '',
       driver_name: '', driver_contact: '', special_instructions: ''
     });
   };
@@ -188,6 +190,7 @@ const StudentTransportFees = () => {
       transport_route_id: routeId, 
       transport_pickup_point_id: '',
       transport_fee: route?.fare || prev.transport_fee,
+      billing_cycle: route?.billing_cycle || 'monthly',
       // Clear vehicle fields when route changes
       vehicle_number: '',
       driver_name: '',
@@ -261,6 +264,7 @@ const StudentTransportFees = () => {
       transport_route_id: formData.transport_route_id || null,
       transport_pickup_point_id: formData.transport_pickup_point_id || null,
       transport_fee: formData.transport_fee ? parseFloat(formData.transport_fee) : null,
+      billing_cycle: formData.billing_cycle || 'monthly',
       pickup_time: formData.pickup_time || null,
       drop_time: formData.drop_time || null,
       vehicle_number: formData.vehicle_number || null,

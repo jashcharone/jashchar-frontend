@@ -70,7 +70,7 @@ const ParentUsers = () => {
                 return;
             }
             try {
-                const response = await api.get(`/classes?branch_id=${filters.branch_id}`);
+                const response = await api.get(`/academics/classes?branchId=${filters.branch_id}`);
                 if (response.data.success) {
                     setClasses(response.data.data || []);
                 }

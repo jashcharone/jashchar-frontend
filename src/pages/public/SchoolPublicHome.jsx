@@ -184,10 +184,12 @@ const FeatureBar = ({ primaryColor = DEFAULT_PRIMARY }) => {
   );
 };
 
-const AboutSection = ({ content, primaryColor = DEFAULT_PRIMARY, title, schoolName }) => {
+const AboutSection = ({ content, primaryColor = DEFAULT_PRIMARY, title, schoolName, featuredImage }) => {
   // Merged Welcome/About section to match reference layout (Image Left, Accordion Right)
   // Title comes from Front CMS 'home-welcome' page title, fallback to school name
   const displayTitle = title || (schoolName ? `WELCOME TO ${schoolName.toUpperCase()}` : 'WELCOME');
+  // Image comes from Front CMS 'home-welcome' page featured_image, fallback to default
+  const welcomeImage = featuredImage || 'https://demo.smart-school.in/uploads/gallery/media/welcome.jpg';
   
   return (
     <section className="py-16 bg-white dark:bg-gray-900 transition-colors duration-300">
@@ -195,7 +197,7 @@ const AboutSection = ({ content, primaryColor = DEFAULT_PRIMARY, title, schoolNa
         <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-start">
           <div className="relative">
             <div className="absolute -top-4 -left-4 w-24 h-24 bg-yellow-100 dark:bg-yellow-900/30 rounded-full -z-10"></div>
-            <img src="https://demo.smart-school.in/uploads/gallery/media/welcome.jpg" alt="Classroom" className="rounded-lg shadow-2xl w-full" />
+            <img src={welcomeImage} alt={schoolName || 'School'} className="rounded-lg shadow-2xl w-full" />
             <div className="absolute -bottom-6 -right-6 bg-white dark:bg-gray-800 p-4 rounded-lg shadow-xl hidden md:block">
               <div className="flex items-center gap-3">
                 <div className="text-white p-2 rounded-full" style={{ backgroundColor: primaryColor }}>
@@ -885,6 +887,7 @@ const SchoolPublicHome = () => {
             content={pages['home-welcome']?.content_html || pages['home-welcome']?.content} 
             title={pages['home-welcome']?.title}
             schoolName={settings?.homepage_title || school?.name}
+            featuredImage={pages['home-welcome']?.feature_image || pages['home-welcome']?.featured_image}
             primaryColor={primaryColor} 
         />
         

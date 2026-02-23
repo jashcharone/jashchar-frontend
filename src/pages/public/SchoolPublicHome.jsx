@@ -184,12 +184,41 @@ const FeatureBar = ({ primaryColor = DEFAULT_PRIMARY }) => {
   );
 };
 
+// Parse content_html: text before first <h3> = description, each <h3>+content = accordion item
+const parseWelcomeContent = (html) => {
+  if (!html) return { description: '', accordionItems: [] };
+  
+  // Split by <h3> tags
+  const parts = html.split(/<h3[^>]*>/i);
+  const description = (parts[0] || '').trim();
+  const accordionItems = [];
+  
+  for (let i = 1; i < parts.length; i++) {
+    const closingMatch = parts[i].split(/<\/h3>/i);
+    if (closingMatch.length >= 2) {
+      const itemTitle = closingMatch[0].replace(/<[^>]*>/g, '').trim();
+      const itemContent = closingMatch.slice(1).join('').trim();
+      if (itemTitle) {
+        accordionItems.push({ title: itemTitle, content: itemContent });
+      }
+    }
+  }
+  
+  return { description, accordionItems };
+};
+
 const AboutSection = ({ content, primaryColor = DEFAULT_PRIMARY, title, schoolName, featuredImage }) => {
   // Merged Welcome/About section to match reference layout (Image Left, Accordion Right)
   // Title comes from Front CMS 'home-welcome' page title, fallback to school name
   const displayTitle = title || (schoolName ? `WELCOME TO ${schoolName.toUpperCase()}` : 'WELCOME');
   // Image comes from Front CMS 'home-welcome' page featured_image, fallback to default
   const welcomeImage = featuredImage || 'https://demo.smart-school.in/uploads/gallery/media/welcome.jpg';
+  
+  // Parse content for description + accordion items
+  // Admin writes in Rich Text Editor: normal text = description, H3 headings = accordion titles
+  const { description, accordionItems } = parseWelcomeContent(content);
+  
+  const defaultDesc = "<p>We are dedicated to providing a nurturing environment where students can grow academically, socially, and emotionally. Our holistic approach ensures that every child receives the attention they need to succeed.</p>";
   
   return (
     <section className="py-16 bg-white dark:bg-gray-900 transition-colors duration-300">
@@ -219,44 +248,27 @@ const AboutSection = ({ content, primaryColor = DEFAULT_PRIMARY, title, schoolNa
             <h2 className="text-4xl md:text-5xl font-bold mb-4 text-gray-900 dark:text-white leading-tight">
               {displayTitle}
             </h2>
-            <div dangerouslySetInnerHTML={{ __html: content || "<p>We are dedicated to providing a nurturing environment where students can grow academically, socially, and emotionally. Our holistic approach ensures that every child receives the attention they need to succeed.</p>" }} 
+            <div dangerouslySetInnerHTML={{ __html: description || defaultDesc }} 
                  className="text-gray-600 dark:text-gray-300 mb-6 leading-relaxed text-lg prose dark:prose-invert max-w-none" />
             
+            {accordionItems.length > 0 && (
             <Accordion type="single" collapsible className="w-full space-y-3">
-              <AccordionItem value="item-1" className="border-none">
+              {accordionItems.map((item, index) => (
+              <AccordionItem key={index} value={`item-${index}`} className="border-none">
                 <AccordionTrigger 
                   className="bg-gray-900 text-white px-5 py-3 rounded hover:opacity-90 hover:no-underline transition-colors data-[state=open]:bg-opacity-90 dark:data-[state=open]:bg-gray-800 text-base font-medium"
                   style={{ backgroundColor: primaryColor }}
                 >
-                  Collapsible Group Item #1
+                  {item.title}
                 </AccordionTrigger>
-                <AccordionContent className="p-5 border border-t-0 rounded-b bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-300 dark:border-gray-700 text-base">
-                  Anim pariatur cliche reprehenderit, enim eiusmod high life accusamus terry richardson ad squid. 3 wolf moon officia aute, non cupidatat skateboard dolor brunch.
+                <AccordionContent className="p-5 border border-t-0 rounded-b bg-gray-50 dark:bg-gray-800 dark:border-gray-700 text-base">
+                  <div dangerouslySetInnerHTML={{ __html: item.content }} 
+                       className="text-gray-600 dark:text-gray-300 prose dark:prose-invert max-w-none" />
                 </AccordionContent>
               </AccordionItem>
-              <AccordionItem value="item-2" className="border-none">
-                <AccordionTrigger 
-                  className="bg-gray-900 text-white px-5 py-3 rounded hover:opacity-90 hover:no-underline transition-colors data-[state=open]:bg-opacity-90 dark:data-[state=open]:bg-gray-800 text-base font-medium"
-                  style={{ backgroundColor: primaryColor }}
-                >
-                  Collapsible Group Item #2
-                </AccordionTrigger>
-                <AccordionContent className="p-5 border border-t-0 rounded-b bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-300 dark:border-gray-700 text-base">
-                  Food truck quinoa nesciunt laborum eiusmod. Brunch 3 wolf moon tempor, sunt aliqua put a bird on it squid single-origin coffee nulla assumenda shoreditch et.
-                </AccordionContent>
-              </AccordionItem>
-              <AccordionItem value="item-3" className="border-none">
-                <AccordionTrigger 
-                  className="bg-gray-900 text-white px-5 py-3 rounded hover:opacity-90 hover:no-underline transition-colors data-[state=open]:bg-opacity-90 dark:data-[state=open]:bg-gray-800 text-base font-medium"
-                  style={{ backgroundColor: primaryColor }}
-                >
-                  Collapsible Group Item #3
-                </AccordionTrigger>
-                <AccordionContent className="p-5 border border-t-0 rounded-b bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-300 dark:border-gray-700 text-base">
-                  Nihil anim keffiyeh helvetica, craft beer labore wes anderson cred nesciunt sapiente ea proident. Ad vegan excepteur butcher vice lomo.
-                </AccordionContent>
-              </AccordionItem>
+              ))}
             </Accordion>
+            )}
           </div>
         </div>
       </div>

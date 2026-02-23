@@ -5,7 +5,8 @@ import {
   Loader2, Phone, MapPin, Mail, Facebook, Twitter, Youtube, 
   Linkedin, Instagram, ChevronRight, ChevronLeft, Plus, Minus, 
   GraduationCap, Users, Trophy, BookOpen, UserCheck, Quote, Clock, CheckCircle, User,
-  Calendar, Newspaper, PlayCircle, X, Image as ImageIcon
+  Calendar, Newspaper, PlayCircle, X, Image as ImageIcon,
+  Award, Star, Heart, Target, Globe
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Helmet } from 'react-helmet';
@@ -364,7 +365,7 @@ const CoursesSection = ({ slug, primaryColor = DEFAULT_PRIMARY }) => {
   );
 };
 
-const AchievementsSection = ({ slug, primaryColor = DEFAULT_PRIMARY }) => {
+const AchievementsSection = ({ slug, primaryColor = DEFAULT_PRIMARY, achievementImage, achievementCaption, description }) => {
   const [stats, setStats] = useState([]);
   
   useEffect(() => {
@@ -396,9 +397,20 @@ const AchievementsSection = ({ slug, primaryColor = DEFAULT_PRIMARY }) => {
           case 'UserCheck': return <UserCheck {...props} />;
           case 'MapPin': return <MapPin {...props} />;
           case 'Users': return <Users {...props} />;
+          case 'Trophy': return <Trophy {...props} />;
+          case 'BookOpen': return <BookOpen {...props} />;
+          case 'Award': return <Award {...props} />;
+          case 'Star': return <Star {...props} />;
+          case 'Heart': return <Heart {...props} />;
+          case 'Target': return <Target {...props} />;
+          case 'Globe': return <Globe {...props} />;
           default: return <Trophy {...props} />;
       }
   };
+
+  const displayImage = achievementImage || 'https://demo.smart-school.in/uploads/gallery/media/achivement.jpg';
+  const displayCaption = achievementCaption || 'Class of 2024 Graduation Ceremony';
+  const displayDescription = description || 'Our commitment to excellence has been recognized through various awards and achievements. We take pride in our students\' success and our contribution to the field of education.';
 
   return (
     <section className="py-16 bg-[#1e293b] text-white relative overflow-hidden">
@@ -415,16 +427,16 @@ const AchievementsSection = ({ slug, primaryColor = DEFAULT_PRIMARY }) => {
               <span style={{ color: primaryColor }}>Recognitions</span>
             </h2>
             <p className="text-gray-400 mb-6 leading-relaxed text-lg">
-              Our commitment to excellence has been recognized through various awards and achievements. We take pride in our students' success and our contribution to the field of education.
+              {displayDescription}
             </p>
             <div className="relative rounded-lg overflow-hidden group">
                 <img 
-                  src="https://demo.smart-school.in/uploads/gallery/media/achivement.jpg" 
-                  alt="Graduation" 
+                  src={displayImage} 
+                  alt={displayCaption} 
                   className="rounded-lg shadow-2xl transform group-hover:scale-105 transition-transform duration-500" 
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent flex items-end p-4">
-                  <p className="text-white font-bold text-lg">Class of 2024 Graduation Ceremony</p>
+                  <p className="text-white font-bold text-lg">{displayCaption}</p>
                 </div>
             </div>
           </div>
@@ -907,7 +919,13 @@ const SchoolPublicHome = () => {
         <CoursesSection slug={schoolSlug} primaryColor={primaryColor} />
         
         {/* Achievements */}
-        <AchievementsSection slug={schoolSlug} primaryColor={primaryColor} />
+        <AchievementsSection 
+            slug={schoolSlug} 
+            primaryColor={primaryColor}
+            achievementImage={pages['home-achievements']?.feature_image || pages['home-achievements']?.featured_image}
+            achievementCaption={pages['home-achievements']?.title}
+            description={pages['home-achievements']?.content_html ? pages['home-achievements'].content_html.replace(/<[^>]*>/g, '').trim() : undefined}
+        />
         
         {/* Staff / Team */}
         <StaffSection slug={schoolSlug} primaryColor={primaryColor} />

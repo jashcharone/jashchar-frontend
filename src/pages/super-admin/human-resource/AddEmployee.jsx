@@ -1522,8 +1522,8 @@ const AddEmployee = () => {
                                             <Lock className="w-6 h-6 mx-auto text-orange-500 dark:text-orange-400 mb-2" />
                                             <h3 className="font-medium text-orange-800 dark:text-orange-300">Password Auto-Generation ON</h3>
                                             <p className="text-xs text-orange-600 dark:text-orange-400/80 mt-1">
-                                                System will generate and email the password.
-                                                {schoolSettings?.password_default && <span className="block mt-1 font-mono">Default: {schoolSettings.password_default}</span>}
+                                                System will use the default employee password.
+                                                {(schoolSettings?.password_default_employee || schoolSettings?.password_default) && <span className="block mt-1 font-mono">Default: {schoolSettings.password_default_employee || schoolSettings.password_default}</span>}
                                             </p>
                                         </div>
                                     ) : (

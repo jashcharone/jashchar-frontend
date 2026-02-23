@@ -1264,7 +1264,8 @@ const BulkUpload = () => {
     const generateNextAdmissionNo = async (branchIdParam, offset = 0) => {
         try {
             // 🌟 Call Backend API for GLOBAL UNIQUE admission number (same as StudentAdmission.jsx)
-            const response = await api.get(`/students/next-admission-number?branch_id=${branchIdParam}`, {
+            // Pass session_id so year matches the selected session (e.g., 2025-26 → 2025)
+            const response = await api.get(`/students/next-admission-number?branch_id=${branchIdParam}&session_id=${selectedSession}`, {
                 headers: { 'x-branch-id': branchIdParam }
             });
             
@@ -1302,8 +1303,16 @@ const BulkUpload = () => {
         
         const prefix = (branchSettings?.student_admission_no_prefix ?? 'STU').trim();
         const digit = Number(branchSettings?.student_admission_no_digit) || 5;
-        const currentYear = new Date().getFullYear();
-        const yearPrefix = `${prefix}-${currentYear}-`;
+        
+        // 🌟 Use session year instead of current calendar year
+        // Extract start year from selected session name (e.g., "2025-26" → 2025)
+        let admissionYear = new Date().getFullYear(); // fallback
+        const selectedSessionObj = sessions.find(s => s.id === selectedSession);
+        if (selectedSessionObj?.name) {
+            const yearMatch = selectedSessionObj.name.match(/^(\d{4})/);
+            if (yearMatch) admissionYear = parseInt(yearMatch[1], 10);
+        }
+        const yearPrefix = `${prefix}-${admissionYear}-`;
         
         // 🌟 Query GLOBALLY for the prefix-year combination (same as StudentAdmission.jsx)
         const { data } = await supabase

@@ -212,7 +212,7 @@ const IdAutoGenerationSettings = ({ settings, handleChange }) => {
                     
                     <div className="space-y-4 p-4 rounded-lg border border-border/50 bg-card">
                         <div className="flex items-center justify-between">
-                            <Label className="font-medium">Default Password</Label>
+                            <Label className="font-medium">Default Password Auto-Fill</Label>
                             <RadioGroup 
                                 value={String(settings.password_auto_generation)} 
                                 onValueChange={(val) => handleChange('password_auto_generation', val === 'true')} 
@@ -229,9 +229,21 @@ const IdAutoGenerationSettings = ({ settings, handleChange }) => {
                             </RadioGroup>
                         </div>
                         {settings.password_auto_generation && (
-                            <div className="space-y-2">
-                                <Label htmlFor="pass-default" className="text-sm">Default Password</Label>
-                                <Input id="pass-default" placeholder="e.g., Welcome@123" value={settings.password_default || ''} onChange={(e) => handleChange('password_default', e.target.value)} />
+                            <div className="space-y-4 pt-2">
+                                <div className="space-y-2">
+                                    <Label htmlFor="pass-student" className="text-sm flex items-center gap-2">
+                                        🎓 Student & Parent Default Password
+                                    </Label>
+                                    <Input id="pass-student" placeholder="e.g., Student@123" value={settings.password_default || ''} onChange={(e) => handleChange('password_default', e.target.value)} />
+                                    <p className="text-xs text-muted-foreground">Used when admitting new students and creating parent accounts</p>
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="pass-employee" className="text-sm flex items-center gap-2">
+                                        👨‍💼 Employee Default Password
+                                    </Label>
+                                    <Input id="pass-employee" placeholder="e.g., Staff@123" value={settings.password_default_employee || ''} onChange={(e) => handleChange('password_default_employee', e.target.value)} />
+                                    <p className="text-xs text-muted-foreground">Used when adding new staff/employees (Teachers, Principal, etc.)</p>
+                                </div>
                             </div>
                         )}
                     </div>
@@ -515,34 +527,22 @@ const GeneralSetting = () => {
         console.log('[GeneralSetting] Fetching settings for branch:', branchId);
         setIsFetching(true);
         
-        // Get branch info
-        const { data: branchData } = await supabase
+        // 🌟 Read from branches table - this is what all consumers (StudentAdmission, AddEmployee, BulkUpload) read from
+        const { data: branchData, error } = await supabase
             .from('branches')
-            .select('id, branch_name')
+            .select('*')
             .eq('id', branchId)
             .single();
-        
-        // Get settings from branch_settings table
-        const { data, error } = await supabase
-            .from('branch_settings')
-            .select('*')
-            .eq('branch_id', branchId)
-            .maybeSingle();
         
         if (error) {
             console.error('[GeneralSetting] Error fetching settings:', error);
             toast({ variant: 'destructive', title: 'Failed to fetch settings', description: error.message });
         } else {
-            const mergedSettings = { 
-                ...data, 
-                branch_id: branchId,
-                branch_name: branchData?.branch_name || selectedBranch?.branch_name 
-            };
-            console.log('[GeneralSetting] Settings loaded for:', mergedSettings.branch_name, mergedSettings);
-            setSettings(mergedSettings);
+            console.log('[GeneralSetting] Settings loaded for:', branchData?.branch_name, branchData);
+            setSettings(branchData || {});
         }
         setIsFetching(false);
-    }, [branchId, toast, selectedBranch]);
+    }, [branchId, toast]);
 
     useEffect(() => {
         fetchSettings();
@@ -557,49 +557,51 @@ const GeneralSetting = () => {
     const handleSave = async () => {
         setLoading(true);
         
-        // Save to branch_settings table
-        if (branchId) {
-            // Remove non-updatable fields
-            const { id, branch_id, branch_name, created_at, organization_id, ...updateData } = settings;
-            
-            // Check if settings exist
-            const { data: existingSettings } = await supabase
-                .from('branch_settings')
-                .select('id')
-                .eq('branch_id', branchId)
-                .maybeSingle();
-            
-            let error;
-            if (existingSettings) {
-                // Update existing settings
-                const result = await supabase
-                    .from('branch_settings')
-                    .update({
-                        ...updateData,
-                        updated_at: new Date().toISOString()
-                    })
-                    .eq('branch_id', branchId);
-                error = result.error;
-            } else {
-                // Insert new settings
-                const result = await supabase
-                    .from('branch_settings')
-                    .insert({
-                        branch_id: branchId,
-                        ...updateData,
-                        created_at: new Date().toISOString(),
-                        updated_at: new Date().toISOString()
-                    });
-                error = result.error;
-            }
-            
-            if (error) {
-                toast({ variant: 'destructive', title: 'Failed to save settings', description: error.message });
-            } else {
-                toast({ title: 'Success!', description: `Settings saved for ${settings.branch_name || selectedBranch?.branch_name || 'branch'}.` });
-            }
-        } else {
+        if (!branchId) {
             toast({ variant: 'destructive', title: 'No branch selected', description: 'Please select a branch first.' });
+            setLoading(false);
+            return;
+        }
+        
+        // 🌟 Save to branches table - this is what all consumers read from
+        // Only update settings-related columns, not structure columns
+        const settingsColumns = {
+            password_auto_generation: settings.password_auto_generation,
+            password_default: settings.password_default,
+            password_default_employee: settings.password_default_employee,
+            student_admission_no_auto_generation: settings.student_admission_no_auto_generation,
+            student_admission_no_prefix: settings.student_admission_no_prefix,
+            student_admission_no_digit: settings.student_admission_no_digit,
+            student_admission_start_from: settings.student_admission_start_from,
+            staff_id_auto_generation: settings.staff_id_auto_generation,
+            staff_id_prefix: settings.staff_id_prefix,
+            student_username_auto_generation: settings.student_username_auto_generation,
+            student_username_prefix: settings.student_username_prefix,
+            offline_bank_payment_enabled: settings.offline_bank_payment_enabled,
+            offline_bank_payment_instruction: settings.offline_bank_payment_instruction,
+            lock_student_panel_on_due_fees: settings.lock_student_panel_on_due_fees,
+            fees_payment_grace_period_days: settings.fees_payment_grace_period_days ? parseInt(settings.fees_payment_grace_period_days) : null,
+            print_receipt_office_copy: settings.print_receipt_office_copy,
+            print_receipt_student_copy: settings.print_receipt_student_copy,
+            print_receipt_bank_copy: settings.print_receipt_bank_copy,
+            single_page_fees_print: settings.single_page_fees_print,
+            collect_fees_in_back_date: settings.collect_fees_in_back_date,
+            carry_forward_fees_due_days: settings.carry_forward_fees_due_days ? parseInt(settings.carry_forward_fees_due_days) : null,
+            student_panel_fees_discount: settings.student_panel_fees_discount,
+            transport_hostel_receipt_format: settings.transport_hostel_receipt_format,
+            updated_at: new Date().toISOString()
+        };
+
+        const { error } = await supabase
+            .from('branches')
+            .update(settingsColumns)
+            .eq('id', branchId);
+        
+        if (error) {
+            console.error('[GeneralSetting] Save error:', error);
+            toast({ variant: 'destructive', title: 'Failed to save settings', description: error.message });
+        } else {
+            toast({ title: 'Settings Saved!', description: `Settings saved for ${settings.branch_name || selectedBranch?.branch_name || 'branch'}.` });
         }
         setLoading(false);
     };

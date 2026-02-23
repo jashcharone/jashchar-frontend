@@ -1589,8 +1589,16 @@ const StudentAdmission = () => {
   const generateNextIdLocal = useCallback(async (settings, branchId) => {
     const prefix = (settings?.student_admission_no_prefix ?? 'STU').trim();
     const digit = Number(settings?.student_admission_no_digit) || 5;
-    const currentYear = new Date().getFullYear();
-    const yearPrefix = `${prefix}-${currentYear}-`;
+    
+    // 🌟 Use session year instead of current calendar year
+    // Extract start year from selected session name (e.g., "2025-26" → 2025)
+    let admissionYear = new Date().getFullYear(); // fallback
+    const selectedSessionObj = sessions.find(s => s.id === formData.session_id);
+    if (selectedSessionObj?.name) {
+      const yearMatch = selectedSessionObj.name.match(/^(\d{4})/);
+      if (yearMatch) admissionYear = parseInt(yearMatch[1], 10);
+    }
+    const yearPrefix = `${prefix}-${admissionYear}-`;
 
     // 🌟 Query GLOBALLY across ALL branches for the prefix-year combination
     const { data, error } = await supabase
@@ -1629,7 +1637,7 @@ const StudentAdmission = () => {
     
     checkStudentUsernameDuplicate(studentUsername);
     return newId;
-  }, [checkStudentUsernameDuplicate]);
+  }, [checkStudentUsernameDuplicate, sessions, formData.session_id]);
 
   /**
    * 🌟 GLOBAL UNIQUE ADMISSION NUMBER GENERATOR
@@ -1650,8 +1658,9 @@ const StudentAdmission = () => {
 
     try {
       // 🌟 Call Backend API for GLOBAL UNIQUE admission number
-      // Using centralized api client for proper URL handling (relative /api on production, VITE_API_BASE_URL on localhost)
-      const response = await api.get(`/students/next-admission-number?branch_id=${branchId}`, {
+      // Pass session_id so year matches the selected session (e.g., 2025-26 → 2025)
+      const sessionId = formData.session_id || currentSessionId;
+      const response = await api.get(`/students/next-admission-number?branch_id=${branchId}&session_id=${sessionId}`, {
         headers: {
           'x-branch-id': branchId
         }
@@ -1689,7 +1698,7 @@ const StudentAdmission = () => {
       console.warn('[StudentAdmission] Falling back to local generation...');
       return await generateNextIdLocal(settings, branchId);
     }
-  }, [selectedBranch?.id, toast, checkStudentUsernameDuplicate, generateNextIdLocal]);
+  }, [selectedBranch?.id, toast, checkStudentUsernameDuplicate, generateNextIdLocal, formData.session_id, currentSessionId]);
   
   const fetchSchoolSettings = useCallback(async () => {
     const branchId = selectedBranch?.id;

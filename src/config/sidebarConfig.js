@@ -1,5 +1,5 @@
 import { 
-  LayoutDashboard, School, Users, CreditCard, Settings, BookOpen, GraduationCap, Calendar, FileText, Bus, Building, MessageSquare, Briefcase, LogOut, X, ChevronDown, ChevronRight, Package, CheckSquare, Library, Layout, Video, MonitorPlay, AlertTriangle, Award, Newspaper, Activity, IndianRupee, UserPlus, GitBranch, BarChart3, Bot, Box, Download, QrCode
+  LayoutDashboard, School, Users, CreditCard, Settings, BookOpen, GraduationCap, Calendar, FileText, Bus, Building, MessageSquare, Briefcase, LogOut, X, ChevronDown, ChevronRight, Package, CheckSquare, Library, Layout, Video, MonitorPlay, AlertTriangle, Award, Newspaper, Activity, IndianRupee, UserPlus, GitBranch, BarChart3, Bot, Box, Download, QrCode, KeyRound
 } from 'lucide-react';
 import { ROUTES } from '@/registry/routeRegistry';
 
@@ -430,6 +430,18 @@ export const BASE_SIDEBAR = {
           { title: 'Hostel', path: ROUTES.SUPER_ADMIN.REPORT_HOSTEL },
           { title: 'Homework', path: ROUTES.SUPER_ADMIN.REPORT_HOMEWORK },
           { title: 'Homework Evaluation', path: ROUTES.SUPER_ADMIN.REPORT_HOMEWORK_EVAL },
+      ]
+    },
+    {
+      title: 'User Management',
+      icon: KeyRound,
+      badge: 'NEW',
+      submenu: [
+        { title: 'Dashboard', path: '/super-admin/user-management/dashboard' },
+        { title: 'All Users', path: '/super-admin/user-management/all-users' },
+        { title: 'Student Users', path: '/super-admin/user-management/students' },
+        { title: 'Staff Users', path: '/super-admin/user-management/staff' },
+        { title: 'Parent Users', path: '/super-admin/user-management/parents' },
       ]
     },
     {

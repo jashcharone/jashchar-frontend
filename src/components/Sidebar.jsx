@@ -121,8 +121,9 @@ const Sidebar = ({ role, isSidebarOpen, isMobile, toggleSidebar, closeSidebar, o
       console.log('[Sidebar] Using enhanced menu:', menuItems.length, 'items');
     }
     
-    // For master_admin, return all modules without filtering
-    if (normalizedRole === 'master_admin') {
+    // For master_admin and super_admin, return all modules without filtering
+    // super_admin (School Owner) should see all modules in their organization
+    if (normalizedRole === 'master_admin' || normalizedRole === 'super_admin') {
       return menuItems;
     }
     

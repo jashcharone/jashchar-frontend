@@ -60,8 +60,9 @@ const ProtectedRoute = ({ children, allowedRoles, requiredModule }) => {
 
   // 2. Module Permission Check
   if (requiredModule) {
-    // Master Admin bypass is handled inside canView (via checkAccess)
-    if (!canView(requiredModule)) {
+    // Master Admin and Super Admin bypass permission checks - they have full access
+    const bypassRoles = ['master_admin', 'super_admin', 'school_owner', 'organization_owner'];
+    if (!bypassRoles.includes(userRole) && !canView(requiredModule)) {
       // User has role but not specific module permission
       return (
         <div className="min-h-screen w-full flex flex-col items-center justify-center bg-background p-4">

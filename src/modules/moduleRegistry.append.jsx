@@ -2,7 +2,7 @@
 import { 
   GitBranch, Video, CalendarDays, Download, FileText, 
   GraduationCap, Settings2, FileBarChart, ShieldAlert,
-  Users, Globe, LayoutTemplate, CreditCard
+  Users, Globe, LayoutTemplate, CreditCard, KeyRound
 } from 'lucide-react';
 import PlaceholderModule from '@/components/common/PlaceholderModule';
 import { ROUTES } from '@/registry/routeRegistry';
@@ -45,6 +45,13 @@ const BranchReport = lazyLoad(() => import('@/pages/super-admin/multi-branch/Bra
 const ZoomLiveClasses = lazyLoad(() => import('@/pages/super-admin/ZoomLiveClasses'));
 const AlumniList = lazyLoad(() => import('@/pages/super-admin/alumni/AlumniList'));
 const AlumniEvents = lazyLoad(() => import('@/pages/super-admin/alumni/AlumniEvents'));
+
+// --- USER MANAGEMENT COMPONENTS ---
+const UserManagementDashboard = lazyLoad(() => import('@/pages/super-admin/user-management/Dashboard'));
+const StudentUsers = lazyLoad(() => import('@/pages/super-admin/user-management/StudentUsers'));
+const StaffUsers = lazyLoad(() => import('@/pages/super-admin/user-management/StaffUsers'));
+const ParentUsers = lazyLoad(() => import('@/pages/super-admin/user-management/ParentUsers'));
+const AllUsers = lazyLoad(() => import('@/pages/super-admin/user-management/AllUsers'));
 
 // --- HELPER TO GENERATE MODULE CONFIG ---
 const createModule = (key, role, title, icon, path, submenu = []) => ({
@@ -287,6 +294,31 @@ export const NEW_MODULES = [
     route: { path: ROUTES.SUPER_ADMIN.MY_SUBSCRIPTION, element: <MySubscriptionPlan /> },
     sidebar: { title: 'My Subscription', icon: CreditCard, path: ROUTES.SUPER_ADMIN.MY_SUBSCRIPTION }
   },
+
+  // --- 12. USER MANAGEMENT MODULE ---
+  { 
+    key: 'user_management', 
+    role: 'super_admin', 
+    route: { path: '/super-admin/user-management', element: <UserManagementDashboard /> }, 
+    ignoreSubmenuRoutes: true,
+    sidebar: { 
+      title: 'User Management', 
+      icon: KeyRound, 
+      path: '/super-admin/user-management',
+      submenu: [
+        { title: 'Dashboard', path: '/super-admin/user-management/dashboard' },
+        { title: 'All Users', path: '/super-admin/user-management/all-users' },
+        { title: 'Student Users', path: '/super-admin/user-management/students' },
+        { title: 'Staff Users', path: '/super-admin/user-management/staff' },
+        { title: 'Parent Users', path: '/super-admin/user-management/parents' }
+      ]
+    } 
+  },
+  { key: 'user_management', role: 'super_admin', route: { path: '/super-admin/user-management/dashboard', element: <UserManagementDashboard /> } },
+  { key: 'user_management', role: 'super_admin', route: { path: '/super-admin/user-management/all-users', element: <AllUsers /> } },
+  { key: 'user_management', role: 'super_admin', route: { path: '/super-admin/user-management/students', element: <StudentUsers /> } },
+  { key: 'user_management', role: 'super_admin', route: { path: '/super-admin/user-management/staff', element: <StaffUsers /> } },
+  { key: 'user_management', role: 'super_admin', route: { path: '/super-admin/user-management/parents', element: <ParentUsers /> } },
 
   // === CORE MODULES (MUST MATCH DATABASE MODULE SLUGS) ===
   // These are the primary modules that come with subscription plans

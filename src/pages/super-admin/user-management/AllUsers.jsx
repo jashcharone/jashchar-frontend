@@ -190,7 +190,7 @@ const AllUsers = () => {
                             <SelectContent>
                                 <SelectItem value="all">All Branches</SelectItem>
                                 {branches?.map(b => (
-                                    <SelectItem key={b.id} value={b.id}>{b.name}</SelectItem>
+                                    <SelectItem key={b.id} value={b.id}>{b.branch_name || b.name}</SelectItem>
                                 ))}
                             </SelectContent>
                         </Select>
@@ -307,7 +307,7 @@ const AllUsers = () => {
                                                     {user.email || user.username || user.phone || '-'}
                                                 </code>
                                             </td>
-                                            <td className="p-3 text-sm text-muted-foreground">{user.branch_name || '-'}</td>
+                                            <td className="p-3 text-sm text-muted-foreground">{user.branch_name || branches?.find(b => b.id === user.branch_id)?.branch_name || '-'}</td>
                                             <td className="p-3">
                                                 <div className="flex items-center gap-1 text-sm text-muted-foreground">
                                                     <Clock className="h-3 w-3" />

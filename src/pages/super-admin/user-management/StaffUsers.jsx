@@ -241,7 +241,7 @@ const StaffUsers = () => {
                             <SelectContent>
                                 <SelectItem value="all">All Branches</SelectItem>
                                 {branchesList.map(b => (
-                                    <SelectItem key={b.id} value={b.id}>{b.name}</SelectItem>
+                                    <SelectItem key={b.id} value={b.id}>{b.branch_name || b.name}</SelectItem>
                                 ))}
                             </SelectContent>
                         </Select>

@@ -107,7 +107,7 @@ const UserManagementDashboard = () => {
                             <SelectItem value="all">All Branches</SelectItem>
                             {branches?.map(branch => (
                                 <SelectItem key={branch.id} value={branch.id}>
-                                    {branch.name}
+                                    {branch.branch_name || branch.name}
                                 </SelectItem>
                             ))}
                         </SelectContent>

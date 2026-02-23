@@ -94,6 +94,7 @@ export const NEW_MODULES = [
         { title: 'Gallery', path: '/master-admin/front-cms/gallery' },
         { title: 'News', path: '/master-admin/front-cms/news' },
         { title: 'Media Manager', path: '/master-admin/front-cms/media' },
+        { title: 'Achievements', path: '/master-admin/front-cms/achievements' },
         { title: 'Banners', path: '/master-admin/front-cms/banners' }
       ] 
     } 
@@ -133,6 +134,7 @@ export const NEW_MODULES = [
         { title: 'Gallery', path: '/super-admin/front-cms/gallery' },
         { title: 'News', path: '/super-admin/front-cms/news' },
         { title: 'Media Manager', path: '/super-admin/front-cms/media' },
+        { title: 'Achievements', path: '/super-admin/front-cms/achievements' },
         { title: 'Banner Images', path: '/super-admin/front-cms/banners' }
       ] 
     } 

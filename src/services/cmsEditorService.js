@@ -88,6 +88,23 @@ export const cmsEditorService = {
     if (error) throw error;
   },
 
+  // --- ACHIEVEMENTS ---
+  getAchievements: async (branchId) => {
+    const { data, error } = await supabase.from('front_cms_achievements').select('*').eq('branch_id', branchId).order('sort_order');
+    if (error) throw error;
+    return data;
+  },
+  upsertAchievement: async (achievementData) => {
+    ensureSafety('front_cms_achievements');
+    const { error } = await supabase.from('front_cms_achievements').upsert(achievementData);
+    if (error) throw error;
+  },
+  deleteAchievement: async (id) => {
+    ensureSafety('front_cms_achievements');
+    const { error } = await supabase.from('front_cms_achievements').delete().eq('id', id);
+    if (error) throw error;
+  },
+
   // --- PAGES ---
   getPages: async (branchId) => {
     const { data, error } = await supabase.from('front_cms_pages').select('*').eq('branch_id', branchId).order('created_at');

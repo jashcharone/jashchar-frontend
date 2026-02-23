@@ -38,6 +38,7 @@ export const schoolModuleMap = {
         { title: 'Events', path: '/super-admin/front-cms/events' },
         { title: 'News', path: '/super-admin/front-cms/news' },
         { title: 'Gallery', path: '/super-admin/front-cms/gallery' },
+        { title: 'Achievements', path: '/super-admin/front-cms/achievements' },
         { title: 'Media Manager', path: '/super-admin/front-cms/media-manager' }
       ]
     }

@@ -17,6 +17,7 @@ import MenusTab from '@/components/front-cms-editor/MenusTab';
 import Menus from '@/pages/super-admin/front-cms/Menus';
 import MediaManagerTab from '@/components/front-cms-editor/MediaManagerTab';
 import BannersTab from '@/components/front-cms-editor/BannersTab';
+import AchievementsTab from '@/components/front-cms-editor/AchievementsTab';
 import { errorLoggerService } from '@/services/errorLoggerService';
 
 /**
@@ -88,6 +89,7 @@ const UnifiedFrontCmsEditor = ({ branchId, role = 'super_admin', basePath = '/sc
     'layout': HomeLayoutTab,
     'events': EventsTab,
     'notices': NoticesTab,
+    'achievements': AchievementsTab,
   };
 
   const ActiveComponent = routeToComponent[tab] || WebsiteSettingsTab;

@@ -209,10 +209,10 @@ const StaffUsers = () => {
             <div className="flex justify-between items-center">
                 <div>
                     <h1 className="text-2xl font-bold flex items-center gap-2">
-                        <Briefcase className="h-6 w-6 text-purple-500" />
+                        <Briefcase className="h-6 w-6 text-primary" />
                         Staff Users
                     </h1>
-                    <p className="text-gray-500">Manage staff login accounts</p>
+                    <p className="text-muted-foreground">Manage staff login accounts</p>
                 </div>
             </div>
 
@@ -265,7 +265,7 @@ const StaffUsers = () => {
                         </Select>
 
                         <div className="relative">
-                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                             <Input
                                 placeholder="Search..."
                                 value={filters.search}
@@ -330,7 +330,7 @@ const StaffUsers = () => {
                 <CardContent className="p-0">
                     <div className="overflow-x-auto">
                         <table className="w-full">
-                            <thead className="bg-gray-50 border-b">
+                            <thead className="bg-muted/50 border-b">
                                 <tr>
                                     <th className="p-3 text-left">
                                         <Checkbox
@@ -338,17 +338,17 @@ const StaffUsers = () => {
                                             onCheckedChange={handleSelectAll}
                                         />
                                     </th>
-                                    <th className="p-3 text-left text-sm font-medium text-gray-600">Photo</th>
-                                    <th className="p-3 text-left text-sm font-medium text-gray-600">Name</th>
-                                    <th className="p-3 text-left text-sm font-medium text-gray-600">Employee ID</th>
-                                    <th className="p-3 text-left text-sm font-medium text-gray-600">Department</th>
-                                    <th className="p-3 text-left text-sm font-medium text-gray-600">Designation</th>
-                                    <th className="p-3 text-left text-sm font-medium text-gray-600">Branch</th>
-                                    <th className="p-3 text-left text-sm font-medium text-gray-600">Login Status</th>
-                                    <th className="p-3 text-left text-sm font-medium text-gray-600">Contact</th>
+                                    <th className="p-3 text-left text-sm font-medium text-muted-foreground">Photo</th>
+                                    <th className="p-3 text-left text-sm font-medium text-muted-foreground">Name</th>
+                                    <th className="p-3 text-left text-sm font-medium text-muted-foreground">Employee ID</th>
+                                    <th className="p-3 text-left text-sm font-medium text-muted-foreground">Department</th>
+                                    <th className="p-3 text-left text-sm font-medium text-muted-foreground">Designation</th>
+                                    <th className="p-3 text-left text-sm font-medium text-muted-foreground">Branch</th>
+                                    <th className="p-3 text-left text-sm font-medium text-muted-foreground">Login Status</th>
+                                    <th className="p-3 text-left text-sm font-medium text-muted-foreground">Contact</th>
                                 </tr>
                             </thead>
-                            <tbody className="divide-y">
+                            <tbody className="divide-y divide-border">
                                 {loading ? (
                                     <tr>
                                         <td colSpan={9} className="p-8 text-center">
@@ -357,13 +357,13 @@ const StaffUsers = () => {
                                     </tr>
                                 ) : staff.length === 0 ? (
                                     <tr>
-                                        <td colSpan={9} className="p-8 text-center text-gray-500">
+                                        <td colSpan={9} className="p-8 text-center text-muted-foreground">
                                             No staff found
                                         </td>
                                     </tr>
                                 ) : (
                                     staff.map((member) => (
-                                        <tr key={member.id} className="hover:bg-gray-50">
+                                        <tr key={member.id} className="hover:bg-muted/50">
                                             <td className="p-3">
                                                 <Checkbox
                                                     checked={selectedStaff.includes(member.id)}
@@ -371,11 +371,11 @@ const StaffUsers = () => {
                                                 />
                                             </td>
                                             <td className="p-3">
-                                                <div className="w-10 h-10 rounded-full bg-gray-200 overflow-hidden">
+                                                <div className="w-10 h-10 rounded-full bg-muted overflow-hidden">
                                                     {member.photo_url ? (
                                                         <img src={member.photo_url} alt="" className="w-full h-full object-cover" />
                                                     ) : (
-                                                        <div className="w-full h-full flex items-center justify-center text-gray-400">
+                                                        <div className="w-full h-full flex items-center justify-center text-muted-foreground">
                                                             <Briefcase className="h-5 w-5" />
                                                         </div>
                                                     )}
@@ -385,12 +385,12 @@ const StaffUsers = () => {
                                                 <div className="font-medium">{member.full_name}</div>
                                             </td>
                                             <td className="p-3">
-                                                <code className="bg-gray-100 px-2 py-1 rounded text-sm">
+                                                <code className="bg-muted px-2 py-1 rounded text-sm">
                                                     {member.employee_id || '-'}
                                                 </code>
                                             </td>
-                                            <td className="p-3 text-sm">{member.department || '-'}</td>
-                                            <td className="p-3 text-sm">{member.designation || '-'}</td>
+                                            <td className="p-3 text-sm text-muted-foreground">{member.department_id || '-'}</td>
+                                            <td className="p-3 text-sm text-muted-foreground">{member.designation_id || '-'}</td>
                                             <td className="p-3 text-sm">{member.branch_name}</td>
                                             <td className="p-3">
                                                 {member.has_login ? (

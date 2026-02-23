@@ -188,10 +188,10 @@ const ParentUsers = () => {
             <div className="flex justify-between items-center">
                 <div>
                     <h1 className="text-2xl font-bold flex items-center gap-2">
-                        <Users className="h-6 w-6 text-emerald-500" />
+                        <Users className="h-6 w-6 text-primary" />
                         Parent Users
                     </h1>
-                    <p className="text-gray-500">Manage parent login accounts based on student records</p>
+                    <p className="text-muted-foreground">Manage parent login accounts based on student records</p>
                 </div>
             </div>
 
@@ -263,7 +263,7 @@ const ParentUsers = () => {
                         </Select>
 
                         <div className="relative">
-                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                             <Input
                                 placeholder="Search student/parent..."
                                 value={filters.search}
@@ -318,7 +318,7 @@ const ParentUsers = () => {
                 <CardContent className="p-0">
                     <div className="overflow-x-auto">
                         <table className="w-full">
-                            <thead className="bg-gray-50 border-b">
+                            <thead className="bg-muted/50 border-b">
                                 <tr>
                                     <th className="p-3 text-left">
                                         <Checkbox
@@ -326,16 +326,16 @@ const ParentUsers = () => {
                                             onCheckedChange={handleSelectAll}
                                         />
                                     </th>
-                                    <th className="p-3 text-left text-sm font-medium text-gray-600">Student</th>
-                                    <th className="p-3 text-left text-sm font-medium text-gray-600">Class</th>
-                                    <th className="p-3 text-left text-sm font-medium text-gray-600">Father Name</th>
-                                    <th className="p-3 text-left text-sm font-medium text-gray-600">Father Phone</th>
-                                    <th className="p-3 text-left text-sm font-medium text-gray-600">Mother Name</th>
-                                    <th className="p-3 text-left text-sm font-medium text-gray-600">Mother Phone</th>
-                                    <th className="p-3 text-left text-sm font-medium text-gray-600">Parent Login</th>
+                                    <th className="p-3 text-left text-sm font-medium text-muted-foreground">Student</th>
+                                    <th className="p-3 text-left text-sm font-medium text-muted-foreground">Class</th>
+                                    <th className="p-3 text-left text-sm font-medium text-muted-foreground">Father Name</th>
+                                    <th className="p-3 text-left text-sm font-medium text-muted-foreground">Father Phone</th>
+                                    <th className="p-3 text-left text-sm font-medium text-muted-foreground">Mother Name</th>
+                                    <th className="p-3 text-left text-sm font-medium text-muted-foreground">Mother Phone</th>
+                                    <th className="p-3 text-left text-sm font-medium text-muted-foreground">Parent Login</th>
                                 </tr>
                             </thead>
-                            <tbody className="divide-y">
+                            <tbody className="divide-y divide-border">
                                 {loading ? (
                                     <tr>
                                         <td colSpan={8} className="p-8 text-center">
@@ -344,13 +344,13 @@ const ParentUsers = () => {
                                     </tr>
                                 ) : studentsWithParents.length === 0 ? (
                                     <tr>
-                                        <td colSpan={8} className="p-8 text-center text-gray-500">
+                                        <td colSpan={8} className="p-8 text-center text-muted-foreground">
                                             No students found
                                         </td>
                                     </tr>
                                 ) : (
                                     studentsWithParents.map((student) => (
-                                        <tr key={student.id} className="hover:bg-gray-50">
+                                        <tr key={student.id} className="hover:bg-muted/50">
                                             <td className="p-3">
                                                 <Checkbox
                                                     checked={selectedStudents.includes(student.id)}
@@ -359,18 +359,18 @@ const ParentUsers = () => {
                                             </td>
                                             <td className="p-3">
                                                 <div className="flex items-center gap-2">
-                                                    <div className="w-8 h-8 rounded-full bg-gray-200 overflow-hidden">
+                                                    <div className="w-8 h-8 rounded-full bg-muted overflow-hidden">
                                                         {student.photo_url ? (
                                                             <img src={student.photo_url} alt="" className="w-full h-full object-cover" />
                                                         ) : (
-                                                            <div className="w-full h-full flex items-center justify-center text-gray-400">
+                                                            <div className="w-full h-full flex items-center justify-center text-muted-foreground">
                                                                 <User className="h-4 w-4" />
                                                             </div>
                                                         )}
                                                     </div>
                                                     <div>
                                                         <div className="font-medium">{student.first_name} {student.last_name}</div>
-                                                        <div className="text-xs text-gray-500">{student.admission_number}</div>
+                                                        <div className="text-xs text-muted-foreground">{student.admission_number}</div>
                                                     </div>
                                                 </div>
                                             </td>
@@ -381,26 +381,26 @@ const ParentUsers = () => {
                                             <td className="p-3">
                                                 {student.father_phone ? (
                                                     <div className="flex items-center gap-1">
-                                                        <Phone className="h-3 w-3 text-gray-400" />
-                                                        <code className="bg-gray-100 px-2 py-1 rounded text-sm">
+                                                        <Phone className="h-3 w-3 text-muted-foreground" />
+                                                        <code className="bg-muted px-2 py-1 rounded text-sm">
                                                             {student.father_phone}
                                                         </code>
                                                     </div>
                                                 ) : (
-                                                    <span className="text-gray-400">-</span>
+                                                    <span className="text-muted-foreground">-</span>
                                                 )}
                                             </td>
                                             <td className="p-3 text-sm">{student.mother_name || '-'}</td>
                                             <td className="p-3">
                                                 {student.mother_phone ? (
                                                     <div className="flex items-center gap-1">
-                                                        <Phone className="h-3 w-3 text-gray-400" />
-                                                        <code className="bg-gray-100 px-2 py-1 rounded text-sm">
+                                                        <Phone className="h-3 w-3 text-muted-foreground" />
+                                                        <code className="bg-muted px-2 py-1 rounded text-sm">
                                                             {student.mother_phone}
                                                         </code>
                                                     </div>
                                                 ) : (
-                                                    <span className="text-gray-400">-</span>
+                                                    <span className="text-muted-foreground">-</span>
                                                 )}
                                             </td>
                                             <td className="p-3">

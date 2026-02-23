@@ -242,10 +242,10 @@ const StudentUsers = () => {
             <div className="flex justify-between items-center">
                 <div>
                     <h1 className="text-2xl font-bold flex items-center gap-2">
-                        <GraduationCap className="h-6 w-6 text-blue-500" />
+                        <GraduationCap className="h-6 w-6 text-primary" />
                         Student Users
                     </h1>
-                    <p className="text-gray-500">Manage student login accounts</p>
+                    <p className="text-muted-foreground">Manage student login accounts</p>
                 </div>
             </div>
 
@@ -380,7 +380,7 @@ const StudentUsers = () => {
                 <CardContent className="p-0">
                     <div className="overflow-x-auto">
                         <table className="w-full">
-                            <thead className="bg-gray-50 border-b">
+                            <thead className="bg-muted/50 border-b">
                                 <tr>
                                     <th className="p-3 text-left">
                                         <Checkbox
@@ -388,16 +388,16 @@ const StudentUsers = () => {
                                             onCheckedChange={handleSelectAll}
                                         />
                                     </th>
-                                    <th className="p-3 text-left text-sm font-medium text-gray-600">Photo</th>
-                                    <th className="p-3 text-left text-sm font-medium text-gray-600">Name</th>
-                                    <th className="p-3 text-left text-sm font-medium text-gray-600">Admission No</th>
-                                    <th className="p-3 text-left text-sm font-medium text-gray-600">Class</th>
-                                    <th className="p-3 text-left text-sm font-medium text-gray-600">Branch</th>
-                                    <th className="p-3 text-left text-sm font-medium text-gray-600">Login Status</th>
-                                    <th className="p-3 text-left text-sm font-medium text-gray-600">Parent Phone</th>
+                                    <th className="p-3 text-left text-sm font-medium text-muted-foreground">Photo</th>
+                                    <th className="p-3 text-left text-sm font-medium text-muted-foreground">Name</th>
+                                    <th className="p-3 text-left text-sm font-medium text-muted-foreground">Admission No</th>
+                                    <th className="p-3 text-left text-sm font-medium text-muted-foreground">Class</th>
+                                    <th className="p-3 text-left text-sm font-medium text-muted-foreground">Branch</th>
+                                    <th className="p-3 text-left text-sm font-medium text-muted-foreground">Login Status</th>
+                                    <th className="p-3 text-left text-sm font-medium text-muted-foreground">Parent Phone</th>
                                 </tr>
                             </thead>
-                            <tbody className="divide-y">
+                            <tbody className="divide-y divide-border">
                                 {loading ? (
                                     <tr>
                                         <td colSpan={8} className="p-8 text-center">
@@ -406,13 +406,13 @@ const StudentUsers = () => {
                                     </tr>
                                 ) : students.length === 0 ? (
                                     <tr>
-                                        <td colSpan={8} className="p-8 text-center text-gray-500">
+                                        <td colSpan={8} className="p-8 text-center text-muted-foreground">
                                             No students found
                                         </td>
                                     </tr>
                                 ) : (
                                     students.map((student) => (
-                                        <tr key={student.id} className="hover:bg-gray-50">
+                                        <tr key={student.id} className="hover:bg-muted/50">
                                             <td className="p-3">
                                                 <Checkbox
                                                     checked={selectedStudents.includes(student.id)}
@@ -420,11 +420,11 @@ const StudentUsers = () => {
                                                 />
                                             </td>
                                             <td className="p-3">
-                                                <div className="w-10 h-10 rounded-full bg-gray-200 overflow-hidden">
+                                                <div className="w-10 h-10 rounded-full bg-muted overflow-hidden">
                                                     {student.photo_url ? (
                                                         <img src={student.photo_url} alt="" className="w-full h-full object-cover" />
                                                     ) : (
-                                                        <div className="w-full h-full flex items-center justify-center text-gray-400">
+                                                        <div className="w-full h-full flex items-center justify-center text-muted-foreground">
                                                             <GraduationCap className="h-5 w-5" />
                                                         </div>
                                                     )}
@@ -432,10 +432,10 @@ const StudentUsers = () => {
                                             </td>
                                             <td className="p-3">
                                                 <div className="font-medium">{student.full_name}</div>
-                                                <div className="text-sm text-gray-500">{student.phone || student.email || '-'}</div>
+                                                <div className="text-sm text-muted-foreground">{student.phone || student.email || '-'}</div>
                                             </td>
                                             <td className="p-3">
-                                                <code className="bg-gray-100 px-2 py-1 rounded text-sm">
+                                                <code className="bg-muted px-2 py-1 rounded text-sm">
                                                     {student.school_code || '-'}
                                                 </code>
                                             </td>

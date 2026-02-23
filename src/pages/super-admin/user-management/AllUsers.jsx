@@ -165,10 +165,10 @@ const AllUsers = () => {
             <div className="flex justify-between items-center">
                 <div>
                     <h1 className="text-2xl font-bold flex items-center gap-2">
-                        <Users className="h-6 w-6 text-indigo-500" />
+                        <Users className="h-6 w-6 text-primary" />
                         All Users
                     </h1>
-                    <p className="text-gray-500">Unified view of all system users</p>
+                    <p className="text-muted-foreground">Unified view of all system users</p>
                 </div>
                 <Button variant="outline" onClick={() => {}}>
                     <Download className="h-4 w-4 mr-2" />
@@ -207,7 +207,6 @@ const AllUsers = () => {
                                 <SelectItem value="student">Students</SelectItem>
                                 <SelectItem value="staff">Staff</SelectItem>
                                 <SelectItem value="parent">Parents</SelectItem>
-                                <SelectItem value="super_admin">Super Admins</SelectItem>
                             </SelectContent>
                         </Select>
 
@@ -248,18 +247,18 @@ const AllUsers = () => {
                 <CardContent className="p-0">
                     <div className="overflow-x-auto">
                         <table className="w-full">
-                            <thead className="bg-gray-50 border-b">
+                            <thead className="bg-muted/50 border-b">
                                 <tr>
-                                    <th className="p-3 text-left text-sm font-medium text-gray-600">User</th>
-                                    <th className="p-3 text-left text-sm font-medium text-gray-600">Type</th>
-                                    <th className="p-3 text-left text-sm font-medium text-gray-600">Email / Username</th>
-                                    <th className="p-3 text-left text-sm font-medium text-gray-600">Branch</th>
-                                    <th className="p-3 text-left text-sm font-medium text-gray-600">Last Login</th>
-                                    <th className="p-3 text-left text-sm font-medium text-gray-600">Status</th>
-                                    <th className="p-3 text-left text-sm font-medium text-gray-600">Actions</th>
+                                    <th className="p-3 text-left text-sm font-medium text-muted-foreground">User</th>
+                                    <th className="p-3 text-left text-sm font-medium text-muted-foreground">Type</th>
+                                    <th className="p-3 text-left text-sm font-medium text-muted-foreground">Email / Username</th>
+                                    <th className="p-3 text-left text-sm font-medium text-muted-foreground">Branch</th>
+                                    <th className="p-3 text-left text-sm font-medium text-muted-foreground">Last Login</th>
+                                    <th className="p-3 text-left text-sm font-medium text-muted-foreground">Status</th>
+                                    <th className="p-3 text-left text-sm font-medium text-muted-foreground">Actions</th>
                                 </tr>
                             </thead>
-                            <tbody className="divide-y">
+                            <tbody className="divide-y divide-border">
                                 {loading ? (
                                     <tr>
                                         <td colSpan={7} className="p-8 text-center">
@@ -268,20 +267,20 @@ const AllUsers = () => {
                                     </tr>
                                 ) : users.length === 0 ? (
                                     <tr>
-                                        <td colSpan={7} className="p-8 text-center text-gray-500">
+                                        <td colSpan={7} className="p-8 text-center text-muted-foreground">
                                             No users found
                                         </td>
                                     </tr>
                                 ) : (
                                     users.map((user) => (
-                                        <tr key={user.id} className="hover:bg-gray-50">
+                                        <tr key={user.id} className="hover:bg-muted/50">
                                             <td className="p-3">
                                                 <div className="flex items-center gap-2">
-                                                    <div className="w-10 h-10 rounded-full bg-gray-200 overflow-hidden flex items-center justify-center">
+                                                    <div className="w-10 h-10 rounded-full bg-muted overflow-hidden flex items-center justify-center">
                                                         {user.photo_url ? (
                                                             <img src={user.photo_url} alt="" className="w-full h-full object-cover" />
                                                         ) : (
-                                                            <div className="text-gray-400">
+                                                            <div className="text-muted-foreground">
                                                                 {getUserTypeIcon(user.user_type)}
                                                             </div>
                                                         )}
@@ -289,10 +288,10 @@ const AllUsers = () => {
                                                     <div>
                                                         <div className="font-medium">{user.full_name || user.email}</div>
                                                         {user.employee_id && (
-                                                            <div className="text-xs text-gray-500">{user.employee_id}</div>
+                                                            <div className="text-xs text-muted-foreground">{user.employee_id}</div>
                                                         )}
-                                                        {user.admission_number && (
-                                                            <div className="text-xs text-gray-500">{user.admission_number}</div>
+                                                        {user.school_code && (
+                                                            <div className="text-xs text-muted-foreground">{user.school_code}</div>
                                                         )}
                                                     </div>
                                                 </div>
@@ -304,13 +303,13 @@ const AllUsers = () => {
                                                 </Badge>
                                             </td>
                                             <td className="p-3">
-                                                <code className="bg-gray-100 px-2 py-1 rounded text-sm">
-                                                    {user.email || user.phone || '-'}
+                                                <code className="bg-muted px-2 py-1 rounded text-sm">
+                                                    {user.email || user.username || user.phone || '-'}
                                                 </code>
                                             </td>
-                                            <td className="p-3 text-sm">{user.branch_name || 'All'}</td>
+                                            <td className="p-3 text-sm text-muted-foreground">{user.branch_name || '-'}</td>
                                             <td className="p-3">
-                                                <div className="flex items-center gap-1 text-sm text-gray-500">
+                                                <div className="flex items-center gap-1 text-sm text-muted-foreground">
                                                     <Clock className="h-3 w-3" />
                                                     {formatLastLogin(user.last_login_at)}
                                                 </div>
@@ -362,8 +361,8 @@ const AllUsers = () => {
                     </div>
 
                     {/* Pagination */}
-                    <div className="flex items-center justify-between p-4 border-t">
-                        <div className="text-sm text-gray-500">
+                    <div className="flex items-center justify-between p-4 border-t border-border">
+                        <div className="text-sm text-muted-foreground">
                             Showing {((pagination.page - 1) * pagination.limit) + 1} to {Math.min(pagination.page * pagination.limit, pagination.total)} of {pagination.total}
                         </div>
                         <div className="flex gap-2">

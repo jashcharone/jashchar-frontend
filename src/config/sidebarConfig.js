@@ -773,37 +773,37 @@ export const BASE_SIDEBAR = {
       title: 'Fees',
       icon: CreditCard,
       submenu: [
-        { title: 'Child Fees', path: ROUTES.STUDENT.FEES },
-        { title: 'Pay Online', path: ROUTES.STUDENT.FEES },
+        { title: 'Child Fees', path: ROUTES.PARENT.FEES },
+        { title: 'Pay Online', path: ROUTES.PARENT.PAY_ONLINE },
       ]
     },
     {
       title: 'Academics',
       icon: BookOpen,
       submenu: [
-        { title: 'Homework', path: ROUTES.STUDENT.HOMEWORK },
-        { title: 'Class Timetable', path: ROUTES.STUDENT.TIMETABLE },
+        { title: 'Homework', path: ROUTES.PARENT.HOMEWORK },
+        { title: 'Class Timetable', path: ROUTES.PARENT.TIMETABLE },
       ]
     },
     {
       title: 'Examinations',
       icon: FileText,
       submenu: [
-        { title: 'Exam Schedule', path: ROUTES.STUDENT.EXAM_SCHEDULE },
-        { title: 'Exam Results', path: ROUTES.STUDENT.EXAM_RESULT },
+        { title: 'Exam Schedule', path: ROUTES.PARENT.EXAM_SCHEDULE },
+        { title: 'Exam Results', path: ROUTES.PARENT.EXAM_RESULT },
       ]
     },
     {
       title: 'Attendance',
       icon: CheckSquare,
       submenu: [
-        { title: 'Child Attendance', path: ROUTES.STUDENT.ATTENDANCE },
-        { title: 'Apply Leave', path: ROUTES.STUDENT.APPLY_LEAVE },
+        { title: 'Child Attendance', path: ROUTES.PARENT.ATTENDANCE },
+        { title: 'Apply Leave', path: ROUTES.PARENT.APPLY_LEAVE },
       ]
     },
-    { title: 'Transport', icon: Bus, path: ROUTES.STUDENT.TRANSPORT_ROUTES },
-    { title: 'Hostel', icon: Building, path: ROUTES.STUDENT.HOSTEL_ROOMS },
-    { title: 'Notice Board', icon: MessageSquare, path: ROUTES.SUPER_ADMIN.NOTICE_BOARD },
+    { title: 'Transport', icon: Bus, path: ROUTES.PARENT.TRANSPORT },
+    { title: 'Hostel', icon: Building, path: ROUTES.PARENT.HOSTEL },
+    { title: 'Notice Board', icon: MessageSquare, path: ROUTES.PARENT.NOTICE_BOARD },
   ],
 };
 

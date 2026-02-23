@@ -390,6 +390,17 @@ export const ROUTES = {
   PARENT: {
     DASHBOARD: '/Parent/dashboard',
     PROFILE: '/Parent/profile',
+    FEES: '/Parent/fees',
+    PAY_ONLINE: '/Parent/pay-online',
+    HOMEWORK: '/Parent/homework',
+    TIMETABLE: '/Parent/timetable',
+    EXAM_SCHEDULE: '/Parent/exam-schedule',
+    EXAM_RESULT: '/Parent/exam-result',
+    ATTENDANCE: '/Parent/attendance',
+    APPLY_LEAVE: '/Parent/apply-leave',
+    TRANSPORT: '/Parent/transport',
+    HOSTEL: '/Parent/hostel',
+    NOTICE_BOARD: '/Parent/notice-board',
   },
   TEACHER: {
     DASHBOARD: '/Teacher/dashboard',

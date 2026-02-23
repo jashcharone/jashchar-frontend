@@ -13,6 +13,7 @@ import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { PermissionProvider } from '@/contexts/PermissionContext';
 import { RecoveryProvider } from '@/contexts/RecoveryContext';
 import { EnvStatusProvider } from '@/contexts/EnvStatusContext';
+import { ParentChildProvider } from '@/contexts/ParentChildContext';
 import OfflineIndicator from '@/components/OfflineIndicator';
 import EnvWarningBanner from '@/components/EnvWarningBanner';
 import PwaUpdater from '@/components/PwaUpdater';
@@ -81,6 +82,17 @@ const StaffDashboard = lazy(() => import('@/pages/StaffDashboard'));
 const StudentDashboard = lazy(() => import('@/pages/student/StudentDashboard'));
 const ParentDashboard = lazy(() => import('@/pages/ParentDashboard'));
 const ParentProfile = lazy(() => import('@/pages/parent/ParentProfile'));
+// Parent Module Pages
+const ParentFees = lazy(() => import('@/pages/parent/ParentFees'));
+const ParentAttendance = lazy(() => import('@/pages/parent/ParentAttendance'));
+const ParentExamSchedule = lazy(() => import('@/pages/parent/ParentExamSchedule'));
+const ParentExamResult = lazy(() => import('@/pages/parent/ParentExamResult'));
+const ParentTransport = lazy(() => import('@/pages/parent/ParentTransport'));
+const ParentHostel = lazy(() => import('@/pages/parent/ParentHostel'));
+const ParentHomework = lazy(() => import('@/pages/parent/ParentHomework'));
+const ParentTimetable = lazy(() => import('@/pages/parent/ParentTimetable'));
+const ParentApplyLeave = lazy(() => import('@/pages/parent/ParentApplyLeave'));
+const ParentNoticeBoard = lazy(() => import('@/pages/parent/ParentNoticeBoard'));
 // ? Role-specific Dashboards
 const PrincipalDashboard = lazy(() => import('@/pages/PrincipalDashboard'));
 const AccountantDashboard = lazy(() => import('@/pages/AccountantDashboard'));
@@ -471,6 +483,7 @@ function App() {
         {/* PushNotificationManager moved - Bell icon in Header handles notifications */}
         {/* AIChatbot moved to DashboardLayout - controlled via Header icon */}
         <PermissionProvider>
+          <ParentChildProvider>
           <Suspense fallback={<LoadingFallback />}>
             <Routes>
             {/* ? Demo Login Page - Marketing */}
@@ -776,6 +789,17 @@ function App() {
             
             <Route path="/Parent/dashboard" element={<ProtectedRoute allowedRoles={['parent']}><ParentDashboard /></ProtectedRoute>} />
             <Route path={ROUTES.PARENT.PROFILE} element={<ProtectedRoute allowedRoles={['parent']}><ParentProfile /></ProtectedRoute>} />
+            <Route path={ROUTES.PARENT.FEES} element={<ProtectedRoute allowedRoles={['parent']}><ParentFees /></ProtectedRoute>} />
+            <Route path={ROUTES.PARENT.PAY_ONLINE} element={<ProtectedRoute allowedRoles={['parent']}><ParentFees /></ProtectedRoute>} />
+            <Route path={ROUTES.PARENT.HOMEWORK} element={<ProtectedRoute allowedRoles={['parent']}><ParentHomework /></ProtectedRoute>} />
+            <Route path={ROUTES.PARENT.TIMETABLE} element={<ProtectedRoute allowedRoles={['parent']}><ParentTimetable /></ProtectedRoute>} />
+            <Route path={ROUTES.PARENT.EXAM_SCHEDULE} element={<ProtectedRoute allowedRoles={['parent']}><ParentExamSchedule /></ProtectedRoute>} />
+            <Route path={ROUTES.PARENT.EXAM_RESULT} element={<ProtectedRoute allowedRoles={['parent']}><ParentExamResult /></ProtectedRoute>} />
+            <Route path={ROUTES.PARENT.ATTENDANCE} element={<ProtectedRoute allowedRoles={['parent']}><ParentAttendance /></ProtectedRoute>} />
+            <Route path={ROUTES.PARENT.APPLY_LEAVE} element={<ProtectedRoute allowedRoles={['parent']}><ParentApplyLeave /></ProtectedRoute>} />
+            <Route path={ROUTES.PARENT.TRANSPORT} element={<ProtectedRoute allowedRoles={['parent']}><ParentTransport /></ProtectedRoute>} />
+            <Route path={ROUTES.PARENT.HOSTEL} element={<ProtectedRoute allowedRoles={['parent']}><ParentHostel /></ProtectedRoute>} />
+            <Route path={ROUTES.PARENT.NOTICE_BOARD} element={<ProtectedRoute allowedRoles={['parent']}><ParentNoticeBoard /></ProtectedRoute>} />
             <Route path="/Parent/*" element={<Navigate to="/Parent/dashboard" replace />} />
             
             {/* ✅ Student Portal Routes */}
@@ -1506,6 +1530,7 @@ function App() {
             <Route path="*" element={<NotFound />} />
           </Routes>
           </Suspense>
+          </ParentChildProvider>
         </PermissionProvider>
       </EnvStatusProvider>
     </RecoveryProvider>

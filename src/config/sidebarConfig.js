@@ -70,6 +70,7 @@ export const BASE_SIDEBAR = {
         { title: 'Gallery', path: '/master-admin/front-cms/gallery' },
         { title: 'News', path: '/master-admin/front-cms/news' },
         { title: 'Media Manager', path: '/master-admin/front-cms/media-manager' },
+        { title: 'Achievements', path: '/master-admin/front-cms/achievements' },
         { title: 'Banner Images', path: '/master-admin/front-cms/banners' },
       ]
     }
@@ -371,6 +372,7 @@ export const BASE_SIDEBAR = {
         { title: 'Gallery', path: ROUTES.SUPER_ADMIN.GALLERY },
         { title: 'News', path: ROUTES.SUPER_ADMIN.NEWS },
         { title: 'Media Manager', path: ROUTES.SUPER_ADMIN.MEDIA_MANAGER },
+        { title: 'Achievements', path: '/super-admin/front-cms/achievements' },
         { title: 'Banner Images', path: ROUTES.SUPER_ADMIN.BANNER_IMAGES },
       ]
     },

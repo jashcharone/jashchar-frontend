@@ -36,7 +36,7 @@ import { useToast } from '@/components/ui/use-toast';
  * Master Admin - Manage Branches for a Specific School
  */
 const SchoolBranches = () => {
-  const { branchId } = useParams();
+  const { schoolId } = useParams();
   const [branches, setBranches] = useState([]);
   const [school, setSchool] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -48,12 +48,12 @@ const SchoolBranches = () => {
 
   useEffect(() => {
     fetchBranches();
-  }, [branchId]);
+  }, [schoolId]);
 
   const fetchBranches = async () => {
     setLoading(true);
     try {
-      const response = await api.get(`/master-admin/branch-management/schools/${branchId}/branches`);
+      const response = await api.get(`/master-admin/branch-management/schools/${schoolId}/branches`);
       if (response.data.success) {
         setBranches(response.data.data || []);
         setSchool(response.data.school || null);
@@ -71,11 +71,11 @@ const SchoolBranches = () => {
   };
 
   const handleAddBranch = () => {
-    navigate(`/master-admin/branch-management/schools/${branchId}/branches/add`);
+    navigate(`/master-admin/branch-management/schools/${schoolId}/branches/add`);
   };
 
-  const handleEdit = (branchId) => {
-    navigate(`/master-admin/branch-management/schools/${branchId}/branches/${branchId}/edit`);
+  const handleEdit = (editBranchId) => {
+    navigate(`/master-admin/branch-management/schools/${schoolId}/branches/${editBranchId}/edit`);
   };
 
   const handleDeleteClick = (branch) => {
@@ -88,7 +88,7 @@ const SchoolBranches = () => {
     setActionLoading(true);
     try {
       const response = await api.delete(
-        `/master-admin/branch-management/schools/${branchId}/branches/${deleteDialog.branch.id}`
+        `/master-admin/branch-management/schools/${schoolId}/branches/${deleteDialog.branch.id}`
       );
       if (response.data.success) {
         toast({ title: "Success", description: "Branch deleted successfully" });

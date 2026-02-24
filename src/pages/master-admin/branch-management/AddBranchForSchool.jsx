@@ -15,7 +15,7 @@ import { usePincodeLookup } from '@/hooks/usePincodeLookup';
  * Master Admin - Add Branch for a Specific School
  */
 const AddBranchForSchool = () => {
-  const { branchId } = useParams();
+  const { schoolId } = useParams();
   const navigate = useNavigate();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
@@ -45,7 +45,7 @@ const AddBranchForSchool = () => {
     // Fetch school name for display
     const fetchSchoolInfo = async () => {
       try {
-        const response = await api.get(`/master-admin/branch-management/schools/${branchId}/branches`);
+        const response = await api.get(`/master-admin/branch-management/schools/${schoolId}/branches`);
         if (response.data.school) {
           setSchoolName(response.data.school.name);
         }
@@ -54,7 +54,7 @@ const AddBranchForSchool = () => {
       }
     };
     fetchSchoolInfo();
-  }, [branchId]);
+  }, [schoolId]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -79,7 +79,7 @@ const AddBranchForSchool = () => {
       };
       
       const response = await api.post(
-        `/master-admin/branch-management/schools/${branchId}/branches`, 
+        `/master-admin/branch-management/schools/${schoolId}/branches`, 
         submitData
       );
       
@@ -88,7 +88,7 @@ const AddBranchForSchool = () => {
           title: "Success",
           description: response.data.message || "Branch created successfully",
         });
-        navigate(`/master-admin/branch-management/schools/${branchId}/branches`);
+        navigate(`/master-admin/branch-management/schools/${schoolId}/branches`);
       }
     } catch (error) {
       console.error('Error creating branch:', error);
@@ -103,7 +103,7 @@ const AddBranchForSchool = () => {
   };
 
   const goBack = () => {
-    navigate(`/master-admin/branch-management/schools/${branchId}/branches`);
+    navigate(`/master-admin/branch-management/schools/${schoolId}/branches`);
   };
 
   return (

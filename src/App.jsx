@@ -1233,9 +1233,9 @@ function App() {
 
             {/* ? Master Admin Branch Management */}
             <Route path="/master-admin/branch-management" element={<ProtectedRoute allowedRoles={['master_admin']}><SchoolBranchesOverview /></ProtectedRoute>} />
-            <Route path="/master-admin/branch-management/schools/:branchId/branches" element={<ProtectedRoute allowedRoles={['master_admin']}><SchoolBranches /></ProtectedRoute>} />
-            <Route path="/master-admin/branch-management/schools/:branchId/branches/add" element={<ProtectedRoute allowedRoles={['master_admin']}><AddBranchForSchool /></ProtectedRoute>} />
-            <Route path="/master-admin/branch-management/schools/:branchId/branches/:branchId/edit" element={<ProtectedRoute allowedRoles={['master_admin']}><EditBranchForSchool /></ProtectedRoute>} />
+            <Route path="/master-admin/branch-management/schools/:schoolId/branches" element={<ProtectedRoute allowedRoles={['master_admin']}><SchoolBranches /></ProtectedRoute>} />
+            <Route path="/master-admin/branch-management/schools/:schoolId/branches/add" element={<ProtectedRoute allowedRoles={['master_admin']}><AddBranchForSchool /></ProtectedRoute>} />
+            <Route path="/master-admin/branch-management/schools/:schoolId/branches/:branchId/edit" element={<ProtectedRoute allowedRoles={['master_admin']}><EditBranchForSchool /></ProtectedRoute>} />
 
             {/* ? School Owner Profile & Subscription */}
             <Route path={ROUTES.SUPER_ADMIN.PROFILE} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'organization_owner', 'school_owner', 'principal', 'teacher', 'accountant', 'receptionist', 'librarian']}><SchoolOwnerProfile /></ProtectedRoute>} />

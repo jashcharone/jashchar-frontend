@@ -16,7 +16,7 @@ import { usePincodeLookup } from '@/hooks/usePincodeLookup';
  * Master Admin - Edit Branch for a Specific School
  */
 const EditBranchForSchool = () => {
-  const { branchId } = useParams();
+  const { schoolId, branchId } = useParams();
   const navigate = useNavigate();
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
@@ -46,13 +46,13 @@ const EditBranchForSchool = () => {
 
   useEffect(() => {
     fetchBranchData();
-  }, [branchId, branchId]);
+  }, [schoolId, branchId]);
 
   const fetchBranchData = async () => {
     setLoading(true);
     try {
       const response = await api.get(
-        `/master-admin/branch-management/schools/${branchId}/branches/${branchId}`
+        `/master-admin/branch-management/schools/${schoolId}/branches/${branchId}`
       );
       if (response.data.success) {
         const branch = response.data.data;
@@ -73,7 +73,7 @@ const EditBranchForSchool = () => {
 
       // Fetch school name
       const schoolResponse = await api.get(
-        `/master-admin/branch-management/schools/${branchId}/branches`
+        `/master-admin/branch-management/schools/${schoolId}/branches`
       );
       if (schoolResponse.data.school) {
         setSchoolName(schoolResponse.data.school.name);
@@ -117,7 +117,7 @@ const EditBranchForSchool = () => {
       };
       
       const response = await api.put(
-        `/master-admin/branch-management/schools/${branchId}/branches/${branchId}`, 
+        `/master-admin/branch-management/schools/${schoolId}/branches/${branchId}`, 
         submitData
       );
       
@@ -126,7 +126,7 @@ const EditBranchForSchool = () => {
           title: "Success",
           description: "Branch updated successfully",
         });
-        navigate(`/master-admin/branch-management/schools/${branchId}/branches`);
+        navigate(`/master-admin/branch-management/schools/${schoolId}/branches`);
       }
     } catch (error) {
       console.error('Error updating branch:', error);
@@ -141,7 +141,7 @@ const EditBranchForSchool = () => {
   };
 
   const goBack = () => {
-    navigate(`/master-admin/branch-management/schools/${branchId}/branches`);
+    navigate(`/master-admin/branch-management/schools/${schoolId}/branches`);
   };
 
   if (loading) {

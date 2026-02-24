@@ -113,6 +113,29 @@ const MASTER_ADMIN_ONLY_SLUGS = [
 ];
 
 /**
+ * Known aliases: DB module slugs that are ALREADY covered by static sidebar items
+ * with different names. Prevents duplicate menu items.
+ * Format: 'db_slug_last_part' → true (mark as already existing)
+ */
+const ALREADY_IN_SIDEBAR_ALIASES = new Set([
+  'daily_attendance',       // Covered by "Student Attendance" in static sidebar
+  'leave_management',       // Covered by "Approve Leave" in static sidebar
+  'attendance_analytics',   // Covered by "Analytics" in static sidebar
+  'live_face_attendance',   // Covered by "🤖 Live Face Attendance"
+]);
+
+/**
+ * Strip emoji/icon prefixes from text for comparison
+ * e.g., "📱 QR Code Generator" → "QR Code Generator"
+ * e.g., "⚙️ Attendance Rules" → "Attendance Rules"
+ */
+const stripEmojis = (text) => {
+  if (!text) return '';
+  // Remove emoji characters, variation selectors, ZWJ sequences, and leading whitespace
+  return text.replace(/[\u{1F600}-\u{1F64F}\u{1F300}-\u{1F5FF}\u{1F680}-\u{1F6FF}\u{1F1E0}-\u{1F1FF}\u{2600}-\u{27BF}\u{2B05}-\u{2B07}\u{2934}-\u{2935}\u{3030}\u{3297}\u{3299}\u{FE00}-\u{FE0F}\u{200D}\u{20E3}\u{E0020}-\u{E007F}\u{2702}-\u{27B0}\u{1F900}-\u{1F9FF}\u{1FA00}-\u{1FA6F}\u{1FA70}-\u{1FAFF}\u{2705}\u{2714}\u{2716}\u{274C}\u{274E}\u{2795}-\u{2797}\u{27A1}\u{2B50}\u{2B55}\u{2611}\u{26A0}\u{2699}\u{2764}\u{1F4CA}\u{1F4F1}\u{1F4CD}\u{1F4C8}\u{1F916}\u{1F50C}\u{1F4B3}\u{1F464}\u{231A}]/gu, '').trim();
+};
+
+/**
  * Convert slug to display name
  */
 const slugToDisplayName = (slug) => {
@@ -190,19 +213,25 @@ const findMissingModules = (dbModules, staticSidebar, effectiveRole = 'super_adm
   const existingTitles = new Set();
   
   staticSidebar.forEach(item => {
-    // Add parent slug and variations
-    const parentSlug = item.title.toLowerCase().replace(/\s+/g, '_');
+    // Add parent slug and variations (strip emojis for matching)
+    const cleanTitle = stripEmojis(item.title);
+    const parentSlug = cleanTitle.toLowerCase().replace(/\s+/g, '_');
     existingSlugs.add(parentSlug);
+    existingTitles.add(cleanTitle.toLowerCase());
+    // Also add raw title (with emoji) for completeness
     existingTitles.add(item.title.toLowerCase());
     
     // Add submenu slugs and titles
     if (item.submenu) {
       item.submenu.forEach(sub => {
-        const subSlug = sub.title.toLowerCase().replace(/\s+/g, '_');
+        const cleanSubTitle = stripEmojis(sub.title);
+        const subSlug = cleanSubTitle.toLowerCase().replace(/\s+/g, '_');
         // Add multiple formats to handle various DB slug patterns
         existingSlugs.add(`${parentSlug}.${subSlug}`);
         existingSlugs.add(`${parentSlug}.${parentSlug}.${subSlug}`); // double-prefix format
         existingSlugs.add(subSlug); // bare slug
+        existingTitles.add(cleanSubTitle.toLowerCase());
+        // Also add raw title (with emoji) in case of exact match
         existingTitles.add(sub.title.toLowerCase());
       });
     }
@@ -217,8 +246,12 @@ const findMissingModules = (dbModules, staticSidebar, effectiveRole = 'super_adm
     if (existingSlugs.has(lastPart)) return true;
     if (existingTitles.has(lastPart.replace(/_/g, ' '))) return true;
     
-    // Check module name/display_name against existing titles
-    if (moduleName && existingTitles.has(moduleName.toLowerCase())) return true;
+    // Check module name/display_name against existing titles (strip emojis for comparison)
+    if (moduleName) {
+      const cleanName = stripEmojis(moduleName).toLowerCase();
+      if (existingTitles.has(cleanName)) return true;
+      if (existingTitles.has(moduleName.toLowerCase())) return true;
+    }
     
     // Handle singular/plural variations (fee_type vs fees_type, fee_group vs fees_group)
     const singularSlug = lastPart.replace(/^fees?_/, 'fee_').replace(/^fees?$/, 'fee');
@@ -227,6 +260,15 @@ const findMissingModules = (dbModules, staticSidebar, effectiveRole = 'super_adm
     if (existingSlugs.has(pluralSlug)) return true;
     if (existingTitles.has(singularSlug.replace(/_/g, ' '))) return true;
     if (existingTitles.has(pluralSlug.replace(/_/g, ' '))) return true;
+    
+    // Handle dash vs underscore variations (e.g., 'geo-fence setup' vs 'geo_fence_setup')
+    const dashVariant = lastPart.replace(/_/g, '-');
+    if (existingSlugs.has(dashVariant)) return true;
+    if (existingTitles.has(dashVariant.replace(/-/g, ' '))) return true;
+    
+    // Check known aliases (DB modules with different names than static sidebar)
+    if (ALREADY_IN_SIDEBAR_ALIASES.has(lastPart)) return true;
+    if (ALREADY_IN_SIDEBAR_ALIASES.has(slug)) return true;
     
     return false;
   };

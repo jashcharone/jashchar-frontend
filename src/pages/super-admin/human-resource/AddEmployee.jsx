@@ -56,6 +56,7 @@ const AddEmployee = () => {
     const [departments, setDepartments] = useState([]);
     const [designations, setDesignations] = useState([]);
     const [employmentCategories, setEmploymentCategories] = useState([]);
+    const [shifts, setShifts] = useState([]);
     const [schoolSettings, setSchoolSettings] = useState(null);
     const [pincodeLoading, setPincodeLoading] = useState(false);
     const [bankLoading, setBankLoading] = useState(false);
@@ -207,12 +208,17 @@ const AddEmployee = () => {
             if (!queryBranchId) return; // Wait for branch selection (either auto or manual)
 
             try {
-                const [rolesRes, departmentsData, designationsData, empCatsData, formSettingsRes] = await Promise.all([
+                const [rolesRes, departmentsData, designationsData, empCatsData, formSettingsRes, shiftsRes] = await Promise.all([
                     supabase.from('roles').select('id, name, description, is_system').eq('branch_id', branchId),
                     humanResourceApi.getDepartments(branchId, queryBranchId),
                     humanResourceApi.getDesignations(branchId, queryBranchId),
                     humanResourceApi.getEmploymentCategories(branchId, queryBranchId),
-                    api.get('/form-settings', { params: { branchId: branchId, module: 'employee_registration' } })
+                    api.get('/form-settings', { params: { branchId: branchId, module: 'employee_registration' } }),
+                    supabase.from('attendance_shifts')
+                        .select('id, shift_name, shift_code, start_time, end_time, is_default')
+                        .eq('branch_id', queryBranchId)
+                        .eq('is_active', true)
+                        .order('shift_name')
                 ]);
 
                 // Process Field Settings
@@ -262,6 +268,7 @@ const AddEmployee = () => {
                 setDepartments(departmentsData || []);
                 setDesignations(designationsData || []);
                 setEmploymentCategories(empCatsData || []);
+                setShifts(shiftsRes.data || []);
             } catch (error) {
                 console.error("Failed to fetch dropdowns", error);
                 toast({
@@ -1759,9 +1766,19 @@ const AddEmployee = () => {
                         <Select value={formData.shift_id} onValueChange={v => handleChange('shift_id', v)}>
                             <SelectTrigger><SelectValue placeholder="Select Shift" /></SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="Morning">Morning Shift (08:00 AM - 02:00 PM)</SelectItem>
-                                <SelectItem value="Day">Day Shift (09:00 AM - 04:00 PM)</SelectItem>
-                                <SelectItem value="Evening">Evening Shift (12:00 PM - 06:00 PM)</SelectItem>
+                                {shifts.length > 0 ? (
+                                    shifts.map(shift => (
+                                        <SelectItem key={shift.id} value={shift.shift_name}>
+                                            {shift.shift_name} ({shift.start_time?.slice(0,5)} - {shift.end_time?.slice(0,5)})
+                                        </SelectItem>
+                                    ))
+                                ) : (
+                                    <>
+                                        <SelectItem value="Morning Shift">Morning Shift (08:00 - 14:00)</SelectItem>
+                                        <SelectItem value="Day Shift">Day Shift (09:00 - 16:00)</SelectItem>
+                                        <SelectItem value="Evening Shift">Evening Shift (12:00 - 18:00)</SelectItem>
+                                    </>
+                                )}
                             </SelectContent>
                         </Select>
                     </div>

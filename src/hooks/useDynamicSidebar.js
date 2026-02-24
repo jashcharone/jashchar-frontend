@@ -125,6 +125,25 @@ const ALREADY_IN_SIDEBAR_ALIASES = new Set([
 ]);
 
 /**
+ * ═══════════════════════════════════════════════════════════════════════════════
+ * 🔒 PERMANENT FIX: Parent slugs whose submodules are FULLY defined in 
+ *    sidebarConfig.js and should NEVER be dynamically added.
+ * 
+ * WHY: The static sidebar already has ALL attendance items (15 items).
+ *      Sidebar.jsx uses isPathEnabled() to filter based on branch_attendance_config.
+ *      If dynamic system also adds these, we get DUPLICATES every time:
+ *        - DB module name doesn't exactly match static title
+ *        - DB module has emoji mismatch
+ *        - New module added to module_registry
+ * 
+ * This is the SINGLE SOURCE OF TRUTH fix — no more fragile name-matching.
+ * ═══════════════════════════════════════════════════════════════════════════════
+ */
+const FULLY_STATIC_PARENT_SLUGS = new Set([
+  'attendance',  // All 16 attendance submodules are in sidebarConfig.js
+]);
+
+/**
  * Strip emoji/icon prefixes from text for comparison
  * e.g., "📱 QR Code Generator" → "QR Code Generator"
  * e.g., "⚙️ Attendance Rules" → "Attendance Rules"
@@ -192,6 +211,16 @@ const findMissingModules = (dbModules, staticSidebar, effectiveRole = 'super_adm
     filteredDbModules = dbModules.filter(m => {
       const slug = m.slug?.toLowerCase() || '';
       const lastPart = slug.split('.').pop();
+      
+      // 🔒 PERMANENT FIX: Skip modules whose parent is fully defined in static sidebar
+      // This prevents ALL attendance submodule duplicates regardless of name/emoji/format
+      if (m.parent_slug && FULLY_STATIC_PARENT_SLUGS.has(m.parent_slug.toLowerCase())) {
+        return false;
+      }
+      // Also skip parent entries of fully-static parents (e.g., the "attendance" parent itself)
+      if (!m.parent_slug && FULLY_STATIC_PARENT_SLUGS.has(slug)) {
+        return false;
+      }
       
       // Check if module is master_admin-only
       const isMasterAdminOnly = MASTER_ADMIN_ONLY_SLUGS.some(maSlug => 

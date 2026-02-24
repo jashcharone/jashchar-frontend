@@ -144,6 +144,25 @@ const getDefaultsForRoleType = (roleName) => {
         'student_information': viewOnly,
         '*': { view: false, add: false, edit: false, delete: false }
       };
+    case 'principal':
+      // Principal = School Head, needs full access to all modules
+      return {
+        'student_information': viewAddEdit,
+        'human_resource': viewAddEdit,
+        'attendance': viewAddEdit,
+        'academics': viewAddEdit,
+        'examinations': viewAddEdit,
+        'behaviour_records': viewAddEdit,
+        'communicate': viewAddEdit,
+        'fees_collection': viewOnly,
+        'library': viewOnly,
+        'transport': viewOnly,
+        'hostel': viewOnly,
+        'front_office': viewOnly,
+        'homework': viewAddEdit,
+        'task_management': viewAddEdit,
+        '*': viewOnly
+      };
     case 'admin':
       // Admin usually has more access but maybe not delete
       return {

@@ -358,6 +358,7 @@ const DesignAdmitCard = lazy(() => import('@/pages/super-admin/examinations/Desi
 const TeacherRemarks = lazy(() => import('@/pages/super-admin/examinations/TeacherRemarks'));
 const AssignObservation = lazy(() => import('@/pages/super-admin/examinations/AssignObservation'));
 const CbseReports = lazy(() => import('@/pages/super-admin/examinations/CbseReports'));
+const ReportCard = lazy(() => import('@/pages/super-admin/examinations/ReportCard'));
 
 // Library
 const LibraryBooks = lazy(() => import('@/pages/super-admin/library/LibraryBooks'));
@@ -1336,11 +1337,11 @@ function App() {
             <Route path={ROUTES.SUPER_ADMIN.ASSIGN_FEE_MASTER} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'accountant']}><AssignFeeGroup /></ProtectedRoute>} />
             <Route path={ROUTES.SUPER_ADMIN.ASSIGN_FEE_GROUP} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'accountant']}><AssignFeeGroup /></ProtectedRoute>} />
             <Route path={ROUTES.SUPER_ADMIN.STUDENT_FEES} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'accountant']}><StudentFees /></ProtectedRoute>} />
-            <Route path={ROUTES.SUPER_ADMIN.SEARCH_FEES_PAYMENT} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'accountant']}><SearchFeesPayment /></ProtectedRoute>} />
-            <Route path={ROUTES.SUPER_ADMIN.SEARCH_DUE_FEES} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'accountant']}><SearchDueFees /></ProtectedRoute>} />
+            <Route path={ROUTES.SUPER_ADMIN.SEARCH_FEES_PAYMENT} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'accountant', 'principal']}><SearchFeesPayment /></ProtectedRoute>} />
+            <Route path={ROUTES.SUPER_ADMIN.SEARCH_DUE_FEES} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'accountant', 'principal']}><SearchDueFees /></ProtectedRoute>} />
             <Route path={ROUTES.SUPER_ADMIN.FEES_DISCOUNT} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'accountant']}><FeesDiscount /></ProtectedRoute>} />
             <Route path={ROUTES.SUPER_ADMIN.FEES_CARRY_FORWARD} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'accountant']}><FeesCarryForward /></ProtectedRoute>} />
-            <Route path={ROUTES.SUPER_ADMIN.FEES_REMINDER} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'accountant']}><FeesReminder /></ProtectedRoute>} />
+            <Route path={ROUTES.SUPER_ADMIN.FEES_REMINDER} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'accountant', 'principal']}><FeesReminder /></ProtectedRoute>} />
             <Route path={ROUTES.SUPER_ADMIN.PRINT_FEES_RECEIPT} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'accountant']}><PrintFeesReceipt /></ProtectedRoute>} />
             <Route path="/super-admin/fees-collection/print-transport-receipt/:paymentId" element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'accountant']}><PrintTransportReceipt /></ProtectedRoute>} />
             <Route path="/super-admin/fees-collection/print-hostel-receipt/:paymentId" element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'accountant']}><PrintHostelReceipt /></ProtectedRoute>} />
@@ -1380,6 +1381,7 @@ function App() {
             <Route path={ROUTES.SUPER_ADMIN.TEACHER_REMARKS} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'teacher']} requiredModule="examinations"><TeacherRemarks /></ProtectedRoute>} />
             <Route path={ROUTES.SUPER_ADMIN.ASSIGN_OBSERVATION} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="examinations"><AssignObservation /></ProtectedRoute>} />
             <Route path={ROUTES.SUPER_ADMIN.CBSE_REPORTS} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'principal']} requiredModule="examinations"><CbseReports /></ProtectedRoute>} />
+            <Route path={ROUTES.SUPER_ADMIN.REPORT_CARD} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'principal']} requiredModule="examinations"><ReportCard /></ProtectedRoute>} />
 
             {/* ? Library */}
             <Route path={ROUTES.SUPER_ADMIN.LIBRARY_BOOKS} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'librarian']} requiredModule="library"><LibraryBooks /></ProtectedRoute>} />

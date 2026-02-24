@@ -583,11 +583,20 @@ export const BASE_SIDEBAR = {
       ]
     },
     {
+      title: 'Fees Collection',
+      icon: CreditCard,
+      submenu: [
+        { title: 'Search Fees Payment', path: ROUTES.SUPER_ADMIN.SEARCH_FEES_PAYMENT },
+        { title: 'Search Due Fees', path: ROUTES.SUPER_ADMIN.SEARCH_DUE_FEES },
+        { title: 'Fees Reminder', path: ROUTES.SUPER_ADMIN.FEES_REMINDER },
+      ]
+    },
+    {
       title: 'Reports',
       icon: BarChart3,
       submenu: [
         { title: 'Student Information', path: ROUTES.SUPER_ADMIN.REPORT_STUDENT_INFO },
-        { title: 'Attendance', path: ROUTES.SUPER_ADMIN.REPORT_ATTENDANCE },
+        { title: 'Attendance', path: ROUTES.SUPER_ADMIN.ATTENDANCE_REPORT },
         { title: 'Examinations', path: ROUTES.SUPER_ADMIN.CBSE_REPORTS },
         { title: 'Human Resource', path: ROUTES.SUPER_ADMIN.REPORT_PAYROLL },
       ]

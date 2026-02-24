@@ -1131,8 +1131,8 @@ function App() {
             <Route path={ROUTES.SUPER_ADMIN.REPORT_BALANCE_FEES_STATEMENT} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'accountant']} requiredModule="fees_collection"><BalanceFeesStatementReport /></ProtectedRoute>} />
             <Route path={ROUTES.SUPER_ADMIN.REPORT_BALANCE_FEES_REMARK} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'accountant']} requiredModule="fees_collection"><BalanceFeesWithRemarkReport /></ProtectedRoute>} />
             <Route path={ROUTES.SUPER_ADMIN.REPORT_ONLINE_FEES} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'accountant']} requiredModule="fees_collection"><OnlineFeesCollectionReport /></ProtectedRoute>} />
-            <Route path={ROUTES.SUPER_ADMIN.REPORT_PAYROLL} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'accountant']} requiredModule="human_resource"><PayrollReport /></ProtectedRoute>} />
-            <Route path={ROUTES.SUPER_ADMIN.REPORT_STUDENT_INFO} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']}><StudentInformationReport /></ProtectedRoute>} />
+            <Route path={ROUTES.SUPER_ADMIN.REPORT_PAYROLL} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'accountant', 'principal']} requiredModule="human_resource"><PayrollReport /></ProtectedRoute>} />
+            <Route path={ROUTES.SUPER_ADMIN.REPORT_STUDENT_INFO} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'principal']}><StudentInformationReport /></ProtectedRoute>} />
 
             {/* ? Fees Collection */}
             <Route
@@ -1148,7 +1148,7 @@ function App() {
             <Route
               path={ROUTES.SUPER_ADMIN.ASSIGN_INCIDENT}
               element={
-                <ProtectedRoute allowedRoles={['super_admin', 'admin', 'teacher']} requiredModule="behaviour_records">
+                <ProtectedRoute allowedRoles={['super_admin', 'admin', 'teacher', 'principal']} requiredModule="behaviour_records">
                   <AssignIncident />
                 </ProtectedRoute>
               }
@@ -1156,7 +1156,7 @@ function App() {
             <Route
               path={ROUTES.SUPER_ADMIN.INCIDENTS}
               element={
-                <ProtectedRoute allowedRoles={['super_admin', 'admin', 'teacher']} requiredModule="behaviour_records">
+                <ProtectedRoute allowedRoles={['super_admin', 'admin', 'teacher', 'principal']} requiredModule="behaviour_records">
                   <Incidents />
                 </ProtectedRoute>
               }
@@ -1164,7 +1164,7 @@ function App() {
             <Route
               path={ROUTES.SUPER_ADMIN.BEHAVIOUR_REPORTS}
               element={
-                <ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="behaviour_records">
+                <ProtectedRoute allowedRoles={['super_admin', 'admin', 'principal']} requiredModule="behaviour_records">
                   <BehaviourReports />
                 </ProtectedRoute>
               }
@@ -1252,28 +1252,28 @@ function App() {
             <Route path={ROUTES.SUPER_ADMIN.COMPLAIN} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'receptionist']} requiredModule="front_office"><Complain /></ProtectedRoute>} />
 
             {/* ? Academics */}
-            <Route path={ROUTES.SUPER_ADMIN.CLASSES} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'teacher']} requiredModule="academics"><Classes /></ProtectedRoute>} />
-            <Route path={ROUTES.SUPER_ADMIN.SECTIONS} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'teacher']} requiredModule="academics"><Sections /></ProtectedRoute>} />
+            <Route path={ROUTES.SUPER_ADMIN.CLASSES} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'teacher', 'principal']} requiredModule="academics"><Classes /></ProtectedRoute>} />
+            <Route path={ROUTES.SUPER_ADMIN.SECTIONS} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'teacher', 'principal']} requiredModule="academics"><Sections /></ProtectedRoute>} />
             <Route path={ROUTES.SUPER_ADMIN.SUBJECTS} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'teacher']} requiredModule="academics"><Subjects /></ProtectedRoute>} />
             <Route path={ROUTES.SUPER_ADMIN.SUBJECT_GROUP} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'teacher']} requiredModule="academics"><SubjectGroup /></ProtectedRoute>} />
-            <Route path={ROUTES.SUPER_ADMIN.SUBJECT_TEACHER} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="academics"><SubjectTeacher /></ProtectedRoute>} />
+            <Route path={ROUTES.SUPER_ADMIN.SUBJECT_TEACHER} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'principal']} requiredModule="academics"><SubjectTeacher /></ProtectedRoute>} />
             <Route path={ROUTES.SUPER_ADMIN.CLASS_TEACHER} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="academics"><ClassTeacher /></ProtectedRoute>} />
-            <Route path={ROUTES.SUPER_ADMIN.CLASS_TIMETABLE} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'teacher', 'student', 'parent']} requiredModule="academics"><ClassTimetable /></ProtectedRoute>} />
-            <Route path={ROUTES.SUPER_ADMIN.TEACHER_TIMETABLE} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'teacher']} requiredModule="academics"><TeacherTimetable /></ProtectedRoute>} />
+            <Route path={ROUTES.SUPER_ADMIN.CLASS_TIMETABLE} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'teacher', 'student', 'parent', 'principal']} requiredModule="academics"><ClassTimetable /></ProtectedRoute>} />
+            <Route path={ROUTES.SUPER_ADMIN.TEACHER_TIMETABLE} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'teacher', 'principal']} requiredModule="academics"><TeacherTimetable /></ProtectedRoute>} />
             <Route path={ROUTES.SUPER_ADMIN.TIMETABLE} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'teacher']} requiredModule="academics"><Timetable /></ProtectedRoute>} />
-            <Route path={ROUTES.SUPER_ADMIN.ASSIGN_CLASS_TEACHER} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="academics"><AssignClassTeacher /></ProtectedRoute>} />
+            <Route path={ROUTES.SUPER_ADMIN.ASSIGN_CLASS_TEACHER} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'principal']} requiredModule="academics"><AssignClassTeacher /></ProtectedRoute>} />
             <Route path={ROUTES.SUPER_ADMIN.PROMOTE_STUDENT} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="academics"><PromoteStudent /></ProtectedRoute>} />
 
             {/* ? Student Information */}
-            <Route path={ROUTES.SUPER_ADMIN.STUDENT_ADMISSION} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="student_information"><StudentAdmission /></ProtectedRoute>} />
+            <Route path={ROUTES.SUPER_ADMIN.STUDENT_ADMISSION} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'principal']} requiredModule="student_information"><StudentAdmission /></ProtectedRoute>} />
             <Route path={ROUTES.SUPER_ADMIN.ADMISSION_FORM_SETTINGS} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="student_information"><AdmissionFormSettings /></ProtectedRoute>} />
-            <Route path={ROUTES.SUPER_ADMIN.STUDENT_DETAILS} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'teacher', 'accountant', 'receptionist']} requiredModule="student_information"><StudentDetails /></ProtectedRoute>} />
-            <Route path={ROUTES.SUPER_ADMIN.STUDENT_PROFILE} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'teacher', 'accountant', 'receptionist']} requiredModule="student_information"><StudentProfile /></ProtectedRoute>} />
+            <Route path={ROUTES.SUPER_ADMIN.STUDENT_DETAILS} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'teacher', 'accountant', 'receptionist', 'principal']} requiredModule="student_information"><StudentDetails /></ProtectedRoute>} />
+            <Route path={ROUTES.SUPER_ADMIN.STUDENT_PROFILE} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'teacher', 'accountant', 'receptionist', 'principal']} requiredModule="student_information"><StudentProfile /></ProtectedRoute>} />
             <Route path={ROUTES.SUPER_ADMIN.EDIT_STUDENT} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="student_information"><EditStudentProfile /></ProtectedRoute>} />
-            <Route path={ROUTES.SUPER_ADMIN.ONLINE_ADMISSION_LIST} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="student_information"><OnlineAdmissionList /></ProtectedRoute>} />
+            <Route path={ROUTES.SUPER_ADMIN.ONLINE_ADMISSION_LIST} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'principal']} requiredModule="student_information"><OnlineAdmissionList /></ProtectedRoute>} />
             <Route path={ROUTES.SUPER_ADMIN.EDIT_ONLINE_ADMISSION} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="student_information"><EditOnlineAdmission /></ProtectedRoute>} />
             {/* StudentCategories and StudentHouse moved to Admission Form Settings tabs - no separate routes needed */}
-            <Route path={ROUTES.SUPER_ADMIN.DISABLED_STUDENTS} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="student_information"><DisabledStudents /></ProtectedRoute>} />
+            <Route path={ROUTES.SUPER_ADMIN.DISABLED_STUDENTS} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'principal']} requiredModule="student_information"><DisabledStudents /></ProtectedRoute>} />
             <Route path={ROUTES.SUPER_ADMIN.DISABLE_REASON} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="student_information"><DisableReason /></ProtectedRoute>} />
             <Route path={ROUTES.SUPER_ADMIN.MULTI_CLASS_STUDENT} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="student_information"><MultiClassStudent /></ProtectedRoute>} />
             <Route path={ROUTES.SUPER_ADMIN.BULK_DELETE} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="student_information"><BulkDelete /></ProtectedRoute>} />
@@ -1282,29 +1282,29 @@ function App() {
 
             {/* ? HR */}
             <Route path={ROUTES.SUPER_ADMIN.EMPLOYEE_FORM_SETTINGS} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="human_resource"><EmployeeFormSettings /></ProtectedRoute>} />
-            <Route path={ROUTES.SUPER_ADMIN.DEPARTMENTS} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="human_resource"><Departments /></ProtectedRoute>} />
+            <Route path={ROUTES.SUPER_ADMIN.DEPARTMENTS} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'principal']} requiredModule="human_resource"><Departments /></ProtectedRoute>} />
             <Route path={ROUTES.SUPER_ADMIN.EMPLOYMENT_CATEGORY} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="human_resource"><EmploymentCategory /></ProtectedRoute>} />
-            <Route path={ROUTES.SUPER_ADMIN.DESIGNATIONS} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="human_resource"><Designations /></ProtectedRoute>} />
+            <Route path={ROUTES.SUPER_ADMIN.DESIGNATIONS} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'principal']} requiredModule="human_resource"><Designations /></ProtectedRoute>} />
             <Route path={ROUTES.SUPER_ADMIN.ADD_EMPLOYEE} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="human_resource"><AddEmployee /></ProtectedRoute>} />
             <Route path={ROUTES.SUPER_ADMIN.EDIT_EMPLOYEE} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="human_resource"><EditEmployee /></ProtectedRoute>} />
             <Route path={ROUTES.SUPER_ADMIN.EMPLOYEE_LIST} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="human_resource"><EmployeeList /></ProtectedRoute>} />
-            <Route path={ROUTES.SUPER_ADMIN.STAFF_DIRECTORY} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'teacher', 'student', 'parent']} requiredModule="human_resource"><StaffDirectory /></ProtectedRoute>} />
+            <Route path={ROUTES.SUPER_ADMIN.STAFF_DIRECTORY} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'teacher', 'student', 'parent', 'principal']} requiredModule="human_resource"><StaffDirectory /></ProtectedRoute>} />
             <Route path={ROUTES.SUPER_ADMIN.STAFF_PROFILE} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="human_resource"><StaffProfile /></ProtectedRoute>} />
             <Route path={ROUTES.SUPER_ADMIN.IMPORT_STAFF} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="human_resource"><ImportStaff /></ProtectedRoute>} />
             <Route path={ROUTES.SUPER_ADMIN.STAFF_LEAVE_TYPE} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="human_resource"><StaffLeaveType /></ProtectedRoute>} />
             <Route path={ROUTES.SUPER_ADMIN.STAFF_APPLY_LEAVE} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'teacher', 'employee']} requiredModule="human_resource"><StaffApplyLeave /></ProtectedRoute>} />
-            <Route path={ROUTES.SUPER_ADMIN.APPROVE_STAFF_LEAVE} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="human_resource"><ApproveStaffLeave /></ProtectedRoute>} />
+            <Route path={ROUTES.SUPER_ADMIN.APPROVE_STAFF_LEAVE} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'principal']} requiredModule="human_resource"><ApproveStaffLeave /></ProtectedRoute>} />
             <Route path={ROUTES.SUPER_ADMIN.EMPLOYEE_DOCUMENTS} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="human_resource"><EmployeeDocuments /></ProtectedRoute>} />
             <Route path={ROUTES.SUPER_ADMIN.EMPLOYEE_PERFORMANCE} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="human_resource"><EmployeePerformance /></ProtectedRoute>} />
             <Route path={ROUTES.SUPER_ADMIN.EMPLOYEE_PAYROLL} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'accountant']} requiredModule="human_resource"><EmployeePayroll /></ProtectedRoute>} />
-            <Route path={ROUTES.SUPER_ADMIN.LEAVE_MANAGEMENT} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="human_resource"><LeaveManagement /></ProtectedRoute>} />
+            <Route path={ROUTES.SUPER_ADMIN.LEAVE_MANAGEMENT} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'principal']} requiredModule="human_resource"><LeaveManagement /></ProtectedRoute>} />
 
             {/* ? Attendance */}
-            <Route path={ROUTES.SUPER_ADMIN.STUDENT_ATTENDANCE} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'teacher']} requiredModule="attendance"><StudentAttendance /></ProtectedRoute>} />
+            <Route path={ROUTES.SUPER_ADMIN.STUDENT_ATTENDANCE} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'teacher', 'principal']} requiredModule="attendance"><StudentAttendance /></ProtectedRoute>} />
             <Route path={ROUTES.SUPER_ADMIN.ATTENDANCE_BY_DATE} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'teacher']} requiredModule="attendance"><AttendanceByDate /></ProtectedRoute>} />
-            <Route path={ROUTES.SUPER_ADMIN.APPROVE_LEAVE} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'teacher']} requiredModule="attendance"><ApproveStudentLeave /></ProtectedRoute>} />
-            <Route path={ROUTES.SUPER_ADMIN.STAFF_ATTENDANCE} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="attendance"><StaffAttendance /></ProtectedRoute>} />
-            <Route path={ROUTES.SUPER_ADMIN.ATTENDANCE_REPORT} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'teacher']} requiredModule="attendance"><AttendanceReport /></ProtectedRoute>} />
+            <Route path={ROUTES.SUPER_ADMIN.APPROVE_LEAVE} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'teacher', 'principal']} requiredModule="attendance"><ApproveStudentLeave /></ProtectedRoute>} />
+            <Route path={ROUTES.SUPER_ADMIN.STAFF_ATTENDANCE} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'principal']} requiredModule="attendance"><StaffAttendance /></ProtectedRoute>} />
+            <Route path={ROUTES.SUPER_ADMIN.ATTENDANCE_REPORT} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'teacher', 'principal']} requiredModule="attendance"><AttendanceReport /></ProtectedRoute>} />
             {/* Advanced Attendance (Futuristic) */}
             <Route path={ROUTES.SUPER_ADMIN.LIVE_ATTENDANCE_DASHBOARD} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="attendance"><LiveAttendanceDashboard /></ProtectedRoute>} />
             <Route path={ROUTES.SUPER_ADMIN.QR_CODE_GENERATOR} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'teacher']} requiredModule="attendance"><QRCodeGenerator /></ProtectedRoute>} />
@@ -1349,14 +1349,14 @@ function App() {
             <Route path={ROUTES.SUPER_ADMIN.ONLINE_PAYMENT} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'accountant']}><OnlinePayment /></ProtectedRoute>} />
 
             {/* ? Examinations */}
-            <Route path={ROUTES.SUPER_ADMIN.EXAM_GROUP} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'teacher']} requiredModule="examinations"><ExamGroup /></ProtectedRoute>} />
+            <Route path={ROUTES.SUPER_ADMIN.EXAM_GROUP} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'teacher', 'principal']} requiredModule="examinations"><ExamGroup /></ProtectedRoute>} />
             <Route path={ROUTES.SUPER_ADMIN.EXAM_LIST} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'teacher']} requiredModule="examinations"><ExamList /></ProtectedRoute>} />
-            <Route path={ROUTES.SUPER_ADMIN.EXAM_SCHEDULE} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'teacher', 'student', 'parent']} requiredModule="examinations"><ExamSchedule /></ProtectedRoute>} />
+            <Route path={ROUTES.SUPER_ADMIN.EXAM_SCHEDULE} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'teacher', 'student', 'parent', 'principal']} requiredModule="examinations"><ExamSchedule /></ProtectedRoute>} />
             <Route path={ROUTES.SUPER_ADMIN.EXAM_ATTENDANCE} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'teacher']} requiredModule="examinations"><ExamAttendance /></ProtectedRoute>} />
-            <Route path={ROUTES.SUPER_ADMIN.MARKS_ENTRY} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'teacher']} requiredModule="examinations"><MarksEntry /></ProtectedRoute>} />
+            <Route path={ROUTES.SUPER_ADMIN.MARKS_ENTRY} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'teacher', 'principal']} requiredModule="examinations"><MarksEntry /></ProtectedRoute>} />
             <Route path={ROUTES.SUPER_ADMIN.MARKS_DIVISION} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="examinations"><MarksDivision /></ProtectedRoute>} />
             <Route path={ROUTES.SUPER_ADMIN.MARKS_GRADE} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="examinations"><MarksGrade /></ProtectedRoute>} />
-            <Route path={ROUTES.SUPER_ADMIN.GENERAL_EXAM_RESULT} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'teacher']} requiredModule="examinations"><GeneralExamResult /></ProtectedRoute>} />
+            <Route path={ROUTES.SUPER_ADMIN.GENERAL_EXAM_RESULT} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'teacher', 'principal']} requiredModule="examinations"><GeneralExamResult /></ProtectedRoute>} />
             <Route path={ROUTES.SUPER_ADMIN.GENERAL_EXAM_SCHEDULE} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'teacher']} requiredModule="examinations"><GeneralExamSchedule /></ProtectedRoute>} />
             <Route path={ROUTES.SUPER_ADMIN.CBSE_EXAM} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="examinations"><CbseExam /></ProtectedRoute>} />
             <Route path={ROUTES.SUPER_ADMIN.CBSE_SETTINGS} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="examinations"><CbseSettings /></ProtectedRoute>} />
@@ -1379,7 +1379,7 @@ function App() {
             <Route path={ROUTES.SUPER_ADMIN.DESIGN_ADMIT_CARD} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="examinations"><DesignAdmitCard /></ProtectedRoute>} />
             <Route path={ROUTES.SUPER_ADMIN.TEACHER_REMARKS} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'teacher']} requiredModule="examinations"><TeacherRemarks /></ProtectedRoute>} />
             <Route path={ROUTES.SUPER_ADMIN.ASSIGN_OBSERVATION} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="examinations"><AssignObservation /></ProtectedRoute>} />
-            <Route path={ROUTES.SUPER_ADMIN.CBSE_REPORTS} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="examinations"><CbseReports /></ProtectedRoute>} />
+            <Route path={ROUTES.SUPER_ADMIN.CBSE_REPORTS} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'principal']} requiredModule="examinations"><CbseReports /></ProtectedRoute>} />
 
             {/* ? Library */}
             <Route path={ROUTES.SUPER_ADMIN.LIBRARY_BOOKS} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'librarian']} requiredModule="library"><LibraryBooks /></ProtectedRoute>} />
@@ -1405,9 +1405,9 @@ function App() {
             <Route path={ROUTES.SUPER_ADMIN.TRANSPORT_ANALYSIS} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="transport"><TransportAnalysis /></ProtectedRoute>} />
 
             {/* ? Communicate */}
-            <Route path={ROUTES.SUPER_ADMIN.NOTICE_BOARD} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'teacher', 'student', 'parent']} requiredModule="communicate"><NoticeBoard /></ProtectedRoute>} />
-            <Route path={ROUTES.SUPER_ADMIN.SEND_EMAIL} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="communicate"><SendEmail /></ProtectedRoute>} />
-            <Route path={ROUTES.SUPER_ADMIN.SEND_SMS} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="communicate"><SendSms /></ProtectedRoute>} />
+            <Route path={ROUTES.SUPER_ADMIN.NOTICE_BOARD} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'teacher', 'student', 'parent', 'principal']} requiredModule="communicate"><NoticeBoard /></ProtectedRoute>} />
+            <Route path={ROUTES.SUPER_ADMIN.SEND_EMAIL} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'principal']} requiredModule="communicate"><SendEmail /></ProtectedRoute>} />
+            <Route path={ROUTES.SUPER_ADMIN.SEND_SMS} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'principal']} requiredModule="communicate"><SendSms /></ProtectedRoute>} />
             <Route path={ROUTES.SUPER_ADMIN.COMPOSE_MESSAGE} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="communicate"><ComposeMessage /></ProtectedRoute>} />
             <Route path={ROUTES.SUPER_ADMIN.EMAIL_SMS_LOG} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="communicate"><EmailSmsLog /></ProtectedRoute>} />
             <Route path={ROUTES.SUPER_ADMIN.WHATSAPP} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="communicate"><WhatsAppDashboard /></ProtectedRoute>} />

@@ -509,7 +509,7 @@ export const BASE_SIDEBAR = {
   
   // Principal Dashboard - School Head with full overview
   principal: [
-    { title: 'Dashboard', icon: LayoutDashboard, path: '/principal/dashboard' },
+    { title: 'Dashboard', icon: LayoutDashboard, path: ROUTES.PRINCIPAL.DASHBOARD },
     {
       title: 'Student Information',
       icon: Users,

@@ -295,24 +295,23 @@ export const useDynamicSidebar = (role) => {
   const menu = useMemo(() => {
     // Get effective role
     // master_admin stays as master_admin
-    // student, parent, teacher keep their own sidebar
-    // All other school staff (organization_owner, super_admin, admin, principal, accountant, receptionist, librarian) -> super_admin
+    // student, parent, teacher, principal, accountant, receptionist, librarian keep their own sidebar
+    // organization_owner, super_admin, admin, school_owner -> super_admin
     
     // Normalize role to handle both underscore and space formats
     const normalizedInputRole = role?.toLowerCase().replace(/\s+/g, '_') || '';
     let effectiveRole = normalizedInputRole;
     
-    const schoolStaffRoles = ['organization_owner', 'super_admin', 'admin', 'school_owner', 'principal', 'accountant', 'receptionist', 'librarian'];
+    // ✅ Roles that have their OWN curated sidebar in sidebarConfig.js
+    const rolesWithOwnSidebar = ['student', 'parent', 'teacher', 'principal', 'accountant', 'receptionist', 'librarian', 'master_admin'];
     
-    // ✅ Student, Parent, and Teacher keep their own sidebar - DO NOT convert to super_admin
-    if (normalizedInputRole === 'student' || normalizedInputRole === 'parent' || normalizedInputRole === 'teacher') {
+    // ✅ Roles that share the super_admin sidebar (school owners/admins)
+    const schoolAdminRoles = ['organization_owner', 'super_admin', 'admin', 'school_owner'];
+    
+    if (rolesWithOwnSidebar.includes(normalizedInputRole)) {
       effectiveRole = normalizedInputRole;
-    } else if (schoolStaffRoles.includes(normalizedInputRole)) {
+    } else if (schoolAdminRoles.includes(normalizedInputRole)) {
       effectiveRole = 'super_admin';
-    }
-    // master_admin keeps its own sidebar
-    if (normalizedInputRole === 'master_admin') {
-      effectiveRole = 'master_admin';
     }
     
     console.log('[useDynamicSidebar] Role:', role, '-> Normalized:', normalizedInputRole, '-> Effective:', effectiveRole);
@@ -320,18 +319,10 @@ export const useDynamicSidebar = (role) => {
     // Start with static sidebar (has correct routes!)
     const staticMenu = BASE_SIDEBAR[effectiveRole] || BASE_SIDEBAR['super_admin'] || [];
     
-    // ✅ STUDENT/PARENT/TEACHER: Return their specific static sidebar only
-    // They have curated modules defined in sidebarConfig.js
-    if (effectiveRole === 'student' || effectiveRole === 'parent' || effectiveRole === 'teacher') {
+    // ✅ Roles with their own curated sidebar: Return static sidebar only
+    // They have curated modules defined in sidebarConfig.js - no dynamic additions needed
+    if (rolesWithOwnSidebar.includes(effectiveRole)) {
       console.log('[useDynamicSidebar]', effectiveRole, '- using role-specific sidebar:', staticMenu.length, 'items');
-      return staticMenu;
-    }
-    
-    // ✅ MASTER ADMIN: Return ONLY static sidebar, don't add any dynamic modules
-    // Master admin has fixed modules (Dashboard, Branches, Subscriptions, etc.)
-    // Should NOT get school modules like student_information, fees_collection, etc.
-    if (effectiveRole === 'master_admin') {
-      console.log('[useDynamicSidebar] Master Admin - using static sidebar only:', staticMenu.length, 'items');
       return staticMenu;
     }
     

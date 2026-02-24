@@ -410,6 +410,51 @@ export const ROUTES = {
   },
   PRINCIPAL: {
     DASHBOARD: '/Principal/dashboard',
+    // Student Information
+    STUDENT_DETAILS: '/principal/student-information/details',
+    STUDENT_ADMISSION: '/principal/student-information/admission',
+    ONLINE_ADMISSION_LIST: '/principal/student-information/online-admission',
+    DISABLED_STUDENTS: '/principal/student-information/disabled-students',
+    // Human Resource
+    STAFF_DIRECTORY: '/principal/human-resource/staff-directory',
+    DEPARTMENTS: '/principal/human-resource/departments',
+    DESIGNATIONS: '/principal/human-resource/designations',
+    LEAVE_MANAGEMENT: '/principal/human-resource/leave-management',
+    APPROVE_STAFF_LEAVE: '/principal/human-resource/approve-staff-leave',
+    // Attendance
+    STUDENT_ATTENDANCE: '/principal/attendance/student-attendance',
+    STAFF_ATTENDANCE: '/principal/attendance/staff-attendance',
+    APPROVE_LEAVE: '/principal/attendance/approve-student-leave',
+    ATTENDANCE_REPORT: '/principal/attendance/attendance-report',
+    // Academics
+    CLASSES: '/principal/academics/classes',
+    SECTIONS: '/principal/academics/sections',
+    CLASS_TIMETABLE: '/principal/academics/class-timetable',
+    TEACHER_TIMETABLE: '/principal/academics/teacher-timetable',
+    ASSIGN_CLASS_TEACHER: '/principal/academics/assign-class-teacher',
+    SUBJECT_TEACHER: '/principal/academics/subject-teacher',
+    // Examinations
+    EXAM_GROUP: '/principal/examinations/exam-group',
+    EXAM_SCHEDULE: '/principal/examinations/exam-schedule',
+    GENERAL_EXAM_RESULT: '/principal/examinations/general-exam-result',
+    MARKS_ENTRY: '/principal/examinations/marks-entry',
+    REPORT_CARD: '/principal/examinations/report-card',
+    CBSE_REPORTS: '/principal/examinations/cbse-reports',
+    // Behaviour Records
+    ASSIGN_INCIDENT: '/principal/behaviour-records/assign-incident',
+    INCIDENTS: '/principal/behaviour-records/incidents',
+    BEHAVIOUR_REPORTS: '/principal/behaviour-records/reports',
+    // Communicate
+    NOTICE_BOARD: '/principal/communicate/notice-board',
+    SEND_EMAIL: '/principal/communicate/send-email',
+    SEND_SMS: '/principal/communicate/send-sms',
+    // Fees Collection (view-only)
+    SEARCH_FEES_PAYMENT: '/principal/fees-collection/search-fees-payment',
+    SEARCH_DUE_FEES: '/principal/fees-collection/search-due-fees',
+    FEES_REMINDER: '/principal/fees-collection/fees-reminder',
+    // Reports
+    REPORT_STUDENT_INFO: '/principal/reports/student-information-report',
+    REPORT_PAYROLL: '/principal/reports/payroll-report',
   },
   ACCOUNTANT: {
     DASHBOARD: '/Accountant/dashboard',

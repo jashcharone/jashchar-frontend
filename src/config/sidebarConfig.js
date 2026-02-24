@@ -514,91 +514,91 @@ export const BASE_SIDEBAR = {
       title: 'Student Information',
       icon: Users,
       submenu: [
-        { title: 'Student Details', path: ROUTES.SUPER_ADMIN.STUDENT_DETAILS },
-        { title: 'Student Admission', path: ROUTES.SUPER_ADMIN.STUDENT_ADMISSION },
-        { title: 'Online Admission', path: ROUTES.SUPER_ADMIN.ONLINE_ADMISSION_LIST },
-        { title: 'Disabled Students', path: ROUTES.SUPER_ADMIN.DISABLED_STUDENTS },
+        { title: 'Student Details', path: ROUTES.PRINCIPAL.STUDENT_DETAILS },
+        { title: 'Student Admission', path: ROUTES.PRINCIPAL.STUDENT_ADMISSION },
+        { title: 'Online Admission', path: ROUTES.PRINCIPAL.ONLINE_ADMISSION_LIST },
+        { title: 'Disabled Students', path: ROUTES.PRINCIPAL.DISABLED_STUDENTS },
       ]
     },
     {
       title: 'Human Resource',
       icon: Briefcase,
       submenu: [
-        { title: 'Staff Directory', path: ROUTES.SUPER_ADMIN.STAFF_DIRECTORY },
-        { title: 'Department', path: ROUTES.SUPER_ADMIN.DEPARTMENTS },
-        { title: 'Designation', path: ROUTES.SUPER_ADMIN.DESIGNATIONS },
-        { title: 'Leave Management', path: ROUTES.SUPER_ADMIN.LEAVE_MANAGEMENT },
-        { title: 'Approve Leave Request', path: ROUTES.SUPER_ADMIN.APPROVE_STAFF_LEAVE },
+        { title: 'Staff Directory', path: ROUTES.PRINCIPAL.STAFF_DIRECTORY },
+        { title: 'Department', path: ROUTES.PRINCIPAL.DEPARTMENTS },
+        { title: 'Designation', path: ROUTES.PRINCIPAL.DESIGNATIONS },
+        { title: 'Leave Management', path: ROUTES.PRINCIPAL.LEAVE_MANAGEMENT },
+        { title: 'Approve Leave Request', path: ROUTES.PRINCIPAL.APPROVE_STAFF_LEAVE },
       ]
     },
     {
       title: 'Attendance',
       icon: Calendar,
       submenu: [
-        { title: 'Student Attendance', path: ROUTES.SUPER_ADMIN.STUDENT_ATTENDANCE },
-        { title: 'Staff Attendance', path: ROUTES.SUPER_ADMIN.STAFF_ATTENDANCE },
-        { title: 'Approve Leave', path: ROUTES.SUPER_ADMIN.APPROVE_LEAVE },
-        { title: 'Attendance Report', path: ROUTES.SUPER_ADMIN.ATTENDANCE_REPORT },
+        { title: 'Student Attendance', path: ROUTES.PRINCIPAL.STUDENT_ATTENDANCE },
+        { title: 'Staff Attendance', path: ROUTES.PRINCIPAL.STAFF_ATTENDANCE },
+        { title: 'Approve Leave', path: ROUTES.PRINCIPAL.APPROVE_LEAVE },
+        { title: 'Attendance Report', path: ROUTES.PRINCIPAL.ATTENDANCE_REPORT },
       ]
     },
     {
       title: 'Academics',
       icon: GraduationCap,
       submenu: [
-        { title: 'Class', path: ROUTES.SUPER_ADMIN.CLASSES },
-        { title: 'Sections', path: ROUTES.SUPER_ADMIN.SECTIONS },
-        { title: 'Class Timetable', path: ROUTES.SUPER_ADMIN.CLASS_TIMETABLE },
-        { title: 'Teacher Timetable', path: ROUTES.SUPER_ADMIN.TEACHER_TIMETABLE },
-        { title: 'Assign Class Teacher', path: ROUTES.SUPER_ADMIN.ASSIGN_CLASS_TEACHER },
-        { title: 'Subject Teacher', path: ROUTES.SUPER_ADMIN.SUBJECT_TEACHER },
+        { title: 'Class', path: ROUTES.PRINCIPAL.CLASSES },
+        { title: 'Sections', path: ROUTES.PRINCIPAL.SECTIONS },
+        { title: 'Class Timetable', path: ROUTES.PRINCIPAL.CLASS_TIMETABLE },
+        { title: 'Teacher Timetable', path: ROUTES.PRINCIPAL.TEACHER_TIMETABLE },
+        { title: 'Assign Class Teacher', path: ROUTES.PRINCIPAL.ASSIGN_CLASS_TEACHER },
+        { title: 'Subject Teacher', path: ROUTES.PRINCIPAL.SUBJECT_TEACHER },
       ]
     },
     {
       title: 'Examinations',
       icon: FileText,
       submenu: [
-        { title: 'Exam Group', path: ROUTES.SUPER_ADMIN.EXAM_GROUP },
-        { title: 'Exam Schedule', path: ROUTES.SUPER_ADMIN.EXAM_SCHEDULE },
-        { title: 'Exam Result', path: ROUTES.SUPER_ADMIN.GENERAL_EXAM_RESULT },
-        { title: 'Marks Entry', path: ROUTES.SUPER_ADMIN.MARKS_ENTRY },
-        { title: 'Report Card', path: ROUTES.SUPER_ADMIN.REPORT_CARD },
+        { title: 'Exam Group', path: ROUTES.PRINCIPAL.EXAM_GROUP },
+        { title: 'Exam Schedule', path: ROUTES.PRINCIPAL.EXAM_SCHEDULE },
+        { title: 'Exam Result', path: ROUTES.PRINCIPAL.GENERAL_EXAM_RESULT },
+        { title: 'Marks Entry', path: ROUTES.PRINCIPAL.MARKS_ENTRY },
+        { title: 'Report Card', path: ROUTES.PRINCIPAL.REPORT_CARD },
       ]
     },
     {
       title: 'Behaviour Records',
       icon: AlertTriangle,
       submenu: [
-        { title: 'Assign Incident', path: ROUTES.SUPER_ADMIN.ASSIGN_INCIDENT },
-        { title: 'Incidents', path: ROUTES.SUPER_ADMIN.INCIDENTS },
-        { title: 'Reports', path: ROUTES.SUPER_ADMIN.BEHAVIOUR_REPORTS },
+        { title: 'Assign Incident', path: ROUTES.PRINCIPAL.ASSIGN_INCIDENT },
+        { title: 'Incidents', path: ROUTES.PRINCIPAL.INCIDENTS },
+        { title: 'Reports', path: ROUTES.PRINCIPAL.BEHAVIOUR_REPORTS },
       ]
     },
     {
       title: 'Communicate',
       icon: MessageSquare,
       submenu: [
-        { title: 'Notice Board', path: ROUTES.SUPER_ADMIN.NOTICE_BOARD },
-        { title: 'Send Email', path: ROUTES.SUPER_ADMIN.SEND_EMAIL },
-        { title: 'Send SMS', path: ROUTES.SUPER_ADMIN.SEND_SMS },
+        { title: 'Notice Board', path: ROUTES.PRINCIPAL.NOTICE_BOARD },
+        { title: 'Send Email', path: ROUTES.PRINCIPAL.SEND_EMAIL },
+        { title: 'Send SMS', path: ROUTES.PRINCIPAL.SEND_SMS },
       ]
     },
     {
       title: 'Fees Collection',
       icon: CreditCard,
       submenu: [
-        { title: 'Search Fees Payment', path: ROUTES.SUPER_ADMIN.SEARCH_FEES_PAYMENT },
-        { title: 'Search Due Fees', path: ROUTES.SUPER_ADMIN.SEARCH_DUE_FEES },
-        { title: 'Fees Reminder', path: ROUTES.SUPER_ADMIN.FEES_REMINDER },
+        { title: 'Search Fees Payment', path: ROUTES.PRINCIPAL.SEARCH_FEES_PAYMENT },
+        { title: 'Search Due Fees', path: ROUTES.PRINCIPAL.SEARCH_DUE_FEES },
+        { title: 'Fees Reminder', path: ROUTES.PRINCIPAL.FEES_REMINDER },
       ]
     },
     {
       title: 'Reports',
       icon: BarChart3,
       submenu: [
-        { title: 'Student Information', path: ROUTES.SUPER_ADMIN.REPORT_STUDENT_INFO },
-        { title: 'Attendance', path: ROUTES.SUPER_ADMIN.ATTENDANCE_REPORT },
-        { title: 'Examinations', path: ROUTES.SUPER_ADMIN.CBSE_REPORTS },
-        { title: 'Human Resource', path: ROUTES.SUPER_ADMIN.REPORT_PAYROLL },
+        { title: 'Student Information', path: ROUTES.PRINCIPAL.REPORT_STUDENT_INFO },
+        { title: 'Attendance', path: ROUTES.PRINCIPAL.ATTENDANCE_REPORT },
+        { title: 'Examinations', path: ROUTES.PRINCIPAL.CBSE_REPORTS },
+        { title: 'Human Resource', path: ROUTES.PRINCIPAL.REPORT_PAYROLL },
       ]
     },
   ],

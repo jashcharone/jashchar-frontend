@@ -738,6 +738,43 @@ function App() {
             <Route path="/Admin/*" element={<Navigate to="/Admin/dashboard" replace />} />
             
             <Route path="/Principal/dashboard" element={<ProtectedRoute allowedRoles={['principal']}><PrincipalDashboard /></ProtectedRoute>} />
+            {/* Principal Module Routes - /principal/ prefix */}
+            <Route path={ROUTES.PRINCIPAL.STUDENT_DETAILS} element={<ProtectedRoute allowedRoles={['principal']} requiredModule="student_information"><StudentDetails /></ProtectedRoute>} />
+            <Route path={ROUTES.PRINCIPAL.STUDENT_ADMISSION} element={<ProtectedRoute allowedRoles={['principal']} requiredModule="student_information"><StudentAdmission /></ProtectedRoute>} />
+            <Route path={ROUTES.PRINCIPAL.ONLINE_ADMISSION_LIST} element={<ProtectedRoute allowedRoles={['principal']} requiredModule="student_information"><OnlineAdmissionList /></ProtectedRoute>} />
+            <Route path={ROUTES.PRINCIPAL.DISABLED_STUDENTS} element={<ProtectedRoute allowedRoles={['principal']} requiredModule="student_information"><DisabledStudents /></ProtectedRoute>} />
+            <Route path={ROUTES.PRINCIPAL.STAFF_DIRECTORY} element={<ProtectedRoute allowedRoles={['principal']} requiredModule="human_resource"><StaffDirectory /></ProtectedRoute>} />
+            <Route path={ROUTES.PRINCIPAL.DEPARTMENTS} element={<ProtectedRoute allowedRoles={['principal']} requiredModule="human_resource"><Departments /></ProtectedRoute>} />
+            <Route path={ROUTES.PRINCIPAL.DESIGNATIONS} element={<ProtectedRoute allowedRoles={['principal']} requiredModule="human_resource"><Designations /></ProtectedRoute>} />
+            <Route path={ROUTES.PRINCIPAL.LEAVE_MANAGEMENT} element={<ProtectedRoute allowedRoles={['principal']} requiredModule="human_resource"><LeaveManagement /></ProtectedRoute>} />
+            <Route path={ROUTES.PRINCIPAL.APPROVE_STAFF_LEAVE} element={<ProtectedRoute allowedRoles={['principal']} requiredModule="human_resource"><ApproveStaffLeave /></ProtectedRoute>} />
+            <Route path={ROUTES.PRINCIPAL.STUDENT_ATTENDANCE} element={<ProtectedRoute allowedRoles={['principal']} requiredModule="attendance"><StudentAttendance /></ProtectedRoute>} />
+            <Route path={ROUTES.PRINCIPAL.STAFF_ATTENDANCE} element={<ProtectedRoute allowedRoles={['principal']} requiredModule="attendance"><StaffAttendance /></ProtectedRoute>} />
+            <Route path={ROUTES.PRINCIPAL.APPROVE_LEAVE} element={<ProtectedRoute allowedRoles={['principal']} requiredModule="attendance"><ApproveStudentLeave /></ProtectedRoute>} />
+            <Route path={ROUTES.PRINCIPAL.ATTENDANCE_REPORT} element={<ProtectedRoute allowedRoles={['principal']} requiredModule="attendance"><AttendanceReport /></ProtectedRoute>} />
+            <Route path={ROUTES.PRINCIPAL.CLASSES} element={<ProtectedRoute allowedRoles={['principal']} requiredModule="academics"><Classes /></ProtectedRoute>} />
+            <Route path={ROUTES.PRINCIPAL.SECTIONS} element={<ProtectedRoute allowedRoles={['principal']} requiredModule="academics"><Sections /></ProtectedRoute>} />
+            <Route path={ROUTES.PRINCIPAL.CLASS_TIMETABLE} element={<ProtectedRoute allowedRoles={['principal']} requiredModule="academics"><ClassTimetable /></ProtectedRoute>} />
+            <Route path={ROUTES.PRINCIPAL.TEACHER_TIMETABLE} element={<ProtectedRoute allowedRoles={['principal']} requiredModule="academics"><TeacherTimetable /></ProtectedRoute>} />
+            <Route path={ROUTES.PRINCIPAL.ASSIGN_CLASS_TEACHER} element={<ProtectedRoute allowedRoles={['principal']} requiredModule="academics"><AssignClassTeacher /></ProtectedRoute>} />
+            <Route path={ROUTES.PRINCIPAL.SUBJECT_TEACHER} element={<ProtectedRoute allowedRoles={['principal']} requiredModule="academics"><SubjectTeacher /></ProtectedRoute>} />
+            <Route path={ROUTES.PRINCIPAL.EXAM_GROUP} element={<ProtectedRoute allowedRoles={['principal']} requiredModule="examinations"><ExamGroup /></ProtectedRoute>} />
+            <Route path={ROUTES.PRINCIPAL.EXAM_SCHEDULE} element={<ProtectedRoute allowedRoles={['principal']} requiredModule="examinations"><ExamSchedule /></ProtectedRoute>} />
+            <Route path={ROUTES.PRINCIPAL.GENERAL_EXAM_RESULT} element={<ProtectedRoute allowedRoles={['principal']} requiredModule="examinations"><GeneralExamResult /></ProtectedRoute>} />
+            <Route path={ROUTES.PRINCIPAL.MARKS_ENTRY} element={<ProtectedRoute allowedRoles={['principal']} requiredModule="examinations"><MarksEntry /></ProtectedRoute>} />
+            <Route path={ROUTES.PRINCIPAL.REPORT_CARD} element={<ProtectedRoute allowedRoles={['principal']} requiredModule="examinations"><ReportCard /></ProtectedRoute>} />
+            <Route path={ROUTES.PRINCIPAL.CBSE_REPORTS} element={<ProtectedRoute allowedRoles={['principal']} requiredModule="examinations"><CbseReports /></ProtectedRoute>} />
+            <Route path={ROUTES.PRINCIPAL.ASSIGN_INCIDENT} element={<ProtectedRoute allowedRoles={['principal']} requiredModule="behaviour_records"><AssignIncident /></ProtectedRoute>} />
+            <Route path={ROUTES.PRINCIPAL.INCIDENTS} element={<ProtectedRoute allowedRoles={['principal']} requiredModule="behaviour_records"><Incidents /></ProtectedRoute>} />
+            <Route path={ROUTES.PRINCIPAL.BEHAVIOUR_REPORTS} element={<ProtectedRoute allowedRoles={['principal']} requiredModule="behaviour_records"><BehaviourReports /></ProtectedRoute>} />
+            <Route path={ROUTES.PRINCIPAL.NOTICE_BOARD} element={<ProtectedRoute allowedRoles={['principal']} requiredModule="communicate"><NoticeBoard /></ProtectedRoute>} />
+            <Route path={ROUTES.PRINCIPAL.SEND_EMAIL} element={<ProtectedRoute allowedRoles={['principal']} requiredModule="communicate"><SendEmail /></ProtectedRoute>} />
+            <Route path={ROUTES.PRINCIPAL.SEND_SMS} element={<ProtectedRoute allowedRoles={['principal']} requiredModule="communicate"><SendSms /></ProtectedRoute>} />
+            <Route path={ROUTES.PRINCIPAL.SEARCH_FEES_PAYMENT} element={<ProtectedRoute allowedRoles={['principal']}><SearchFeesPayment /></ProtectedRoute>} />
+            <Route path={ROUTES.PRINCIPAL.SEARCH_DUE_FEES} element={<ProtectedRoute allowedRoles={['principal']}><SearchDueFees /></ProtectedRoute>} />
+            <Route path={ROUTES.PRINCIPAL.FEES_REMINDER} element={<ProtectedRoute allowedRoles={['principal']}><FeesReminder /></ProtectedRoute>} />
+            <Route path={ROUTES.PRINCIPAL.REPORT_STUDENT_INFO} element={<ProtectedRoute allowedRoles={['principal']}><StudentInformationReport /></ProtectedRoute>} />
+            <Route path={ROUTES.PRINCIPAL.REPORT_PAYROLL} element={<ProtectedRoute allowedRoles={['principal']} requiredModule="human_resource"><PayrollReport /></ProtectedRoute>} />
             <Route path="/Principal/*" element={<Navigate to="/Principal/dashboard" replace />} />
             
             <Route path="/VicePrincipal/dashboard" element={<ProtectedRoute allowedRoles={['vice_principal']}><VicePrincipalDashboard /></ProtectedRoute>} />

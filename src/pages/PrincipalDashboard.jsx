@@ -142,20 +142,18 @@ const PrincipalDashboard = () => {
           // Pending leave requests
           supabase.from('leave_requests').select('id', { count: 'exact', head: true })
             .eq('branch_id', branchId).eq('status', 'pending'),
-          // Recent notices
-          supabase.from('notices').select('id, title, publish_date, is_published')
-            .eq('branch_id', branchId).eq('is_published', true)
-            .order('publish_date', { ascending: false }).limit(5),
-          // Classes — handle NULL session_id (some schools store classes without session)
+          // Recent notices (notices table uses notice_date, no is_published column)
+          supabase.from('notices').select('id, title, notice_date, message')
+            .eq('branch_id', branchId)
+            .order('notice_date', { ascending: false }).limit(5),
+          // Classes — handle NULL session_id (classes table has no is_active column)
           supabase.from('classes').select('id', { count: 'exact', head: true })
             .eq('branch_id', branchId)
-            .or(`session_id.eq.${sessionId},session_id.is.null`)
-            .or('is_active.is.null,is_active.eq.true'),
-          // Sections — handle NULL session_id
+            .or(`session_id.eq.${sessionId},session_id.is.null`),
+          // Sections — handle NULL session_id (sections table has no is_active column)
           supabase.from('sections').select('id', { count: 'exact', head: true })
             .eq('branch_id', branchId)
-            .or(`session_id.eq.${sessionId},session_id.is.null`)
-            .or('is_active.is.null,is_active.eq.true'),
+            .or(`session_id.eq.${sessionId},session_id.is.null`),
         ]);
 
         // Debug: Log all query results for troubleshooting
@@ -433,7 +431,7 @@ const PrincipalDashboard = () => {
                         <span className="text-sm font-medium">{notice.title}</span>
                       </div>
                       <span className="text-xs text-muted-foreground">
-                        {notice.publish_date ? new Date(notice.publish_date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' }) : ''}
+                        {notice.notice_date ? new Date(notice.notice_date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' }) : ''}
                       </span>
                     </div>
                   ))}

@@ -121,10 +121,31 @@ const Sidebar = ({ role, isSidebarOpen, isMobile, toggleSidebar, closeSidebar, o
       console.log('[Sidebar] Using enhanced menu:', menuItems.length, 'items');
     }
     
-    // For master_admin and super_admin, return all modules without filtering
-    // super_admin (School Owner) should see all modules in their organization
-    if (normalizedRole === 'master_admin' || normalizedRole === 'super_admin') {
+    // For master_admin, return all modules without filtering (platform-level)
+    if (normalizedRole === 'master_admin') {
       return menuItems;
+    }
+    
+    // For super_admin / school owner roles, apply ONLY attendance module filtering
+    // They have full access to all modules, but attendance submenu respects branch config
+    const isSchoolAdminRole = ['super_admin', 'organization_owner', 'admin', 'school_owner'].includes(normalizedRole);
+    if (isSchoolAdminRole) {
+      if (!hasAttendanceConfig) return menuItems;
+      
+      return menuItems.map(item => {
+        const isAttendanceModule = item.title?.toLowerCase().includes('attendance') || 
+          (item.submenu && item.submenu.some(s => PATH_TO_ATTENDANCE_MODULE[s.path]));
+        
+        if (!isAttendanceModule || !item.submenu) return item;
+        
+        const filteredSubmenu = item.submenu.filter(sub => {
+          if (sub.disabled) return false; // Remove separators like "── Advanced ──"
+          return isPathEnabled(sub.path);
+        });
+        
+        if (filteredSubmenu.length === 0) return null;
+        return { ...item, submenu: filteredSubmenu };
+      }).filter(Boolean);
     }
     
     // For other roles, apply permission filtering

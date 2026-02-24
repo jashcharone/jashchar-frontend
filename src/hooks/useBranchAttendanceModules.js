@@ -46,7 +46,8 @@ export const ATTENDANCE_MODULE_TO_PATH = {
     'advanced_analytics': '/super-admin/attendance/analytics',
     'advanced_report': '/super-admin/attendance/analytics',
     
-    // Enterprise Tier - GPS & AI
+    // Enterprise Tier - GPS, Wearables & AI
+    'wearable_devices': '/super-admin/attendance/wearable-devices',
     'geo_fence': '/super-admin/attendance/geo-fence',
     'gps_tracking': '/super-admin/attendance/gps-tracking',
     'smart_classroom': '/super-admin/attendance/smart-classroom',

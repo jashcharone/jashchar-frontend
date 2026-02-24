@@ -130,12 +130,24 @@ const getDefaultsForRoleType = (roleName) => {
         '*': { view: false, add: false, edit: false, delete: false }
       };
     case 'teacher':
+    case 'subject teacher':
       return {
         'academics': viewOnly,
         'student_information': viewOnly,
         'attendance': viewAdd,
         'examinations': viewAdd,
         'homework': viewAdd,
+        '*': { view: false, add: false, edit: false, delete: false }
+      };
+    case 'class teacher':
+      return {
+        'academics': viewOnly,
+        'student_information': viewOnly,
+        'attendance': viewAddEdit,
+        'examinations': viewAdd,
+        'behaviour_records': viewAdd,
+        'homework': viewAddEdit,
+        'communicate': viewOnly,
         '*': { view: false, add: false, edit: false, delete: false }
       };
     case 'receptionist':
@@ -162,6 +174,83 @@ const getDefaultsForRoleType = (roleName) => {
         'homework': viewAddEdit,
         'task_management': viewAddEdit,
         '*': viewOnly
+      };
+    case 'vice principal':
+      // VP = Deputy Head, nearly same as principal
+      return {
+        'student_information': viewAddEdit,
+        'human_resource': viewAddEdit,
+        'attendance': viewAddEdit,
+        'academics': viewAddEdit,
+        'examinations': viewAddEdit,
+        'behaviour_records': viewAddEdit,
+        'communicate': viewAddEdit,
+        'fees_collection': viewOnly,
+        'library': viewOnly,
+        'transport': viewOnly,
+        'hostel': viewOnly,
+        'front_office': viewOnly,
+        'homework': viewAddEdit,
+        '*': viewOnly
+      };
+    case 'coordinator':
+      return {
+        'academics': viewAddEdit,
+        'student_information': viewOnly,
+        'attendance': viewAdd,
+        'examinations': viewAdd,
+        'homework': viewAddEdit,
+        'communicate': viewOnly,
+        '*': { view: false, add: false, edit: false, delete: false }
+      };
+    case 'cashier':
+      return {
+        'fees_collection': viewAdd,
+        '*': { view: false, add: false, edit: false, delete: false }
+      };
+    case 'lab assistant':
+      return {
+        'inventory': viewAdd,
+        'communicate': viewOnly,
+        '*': { view: false, add: false, edit: false, delete: false }
+      };
+    case 'hostel warden':
+      return {
+        'hostel': viewAddEdit,
+        'student_information': viewOnly,
+        'communicate': viewOnly,
+        '*': { view: false, add: false, edit: false, delete: false }
+      };
+    case 'driver':
+      return {
+        'transport': viewOnly,
+        'communicate': viewOnly,
+        '*': { view: false, add: false, edit: false, delete: false }
+      };
+    case 'sports coach':
+      return {
+        'student_information': viewOnly,
+        'attendance': viewOnly,
+        'communicate': viewOnly,
+        '*': { view: false, add: false, edit: false, delete: false }
+      };
+    case 'security guard':
+      return {
+        'front_office': viewOnly,
+        'communicate': viewOnly,
+        '*': { view: false, add: false, edit: false, delete: false }
+      };
+    case 'maintenance staff':
+    case 'maintenance':
+      return {
+        'inventory': viewAdd,
+        'communicate': viewOnly,
+        '*': { view: false, add: false, edit: false, delete: false }
+      };
+    case 'peon':
+      return {
+        'communicate': viewOnly,
+        '*': { view: false, add: false, edit: false, delete: false }
       };
     case 'admin':
       // Admin usually has more access but maybe not delete

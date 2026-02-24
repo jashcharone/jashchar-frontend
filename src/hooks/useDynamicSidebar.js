@@ -303,13 +303,21 @@ export const useDynamicSidebar = (role) => {
     let effectiveRole = normalizedInputRole;
     
     // ✅ Roles that have their OWN curated sidebar in sidebarConfig.js
-    const rolesWithOwnSidebar = ['student', 'parent', 'teacher', 'principal', 'accountant', 'receptionist', 'librarian', 'master_admin'];
+    const rolesWithOwnSidebar = [
+      'student', 'parent', 'teacher', 'principal', 'master_admin',
+      'accountant', 'receptionist', 'librarian',
+      'vice_principal', 'coordinator', 'class_teacher', 'subject_teacher',
+      'cashier', 'lab_assistant', 'hostel_warden',
+      'driver', 'sports_coach', 'security_guard',
+      'maintenance_staff', 'maintenance', 'peon',
+    ];
     
     // ✅ Roles that share the super_admin sidebar (school owners/admins)
     const schoolAdminRoles = ['organization_owner', 'super_admin', 'admin', 'school_owner'];
     
     if (rolesWithOwnSidebar.includes(normalizedInputRole)) {
-      effectiveRole = normalizedInputRole;
+      // Handle maintenance -> maintenance_staff alias
+      effectiveRole = normalizedInputRole === 'maintenance' ? 'maintenance_staff' : normalizedInputRole;
     } else if (schoolAdminRoles.includes(normalizedInputRole)) {
       effectiveRole = 'super_admin';
     }

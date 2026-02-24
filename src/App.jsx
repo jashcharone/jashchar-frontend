@@ -6,6 +6,7 @@ import SecurityHeaders from '@/components/SecurityHeaders';
 import { lazyWithRetry } from '@/utils/lazyWithRetry';
 import { ROUTES } from '@/registry/routeRegistry';
 import { MASTER_ADMIN_ROUTES } from '@/routes/masterAdminRoutes';
+import StaffModuleRoute from '@/components/StaffModuleRoute';
 import NewModuleRoutes from '@/routes/routes.new.jsx';
 import { NEW_MODULES } from '@/modules/moduleRegistry.append.jsx';
 import DemoAutomationDialog from '@/components/DemoAutomationDialog';
@@ -778,52 +779,36 @@ function App() {
             <Route path="/Principal/*" element={<Navigate to="/Principal/dashboard" replace />} />
             
             <Route path="/VicePrincipal/dashboard" element={<ProtectedRoute allowedRoles={['vice_principal']}><VicePrincipalDashboard /></ProtectedRoute>} />
-            <Route path="/VicePrincipal/*" element={<Navigate to="/VicePrincipal/dashboard" replace />} />
             
             <Route path="/Coordinator/dashboard" element={<ProtectedRoute allowedRoles={['coordinator']}><CoordinatorDashboard /></ProtectedRoute>} />
-            <Route path="/Coordinator/*" element={<Navigate to="/Coordinator/dashboard" replace />} />
             
             <Route path="/Teacher/dashboard" element={<ProtectedRoute allowedRoles={['teacher']}><TeacherDashboard /></ProtectedRoute>} />
-            <Route path="/Teacher/*" element={<Navigate to="/Teacher/dashboard" replace />} />
             
             <Route path="/ClassTeacher/dashboard" element={<ProtectedRoute allowedRoles={['class_teacher']}><ClassTeacherDashboard /></ProtectedRoute>} />
-            <Route path="/ClassTeacher/*" element={<Navigate to="/ClassTeacher/dashboard" replace />} />
             
             <Route path="/SubjectTeacher/dashboard" element={<ProtectedRoute allowedRoles={['subject_teacher']}><TeacherDashboard /></ProtectedRoute>} />
-            <Route path="/SubjectTeacher/*" element={<Navigate to="/SubjectTeacher/dashboard" replace />} />
             
             <Route path="/Accountant/dashboard" element={<ProtectedRoute allowedRoles={['accountant']}><AccountantDashboard /></ProtectedRoute>} />
-            <Route path="/Accountant/*" element={<Navigate to="/Accountant/dashboard" replace />} />
             
             <Route path="/Cashier/dashboard" element={<ProtectedRoute allowedRoles={['cashier']}><CashierDashboard /></ProtectedRoute>} />
-            <Route path="/Cashier/*" element={<Navigate to="/Cashier/dashboard" replace />} />
             
             <Route path="/Receptionist/dashboard" element={<ProtectedRoute allowedRoles={['receptionist']}><ReceptionistDashboard /></ProtectedRoute>} />
-            <Route path="/Receptionist/*" element={<Navigate to="/Receptionist/dashboard" replace />} />
             
             <Route path="/Librarian/dashboard" element={<ProtectedRoute allowedRoles={['librarian']}><LibrarianDashboard /></ProtectedRoute>} />
-            <Route path="/Librarian/*" element={<Navigate to="/Librarian/dashboard" replace />} />
             
             <Route path="/LabAssistant/dashboard" element={<ProtectedRoute allowedRoles={['lab_assistant']}><LabAssistantDashboard /></ProtectedRoute>} />
-            <Route path="/LabAssistant/*" element={<Navigate to="/LabAssistant/dashboard" replace />} />
             
             <Route path="/Driver/dashboard" element={<ProtectedRoute allowedRoles={['driver']}><DriverDashboard /></ProtectedRoute>} />
-            <Route path="/Driver/*" element={<Navigate to="/Driver/dashboard" replace />} />
             
             <Route path="/HostelWarden/dashboard" element={<ProtectedRoute allowedRoles={['hostel_warden']}><HostelWardenDashboard /></ProtectedRoute>} />
-            <Route path="/HostelWarden/*" element={<Navigate to="/HostelWarden/dashboard" replace />} />
             
             <Route path="/SportsCoach/dashboard" element={<ProtectedRoute allowedRoles={['sports_coach']}><SportsCoachDashboard /></ProtectedRoute>} />
-            <Route path="/SportsCoach/*" element={<Navigate to="/SportsCoach/dashboard" replace />} />
             
             <Route path="/SecurityGuard/dashboard" element={<ProtectedRoute allowedRoles={['security_guard']}><SecurityGuardDashboard /></ProtectedRoute>} />
-            <Route path="/SecurityGuard/*" element={<Navigate to="/SecurityGuard/dashboard" replace />} />
             
-            <Route path="/MaintenanceStaff/dashboard" element={<ProtectedRoute allowedRoles={['maintenance']}><MaintenanceStaffDashboard /></ProtectedRoute>} />
-            <Route path="/MaintenanceStaff/*" element={<Navigate to="/MaintenanceStaff/dashboard" replace />} />
+            <Route path="/MaintenanceStaff/dashboard" element={<ProtectedRoute allowedRoles={['maintenance', 'maintenance_staff']}><MaintenanceStaffDashboard /></ProtectedRoute>} />
             
             <Route path="/Peon/dashboard" element={<ProtectedRoute allowedRoles={['peon']}><PeonDashboard /></ProtectedRoute>} />
-            <Route path="/Peon/*" element={<Navigate to="/Peon/dashboard" replace />} />
             
             <Route path="/Parent/dashboard" element={<ProtectedRoute allowedRoles={['parent']}><ParentDashboard /></ProtectedRoute>} />
             <Route path={ROUTES.PARENT.PROFILE} element={<ProtectedRoute allowedRoles={['parent']}><ParentProfile /></ProtectedRoute>} />
@@ -1519,6 +1504,167 @@ function App() {
             <Route path={ROUTES.SUPER_ADMIN.CERT_STAFF_ID} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="certificate"><StaffIDCard /></ProtectedRoute>} />
             <Route path={ROUTES.SUPER_ADMIN.CERT_GENERATE_STAFF_ID} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="certificate"><GenerateStaffIDCard /></ProtectedRoute>} />
             <Route path={ROUTES.SUPER_ADMIN.CERT_STUDENT_ID} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="certificate"><StudentIDCard /></ProtectedRoute>} />
+
+            {/* ═══════════════════════════════════════════════════════════════════════════
+                SHARED STAFF MODULE ROUTES - Dynamic /:roleSlug/ prefix
+                These routes work for ALL 20 staff roles with their own URL prefix.
+                The StaffModuleRoute component validates the URL's roleSlug matches
+                the logged-in user's actual role.
+                ═══════════════════════════════════════════════════════════════════════════ */}
+            
+            {/* Student Information */}
+            <Route path="/:roleSlug/student-information/details" element={<StaffModuleRoute requiredModule="student_information"><StudentDetails /></StaffModuleRoute>} />
+            <Route path="/:roleSlug/student-information/admission" element={<StaffModuleRoute requiredModule="student_information"><StudentAdmission /></StaffModuleRoute>} />
+            <Route path="/:roleSlug/student-information/online-admission" element={<StaffModuleRoute requiredModule="student_information"><OnlineAdmissionList /></StaffModuleRoute>} />
+            <Route path="/:roleSlug/student-information/disabled-students" element={<StaffModuleRoute requiredModule="student_information"><DisabledStudents /></StaffModuleRoute>} />
+            <Route path="/:roleSlug/student-information/profile/:studentId" element={<StaffModuleRoute requiredModule="student_information"><StudentProfile /></StaffModuleRoute>} />
+            <Route path="/:roleSlug/student-information/id-card" element={<StaffModuleRoute requiredModule="student_information"><StudentIdCard /></StaffModuleRoute>} />
+            
+            {/* Front Office */}
+            <Route path="/:roleSlug/front-office/admission-enquiry" element={<StaffModuleRoute requiredModule="front_office"><AdmissionEnquiry /></StaffModuleRoute>} />
+            <Route path="/:roleSlug/front-office/visitor-book" element={<StaffModuleRoute requiredModule="front_office"><VisitorBook /></StaffModuleRoute>} />
+            <Route path="/:roleSlug/front-office/phone-call-log" element={<StaffModuleRoute requiredModule="front_office"><PhoneCallLog /></StaffModuleRoute>} />
+            <Route path="/:roleSlug/front-office/postal-dispatch" element={<StaffModuleRoute requiredModule="front_office"><PostalDispatch /></StaffModuleRoute>} />
+            <Route path="/:roleSlug/front-office/postal-receive" element={<StaffModuleRoute requiredModule="front_office"><PostalReceive /></StaffModuleRoute>} />
+            <Route path="/:roleSlug/front-office/complain" element={<StaffModuleRoute requiredModule="front_office"><Complain /></StaffModuleRoute>} />
+            <Route path="/:roleSlug/front-office/setup" element={<StaffModuleRoute requiredModule="front_office"><SetupFrontOffice /></StaffModuleRoute>} />
+            
+            {/* Academics */}
+            <Route path="/:roleSlug/academics/classes" element={<StaffModuleRoute requiredModule="academics"><Classes /></StaffModuleRoute>} />
+            <Route path="/:roleSlug/academics/sections" element={<StaffModuleRoute requiredModule="academics"><Sections /></StaffModuleRoute>} />
+            <Route path="/:roleSlug/academics/subjects" element={<StaffModuleRoute requiredModule="academics"><Subjects /></StaffModuleRoute>} />
+            <Route path="/:roleSlug/academics/subject-group" element={<StaffModuleRoute requiredModule="academics"><SubjectGroup /></StaffModuleRoute>} />
+            <Route path="/:roleSlug/academics/class-timetable" element={<StaffModuleRoute requiredModule="academics"><ClassTimetable /></StaffModuleRoute>} />
+            <Route path="/:roleSlug/academics/teacher-timetable" element={<StaffModuleRoute requiredModule="academics"><TeacherTimetable /></StaffModuleRoute>} />
+            <Route path="/:roleSlug/academics/assign-class-teacher" element={<StaffModuleRoute requiredModule="academics"><AssignClassTeacher /></StaffModuleRoute>} />
+            <Route path="/:roleSlug/academics/subject-teacher" element={<StaffModuleRoute requiredModule="academics"><SubjectTeacher /></StaffModuleRoute>} />
+            
+            {/* Attendance */}
+            <Route path="/:roleSlug/attendance/student-attendance" element={<StaffModuleRoute requiredModule="attendance"><StudentAttendance /></StaffModuleRoute>} />
+            <Route path="/:roleSlug/attendance/attendance-by-date" element={<StaffModuleRoute requiredModule="attendance"><AttendanceByDate /></StaffModuleRoute>} />
+            <Route path="/:roleSlug/attendance/approve-student-leave" element={<StaffModuleRoute requiredModule="attendance"><ApproveStudentLeave /></StaffModuleRoute>} />
+            <Route path="/:roleSlug/attendance/staff-attendance" element={<StaffModuleRoute requiredModule="attendance"><StaffAttendance /></StaffModuleRoute>} />
+            <Route path="/:roleSlug/attendance/attendance-report" element={<StaffModuleRoute requiredModule="attendance"><AttendanceReport /></StaffModuleRoute>} />
+            
+            {/* Examinations */}
+            <Route path="/:roleSlug/examinations/exam-group" element={<StaffModuleRoute requiredModule="examinations"><ExamGroup /></StaffModuleRoute>} />
+            <Route path="/:roleSlug/examinations/exam-schedule" element={<StaffModuleRoute requiredModule="examinations"><ExamSchedule /></StaffModuleRoute>} />
+            <Route path="/:roleSlug/examinations/general-exam-result" element={<StaffModuleRoute requiredModule="examinations"><GeneralExamResult /></StaffModuleRoute>} />
+            <Route path="/:roleSlug/examinations/marks-entry" element={<StaffModuleRoute requiredModule="examinations"><MarksEntry /></StaffModuleRoute>} />
+            <Route path="/:roleSlug/examinations/enter-marks" element={<StaffModuleRoute requiredModule="examinations"><EnterMarks /></StaffModuleRoute>} />
+            <Route path="/:roleSlug/examinations/report-card" element={<StaffModuleRoute requiredModule="examinations"><ReportCard /></StaffModuleRoute>} />
+            <Route path="/:roleSlug/examinations/cbse-reports" element={<StaffModuleRoute requiredModule="examinations"><CbseReports /></StaffModuleRoute>} />
+            
+            {/* Behaviour Records */}
+            <Route path="/:roleSlug/behaviour-records/assign-incident" element={<StaffModuleRoute requiredModule="behaviour_records"><AssignIncident /></StaffModuleRoute>} />
+            <Route path="/:roleSlug/behaviour-records/incidents" element={<StaffModuleRoute requiredModule="behaviour_records"><Incidents /></StaffModuleRoute>} />
+            <Route path="/:roleSlug/behaviour-records/reports" element={<StaffModuleRoute requiredModule="behaviour_records"><BehaviourReports /></StaffModuleRoute>} />
+            
+            {/* Fees Collection */}
+            <Route path="/:roleSlug/fees-collection/collect-fees" element={<StaffModuleRoute requiredModule="fees_collection"><CollectFees /></StaffModuleRoute>} />
+            <Route path="/:roleSlug/fees-collection/search-fees-payment" element={<StaffModuleRoute><SearchFeesPayment /></StaffModuleRoute>} />
+            <Route path="/:roleSlug/fees-collection/search-due-fees" element={<StaffModuleRoute><SearchDueFees /></StaffModuleRoute>} />
+            <Route path="/:roleSlug/fees-collection/fees-master" element={<StaffModuleRoute requiredModule="fees_collection"><FeesMaster /></StaffModuleRoute>} />
+            <Route path="/:roleSlug/fees-collection/fees-group" element={<StaffModuleRoute requiredModule="fees_collection"><FeesGroup /></StaffModuleRoute>} />
+            <Route path="/:roleSlug/fees-collection/fees-type" element={<StaffModuleRoute requiredModule="fees_collection"><FeesType /></StaffModuleRoute>} />
+            <Route path="/:roleSlug/fees-collection/fees-discount" element={<StaffModuleRoute requiredModule="fees_collection"><FeesDiscount /></StaffModuleRoute>} />
+            <Route path="/:roleSlug/fees-collection/fees-reminder" element={<StaffModuleRoute><FeesReminder /></StaffModuleRoute>} />
+            <Route path="/:roleSlug/fees-collection/quick-fees" element={<StaffModuleRoute requiredModule="fees_collection"><QuickFees /></StaffModuleRoute>} />
+            <Route path="/:roleSlug/fees-collection/offline-bank-payments" element={<StaffModuleRoute requiredModule="fees_collection"><CollectFees /></StaffModuleRoute>} />
+            <Route path="/:roleSlug/fees-collection/online-payment" element={<StaffModuleRoute requiredModule="fees_collection"><OnlinePayment /></StaffModuleRoute>} />
+            <Route path="/:roleSlug/fees-collection/student-fees/:studentId" element={<StaffModuleRoute requiredModule="fees_collection"><StudentFees /></StaffModuleRoute>} />
+            <Route path="/:roleSlug/fees-collection/print-fees-receipt/:paymentId" element={<StaffModuleRoute><PrintFeesReceipt /></StaffModuleRoute>} />
+            <Route path="/:roleSlug/fees-collection/print-transport-receipt/:paymentId" element={<StaffModuleRoute><PrintTransportReceipt /></StaffModuleRoute>} />
+            <Route path="/:roleSlug/fees-collection/print-hostel-receipt/:paymentId" element={<StaffModuleRoute><PrintHostelReceipt /></StaffModuleRoute>} />
+            
+            {/* Finance */}
+            <Route path="/:roleSlug/finance/income" element={<StaffModuleRoute requiredModule="income"><Income /></StaffModuleRoute>} />
+            <Route path="/:roleSlug/finance/add-income" element={<StaffModuleRoute requiredModule="income"><AddIncome /></StaffModuleRoute>} />
+            <Route path="/:roleSlug/finance/income-head" element={<StaffModuleRoute requiredModule="income"><IncomeHead /></StaffModuleRoute>} />
+            <Route path="/:roleSlug/finance/expense" element={<StaffModuleRoute requiredModule="expenses"><Expense /></StaffModuleRoute>} />
+            <Route path="/:roleSlug/finance/add-expense" element={<StaffModuleRoute requiredModule="expenses"><AddExpense /></StaffModuleRoute>} />
+            <Route path="/:roleSlug/finance/expense-head" element={<StaffModuleRoute requiredModule="expenses"><ExpenseHead /></StaffModuleRoute>} />
+            
+            {/* Human Resource */}
+            <Route path="/:roleSlug/human-resource/staff-directory" element={<StaffModuleRoute requiredModule="human_resource"><StaffDirectory /></StaffModuleRoute>} />
+            <Route path="/:roleSlug/human-resource/departments" element={<StaffModuleRoute requiredModule="human_resource"><Departments /></StaffModuleRoute>} />
+            <Route path="/:roleSlug/human-resource/designations" element={<StaffModuleRoute requiredModule="human_resource"><Designations /></StaffModuleRoute>} />
+            <Route path="/:roleSlug/human-resource/leave-management" element={<StaffModuleRoute requiredModule="human_resource"><LeaveManagement /></StaffModuleRoute>} />
+            <Route path="/:roleSlug/human-resource/approve-staff-leave" element={<StaffModuleRoute requiredModule="human_resource"><ApproveStaffLeave /></StaffModuleRoute>} />
+            <Route path="/:roleSlug/human-resource/staff-apply-leave" element={<StaffModuleRoute requiredModule="human_resource"><StaffApplyLeave /></StaffModuleRoute>} />
+            <Route path="/:roleSlug/human-resource/payroll" element={<StaffModuleRoute requiredModule="human_resource"><EmployeePayroll /></StaffModuleRoute>} />
+            <Route path="/:roleSlug/human-resource/staff-profile/:employeeId" element={<StaffModuleRoute requiredModule="human_resource"><StaffProfile /></StaffModuleRoute>} />
+            
+            {/* Communicate */}
+            <Route path="/:roleSlug/communicate/notice-board" element={<StaffModuleRoute requiredModule="communicate"><NoticeBoard /></StaffModuleRoute>} />
+            <Route path="/:roleSlug/communicate/send-email" element={<StaffModuleRoute requiredModule="communicate"><SendEmail /></StaffModuleRoute>} />
+            <Route path="/:roleSlug/communicate/send-sms" element={<StaffModuleRoute requiredModule="communicate"><SendSms /></StaffModuleRoute>} />
+            
+            {/* Library */}
+            <Route path="/:roleSlug/library/book-list" element={<StaffModuleRoute requiredModule="library"><LibraryBooks /></StaffModuleRoute>} />
+            <Route path="/:roleSlug/library/books" element={<StaffModuleRoute requiredModule="library"><LibraryBooks /></StaffModuleRoute>} />
+            <Route path="/:roleSlug/library/book-issued" element={<StaffModuleRoute requiredModule="library"><LibraryBookIssued /></StaffModuleRoute>} />
+            <Route path="/:roleSlug/library/members" element={<StaffModuleRoute requiredModule="library"><LibraryMembers /></StaffModuleRoute>} />
+            <Route path="/:roleSlug/library/issue-return" element={<StaffModuleRoute requiredModule="library"><LibraryIssueReturn /></StaffModuleRoute>} />
+            <Route path="/:roleSlug/library/add-book" element={<StaffModuleRoute requiredModule="library"><LibraryBooks /></StaffModuleRoute>} />
+            <Route path="/:roleSlug/library/library-card" element={<StaffModuleRoute requiredModule="library"><LibraryBooks /></StaffModuleRoute>} />
+            
+            {/* Hostel */}
+            <Route path="/:roleSlug/hostel/hostels" element={<StaffModuleRoute requiredModule="hostel"><Hostels /></StaffModuleRoute>} />
+            <Route path="/:roleSlug/hostel/hostel-rooms" element={<StaffModuleRoute requiredModule="hostel"><HostelRooms /></StaffModuleRoute>} />
+            <Route path="/:roleSlug/hostel/room-types" element={<StaffModuleRoute requiredModule="hostel"><RoomTypes /></StaffModuleRoute>} />
+            <Route path="/:roleSlug/hostel/hostel-fee" element={<StaffModuleRoute requiredModule="hostel"><HostelFee /></StaffModuleRoute>} />
+            <Route path="/:roleSlug/hostel/hostel-analysis" element={<StaffModuleRoute requiredModule="hostel"><HostelAnalysis /></StaffModuleRoute>} />
+            
+            {/* Transport */}
+            <Route path="/:roleSlug/transport/transport-routes" element={<StaffModuleRoute requiredModule="transport"><TransportRoutes /></StaffModuleRoute>} />
+            <Route path="/:roleSlug/transport/transport-vehicles" element={<StaffModuleRoute requiredModule="transport"><TransportVehicles /></StaffModuleRoute>} />
+            <Route path="/:roleSlug/transport/pickup-points" element={<StaffModuleRoute requiredModule="transport"><PickupPoints /></StaffModuleRoute>} />
+            <Route path="/:roleSlug/transport/route-pickup-point" element={<StaffModuleRoute requiredModule="transport"><RoutePickupPoint /></StaffModuleRoute>} />
+            <Route path="/:roleSlug/transport/assign-vehicle" element={<StaffModuleRoute requiredModule="transport"><AssignVehicle /></StaffModuleRoute>} />
+            <Route path="/:roleSlug/transport/student-transport-fees" element={<StaffModuleRoute requiredModule="transport"><StudentTransportFees /></StaffModuleRoute>} />
+            <Route path="/:roleSlug/transport/transport-fees-master" element={<StaffModuleRoute requiredModule="transport"><TransportFeesMaster /></StaffModuleRoute>} />
+            <Route path="/:roleSlug/transport/transport-analysis" element={<StaffModuleRoute requiredModule="transport"><TransportAnalysis /></StaffModuleRoute>} />
+            
+            {/* Inventory */}
+            <Route path="/:roleSlug/inventory/issue-item" element={<StaffModuleRoute requiredModule="inventory"><IssueItem /></StaffModuleRoute>} />
+            <Route path="/:roleSlug/inventory/add-item-stock" element={<StaffModuleRoute requiredModule="inventory"><AddItemStock /></StaffModuleRoute>} />
+            <Route path="/:roleSlug/inventory/item-stock" element={<StaffModuleRoute requiredModule="inventory"><AddItemStock /></StaffModuleRoute>} />
+            <Route path="/:roleSlug/inventory/add-item" element={<StaffModuleRoute requiredModule="inventory"><AddItem /></StaffModuleRoute>} />
+            <Route path="/:roleSlug/inventory/item-category" element={<StaffModuleRoute requiredModule="inventory"><ItemCategory /></StaffModuleRoute>} />
+            <Route path="/:roleSlug/inventory/item-store" element={<StaffModuleRoute requiredModule="inventory"><ItemStore /></StaffModuleRoute>} />
+            <Route path="/:roleSlug/inventory/item-supplier" element={<StaffModuleRoute requiredModule="inventory"><ItemSupplier /></StaffModuleRoute>} />
+            
+            {/* Homework & Lesson Plan */}
+            <Route path="/:roleSlug/homework/add-homework" element={<StaffModuleRoute requiredModule="homework"><HomeworkList /></StaffModuleRoute>} />
+            <Route path="/:roleSlug/homework/homework-list" element={<StaffModuleRoute requiredModule="homework"><HomeworkList /></StaffModuleRoute>} />
+            <Route path="/:roleSlug/homework/evaluate-homework" element={<StaffModuleRoute requiredModule="homework"><HomeworkList /></StaffModuleRoute>} />
+            <Route path="/:roleSlug/lesson-plan/manage-lessons" element={<StaffModuleRoute requiredModule="homework"><HomeworkList /></StaffModuleRoute>} />
+            <Route path="/:roleSlug/lesson-plan/syllabus-status" element={<StaffModuleRoute requiredModule="homework"><HomeworkList /></StaffModuleRoute>} />
+            
+            {/* Live Classes */}
+            <Route path="/:roleSlug/gmeet-live-classes/live-classes" element={<StaffModuleRoute requiredModule="gmeet_live_classes"><LiveClasses /></StaffModuleRoute>} />
+            <Route path="/:roleSlug/gmeet-live-classes/live-meeting" element={<StaffModuleRoute requiredModule="gmeet_live_classes"><LiveClasses /></StaffModuleRoute>} />
+            
+            {/* Online Course */}
+            <Route path="/:roleSlug/online-course" element={<StaffModuleRoute requiredModule="online_course"><OnlineCourse /></StaffModuleRoute>} />
+            
+            {/* Reports */}
+            <Route path="/:roleSlug/reports/student-information-report" element={<StaffModuleRoute><StudentInformationReport /></StaffModuleRoute>} />
+            <Route path="/:roleSlug/reports/attendance-report" element={<StaffModuleRoute requiredModule="attendance"><AttendanceReport /></StaffModuleRoute>} />
+            <Route path="/:roleSlug/reports/payroll-report" element={<StaffModuleRoute requiredModule="human_resource"><PayrollReport /></StaffModuleRoute>} />
+            <Route path="/:roleSlug/reports/income-report" element={<StaffModuleRoute requiredModule="income"><IncomeReport /></StaffModuleRoute>} />
+            <Route path="/:roleSlug/reports/expense-report" element={<StaffModuleRoute requiredModule="expenses"><ExpenseReport /></StaffModuleRoute>} />
+            <Route path="/:roleSlug/reports/income-expense-balance-report" element={<StaffModuleRoute requiredModule="income"><IncomeExpenseBalanceReport /></StaffModuleRoute>} />
+            <Route path="/:roleSlug/reports/daily-collection-report" element={<StaffModuleRoute requiredModule="fees_collection"><DailyCollectionReport /></StaffModuleRoute>} />
+            <Route path="/:roleSlug/reports/fees-collection-report" element={<StaffModuleRoute requiredModule="fees_collection"><FeesCollectionReport /></StaffModuleRoute>} />
+            <Route path="/:roleSlug/reports/fees-statement-report" element={<StaffModuleRoute requiredModule="fees_collection"><FeesStatementReport /></StaffModuleRoute>} />
+            <Route path="/:roleSlug/reports/balance-fees-report" element={<StaffModuleRoute requiredModule="fees_collection"><BalanceFeesReport /></StaffModuleRoute>} />
+            <Route path="/:roleSlug/reports/library/book-issue" element={<StaffModuleRoute requiredModule="library"><LibraryBookIssued /></StaffModuleRoute>} />
+            
+            {/* Profile & Password (available to all staff) */}
+            <Route path="/:roleSlug/profile" element={<StaffModuleRoute><SchoolOwnerProfile /></StaffModuleRoute>} />
+            <Route path="/:roleSlug/reset-password" element={<StaffModuleRoute><SchoolOwnerResetPassword /></StaffModuleRoute>} />
 
             {/* ? DYNAMIC NEW MODULES */}
             {NEW_MODULES.map((module) => (

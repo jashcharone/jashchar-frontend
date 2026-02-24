@@ -98,7 +98,19 @@ const PrincipalDashboard = () => {
     const fetchDashboardData = async () => {
       const branchId = selectedBranch?.id || user?.profile?.branch_id;
       const sessionId = currentSessionId;
-      if (!branchId || !sessionId) return;
+      
+      console.log('[PrincipalDashboard] Fetching data:', { 
+        branchId, sessionId, 
+        selectedBranch: selectedBranch?.id, 
+        profileBranch: user?.profile?.branch_id,
+        userId: user?.id 
+      });
+      
+      if (!branchId || !sessionId) {
+        console.warn('[PrincipalDashboard] Missing branchId or sessionId, skipping fetch');
+        setLoading(false);
+        return;
+      }
 
       setLoading(true);
       try {
@@ -134,15 +146,32 @@ const PrincipalDashboard = () => {
           supabase.from('notices').select('id, title, publish_date, is_published')
             .eq('branch_id', branchId).eq('is_published', true)
             .order('publish_date', { ascending: false }).limit(5),
-          // Classes
+          // Classes — handle NULL session_id (some schools store classes without session)
           supabase.from('classes').select('id', { count: 'exact', head: true })
-            .eq('branch_id', branchId).eq('session_id', sessionId)
+            .eq('branch_id', branchId)
+            .or(`session_id.eq.${sessionId},session_id.is.null`)
             .or('is_active.is.null,is_active.eq.true'),
-          // Sections
+          // Sections — handle NULL session_id
           supabase.from('sections').select('id', { count: 'exact', head: true })
-            .eq('branch_id', branchId).eq('session_id', sessionId)
+            .eq('branch_id', branchId)
+            .or(`session_id.eq.${sessionId},session_id.is.null`)
             .or('is_active.is.null,is_active.eq.true'),
         ]);
+
+        // Debug: Log all query results for troubleshooting
+        if (studentsRes.error) console.error('[PrincipalDashboard] Students error:', studentsRes.error);
+        if (staffRes.error) console.error('[PrincipalDashboard] Staff error:', staffRes.error);
+        if (studentAttRes.error) console.error('[PrincipalDashboard] StudentAtt error:', studentAttRes.error);
+        if (staffAttRes.error) console.error('[PrincipalDashboard] StaffAtt error:', staffAttRes.error);
+        if (pendingLeavesRes.error) console.error('[PrincipalDashboard] Leaves error:', pendingLeavesRes.error);
+        if (noticesRes.error) console.error('[PrincipalDashboard] Notices error:', noticesRes.error);
+        if (classesRes.error) console.error('[PrincipalDashboard] Classes error:', classesRes.error);
+        if (sectionsRes.error) console.error('[PrincipalDashboard] Sections error:', sectionsRes.error);
+        
+        console.log('[PrincipalDashboard] Results:', {
+          students: studentsRes.count, staff: staffRes.data?.length,
+          classes: classesRes.count, sections: sectionsRes.count
+        });
 
         // Students
         const totalStudents = studentsRes.count || 0;

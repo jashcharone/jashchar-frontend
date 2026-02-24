@@ -380,6 +380,11 @@ const ERP_FIELD_MAPPINGS = {
             'fee_opening_balance', 'opening_balance', 'opening balance', 'openingbalance',
             'pending', 'pending fee', 'pending_fee', 'balance', 'due balance', 'due_balance',
             'outstanding', 'arrears', 'carry forward', 'carry_forward'
+        ],
+        'fee_discount': [
+            'fee_discount', 'fee_concession', 'discount', 'concession', 'discount_amount',
+            'total_concession', 'total concession', 'totalconcession', 'fee discount',
+            'scholarship', 'waiver', 'rebate', 'deduction'
         ]
     }
 };
@@ -406,6 +411,7 @@ const TARGET_FIELDS = [
     { key: 'fee_total_due', label: 'Total Fee Due', required: false, type: 'currency' },
     { key: 'fee_paid_amount', label: 'Fees Paid', required: false, type: 'currency' },
     { key: 'fee_opening_balance', label: 'Pending/Opening Balance', required: false, type: 'currency' },
+    { key: 'fee_discount', label: 'Fee Discount/Concession', required: false, type: 'currency' },
     
     // --- Extended Info ---
     { key: 'blood_group', label: 'Blood Group', required: false, type: 'select', options: ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'] },
@@ -1697,32 +1703,38 @@ const BulkUpload = () => {
                             console.log(`[Fee Import] ✅ Allocated ${allocations.length} fee masters to student ${studentId} (all shown as DUE)`);
                         }
                         
-                        // 2. Record fee payments if fee_paid_amount > 0 (from old ERP migration data)
-                        // This ensures: Total Due - Paid = Balance (which can be carried forward to next session)
+                        // 2. Record fee payments if fee_paid_amount > 0 OR fee_discount > 0 (from old ERP migration data)
+                        // This ensures: Total Due - Paid - Discount = Balance
                         const paidAmount = parseFloat(record.fee_paid_amount) || 0;
-                        if (paidAmount > 0) {
-                            let remaining = paidAmount;
+                        const discountAmount = parseFloat(record.fee_discount) || 0;
+                        if (paidAmount > 0 || discountAmount > 0) {
+                            let remainingPaid = paidAmount;
+                            let remainingDiscount = discountAmount;
                             const payments = [];
                             
-                            // Distribute paid amount across fee_masters in due_date order
+                            // Distribute paid amount + discount across fee_masters in due_date order
                             for (const fm of feeMasters) {
-                                if (remaining <= 0) break;
+                                if (remainingPaid <= 0 && remainingDiscount <= 0) break;
                                 const fmAmount = parseFloat(fm.amount);
-                                const payAmount = Math.min(remaining, fmAmount);
+                                const payAmount = Math.min(remainingPaid, fmAmount);
+                                const discForThisFee = Math.min(remainingDiscount, fmAmount - payAmount);
                                 
-                                payments.push({
-                                    student_id: studentId,
-                                    fee_master_id: fm.id,
-                                    amount: payAmount,
-                                    payment_date: new Date().toISOString().split('T')[0],
-                                    payment_mode: 'Migration Import',
-                                    note: 'Imported from previous ERP (MCB)',
-                                    branch_id: branchId,
-                                    session_id: selectedSession,
-                                    organization_id: organizationId,
-                                });
-                                
-                                remaining -= payAmount;
+                                if (payAmount > 0 || discForThisFee > 0) {
+                                    payments.push({
+                                        student_id: studentId,
+                                        fee_master_id: fm.id,
+                                        amount: payAmount,
+                                        discount_amount: discForThisFee,
+                                        payment_date: new Date().toISOString().split('T')[0],
+                                        payment_mode: 'Migration Import',
+                                        note: discForThisFee > 0 ? `Imported from previous ERP (MCB) - includes ₹${discForThisFee} concession/discount` : 'Imported from previous ERP (MCB)',
+                                        branch_id: branchId,
+                                        session_id: selectedSession,
+                                        organization_id: organizationId,
+                                    });
+                                    remainingPaid -= payAmount;
+                                    remainingDiscount -= discForThisFee;
+                                }
                             }
                             
                             if (payments.length > 0) {
@@ -1733,7 +1745,8 @@ const BulkUpload = () => {
                                 if (payError) {
                                     console.error(`[Fee Import] Payment error for student ${studentId}:`, payError.message);
                                 } else {
-                                    console.log(`[Fee Import] ✅ Paid ₹${paidAmount}, Balance ₹${(parseFloat(record.fee_total_due) || 0) - paidAmount} for student ${studentId}`);
+                                    const totalDue = parseFloat(record.fee_total_due) || 0;
+                                    console.log(`[Fee Import] ✅ Paid ₹${paidAmount}, Discount ₹${discountAmount}, Balance ₹${totalDue - paidAmount - discountAmount} for student ${studentId}`);
                                 }
                             }
                         }

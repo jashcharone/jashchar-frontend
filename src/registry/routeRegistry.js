@@ -139,6 +139,7 @@ export const ROUTES = {
     ASSIGN_CLASS_TEACHER: '/super-admin/academics/assign-class-teacher',
     PROMOTE_STUDENT: '/super-admin/academics/promote-student',
     SUBJECT_TEACHER: '/super-admin/academics/subject-teacher',
+    ACADEMIC_ANALYSIS: '/super-admin/academics/academic-analysis',
     // Multi Branch
     MULTI_BRANCH_OVERVIEW: '/super-admin/multi-branch/overview',
     BRANCH_LIST: '/super-admin/multi-branch/overview',
@@ -166,6 +167,7 @@ export const ROUTES = {
     DISABLE_REASON: '/super-admin/student-information/disable-reason',
     MULTI_CLASS_STUDENT: '/super-admin/student-information/multi-class',
     BULK_DELETE: '/super-admin/student-information/bulk-delete',
+    STUDENT_ANALYSIS: '/super-admin/student-information/student-analysis',
     STUDENT_BULK_UPLOAD: '/super-admin/student-information/bulk-upload',
     STUDENT_ID_CARD: '/super-admin/student-information/id-card',
     // Behaviour
@@ -236,6 +238,7 @@ export const ROUTES = {
     FEES_DISCOUNT: '/super-admin/fees-collection/fees-discount',
     FEES_CARRY_FORWARD: '/super-admin/fees-collection/fees-carry-forward',
     FEES_REMINDER: '/super-admin/fees-collection/fees-reminder',
+    FEES_ANALYSIS: '/super-admin/fees-collection/fees-analysis',
     PRINT_FEES_RECEIPT: '/super-admin/fees-collection/print-fees-receipt/:paymentId',
     PRINT_SELECTED_FEES: '/super-admin/fees-collection/print-selected-fees',
     QUICK_FEES: '/super-admin/fees-collection/quick-fees',

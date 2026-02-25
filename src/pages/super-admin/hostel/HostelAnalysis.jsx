@@ -1,5 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
 import { supabase } from '@/lib/customSupabaseClient';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
@@ -7,11 +6,14 @@ import { useBranch } from '@/contexts/BranchContext';
 import { useToast } from '@/components/ui/use-toast';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { 
-  Building, Users, IndianRupee, BedDouble, ArrowLeft, Loader2, TrendingUp, 
-  Home, DoorOpen, AlertCircle, CheckCircle, Clock, BarChart3, PieChart, Percent
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  Building, Users, IndianRupee, BedDouble, Loader2, TrendingUp,
+  Home, DoorOpen, AlertCircle, CheckCircle, Clock, BarChart3, PieChart, Percent,
+  Printer, FileSpreadsheet, RefreshCw, Calendar, Filter
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { format } from 'date-fns';
 
 // Simple progress bar component
 const ProgressBar = ({ value, max, color = 'bg-primary', label }) => {
@@ -54,7 +56,7 @@ const StatCard = ({ title, value, subtitle, icon: Icon, color = 'text-primary', 
 );
 
 const HostelAnalysis = () => {
-  const navigate = useNavigate();
+  const printRef = useRef();
   const { user, currentSessionId, organizationId } = useAuth();
   const { selectedBranch } = useBranch();
   const { toast } = useToast();
@@ -75,11 +77,25 @@ const HostelAnalysis = () => {
   const [classWiseData, setClassWiseData] = useState([]);
   const [hostelWiseData, setHostelWiseData] = useState([]);
   const [roomTypeData, setRoomTypeData] = useState([]);
+  const [sessions, setSessions] = useState([]);
+  const [selectedSessionId, setSelectedSessionId] = useState(currentSessionId);
 
   const branchId = selectedBranch?.id || user?.profile?.branch_id;
 
+  const fetchSessions = useCallback(async () => {
+    if (!selectedBranch) return;
+    const { data } = await supabase.from('sessions')
+      .select('id, name, is_active')
+      .eq('branch_id', selectedBranch.id)
+      .order('name', { ascending: false });
+    setSessions(data || []);
+  }, [selectedBranch]);
+
+  useEffect(() => { fetchSessions(); }, [fetchSessions]);
+  useEffect(() => { if (currentSessionId) setSelectedSessionId(currentSessionId); }, [currentSessionId]);
+
   const fetchAnalyticsData = useCallback(async () => {
-    if (!branchId || !currentSessionId) return;
+    if (!branchId || !selectedSessionId) return;
     setLoading(true);
 
     try {
@@ -93,7 +109,7 @@ const HostelAnalysis = () => {
           room:hostel_rooms(id, room_number_name)
         `)
         .eq('branch_id', branchId)
-        .eq('session_id', currentSessionId);
+        .eq('session_id', selectedSessionId);
 
       if (hostelError) throw hostelError;
 
@@ -241,7 +257,7 @@ const HostelAnalysis = () => {
     } finally {
       setLoading(false);
     }
-  }, [branchId, currentSessionId, toast]);
+  }, [branchId, selectedSessionId, toast]);
 
   useEffect(() => {
     fetchAnalyticsData();
@@ -251,37 +267,117 @@ const HostelAnalysis = () => {
     return new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(amount);
   };
 
-  if (loading) {
-    return (
-      <DashboardLayout>
-        <div className="flex items-center justify-center h-96">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        </div>
-      </DashboardLayout>
-    );
-  }
+  // === PRINT REPORT ===
+  const handlePrint = () => {
+    const printWindow = window.open('', '_blank');
+    const sessionName = sessions.find(s => s.id === selectedSessionId)?.name || 'Active';
+    printWindow.document.write(`
+      <html><head><title>Hostel Analysis - ${selectedBranch?.name || 'School'}</title>
+      <style>
+        body { font-family: 'Segoe UI', sans-serif; margin: 20px; color: #333; }
+        h1 { font-size: 20px; color: #1a1a2e; border-bottom: 2px solid #1a1a2e; padding-bottom: 8px; }
+        h2 { font-size: 16px; margin-top: 24px; color: #16213e; }
+        .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin: 16px 0; }
+        .stat-box { border: 1px solid #ddd; border-radius: 8px; padding: 12px; text-align: center; }
+        .stat-value { font-size: 22px; font-weight: bold; }
+        .stat-label { font-size: 11px; color: #666; text-transform: uppercase; }
+        table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 13px; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background: #f8f9fa; font-weight: 600; }
+        .footer { margin-top: 30px; font-size: 10px; color: #999; text-align: center; border-top: 1px solid #eee; padding-top: 10px; }
+      </style></head><body>
+      <h1>Hostel Analysis Report</h1>
+      <p><strong>School:</strong> ${selectedBranch?.name || ''} | <strong>Session:</strong> ${sessionName} | <strong>Generated:</strong> ${format(new Date(), 'dd MMM yyyy, hh:mm a')}</p>
+      <div class="stats-grid">
+        <div class="stat-box"><div class="stat-value">${stats.totalHostellers}</div><div class="stat-label">Hostellers</div></div>
+        <div class="stat-box"><div class="stat-value">${stats.occupancyPercent}%</div><div class="stat-label">Occupancy</div></div>
+        <div class="stat-box"><div class="stat-value">${formatCurrency(stats.totalRevenue)}</div><div class="stat-label">Revenue</div></div>
+        <div class="stat-box"><div class="stat-value">${stats.totalHostels} / ${stats.totalRooms}</div><div class="stat-label">Hostels / Rooms</div></div>
+      </div>
+      <h2>Class-wise Hostel Occupancy</h2>
+      <table>
+        <thead><tr><th>Class</th><th>Students</th><th>Revenue</th><th>%</th></tr></thead>
+        <tbody>${classWiseData.map(c => `<tr><td>${c.className}</td><td>${c.count}</td><td>${formatCurrency(c.revenue)}</td><td>${c.percentage}%</td></tr>`).join('')}</tbody>
+      </table>
+      <h2>Hostel-wise Occupancy</h2>
+      <table>
+        <thead><tr><th>Hostel</th><th>Occupied</th><th>Capacity</th><th>Available</th><th>Occupancy %</th></tr></thead>
+        <tbody>${hostelWiseData.map(h => `<tr><td>${h.hostelName}</td><td>${h.studentCount}</td><td>${h.totalCapacity}</td><td>${h.available}</td><td>${h.occupancy}%</td></tr>`).join('')}</tbody>
+      </table>
+      <div class="footer">Generated by Jashchar ERP</div>
+      </body></html>
+    `);
+    printWindow.document.close();
+    setTimeout(() => printWindow.print(), 500);
+  };
+
+  // === EXPORT CSV ===
+  const handleExportExcel = () => {
+    const rows = [['Class', 'Students', 'Revenue', '%']];
+    classWiseData.forEach(c => rows.push([c.className, c.count, c.revenue, `${c.percentage}%`]));
+    rows.push([]);
+    rows.push(['Hostel', 'Occupied', 'Capacity', 'Available', 'Occupancy %']);
+    hostelWiseData.forEach(h => rows.push([h.hostelName, h.studentCount, h.totalCapacity, h.available, `${h.occupancy}%`]));
+    const csv = rows.map(r => r.map(v => `"${v}"`).join(',')).join('\n');
+    const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `Hostel_Analysis_${format(new Date(), 'yyyy-MM-dd')}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast({ title: 'Exported successfully', description: 'Hostel analysis data exported to CSV' });
+  };
 
   return (
     <DashboardLayout>
-      <div className="p-6 space-y-6">
+      <div className="p-6 space-y-6" ref={printRef}>
         {/* Header */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <Button variant="ghost" size="sm" onClick={() => navigate(-1)} className="gap-2">
-              <ArrowLeft className="h-4 w-4" /> Back
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-2">
+          <div>
+            <h1 className="text-2xl font-bold flex items-center gap-2">
+              <Building className="h-7 w-7 text-purple-600" />
+              Hostel Analysis
+            </h1>
+            <p className="text-sm text-muted-foreground mt-1">Comprehensive hostel analytics & insights</p>
+          </div>
+          <div className="flex items-center gap-2 flex-wrap">
+            <Button variant="outline" size="sm" onClick={fetchAnalyticsData} disabled={loading}>
+              <RefreshCw className={cn("h-4 w-4 mr-1", loading && "animate-spin")} /> Refresh
             </Button>
-            <div>
-              <h1 className="text-2xl font-bold flex items-center gap-2">
-                <BarChart3 className="h-6 w-6 text-primary" />
-                Hostel Analysis
-              </h1>
-              <p className="text-sm text-muted-foreground">
-                {selectedBranch?.branch_name} • Session Overview
-              </p>
-            </div>
+            <Button variant="outline" size="sm" onClick={handlePrint}>
+              <Printer className="h-4 w-4 mr-1" /> Print
+            </Button>
+            <Button variant="outline" size="sm" onClick={handleExportExcel}>
+              <FileSpreadsheet className="h-4 w-4 mr-1" /> Export Excel
+            </Button>
           </div>
         </div>
 
+        {/* Session Filter */}
+        <Card className="mb-4">
+          <CardContent className="p-4">
+            <div className="flex flex-wrap items-end gap-4">
+              <div className="space-y-1 min-w-[200px]">
+                <label className="text-xs font-medium text-muted-foreground flex items-center gap-1"><Calendar className="h-3 w-3" /> Session</label>
+                <Select value={selectedSessionId || ''} onValueChange={setSelectedSessionId}>
+                  <SelectTrigger className="h-9"><SelectValue placeholder="Select Session" /></SelectTrigger>
+                  <SelectContent>
+                    {sessions.map(s => <SelectItem key={s.id} value={s.id}>{s.name}{s.is_active ? ' ✦' : ''}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {loading ? (
+          <div className="flex items-center justify-center py-20">
+            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+            <span className="ml-3 text-muted-foreground">Loading hostel analytics...</span>
+          </div>
+        ) : (
+          <>
         {/* KPI Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <StatCard 
@@ -479,6 +575,8 @@ const HostelAnalysis = () => {
               </div>
             </CardContent>
           </Card>
+        )}
+          </>
         )}
       </div>
     </DashboardLayout>

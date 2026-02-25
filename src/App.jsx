@@ -254,6 +254,7 @@ const ClassTeacher = lazy(() => import('@/pages/super-admin/academics/ClassTeach
 const SubjectTeacher = lazy(() => import('@/pages/super-admin/academics/SubjectTeacher'));
 const AssignClassTeacher = lazy(() => import('@/pages/super-admin/academics/AssignClassTeacher'));
 const PromoteStudent = lazy(() => import('@/pages/super-admin/academics/PromoteStudent'));
+const AcademicAnalysis = lazy(() => import('@/pages/super-admin/academics/AcademicAnalysis'));
 
 // Student Info
 const StudentAdmission = lazy(() => import('@/pages/super-admin/student-information/StudentAdmission'));
@@ -270,6 +271,7 @@ const MultiClassStudent = lazy(() => import('@/pages/super-admin/student-informa
 const BulkDelete = lazy(() => import('@/pages/super-admin/student-information/BulkDelete'));
 const BulkUpload = lazy(() => import('@/pages/super-admin/student-information/BulkUpload'));
 const StudentIdCard = lazy(() => import('@/pages/super-admin/student-information/StudentIdCard'));
+const StudentAnalysis = lazy(() => import('@/pages/super-admin/student-information/StudentAnalysis'));
 
 // HR
 const EmployeeFormSettings = lazy(() => import('@/pages/super-admin/human-resource/EmployeeFormSettings.jsx'));
@@ -326,6 +328,7 @@ const PrintHostelReceipt = lazy(() => import('@/pages/super-admin/fees-collectio
 const PrintSelectedFees = lazy(() => import('@/pages/super-admin/fees-collection/PrintSelectedFees'));
 const QuickFees = lazy(() => import('@/pages/super-admin/fees-collection/QuickFees'));
 const OnlinePayment = lazy(() => import('@/pages/super-admin/fees-collection/OnlinePayment'));
+const FeesAnalysis = lazy(() => import('@/pages/super-admin/fees-collection/FeesAnalysis'));
 
 // Examinations
 const ExamGroup = lazy(() => import('@/pages/super-admin/examinations/ExamGroup'));
@@ -1286,6 +1289,7 @@ function App() {
             <Route path={ROUTES.SUPER_ADMIN.TIMETABLE} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'teacher']} requiredModule="academics"><Timetable /></ProtectedRoute>} />
             <Route path={ROUTES.SUPER_ADMIN.ASSIGN_CLASS_TEACHER} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'principal']} requiredModule="academics"><AssignClassTeacher /></ProtectedRoute>} />
             <Route path={ROUTES.SUPER_ADMIN.PROMOTE_STUDENT} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="academics"><PromoteStudent /></ProtectedRoute>} />
+            <Route path={ROUTES.SUPER_ADMIN.ACADEMIC_ANALYSIS} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'principal']} requiredModule="academics"><AcademicAnalysis /></ProtectedRoute>} />
 
             {/* ? Student Information */}
             <Route path={ROUTES.SUPER_ADMIN.STUDENT_ADMISSION} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'principal']} requiredModule="student_information"><StudentAdmission /></ProtectedRoute>} />
@@ -1302,6 +1306,7 @@ function App() {
             <Route path={ROUTES.SUPER_ADMIN.BULK_DELETE} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="student_information"><BulkDelete /></ProtectedRoute>} />
             <Route path={ROUTES.SUPER_ADMIN.STUDENT_BULK_UPLOAD} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="student_information"><BulkUpload /></ProtectedRoute>} />
             <Route path={ROUTES.SUPER_ADMIN.STUDENT_ID_CARD} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="student_information"><StudentIdCard /></ProtectedRoute>} />
+            <Route path={ROUTES.SUPER_ADMIN.STUDENT_ANALYSIS} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'principal']} requiredModule="student_information"><StudentAnalysis /></ProtectedRoute>} />
 
             {/* ? HR */}
             <Route path={ROUTES.SUPER_ADMIN.EMPLOYEE_FORM_SETTINGS} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="human_resource"><EmployeeFormSettings /></ProtectedRoute>} />
@@ -1370,6 +1375,7 @@ function App() {
             <Route path={ROUTES.SUPER_ADMIN.PRINT_SELECTED_FEES} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'accountant']}><PrintSelectedFees /></ProtectedRoute>} />
             <Route path={ROUTES.SUPER_ADMIN.QUICK_FEES} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'accountant']}><QuickFees /></ProtectedRoute>} />
             <Route path={ROUTES.SUPER_ADMIN.ONLINE_PAYMENT} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'accountant']}><OnlinePayment /></ProtectedRoute>} />
+            <Route path={ROUTES.SUPER_ADMIN.FEES_ANALYSIS} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'accountant', 'principal']}><FeesAnalysis /></ProtectedRoute>} />
 
             {/* ? Examinations */}
             <Route path={ROUTES.SUPER_ADMIN.EXAM_GROUP} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'teacher', 'principal']} requiredModule="examinations"><ExamGroup /></ProtectedRoute>} />

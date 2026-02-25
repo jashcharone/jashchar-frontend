@@ -105,6 +105,7 @@ export const BASE_SIDEBAR = {
         { title: 'Disable Reason', path: ROUTES.SUPER_ADMIN.DISABLE_REASON },
         { title: 'Multi Class Student', path: ROUTES.SUPER_ADMIN.MULTI_CLASS_STUDENT },
         { title: 'Bulk Delete', path: ROUTES.SUPER_ADMIN.BULK_DELETE },
+        { title: 'Student Analysis', path: ROUTES.SUPER_ADMIN.STUDENT_ANALYSIS },
       ],
     },
     {
@@ -133,6 +134,7 @@ export const BASE_SIDEBAR = {
         { title: 'Fees Discount', path: ROUTES.SUPER_ADMIN.FEES_DISCOUNT },
         { title: 'Fees Carry Forward', path: ROUTES.SUPER_ADMIN.FEES_CARRY_FORWARD },
         { title: 'Fees Reminder', path: ROUTES.SUPER_ADMIN.FEES_REMINDER },
+        { title: 'Fees Analysis', path: ROUTES.SUPER_ADMIN.FEES_ANALYSIS },
       ],
     },
     {
@@ -231,6 +233,7 @@ export const BASE_SIDEBAR = {
         { title: 'Class Timetable', path: ROUTES.SUPER_ADMIN.CLASS_TIMETABLE },
         { title: 'Teachers Timetable', path: ROUTES.SUPER_ADMIN.TEACHER_TIMETABLE },
         { title: 'Promote Students', path: ROUTES.SUPER_ADMIN.PROMOTE_STUDENT },
+        { title: 'Academic Analysis', path: ROUTES.SUPER_ADMIN.ACADEMIC_ANALYSIS },
       ],
     },
      {

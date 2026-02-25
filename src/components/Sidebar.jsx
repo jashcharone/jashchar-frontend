@@ -147,7 +147,8 @@ const Sidebar = ({ role, isSidebarOpen, isMobile, toggleSidebar, closeSidebar, o
     
     // For other roles, apply permission filtering
     return menuItems.filter(item => {
-      if (item.path === '/staff/dashboard' || item.path === '/student/dashboard') return true;
+      // Dashboard always visible for all roles
+      if (item.title === 'Dashboard') return true;
       
       const moduleSlug = item.slug || SIDEBAR_TO_MODULE_MAP[item.title] || item.title.toLowerCase().replace(/\s+/g, '_');
       

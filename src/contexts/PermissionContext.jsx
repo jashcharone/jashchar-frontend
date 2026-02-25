@@ -594,6 +594,14 @@ export const PermissionProvider = ({ children }) => {
                     };
                 }
             });
+
+            // ✅ Always ensure dashboard + profile access for all staff roles
+            if (!permMap['dashboard']) {
+                permMap['dashboard'] = { can_view: true, can_add: false, can_edit: false, can_delete: false };
+            }
+            if (!permMap['my_profile']) {
+                permMap['my_profile'] = { can_view: true, can_add: false, can_edit: true, can_delete: false };
+            }
         } else if (normalizedRole === 'school_owner' || normalizedRole === 'admin' || normalizedRole === 'organization_owner') {
             // Fallback: School Owner gets ALL permissions for allowed modules if no specific permissions set
             // If allowedModules is empty (e.g. plan fetch failed), we default to ALL modules for safety in dev

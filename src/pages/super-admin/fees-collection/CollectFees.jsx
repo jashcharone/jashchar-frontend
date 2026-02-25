@@ -9,8 +9,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Search, Loader2 } from 'lucide-react';
-import { format } from 'date-fns';
+import { Progress } from '@/components/ui/progress';
+import { Search, Loader2, IndianRupee, Users, AlertCircle, CheckCircle2, Clock, Phone } from 'lucide-react';
+
 
 const CollectFees = () => {
     const navigate = useNavigate();
@@ -27,6 +28,7 @@ const CollectFees = () => {
     const [students, setStudents] = useState([]);
     const [loading, setLoading] = useState(false);
     const [searched, setSearched] = useState(false);
+    const [feesData, setFeesData] = useState({}); // { studentId: { total, paid, balance, progress } }
 
     const fetchClasses = useCallback(async () => {
         if (!branchId || !selectedBranch) return;
@@ -89,7 +91,7 @@ const CollectFees = () => {
             // Use student_profiles directly - it's faster and more reliable
             let query = supabase
                 .from('student_profiles')
-                .select('id, full_name, father_name, phone, school_code, session_id, date_of_birth, classes!student_profiles_class_id_fkey(name), sections!student_profiles_section_id_fkey(name)')
+                .select('id, full_name, father_name, mother_name, phone, father_phone, mother_phone, guardian_phone, school_code, session_id, date_of_birth, gender, photo_url, admission_date, classes!student_profiles_class_id_fkey(name), sections!student_profiles_section_id_fkey(name)')
                 .eq('branch_id', selectedBranch.id)
                 .eq('class_id', selectedClass);
             
@@ -110,6 +112,13 @@ const CollectFees = () => {
 
             if (error) throw error;
             setStudents(data || []);
+            
+            // Fetch fees progress for found students
+            if (data && data.length > 0) {
+                await fetchFeesProgress(data.map(s => s.id));
+            } else {
+                setFeesData({});
+            }
         } catch (error) {
             console.error('Search error:', error);
             toast({ variant: 'destructive', title: 'Error searching students', description: error.message });
@@ -117,6 +126,87 @@ const CollectFees = () => {
         } finally {
             setLoading(false);
         }
+    };
+
+    // Fetch fee allocations and payments for fee progress display
+    const fetchFeesProgress = async (studentIds) => {
+        try {
+            const [allocRes, payRes] = await Promise.all([
+                supabase
+                    .from('student_fee_allocations')
+                    .select('student_id, fee_master:fee_masters(amount)')
+                    .in('student_id', studentIds),
+                supabase
+                    .from('fee_payments')
+                    .select('student_id, amount')
+                    .in('student_id', studentIds)
+                    .is('reverted_at', null)
+            ]);
+
+            const progressMap = {};
+            studentIds.forEach(id => {
+                progressMap[id] = { total: 0, paid: 0, balance: 0, progress: 0 };
+            });
+
+            if (allocRes.data) {
+                allocRes.data.forEach(alloc => {
+                    const amount = parseFloat(alloc.fee_master?.amount || 0);
+                    if (progressMap[alloc.student_id]) {
+                        progressMap[alloc.student_id].total += amount;
+                    }
+                });
+            }
+
+            if (payRes.data) {
+                payRes.data.forEach(pay => {
+                    if (progressMap[pay.student_id]) {
+                        progressMap[pay.student_id].paid += parseFloat(pay.amount || 0);
+                    }
+                });
+            }
+
+            Object.keys(progressMap).forEach(id => {
+                const { total, paid } = progressMap[id];
+                progressMap[id].balance = Math.max(0, total - paid);
+                progressMap[id].progress = total > 0 ? Math.min(100, Math.round((paid / total) * 100)) : 0;
+            });
+
+            setFeesData(progressMap);
+        } catch (error) {
+            console.error('Error fetching fees progress:', error);
+        }
+    };
+
+    // Summary stats for the searched students
+    const summaryStats = (() => {
+        const studentIds = students.map(s => s.id);
+        let totalStudents = students.length;
+        let fullyPaid = 0;
+        let partialPaid = 0;
+        let unpaid = 0;
+        let totalFees = 0;
+        let totalCollected = 0;
+        let totalBalance = 0;
+
+        studentIds.forEach(id => {
+            const f = feesData[id];
+            if (f) {
+                totalFees += f.total;
+                totalCollected += f.paid;
+                totalBalance += f.balance;
+                if (f.progress >= 100) fullyPaid++;
+                else if (f.progress > 0) partialPaid++;
+                else unpaid++;
+            } else {
+                unpaid++;
+            }
+        });
+
+        return { totalStudents, fullyPaid, partialPaid, unpaid, totalFees, totalCollected, totalBalance };
+    })();
+
+    const getGuardianPhone = (student) => {
+        return student.father_phone || student.mother_phone || student.guardian_phone || student.phone || '-';
     };
 
     return (
@@ -164,59 +254,210 @@ const CollectFees = () => {
             </Card>
 
             {searched && (
-                 <Card>
-                    <CardHeader>
-                        <CardTitle>Student List</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        {loading ? <div className="flex justify-center p-8"><Loader2 className="animate-spin" /></div> : (
-                             <div className="overflow-x-auto">
-                                <table className="w-full text-sm">
-                                    <thead>
-                                        <tr className="border-b text-left text-muted-foreground">
-                                            <th className="p-2 font-medium">Admission No</th>
-                                            <th className="p-2 font-medium">Student Name</th>
-                                            <th className="p-2 font-medium">Class</th>
-                                            <th className="p-2 font-medium">Father Name</th>
-                                            <th className="p-2 font-medium">Date of Birth</th>
-                                            <th className="p-2 font-medium">Phone</th>
-                                            <th className="p-2 font-medium text-right">Action</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {students.length > 0 ? students.map(student => (
-                                            <tr key={student.id} className="border-b hover:bg-muted/50 transition-colors">
-                                                <td className="p-2">{student.school_code || '-'}</td>
-                                                <td className="p-2 font-medium">{student.full_name}</td>
-                                                <td className="p-2">{student.classes?.name} {student.sections?.name ? `(${student.sections.name})` : ''}</td>
-                                                <td className="p-2">{student.father_name || '-'}</td>
-                                                <td className="p-2">
-                                                    {student.date_of_birth ? (
-                                                        (() => {
-                                                            try {
-                                                                return format(new Date(student.date_of_birth), 'dd-MM-yyyy');
-                                                            } catch (e) {
-                                                                return student.date_of_birth; // Fallback to raw value
-                                                            }
-                                                        })()
-                                                    ) : '-'}
-                                                </td>
-                                                <td className="p-2">{student.phone || '-'}</td>
-                                                <td className="p-2 text-right">
-                                                    <Button size="sm" onClick={() => navigate(`/super-admin/fees-collection/student-fees/${student.id}`)}>
-                                                        $ Collect Fees
-                                                    </Button>
-                                                </td>
+                <>
+                    {/* Summary Stats Cards */}
+                    {students.length > 0 && (
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                            <Card className="border-blue-200 bg-blue-50 dark:bg-blue-950/30 dark:border-blue-800">
+                                <CardContent className="p-4">
+                                    <div className="flex items-center gap-3">
+                                        <div className="p-2 rounded-full bg-blue-100 dark:bg-blue-900">
+                                            <Users className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                                        </div>
+                                        <div>
+                                            <p className="text-xs text-blue-600 dark:text-blue-400 font-medium">Total Students</p>
+                                            <p className="text-2xl font-bold text-blue-700 dark:text-blue-300">{summaryStats.totalStudents}</p>
+                                        </div>
+                                    </div>
+                                </CardContent>
+                            </Card>
+                            <Card className="border-green-200 bg-green-50 dark:bg-green-950/30 dark:border-green-800">
+                                <CardContent className="p-4">
+                                    <div className="flex items-center gap-3">
+                                        <div className="p-2 rounded-full bg-green-100 dark:bg-green-900">
+                                            <CheckCircle2 className="h-5 w-5 text-green-600 dark:text-green-400" />
+                                        </div>
+                                        <div>
+                                            <p className="text-xs text-green-600 dark:text-green-400 font-medium">Fully Paid</p>
+                                            <p className="text-2xl font-bold text-green-700 dark:text-green-300">{summaryStats.fullyPaid}</p>
+                                        </div>
+                                    </div>
+                                </CardContent>
+                            </Card>
+                            <Card className="border-amber-200 bg-amber-50 dark:bg-amber-950/30 dark:border-amber-800">
+                                <CardContent className="p-4">
+                                    <div className="flex items-center gap-3">
+                                        <div className="p-2 rounded-full bg-amber-100 dark:bg-amber-900">
+                                            <Clock className="h-5 w-5 text-amber-600 dark:text-amber-400" />
+                                        </div>
+                                        <div>
+                                            <p className="text-xs text-amber-600 dark:text-amber-400 font-medium">Partial</p>
+                                            <p className="text-2xl font-bold text-amber-700 dark:text-amber-300">{summaryStats.partialPaid}</p>
+                                        </div>
+                                    </div>
+                                </CardContent>
+                            </Card>
+                            <Card className="border-red-200 bg-red-50 dark:bg-red-950/30 dark:border-red-800">
+                                <CardContent className="p-4">
+                                    <div className="flex items-center gap-3">
+                                        <div className="p-2 rounded-full bg-red-100 dark:bg-red-900">
+                                            <AlertCircle className="h-5 w-5 text-red-600 dark:text-red-400" />
+                                        </div>
+                                        <div>
+                                            <p className="text-xs text-red-600 dark:text-red-400 font-medium">Unpaid</p>
+                                            <p className="text-2xl font-bold text-red-700 dark:text-red-300">{summaryStats.unpaid}</p>
+                                        </div>
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        </div>
+                    )}
+
+                    {/* Fee Collection Summary Bar */}
+                    {students.length > 0 && summaryStats.totalFees > 0 && (
+                        <Card className="mb-6 border-indigo-200 dark:border-indigo-800">
+                            <CardContent className="p-4">
+                                <div className="flex flex-wrap items-center justify-between gap-4">
+                                    <div className="flex items-center gap-6">
+                                        <div>
+                                            <p className="text-xs text-muted-foreground">Total Fees</p>
+                                            <p className="text-lg font-bold flex items-center"><IndianRupee className="h-4 w-4" />{summaryStats.totalFees.toLocaleString('en-IN')}</p>
+                                        </div>
+                                        <div className="h-8 w-px bg-border"></div>
+                                        <div>
+                                            <p className="text-xs text-green-600 dark:text-green-400">Collected</p>
+                                            <p className="text-lg font-bold text-green-600 dark:text-green-400 flex items-center"><IndianRupee className="h-4 w-4" />{summaryStats.totalCollected.toLocaleString('en-IN')}</p>
+                                        </div>
+                                        <div className="h-8 w-px bg-border"></div>
+                                        <div>
+                                            <p className="text-xs text-red-600 dark:text-red-400">Balance</p>
+                                            <p className="text-lg font-bold text-red-600 dark:text-red-400 flex items-center"><IndianRupee className="h-4 w-4" />{summaryStats.totalBalance.toLocaleString('en-IN')}</p>
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center gap-3 min-w-[200px]">
+                                        <Progress value={summaryStats.totalFees > 0 ? Math.round((summaryStats.totalCollected / summaryStats.totalFees) * 100) : 0} className="h-3 flex-1" />
+                                        <span className="text-sm font-bold">{summaryStats.totalFees > 0 ? Math.round((summaryStats.totalCollected / summaryStats.totalFees) * 100) : 0}%</span>
+                                    </div>
+                                </div>
+                            </CardContent>
+                        </Card>
+                    )}
+
+                    {/* Student List Table */}
+                    <Card>
+                        <CardHeader className="pb-3">
+                            <CardTitle className="flex items-center gap-2">
+                                <Users className="h-5 w-5" />
+                                Student List
+                                {students.length > 0 && <span className="text-sm font-normal text-muted-foreground ml-2">({students.length} students)</span>}
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            {loading ? <div className="flex justify-center p-8"><Loader2 className="animate-spin" /></div> : (
+                                <div className="overflow-x-auto">
+                                    <table className="w-full text-sm">
+                                        <thead>
+                                            <tr className="border-b bg-muted/50">
+                                                <th className="p-3 font-semibold text-left w-10">#</th>
+                                                <th className="p-3 font-semibold text-left">Student</th>
+                                                <th className="p-3 font-semibold text-left">Class</th>
+                                                <th className="p-3 font-semibold text-left">Guardian / Phone</th>
+                                                <th className="p-3 font-semibold text-left min-w-[220px]">Fees Status</th>
+                                                <th className="p-3 font-semibold text-center">Action</th>
                                             </tr>
-                                        )) : (
-                                            <tr><td colSpan="7" className="p-8 text-center text-muted-foreground">No students found.</td></tr>
-                                        )}
-                                    </tbody>
-                                </table>
-                            </div>
-                        )}
-                    </CardContent>
-                </Card>
+                                        </thead>
+                                        <tbody>
+                                            {students.length > 0 ? students.map((student, index) => {
+                                                const fee = feesData[student.id] || { total: 0, paid: 0, balance: 0, progress: 0 };
+                                                const progressColor = fee.progress >= 100 ? 'text-green-600 dark:text-green-400' : fee.progress > 0 ? 'text-amber-600 dark:text-amber-400' : 'text-red-600 dark:text-red-400';
+                                                const progressBg = fee.progress >= 100 ? 'bg-green-50 dark:bg-green-950/30' : fee.progress > 0 ? 'bg-amber-50 dark:bg-amber-950/20' : '';
+                                                const badgeColor = fee.progress >= 100 ? 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300' : fee.progress > 0 ? 'bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-300' : 'bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300';
+                                                const badgeText = fee.progress >= 100 ? 'Paid' : fee.progress > 0 ? 'Partial' : fee.total > 0 ? 'Unpaid' : 'No Fees';
+
+                                                return (
+                                                    <tr key={student.id} className={`border-b hover:bg-muted/50 transition-colors ${progressBg}`}>
+                                                        <td className="p-3 text-muted-foreground">{index + 1}</td>
+                                                        <td className="p-3">
+                                                            <div className="flex items-center gap-3">
+                                                                {/* Avatar */}
+                                                                <div className="h-10 w-10 rounded-full bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center text-white font-bold text-sm shrink-0">
+                                                                    {student.photo_url ? (
+                                                                        <img src={student.photo_url} alt="" className="h-10 w-10 rounded-full object-cover" />
+                                                                    ) : (
+                                                                        student.full_name?.charAt(0)?.toUpperCase() || '?'
+                                                                    )}
+                                                                </div>
+                                                                <div>
+                                                                    <p className="font-semibold text-foreground">{student.full_name}</p>
+                                                                    <p className="text-xs text-muted-foreground">{student.school_code || 'No Admission No'}</p>
+                                                                </div>
+                                                            </div>
+                                                        </td>
+                                                        <td className="p-3">
+                                                            <div>
+                                                                <p className="font-medium">{student.classes?.name || '-'}</p>
+                                                                {student.sections?.name && <p className="text-xs text-muted-foreground">Section: {student.sections.name}</p>}
+                                                            </div>
+                                                        </td>
+                                                        <td className="p-3">
+                                                            <div>
+                                                                <p className="font-medium text-sm">{student.father_name || student.mother_name || '-'}</p>
+                                                                <p className="text-xs text-emerald-600 dark:text-emerald-400 flex items-center gap-1 mt-0.5">
+                                                                    <Phone className="h-3 w-3" />
+                                                                    {getGuardianPhone(student)}
+                                                                </p>
+                                                            </div>
+                                                        </td>
+                                                        <td className="p-3">
+                                                            <div className="space-y-1.5">
+                                                                <div className="flex items-center justify-between gap-2">
+                                                                    <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${badgeColor}`}>{badgeText}</span>
+                                                                    <span className={`text-xs font-bold ${progressColor}`}>{fee.progress}%</span>
+                                                                </div>
+                                                                <Progress value={fee.progress} className="h-2" />
+                                                                <div className="flex items-center justify-between text-xs">
+                                                                    <span className="text-green-600 dark:text-green-400 flex items-center"><IndianRupee className="h-3 w-3" />{fee.paid.toLocaleString('en-IN')}</span>
+                                                                    <span className="text-muted-foreground">/</span>
+                                                                    <span className="text-muted-foreground flex items-center"><IndianRupee className="h-3 w-3" />{fee.total.toLocaleString('en-IN')}</span>
+                                                                </div>
+                                                                {fee.balance > 0 && (
+                                                                    <p className="text-xs text-red-600 dark:text-red-400 font-medium flex items-center gap-0.5">
+                                                                        <AlertCircle className="h-3 w-3" />
+                                                                        Due: <IndianRupee className="h-3 w-3" />{fee.balance.toLocaleString('en-IN')}
+                                                                    </p>
+                                                                )}
+                                                            </div>
+                                                        </td>
+                                                        <td className="p-3 text-center">
+                                                            <Button 
+                                                                size="sm" 
+                                                                className={fee.balance > 0 ? 'bg-red-600 hover:bg-red-700 text-white' : 'bg-green-600 hover:bg-green-700 text-white'}
+                                                                onClick={() => navigate(`/super-admin/fees-collection/student-fees/${student.id}`)}
+                                                            >
+                                                                <IndianRupee className="h-3.5 w-3.5 mr-1" />
+                                                                {fee.balance > 0 ? 'Collect' : 'View'}
+                                                            </Button>
+                                                        </td>
+                                                    </tr>
+                                                );
+                                            }) : (
+                                                <tr>
+                                                    <td colSpan="6" className="p-12 text-center">
+                                                        <div className="flex flex-col items-center gap-2 text-muted-foreground">
+                                                            <Users className="h-10 w-10 opacity-30" />
+                                                            <p className="text-lg font-medium">No students found</p>
+                                                            <p className="text-sm">Try adjusting your search criteria</p>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            )}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            )}
+                        </CardContent>
+                    </Card>
+                </>
             )}
         </DashboardLayout>
     );

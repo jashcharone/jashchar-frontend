@@ -8,14 +8,13 @@ export const staffApi = {
         return response.data;
     },
 
-    searchStaffByMobile: async (mobile) => {
+    searchStaffByMobile: async (mobile, organizationId) => {
         // Normalize mobile (remove +91 or 91 prefix for search if needed, or search both)
         // We'll search via Supabase directly for speed/simplicity as per current pattern
-        // or add a backend endpoint. Let's use Supabase directly here as it's a read op.
         
         const cleanMobile = mobile.replace(/\D/g, '');
         // Search for exact match or with +91
-        const { data, error } = await supabase
+        let query = supabase
             .from('employee_profiles')
             .select(`
                 id, 
@@ -24,19 +23,27 @@ export const staffApi = {
                 phone, 
                 email,
                 branch_id,
+                organization_id,
                 designation:designations(name)
             `)
-            .or(`phone.eq.${cleanMobile},phone.eq.+91${cleanMobile},phone.eq.91${cleanMobile}`)
-            .maybeSingle();
+            .or(`phone.eq.${cleanMobile},phone.eq.+91${cleanMobile},phone.eq.91${cleanMobile}`);
+        
+        // ✅ CROSS-ORG FIX: Filter by organization to only find duplicates within SAME org
+        if (organizationId) {
+            query = query.eq('organization_id', organizationId);
+        }
+            
+        const { data, error } = await query.maybeSingle();
             
         if (error && error.code !== 'PGRST116') throw error;
         return data;
     },
 
-    checkUserExistence: async (mobile, email) => {
+    checkUserExistence: async (mobile, email, branchId) => {
         const params = new URLSearchParams();
         if (mobile) params.append('mobile', mobile);
         if (email) params.append('email', email);
+        if (branchId) params.append('branch_id', branchId);
 
         const response = await api.get(`/staff/check-existence?${params.toString()}`);
         return response.data;

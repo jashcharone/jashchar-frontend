@@ -33,7 +33,7 @@ const AddEmployee = () => {
     const { toast } = useToast();
     const location = useLocation();
     const navigate = useNavigate();
-    const { user } = useAuth();
+    const { user, organizationId } = useAuth();
     const { selectedBranch, branches } = useBranch(); // Get all branches to check count
     
     const stateBranchId = location.state?.branch_id;
@@ -476,26 +476,44 @@ const AddEmployee = () => {
         setLoading(true);
         try {
             // 1. Check Central User Registry (Owners, Staff, etc.)
-            const userCheck = await staffApi.checkUserExistence(searchMobile, null);
+            const currentBranchId = formData.branch_id || selectedBranch?.id || branchId;
+            const userCheck = await staffApi.checkUserExistence(searchMobile, null, currentBranchId);
             
             if (userCheck.exists) {
-                // Found in users table (could be owner or existing staff)
+                if (userCheck.crossOrg) {
+                    // ✅ CROSS-ORG: User exists in another org — allow linking to current branch
+                    setSearchResult({ 
+                        exists: true, 
+                        crossOrg: true, 
+                        full_name: userCheck.users[0]?.email || 'Existing User',
+                        ...userCheck.users[0] 
+                    });
+                    setHasSearched(true);
+                    toast({ 
+                        title: 'Cross-Organization User Found', 
+                        description: 'This user exists in another organization. You can link them to this branch.' 
+                    });
+                    return;
+                }
+                
+                // Same org/branch duplicate — block
                 setSearchResult({ 
                     exists: true, 
-                    full_name: 'Existing User', // We might not get full details for security, but we know it exists
+                    full_name: 'Existing User',
                     ...userCheck.users[0] 
                 });
                 setHasSearched(true);
                 toast({ 
                     variant: 'destructive', 
                     title: 'Duplicate Found', 
-                    description: 'This mobile number is already registered in the system (User/Owner). Login is based on mobile number, so duplicates are not allowed.' 
+                    description: 'This mobile number is already registered in this branch. Duplicates are not allowed.' 
                 });
                 return;
             }
 
-            // 2. Check Employee Profiles (Legacy/Specific check)
-            const result = await staffApi.searchStaffByMobile(searchMobile);
+            // 2. Check Employee Profiles (filtered by current organization)
+            const currentOrgId = organizationId || user?.profile?.organization_id || selectedBranch?.organization_id;
+            const result = await staffApi.searchStaffByMobile(searchMobile, currentOrgId);
             setSearchResult(result);
             setHasSearched(true);
             
@@ -503,7 +521,7 @@ const AddEmployee = () => {
                 toast({ 
                     variant: 'destructive', 
                     title: 'Duplicate Found', 
-                    description: 'This mobile number is already registered as Staff.' 
+                    description: 'This mobile number is already registered as Staff in this organization.' 
                 });
             }
         } catch (error) {
@@ -515,7 +533,12 @@ const AddEmployee = () => {
     };
 
     const handleContinueToCreate = () => {
-        setFormData(prev => ({ ...prev, phone: searchMobile }));
+        setFormData(prev => ({ 
+            ...prev, 
+            phone: searchMobile,
+            // ✅ CROSS-ORG: Pre-fill email if available from cross-org user
+            ...(searchResult?.crossOrg && searchResult?.email ? { email: searchResult.email } : {})
+        }));
         setCurrentStep(1);
     };
 
@@ -950,33 +973,70 @@ const AddEmployee = () => {
                     {hasSearched && (
                         <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
                             {searchResult ? (
-                                <div className="bg-yellow-500/10 p-6 rounded-lg border border-yellow-500/20 shadow-sm">
-                                    <div className="flex items-center gap-3 mb-4">
-                                        <div className="bg-yellow-500/20 p-2 rounded-full">
-                                            <User className="w-5 h-5 text-yellow-600 dark:text-yellow-400" />
+                                searchResult.crossOrg ? (
+                                    /* ✅ CROSS-ORG: User exists in another org — show info + continue button */
+                                    <div className="bg-blue-500/10 p-6 rounded-lg border border-blue-500/20 shadow-sm">
+                                        <div className="flex items-center gap-3 mb-4">
+                                            <div className="bg-blue-500/20 p-2 rounded-full">
+                                                <User className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                                            </div>
+                                            <h3 className="font-bold text-blue-700 dark:text-blue-300 text-lg">Cross-Organization User</h3>
                                         </div>
-                                        <h3 className="font-bold text-yellow-700 dark:text-yellow-300 text-lg">Staff Found!</h3>
+                                        <p className="text-sm text-blue-600 dark:text-blue-400 mb-4">
+                                            This user is registered in another organization. They will be linked to your current branch with a new staff profile.
+                                        </p>
+                                        <Table>
+                                            <TableHeader>
+                                                <TableRow>
+                                                    <TableHead>Email</TableHead>
+                                                    <TableHead>Mobile</TableHead>
+                                                    <TableHead>Role</TableHead>
+                                                </TableRow>
+                                            </TableHeader>
+                                            <TableBody>
+                                                <TableRow>
+                                                    <TableCell className="font-medium">{searchResult.email || '-'}</TableCell>
+                                                    <TableCell>{searchResult.mobile || searchMobile}</TableCell>
+                                                    <TableCell className="capitalize">{searchResult.role || '-'}</TableCell>
+                                                </TableRow>
+                                            </TableBody>
+                                        </Table>
+                                        <div className="mt-6 text-center">
+                                            <Button onClick={handleContinueToCreate} className="w-full max-w-xs" size="lg">
+                                                Continue to Link & Create <ArrowRight className="ml-2 w-4 h-4" />
+                                            </Button>
+                                        </div>
                                     </div>
-                                    <Table>
-                                        <TableHeader>
-                                            <TableRow>
-                                                <TableHead>Name</TableHead>
-                                                <TableHead>Designation</TableHead>
-                                                <TableHead>Mobile</TableHead>
-                                            </TableRow>
-                                        </TableHeader>
-                                        <TableBody>
-                                            <TableRow>
-                                                <TableCell className="font-medium">{searchResult.full_name}</TableCell>
-                                                <TableCell>{searchResult.designation?.name}</TableCell>
-                                                <TableCell>{searchResult.phone}</TableCell>
-                                            </TableRow>
-                                        </TableBody>
-                                    </Table>
-                                    <p className="text-sm text-muted-foreground mt-4 flex items-center gap-2">
-                                        <Lock className="w-4 h-4" /> This mobile number is already registered in the system.
-                                    </p>
-                                </div>
+                                ) : (
+                                    /* ❌ Same branch duplicate — block */
+                                    <div className="bg-yellow-500/10 p-6 rounded-lg border border-yellow-500/20 shadow-sm">
+                                        <div className="flex items-center gap-3 mb-4">
+                                            <div className="bg-yellow-500/20 p-2 rounded-full">
+                                                <User className="w-5 h-5 text-yellow-600 dark:text-yellow-400" />
+                                            </div>
+                                            <h3 className="font-bold text-yellow-700 dark:text-yellow-300 text-lg">Staff Found!</h3>
+                                        </div>
+                                        <Table>
+                                            <TableHeader>
+                                                <TableRow>
+                                                    <TableHead>Name</TableHead>
+                                                    <TableHead>Designation</TableHead>
+                                                    <TableHead>Mobile</TableHead>
+                                                </TableRow>
+                                            </TableHeader>
+                                            <TableBody>
+                                                <TableRow>
+                                                    <TableCell className="font-medium">{searchResult.full_name}</TableCell>
+                                                    <TableCell>{searchResult.designation?.name}</TableCell>
+                                                    <TableCell>{searchResult.phone}</TableCell>
+                                                </TableRow>
+                                            </TableBody>
+                                        </Table>
+                                        <p className="text-sm text-muted-foreground mt-4 flex items-center gap-2">
+                                            <Lock className="w-4 h-4" /> This mobile number is already registered in this branch.
+                                        </p>
+                                    </div>
+                                )
                             ) : (
                                 <div className="bg-green-500/10 p-8 text-center rounded-lg border border-green-500/20 shadow-sm">
                                     <div className="mx-auto bg-green-500/20 w-12 h-12 rounded-full flex items-center justify-center mb-3">
@@ -1767,16 +1827,25 @@ const AddEmployee = () => {
                             <SelectTrigger><SelectValue placeholder="Select Shift" /></SelectTrigger>
                             <SelectContent>
                                 {shifts.length > 0 ? (
-                                    shifts.map(shift => (
-                                        <SelectItem key={shift.id} value={shift.shift_name}>
-                                            {shift.shift_name} ({shift.start_time?.slice(0,5)} - {shift.end_time?.slice(0,5)})
-                                        </SelectItem>
-                                    ))
+                                    shifts.map(shift => {
+                                        const to12h = (t) => {
+                                            if (!t) return '';
+                                            const [h, m] = t.split(':').map(Number);
+                                            const period = h >= 12 ? 'PM' : 'AM';
+                                            const h12 = h % 12 || 12;
+                                            return `${h12}:${String(m).padStart(2,'0')} ${period}`;
+                                        };
+                                        return (
+                                            <SelectItem key={shift.id} value={shift.shift_name}>
+                                                {shift.shift_name} ({to12h(shift.start_time)} - {to12h(shift.end_time)})
+                                            </SelectItem>
+                                        );
+                                    })
                                 ) : (
                                     <>
-                                        <SelectItem value="Morning Shift">Morning Shift (08:00 - 14:00)</SelectItem>
-                                        <SelectItem value="Day Shift">Day Shift (09:00 - 16:00)</SelectItem>
-                                        <SelectItem value="Evening Shift">Evening Shift (12:00 - 18:00)</SelectItem>
+                                        <SelectItem value="Morning Shift">Morning Shift (08:00 AM - 02:00 PM)</SelectItem>
+                                        <SelectItem value="Day Shift">Day Shift (09:00 AM - 04:00 PM)</SelectItem>
+                                        <SelectItem value="Evening Shift">Evening Shift (12:00 PM - 06:00 PM)</SelectItem>
                                     </>
                                 )}
                             </SelectContent>

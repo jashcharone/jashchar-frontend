@@ -230,7 +230,6 @@ const findMissingModules = (dbModules, staticSidebar, effectiveRole = 'super_adm
       );
       
       if (isMasterAdminOnly) {
-        console.log('[useDynamicSidebar] Filtering out master_admin module:', slug);
         return false;
       }
       return true;
@@ -393,7 +392,6 @@ export const useDynamicSidebar = (role) => {
       effectiveRole = 'super_admin';
     }
     
-    console.log('[useDynamicSidebar] Role:', role, '-> Normalized:', normalizedInputRole, '-> Effective:', effectiveRole);
     
     // Start with static sidebar (has correct routes!)
     const staticMenu = BASE_SIDEBAR[effectiveRole] || BASE_SIDEBAR['super_admin'] || [];
@@ -401,13 +399,12 @@ export const useDynamicSidebar = (role) => {
     // ✅ Roles with their own curated sidebar: Return static sidebar only
     // They have curated modules defined in sidebarConfig.js - no dynamic additions needed
     if (rolesWithOwnSidebar.includes(effectiveRole)) {
-      console.log('[useDynamicSidebar]', effectiveRole, '- using role-specific sidebar:', staticMenu.length, 'items');
+      const staticMenu = getSidebarConfig(effectiveRole);
       return staticMenu;
     }
     
     // If no additional modules loaded, return static
     if (!additionalModules || additionalModules.length === 0) {
-      console.log('[useDynamicSidebar] Using static sidebar only');
       return staticMenu;
     }
     
@@ -447,8 +444,6 @@ export const useDynamicSidebar = (role) => {
     
     // Add missing parent modules at the end
     if (missingParents.length > 0) {
-      console.log('[useDynamicSidebar] Adding missing parents:', missingParents.map(p => p.slug));
-      
       missingParents.forEach(parent => {
         const children = additionalModules.filter(m => m.parent_slug === parent.slug);
         const rolePrefix = effectiveRole === 'master_admin' ? '/master-admin' : '/super-admin';
@@ -481,7 +476,6 @@ export const useDynamicSidebar = (role) => {
         const seenPaths = new Set();
         const uniqueSubmenu = item.submenu.filter(sub => {
           if (seenPaths.has(sub.path)) {
-            console.log('[useDynamicSidebar] Removing duplicate submenu:', sub.path);
             return false;
           }
           seenPaths.add(sub.path);
@@ -492,7 +486,6 @@ export const useDynamicSidebar = (role) => {
       return item;
     });
     
-    console.log('[useDynamicSidebar] Enhanced menu items:', deduplicatedMenu.length);
     return deduplicatedMenu;
   }, [role, additionalModules]);
   

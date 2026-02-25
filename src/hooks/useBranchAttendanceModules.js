@@ -130,19 +130,15 @@ export const useBranchAttendanceModules = () => {
         return (path) => {
             // If no config exists, allow all
             if (enabledModules.length === 0) {
-                console.log('[isPathEnabled] No config found, allowing:', path);
                 return true;
             }
             
             const moduleCode = PATH_TO_ATTENDANCE_MODULE[path];
             if (!moduleCode) {
-                console.log('[isPathEnabled] Path not in attendance mapping, allowing:', path);
                 return true; // Path not in attendance modules, allow it
             }
             
-            const isEnabled = enabledModules.includes(moduleCode);
-            console.log(`[isPathEnabled] ${path} -> ${moduleCode} -> ${isEnabled ? '✅ SHOW' : '❌ HIDE'}`);
-            return isEnabled;
+            return enabledModules.includes(moduleCode);
         };
     }, [enabledModules]);
 

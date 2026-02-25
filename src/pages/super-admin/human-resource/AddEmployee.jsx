@@ -163,12 +163,15 @@ const AddEmployee = () => {
             if (email && emailRegex.test(email)) {
                 setEmailChecking(true);
                 try {
-                    const result = await staffApi.checkUserExistence(null, email);
-                    if (result.exists) {
+                    // CRITICAL FIX: Pass branchId so backend can detect cross-org vs same-branch
+                    const currentBranchId = formData.branch_id || selectedBranch?.id || branchId;
+                    const result = await staffApi.checkUserExistence(null, email, currentBranchId);
+                    // Only show error for same-branch duplicates, NOT cross-org users
+                    if (result.exists && !result.crossOrg) {
                         toast({
                             variant: 'destructive',
                             title: 'Email Already Exists',
-                            description: 'This email is already associated with another user.'
+                            description: 'This email is already associated with another user in this branch.'
                         });
                     }
                 } catch (error) {
@@ -189,7 +192,6 @@ const AddEmployee = () => {
         const targetBranchId = selectedBranch?.id || stateBranchId || (branches.length === 1 ? branches[0]?.id : null) || branchId;
         
         if (targetBranchId && formData.branch_id !== targetBranchId) {
-            console.log('[AddEmployee] Setting branch_id to:', targetBranchId, '(selectedBranch:', selectedBranch?.name, ')');
             setFormData(prev => ({ ...prev, branch_id: targetBranchId }));
         }
 
@@ -197,9 +199,11 @@ const AddEmployee = () => {
 
         const fetchSettingsAndDropdowns = async () => {
             // Settings - fetch from branches table
-            const { data: settings } = await supabase.from('branches').select('*').eq('id', branchId).maybeSingle();
+            // CRITICAL FIX: Use targetBranchId (selected branch) instead of branchId (user's profile branch)
+            // This ensures password_auto_generation and other settings are loaded for the correct branch
+            const effectiveBranchId = targetBranchId || branchId;
+            const { data: settings } = await supabase.from('branches').select('*').eq('id', effectiveBranchId).maybeSingle();
             setSchoolSettings(settings);
-            console.log('Branch settings loaded for employee:', settings);
 
             // Dropdowns
             // Fetch for SELECTED branch (via dropdown) or DEFAULT branch
@@ -310,7 +314,6 @@ const AddEmployee = () => {
             
             if (result.success) {
                 const newId = result.employeeId;
-                console.log(`[AddEmployee] 🌟 Global Unique Employee ID: ${newId} (Year: ${result.year}, Sequence: ${result.sequence})`);
                 setFormData(prev => ({ ...prev, employee_id: newId, biometric_code: newId }));
             } else {
                 // Fallback to local generation if API fails
@@ -354,7 +357,6 @@ const AddEmployee = () => {
             }
 
             const nextId = `${prefix}${String(nextNum).padStart(5, '0')}`;
-            console.log(`[AddEmployee] Local Generated: ${nextId}`);
             setFormData(prev => ({ ...prev, employee_id: nextId, biometric_code: nextId }));
         } catch (err) {
             console.error("Failed to generate Employee ID locally", err);
@@ -574,9 +576,14 @@ const AddEmployee = () => {
             // Password Validation based on Settings
             const isAutoPass = schoolSettings?.password_auto_generation;
             if (!isAutoPass) {
-                if (!formData.password) errors.push("Password is required");
-                if (formData.password.length < 6) errors.push("Password must be at least 6 characters");
-                if (formData.password !== formData.retype_password) errors.push("Passwords do not match");
+                if (!formData.password) {
+                    errors.push("Password is required");
+                } else if (formData.password.length < 6) {
+                    errors.push("Password must be at least 6 characters");
+                }
+                if (formData.password && formData.retype_password && formData.password !== formData.retype_password) {
+                    errors.push("Passwords do not match");
+                }
             }
         }
         if (step === 4) { // Other
@@ -844,9 +851,14 @@ const AddEmployee = () => {
         if (!formData.phone) errors.push("Mobile Number is required");
         const isAutoPass = schoolSettings?.password_auto_generation;
         if (!isAutoPass) {
-            if (!formData.password) errors.push("Password is required");
-            if (formData.password.length < 6) errors.push("Password must be at least 6 characters");
-            if (formData.password !== formData.retype_password) errors.push("Passwords do not match");
+            if (!formData.password) {
+                errors.push("Password is required");
+            } else if (formData.password.length < 6) {
+                errors.push("Password must be at least 6 characters");
+            }
+            if (formData.password && formData.retype_password && formData.password !== formData.retype_password) {
+                errors.push("Passwords do not match");
+            }
         }
 
         // Step 4: Other
@@ -897,13 +909,6 @@ const AddEmployee = () => {
             // then selectedBranch.id (current active branch from context)
             // then fallbacks
             const finalBranchId = formData.branch_id || selectedBranch?.id || stateBranchId || branchId;
-            
-            console.log('[AddEmployee] Submitting with branch_id:', finalBranchId, {
-                'formData.branch_id': formData.branch_id,
-                'selectedBranch.id': selectedBranch?.id,
-                'stateBranchId': stateBranchId,
-                'branchId': branchId
-            });
             
             const payload = {
                 ...formData,

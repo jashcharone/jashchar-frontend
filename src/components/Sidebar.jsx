@@ -114,11 +114,8 @@ const Sidebar = ({ role, isSidebarOpen, isMobile, toggleSidebar, closeSidebar, o
     
     // Fallback to pure static if dynamic failed
     if (menuItems.length === 0) {
-      console.log('[Sidebar] Using pure static config');
       const effectiveRole = (normalizedRole === 'organization_owner' || normalizedRole === 'super_admin' || normalizedRole === 'admin') ? 'super_admin' : normalizedRole;
       menuItems = BASE_SIDEBAR[effectiveRole] || BASE_SIDEBAR['super_admin'] || [];
-    } else {
-      console.log('[Sidebar] Using enhanced menu:', menuItems.length, 'items');
     }
     
     // For master_admin, return all modules without filtering (platform-level)
@@ -164,11 +161,6 @@ const Sidebar = ({ role, isSidebarOpen, isMobile, toggleSidebar, closeSidebar, o
       // Check if this is an attendance module
       const isAttendanceModule = moduleSlug === 'attendance' || item.title?.toLowerCase().includes('attendance');
       
-      // Debug log for attendance module
-      if (isAttendanceModule) {
-        console.log('[Sidebar] Processing Attendance module, hasAttendanceConfig:', hasAttendanceConfig);
-      }
-      
       if (item.submenu && item.submenu.length > 0) {
         const visibleSubmenu = item.submenu.filter(sub => {
           // Skip disabled items (separators like "── Advanced ──")
@@ -177,7 +169,6 @@ const Sidebar = ({ role, isSidebarOpen, isMobile, toggleSidebar, closeSidebar, o
           // ✅ ATTENDANCE MODULE FILTERING - Check if path is enabled by Master Admin
           if (isAttendanceModule && hasAttendanceConfig) {
             const pathEnabled = isPathEnabled(sub.path);
-            console.log(`[Sidebar] Attendance submenu: ${sub.title} (${sub.path}) -> ${pathEnabled ? 'SHOW' : 'HIDE'}`);
             if (!pathEnabled) {
               return false;
             }

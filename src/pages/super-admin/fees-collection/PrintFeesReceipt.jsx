@@ -340,12 +340,12 @@ const PrintFeesReceipt = () => {
           <div className='flex items-center gap-3'>
             {school?.logo_url && <img src={school.logo_url} alt='Logo' className='h-12' />}
             <div>
-              <h1 className='text-lg font-bold uppercase text-gray-900'>{school?.name || branch?.branch_name}</h1>
-              <p className='text-xs text-gray-600'>{branch?.branch_name}</p>
+              <h1 className='text-lg font-bold uppercase text-gray-900'>{school?.name || branch?.branch_name || '-'}</h1>
+              {school?.address && <p className='text-xs text-gray-600'>{school.address}</p>}
             </div>
           </div>
           <div className='text-right text-[9px] text-gray-600'>
-            {school?.address && <p>{school.address}</p>}
+            {(school?.pincode || school?.city) && <p>{[school?.city, school?.state, school?.pincode].filter(Boolean).join(', ')}</p>}
             {school?.contact_number && <p>Phone: {school.contact_number}</p>}
             {school?.contact_email && <p>Email: {school.contact_email}</p>}
           </div>
@@ -408,7 +408,7 @@ const PrintFeesReceipt = () => {
                 </tr>
                 <tr>
                   <td className='font-semibold text-gray-700 py-0.5'>Branch</td>
-                  <td className='py-0.5'>: {branch?.branch_name || school?.name || '-'}</td>
+                  <td className='py-0.5'>: {school?.name || branch?.branch_name || '-'}</td>
                 </tr>
               </tbody>
             </table>

@@ -136,12 +136,13 @@ const EditBranch = () => {
     setSaving(true);
 
     try {
-      // Include pincode, city, state in the submission
+      // Include pincode, city, state, post_office in the submission
       const submitData = {
         ...formData,
         pincode,
         city,
-        state
+        state,
+        post_office: selectedPostOffice || undefined
       };
       
       const response = await api.put(`/branches/${id}`, submitData);

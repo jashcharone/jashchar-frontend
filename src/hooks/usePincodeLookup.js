@@ -1,4 +1,4 @@
-﻿import { useState, useEffect, useCallback } from 'react';
+﻿import { useState, useEffect, useCallback, useRef } from 'react';
 import { useToast } from '@/components/ui/use-toast';
 import api from '@/lib/api';
 
@@ -19,20 +19,37 @@ export function usePincodeLookup(initialPincode = '', initialCity = '', initialS
   const [city, setCity] = useState(initialCity);
   const [state, setState] = useState(initialState);
   const { toast } = useToast();
+  
+  // Flag to skip API lookup when setting initial values from DB
+  const skipNextLookupRef = useRef(false);
+  // Track if user manually typed the pincode (only then do API lookup)
+  const userTypedRef = useRef(false);
 
   // Reset function for post offices
   const resetPostOffices = useCallback(() => {
     setPostOffices([]);
   }, []);
 
-  // Handle pincode input change
+  // Handle pincode input change (user typed)
   const handlePincodeChange = useCallback((e) => {
     const value = e.target.value.replace(/\D/g, '').slice(0, 6);
+    userTypedRef.current = true;
     setPincode(value);
   }, []);
 
   // Fetch location data when pincode changes
   useEffect(() => {
+    // Skip lookup if this was set via setInitialValues (not user-typed)
+    if (skipNextLookupRef.current) {
+      skipNextLookupRef.current = false;
+      return;
+    }
+    
+    // Only do API lookup if user manually typed the pincode
+    if (!userTypedRef.current) {
+      return;
+    }
+    
     const fetchPincodeData = async () => {
       // Only fetch if pincode is exactly 6 digits
       if (pincode.length !== 6) {
@@ -108,7 +125,10 @@ export function usePincodeLookup(initialPincode = '', initialCity = '', initialS
   }, [pincode, toast]);
 
   // Set initial values (useful when editing existing data)
+  // This skips the pincode API lookup since we already have city/state from DB
   const setInitialValues = useCallback((newPincode, newCity, newState) => {
+    skipNextLookupRef.current = true;
+    userTypedRef.current = false;
     if (newPincode) setPincode(newPincode);
     if (newCity) setCity(newCity);
     if (newState) setState(newState);

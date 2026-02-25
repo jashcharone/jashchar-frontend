@@ -103,7 +103,6 @@ export const useBranchAttendanceModules = () => {
                 } else {
                     const codes = data?.map(d => d.module_code) || [];
                     setEnabledModules(codes);
-                    console.log('[useBranchAttendanceModules] Enabled modules for branch', selectedBranch.id, ':', codes);
                 }
             } catch (err) {
                 console.error('[useBranchAttendanceModules] Exception:', err);

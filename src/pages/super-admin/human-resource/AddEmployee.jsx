@@ -205,6 +205,19 @@ const AddEmployee = () => {
             const { data: settings } = await supabase.from('branches').select('*').eq('id', effectiveBranchId).maybeSingle();
             setSchoolSettings(settings);
 
+            // Auto-fill password when password_auto_generation is ON
+            // This prevents validation errors when user reaches Save step
+            if (settings?.password_auto_generation) {
+                const autoPassword = settings.password_default_employee || settings.password_default || '';
+                if (autoPassword) {
+                    setFormData(prev => ({
+                        ...prev,
+                        password: prev.password || autoPassword,
+                        retype_password: prev.retype_password || autoPassword
+                    }));
+                }
+            }
+
             // Dropdowns
             // Fetch for SELECTED branch (via dropdown) or DEFAULT branch
             const queryBranchId = formData.branch_id || targetBranchId || selectedBranch?.id;
@@ -574,8 +587,10 @@ const AddEmployee = () => {
             if (!formData.phone) errors.push("Mobile Number is required");
             
             // Password Validation based on Settings
+            // When auto-gen is ON or settings not loaded yet, skip password requirement
+            // Backend always has fallback (default password or mobile number)
             const isAutoPass = schoolSettings?.password_auto_generation;
-            if (!isAutoPass) {
+            if (isAutoPass === false) {
                 if (!formData.password) {
                     errors.push("Password is required");
                 } else if (formData.password.length < 6) {
@@ -849,8 +864,10 @@ const AddEmployee = () => {
         // Step 3: Login
         if (!formData.email) errors.push("Email is required");
         if (!formData.phone) errors.push("Mobile Number is required");
+        // When auto-gen is ON or settings not loaded, skip password requirement
+        // Backend always falls back to default password or mobile number
         const isAutoPass = schoolSettings?.password_auto_generation;
-        if (!isAutoPass) {
+        if (isAutoPass === false) {
             if (!formData.password) {
                 errors.push("Password is required");
             } else if (formData.password.length < 6) {

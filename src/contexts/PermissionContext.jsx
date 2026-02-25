@@ -50,7 +50,6 @@ export const PermissionProvider = ({ children }) => {
 
       // ? CRITICAL FIX: If branch_id is still missing, fetch from branch_users table
       if (!branchId) {
-        console.log('PermissionContext: branch_id missing, fetching from branch_users...');
         const { data: branchUserData } = await supabase
           .from('branch_users')
           .select('branch_id')
@@ -60,7 +59,6 @@ export const PermissionProvider = ({ children }) => {
         
         if (branchUserData?.branch_id) {
           branchId = branchUserData.branch_id;
-          console.log('PermissionContext: Found branch_id from branch_users:', branchId);
         }
       }
 
@@ -70,7 +68,6 @@ export const PermissionProvider = ({ children }) => {
       // If role is generic or missing, try to fetch from profile
       if (!roleName || roleName === 'staff' || roleName === 'user' || roleName === 'authenticated') {
           const { success, profile } = await fetchUserProfileWithFallback(user.id);
-          console.log('PermissionContext: Profile fetch result:', success, profile?.role, profile?.role_id);
           if (success && profile) {
               // Check if role name is already resolved (from branch_users/employee_profiles)
               if (profile.role && typeof profile.role === 'string') {
@@ -90,7 +87,6 @@ export const PermissionProvider = ({ children }) => {
 
       // Normalize role name
       const normalizedRole = roleName ? roleName.toLowerCase() : '';
-      console.log('PermissionContext: Role detected:', roleName, 'Normalized:', normalizedRole);
       
       // ? Save detected role for sidebar/dashboard
       if (isMounted && normalizedRole) {
@@ -105,8 +101,6 @@ export const PermissionProvider = ({ children }) => {
 
       // ? Parent/Student - Fetch ACTUAL permissions from role_permissions table
       if (normalizedRole === 'parent' || normalizedRole === 'student') {
-        console.log('PermissionContext: Loading permissions for', normalizedRole, 'branch:', branchId);
-        
         try {
           // Use the same RPC as super_admin to fetch permissions
           const queryRoleName = normalizedRole.charAt(0).toUpperCase() + normalizedRole.slice(1); // 'Parent' or 'Student'
@@ -116,8 +110,6 @@ export const PermissionProvider = ({ children }) => {
               p_branch_id: branchId,
               p_role_name: queryRoleName
             });
-
-          console.log('PermissionContext:', normalizedRole, 'permissions from DB:', rolePerms?.length || 0, 'error:', permError);
 
           if (rolePerms && rolePerms.length > 0) {
             // Build permission map from database
@@ -154,7 +146,6 @@ export const PermissionProvider = ({ children }) => {
             // Always ensure dashboard access
             permMap['dashboard'] = { can_view: true, can_add: false, can_edit: false, can_delete: false };
             
-            console.log('PermissionContext:', normalizedRole, 'final permissions:', Object.keys(permMap).length);
             if (isMounted) { setPermissions(permMap); setLoading(false); }
             return;
           }
@@ -163,7 +154,6 @@ export const PermissionProvider = ({ children }) => {
         }
 
         // Fallback to basic defaults if no explicit permissions found
-        console.log('PermissionContext: No explicit permissions found for', normalizedRole, '- using defaults');
         const basicPerms = {
           '__BASIC_USER__': true,
           'dashboard': { can_view: true, can_add: false, can_edit: false, can_delete: false },
@@ -294,8 +284,6 @@ export const PermissionProvider = ({ children }) => {
             return;
           }
 
-          console.log("PermissionContext: Plan Module Slugs:", planModuleSlugs);
-
           // Map DB module names to sidebar slugs
           const DB_TO_SLUG = {
             // Legacy Title Case
@@ -378,16 +366,12 @@ export const PermissionProvider = ({ children }) => {
           
           let queryRoleName = ROLE_NAME_MAP[normalizedRole] || roleName;
 
-          console.log('DEBUG: Querying role_permissions via RPC with branch_id=', ownerSchoolId, 'role_name=', queryRoleName);
-
           // Use SECURITY DEFINER RPC to bypass RLS issues
           const { data: explicitPerms, error: permError } = await supabase
             .rpc('rpc_get_role_permissions_for_school', {
               p_branch_id: ownerSchoolId,
               p_role_name: queryRoleName
             });
-
-          console.log('DEBUG: explicitPerms result =', explicitPerms, 'error =', permError);
 
           const permMap = { __SCHOOL_OWNER_LIMITED__: true };
           
@@ -425,9 +409,6 @@ export const PermissionProvider = ({ children }) => {
              // First, create a set of allowed slugs from the Plan
              const planSlugs = new Set(planModuleSlugs.map(m => getSlug(m)));
 
-             console.log('DEBUG PERM: Plan slugs =', Array.from(planSlugs));
-             console.log('DEBUG PERM: Explicit perms count =', explicitPerms.length);
-
              explicitPerms.forEach(p => {
                 // Normalize slug: RPC sometimes returns 'parent.parent.child' instead of 'parent.child'
                 // Fix: Remove duplicate parent prefix (e.g., 'multi_branch.multi_branch.branch_list' -> 'multi_branch.branch_list')
@@ -446,7 +427,6 @@ export const PermissionProvider = ({ children }) => {
                 // Special case for front_cms: if parent is in plan, include all children
                 // This fixes issues where submodules like 'front_cms.events' were being filtered out
                 if ((baseModule === 'front_cms' || moduleSlug.startsWith('front_cms')) && planSlugs.has('front_cms')) {
-                    console.log(`DEBUG PERM: Allowing front_cms child: ${moduleSlug}`);
                     permMap[moduleSlug] = {
                         can_view: p.can_view,
                         can_add: p.can_add,
@@ -475,8 +455,6 @@ export const PermissionProvider = ({ children }) => {
                     };
                 }
              });
-             
-             console.log('DEBUG PERM: Final permMap =', JSON.stringify(permMap, null, 2));
 
              // Ensure Dashboard is always there (required for login)
              permMap['dashboard'] = { can_view: true, can_add: true, can_edit: true, can_delete: true };
@@ -508,8 +486,6 @@ export const PermissionProvider = ({ children }) => {
              // permMap['system_settings'] = { can_view: true, can_add: true, can_edit: true, can_delete: true };
           }
 
-          console.log("PermissionContext: Final Permissions:", Object.keys(permMap).filter(k => !k.startsWith('__')));
-          
           if (isMounted) { setPermissions(permMap); setLoading(false); }
           return;
 
@@ -575,8 +551,6 @@ export const PermissionProvider = ({ children }) => {
         
         const queryRoleName = ROLE_MAP[roleName] || roleName;
 
-        console.log(`DEBUG: Querying role_permissions via RPC for role=${queryRoleName}, branch_id=${branchId}`);
-
         if (!branchId) {
             console.warn('DEBUG: Skipping RPC call because branchId is missing. Granting basic permissions.');
             // ? FIX: Set loading to false and grant basic permissions instead of returning empty
@@ -594,9 +568,6 @@ export const PermissionProvider = ({ children }) => {
             p_branch_id: branchId,
             p_role_name: queryRoleName
           });
-
-        console.log('DEBUG: RPC result for', queryRoleName, '=', permData?.length, 'permissions, error=', permError);
-        console.log('DEBUG: allowedModules from plan =', allowedModules);
 
         if (permError) {
           console.error('RPC error:', permError);
@@ -623,7 +594,6 @@ export const PermissionProvider = ({ children }) => {
                     };
                 }
             });
-            console.log('DEBUG: Added', addedCount, 'permissions to permMap. Sample keys:', Object.keys(permMap).slice(0, 10));
         } else if (normalizedRole === 'school_owner' || normalizedRole === 'admin' || normalizedRole === 'organization_owner') {
             // Fallback: School Owner gets ALL permissions for allowed modules if no specific permissions set
             // If allowedModules is empty (e.g. plan fetch failed), we default to ALL modules for safety in dev
@@ -647,12 +617,6 @@ export const PermissionProvider = ({ children }) => {
                 permMap[slug] = { can_view: true, can_add: true, can_edit: true, can_delete: true };
             });
         } else if (normalizedRole === 'teacher') {
-            // ✅ TEACHER DEFAULT PERMISSIONS
-            // When no explicit permissions exist in DB, grant default teaching-related modules
-            // This ensures teacher sidebar works immediately after user creation
-            // These can be overridden by explicit role_permissions in the Permission DNA page
-            console.log('PermissionContext: Granting default teacher permissions (no explicit permissions found)');
-            
             const TEACHER_DEFAULTS = {
               'dashboard':           { can_view: true, can_add: false, can_edit: false, can_delete: false },
               'academics':           { can_view: true, can_add: true,  can_edit: true,  can_delete: false },
@@ -686,8 +650,6 @@ export const PermissionProvider = ({ children }) => {
                 permMap[slug] = perms;
               }
             });
-            
-            console.log('PermissionContext: Teacher default permissions granted:', Object.keys(permMap).length);
         }
         
         // ✅ FIX: Mark as loaded for this user/school/role combo

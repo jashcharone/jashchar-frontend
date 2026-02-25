@@ -299,18 +299,19 @@ const PrintFeesReceipt = () => {
 
   const { student, school, branch, payments, totalPaid, totalDiscount, totalFine, transactionId, feeStatement, feeStatementTotals } = paymentDetails;
 
-  // Calculate number of enabled copies
-  const enabledCopiesCount = [
-    receiptCopySettings.office_copy,
-    receiptCopySettings.student_copy,
-    receiptCopySettings.bank_copy
-  ].filter(Boolean).length || 1;
+  // Receipt No = short serial (e.g., F00001), Transaction ID = full reference in Payment History
+  const receiptNo = (() => {
+      const parts = (transactionId || '').split('/');
+      return parts.length === 3 ? parts[2] : transactionId || '-';
+  })();
 
-  // Calculate receipt height based on number of copies
+  // Only count page-1 copies (office + student). Bank copy goes on page 2.
+  const firstPageCopies = [receiptCopySettings.office_copy, receiptCopySettings.student_copy].filter(Boolean).length || 1;
+
+  // Calculate receipt height based on page-1 copies
   const getReceiptHeight = () => {
-    if (enabledCopiesCount === 1) return '95vh';
-    if (enabledCopiesCount === 2) return '47vh';
-    return '30vh'; // 3 copies
+    if (firstPageCopies <= 1) return '95vh';
+    return '47vh'; // 2 copies on page 1
   };
 
   // Single Receipt Component - dynamic size based on copies
@@ -361,7 +362,7 @@ const PrintFeesReceipt = () => {
       <div className='flex justify-between items-center px-3 py-1.5 bg-gray-100 border-b text-[10px]'>
         <span className='font-bold text-gray-800 uppercase tracking-wide'>{copyType}</span>
         <span className='text-gray-700'>
-          Receipt No: <span className='font-mono font-bold text-blue-800 bg-blue-50 px-2 py-0.5 rounded'>{transactionId}</span>
+          Receipt No: <span className='font-mono font-bold text-blue-800 bg-blue-50 px-2 py-0.5 rounded'>{receiptNo}</span>
         </span>
       </div>
 
@@ -626,14 +627,14 @@ const PrintFeesReceipt = () => {
         </div>
       </div>
 
-      {/* Print Container - A4 with receipt copies based on settings */}
+      {/* Print Container - Page 1: Office + Student | Page 2: Bank (if enabled) */}
       <div className='print-container bg-white' style={{ minHeight: '297mm' }}>
         <div className='flex flex-col gap-4' style={{ height: '100%' }}>
-          {/* Dynamically render enabled copies */}
+          {/* Page 1: Office Copy + Student Copy */}
           {receiptCopySettings.office_copy && (
             <>
               <Receipt copyType='OFFICE COPY' />
-              {(receiptCopySettings.student_copy || receiptCopySettings.bank_copy) && (
+              {receiptCopySettings.student_copy && (
                 <div className='flex items-center justify-center py-1 print:py-0'>
                   <div className='flex-1 border-t-2 border-dashed border-gray-400'></div>
                   <span className='px-4 text-[10px] text-gray-500 print:text-gray-400'>✂ CUT HERE ✂</span>
@@ -644,20 +645,14 @@ const PrintFeesReceipt = () => {
           )}
 
           {receiptCopySettings.student_copy && (
-            <>
-              <Receipt copyType='STUDENT COPY' />
-              {receiptCopySettings.bank_copy && (
-                <div className='flex items-center justify-center py-1 print:py-0'>
-                  <div className='flex-1 border-t-2 border-dashed border-gray-400'></div>
-                  <span className='px-4 text-[10px] text-gray-500 print:text-gray-400'>✂ CUT HERE ✂</span>
-                  <div className='flex-1 border-t-2 border-dashed border-gray-400'></div>
-                </div>
-              )}
-            </>
+            <Receipt copyType='STUDENT COPY' />
           )}
 
+          {/* Page 2: Bank Copy (next page, if enabled in General Settings) */}
           {receiptCopySettings.bank_copy && (
-            <Receipt copyType='BANK COPY' />
+            <div style={{ pageBreakBefore: 'always' }}>
+              <Receipt copyType='BANK COPY' />
+            </div>
           )}
 
           {/* Fallback if nothing is enabled - show at least one copy */}

@@ -18,6 +18,7 @@ const PrintTransportReceipt = () => {
     const [loading, setLoading] = useState(true);
     const [printHeaderImage, setPrintHeaderImage] = useState(null);
     const [receiptFormat, setReceiptFormat] = useState('detailed'); // 'detailed' or 'summary'
+    const [receiptCopySettings, setReceiptCopySettings] = useState({ office_copy: true, student_copy: true, bank_copy: false });
 
     const fetchDetails = useCallback(async () => {
         if (!paymentId || !selectedBranch?.id) {
@@ -87,15 +88,22 @@ const PrintTransportReceipt = () => {
                 setPrintHeaderImage(printSettings.header_image_url);
             }
 
-            // Fetch branch settings for receipt format (saved in branches table by GeneralSetting)
+            // Fetch branch settings for receipt format & copy settings (saved in branches table by GeneralSetting)
             const { data: branchData } = await supabase
                 .from('branches')
-                .select('transport_hostel_receipt_format')
+                .select('transport_hostel_receipt_format, print_receipt_office_copy, print_receipt_student_copy, print_receipt_bank_copy')
                 .eq('id', selectedBranch.id)
                 .maybeSingle();
 
             if (branchData?.transport_hostel_receipt_format) {
                 setReceiptFormat(branchData.transport_hostel_receipt_format);
+            }
+            if (branchData) {
+                setReceiptCopySettings({
+                    office_copy: branchData.print_receipt_office_copy !== false,
+                    student_copy: branchData.print_receipt_student_copy !== false,
+                    bank_copy: branchData.print_receipt_bank_copy === true
+                });
             }
 
             // Fetch ALL transport payments for this student to calculate summary
@@ -194,6 +202,13 @@ const PrintTransportReceipt = () => {
     const { payment, payments = [payment], student, transport, school, branch, transportSummary } = paymentDetails;
     const currencySymbol = '₹';
 
+    // Receipt No = short serial (e.g., T00001), Transaction ID = full reference in Payment History
+    const receiptNo = (() => {
+        const txnId = payment?.transaction_id || '';
+        const parts = txnId.split('/');
+        return parts.length === 3 ? parts[2] : txnId || '-';
+    })();
+
     // Calculate totals from all payments in this transaction
     const totalAmount = payments.reduce((sum, p) => sum + Number(p.amount || 0), 0);
     const totalDiscount = payments.reduce((sum, p) => sum + Number(p.discount_amount || 0), 0);
@@ -238,7 +253,7 @@ const PrintTransportReceipt = () => {
             <div className='flex justify-between items-center px-3 py-1.5 bg-gray-100 border-b text-[10px]'>
                 <span className='font-bold text-gray-800 uppercase tracking-wide'>{copyType}</span>
                 <span className='text-gray-700'>
-                    Receipt No: <span className='font-mono font-bold text-blue-800 bg-blue-50 px-2 py-0.5 rounded'>{payment.transaction_id}</span>
+                    Receipt No: <span className='font-mono font-bold text-blue-800 bg-blue-50 px-2 py-0.5 rounded'>{receiptNo}</span>
                 </span>
             </div>
 
@@ -497,16 +512,45 @@ const PrintTransportReceipt = () => {
                 </div>
             </div>
 
-            {/* Print Container */}
+            {/* Print Container - Page 1: Office + Student | Page 2: Bank (if enabled) */}
             <div className='print-container bg-white' style={{ minHeight: '297mm' }}>
                 <div className='flex flex-col gap-4'>
-                    <Receipt copyType='OFFICE COPY' />
-                    <div className='flex items-center justify-center py-1 print:py-0'>
-                        <div className='flex-1 border-t-2 border-dashed border-gray-400'></div>
-                        <span className='px-4 text-[10px] text-gray-500'>✂ CUT HERE ✂</span>
-                        <div className='flex-1 border-t-2 border-dashed border-gray-400'></div>
-                    </div>
-                    <Receipt copyType='STUDENT COPY' />
+                    {/* Page 1: Office Copy + Student Copy */}
+                    {receiptCopySettings.office_copy && (
+                        <>
+                            <Receipt copyType='OFFICE COPY' />
+                            {receiptCopySettings.student_copy && (
+                                <div className='flex items-center justify-center py-1 print:py-0'>
+                                    <div className='flex-1 border-t-2 border-dashed border-gray-400'></div>
+                                    <span className='px-4 text-[10px] text-gray-500'>✂ CUT HERE ✂</span>
+                                    <div className='flex-1 border-t-2 border-dashed border-gray-400'></div>
+                                </div>
+                            )}
+                        </>
+                    )}
+                    {receiptCopySettings.student_copy && (
+                        <Receipt copyType='STUDENT COPY' />
+                    )}
+
+                    {/* Page 2: Bank Copy (next page, if enabled in General Settings) */}
+                    {receiptCopySettings.bank_copy && (
+                        <div style={{ pageBreakBefore: 'always' }}>
+                            <Receipt copyType='BANK COPY' />
+                        </div>
+                    )}
+
+                    {/* Fallback if nothing enabled */}
+                    {!receiptCopySettings.office_copy && !receiptCopySettings.student_copy && !receiptCopySettings.bank_copy && (
+                        <>
+                            <Receipt copyType='OFFICE COPY' />
+                            <div className='flex items-center justify-center py-1 print:py-0'>
+                                <div className='flex-1 border-t-2 border-dashed border-gray-400'></div>
+                                <span className='px-4 text-[10px] text-gray-500'>✂ CUT HERE ✂</span>
+                                <div className='flex-1 border-t-2 border-dashed border-gray-400'></div>
+                            </div>
+                            <Receipt copyType='STUDENT COPY' />
+                        </>
+                    )}
                 </div>
             </div>
         </>

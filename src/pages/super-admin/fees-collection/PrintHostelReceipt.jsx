@@ -19,6 +19,8 @@ const PrintHostelReceipt = () => {
     const [printHeaderImage, setPrintHeaderImage] = useState(null);
     const [receiptFormat, setReceiptFormat] = useState('detailed'); // 'detailed' or 'summary'
     const [receiptCopySettings, setReceiptCopySettings] = useState({ office_copy: true, student_copy: true, bank_copy: false });
+    const [isOriginal, setIsOriginal] = useState(true);
+    const [currentDateTime] = useState(new Date());
 
     const fetchDetails = useCallback(async () => {
         if (!paymentId || !selectedBranch?.id) {
@@ -156,6 +158,13 @@ const PrintHostelReceipt = () => {
                 };
             }
 
+            // Check if this receipt has been printed before (Original vs Reprint)
+            const anyPrinted = payments.some(p => p.printed_at);
+            setIsOriginal(!anyPrinted);
+
+            // Receipt generated date = first payment's created_at
+            const receiptCreatedAt = payments[0]?.created_at || payments[0]?.payment_date || new Date().toISOString();
+
             setPaymentDetails({
                 payment,
                 payments, // Array of all payments in this transaction
@@ -163,7 +172,8 @@ const PrintHostelReceipt = () => {
                 hostel,
                 school,
                 branch: selectedBranch,
-                hostelSummary
+                hostelSummary,
+                receiptCreatedAt,
             });
         } catch (error) {
             console.error('Error:', error);
@@ -177,7 +187,21 @@ const PrintHostelReceipt = () => {
         if (selectedBranch) fetchDetails();
     }, [fetchDetails, selectedBranch]);
 
-    const handlePrint = () => window.print();
+    const handlePrint = async () => {
+        if (isOriginal && paymentDetails?.payments?.length > 0) {
+            const paymentIds = paymentDetails.payments.map(p => p.id);
+            const { data: updateResult, error: updateError } = await supabase
+                .from('hostel_fee_payments')
+                .update({ printed_at: new Date().toISOString() })
+                .in('id', paymentIds)
+                .is('printed_at', null)
+                .select('id, printed_at');
+            if (!updateError && updateResult?.length > 0) {
+                setIsOriginal(false);
+            }
+        }
+        window.print();
+    };
 
     if (loading) {
         return (
@@ -197,7 +221,8 @@ const PrintHostelReceipt = () => {
         );
     }
 
-    const { payment, payments = [payment], student, hostel, school, branch, hostelSummary } = paymentDetails;
+    const { payment, payments = [payment], student, hostel, school, branch, hostelSummary, receiptCreatedAt } = paymentDetails;
+    const receiptDate = receiptCreatedAt ? new Date(receiptCreatedAt) : currentDateTime;
     const currencySymbol = '₹';
 
     // Receipt No = short serial (e.g., H00001), Transaction ID = full reference in Payment History
@@ -241,64 +266,65 @@ const PrintHostelReceipt = () => {
                 </div>
             )}
 
-            {/* Title Bar */}
-            <div className='bg-purple-800 text-white text-center py-1 flex items-center justify-center gap-2'>
-                <Building2 className='h-4 w-4' />
-                <span className='text-sm font-semibold tracking-wide'>HOSTEL FEE RECEIPT</span>
-            </div>
-
-            {/* Copy Type & Receipt Info */}
-            <div className='flex justify-between items-center px-3 py-1.5 bg-gray-100 border-b text-[10px]'>
-                <span className='font-bold text-gray-800 uppercase tracking-wide'>{copyType}</span>
-                <span className='text-gray-700'>
-                    Receipt No: <span className='font-mono font-bold text-purple-800 bg-purple-50 px-2 py-0.5 rounded'>{receiptNo}</span>
+            {/* Title Bar - includes Copy Type, Original/Reprint, & Receipt No */}
+            <div className='bg-purple-800 text-white py-1 px-3 flex justify-between items-center'>
+                <span className='text-[10px] font-bold uppercase tracking-wide opacity-90'>{copyType}</span>
+                <div className='text-center flex items-center gap-1'>
+                    <Building2 className='h-3 w-3' />
+                    <span className='text-sm font-semibold tracking-wide'>HOSTEL FEE RECEIPT</span>
+                    <span className={`ml-1 text-[9px] font-bold px-1.5 py-0.5 rounded ${isOriginal ? 'bg-green-500/30 text-green-200' : 'bg-yellow-500/30 text-yellow-200'}`}>
+                        {isOriginal ? 'ORIGINAL' : 'REPRINT COPY'}
+                    </span>
+                </div>
+                <span className='text-[10px]'>
+                    Receipt No: <span className='font-mono font-bold bg-white/20 px-1.5 py-0.5 rounded'>{receiptNo}</span>
                 </span>
             </div>
 
             {/* Content */}
             <div className='p-3'>
-                {/* Student & Hostel Info */}
-                <div className='flex justify-between gap-4 mb-3 text-[11px]'>
+                {/* Student & Hostel Info - Compact */}
+                <div className='flex justify-between gap-4 mb-2 text-[11px]' style={{ lineHeight: '1.4' }}>
                     <div className='flex-1'>
-                        <table className='w-full'>
+                        <table className='w-full' style={{ borderSpacing: 0 }}>
                             <tbody>
                                 <tr>
-                                    <td className='font-semibold text-gray-700 py-0.5 w-28'>Student Name</td>
-                                    <td className='py-0.5'>: <span className='font-medium'>{student?.full_name}</span></td>
+                                    <td className='font-semibold text-gray-700 w-28' style={{ padding: '1px 0' }}>Student Name</td>
+                                    <td style={{ padding: '1px 0' }}>: <span className='font-bold text-gray-900 text-[12px]'>{student?.full_name}</span></td>
                                 </tr>
                                 <tr>
-                                    <td className='font-semibold text-gray-700 py-0.5'>Admission No</td>
-                                    <td className='py-0.5'>: <span className='font-mono'>{student?.school_code || student?.admission_no || '-'}</span></td>
+                                    <td className='font-semibold text-gray-700' style={{ padding: '1px 0' }}>Admission No</td>
+                                    <td style={{ padding: '1px 0' }}>: <span className='font-mono font-bold text-gray-900 bg-gray-100 px-1 rounded'>{student?.school_code || student?.admission_no || '-'}</span></td>
                                 </tr>
                                 <tr>
-                                    <td className='font-semibold text-gray-700 py-0.5'>Father's Name</td>
-                                    <td className='py-0.5'>: {student?.father_name || '-'}</td>
+                                    <td className='font-semibold text-gray-700' style={{ padding: '1px 0' }}>Father's Name</td>
+                                    <td style={{ padding: '1px 0' }}>: {student?.father_name || '-'}</td>
                                 </tr>
                                 <tr>
-                                    <td className='font-semibold text-gray-700 py-0.5'>Class</td>
-                                    <td className='py-0.5'>: {student?.classes?.name || '-'} ({student?.sections?.name || '-'})</td>
+                                    <td className='font-semibold text-gray-700' style={{ padding: '1px 0' }}>Class</td>
+                                    <td style={{ padding: '1px 0' }}>: {student?.classes?.name || '-'} ({student?.sections?.name || '-'})</td>
                                 </tr>
                             </tbody>
                         </table>
                     </div>
                     <div className='flex-1'>
-                        <table className='w-full'>
+                        <table className='w-full' style={{ borderSpacing: 0 }}>
                             <tbody>
                                 <tr>
-                                    <td className='font-semibold text-gray-700 py-0.5 w-24'>Date</td>
-                                    <td className='py-0.5'>: {format(new Date(payment.payment_date), 'dd MMM yyyy')}</td>
+                                    <td className='font-semibold text-gray-700 w-24' style={{ padding: '1px 0' }}>Date</td>
+                                    <td style={{ padding: '1px 0' }}>: <span className='font-medium'>{format(receiptDate, 'dd-MM-yyyy')}</span></td>
                                 </tr>
                                 <tr>
-                                    <td className='font-semibold text-gray-700 py-0.5'>Room</td>
-                                    <td className='py-0.5'>: {hostel?.room?.room_number_name || 'N/A'}</td>
+                                    <td className='font-semibold text-gray-700' style={{ padding: '1px 0' }}>Time</td>
+                                    <td style={{ padding: '1px 0' }}>: <span className='font-medium'>{format(receiptDate, 'hh:mm a')}</span></td>
                                 </tr>
                                 <tr>
-                                    <td className='font-semibold text-gray-700 py-0.5'>Room Type</td>
-                                    <td className='py-0.5'>: {hostel?.room_type?.name || 'N/A'}</td>
+                                    <td className='font-semibold text-gray-700' style={{ padding: '1px 0' }}>Room</td>
+                                    <td style={{ padding: '1px 0' }}>: {hostel?.room?.room_number_name || 'N/A'}</td>
                                 </tr>
                                 <tr>
-                                    <td className='font-semibold text-gray-700 py-0.5'>Bed No</td>
-                                    <td className='py-0.5'>: {hostel?.bed_number || 'N/A'}</td>
+                                    <td className='font-semibold text-gray-700' style={{ padding: '1px 0' }}>Payment Mode</td>
+                                    <td style={{ padding: '1px 0' }}>: <span className='uppercase font-medium'>{payment.payment_mode || 'Cash'}</span></td>
                                 </tr>
                             </tbody>
                         </table>
@@ -415,68 +441,78 @@ const PrintHostelReceipt = () => {
                     </table>
                 )}
 
-                {/* Payment Mode & Note */}
-                <div className='flex justify-between text-[10px] mb-3'>
-                    <div>
-                        <span className='text-gray-600'>Payment Mode:</span>
-                        <span className='ml-1 font-medium bg-gray-100 px-2 py-0.5 rounded'>{payment.payment_mode}</span>
-                    </div>
-                    {payment.note && (
-                        <div>
-                            <span className='text-gray-600'>Note:</span>
-                            <span className='ml-1'>{payment.note}</span>
-                        </div>
-                    )}
-                </div>
-
-                {/* Hostel Fee Summary - Show detailed version only in 'detailed' format */}
-                {hostelSummary && receiptFormat === 'detailed' && (
-                    <div className='mt-2 mb-3 border-t border-purple-300 pt-2'>
-                        <div className='text-[9px] font-semibold text-purple-700 mb-1 flex justify-between items-center'>
-                            <span>🏠 HOSTEL FEE SUMMARY (All Months)</span>
-                            <span className={`px-1.5 py-0.5 rounded text-[7px] font-bold ${
-                                hostelSummary.status === 'Paid' ? 'bg-green-100 text-green-700' : 
-                                hostelSummary.status === 'Partial' ? 'bg-yellow-100 text-yellow-700' : 
-                                'bg-red-100 text-red-700'
-                            }`}>{hostelSummary.status}</span>
-                        </div>
-                        <div className='grid grid-cols-2 gap-2 text-[8px]'>
-                            <div className='bg-purple-50 p-1.5 rounded'>
-                                <div className='text-gray-500'>Room: <span className='text-purple-800 font-medium'>{hostel?.room?.room_number_name || 'N/A'}</span></div>
-                                <div className='text-gray-500'>Type: <span className='text-purple-800 font-medium'>{hostel?.room_type?.name || 'N/A'}</span></div>
-                                {hostelSummary.paidMonths && hostelSummary.paidMonths.length > 0 && (
-                                    <div className='text-gray-500 mt-1'>Paid Months: <span className='text-green-700 font-medium'>{hostelSummary.paidMonths.join(', ')}</span></div>
-                                )}
-                            </div>
-                            <div className='bg-purple-50 p-1.5 rounded'>
-                                <div className='flex justify-between'>
-                                    <span className='text-gray-500'>Monthly Fee:</span>
-                                    <span className='font-mono'>₹{hostelSummary.monthlyFee.toLocaleString('en-IN')}</span>
-                                </div>
-                                <div className='flex justify-between'>
-                                    <span className='text-gray-500'>Total ({hostelSummary.totalMonths} months):</span>
-                                    <span className='font-mono'>₹{hostelSummary.totalFee.toLocaleString('en-IN')}</span>
-                                </div>
-                                <div className='flex justify-between text-green-600'>
-                                    <span>Paid ({hostelSummary.paidMonthsCount} months):</span>
-                                    <span className='font-mono font-semibold'>₹{hostelSummary.totalPaid.toLocaleString('en-IN')}</span>
-                                </div>
-                                <div className='flex justify-between text-red-600 font-semibold'>
-                                    <span>Balance ({hostelSummary.unpaidMonthsCount} months):</span>
-                                    <span className='font-mono'>₹{hostelSummary.balance.toLocaleString('en-IN')}</span>
-                                </div>
-                            </div>
-                        </div>
+                {/* Note (if any) */}
+                {payment.note && (
+                    <div className='text-[10px] mb-2'>
+                        <span className='text-gray-600'>Note:</span>
+                        <span className='ml-1'>{payment.note}</span>
                     </div>
                 )}
 
-                {/* Signature */}
-                <div className='flex justify-between items-end pt-4 text-[10px]'>
-                    <div className='text-center'>
-                        <div className='border-t border-gray-400 pt-1 px-8'>Student/Parent Sign</div>
+                {/* Hostel Fee Statement - Bordered table matching fees receipt */}
+                {hostelSummary && (
+                    <div className='mt-1 border border-gray-400 rounded'>
+                        {/* Header */}
+                        <div className='bg-gray-100 border-b border-gray-400 px-2 py-0.5 flex justify-between items-center'>
+                            <span className='text-[8px] font-semibold text-gray-700'>🏠 HOSTEL FEE STATEMENT</span>
+                            <span className='text-[7px]'>
+                                <span className={`px-1 rounded font-bold ${
+                                    hostelSummary.status === 'Paid' ? 'bg-green-100 text-green-700' : 
+                                    hostelSummary.status === 'Partial' ? 'bg-yellow-100 text-yellow-700' : 
+                                    'bg-red-100 text-red-700'
+                                }`}>{hostelSummary.status}</span>
+                            </span>
+                        </div>
+                        {/* Table */}
+                        <table className='w-full text-[7px] border-collapse'>
+                            <thead>
+                                <tr className='bg-gray-50'>
+                                    <th className='text-left px-2 py-0.5 font-semibold text-gray-600 border-b border-gray-300'>Details</th>
+                                    <th className='text-right px-2 py-0.5 font-semibold text-gray-600 border-b border-gray-300 w-16'>Amount</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr className='bg-white'>
+                                    <td className='px-2 border-b border-gray-200 text-gray-700' style={{ lineHeight: '1.6' }}>
+                                        Room: <span className='font-medium'>{hostel?.room?.room_number_name || 'N/A'}</span>
+                                        {hostel?.room_type?.name && <span className='text-gray-400 ml-1'>({hostel.room_type.name})</span>}
+                                    </td>
+                                    <td className='px-2 border-b border-gray-200 font-mono text-right' style={{ lineHeight: '1.6' }}>
+                                        Billing: {hostelSummary.billingCycle === 'annual' ? 'Annual' : hostelSummary.billingCycle === 'one_time' ? 'One-Time' : hostelSummary.billingCycle === 'monthly' ? 'Monthly' : hostelSummary.billingCycle}
+                                    </td>
+                                </tr>
+                                <tr className='bg-gray-50'>
+                                    <td className='px-2 border-b border-gray-200 text-gray-700' style={{ lineHeight: '1.6' }}>Total Fee</td>
+                                    <td className='px-2 border-b border-gray-200 font-mono text-right' style={{ lineHeight: '1.6' }}>₹{hostelSummary.totalFee.toLocaleString('en-IN')}</td>
+                                </tr>
+                                <tr className='bg-white'>
+                                    <td className='px-2 border-b border-gray-200 text-green-600' style={{ lineHeight: '1.6' }}>Total Paid</td>
+                                    <td className='px-2 border-b border-gray-200 font-mono text-right text-green-600' style={{ lineHeight: '1.6' }}>₹{hostelSummary.totalPaid.toLocaleString('en-IN')}</td>
+                                </tr>
+                                {hostelSummary.totalDiscount > 0 && (
+                                <tr className='bg-gray-50'>
+                                    <td className='px-2 border-b border-gray-200 text-blue-600' style={{ lineHeight: '1.6' }}>Total Discount</td>
+                                    <td className='px-2 border-b border-gray-200 font-mono text-right text-blue-600' style={{ lineHeight: '1.6' }}>₹{hostelSummary.totalDiscount.toLocaleString('en-IN')}</td>
+                                </tr>
+                                )}
+                            </tbody>
+                            <tfoot>
+                                <tr className='bg-gray-100 font-bold'>
+                                    <td className='px-2 py-0.5 border-t border-gray-400 text-red-700'>Balance Due</td>
+                                    <td className='px-2 py-0.5 border-t border-gray-400 font-mono text-right text-red-700'>{hostelSummary.balance > 0 ? `₹${hostelSummary.balance.toLocaleString('en-IN')}` : '₹0'}</td>
+                                </tr>
+                            </tfoot>
+                        </table>
                     </div>
-                    <div className='text-center'>
-                        <div className='border-t border-gray-400 pt-1 px-8'>Authorized Signatory</div>
+                )}
+
+                {/* Footer */}
+                <div className='flex justify-between items-end mt-2 pt-2 border-t border-dashed border-gray-400'>
+                    <div className='text-[9px] text-gray-500 italic'>
+                        This is a computer generated receipt. No signature required.
+                    </div>
+                    <div className='text-[8px] text-gray-400'>
+                        Printed: {format(currentDateTime, 'dd/MM/yyyy hh:mm a')}
                     </div>
                 </div>
             </div>

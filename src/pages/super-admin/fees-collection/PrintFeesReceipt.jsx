@@ -255,6 +255,9 @@ const PrintFeesReceipt = () => {
       const anyPrinted = paymentData.some(p => p.printed_at);
       setIsOriginal(!anyPrinted);
 
+      // Receipt generated date = first payment's created_at (original creation time)
+      const receiptCreatedAt = paymentsWithMaster[0]?.created_at || paymentsWithMaster[0]?.payment_date || new Date().toISOString();
+
       setPaymentDetails({
         student,
         school: schoolData,
@@ -266,6 +269,7 @@ const PrintFeesReceipt = () => {
         transactionId: displayTransactionId,
         feeStatement,
         feeStatementTotals,
+        receiptCreatedAt,
       });
       setPrintSettings(settingsData);
     } catch (error) {
@@ -283,16 +287,16 @@ const PrintFeesReceipt = () => {
   const handlePrint = async () => {
     // Mark as printed in DB (first print = original, subsequent = reprint)
     if (isOriginal && paymentDetails?.payments?.length > 0) {
-      try {
-        const paymentIds = paymentDetails.payments.map(p => p.id);
-        await supabase
-          .from('fee_payments')
-          .update({ printed_at: new Date().toISOString() })
-          .in('id', paymentIds)
-          .is('printed_at', null);
+      const paymentIds = paymentDetails.payments.map(p => p.id);
+      const { data: updateResult, error: updateError } = await supabase
+        .from('fee_payments')
+        .update({ printed_at: new Date().toISOString() })
+        .in('id', paymentIds)
+        .is('printed_at', null)
+        .select('id, printed_at');
+      
+      if (!updateError && updateResult?.length > 0) {
         setIsOriginal(false); // After first print, it becomes reprint
-      } catch (err) {
-        // Non-blocking - don't prevent printing if DB update fails
       }
     }
     window.print();
@@ -316,7 +320,8 @@ const PrintFeesReceipt = () => {
     );
   }
 
-  const { student, school, branch, payments, totalPaid, totalDiscount, totalFine, transactionId, feeStatement, feeStatementTotals } = paymentDetails;
+  const { student, school, branch, payments, totalPaid, totalDiscount, totalFine, transactionId, feeStatement, feeStatementTotals, receiptCreatedAt } = paymentDetails;
+  const receiptDate = receiptCreatedAt ? new Date(receiptCreatedAt) : currentDateTime;
 
   // Receipt No = short serial (e.g., F00001), Transaction ID = full reference in Payment History
   const receiptNo = (() => {
@@ -388,48 +393,48 @@ const PrintFeesReceipt = () => {
 
       {/* Content */}
       <div className='p-3'>
-        {/* Student & Transaction Info */}
-        <div className='flex justify-between gap-4 mb-3 text-[11px]'>
+        {/* Student & Transaction Info - Compact */}
+        <div className='flex justify-between gap-4 mb-2 text-[11px]' style={{ lineHeight: '1.4' }}>
           <div className='flex-1'>
-            <table className='w-full'>
+            <table className='w-full' style={{ borderSpacing: 0 }}>
               <tbody>
                 <tr>
-                  <td className='font-semibold text-gray-700 py-0.5 w-28'>Student Name</td>
-                  <td className='py-0.5'>: <span className='font-bold text-gray-900 text-[12px]'>{student.full_name}</span></td>
+                  <td className='font-semibold text-gray-700 w-28' style={{ padding: '1px 0' }}>Student Name</td>
+                  <td style={{ padding: '1px 0' }}>: <span className='font-bold text-gray-900 text-[12px]'>{student.full_name}</span></td>
                 </tr>
                 <tr>
-                  <td className='font-semibold text-gray-700 py-0.5'>Admission No</td>
-                  <td className='py-0.5'>: <span className='font-mono font-bold text-gray-900 bg-gray-100 px-1 rounded'>{student.school_code || student.admission_no || '-'}</span></td>
+                  <td className='font-semibold text-gray-700' style={{ padding: '1px 0' }}>Admission No</td>
+                  <td style={{ padding: '1px 0' }}>: <span className='font-mono font-bold text-gray-900 bg-gray-100 px-1 rounded'>{student.school_code || student.admission_no || '-'}</span></td>
                 </tr>
                 <tr>
-                  <td className='font-semibold text-gray-700 py-0.5'>Father's Name</td>
-                  <td className='py-0.5'>: {student.father_name || '-'}</td>
+                  <td className='font-semibold text-gray-700' style={{ padding: '1px 0' }}>Father's Name</td>
+                  <td style={{ padding: '1px 0' }}>: {student.father_name || '-'}</td>
                 </tr>
                 <tr>
-                  <td className='font-semibold text-gray-700 py-0.5'>Class</td>
-                  <td className='py-0.5'>: {student.classes?.name || student.class?.name || '-'} ({student.sections?.name || student.section?.name || '-'})</td>
+                  <td className='font-semibold text-gray-700' style={{ padding: '1px 0' }}>Class</td>
+                  <td style={{ padding: '1px 0' }}>: {student.classes?.name || student.class?.name || '-'} ({student.sections?.name || student.section?.name || '-'})</td>
                 </tr>
               </tbody>
             </table>
           </div>
           <div className='flex-1'>
-            <table className='w-full'>
+            <table className='w-full' style={{ borderSpacing: 0 }}>
               <tbody>
                 <tr>
-                  <td className='font-semibold text-gray-700 py-0.5 w-28'>Date</td>
-                  <td className='py-0.5'>: <span className='font-medium'>{format(currentDateTime, 'dd-MM-yyyy')}</span></td>
+                  <td className='font-semibold text-gray-700 w-28' style={{ padding: '1px 0' }}>Date</td>
+                  <td style={{ padding: '1px 0' }}>: <span className='font-medium'>{format(receiptDate, 'dd-MM-yyyy')}</span></td>
                 </tr>
                 <tr>
-                  <td className='font-semibold text-gray-700 py-0.5'>Time</td>
-                  <td className='py-0.5'>: <span className='font-medium'>{format(currentDateTime, 'hh:mm a')}</span></td>
+                  <td className='font-semibold text-gray-700' style={{ padding: '1px 0' }}>Time</td>
+                  <td style={{ padding: '1px 0' }}>: <span className='font-medium'>{format(receiptDate, 'hh:mm a')}</span></td>
                 </tr>
                 <tr>
-                  <td className='font-semibold text-gray-700 py-0.5'>Payment Mode</td>
-                  <td className='py-0.5'>: <span className='uppercase font-medium'>{payments[0]?.payment_mode || 'Cash'}</span></td>
+                  <td className='font-semibold text-gray-700' style={{ padding: '1px 0' }}>Payment Mode</td>
+                  <td style={{ padding: '1px 0' }}>: <span className='uppercase font-medium'>{payments[0]?.payment_mode || 'Cash'}</span></td>
                 </tr>
                 <tr>
-                  <td className='font-semibold text-gray-700 py-0.5'>Branch</td>
-                  <td className='py-0.5'>: {school?.name || branch?.branch_name || '-'}</td>
+                  <td className='font-semibold text-gray-700' style={{ padding: '1px 0' }}>Branch</td>
+                  <td style={{ padding: '1px 0' }}>: {school?.name || branch?.branch_name || '-'}</td>
                 </tr>
               </tbody>
             </table>
@@ -453,9 +458,8 @@ const PrintFeesReceipt = () => {
             {payments.map((p, idx) => (
               <tr key={p.id} className={idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
                 <td className='border border-gray-300 p-1.5 text-center'>{idx + 1}</td>
-                <td className='border border-gray-300 p-1.5 font-medium'>
-                  <div>{p.fee_name || 'Fee'}</div>
-                  {p.fee_group_name && <div className='text-[8px] text-gray-500'>{p.fee_group_name}</div>}
+                <td className='border border-gray-300 p-1.5 font-medium' style={{ whiteSpace: 'nowrap' }}>
+                  {p.fee_name || 'Fee'}{p.fee_group_name ? <span className='text-[8px] text-gray-500 ml-1'>({p.fee_group_name})</span> : ''}
                 </td>
                 <td className='border border-gray-300 p-1.5 text-right font-mono'>{Number(p.total_fee_amount || p.fee_master?.amount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
                 {totalDiscount > 0 && <td className='border border-gray-300 p-1.5 text-right font-mono'>{Number(p.discount_amount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>}
@@ -497,41 +501,56 @@ const PrintFeesReceipt = () => {
           )}
         </div>
 
-        {/* Fee Statement Summary - Grid aligned compact format */}
+        {/* Fee Statement Summary - Separate bordered box with table */}
         {feeStatementTotals && feeStatement && feeStatement.length > 0 && (
-          <div className='mt-1 border-t border-gray-300 pt-1'>
-            <div className='text-[8px] font-semibold text-gray-700 mb-0.5 flex justify-between items-center'>
-              <span>📋 FEE STATEMENT ({feeStatementTotals.totalCount} Installments)</span>
-              <span className='font-normal text-[7px]'>
+          <div className='mt-1 border border-gray-400 rounded'>
+            {/* Header */}
+            <div className='bg-gray-100 border-b border-gray-400 px-2 py-0.5 flex justify-between items-center'>
+              <span className='text-[8px] font-semibold text-gray-700'>📋 FEE STATEMENT ({feeStatementTotals.totalCount} Installments)</span>
+              <span className='text-[7px]'>
                 <span className='text-green-600'>✓{feeStatementTotals.paidCount}</span>
                 {feeStatementTotals.partialCount > 0 && <span className='text-yellow-600 ml-1'>◐{feeStatementTotals.partialCount}</span>}
                 {feeStatementTotals.unpaidCount > 0 && <span className='text-red-600 ml-1'>○{feeStatementTotals.unpaidCount}</span>}
               </span>
             </div>
-            <div className='text-[7px]'>
-              {feeStatement.map((fee, idx) => (
-                <div key={fee.id || idx} className='grid items-center border-b border-gray-200 last:border-b-0' style={{ gridTemplateColumns: '1fr 60px 60px 60px 40px', lineHeight: '1.6' }}>
-                  <span className='font-medium text-gray-700 truncate'>{fee.typeName} <span className='text-gray-400'>({fee.group})</span></span>
-                  <span className='font-mono text-right'>₹{fee.amount.toLocaleString('en-IN')}</span>
-                  <span className='font-mono text-right text-green-600'>₹{fee.totalPaid.toLocaleString('en-IN')}</span>
-                  <span className='font-mono text-right text-red-600'>{fee.balance > 0 ? `-₹${fee.balance.toLocaleString('en-IN')}` : '₹0'}</span>
-                  <span className='text-right'>
-                    <span className={`px-1 rounded text-[6px] font-bold ${
-                      fee.status === 'Paid' ? 'bg-green-100 text-green-700' : 
-                      fee.status === 'Partial' ? 'bg-yellow-100 text-yellow-700' : 
-                      'bg-red-100 text-red-700'
-                    }`}>{fee.status}</span>
-                  </span>
-                </div>
-              ))}
-              <div className='grid items-center font-bold border-t border-gray-400' style={{ gridTemplateColumns: '1fr 60px 60px 60px 40px', lineHeight: '1.6' }}>
-                <span>TOTAL:</span>
-                <span className='font-mono text-right'>₹{feeStatementTotals.totalFees.toLocaleString('en-IN')}</span>
-                <span className='font-mono text-right text-green-700'>₹{feeStatementTotals.totalPaid.toLocaleString('en-IN')}</span>
-                <span className='font-mono text-right text-red-700'>{feeStatementTotals.totalBalance > 0 ? `-₹${feeStatementTotals.totalBalance.toLocaleString('en-IN')}` : '₹0'}</span>
-                <span></span>
-              </div>
-            </div>
+            {/* Table */}
+            <table className='w-full text-[7px] border-collapse'>
+              <thead>
+                <tr className='bg-gray-50'>
+                  <th className='text-left px-2 py-0.5 font-semibold text-gray-600 border-b border-gray-300'>Fee Name</th>
+                  <th className='text-right px-2 py-0.5 font-semibold text-gray-600 border-b border-gray-300 w-14'>Amount</th>
+                  <th className='text-right px-2 py-0.5 font-semibold text-gray-600 border-b border-gray-300 w-14'>Paid</th>
+                  <th className='text-right px-2 py-0.5 font-semibold text-gray-600 border-b border-gray-300 w-14'>Balance</th>
+                  <th className='text-right px-2 py-0.5 font-semibold text-gray-600 border-b border-gray-300 w-10'>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {feeStatement.map((fee, idx) => (
+                  <tr key={fee.id || idx} className={idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                    <td className='px-2 border-b border-gray-200 font-medium text-gray-700 truncate' style={{ lineHeight: '1.6' }}>{fee.typeName} <span className='text-gray-400'>({fee.group})</span></td>
+                    <td className='px-2 border-b border-gray-200 font-mono text-right' style={{ lineHeight: '1.6' }}>₹{fee.amount.toLocaleString('en-IN')}</td>
+                    <td className='px-2 border-b border-gray-200 font-mono text-right text-green-600' style={{ lineHeight: '1.6' }}>₹{fee.totalPaid.toLocaleString('en-IN')}</td>
+                    <td className='px-2 border-b border-gray-200 font-mono text-right text-red-600' style={{ lineHeight: '1.6' }}>{fee.balance > 0 ? `-₹${fee.balance.toLocaleString('en-IN')}` : '₹0'}</td>
+                    <td className='px-2 border-b border-gray-200 text-right' style={{ lineHeight: '1.6' }}>
+                      <span className={`px-1 rounded text-[6px] font-bold ${
+                        fee.status === 'Paid' ? 'bg-green-100 text-green-700' : 
+                        fee.status === 'Partial' ? 'bg-yellow-100 text-yellow-700' : 
+                        'bg-red-100 text-red-700'
+                      }`}>{fee.status}</span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+              <tfoot>
+                <tr className='bg-gray-100 font-bold'>
+                  <td className='px-2 py-0.5 border-t border-gray-400'>TOTAL:</td>
+                  <td className='px-2 py-0.5 border-t border-gray-400 font-mono text-right'>₹{feeStatementTotals.totalFees.toLocaleString('en-IN')}</td>
+                  <td className='px-2 py-0.5 border-t border-gray-400 font-mono text-right text-green-700'>₹{feeStatementTotals.totalPaid.toLocaleString('en-IN')}</td>
+                  <td className='px-2 py-0.5 border-t border-gray-400 font-mono text-right text-red-700'>{feeStatementTotals.totalBalance > 0 ? `-₹${feeStatementTotals.totalBalance.toLocaleString('en-IN')}` : '₹0'}</td>
+                  <td className='px-2 py-0.5 border-t border-gray-400'></td>
+                </tr>
+              </tfoot>
+            </table>
           </div>
         )}
 

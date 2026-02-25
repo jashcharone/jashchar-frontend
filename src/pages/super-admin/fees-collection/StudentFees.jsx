@@ -354,20 +354,30 @@ const StudentFees = () => {
                 // Get billing cycle from student_transport_details or default to monthly
                 const billingCycle = transportData.billing_cycle || 'monthly';
                 const periodFee = Number(transportData.transport_fee) || 0;
+                const isAnnualType = billingCycle === 'annual' || billingCycle === 'one_time';
                 
                 // Calculate fee details based on billing cycle
                 const feeDetails = calculateFeeDetails(periodFee, billingCycle, totalSessionMonths);
                 const { totalFee: totalTransportFee, perMonthEquivalent } = feeDetails;
                 
-                // For collection, we use monthly equivalent for month-based tracking
+                // For annual/one_time: use actual paid amounts (any amount allowed)
+                // For monthly: use month-count based calculation
                 const paidMonthsSet = getPaidMonths(transportPayments);
                 const paidMonthsCount = paidMonthsSet.size;
-                
-                // Calculate paid and balance based on monthly equivalent
-                const transportPaid = paidMonthsCount * perMonthEquivalent;
                 const transportDiscount = (transportPayments || []).reduce((sum, p) => sum + (Number(p.discount_amount) || 0), 0);
-                const unpaidMonthsCount = totalSessionMonths - paidMonthsCount;
-                const transportBalance = unpaidMonthsCount * perMonthEquivalent;
+                
+                let transportPaid, transportBalance, unpaidMonthsCount;
+                if (isAnnualType) {
+                    // Annual/One-time: balance = totalFee - actual amounts paid - discounts
+                    transportPaid = (transportPayments || []).reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
+                    transportBalance = Math.max(0, totalTransportFee - transportPaid - transportDiscount);
+                    unpaidMonthsCount = transportBalance > 0 ? 1 : 0;
+                } else {
+                    // Monthly: use month-based calculation
+                    transportPaid = paidMonthsCount * perMonthEquivalent;
+                    unpaidMonthsCount = totalSessionMonths - paidMonthsCount;
+                    transportBalance = unpaidMonthsCount * perMonthEquivalent;
+                }
                 
                 // Mark unpaid months
                 const unpaidMonths = months.filter(m => !paidMonthsSet.has(m.key));
@@ -375,6 +385,7 @@ const StudentFees = () => {
                 setTransportDetails({
                     ...transportData,
                     billingCycle,
+                    isAnnualType,
                     periodFee,                          // Fee per billing period
                     monthlyFee: perMonthEquivalent,     // Monthly equivalent for collection
                     totalMonths: totalSessionMonths,
@@ -420,20 +431,30 @@ const StudentFees = () => {
                 // Get billing cycle from student_hostel_details or default to monthly
                 const billingCycle = hostelData.billing_cycle || 'monthly';
                 const periodFee = Number(hostelData.hostel_fee) || 0;
+                const isAnnualType = billingCycle === 'annual' || billingCycle === 'one_time';
                 
                 // Calculate fee details based on billing cycle
                 const feeDetails = calculateFeeDetails(periodFee, billingCycle, totalSessionMonths);
                 const { totalFee: totalHostelFee, perMonthEquivalent } = feeDetails;
                 
-                // For collection, we use monthly equivalent for month-based tracking
+                // For annual/one_time: use actual paid amounts (any amount allowed)
+                // For monthly: use month-count based calculation
                 const paidMonthsSet = getPaidMonths(hostelPayments);
                 const paidMonthsCount = paidMonthsSet.size;
-                
-                // Calculate paid and balance based on monthly equivalent
-                const hostelPaid = paidMonthsCount * perMonthEquivalent;
                 const hostelDiscount = (hostelPayments || []).reduce((sum, p) => sum + (Number(p.discount_amount) || 0), 0);
-                const unpaidMonthsCount = totalSessionMonths - paidMonthsCount;
-                const hostelBalance = unpaidMonthsCount * perMonthEquivalent;
+                
+                let hostelPaid, hostelBalance, unpaidMonthsCount;
+                if (isAnnualType) {
+                    // Annual/One-time: balance = totalFee - actual amounts paid - discounts
+                    hostelPaid = (hostelPayments || []).reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
+                    hostelBalance = Math.max(0, totalHostelFee - hostelPaid - hostelDiscount);
+                    unpaidMonthsCount = hostelBalance > 0 ? 1 : 0;
+                } else {
+                    // Monthly: use month-based calculation
+                    hostelPaid = paidMonthsCount * perMonthEquivalent;
+                    unpaidMonthsCount = totalSessionMonths - paidMonthsCount;
+                    hostelBalance = unpaidMonthsCount * perMonthEquivalent;
+                }
                 
                 // Mark unpaid months
                 const unpaidMonths = months.filter(m => !paidMonthsSet.has(m.key));
@@ -441,6 +462,7 @@ const StudentFees = () => {
                 setHostelDetails({
                     ...hostelData,
                     billingCycle,
+                    isAnnualType,
                     periodFee,                          // Fee per billing period
                     monthlyFee: perMonthEquivalent,     // Monthly equivalent for collection
                     totalMonths: totalSessionMonths,
@@ -668,15 +690,31 @@ const StudentFees = () => {
 
     // Collect Transport Fee
     const collectTransportFee = async () => {
-        if (!transportDetails || selectedTransportMonths.length === 0) {
+        const isAnnualType = transportDetails?.isAnnualType;
+        
+        if (!isAnnualType && (!transportDetails || selectedTransportMonths.length === 0)) {
             toast({ variant: 'destructive', title: 'Select months', description: 'Please select at least one month to pay.' });
             return;
         }
         
-        const monthlyFee = transportDetails.monthlyFee || 0;
-        const totalAmount = selectedTransportMonths.length * monthlyFee;
         const discount = parseFloat(transportPaymentDetails.discount) || 0;
         const fine = parseFloat(transportPaymentDetails.fine) || 0;
+        
+        let totalAmount;
+        if (isAnnualType) {
+            totalAmount = parseFloat(transportPaymentDetails.amount) || 0;
+            if (totalAmount <= 0) {
+                toast({ variant: 'destructive', title: 'Invalid amount', description: 'Please enter an amount to pay.' });
+                return;
+            }
+            if (totalAmount > transportDetails.balance) {
+                toast({ variant: 'destructive', title: 'Exceeds balance', description: `Amount cannot exceed balance of ${currencySymbol}${transportDetails.balance.toLocaleString('en-IN')}` });
+                return;
+            }
+        } else {
+            const monthlyFee = transportDetails.monthlyFee || 0;
+            totalAmount = selectedTransportMonths.length * monthlyFee;
+        }
         
         if (totalAmount <= 0) {
             toast({ variant: 'destructive', title: 'Invalid amount', description: 'Amount must be greater than zero.' });
@@ -688,25 +726,47 @@ const StudentFees = () => {
             const branchCode = selectedBranch?.branch_code || selectedBranch?.code || 'TRN';
             const newTransactionId = await generateTransactionId(supabase, selectedBranch.id, branchCode, 'transport');
             
-            // Create one payment record per selected month
-            const paymentsToInsert = selectedTransportMonths.map((monthKey, index) => {
-                const monthLabel = sessionMonths.find(m => m.key === monthKey)?.label || monthKey;
-                return {
+            let paymentsToInsert;
+            if (isAnnualType) {
+                // Annual/One-time: Single payment record with custom amount
+                const sessionName = student?.sessions?.name || 'Annual';
+                paymentsToInsert = [{
                     branch_id: selectedBranch.id,
                     session_id: currentSessionId,
                     organization_id: organizationId,
                     student_id: studentId,
-                    amount: monthlyFee,
-                    discount_amount: index === 0 ? discount : 0, // Apply discount to first payment only
-                    fine_paid: index === 0 ? fine : 0,
+                    amount: totalAmount,
+                    discount_amount: discount,
+                    fine_paid: fine,
                     payment_date: format(transportPaymentDetails.payment_date || new Date(), 'yyyy-MM-dd'),
                     payment_mode: transportPaymentDetails.payment_mode,
-                    payment_month: monthLabel,
-                    note: transportPaymentDetails.note || `Payment for ${selectedTransportMonths.length} month(s)`,
+                    payment_month: `${getBillingCycleLabel(transportDetails.billingCycle)} ${sessionName}`,
+                    note: transportPaymentDetails.note || `${getBillingCycleLabel(transportDetails.billingCycle)} payment`,
                     transaction_id: newTransactionId,
                     collected_by: user.id,
-                };
-            });
+                }];
+            } else {
+                // Monthly: Create one payment record per selected month
+                const monthlyFee = transportDetails.monthlyFee || 0;
+                paymentsToInsert = selectedTransportMonths.map((monthKey, index) => {
+                    const monthLabel = sessionMonths.find(m => m.key === monthKey)?.label || monthKey;
+                    return {
+                        branch_id: selectedBranch.id,
+                        session_id: currentSessionId,
+                        organization_id: organizationId,
+                        student_id: studentId,
+                        amount: monthlyFee,
+                        discount_amount: index === 0 ? discount : 0,
+                        fine_paid: index === 0 ? fine : 0,
+                        payment_date: format(transportPaymentDetails.payment_date || new Date(), 'yyyy-MM-dd'),
+                        payment_mode: transportPaymentDetails.payment_mode,
+                        payment_month: monthLabel,
+                        note: transportPaymentDetails.note || `Payment for ${selectedTransportMonths.length} month(s)`,
+                        transaction_id: newTransactionId,
+                        collected_by: user.id,
+                    };
+                });
+            }
 
             const { data, error } = await supabase
                 .from('transport_fee_payments')
@@ -717,7 +777,9 @@ const StudentFees = () => {
             
             toast({ 
                 title: '✅ Transport fee collected!', 
-                description: `${selectedTransportMonths.length} month(s) paid. Transaction ID: ${newTransactionId}` 
+                description: isAnnualType 
+                    ? `${currencySymbol}${totalAmount.toLocaleString('en-IN')} paid. Transaction ID: ${newTransactionId}`
+                    : `${selectedTransportMonths.length} month(s) paid. Transaction ID: ${newTransactionId}` 
             });
             await fetchStudentAndFees();
             setTransportPaymentDetails({ amount: '', discount: '0', fine: '0', payment_date: new Date(), payment_mode: 'Cash', note: '' });
@@ -736,15 +798,31 @@ const StudentFees = () => {
 
     // Collect Hostel Fee
     const collectHostelFee = async () => {
-        if (!hostelDetails || selectedHostelMonths.length === 0) {
+        const isAnnualType = hostelDetails?.isAnnualType;
+        
+        if (!isAnnualType && (!hostelDetails || selectedHostelMonths.length === 0)) {
             toast({ variant: 'destructive', title: 'Select months', description: 'Please select at least one month to pay.' });
             return;
         }
         
-        const monthlyFee = hostelDetails.monthlyFee || 0;
-        const totalAmount = selectedHostelMonths.length * monthlyFee;
         const discount = parseFloat(hostelPaymentDetails.discount) || 0;
         const fine = parseFloat(hostelPaymentDetails.fine) || 0;
+        
+        let totalAmount;
+        if (isAnnualType) {
+            totalAmount = parseFloat(hostelPaymentDetails.amount) || 0;
+            if (totalAmount <= 0) {
+                toast({ variant: 'destructive', title: 'Invalid amount', description: 'Please enter an amount to pay.' });
+                return;
+            }
+            if (totalAmount > hostelDetails.balance) {
+                toast({ variant: 'destructive', title: 'Exceeds balance', description: `Amount cannot exceed balance of ${currencySymbol}${hostelDetails.balance.toLocaleString('en-IN')}` });
+                return;
+            }
+        } else {
+            const monthlyFee = hostelDetails.monthlyFee || 0;
+            totalAmount = selectedHostelMonths.length * monthlyFee;
+        }
         
         if (totalAmount <= 0) {
             toast({ variant: 'destructive', title: 'Invalid amount', description: 'Amount must be greater than zero.' });
@@ -756,25 +834,47 @@ const StudentFees = () => {
             const branchCode = selectedBranch?.branch_code || selectedBranch?.code || 'HST';
             const newTransactionId = await generateTransactionId(supabase, selectedBranch.id, branchCode, 'hostel');
             
-            // Create one payment record per selected month
-            const paymentsToInsert = selectedHostelMonths.map((monthKey, index) => {
-                const monthLabel = sessionMonths.find(m => m.key === monthKey)?.label || monthKey;
-                return {
+            let paymentsToInsert;
+            if (isAnnualType) {
+                // Annual/One-time: Single payment record with custom amount
+                const sessionName = student?.sessions?.name || 'Annual';
+                paymentsToInsert = [{
                     branch_id: selectedBranch.id,
                     session_id: currentSessionId,
                     organization_id: organizationId,
                     student_id: studentId,
-                    amount: monthlyFee,
-                    discount_amount: index === 0 ? discount : 0, // Apply discount to first payment only
-                    fine_paid: index === 0 ? fine : 0,
+                    amount: totalAmount,
+                    discount_amount: discount,
+                    fine_paid: fine,
                     payment_date: format(hostelPaymentDetails.payment_date || new Date(), 'yyyy-MM-dd'),
                     payment_mode: hostelPaymentDetails.payment_mode,
-                    payment_month: monthLabel,
-                    note: hostelPaymentDetails.note || `Payment for ${selectedHostelMonths.length} month(s)`,
+                    payment_month: `${getBillingCycleLabel(hostelDetails.billingCycle)} ${sessionName}`,
+                    note: hostelPaymentDetails.note || `${getBillingCycleLabel(hostelDetails.billingCycle)} payment`,
                     transaction_id: newTransactionId,
                     collected_by: user.id,
-                };
-            });
+                }];
+            } else {
+                // Monthly: Create one payment record per selected month
+                const monthlyFee = hostelDetails.monthlyFee || 0;
+                paymentsToInsert = selectedHostelMonths.map((monthKey, index) => {
+                    const monthLabel = sessionMonths.find(m => m.key === monthKey)?.label || monthKey;
+                    return {
+                        branch_id: selectedBranch.id,
+                        session_id: currentSessionId,
+                        organization_id: organizationId,
+                        student_id: studentId,
+                        amount: monthlyFee,
+                        discount_amount: index === 0 ? discount : 0,
+                        fine_paid: index === 0 ? fine : 0,
+                        payment_date: format(hostelPaymentDetails.payment_date || new Date(), 'yyyy-MM-dd'),
+                        payment_mode: hostelPaymentDetails.payment_mode,
+                        payment_month: monthLabel,
+                        note: hostelPaymentDetails.note || `Payment for ${selectedHostelMonths.length} month(s)`,
+                        transaction_id: newTransactionId,
+                        collected_by: user.id,
+                    };
+                });
+            }
 
             const { data, error } = await supabase
                 .from('hostel_fee_payments')
@@ -785,7 +885,9 @@ const StudentFees = () => {
             
             toast({ 
                 title: '✅ Hostel fee collected!', 
-                description: `${selectedHostelMonths.length} month(s) paid. Transaction ID: ${newTransactionId}` 
+                description: isAnnualType
+                    ? `${currencySymbol}${totalAmount.toLocaleString('en-IN')} paid. Transaction ID: ${newTransactionId}`
+                    : `${selectedHostelMonths.length} month(s) paid. Transaction ID: ${newTransactionId}` 
             });
             await fetchStudentAndFees();
             setHostelPaymentDetails({ amount: '', discount: '0', fine: '0', payment_date: new Date(), payment_mode: 'Cash', note: '' });
@@ -1275,20 +1377,22 @@ const StudentFees = () => {
                                                             <p className="text-xs text-muted-foreground">Fee ({getBillingCycleLabel(transportDetails.billingCycle)})</p>
                                                             <p className="font-bold text-lg">{currencySymbol}{(transportDetails.periodFee || 0).toLocaleString('en-IN')}</p>
                                                         </div>
+                                                        {!transportDetails.isAnnualType && (
                                                         <div>
                                                             <p className="text-xs text-muted-foreground">Monthly Equivalent</p>
                                                             <p className="font-bold text-lg">{currencySymbol}{(transportDetails.monthlyFee || 0).toLocaleString('en-IN')}</p>
                                                         </div>
+                                                        )}
                                                         <div>
-                                                            <p className="text-xs text-muted-foreground">Total Fee ({transportDetails.totalMonths || 12} months)</p>
+                                                            <p className="text-xs text-muted-foreground">Total Fee {!transportDetails.isAnnualType ? `(${transportDetails.totalMonths || 12} months)` : `(${getBillingCycleLabel(transportDetails.billingCycle)})`}</p>
                                                             <p className="font-bold text-lg">{currencySymbol}{(transportDetails.totalFee || 0).toLocaleString('en-IN')}</p>
                                                         </div>
                                                         <div>
-                                                            <p className="text-xs text-muted-foreground">Paid ({transportDetails.paidMonthsCount || 0} months)</p>
+                                                            <p className="text-xs text-muted-foreground">Paid {!transportDetails.isAnnualType ? `(${transportDetails.paidMonthsCount || 0} months)` : ''}</p>
                                                             <p className="font-bold text-lg text-green-600">{currencySymbol}{(transportDetails.totalPaid || 0).toLocaleString('en-IN')}</p>
                                                         </div>
                                                         <div>
-                                                            <p className="text-xs text-muted-foreground">Balance ({transportDetails.unpaidMonthsCount || 0} months)</p>
+                                                            <p className="text-xs text-muted-foreground">Balance {!transportDetails.isAnnualType ? `(${transportDetails.unpaidMonthsCount || 0} months)` : 'Due'}</p>
                                                             <p className={`font-bold text-lg ${transportDetails.balance > 0 ? 'text-red-600' : 'text-green-600'}`}>{currencySymbol}{(transportDetails.balance || 0).toLocaleString('en-IN')}</p>
                                                         </div>
                                                     </div>
@@ -1300,6 +1404,63 @@ const StudentFees = () => {
                                                 {/* Transport Fee Collection Form */}
                                                 {transportDetails.balance > 0 && (
                                                     <div className="border-t pt-4 mt-4">
+                                                        
+                                                        {/* ANNUAL/ONE-TIME: Simple amount input (any amount up to balance) */}
+                                                        {transportDetails.isAnnualType ? (
+                                                            <>
+                                                                <p className="text-sm font-medium mb-3">
+                                                                    Enter Amount to Pay 
+                                                                    <span className="text-xs text-muted-foreground ml-2">
+                                                                        (Balance: {currencySymbol}{transportDetails.balance.toLocaleString('en-IN')} — pay any amount)
+                                                                    </span>
+                                                                </p>
+                                                                <div className="grid sm:grid-cols-3 gap-3">
+                                                                    <div>
+                                                                        <Label className="text-xs">Amount ({currencySymbol})</Label>
+                                                                        <Input
+                                                                            type="number"
+                                                                            value={transportPaymentDetails.amount}
+                                                                            onChange={e => setTransportPaymentDetails(p => ({...p, amount: e.target.value}))}
+                                                                            placeholder={`Max ${transportDetails.balance.toLocaleString('en-IN')}`}
+                                                                            max={transportDetails.balance}
+                                                                        />
+                                                                    </div>
+                                                                    <div>
+                                                                        <Label className="text-xs">Discount ({currencySymbol})</Label>
+                                                                        <Input
+                                                                            type="number"
+                                                                            value={transportPaymentDetails.discount}
+                                                                            onChange={e => setTransportPaymentDetails(p => ({...p, discount: e.target.value}))}
+                                                                        />
+                                                                    </div>
+                                                                    <div>
+                                                                        <Label className="text-xs">Payment Mode</Label>
+                                                                        <Select value={transportPaymentDetails.payment_mode} onValueChange={v => setTransportPaymentDetails(p => ({...p, payment_mode: v}))}>
+                                                                            <SelectTrigger><SelectValue /></SelectTrigger>
+                                                                            <SelectContent>
+                                                                                <SelectItem value="Cash">Cash</SelectItem>
+                                                                                <SelectItem value="Cheque">Cheque</SelectItem>
+                                                                                <SelectItem value="Online">Online</SelectItem>
+                                                                                <SelectItem value="UPI">UPI</SelectItem>
+                                                                                <SelectItem value="Card">Card</SelectItem>
+                                                                            </SelectContent>
+                                                                        </Select>
+                                                                    </div>
+                                                                </div>
+                                                                <div className="mt-3">
+                                                                    <Button 
+                                                                        onClick={collectTransportFee} 
+                                                                        disabled={paymentLoading || !(parseFloat(transportPaymentDetails.amount) > 0)}
+                                                                        className="w-full bg-blue-600 hover:bg-blue-700"
+                                                                    >
+                                                                        {paymentLoading ? <Loader2 className="animate-spin mr-2 h-4 w-4" /> : <Receipt className="mr-2 h-4 w-4" />}
+                                                                        Collect & Print Receipt
+                                                                    </Button>
+                                                                </div>
+                                                            </>
+                                                        ) : (
+                                                            /* MONTHLY: Month selection grid */
+                                                            <>
                                                         <p className="text-sm font-medium mb-3">Select Months to Pay</p>
                                                         
                                                         {/* Month Selection Grid */}
@@ -1426,6 +1587,8 @@ const StudentFees = () => {
                                                                 Collect {selectedTransportMonths.length} Month(s) & Print Receipt
                                                             </Button>
                                                         </div>
+                                                            </>
+                                                        )}
                                                     </div>
                                                 )}
                                             </div>
@@ -1466,20 +1629,22 @@ const StudentFees = () => {
                                                             <p className="text-xs text-muted-foreground">Fee ({getBillingCycleLabel(hostelDetails.billingCycle)})</p>
                                                             <p className="font-bold text-lg">{currencySymbol}{(hostelDetails.periodFee || 0).toLocaleString('en-IN')}</p>
                                                         </div>
+                                                        {!hostelDetails.isAnnualType && (
                                                         <div>
                                                             <p className="text-xs text-muted-foreground">Monthly Equivalent</p>
                                                             <p className="font-bold text-lg">{currencySymbol}{(hostelDetails.monthlyFee || 0).toLocaleString('en-IN')}</p>
                                                         </div>
+                                                        )}
                                                         <div>
-                                                            <p className="text-xs text-muted-foreground">Total Fee ({hostelDetails.totalMonths || 12} months)</p>
+                                                            <p className="text-xs text-muted-foreground">Total Fee {!hostelDetails.isAnnualType ? `(${hostelDetails.totalMonths || 12} months)` : `(${getBillingCycleLabel(hostelDetails.billingCycle)})`}</p>
                                                             <p className="font-bold text-lg">{currencySymbol}{(hostelDetails.totalFee || 0).toLocaleString('en-IN')}</p>
                                                         </div>
                                                         <div>
-                                                            <p className="text-xs text-muted-foreground">Paid ({hostelDetails.paidMonthsCount || 0} months)</p>
+                                                            <p className="text-xs text-muted-foreground">Paid {!hostelDetails.isAnnualType ? `(${hostelDetails.paidMonthsCount || 0} months)` : ''}</p>
                                                             <p className="font-bold text-lg text-green-600">{currencySymbol}{(hostelDetails.totalPaid || 0).toLocaleString('en-IN')}</p>
                                                         </div>
                                                         <div>
-                                                            <p className="text-xs text-muted-foreground">Balance ({hostelDetails.unpaidMonthsCount || 0} months)</p>
+                                                            <p className="text-xs text-muted-foreground">Balance {!hostelDetails.isAnnualType ? `(${hostelDetails.unpaidMonthsCount || 0} months)` : 'Due'}</p>
                                                             <p className={`font-bold text-lg ${hostelDetails.balance > 0 ? 'text-red-600' : 'text-green-600'}`}>{currencySymbol}{(hostelDetails.balance || 0).toLocaleString('en-IN')}</p>
                                                         </div>
                                                     </div>
@@ -1491,6 +1656,63 @@ const StudentFees = () => {
                                                 {/* Hostel Fee Collection Form */}
                                                 {hostelDetails.balance > 0 && (
                                                     <div className="border-t pt-4 mt-4">
+                                                        
+                                                        {/* ANNUAL/ONE-TIME: Simple amount input */}
+                                                        {hostelDetails.isAnnualType ? (
+                                                            <>
+                                                                <p className="text-sm font-medium mb-3">
+                                                                    Enter Amount to Pay 
+                                                                    <span className="text-xs text-muted-foreground ml-2">
+                                                                        (Balance: {currencySymbol}{hostelDetails.balance.toLocaleString('en-IN')} — pay any amount)
+                                                                    </span>
+                                                                </p>
+                                                                <div className="grid sm:grid-cols-3 gap-3">
+                                                                    <div>
+                                                                        <Label className="text-xs">Amount ({currencySymbol})</Label>
+                                                                        <Input
+                                                                            type="number"
+                                                                            value={hostelPaymentDetails.amount}
+                                                                            onChange={e => setHostelPaymentDetails(p => ({...p, amount: e.target.value}))}
+                                                                            placeholder={`Max ${hostelDetails.balance.toLocaleString('en-IN')}`}
+                                                                            max={hostelDetails.balance}
+                                                                        />
+                                                                    </div>
+                                                                    <div>
+                                                                        <Label className="text-xs">Discount ({currencySymbol})</Label>
+                                                                        <Input
+                                                                            type="number"
+                                                                            value={hostelPaymentDetails.discount}
+                                                                            onChange={e => setHostelPaymentDetails(p => ({...p, discount: e.target.value}))}
+                                                                        />
+                                                                    </div>
+                                                                    <div>
+                                                                        <Label className="text-xs">Payment Mode</Label>
+                                                                        <Select value={hostelPaymentDetails.payment_mode} onValueChange={v => setHostelPaymentDetails(p => ({...p, payment_mode: v}))}>
+                                                                            <SelectTrigger><SelectValue /></SelectTrigger>
+                                                                            <SelectContent>
+                                                                                <SelectItem value="Cash">Cash</SelectItem>
+                                                                                <SelectItem value="Cheque">Cheque</SelectItem>
+                                                                                <SelectItem value="Online">Online</SelectItem>
+                                                                                <SelectItem value="UPI">UPI</SelectItem>
+                                                                                <SelectItem value="Card">Card</SelectItem>
+                                                                            </SelectContent>
+                                                                        </Select>
+                                                                    </div>
+                                                                </div>
+                                                                <div className="mt-3">
+                                                                    <Button 
+                                                                        onClick={collectHostelFee} 
+                                                                        disabled={paymentLoading || !(parseFloat(hostelPaymentDetails.amount) > 0)}
+                                                                        className="w-full bg-purple-600 hover:bg-purple-700"
+                                                                    >
+                                                                        {paymentLoading ? <Loader2 className="animate-spin mr-2 h-4 w-4" /> : <Receipt className="mr-2 h-4 w-4" />}
+                                                                        Collect & Print Receipt
+                                                                    </Button>
+                                                                </div>
+                                                            </>
+                                                        ) : (
+                                                            /* MONTHLY: Month selection grid */
+                                                            <>
                                                         <p className="text-sm font-medium mb-3">Select Months to Pay</p>
                                                         
                                                         {/* Month Selection Grid */}
@@ -1617,6 +1839,8 @@ const StudentFees = () => {
                                                                 Collect {selectedHostelMonths.length} Month(s) & Print Receipt
                                                             </Button>
                                                         </div>
+                                                            </>
+                                                        )}
                                                     </div>
                                                 )}
                                             </div>

@@ -353,16 +353,12 @@ const PrintFeesReceipt = () => {
         </div>
       )}
 
-      {/* Title Bar */}
-      <div className='bg-gray-900 text-white text-center py-1'>
+      {/* Title Bar - includes Copy Type & Receipt No */}
+      <div className='bg-gray-900 text-white py-1 px-3 flex justify-between items-center'>
+        <span className='text-[10px] font-bold uppercase tracking-wide opacity-90'>{copyType}</span>
         <span className='text-sm font-semibold tracking-wide'>FEES RECEIPT</span>
-      </div>
-
-      {/* Copy Type & Receipt Info */}
-      <div className='flex justify-between items-center px-3 py-1.5 bg-gray-100 border-b text-[10px]'>
-        <span className='font-bold text-gray-800 uppercase tracking-wide'>{copyType}</span>
-        <span className='text-gray-700'>
-          Receipt No: <span className='font-mono font-bold text-blue-800 bg-blue-50 px-2 py-0.5 rounded'>{receiptNo}</span>
+        <span className='text-[10px]'>
+          Receipt No: <span className='font-mono font-bold bg-white/20 px-1.5 py-0.5 rounded'>{receiptNo}</span>
         </span>
       </div>
 
@@ -375,11 +371,11 @@ const PrintFeesReceipt = () => {
               <tbody>
                 <tr>
                   <td className='font-semibold text-gray-700 py-0.5 w-28'>Student Name</td>
-                  <td className='py-0.5'>: <span className='font-medium'>{student.full_name}</span></td>
+                  <td className='py-0.5'>: <span className='font-bold text-gray-900 text-[12px]'>{student.full_name}</span></td>
                 </tr>
                 <tr>
                   <td className='font-semibold text-gray-700 py-0.5'>Admission No</td>
-                  <td className='py-0.5'>: <span className='font-mono'>{student.school_code || student.admission_no || '-'}</span></td>
+                  <td className='py-0.5'>: <span className='font-mono font-bold text-gray-900 bg-gray-100 px-1 rounded'>{student.school_code || student.admission_no || '-'}</span></td>
                 </tr>
                 <tr>
                   <td className='font-semibold text-gray-700 py-0.5'>Father's Name</td>
@@ -422,11 +418,11 @@ const PrintFeesReceipt = () => {
             <tr className='bg-gray-800 text-white'>
               <th className='border border-gray-400 p-1.5 text-left w-6'>S.No</th>
               <th className='border border-gray-400 p-1.5 text-left'>Fee Particulars</th>
-              <th className='border border-gray-400 p-1.5 text-right w-16'>Total Fee (₹)</th>
-              {totalDiscount > 0 && <th className='border border-gray-400 p-1.5 text-right w-14'>Discount (₹)</th>}
-              {totalFine > 0 && <th className='border border-gray-400 p-1.5 text-right w-14'>Fine (₹)</th>}
-              <th className='border border-gray-400 p-1.5 text-right w-14'>Paid (₹)</th>
-              <th className='border border-gray-400 p-1.5 text-right w-16'>Balance (₹)</th>
+              <th className='border border-gray-400 p-1.5 text-right w-16' style={{ whiteSpace: 'nowrap' }}>Total Fee&nbsp;(₹)</th>
+              {totalDiscount > 0 && <th className='border border-gray-400 p-1.5 text-right w-14' style={{ whiteSpace: 'nowrap' }}>Discount&nbsp;(₹)</th>}
+              {totalFine > 0 && <th className='border border-gray-400 p-1.5 text-right w-14' style={{ whiteSpace: 'nowrap' }}>Fine&nbsp;(₹)</th>}
+              <th className='border border-gray-400 p-1.5 text-right w-14' style={{ whiteSpace: 'nowrap' }}>Paid&nbsp;(₹)</th>
+              <th className='border border-gray-400 p-1.5 text-right w-16' style={{ whiteSpace: 'nowrap' }}>Balance&nbsp;(₹)</th>
             </tr>
           </thead>
           <tbody>
@@ -457,22 +453,22 @@ const PrintFeesReceipt = () => {
           </tfoot>
         </table>
 
-        {/* Payment Summary Box */}
-        <div className='flex justify-between gap-4 mb-2'>
-          <div className='flex-1 bg-green-50 border border-green-300 rounded p-2 text-center'>
-            <div className='text-[8px] text-green-600 uppercase font-semibold'>Amount Paid Now</div>
-            <div className='text-sm font-bold text-green-800'>₹{totalPaid.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</div>
+        {/* Payment Summary Box - Compact */}
+        <div className='flex justify-between gap-2 mb-1'>
+          <div className='flex-1 bg-green-50 border border-green-300 rounded px-2 py-1 text-center'>
+            <div className='text-[7px] text-green-600 uppercase font-semibold'>Amount Paid</div>
+            <div className='text-[11px] font-bold text-green-800'>₹{totalPaid.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</div>
           </div>
           {totalDiscount > 0 && (
-            <div className='flex-1 bg-blue-50 border border-blue-300 rounded p-2 text-center'>
-              <div className='text-[8px] text-blue-600 uppercase font-semibold'>Discount Given</div>
-              <div className='text-sm font-bold text-blue-800'>₹{totalDiscount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</div>
+            <div className='flex-1 bg-blue-50 border border-blue-300 rounded px-2 py-1 text-center'>
+              <div className='text-[7px] text-blue-600 uppercase font-semibold'>Discount</div>
+              <div className='text-[11px] font-bold text-blue-800'>₹{totalDiscount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</div>
             </div>
           )}
           {payments.reduce((sum, p) => sum + Number(p.balance || 0), 0) > 0 && (
-            <div className='flex-1 bg-red-50 border border-red-300 rounded p-2 text-center'>
-              <div className='text-[8px] text-red-600 uppercase font-semibold'>Balance Due</div>
-              <div className='text-sm font-bold text-red-800'>₹{payments.reduce((sum, p) => sum + Number(p.balance || 0), 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</div>
+            <div className='flex-1 bg-red-50 border border-red-300 rounded px-2 py-1 text-center'>
+              <div className='text-[7px] text-red-600 uppercase font-semibold'>Balance Due</div>
+              <div className='text-[11px] font-bold text-red-800'>₹{payments.reduce((sum, p) => sum + Number(p.balance || 0), 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</div>
             </div>
           )}
         </div>

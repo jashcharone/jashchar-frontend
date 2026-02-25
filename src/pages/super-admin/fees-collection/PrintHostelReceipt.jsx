@@ -17,7 +17,6 @@ const PrintHostelReceipt = () => {
     const [paymentDetails, setPaymentDetails] = useState(null);
     const [loading, setLoading] = useState(true);
     const [printHeaderImage, setPrintHeaderImage] = useState(null);
-    const [receiptFormat, setReceiptFormat] = useState('detailed'); // 'detailed' or 'summary'
     const [receiptCopySettings, setReceiptCopySettings] = useState({ office_copy: true, student_copy: true, bank_copy: false });
     const [isOriginal, setIsOriginal] = useState(true);
     const [currentDateTime] = useState(new Date());
@@ -90,16 +89,13 @@ const PrintHostelReceipt = () => {
                 setPrintHeaderImage(printSettings.header_image_url);
             }
 
-            // Fetch branch settings for receipt format & copy settings (saved in branches table by GeneralSetting)
+            // Fetch branch settings for copy settings (saved in branches table by GeneralSetting)
             const { data: branchData } = await supabase
                 .from('branches')
-                .select('transport_hostel_receipt_format, print_receipt_office_copy, print_receipt_student_copy, print_receipt_bank_copy')
+                .select('print_receipt_office_copy, print_receipt_student_copy, print_receipt_bank_copy')
                 .eq('id', selectedBranch.id)
                 .maybeSingle();
 
-            if (branchData?.transport_hostel_receipt_format) {
-                setReceiptFormat(branchData.transport_hostel_receipt_format);
-            }
             if (branchData) {
                 setReceiptCopySettings({
                     office_copy: branchData.print_receipt_office_copy !== false,
@@ -223,7 +219,6 @@ const PrintHostelReceipt = () => {
 
     const { payment, payments = [payment], student, hostel, school, branch, hostelSummary, receiptCreatedAt } = paymentDetails;
     const receiptDate = receiptCreatedAt ? new Date(receiptCreatedAt) : currentDateTime;
-    const currencySymbol = '₹';
 
     // Receipt No = short serial (e.g., H00001), Transaction ID = full reference in Payment History
     const receiptNo = (() => {
@@ -331,115 +326,68 @@ const PrintHostelReceipt = () => {
                     </div>
                 </div>
 
-                {/* Payment Details Table */}
-                {receiptFormat === 'summary' ? (
-                    /* SUMMARY FORMAT - Clean installment-wise receipt */
-                    <>
-                        {/* Billing Cycle Info Header */}
-                        {hostel?.billing_cycle && hostel.billing_cycle !== 'monthly' && (
-                            <div className='mb-2 p-2 rounded bg-purple-50 border-l-4 border-purple-500 text-[10px]'>
-                                <div className='flex justify-between items-center'>
-                                    <span className='font-semibold text-purple-800'>
-                                        📅 Billing Cycle: {hostel.billing_cycle === 'quarterly' ? 'Quarterly' : 
-                                                          hostel.billing_cycle === 'half_yearly' ? 'Half-Yearly' : 
-                                                          hostel.billing_cycle === 'annual' ? 'Annual' : 
-                                                          hostel.billing_cycle === 'one_time' ? 'One-Time' : 'Monthly'}
+                {/* Fee Table - Matching Fees Receipt design. Discount/Fine shown only when applicable */}
+                <table className='w-full text-[10px] border-collapse border border-gray-400 mb-2'>
+                    <thead>
+                        <tr className='bg-purple-900 text-white'>
+                            <th className='border border-gray-400 p-1.5 text-left w-6'>S.No</th>
+                            <th className='border border-gray-400 p-1.5 text-left'>Fee Particulars</th>
+                            <th className='border border-gray-400 p-1.5 text-right w-16' style={{ whiteSpace: 'nowrap' }}>Total Fee&nbsp;(₹)</th>
+                            {totalDiscount > 0 && <th className='border border-gray-400 p-1.5 text-right w-14' style={{ whiteSpace: 'nowrap' }}>Discount&nbsp;(₹)</th>}
+                            {totalFine > 0 && <th className='border border-gray-400 p-1.5 text-right w-14' style={{ whiteSpace: 'nowrap' }}>Fine&nbsp;(₹)</th>}
+                            <th className='border border-gray-400 p-1.5 text-right w-14' style={{ whiteSpace: 'nowrap' }}>Paid&nbsp;(₹)</th>
+                            <th className='border border-gray-400 p-1.5 text-right w-16' style={{ whiteSpace: 'nowrap' }}>Balance&nbsp;(₹)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr className='bg-white'>
+                            <td className='border border-gray-300 p-1.5 text-center'>1</td>
+                            <td className='border border-gray-300 p-1.5 font-medium'>
+                                Hostel Fee
+                                {payments.length > 0 && (
+                                    <span className='text-[8px] text-gray-500 ml-1'>
+                                        ({payments.map(p => p.payment_month).filter(Boolean).join(', ')})
                                     </span>
-                                    <span className='text-gray-600'>
-                                        Annual Fee: ₹{hostelSummary?.totalFee?.toLocaleString('en-IN') || '-'}
-                                    </span>
-                                </div>
-                            </div>
-                        )}
-                        <table className='w-full border-collapse text-[11px] mb-3'>
-                            <thead>
-                                <tr className='bg-gray-200'>
-                                    <th className='border border-gray-400 p-1.5 text-center w-10'>S.No</th>
-                                    <th className='border border-gray-400 p-1.5 text-left'>Fee Particulars</th>
-                                    <th className='border border-gray-400 p-1.5 text-right'>Amount (₹)</th>
-                                    <th className='border border-gray-400 p-1.5 text-right'>Discount (₹)</th>
-                                    <th className='border border-gray-400 p-1.5 text-right'>Fine (₹)</th>
-                                    <th className='border border-gray-400 p-1.5 text-right'>Paid (₹)</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr>
-                                    <td className='border border-gray-400 p-1.5 text-center'>1</td>
-                                    <td className='border border-gray-400 p-1.5'>
-                                        Hostel Fee
-                                        {payments.length > 1 && (
-                                            <span className='text-gray-500 text-[9px] ml-1'>
-                                                ({payments.map(p => p.payment_month).filter(Boolean).join(', ')})
-                                            </span>
-                                        )}
-                                        {payments.length === 1 && payments[0].payment_month && (
-                                            <span className='text-gray-500 text-[9px] ml-1'>({payments[0].payment_month})</span>
-                                        )}
-                                    </td>
-                                    <td className='border border-gray-400 p-1.5 text-right font-mono'>{totalAmount.toLocaleString('en-IN')}</td>
-                                    <td className='border border-gray-400 p-1.5 text-right font-mono text-green-700'>{totalDiscount.toLocaleString('en-IN')}</td>
-                                    <td className='border border-gray-400 p-1.5 text-right font-mono text-red-700'>{totalFine.toLocaleString('en-IN')}</td>
-                                    <td className='border border-gray-400 p-1.5 text-right font-mono text-purple-700 font-bold'>{totalPaid.toLocaleString('en-IN')}</td>
-                                </tr>
-                            </tbody>
-                            <tfoot>
-                                <tr className='bg-purple-100 font-bold'>
-                                    <td colSpan='5' className='border border-gray-400 p-1.5 text-right'>TOTAL PAID</td>
-                                    <td className='border border-gray-400 p-1.5 text-right font-mono text-purple-800'>
-                                        {currencySymbol}{totalPaid.toLocaleString('en-IN')}
-                                    </td>
-                                </tr>
-                                {hostelSummary && hostelSummary.balance > 0 && (
-                                    <tr className='bg-orange-50'>
-                                        <td colSpan='5' className='border border-gray-400 p-1.5 text-right text-orange-700'>Balance Due</td>
-                                        <td className='border border-gray-400 p-1.5 text-right font-mono text-orange-700 font-bold'>
-                                            {currencySymbol}{hostelSummary.balance.toLocaleString('en-IN')}
-                                        </td>
-                                    </tr>
                                 )}
-                            </tfoot>
-                        </table>
-                    </>
-                ) : (
-                    /* DETAILED FORMAT - Month-wise breakdown */
-                    <table className='w-full border-collapse text-[11px] mb-3'>
-                        <thead>
-                            <tr className='bg-gray-200'>
-                                <th className='border border-gray-400 p-1.5 text-center w-10'>S.No</th>
-                                <th className='border border-gray-400 p-1.5 text-left'>Fee Particulars</th>
-                                <th className='border border-gray-400 p-1.5 text-right'>Total Fee (₹)</th>
-                                <th className='border border-gray-400 p-1.5 text-right'>Discount (₹)</th>
-                                <th className='border border-gray-400 p-1.5 text-right'>Fine (₹)</th>
-                                <th className='border border-gray-400 p-1.5 text-right'>Paid (₹)</th>
-                                <th className='border border-gray-400 p-1.5 text-right'>Balance (₹)</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {payments.map((p, idx) => (
-                                <tr key={p.id || idx}>
-                                    <td className='border border-gray-400 p-1.5 text-center'>{idx + 1}</td>
-                                    <td className='border border-gray-400 p-1.5'>Hostel Fee {p.payment_month ? `(${p.payment_month})` : ''}</td>
-                                    <td className='border border-gray-400 p-1.5 text-right font-mono'>{Number(p.amount).toLocaleString('en-IN')}</td>
-                                    <td className='border border-gray-400 p-1.5 text-right font-mono text-green-700'>{Number(p.discount_amount || 0).toLocaleString('en-IN')}</td>
-                                    <td className='border border-gray-400 p-1.5 text-right font-mono text-red-700'>{Number(p.fine_paid || 0).toLocaleString('en-IN')}</td>
-                                    <td className='border border-gray-400 p-1.5 text-right font-mono text-purple-700'>{(Number(p.amount) - Number(p.discount_amount || 0) + Number(p.fine_paid || 0)).toLocaleString('en-IN')}</td>
-                                    <td className='border border-gray-400 p-1.5 text-right font-mono text-orange-700'>{idx === payments.length - 1 && hostelSummary ? Number(hostelSummary.balance).toLocaleString('en-IN') : '-'}</td>
-                                </tr>
-                            ))}
-                        </tbody>
-                        <tfoot>
-                            <tr className='bg-purple-100 font-bold'>
-                                <td colSpan='5' className='border border-gray-400 p-1.5 text-right'>TOTAL ({payments.length} month{payments.length > 1 ? 's' : ''})</td>
-                                <td className='border border-gray-400 p-1.5 text-right font-mono text-purple-800'>
-                                    {currencySymbol}{totalPaid.toLocaleString('en-IN')}
-                                </td>
-                                <td className='border border-gray-400 p-1.5 text-right font-mono text-orange-800'>
-                                    {currencySymbol}{hostelSummary ? Number(hostelSummary.balance).toLocaleString('en-IN') : '0'}
-                                </td>
-                            </tr>
-                        </tfoot>
-                    </table>
-                )}
+                            </td>
+                            <td className='border border-gray-300 p-1.5 text-right font-mono'>{totalAmount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
+                            {totalDiscount > 0 && <td className='border border-gray-300 p-1.5 text-right font-mono'>{totalDiscount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>}
+                            {totalFine > 0 && <td className='border border-gray-300 p-1.5 text-right font-mono'>{totalFine.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>}
+                            <td className='border border-gray-300 p-1.5 text-right font-mono font-semibold'>{totalPaid.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
+                            <td className='border border-gray-300 p-1.5 text-right font-mono font-semibold text-red-600'>{hostelSummary ? hostelSummary.balance.toLocaleString('en-IN', { minimumFractionDigits: 2 }) : '0.00'}</td>
+                        </tr>
+                    </tbody>
+                    <tfoot>
+                        <tr className='bg-gray-100 font-bold'>
+                            <td colSpan='2' className='border border-gray-400 p-1.5 text-right'>TOTAL:</td>
+                            <td className='border border-gray-400 p-1.5 text-right font-mono'>{totalAmount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
+                            {totalDiscount > 0 && <td className='border border-gray-400 p-1.5 text-right font-mono text-blue-700'>{totalDiscount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>}
+                            {totalFine > 0 && <td className='border border-gray-400 p-1.5 text-right font-mono'>{totalFine.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>}
+                            <td className='border border-gray-400 p-1.5 text-right font-mono text-green-700'>{totalPaid.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
+                            <td className='border border-gray-400 p-1.5 text-right font-mono text-red-700'>{hostelSummary ? hostelSummary.balance.toLocaleString('en-IN', { minimumFractionDigits: 2 }) : '0.00'}</td>
+                        </tr>
+                    </tfoot>
+                </table>
+
+                {/* Payment Summary Box - Matching Fees Receipt */}
+                <div className='flex justify-between gap-2 mb-1'>
+                    <div className='flex-1 bg-green-50 border border-green-300 rounded px-2 py-1 text-center'>
+                        <div className='text-[7px] text-green-600 uppercase font-semibold'>Amount Paid</div>
+                        <div className='text-[11px] font-bold text-green-800'>₹{totalPaid.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</div>
+                    </div>
+                    {totalDiscount > 0 && (
+                        <div className='flex-1 bg-blue-50 border border-blue-300 rounded px-2 py-1 text-center'>
+                            <div className='text-[7px] text-blue-600 uppercase font-semibold'>Discount</div>
+                            <div className='text-[11px] font-bold text-blue-800'>₹{totalDiscount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</div>
+                        </div>
+                    )}
+                    {hostelSummary && hostelSummary.balance > 0 && (
+                        <div className='flex-1 bg-red-50 border border-red-300 rounded px-2 py-1 text-center'>
+                            <div className='text-[7px] text-red-600 uppercase font-semibold'>Balance Due</div>
+                            <div className='text-[11px] font-bold text-red-800'>₹{hostelSummary.balance.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</div>
+                        </div>
+                    )}
+                </div>
 
                 {/* Note (if any) */}
                 {payment.note && (

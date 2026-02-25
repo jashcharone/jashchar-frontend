@@ -482,16 +482,6 @@ const StudentAdmission = () => {
   // --- Dynamic Field Renderer with Enhanced Styling ---
   // Changed from component to function to prevent re-mounting and focus loss
   const renderDynamicField = (field) => {
-    // DEBUG: Log caste_category field status
-    if (field.field_name === 'caste_category') {
-      console.log('[StudentAdmission] caste_category field:', { 
-        is_enabled: field.is_enabled, 
-        is_system: field.is_system, 
-        section_key: field.section_key,
-        casteCategories_count: casteCategories.length 
-      });
-    }
-    
     if (!field.is_enabled) return null;
 
     const label = field.field_label;
@@ -910,7 +900,6 @@ const StudentAdmission = () => {
                       ]);
                       setCasteCategories(catRes.data || []);
                       setSubCastes(subRes.data || []);
-                      console.log('[StudentAdmission] Loaded caste data for state:', v, 'Categories:', catRes.data?.length, 'SubCastes:', subRes.data?.length);
                     } else {
                       setCasteCategories([]);
                       setSubCastes([]);
@@ -930,8 +919,6 @@ const StudentAdmission = () => {
             );
         case 'caste_category':
             // New caste category dropdown (state-wise)
-            // DEBUG: Check if caste categories loaded
-            console.log('[StudentAdmission] Rendering caste_category field, categories count:', casteCategories.length);
             if (casteCategories.length === 0) {
               return (
                 <SmartField label={label || "Caste Category"} required={isRequired}>
@@ -946,13 +933,10 @@ const StudentAdmission = () => {
                 <Select 
                   value={formData.caste_category_id || ''} 
                   onValueChange={v => {
-                    console.log('Selected Category ID:', v);
-                    console.log('All Sub Castes:', subCastes);
                     handleChange('caste_category_id', v);
                     handleChange('sub_caste_id', null); // Reset sub-caste when category changes
                     // Filter sub-castes for selected category
                     const filtered = subCastes.filter(sc => sc.caste_category_id === v);
-                    console.log('Filtered Sub Castes:', filtered);
                     setFilteredSubCastes(filtered);
                   }}
                 >
@@ -1319,6 +1303,9 @@ const StudentAdmission = () => {
   };
 
 
+  // Ref to break circular dependency: useEffect → fetchSchoolSettings → generateNextId → formData.session_id
+  const generateNextIdRef = useRef(null);
+
   // Validation Logic - Debounced to prevent excessive re-renders
   const validationTimeoutRef = useRef(null);
   
@@ -1621,7 +1608,6 @@ const StudentAdmission = () => {
     }
     
     const newId = `${yearPrefix}${String(nextNumber).padStart(digit, '0')}`;
-    console.log(`[StudentAdmission] Local Generated: ${newId}`);
     
     // Student username = Admission Number (school_code) - Always auto-set
     const studentUsername = newId;
@@ -1675,7 +1661,6 @@ const StudentAdmission = () => {
       }
 
       const newId = result.admissionNumber;
-      console.log(`[StudentAdmission] 🌟 Global Unique Admission Number: ${newId} (Year: ${result.year}, Sequence: ${result.sequence})`);
       
       // Student username = Admission Number (school_code) - Always auto-set
       const studentUsername = newId;
@@ -1700,22 +1685,23 @@ const StudentAdmission = () => {
     }
   }, [selectedBranch?.id, toast, checkStudentUsernameDuplicate, generateNextIdLocal, formData.session_id, currentSessionId]);
   
+  // Keep ref in sync so fetchSchoolSettings doesn't need generateNextId as a dependency
+  generateNextIdRef.current = generateNextId;
+  
   const fetchSchoolSettings = useCallback(async () => {
     const branchId = selectedBranch?.id;
     if (!branchId) return;
-    console.log('[StudentAdmission] Fetching settings for branch:', branchId);
     const { data, error } = await supabase.from('branches').select('*').eq('id', branchId).single();
     if (error) {
       console.error('Could not fetch branch settings:', error);
       toast({ variant: 'destructive', title: 'Could not fetch school settings.' });
       return;
     }
-    console.log('[StudentAdmission] Branch settings loaded:', data?.branch_name, data);
     setSchoolSettings(data);
     if (data?.student_admission_no_auto_generation) {
-      await generateNextId(data, branchId);
+      await generateNextIdRef.current(data, branchId);
     }
-  }, [selectedBranch?.id, toast, generateNextId]);
+  }, [selectedBranch?.id, toast]);
   
   const resetForm = useCallback(() => {
     setFormData(initialFormData);
@@ -1746,7 +1732,6 @@ const StudentAdmission = () => {
       return;
     }
     const branchId = selectedBranch.id;
-    console.log('[StudentAdmission] Loading data for branch:', branchId, selectedBranch?.branch_name);
     setPageLoading(true); // 🔄 Start loading
     fetchSchoolSettings();
     const fetchPrereqs = async () => {
@@ -1797,7 +1782,6 @@ const StudentAdmission = () => {
         const subCastesData = [];
         // Branch state can be used as default IF available
         const branchStateId = branchStateRes.data?.state_id;
-        console.log('[StudentAdmission] Branch state:', branchStateId, 'States loaded:', indianStatesRes.data?.length);
 
         setClasses(sortClasses(classesRes.data || []));
         setCategories(categoriesRes.data || []);
@@ -1827,7 +1811,6 @@ const StudentAdmission = () => {
           ]);
           setCasteCategories(catRes.data || []);
           setSubCastes(subRes.data || []);
-          console.log('[StudentAdmission] Pre-loaded caste data for branch state:', branchStateId, 'Categories:', catRes.data?.length);
         }
         
         // Set sessions and auto-select active session
@@ -1845,16 +1828,7 @@ const StudentAdmission = () => {
             setFormSections(customFieldsRes.data.sections || []);
           
           // Debug: Log student_details fields specifically (for caste_category debugging)
-          const studentDetailsFields = [...systemFields, ...customFields].filter(f => f.section_key === 'student_details');
-          console.log('[StudentAdmission] student_details section fields:', studentDetailsFields.map(f => ({
-            name: f.field_name, 
-            enabled: f.is_enabled, 
-            label: f.field_label
-          })));
-          
-          // Debug: Log required fields
-          const requiredFields = [...systemFields, ...customFields].filter(f => f.is_required && f.is_enabled);
-          console.log('[StudentAdmission] Required fields loaded:', requiredFields.map(f => ({ name: f.field_name, label: f.field_label })));
+
         }
       } catch (err) {
         console.error('[StudentAdmission] Error loading prerequisites:', err);
@@ -1864,7 +1838,8 @@ const StudentAdmission = () => {
       }
     };
     fetchPrereqs();
-  }, [user, selectedBranch, fetchSchoolSettings, toast]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedBranch?.id]);
   
   const checkDuplicateRollNumber = useCallback(async (rollNumber, classId, sectionId) => {
     if (!selectedBranch?.id) return false;
@@ -1984,7 +1959,6 @@ const StudentAdmission = () => {
       }
       
       const feeGroupIds = data?.map(row => row.fee_group_id) || [];
-      console.log('[StudentAdmission] Fee groups for class:', feeGroupIds.length);
       setClassAssignedFeeGroupIds(feeGroupIds);
     };
     
@@ -2335,18 +2309,6 @@ const StudentAdmission = () => {
     const { isValid, validationErrors } = validateFullForm();
     
     if (!isValid) {
-        // Debug logging to help identify which fields are failing validation
-        console.log('[StudentAdmission] Validation Failed - Errors:', validationErrors);
-        console.log('[StudentAdmission] FormData:', {
-          first_name: formData.first_name,
-          school_code: formData.school_code,
-          class_id: formData.class_id,
-          section_id: formData.section_id,
-          session_id: formData.session_id,
-          gender: formData.gender,
-          dob: formData.dob,
-          admission_date: formData.admission_date
-        });
         
         const firstErrorField = Object.keys(validationErrors)[0];
         if(firstErrorField) {
@@ -2988,9 +2950,7 @@ const StudentAdmission = () => {
           const sectionFields = allFields.filter(f => f.section_key === section.key).sort((a,b) => a.sort_order - b.sort_order);
           
           // DEBUG: Log field order for academic_details
-          if (section.key === 'academic_details') {
-            console.log('[StudentAdmission] Academic Fields Order:', sectionFields.map(f => `${f.sort_order}:${f.field_name}`).join(' → '));
-          }
+
           
           const hasFields = sectionFields.length > 0;
           const isAcademic = section.key === 'academic_details';

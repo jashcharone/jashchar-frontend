@@ -315,13 +315,13 @@ const PrintFeesReceipt = () => {
   };
 
   // Single Receipt Component - dynamic size based on copies
-  const Receipt = ({ copyType }) => (
-    <div className='receipt-box bg-white text-black border border-gray-400' style={{ 
+  const Receipt = ({ copyType, isPageOne = false }) => (
+    <div className={`receipt-box bg-white text-black border border-gray-400 ${isPageOne ? 'page1-receipt' : ''}`} style={{ 
       width: '100%', 
-      minHeight: getReceiptHeight(),
+      minHeight: isPageOne ? 'auto' : getReceiptHeight(),
       padding: '0',
       boxSizing: 'border-box',
-      pageBreakInside: 'avoid'
+      pageBreakInside: isPageOne ? 'auto' : 'avoid'
     }}>
       {/* Header - Full Width with proper image fitting */}
       {printSettings?.header_image_url ? (
@@ -557,7 +557,7 @@ const PrintFeesReceipt = () => {
         @media print {
           @page {
             size: A4 portrait;
-            margin: 6mm;
+            margin: 5mm;
           }
           body {
             -webkit-print-color-adjust: exact !important;
@@ -573,16 +573,69 @@ const PrintFeesReceipt = () => {
             padding: 0 !important;
             margin: 0 !important;
           }
-          .receipt-box {
+          /* Page 1: Force 2 receipts into exactly one A4 page */
+          .page-1-receipts {
+            display: flex !important;
+            flex-direction: column !important;
+            height: calc(297mm - 10mm) !important;
+            overflow: hidden !important;
+            page-break-after: auto !important;
+          }
+          .page-1-receipts .page1-receipt {
+            flex: 1 1 0% !important;
+            min-height: 0 !important;
+            max-height: 49.5% !important;
+            overflow: hidden !important;
+            break-inside: auto !important;
+            page-break-inside: auto !important;
+          }
+          .page-1-receipts .cut-line-separator {
+            flex: 0 0 auto !important;
+            height: 5mm !important;
+            overflow: hidden !important;
+          }
+          /* Compact print styles for fitting 2 receipts on A5 each */
+          .page1-receipt .p-3 {
+            padding: 2mm !important;
+          }
+          .page1-receipt .mb-3 {
+            margin-bottom: 1.5mm !important;
+          }
+          .page1-receipt .mb-2 {
+            margin-bottom: 1mm !important;
+          }
+          .page1-receipt .mt-2 {
+            margin-top: 1mm !important;
+          }
+          .page1-receipt .pt-2 {
+            padding-top: 1mm !important;
+          }
+          .page1-receipt .py-1 {
+            padding-top: 0.5mm !important;
+            padding-bottom: 0.5mm !important;
+          }
+          .page1-receipt .gap-4 {
+            gap: 1.5mm !important;
+          }
+          .page1-receipt table {
+            font-size: 8px !important;
+          }
+          .page1-receipt .text-sm {
+            font-size: 9px !important;
+          }
+          .page1-receipt .text-lg {
+            font-size: 12px !important;
+          }
+          /* Single receipt on full page (bank copy) */
+          .receipt-box:not(.page1-receipt) {
             break-inside: avoid !important;
             page-break-inside: avoid !important;
             margin-bottom: 2mm !important;
           }
-          /* Make receipts smaller if 3 copies */
-          .receipt-box {
+          .receipt-box:not(.page1-receipt) {
             min-height: auto !important;
           }
-          /* Hide ALL floating widgets, chat icons, WhatsApp buttons during print */
+          /* Hide ALL floating widgets during print */
           [class*="whatsapp"],
           [class*="chat"],
           [class*="widget"],
@@ -629,37 +682,36 @@ const PrintFeesReceipt = () => {
 
       {/* Print Container - Page 1: Office + Student | Page 2: Bank (if enabled) */}
       <div className='print-container bg-white' style={{ minHeight: '297mm' }}>
-        <div className='flex flex-col gap-4' style={{ height: '100%' }}>
-          {/* Page 1: Office Copy + Student Copy */}
+        {/* Page 1: Office Copy + Student Copy - forced into one A4 page */}
+        <div className='page-1-receipts flex flex-col'>
           {receiptCopySettings.office_copy && (
-            <>
-              <Receipt copyType='OFFICE COPY' />
-              {receiptCopySettings.student_copy && (
-                <div className='flex items-center justify-center py-1 print:py-0'>
-                  <div className='flex-1 border-t-2 border-dashed border-gray-400'></div>
-                  <span className='px-4 text-[10px] text-gray-500 print:text-gray-400'>✂ CUT HERE ✂</span>
-                  <div className='flex-1 border-t-2 border-dashed border-gray-400'></div>
-                </div>
-              )}
-            </>
+            <Receipt copyType='OFFICE COPY' isPageOne={true} />
           )}
 
-          {receiptCopySettings.student_copy && (
-            <Receipt copyType='STUDENT COPY' />
-          )}
-
-          {/* Page 2: Bank Copy (next page, if enabled in General Settings) */}
-          {receiptCopySettings.bank_copy && (
-            <div style={{ pageBreakBefore: 'always' }}>
-              <Receipt copyType='BANK COPY' />
+          {receiptCopySettings.office_copy && receiptCopySettings.student_copy && (
+            <div className='cut-line-separator flex items-center justify-center py-1'>
+              <div className='flex-1 border-t-2 border-dashed border-gray-400'></div>
+              <span className='px-4 text-[10px] text-gray-500 print:text-gray-400'>✂ CUT HERE ✂</span>
+              <div className='flex-1 border-t-2 border-dashed border-gray-400'></div>
             </div>
           )}
 
-          {/* Fallback if nothing is enabled - show at least one copy */}
+          {receiptCopySettings.student_copy && (
+            <Receipt copyType='STUDENT COPY' isPageOne={true} />
+          )}
+
+          {/* Fallback if only one or neither copy */}
           {!receiptCopySettings.office_copy && !receiptCopySettings.student_copy && !receiptCopySettings.bank_copy && (
-            <Receipt copyType='RECEIPT' />
+            <Receipt copyType='RECEIPT' isPageOne={true} />
           )}
         </div>
+
+        {/* Page 2: Bank Copy (next page, if enabled in General Settings) */}
+        {receiptCopySettings.bank_copy && (
+          <div style={{ pageBreakBefore: 'always' }}>
+            <Receipt copyType='BANK COPY' />
+          </div>
+        )}
       </div>
     </>
   );

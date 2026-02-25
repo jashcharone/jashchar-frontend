@@ -87,15 +87,15 @@ const PrintTransportReceipt = () => {
                 setPrintHeaderImage(printSettings.header_image_url);
             }
 
-            // Fetch branch settings for receipt format
-            const { data: branchSettings } = await supabase
-                .from('branch_settings')
+            // Fetch branch settings for receipt format (saved in branches table by GeneralSetting)
+            const { data: branchData } = await supabase
+                .from('branches')
                 .select('transport_hostel_receipt_format')
-                .eq('branch_id', selectedBranch.id)
+                .eq('id', selectedBranch.id)
                 .maybeSingle();
 
-            if (branchSettings?.transport_hostel_receipt_format) {
-                setReceiptFormat(branchSettings.transport_hostel_receipt_format);
+            if (branchData?.transport_hostel_receipt_format) {
+                setReceiptFormat(branchData.transport_hostel_receipt_format);
             }
 
             // Fetch ALL transport payments for this student to calculate summary

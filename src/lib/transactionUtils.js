@@ -37,20 +37,23 @@ export const generateTransactionId = async (supabase, branchId, branchCode, paym
   }
   
   // Get next serial number for this branch, month, and payment type
+  // Count UNIQUE transaction_ids (not total rows) to avoid serial gaps from batch inserts
   try {
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
     const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59).toISOString();
     
-    const { count, error } = await supabase
+    const { data: existing, error } = await supabase
       .from(tableName)
-      .select('id', { count: 'exact', head: true })
+      .select('transaction_id')
       .eq('branch_id', branchId)
       .gte('created_at', startOfMonth)
       .lte('created_at', endOfMonth);
     
     if (error) throw error;
     
-    const serial = String((count || 0) + 1).padStart(5, '0'); // 00001
+    // Count unique transaction_ids instead of total rows
+    const uniqueTransactionIds = new Set((existing || []).map(r => r.transaction_id).filter(Boolean));
+    const serial = String(uniqueTransactionIds.size + 1).padStart(5, '0'); // 00001
     
     return `${prefix}/${yearMonth}/${typePrefix}${serial}`;
   } catch (error) {

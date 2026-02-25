@@ -106,12 +106,27 @@ const PrintTransportReceipt = () => {
                 .eq('branch_id', selectedBranch.id)
                 .is('reverted_at', null);
 
-            // Calculate transport fee summary
+            // Calculate transport fee summary (respecting billing cycle)
             let transportSummary = null;
             if (transport && transport.transport_fee > 0) {
-                const monthlyFee = Number(transport.transport_fee) || 0;
-                const totalMonths = 12; // Default 12 months
-                const totalFee = monthlyFee * totalMonths;
+                const periodFee = Number(transport.transport_fee) || 0;
+                const billingCycle = transport.billing_cycle || 'monthly';
+                const totalMonths = 12; // Default 12 months per session
+                
+                // Calculate total annual fee based on billing cycle
+                // billing_cycle determines how the fee amount is interpreted:
+                // monthly: fee × 12, quarterly: fee × 4, half_yearly: fee × 2, annual/one_time: fee × 1
+                const periods = {
+                    monthly: totalMonths,
+                    quarterly: Math.ceil(totalMonths / 3),
+                    half_yearly: Math.ceil(totalMonths / 6),
+                    annual: 1,
+                    one_time: 1
+                };
+                const periodsCount = periods[billingCycle] || totalMonths;
+                const totalFee = periodFee * periodsCount;
+                const monthlyFee = totalFee / totalMonths; // Monthly equivalent
+                
                 const totalPaid = (allTransportPayments || []).reduce((sum, p) => sum + Number(p.amount || 0), 0);
                 const totalDiscount = (allTransportPayments || []).reduce((sum, p) => sum + Number(p.discount_amount || 0), 0);
                 const paidMonthsCount = (allTransportPayments || []).length;
@@ -130,6 +145,7 @@ const PrintTransportReceipt = () => {
                     paidMonthsCount,
                     unpaidMonthsCount: totalMonths - paidMonthsCount,
                     paidMonths,
+                    billingCycle,
                     status: balance <= 0 ? 'Paid' : totalPaid > 0 ? 'Partial' : 'Unpaid'
                 };
             }

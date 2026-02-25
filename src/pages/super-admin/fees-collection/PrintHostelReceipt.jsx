@@ -106,12 +106,25 @@ const PrintHostelReceipt = () => {
                 .eq('branch_id', selectedBranch.id)
                 .is('reverted_at', null);
 
-            // Calculate hostel fee summary
+            // Calculate hostel fee summary (respecting billing cycle)
             let hostelSummary = null;
             if (hostel && hostel.hostel_fee > 0) {
-                const monthlyFee = Number(hostel.hostel_fee) || 0;
-                const totalMonths = 12; // Default 12 months
-                const totalFee = monthlyFee * totalMonths;
+                const periodFee = Number(hostel.hostel_fee) || 0;
+                const billingCycle = hostel.billing_cycle || 'monthly';
+                const totalMonths = 12; // Default 12 months per session
+                
+                // Calculate total annual fee based on billing cycle
+                const periods = {
+                    monthly: totalMonths,
+                    quarterly: Math.ceil(totalMonths / 3),
+                    half_yearly: Math.ceil(totalMonths / 6),
+                    annual: 1,
+                    one_time: 1
+                };
+                const periodsCount = periods[billingCycle] || totalMonths;
+                const totalFee = periodFee * periodsCount;
+                const monthlyFee = totalFee / totalMonths; // Monthly equivalent
+                
                 const totalPaid = (allHostelPayments || []).reduce((sum, p) => sum + Number(p.amount || 0), 0);
                 const totalDiscount = (allHostelPayments || []).reduce((sum, p) => sum + Number(p.discount_amount || 0), 0);
                 const paidMonthsCount = (allHostelPayments || []).length;
@@ -130,6 +143,7 @@ const PrintHostelReceipt = () => {
                     paidMonthsCount,
                     unpaidMonthsCount: totalMonths - paidMonthsCount,
                     paidMonths,
+                    billingCycle,
                     status: balance <= 0 ? 'Paid' : totalPaid > 0 ? 'Partial' : 'Unpaid'
                 };
             }

@@ -27,11 +27,97 @@ const api = axios.create({
 
 import { errorLoggerService } from '@/services/errorLoggerService';
 
+// ═══════════════════════════════════════════════════════════════
+// SESSION TOKEN MANAGEMENT
+// ═══════════════════════════════════════════════════════════════
+// Problem: Multiple simultaneous API calls each called supabase.auth.getSession()
+// which triggered parallel token refreshes. When Supabase's "Detect compromised
+// refresh tokens" is ON, using the old refresh token after a new one was issued
+// causes ALL tokens to be revoked → user gets logged out unexpectedly.
+//
+// Solution: Cache the access token and use a single refresh promise (mutex)
+// so concurrent requests share one refresh instead of racing.
+// ═══════════════════════════════════════════════════════════════
+let cachedAccessToken = null;
+let tokenExpiresAt = 0; // Unix timestamp in seconds
+let refreshPromise = null; // Mutex: only one refresh at a time
+let isRedirectingToLogin = false; // Prevent multiple redirects
+
+// Listen to auth state changes to keep token cache in sync
+supabase.auth.onAuthStateChange((event, session) => {
+  if (session?.access_token) {
+    cachedAccessToken = session.access_token;
+    // Supabase tokens typically expire in 3600s. Refresh 60s early to be safe.
+    tokenExpiresAt = session.expires_at ? session.expires_at - 60 : (Date.now() / 1000) + 3540;
+  } else if (event === 'SIGNED_OUT') {
+    cachedAccessToken = null;
+    tokenExpiresAt = 0;
+  }
+});
+
+// Initialize token cache from existing session (for page reload)
+supabase.auth.getSession().then(({ data: { session } }) => {
+  if (session?.access_token) {
+    cachedAccessToken = session.access_token;
+    tokenExpiresAt = session.expires_at ? session.expires_at - 60 : (Date.now() / 1000) + 3540;
+  }
+});
+
+/**
+ * Get a valid access token. Uses cache if still valid, 
+ * otherwise triggers a single shared refresh.
+ */
+async function getValidToken() {
+  const now = Date.now() / 1000;
+  
+  // Token still valid → return cached
+  if (cachedAccessToken && now < tokenExpiresAt) {
+    return cachedAccessToken;
+  }
+
+  // Token expired or missing → refresh (but only one refresh at a time)
+  if (!refreshPromise) {
+    refreshPromise = supabase.auth.getSession()
+      .then(({ data: { session }, error }) => {
+        if (error || !session?.access_token) {
+          cachedAccessToken = null;
+          tokenExpiresAt = 0;
+          return null;
+        }
+        cachedAccessToken = session.access_token;
+        tokenExpiresAt = session.expires_at ? session.expires_at - 60 : (now + 3540);
+        return cachedAccessToken;
+      })
+      .catch(() => {
+        cachedAccessToken = null;
+        tokenExpiresAt = 0;
+        return null;
+      })
+      .finally(() => {
+        refreshPromise = null; // Release the mutex
+      });
+  }
+
+  return refreshPromise;
+}
+
 // Add auth token and branch context to requests
 api.interceptors.request.use(async (config) => {
-  const { data: { session } } = await supabase.auth.getSession();
-  if (session?.access_token) {
-    config.headers.Authorization = `Bearer ${session.access_token}`;
+  // Skip auth for login endpoints
+  const isAuthEndpoint = config.url?.includes('/auth/unified-login') || 
+                         config.url?.includes('/auth/login') ||
+                         config.url?.includes('/auth/forgot-password') ||
+                         config.url?.includes('/auth/reset-password');
+  
+  let session = null;
+  if (!isAuthEndpoint) {
+    const token = await getValidToken();
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+      // Also get full session for metadata (from cache, not a new call)
+      const { data } = await supabase.auth.getSession();
+      session = data?.session;
+    }
   }
 
   // ✅ PRESERVE EXPLICIT HEADERS: If x-school-id is already passed, DO NOT overwrite it.
@@ -94,28 +180,59 @@ api.interceptors.request.use(async (config) => {
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
-    // Handle 401 Unauthorized - Session expired
-    if (error.response?.status === 401) {
-      console.warn('[API] Session expired or unauthorized. Redirecting to login...');
+    const originalRequest = error.config;
+    
+    // Handle 401 Unauthorized — Try ONE token refresh before giving up
+    if (error.response?.status === 401 && !originalRequest._retried) {
+      originalRequest._retried = true;
       
-      // Clear stored auth data
-      localStorage.removeItem('selectedSchoolId');
-      localStorage.removeItem('branchId');
-      localStorage.removeItem('selectedOrganizationId');
-      localStorage.removeItem('selectedBranchId');
-      localStorage.removeItem('selectedSessionId');
-      sessionStorage.removeItem('ma_target_branch_id');
+      console.warn('[API] 401 received. Attempting token refresh before logout...');
       
-      // Sign out from Supabase to clear session
+      // Force a fresh session refresh (bypasses cache)
       try {
-        await supabase.auth.signOut();
-      } catch (signOutErr) {
-        console.error('[API] Error during sign out:', signOutErr);
+        const { data: { session }, error: refreshError } = await supabase.auth.refreshSession();
+        
+        if (!refreshError && session?.access_token) {
+          // Token refreshed successfully → update cache and retry the request
+          cachedAccessToken = session.access_token;
+          tokenExpiresAt = session.expires_at ? session.expires_at - 60 : (Date.now() / 1000 + 3540);
+          originalRequest.headers.Authorization = `Bearer ${session.access_token}`;
+          console.log('[API] Token refreshed successfully. Retrying request...');
+          return api(originalRequest);
+        }
+      } catch (refreshErr) {
+        console.error('[API] Token refresh failed:', refreshErr);
       }
       
-      // Redirect to login if not already there
-      if (typeof window !== 'undefined' && !window.location.pathname.includes('/login')) {
-        window.location.href = '/login?session_expired=true';
+      // Refresh failed → session truly expired, redirect to login
+      if (!isRedirectingToLogin) {
+        isRedirectingToLogin = true;
+        console.warn('[API] Session expired. Redirecting to login...');
+        
+        // Clear stored auth data
+        localStorage.removeItem('selectedSchoolId');
+        localStorage.removeItem('branchId');
+        localStorage.removeItem('selectedOrganizationId');
+        localStorage.removeItem('selectedBranchId');
+        localStorage.removeItem('selectedSessionId');
+        sessionStorage.removeItem('ma_target_branch_id');
+        cachedAccessToken = null;
+        tokenExpiresAt = 0;
+        
+        // Sign out from Supabase to clear session
+        try {
+          await supabase.auth.signOut();
+        } catch (signOutErr) {
+          console.error('[API] Error during sign out:', signOutErr);
+        }
+        
+        // Redirect to login if not already there
+        if (typeof window !== 'undefined' && !window.location.pathname.includes('/login')) {
+          window.location.href = '/login?session_expired=true';
+        }
+        
+        // Reset redirect flag after a delay
+        setTimeout(() => { isRedirectingToLogin = false; }, 3000);
       }
       
       return Promise.reject(error);

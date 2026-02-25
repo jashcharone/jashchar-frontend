@@ -399,7 +399,6 @@ export const useDynamicSidebar = (role) => {
     // ✅ Roles with their own curated sidebar: Return static sidebar only
     // They have curated modules defined in sidebarConfig.js - no dynamic additions needed
     if (rolesWithOwnSidebar.includes(effectiveRole)) {
-      const staticMenu = getSidebarConfig(effectiveRole);
       return staticMenu;
     }
     

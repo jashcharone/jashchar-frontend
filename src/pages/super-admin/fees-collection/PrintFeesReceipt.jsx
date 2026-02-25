@@ -23,6 +23,7 @@ const PrintFeesReceipt = () => {
   });
   const [loading, setLoading] = useState(true);
   const [currentDateTime] = useState(new Date());
+  const [isOriginal, setIsOriginal] = useState(true);
   
   const branchId = user?.profile?.branch_id;
   const userOrgId = organizationId || user?.profile?.organization_id;
@@ -250,6 +251,10 @@ const PrintFeesReceipt = () => {
         displayTransactionId = `${prefix}/${yearMonth}/${shortId}`;
       }
 
+      // Check if this receipt has been printed before (Original vs Reprint)
+      const anyPrinted = paymentData.some(p => p.printed_at);
+      setIsOriginal(!anyPrinted);
+
       setPaymentDetails({
         student,
         school: schoolData,
@@ -275,7 +280,21 @@ const PrintFeesReceipt = () => {
     if (selectedBranch) fetchAllDetails();
   }, [fetchAllDetails, selectedBranch]);
 
-  const handlePrint = () => {
+  const handlePrint = async () => {
+    // Mark as printed in DB (first print = original, subsequent = reprint)
+    if (isOriginal && paymentDetails?.payments?.length > 0) {
+      try {
+        const paymentIds = paymentDetails.payments.map(p => p.id);
+        await supabase
+          .from('fee_payments')
+          .update({ printed_at: new Date().toISOString() })
+          .in('id', paymentIds)
+          .is('printed_at', null);
+        setIsOriginal(false); // After first print, it becomes reprint
+      } catch (err) {
+        // Non-blocking - don't prevent printing if DB update fails
+      }
+    }
     window.print();
   };
 
@@ -353,10 +372,15 @@ const PrintFeesReceipt = () => {
         </div>
       )}
 
-      {/* Title Bar - includes Copy Type & Receipt No */}
+      {/* Title Bar - includes Copy Type, Original/Reprint, & Receipt No */}
       <div className='bg-gray-900 text-white py-1 px-3 flex justify-between items-center'>
         <span className='text-[10px] font-bold uppercase tracking-wide opacity-90'>{copyType}</span>
-        <span className='text-sm font-semibold tracking-wide'>FEES RECEIPT</span>
+        <div className='text-center'>
+          <span className='text-sm font-semibold tracking-wide'>FEES RECEIPT</span>
+          <span className={`ml-2 text-[9px] font-bold px-1.5 py-0.5 rounded ${isOriginal ? 'bg-green-500/30 text-green-200' : 'bg-yellow-500/30 text-yellow-200'}`}>
+            {isOriginal ? 'ORIGINAL' : 'REPRINT COPY'}
+          </span>
+        </div>
         <span className='text-[10px]'>
           Receipt No: <span className='font-mono font-bold bg-white/20 px-1.5 py-0.5 rounded'>{receiptNo}</span>
         </span>
@@ -473,25 +497,25 @@ const PrintFeesReceipt = () => {
           )}
         </div>
 
-        {/* Fee Statement Summary - Compact inline format to save space */}
+        {/* Fee Statement Summary - Grid aligned compact format */}
         {feeStatementTotals && feeStatement && feeStatement.length > 0 && (
           <div className='mt-1 border-t border-gray-300 pt-1'>
             <div className='text-[8px] font-semibold text-gray-700 mb-0.5 flex justify-between items-center'>
-              <span>📋 FEE STATEMENT SUMMARY ({feeStatementTotals.totalCount} Installments)</span>
-              <span className='font-normal'>
+              <span>📋 FEE STATEMENT ({feeStatementTotals.totalCount} Installments)</span>
+              <span className='font-normal text-[7px]'>
                 <span className='text-green-600'>✓{feeStatementTotals.paidCount}</span>
                 {feeStatementTotals.partialCount > 0 && <span className='text-yellow-600 ml-1'>◐{feeStatementTotals.partialCount}</span>}
                 {feeStatementTotals.unpaidCount > 0 && <span className='text-red-600 ml-1'>○{feeStatementTotals.unpaidCount}</span>}
               </span>
             </div>
-            <div className='text-[7px] space-y-0'>
+            <div className='text-[7px]'>
               {feeStatement.map((fee, idx) => (
-                <div key={fee.id || idx} className='flex justify-between items-center py-0 border-b border-gray-200 last:border-b-0'>
-                  <span className='font-medium text-gray-700'>{fee.typeName} <span className='text-gray-400'>({fee.group})</span></span>
-                  <span className='flex items-center gap-2'>
-                    <span className='font-mono'>₹{fee.amount.toLocaleString('en-IN')}</span>
-                    <span className='font-mono text-green-600'>₹{fee.totalPaid.toLocaleString('en-IN')}</span>
-                    {fee.balance > 0 && <span className='font-mono text-red-600'>-₹{fee.balance.toLocaleString('en-IN')}</span>}
+                <div key={fee.id || idx} className='grid items-center border-b border-gray-200 last:border-b-0' style={{ gridTemplateColumns: '1fr 60px 60px 60px 40px', lineHeight: '1.6' }}>
+                  <span className='font-medium text-gray-700 truncate'>{fee.typeName} <span className='text-gray-400'>({fee.group})</span></span>
+                  <span className='font-mono text-right'>₹{fee.amount.toLocaleString('en-IN')}</span>
+                  <span className='font-mono text-right text-green-600'>₹{fee.totalPaid.toLocaleString('en-IN')}</span>
+                  <span className='font-mono text-right text-red-600'>{fee.balance > 0 ? `-₹${fee.balance.toLocaleString('en-IN')}` : '₹0'}</span>
+                  <span className='text-right'>
                     <span className={`px-1 rounded text-[6px] font-bold ${
                       fee.status === 'Paid' ? 'bg-green-100 text-green-700' : 
                       fee.status === 'Partial' ? 'bg-yellow-100 text-yellow-700' : 
@@ -500,13 +524,12 @@ const PrintFeesReceipt = () => {
                   </span>
                 </div>
               ))}
-              <div className='flex justify-between items-center pt-0.5 font-bold text-[7px] border-t border-gray-400'>
+              <div className='grid items-center font-bold border-t border-gray-400' style={{ gridTemplateColumns: '1fr 60px 60px 60px 40px', lineHeight: '1.6' }}>
                 <span>TOTAL:</span>
-                <span className='flex items-center gap-2'>
-                  <span className='font-mono'>₹{feeStatementTotals.totalFees.toLocaleString('en-IN')}</span>
-                  <span className='font-mono text-green-700'>₹{feeStatementTotals.totalPaid.toLocaleString('en-IN')}</span>
-                  {feeStatementTotals.totalBalance > 0 && <span className='font-mono text-red-700'>-₹{feeStatementTotals.totalBalance.toLocaleString('en-IN')}</span>}
-                </span>
+                <span className='font-mono text-right'>₹{feeStatementTotals.totalFees.toLocaleString('en-IN')}</span>
+                <span className='font-mono text-right text-green-700'>₹{feeStatementTotals.totalPaid.toLocaleString('en-IN')}</span>
+                <span className='font-mono text-right text-red-700'>{feeStatementTotals.totalBalance > 0 ? `-₹${feeStatementTotals.totalBalance.toLocaleString('en-IN')}` : '₹0'}</span>
+                <span></span>
               </div>
             </div>
           </div>

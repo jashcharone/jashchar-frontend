@@ -575,10 +575,10 @@ const StudentDetails = () => {
                                     <th className="p-3 text-left font-medium">Section</th>
                                     <th className="p-3 text-left font-medium">Gender</th>
                                     <th className="p-3 text-left font-medium">Mobile No</th>
-                                    <th className="p-3 text-left font-medium">Register No</th>
+                                    <th className="p-3 text-left font-medium">Admission No</th>
                                     <th className="p-3 text-left font-medium">Roll</th>
                                     <th className="p-3 text-left font-medium">Age</th>
-                                    <th className="p-3 text-left font-medium">Guardian Name</th>
+                                    <th className="p-3 text-left font-medium">Father/Guardian</th>
                                     <th className="p-3 text-left font-medium">Fees Progress</th>
                                     <th className="p-3 text-center font-medium">Action</th>
                                 </tr>

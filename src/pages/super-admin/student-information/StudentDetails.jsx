@@ -243,16 +243,8 @@ const StudentDetails = () => {
         }
         setLoading(true);
         
-        // Get active session for the SELECTED branch (not user's branch)
-        const { data: branchSession } = await supabase
-            .from('sessions')
-            .select('id')
-            .eq('branch_id', selectedBranch.id)
-            .eq('is_active', true)
-            .maybeSingle();
-        
-        const activeSessionId = branchSession?.id;
-        console.log('[StudentDetails] Selected branch:', selectedBranch.id, 'Active session:', activeSessionId);
+        // Use session from header dropdown (currentSessionId) — this respects user's session selection
+        const activeSessionId = currentSessionId;
 
         let studentQuery = supabase.from('student_profiles').select(`
             id, full_name, first_name, last_name, school_code, roll_number, gender, date_of_birth, phone, photo_url,
@@ -329,6 +321,13 @@ const StudentDetails = () => {
             handleSearch();
         }
     }, [initialLoadDone, filters.class_id]);
+
+    // Re-fetch when session changes from header dropdown
+    useEffect(() => {
+        if (currentSessionId && initialLoadDone && filters.class_id) {
+            handleSearch();
+        }
+    }, [currentSessionId]);
 
     // Fetch fees progress for students
     const fetchFeesProgress = async (studentIds) => {

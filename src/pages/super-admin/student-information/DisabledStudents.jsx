@@ -125,6 +125,13 @@ const DisabledStudents = () => {
     }
   }, [selectedBranch]);
 
+  // Re-fetch when session changes from header dropdown
+  useEffect(() => {
+    if (currentSessionId && selectedBranch?.id) {
+      handleSearch();
+    }
+  }, [currentSessionId]);
+
   const handleSearch = async () => {
     if (!selectedBranch?.id) {
       toast({ variant: 'destructive', title: 'Please select a branch' });
@@ -133,15 +140,8 @@ const DisabledStudents = () => {
     
     setLoading(true);
     
-    // Get active session for SELECTED branch
-    const { data: branchSession } = await supabase
-      .from('sessions')
-      .select('id')
-      .eq('branch_id', selectedBranch.id)
-      .eq('is_active', true)
-      .maybeSingle();
-    
-    const activeSessionId = branchSession?.id;
+    // Use session from header dropdown (currentSessionId) — respects user's session selection
+    const activeSessionId = currentSessionId;
 
     let query = supabase
       .from('student_profiles')

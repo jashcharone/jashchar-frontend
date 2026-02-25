@@ -83,16 +83,8 @@ const CollectFees = () => {
         setSearched(true);
         
         try {
-            // Get active session for the SELECTED branch (not user's branch)
-            const { data: branchSession } = await supabase
-                .from('sessions')
-                .select('id')
-                .eq('branch_id', selectedBranch.id)
-                .eq('is_active', true)
-                .maybeSingle();
-            
-            const activeSessionId = branchSession?.id;
-            console.log('[CollectFees] Branch:', selectedBranch.id, 'Active session:', activeSessionId);
+            // Use session from header dropdown (currentSessionId) — respects user's session selection
+            const activeSessionId = currentSessionId;
             
             // Use student_profiles directly - it's faster and more reliable
             let query = supabase

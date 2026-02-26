@@ -244,6 +244,8 @@ export const ROUTES = {
     QUICK_FEES: '/super-admin/fees-collection/quick-fees',
     OFFLINE_PAYMENT: '/super-admin/fees-collection/offline-bank-payments',
     ONLINE_PAYMENT: '/super-admin/fees-collection/online-payment',
+    REFUND_APPROVALS: '/super-admin/fees-collection/refund-approvals',
+    PRINT_REFUND_RECEIPT: '/super-admin/fees-collection/print-refund-receipt/:refundId',
     // Finance
     EXPENSE_HEAD: '/super-admin/finance/expense-head',
     EXPENSE: '/super-admin/finance/expense',

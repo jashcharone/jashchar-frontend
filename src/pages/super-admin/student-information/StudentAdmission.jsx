@@ -1577,15 +1577,20 @@ const StudentAdmission = () => {
     const prefix = (settings?.student_admission_no_prefix ?? 'STU').trim();
     const digit = Number(settings?.student_admission_no_digit) || 5;
     
-    // 🌟 Use session year instead of current calendar year
-    // Extract start year from selected session name (e.g., "2025-26" → 2025)
-    let admissionYear = new Date().getFullYear(); // fallback
+    // 🌟 Use session year format (e.g., "2026-2027" → "2026/27")
+    let sessionYear;
     const selectedSessionObj = sessions.find(s => s.id === formData.session_id);
     if (selectedSessionObj?.name) {
-      const yearMatch = selectedSessionObj.name.match(/^(\d{4})/);
-      if (yearMatch) admissionYear = parseInt(yearMatch[1], 10);
+      const match = selectedSessionObj.name.match(/(\d{4})-(\d{4})/);
+      if (match) {
+        sessionYear = `${match[1]}/${match[2].slice(-2)}`; // "2026/27"
+      }
     }
-    const yearPrefix = `${prefix}-${admissionYear}-`;
+    if (!sessionYear) {
+      const currentYear = new Date().getFullYear();
+      sessionYear = `${currentYear}/${String(currentYear + 1).slice(-2)}`;
+    }
+    const yearPrefix = `${prefix}-${sessionYear}-`;
 
     // 🌟 Query GLOBALLY across ALL branches for the prefix-year combination
     const { data, error } = await supabase

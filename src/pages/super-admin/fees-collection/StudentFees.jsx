@@ -17,7 +17,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
     Loader2, User, Printer, RotateCcw, ShieldX, ExternalLink, FileText, CheckCircle, Clock, 
     Phone, Mail, Calendar, CreditCard, Banknote, AlertTriangle, GraduationCap, Users,
-    IndianRupee, Receipt, History, ArrowLeft, Building2, Bus
+    IndianRupee, Receipt, History, ArrowLeft, Building2, Bus, Undo2
 } from 'lucide-react';
 import { format, parseISO, addMonths, startOfMonth, isBefore, isAfter, isSameMonth } from 'date-fns';
 import { Textarea } from '@/components/ui/textarea';
@@ -203,6 +203,18 @@ const StudentFees = () => {
     const [selectedHostelMonths, setSelectedHostelMonths] = useState([]); // Months selected for payment
     
     const [revokeReason, setRevokeReason] = useState('');
+    
+    // Refund state
+    const [refundDialogOpen, setRefundDialogOpen] = useState(false);
+    const [refundPayment, setRefundPayment] = useState(null); // Payment being refunded
+    const [refundDetails, setRefundDetails] = useState({
+        refund_amount: '',
+        refund_reason: '',
+        refund_mode: 'Cash',
+        note: ''
+    });
+    const [refundType, setRefundType] = useState('academic'); // academic/transport/hostel
+    const [studentRefunds, setStudentRefunds] = useState([]); // Existing refund records
     
     // Student assigned discounts
     const [studentDiscounts, setStudentDiscounts] = useState([]);
@@ -506,6 +518,16 @@ const StudentFees = () => {
                 setStudentDiscounts([]);
             }
 
+            // Fetch refund records for this student
+            const { data: refundData } = await supabase
+                .from('fee_refunds')
+                .select('*')
+                .eq('student_id', studentId)
+                .eq('branch_id', selectedBranch.id)
+                .order('created_at', { ascending: false });
+            
+            setStudentRefunds(refundData || []);
+
         } catch (error) {
             toast({ variant: 'destructive', title: 'Error fetching data', description: error.message });
         } finally {
@@ -586,13 +608,19 @@ const StudentFees = () => {
         const totalFees = academicTotal + transportTotal + hostelTotal;
         const totalPaid = academicPaid + transportPaid + hostelPaid;
         const totalDiscount = academicDiscount + transportDiscount + hostelDiscount;
+        
+        // Refund totals (completed refunds only)
+        const totalRefunded = studentRefunds
+            .filter(r => r.status === 'completed')
+            .reduce((sum, r) => sum + Number(r.refund_amount || 0), 0);
+        
         const balance = totalFees - totalPaid - totalDiscount;
 
         const overdueCount = fees.filter(f => f.isOverdue && f.balance > 0).length;
         const unpaidCount = fees.filter(f => f.balance > 0).length;
 
-        return { totalFees, totalPaid, totalDiscount, balance, overdueCount, unpaidCount };
-    }, [fees, payments, transportDetails, hostelDetails]);
+        return { totalFees, totalPaid, totalDiscount, totalRefunded, balance, overdueCount, unpaidCount };
+    }, [fees, payments, transportDetails, hostelDetails, studentRefunds]);
 
     const collectFees = async () => {
         if (!selectedFees.length) {
@@ -927,6 +955,120 @@ const StudentFees = () => {
             await fetchStudentAndFees();
         } catch (error) {
             toast({ variant: 'destructive', title: 'Failed to revoke payment', description: error.message });
+        } finally {
+            setPaymentLoading(false);
+        }
+    };
+
+    // Check if a payment already has a refund request (pending/approved/completed)
+    const hasExistingRefund = (paymentId, type) => {
+        return studentRefunds.some(r => 
+            r.refund_type === type && 
+            r.status !== 'rejected' && 
+            (r.original_payment_ids || []).includes(paymentId)
+        );
+    };
+
+    // Open refund dialog for a payment
+    const openRefundDialog = (payment, type = 'academic') => {
+        setRefundPayment(payment);
+        setRefundType(type);
+        setRefundDetails({
+            refund_amount: '',
+            refund_reason: '',
+            refund_mode: 'Cash',
+            note: ''
+        });
+        setRefundDialogOpen(true);
+    };
+
+    // Submit refund request
+    const submitRefundRequest = async () => {
+        if (!refundPayment) return;
+        
+        const amount = parseFloat(refundDetails.refund_amount);
+        if (!amount || amount <= 0) {
+            toast({ variant: 'destructive', title: 'Invalid amount', description: 'Please enter a valid refund amount.' });
+            return;
+        }
+        
+        // For grouped payments (transport/hostel), calculate total paid
+        const originalPaid = refundType === 'academic' 
+            ? Number(refundPayment.amount || 0)
+            : Number(refundPayment.totalAmount || refundPayment.amount || 0);
+        
+        if (amount > originalPaid) {
+            toast({ variant: 'destructive', title: 'Amount exceeds paid', description: `Refund cannot exceed ${currencySymbol}${originalPaid.toLocaleString('en-IN')}` });
+            return;
+        }
+        
+        if (!refundDetails.refund_reason) {
+            toast({ variant: 'destructive', title: 'Reason required', description: 'Please select or enter a refund reason.' });
+            return;
+        }
+
+        setPaymentLoading(true);
+        try {
+            // Generate refund transaction ID
+            const branchCode = selectedBranch?.branch_code || selectedBranch?.code || 'REF';
+            const now = new Date();
+            const yearMonth = `${String(now.getFullYear()).slice(-2)}${String(now.getMonth() + 1).padStart(2, '0')}`;
+            
+            // Count existing refunds for serial
+            const { data: existingRefunds } = await supabase
+                .from('fee_refunds')
+                .select('id')
+                .eq('branch_id', selectedBranch.id)
+                .gte('created_at', new Date(now.getFullYear(), now.getMonth(), 1).toISOString());
+            
+            const serial = String((existingRefunds?.length || 0) + 1).padStart(5, '0');
+            const refundTransactionId = `${branchCode}/${yearMonth}/R${serial}`;
+            
+            // Determine original payment IDs
+            let originalPaymentIds = [];
+            if (refundPayment.id) {
+                originalPaymentIds = [refundPayment.id];
+            }
+            if (refundPayment.paymentIds) {
+                originalPaymentIds = refundPayment.paymentIds;
+            }
+            
+            const refundRecord = {
+                organization_id: organizationId,
+                branch_id: selectedBranch.id,
+                session_id: currentSessionId,
+                student_id: studentId,
+                refund_type: refundType,
+                refund_amount: amount,
+                refund_date: format(new Date(), 'yyyy-MM-dd'),
+                refund_mode: refundDetails.refund_mode,
+                refund_reason: refundDetails.refund_reason,
+                original_payment_ids: originalPaymentIds,
+                original_total_paid: originalPaid,
+                transaction_id: refundTransactionId,
+                note: refundDetails.note,
+                status: 'pending',
+                requested_by: user.id,
+                created_by: user.id
+            };
+            
+            const { error } = await supabase
+                .from('fee_refunds')
+                .insert(refundRecord);
+            
+            if (error) throw error;
+            
+            toast({ 
+                title: '✅ Refund request submitted!', 
+                description: `${currencySymbol}${amount.toLocaleString('en-IN')} refund request sent for approval. Transaction: ${refundTransactionId}` 
+            });
+            
+            setRefundDialogOpen(false);
+            setRefundPayment(null);
+            await fetchStudentAndFees();
+        } catch (error) {
+            console.error('Refund request error:', error);
+            toast({ variant: 'destructive', title: 'Refund request failed', description: error.message });
         } finally {
             setPaymentLoading(false);
         }
@@ -1893,6 +2035,11 @@ const StudentFees = () => {
                                                                     <Button variant="destructive" size="sm" onClick={() => setPaymentToRevoke(p)}>
                                                                         <RotateCcw className="h-3 w-3" />
                                                                     </Button>
+                                                                    {!hasExistingRefund(p.id, 'academic') && (
+                                                                        <Button variant="outline" size="sm" className="text-orange-600 border-orange-300 hover:bg-orange-50" onClick={() => openRefundDialog(p, 'academic')}>
+                                                                            <Undo2 className="h-3 w-3" />
+                                                                        </Button>
+                                                                    )}
                                                                 </div>
                                                             ) : (
                                                                 <span className="text-xs text-red-600">
@@ -1940,9 +2087,16 @@ const StudentFees = () => {
                                                                 <td className="p-3 text-right font-mono text-amber-600">{currencySymbol}{group.totalFine.toLocaleString('en-IN')}</td>
                                                                 <td className="p-3 text-center">
                                                                     {!group.allReverted ? (
-                                                                        <Button variant="outline" size="sm" onClick={() => navigate(`/super-admin/fees-collection/print-transport-receipt/${p.id}`)}>
-                                                                            <Printer className="h-3 w-3" />
-                                                                        </Button>
+                                                                        <div className="flex justify-center gap-1">
+                                                                            <Button variant="outline" size="sm" onClick={() => navigate(`/super-admin/fees-collection/print-transport-receipt/${p.id}`)}>
+                                                                                <Printer className="h-3 w-3" />
+                                                                            </Button>
+                                                                            {!hasExistingRefund(p.id, 'transport') && (
+                                                                                <Button variant="outline" size="sm" className="text-orange-600 border-orange-300 hover:bg-orange-50" onClick={() => openRefundDialog({ ...p, totalAmount: group.totalAmount, paymentIds: Object.values(groups).flatMap(g => [g.firstPayment.id]) }, 'transport')}>
+                                                                                    <Undo2 className="h-3 w-3" />
+                                                                                </Button>
+                                                                            )}
+                                                                        </div>
                                                                     ) : (
                                                                         <span className="text-xs text-red-600">
                                                                             Reverted {format(parseISO(p.reverted_at), 'dd/MM/yy')}
@@ -1991,9 +2145,16 @@ const StudentFees = () => {
                                                                 <td className="p-3 text-right font-mono text-amber-600">{currencySymbol}{group.totalFine.toLocaleString('en-IN')}</td>
                                                                 <td className="p-3 text-center">
                                                                     {!group.allReverted ? (
-                                                                        <Button variant="outline" size="sm" onClick={() => navigate(`/super-admin/fees-collection/print-hostel-receipt/${p.id}`)}>
-                                                                            <Printer className="h-3 w-3" />
-                                                                        </Button>
+                                                                        <div className="flex justify-center gap-1">
+                                                                            <Button variant="outline" size="sm" onClick={() => navigate(`/super-admin/fees-collection/print-hostel-receipt/${p.id}`)}>
+                                                                                <Printer className="h-3 w-3" />
+                                                                            </Button>
+                                                                            {!hasExistingRefund(p.id, 'hostel') && (
+                                                                                <Button variant="outline" size="sm" className="text-orange-600 border-orange-300 hover:bg-orange-50" onClick={() => openRefundDialog({ ...p, totalAmount: group.totalAmount, paymentIds: Object.values(groups).flatMap(g => [g.firstPayment.id]) }, 'hostel')}>
+                                                                                    <Undo2 className="h-3 w-3" />
+                                                                                </Button>
+                                                                            )}
+                                                                        </div>
                                                                     ) : (
                                                                         <span className="text-xs text-red-600">
                                                                             Reverted {format(parseISO(p.reverted_at), 'dd/MM/yy')}
@@ -2005,7 +2166,41 @@ const StudentFees = () => {
                                                     });
                                                 })()}
 
-                                                {payments.length === 0 && !transportDetails?.payments?.length && !hostelDetails?.payments?.length && (
+                                                {/* Fee Refund Records */}
+                                                {studentRefunds.length > 0 && studentRefunds.map(refund => (
+                                                    <tr key={`refund-${refund.id}`} className="border-b bg-orange-50 dark:bg-orange-950/20">
+                                                        <td className="p-3">{format(parseISO(refund.refund_date || refund.created_at), 'dd MMM yyyy')}</td>
+                                                        <td className="p-3">
+                                                            <Badge variant="secondary" className="bg-orange-100 text-orange-700 dark:bg-orange-900 dark:text-orange-300">
+                                                                <Undo2 className="h-3 w-3 mr-1" />Refund ({refund.refund_type})
+                                                            </Badge>
+                                                        </td>
+                                                        <td className="p-3">
+                                                            <code className="text-xs bg-muted px-2 py-0.5 rounded">{refund.transaction_id || '-'}</code>
+                                                        </td>
+                                                        <td className="p-3">
+                                                            <Badge variant="outline">{refund.refund_mode}</Badge>
+                                                        </td>
+                                                        <td className="p-3 text-muted-foreground text-xs">{refund.refund_reason}</td>
+                                                        <td className="p-3 text-right font-mono text-orange-600">-{currencySymbol}{Number(refund.refund_amount || 0).toLocaleString('en-IN')}</td>
+                                                        <td className="p-3 text-right font-mono">-</td>
+                                                        <td className="p-3 text-right font-mono">-</td>
+                                                        <td className="p-3 text-center">
+                                                            <Badge variant={
+                                                                refund.status === 'completed' ? 'success' : 
+                                                                refund.status === 'approved' ? 'default' : 
+                                                                refund.status === 'rejected' ? 'destructive' : 'warning'
+                                                            }>
+                                                                {refund.status === 'pending' ? '⏳ Pending' : 
+                                                                 refund.status === 'approved' ? '✅ Approved' :
+                                                                 refund.status === 'completed' ? '💰 Completed' :
+                                                                 '❌ Rejected'}
+                                                            </Badge>
+                                                        </td>
+                                                    </tr>
+                                                ))}
+
+                                                {payments.length === 0 && !transportDetails?.payments?.length && !hostelDetails?.payments?.length && studentRefunds.length === 0 && (
                                                     <tr><td colSpan="9" className="p-8 text-center text-muted-foreground">No payment history found.</td></tr>
                                                 )}
                                             </tbody>
@@ -2050,6 +2245,123 @@ const StudentFees = () => {
                             {paymentLoading ? <Loader2 className="animate-spin mr-2 h-4 w-4" /> : null}
                             Revoke Payment
                         </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+
+            {/* Refund Request Dialog */}
+            <AlertDialog open={refundDialogOpen} onOpenChange={setRefundDialogOpen}>
+                <AlertDialogContent className="max-w-lg">
+                    <AlertDialogHeader>
+                        <AlertDialogTitle className="flex items-center gap-2 text-orange-600">
+                            <Undo2 className="h-5 w-5" />Request Fee Refund
+                        </AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Submit a refund request for approval. Super Admin will review and approve.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    
+                    {refundPayment && (
+                        <div className="space-y-4 py-2">
+                            {/* Original Payment Info */}
+                            <div className="bg-muted/50 rounded-lg p-3 space-y-1">
+                                <div className="flex justify-between text-sm">
+                                    <span className="text-muted-foreground">Type</span>
+                                    <Badge variant="outline" className="capitalize">{refundType} Fee</Badge>
+                                </div>
+                                <div className="flex justify-between text-sm">
+                                    <span className="text-muted-foreground">Transaction ID</span>
+                                    <code className="text-xs bg-muted px-2 py-0.5 rounded">{refundPayment.transaction_id || '-'}</code>
+                                </div>
+                                <div className="flex justify-between text-sm">
+                                    <span className="text-muted-foreground">Original Amount Paid</span>
+                                    <span className="font-bold">{currencySymbol}{Number(refundPayment.totalAmount || refundPayment.amount || 0).toLocaleString('en-IN')}</span>
+                                </div>
+                            </div>
+
+                            {/* Refund Amount */}
+                            <div className="space-y-1">
+                                <Label className="text-sm font-medium">Refund Amount ({currencySymbol}) <span className="text-red-500">*</span></Label>
+                                <Input
+                                    type="number"
+                                    value={refundDetails.refund_amount}
+                                    onChange={e => setRefundDetails(p => ({ ...p, refund_amount: e.target.value }))}
+                                    placeholder={`Max: ${Number(refundPayment.totalAmount || refundPayment.amount || 0).toLocaleString('en-IN')}`}
+                                    max={Number(refundPayment.totalAmount || refundPayment.amount || 0)}
+                                />
+                                <p className="text-xs text-muted-foreground">Cannot exceed original paid amount</p>
+                            </div>
+
+                            {/* Refund Reason */}
+                            <div className="space-y-1">
+                                <Label className="text-sm font-medium">Reason <span className="text-red-500">*</span></Label>
+                                <Select value={refundDetails.refund_reason} onValueChange={v => setRefundDetails(p => ({ ...p, refund_reason: v }))}>
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Select reason..." />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="School Leaving">School Leaving / TC</SelectItem>
+                                        <SelectItem value="Hostel Exit">Hostel Exit</SelectItem>
+                                        <SelectItem value="Transport Discontinue">Transport Discontinue</SelectItem>
+                                        <SelectItem value="Excess Payment">Excess Payment</SelectItem>
+                                        <SelectItem value="Fee Adjustment">Fee Adjustment</SelectItem>
+                                        <SelectItem value="Duplicate Payment">Duplicate Payment</SelectItem>
+                                        <SelectItem value="Other">Other</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+
+                            {/* Refund Mode */}
+                            <div className="space-y-1">
+                                <Label className="text-sm font-medium">Refund Mode</Label>
+                                <Select value={refundDetails.refund_mode} onValueChange={v => setRefundDetails(p => ({ ...p, refund_mode: v }))}>
+                                    <SelectTrigger>
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="Cash">Cash</SelectItem>
+                                        <SelectItem value="Cheque">Cheque</SelectItem>
+                                        <SelectItem value="Online">Online / NEFT</SelectItem>
+                                        <SelectItem value="UPI">UPI</SelectItem>
+                                        <SelectItem value="Bank Transfer">Bank Transfer</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+
+                            {/* Note */}
+                            <div className="space-y-1">
+                                <Label className="text-sm font-medium">Note (Optional)</Label>
+                                <Textarea
+                                    value={refundDetails.note}
+                                    onChange={e => setRefundDetails(p => ({ ...p, note: e.target.value }))}
+                                    rows={2}
+                                    placeholder="Additional remarks..."
+                                />
+                            </div>
+
+                            {/* Summary */}
+                            {refundDetails.refund_amount && parseFloat(refundDetails.refund_amount) > 0 && (
+                                <div className="bg-orange-50 dark:bg-orange-950/30 border border-orange-200 rounded-lg p-3">
+                                    <div className="flex justify-between items-center">
+                                        <span className="font-medium text-orange-700">Refund Amount</span>
+                                        <span className="text-xl font-bold text-orange-700">{currencySymbol}{parseFloat(refundDetails.refund_amount).toLocaleString('en-IN')}</span>
+                                    </div>
+                                    <p className="text-xs text-orange-600 mt-1">⏳ This will be sent for Super Admin approval</p>
+                                </div>
+                            )}
+                        </div>
+                    )}
+
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <Button
+                            onClick={submitRefundRequest}
+                            disabled={paymentLoading || !refundDetails.refund_amount || !refundDetails.refund_reason}
+                            className="bg-orange-600 hover:bg-orange-700"
+                        >
+                            {paymentLoading ? <Loader2 className="animate-spin mr-2 h-4 w-4" /> : <Undo2 className="mr-2 h-4 w-4" />}
+                            Submit Refund Request
+                        </Button>
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>

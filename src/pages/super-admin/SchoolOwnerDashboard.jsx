@@ -480,6 +480,8 @@ const SchoolOwnerDashboard = () => {
           staffRes,
           inactiveStaffRes,
           incomeRes, 
+          transportIncomeRes,
+          hostelIncomeRes,
           expenseRes,
           feesAllocRes,
           feesPaidRes,
@@ -506,8 +508,14 @@ const SchoolOwnerDashboard = () => {
           // Inactive/Disabled staff count
           supabase.from('employee_profiles').select('*', { count: 'exact', head: true })
             .eq('branch_id', branchId).eq('is_disabled', true),
-          // Monthly income (session-wise)
+          // Monthly income - Academic fees (session-wise)
           supabase.from('fee_payments').select('amount')
+            .eq('branch_id', branchId).eq('session_id', currentSessionId).gte('payment_date', startOfMonth).is('reverted_at', null),
+          // Monthly income - Transport fees (session-wise)
+          supabase.from('transport_fee_payments').select('amount')
+            .eq('branch_id', branchId).eq('session_id', currentSessionId).gte('payment_date', startOfMonth).is('reverted_at', null),
+          // Monthly income - Hostel fees (session-wise)
+          supabase.from('hostel_fee_payments').select('amount')
             .eq('branch_id', branchId).eq('session_id', currentSessionId).gte('payment_date', startOfMonth).is('reverted_at', null),
           // Monthly expense (session-wise)
           supabase.from('expenses').select('amount')
@@ -541,7 +549,11 @@ const SchoolOwnerDashboard = () => {
         const inactiveStudents = inactiveStudentsRes.count || 0;
         const totalStaff = staffRes.data?.length || 0;
         const inactiveStaff = inactiveStaffRes.count || 0;
-        const monthlyIncome = incomeRes.data?.reduce((sum, item) => sum + (parseFloat(item.amount) || 0), 0) || 0;
+        // Monthly income = Academic + Transport + Hostel fees
+        const academicIncome = incomeRes.data?.reduce((sum, item) => sum + (parseFloat(item.amount) || 0), 0) || 0;
+        const transportIncome = transportIncomeRes.data?.reduce((sum, item) => sum + (parseFloat(item.amount) || 0), 0) || 0;
+        const hostelIncome = hostelIncomeRes.data?.reduce((sum, item) => sum + (parseFloat(item.amount) || 0), 0) || 0;
+        const monthlyIncome = academicIncome + transportIncome + hostelIncome;
         const monthlyExpense = expenseRes.data?.reduce((sum, item) => sum + (parseFloat(item.amount) || 0), 0) || 0;
 
         // Calculate staff by role
@@ -631,17 +643,29 @@ const SchoolOwnerDashboard = () => {
           fee_collection_rate: totalAllocations > 0 ? Math.round((paidStudents / totalAllocations) * 100) : 0
         });
 
-        // Fetch fee payments for daily chart (session-wise)
-        const { data: feesData } = await supabase
-          .from('fee_payments')
-          .select('payment_date, amount')
-          .eq('branch_id', branchId)
-          .eq('session_id', currentSessionId)
-          .gte('payment_date', startOfMonth)
-          .is('reverted_at', null);
+        // Fetch fee payments for daily chart (session-wise) - Academic + Transport + Hostel
+        const [
+          { data: feesData },
+          { data: transportFeesData },
+          { data: hostelFeesData }
+        ] = await Promise.all([
+          supabase.from('fee_payments').select('payment_date, amount')
+            .eq('branch_id', branchId).eq('session_id', currentSessionId).gte('payment_date', startOfMonth).is('reverted_at', null),
+          supabase.from('transport_fee_payments').select('payment_date, amount')
+            .eq('branch_id', branchId).eq('session_id', currentSessionId).gte('payment_date', startOfMonth).is('reverted_at', null),
+          supabase.from('hostel_fee_payments').select('payment_date, amount')
+            .eq('branch_id', branchId).eq('session_id', currentSessionId).gte('payment_date', startOfMonth).is('reverted_at', null)
+        ]);
 
-        if (feesData) {
-          const dailyCollection = feesData.reduce((acc, item) => {
+        // Combine all fee payments for daily chart
+        const allFeesData = [
+          ...(feesData || []),
+          ...(transportFeesData || []),
+          ...(hostelFeesData || [])
+        ];
+
+        if (allFeesData.length > 0) {
+          const dailyCollection = allFeesData.reduce((acc, item) => {
             const day = new Date(item.payment_date).getDate();
             if (!acc[day]) acc[day] = { day: `${day}`, amount: 0 };
             acc[day].amount += parseFloat(item.amount) || 0;
@@ -659,20 +683,33 @@ const SchoolOwnerDashboard = () => {
           setFeesChartData(chartData);
         }
 
-        // Fetch session-wise fees (monthly)
-        const { data: sessionFeesRaw } = await supabase
-          .from('fee_payments')
-          .select('payment_date, amount')
-          .eq('branch_id', branchId)
-          .eq('session_id', currentSessionId)
-          .is('reverted_at', null);
+        // Fetch session-wise fees (monthly) - Academic + Transport + Hostel
+        const [
+          { data: sessionFeesRaw },
+          { data: sessionTransportFeesRaw },
+          { data: sessionHostelFeesRaw }
+        ] = await Promise.all([
+          supabase.from('fee_payments').select('payment_date, amount')
+            .eq('branch_id', branchId).eq('session_id', currentSessionId).is('reverted_at', null),
+          supabase.from('transport_fee_payments').select('payment_date, amount')
+            .eq('branch_id', branchId).eq('session_id', currentSessionId).is('reverted_at', null),
+          supabase.from('hostel_fee_payments').select('payment_date, amount')
+            .eq('branch_id', branchId).eq('session_id', currentSessionId).is('reverted_at', null)
+        ]);
 
-        if (sessionFeesRaw) {
+        // Combine all session fees
+        const allSessionFeesRaw = [
+          ...(sessionFeesRaw || []),
+          ...(sessionTransportFeesRaw || []),
+          ...(sessionHostelFeesRaw || [])
+        ];
+
+        if (allSessionFeesRaw.length > 0) {
           const monthlyData = {};
           const months = ['Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec', 'Jan', 'Feb', 'Mar'];
           months.forEach(m => { monthlyData[m] = { month: m, collection: 0, expense: 0 }; });
           
-          sessionFeesRaw.forEach(item => {
+          allSessionFeesRaw.forEach(item => {
             const monthIdx = new Date(item.payment_date).getMonth();
             const monthName = months[(monthIdx + 9) % 12]; // Adjust for Apr start
             if (monthlyData[monthName]) {

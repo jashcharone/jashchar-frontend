@@ -331,6 +331,8 @@ const PrintSelectedFees = lazy(() => import('@/pages/super-admin/fees-collection
 const QuickFees = lazy(() => import('@/pages/super-admin/fees-collection/QuickFees'));
 const OnlinePayment = lazy(() => import('@/pages/super-admin/fees-collection/OnlinePayment'));
 const FeesAnalysis = lazy(() => import('@/pages/super-admin/fees-collection/FeesAnalysis'));
+const RefundApprovals = lazy(() => import('@/pages/super-admin/fees-collection/RefundApprovals'));
+const PrintRefundReceipt = lazy(() => import('@/pages/super-admin/fees-collection/PrintRefundReceipt'));
 
 // Examinations
 const ExamGroup = lazy(() => import('@/pages/super-admin/examinations/ExamGroup'));
@@ -1387,6 +1389,8 @@ function App() {
             <Route path={ROUTES.SUPER_ADMIN.QUICK_FEES} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'accountant']}><QuickFees /></ProtectedRoute>} />
             <Route path={ROUTES.SUPER_ADMIN.ONLINE_PAYMENT} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'accountant']}><OnlinePayment /></ProtectedRoute>} />
             <Route path={ROUTES.SUPER_ADMIN.FEES_ANALYSIS} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'accountant', 'principal']}><FeesAnalysis /></ProtectedRoute>} />
+            <Route path={ROUTES.SUPER_ADMIN.REFUND_APPROVALS} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']}><RefundApprovals /></ProtectedRoute>} />
+            <Route path={ROUTES.SUPER_ADMIN.PRINT_REFUND_RECEIPT} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'accountant']}><PrintRefundReceipt /></ProtectedRoute>} />
 
             {/* ? Examinations */}
             <Route path={ROUTES.SUPER_ADMIN.EXAM_GROUP} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'teacher', 'principal']} requiredModule="examinations"><ExamGroup /></ProtectedRoute>} />

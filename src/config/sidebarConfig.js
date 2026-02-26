@@ -135,6 +135,7 @@ export const BASE_SIDEBAR = {
         { title: 'Fees Carry Forward', path: ROUTES.SUPER_ADMIN.FEES_CARRY_FORWARD },
         { title: 'Fees Reminder', path: ROUTES.SUPER_ADMIN.FEES_REMINDER },
         { title: 'Fees Analysis', path: ROUTES.SUPER_ADMIN.FEES_ANALYSIS },
+        { title: 'Refund Approvals', path: ROUTES.SUPER_ADMIN.REFUND_APPROVALS },
       ],
     },
     {

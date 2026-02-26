@@ -128,18 +128,46 @@ const CollectFees = () => {
         }
     };
 
-    // Fetch fee allocations and payments for fee progress display
+    // Fetch fee allocations and payments for fee progress display (including transport & hostel)
     const fetchFeesProgress = async (studentIds) => {
         try {
-            const [allocRes, payRes] = await Promise.all([
+            const [allocRes, payRes, transportRes, transportPayRes, hostelRes, hostelPayRes] = await Promise.all([
+                // Academic fee allocations
                 supabase
                     .from('student_fee_allocations')
                     .select('student_id, fee_master:fee_masters(amount)')
                     .in('student_id', studentIds),
+                // Academic fee payments
                 supabase
                     .from('fee_payments')
                     .select('student_id, amount')
                     .in('student_id', studentIds)
+                    .is('reverted_at', null),
+                // Transport fee details
+                supabase
+                    .from('student_transport_details')
+                    .select('student_id, transport_fee, billing_cycle')
+                    .in('student_id', studentIds)
+                    .eq('branch_id', selectedBranch.id),
+                // Transport fee payments
+                supabase
+                    .from('transport_fee_payments')
+                    .select('student_id, amount')
+                    .in('student_id', studentIds)
+                    .eq('branch_id', selectedBranch.id)
+                    .is('reverted_at', null),
+                // Hostel fee details
+                supabase
+                    .from('student_hostel_details')
+                    .select('student_id, hostel_fee, billing_cycle')
+                    .in('student_id', studentIds)
+                    .eq('branch_id', selectedBranch.id),
+                // Hostel fee payments
+                supabase
+                    .from('hostel_fee_payments')
+                    .select('student_id, amount')
+                    .in('student_id', studentIds)
+                    .eq('branch_id', selectedBranch.id)
                     .is('reverted_at', null)
             ]);
 
@@ -148,6 +176,7 @@ const CollectFees = () => {
                 progressMap[id] = { total: 0, paid: 0, balance: 0, progress: 0 };
             });
 
+            // Add academic fee allocations
             if (allocRes.data) {
                 allocRes.data.forEach(alloc => {
                     const amount = parseFloat(alloc.fee_master?.amount || 0);
@@ -157,6 +186,7 @@ const CollectFees = () => {
                 });
             }
 
+            // Add academic fee payments
             if (payRes.data) {
                 payRes.data.forEach(pay => {
                     if (progressMap[pay.student_id]) {
@@ -165,6 +195,67 @@ const CollectFees = () => {
                 });
             }
 
+            // Add transport fees (annual billing = transport_fee * 12 for monthly display, or direct for annual/one_time)
+            if (transportRes.data) {
+                transportRes.data.forEach(transport => {
+                    const fee = parseFloat(transport.transport_fee || 0);
+                    const billingCycle = transport.billing_cycle || 'monthly';
+                    // Calculate total based on billing cycle
+                    let totalTransportFee = fee;
+                    if (billingCycle === 'monthly') {
+                        totalTransportFee = fee * 12; // 12 months in session
+                    } else if (billingCycle === 'quarterly') {
+                        totalTransportFee = fee * 4; // 4 quarters in session
+                    } else if (billingCycle === 'half_yearly') {
+                        totalTransportFee = fee * 2; // 2 half-years in session
+                    }
+                    // annual/one_time - use fee as is
+                    if (progressMap[transport.student_id]) {
+                        progressMap[transport.student_id].total += totalTransportFee;
+                    }
+                });
+            }
+
+            // Add transport fee payments
+            if (transportPayRes.data) {
+                transportPayRes.data.forEach(pay => {
+                    if (progressMap[pay.student_id]) {
+                        progressMap[pay.student_id].paid += parseFloat(pay.amount || 0);
+                    }
+                });
+            }
+
+            // Add hostel fees (similar calculation as transport)
+            if (hostelRes.data) {
+                hostelRes.data.forEach(hostel => {
+                    const fee = parseFloat(hostel.hostel_fee || 0);
+                    const billingCycle = hostel.billing_cycle || 'monthly';
+                    // Calculate total based on billing cycle
+                    let totalHostelFee = fee;
+                    if (billingCycle === 'monthly') {
+                        totalHostelFee = fee * 12; // 12 months in session
+                    } else if (billingCycle === 'quarterly') {
+                        totalHostelFee = fee * 4; // 4 quarters in session
+                    } else if (billingCycle === 'half_yearly') {
+                        totalHostelFee = fee * 2; // 2 half-years in session
+                    }
+                    // annual/one_time - use fee as is
+                    if (progressMap[hostel.student_id]) {
+                        progressMap[hostel.student_id].total += totalHostelFee;
+                    }
+                });
+            }
+
+            // Add hostel fee payments
+            if (hostelPayRes.data) {
+                hostelPayRes.data.forEach(pay => {
+                    if (progressMap[pay.student_id]) {
+                        progressMap[pay.student_id].paid += parseFloat(pay.amount || 0);
+                    }
+                });
+            }
+
+            // Calculate balance and progress
             Object.keys(progressMap).forEach(id => {
                 const { total, paid } = progressMap[id];
                 progressMap[id].balance = Math.max(0, total - paid);

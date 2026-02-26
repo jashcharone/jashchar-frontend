@@ -18,14 +18,25 @@ import { Save, Loader2, Settings, CreditCard, UserCog, Hash, Building2, Receipt 
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
 
+// Helper function to convert session name "2026-2027" to "2026/27" format
+const getSessionYearFormat = (sessionName) => {
+    if (!sessionName) return `${new Date().getFullYear()}/${String(new Date().getFullYear() + 1).slice(-2)}`;
+    // Session name format: "2026-2027"
+    const match = sessionName.match(/(\d{4})-(\d{4})/);
+    if (match) {
+        return `${match[1]}/${match[2].slice(-2)}`; // Returns "2026/27"
+    }
+    return `${new Date().getFullYear()}/${String(new Date().getFullYear() + 1).slice(-2)}`;
+};
+
 // ID Auto Generation Settings Tab
-const IdAutoGenerationSettings = ({ settings, handleChange }) => {
-    // Generate preview of admission number
-    const currentYear = new Date().getFullYear();
+const IdAutoGenerationSettings = ({ settings, handleChange, currentSessionName }) => {
+    // Generate preview of admission number with session year
+    const sessionYear = getSessionYearFormat(currentSessionName);
     const prefix = settings.student_admission_no_prefix || 'STU';
     const digits = settings.student_admission_no_digit || 5;
-    const previewNumber = `${prefix}-${currentYear}-${'X'.repeat(digits)}`;
-    const exampleNumber = `${prefix}-${currentYear}-${String(1).padStart(digits, '0')}`;
+    const previewNumber = `${prefix}-${sessionYear}-${'X'.repeat(digits)}`;
+    const exampleNumber = `${prefix}-${sessionYear}-${String(1).padStart(digits, '0')}`;
     
     return (
     <div className="space-y-6">
@@ -124,8 +135,8 @@ const IdAutoGenerationSettings = ({ settings, handleChange }) => {
                         <div>
                             <p className="font-medium text-emerald-700 dark:text-emerald-400">🌟 Global Unique Employee IDs</p>
                             <p className="text-sm text-muted-foreground mt-1">
-                                Format: <code className="px-1.5 py-0.5 rounded bg-muted">{settings.staff_id_prefix || 'EMP'}-{new Date().getFullYear()}-XXXXX</code><br/>
-                                Example: <code className="px-1.5 py-0.5 rounded bg-muted font-bold">{settings.staff_id_prefix || 'EMP'}-{new Date().getFullYear()}-00001</code><br/>
+                                Format: <code className="px-1.5 py-0.5 rounded bg-muted">{settings.staff_id_prefix || 'EMP'}-{sessionYear}-XXXXX</code><br/>
+                                Example: <code className="px-1.5 py-0.5 rounded bg-muted font-bold">{settings.staff_id_prefix || 'EMP'}-{sessionYear}-00001</code><br/>
                                 <span className="text-xs">Employee IDs are <strong>globally unique</strong> across all branches - No duplicates for 100+ years!</span>
                             </p>
                         </div>
@@ -509,7 +520,7 @@ const GeneralSettings = ({ settings, handleChange }) => (
 );
 
 const GeneralSetting = () => {
-    const { user } = useAuth();
+    const { user, currentSessionName } = useAuth();
     const { selectedBranch } = useBranch();
     const { toast } = useToast();
     const [loading, setLoading] = useState(false);
@@ -679,7 +690,7 @@ const GeneralSetting = () => {
                     </TabsContent>
 
                     <TabsContent value="id-auto-gen" className="mt-6">
-                        <IdAutoGenerationSettings settings={settings} handleChange={handleChange} />
+                        <IdAutoGenerationSettings settings={settings} handleChange={handleChange} currentSessionName={currentSessionName} />
                     </TabsContent>
                 </Tabs>
             </div>

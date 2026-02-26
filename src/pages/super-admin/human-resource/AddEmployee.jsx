@@ -33,7 +33,7 @@ const AddEmployee = () => {
     const { toast } = useToast();
     const location = useLocation();
     const navigate = useNavigate();
-    const { user, organizationId } = useAuth();
+    const { user, organizationId, currentSessionId, currentSessionName } = useAuth();
     const { selectedBranch, setSelectedBranch, branches } = useBranch(); // Get all branches to check count
     
     const stateBranchId = location.state?.branch_id;
@@ -299,10 +299,9 @@ const AddEmployee = () => {
         fetchSettingsAndDropdowns();
     }, [branchId, selectedBranch?.id, branches, stateBranchId]);
 
-    /**
      * 🌟 GLOBAL UNIQUE EMPLOYEE ID GENERATOR
      * Uses Backend API to generate globally unique employee ID
-     * Format: PREFIX-YEAR-SEQUENCE (e.g., EMP-2026-00012)
+     * Format: PREFIX-SESSION_YEAR-SEQUENCE (e.g., EMP-2026/27-00012)
      * 
      * This ensures 100% unique employee IDs across ALL branches
      * for 100+ years with no duplicates ever.
@@ -317,7 +316,7 @@ const AddEmployee = () => {
 
             // 🌟 Call Backend API for GLOBAL UNIQUE employee ID
             // Using centralized api client for proper URL handling (relative /api on production, VITE_API_BASE_URL on localhost)
-            const response = await api.get(`/staff/next-employee-id?branch_id=${currentBranchId}`, {
+            const response = await api.get(`/staff/next-employee-id?branch_id=${currentBranchId}&session_id=${currentSessionId || ''}`, {
                 headers: {
                     'x-branch-id': currentBranchId
                 }
@@ -335,9 +334,9 @@ const AddEmployee = () => {
             }
         } catch (err) {
             console.error("[AddEmployee] Failed to generate Employee ID from API, using local fallback", err);
-            await generateNextEmployeeIdLocal();
+        await generateNextEmployeeIdLocal();
         }
-    }, [formData.branch_id, branchId, selectedBranch?.id]);
+    }, [formData.branch_id, branchId, selectedBranch?.id, currentSessionId]);
 
     /**
      * 📋 LOCAL FALLBACK: Generate employee ID locally if API fails
@@ -345,8 +344,19 @@ const AddEmployee = () => {
      */
     const generateNextEmployeeIdLocal = useCallback(async () => {
         try {
-            const year = new Date().getFullYear();
-            const prefix = `EMP-${year}-`;
+            // 🌟 Use session year format (e.g., "2026-2027" → "2026/27")
+            let sessionYear;
+            if (currentSessionName) {
+                const match = currentSessionName.match(/(\d{4})-(\d{4})/);
+                if (match) {
+                    sessionYear = `${match[1]}/${match[2].slice(-2)}`; // "2026/27"
+                }
+            }
+            if (!sessionYear) {
+                const currentYear = new Date().getFullYear();
+                sessionYear = `${currentYear}/${String(currentYear + 1).slice(-2)}`;
+            }
+            const prefix = `EMP-${sessionYear}-`;
             
             // 🌟 Query GLOBALLY across ALL branches
             const { data, error } = await supabase
@@ -374,7 +384,7 @@ const AddEmployee = () => {
         } catch (err) {
             console.error("Failed to generate Employee ID locally", err);
         }
-    }, []);
+    }, [currentSessionName]);
 
     useEffect(() => {
         // Always auto-generate Employee ID for new employees

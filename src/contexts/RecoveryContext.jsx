@@ -1,9 +1,18 @@
 ﻿import React, { createContext, useContext, useState, useEffect } from 'react';
+import { Capacitor } from '@capacitor/core';
 import { safeInitialize } from '@/utils/initializationGuard';
 import { startMonitoring, stopMonitoring } from '@/services/connectionStatusMonitor';
 import { enableReadOnlyMode, disableReadOnlyMode, SAFE_MODE_FLAG } from '@/services/safeRecoveryManager';
 
 const RecoveryContext = createContext(null);
+
+/** Check if Capacitor native (triple-detect) */
+const _isCapacitorNative = () => {
+  try { if (Capacitor.isNativePlatform()) return true; } catch (e) { /* ignore */ }
+  if (typeof window !== 'undefined' && window.Capacitor?.isNativePlatform?.()) return true;
+  if (typeof window !== 'undefined' && window.location.hostname === 'app.jashchar.local') return true;
+  return false;
+};
 
 export const RecoveryProvider = ({ children }) => {
   const [isReadOnly, setIsReadOnly] = useState(false);
@@ -16,6 +25,18 @@ export const RecoveryProvider = ({ children }) => {
   };
 
   useEffect(() => {
+    // On Capacitor native, skip all initialization diagnostics.
+    // The native HTTP layer handles connectivity; WebView-based Supabase
+    // health checks can give false negatives.
+    if (_isCapacitorNative()) {
+      console.log('[RecoveryContext] Capacitor native → skipping initialization diagnostics');
+      disableReadOnlyMode();
+      setDiagnosticResult({ status: 'HEALTHY', message: 'Native app' });
+      setIsReadOnly(false);
+      setInitializing(false);
+      return;
+    }
+
     const runInit = async () => {
       const { success, result } = await safeInitialize();
       setDiagnosticResult(result);
@@ -30,11 +51,9 @@ export const RecoveryProvider = ({ children }) => {
 
     runInit();
 
-    // Start Monitor
+    // Start Monitor (only on web — skipped internally on native too)
     startMonitoring((isConnected) => {
-      // Callback when monitor detects change
       syncState();
-      // Update diagnostic result if needed (monitor doesn't pass it back directly in this simplified version, but we could)
     });
 
     return () => stopMonitoring();

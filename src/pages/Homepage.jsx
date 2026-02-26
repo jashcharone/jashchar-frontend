@@ -1,7 +1,7 @@
 ﻿import React, { useState, useEffect } from 'react';
 import { Helmet } from 'react-helmet';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Link } from 'react-router-dom';
+import { Link, Navigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { ArrowRight, Menu, X, Sun, Moon, Activity, ExternalLink, ChevronDown } from 'lucide-react';
 import { useTheme } from '@/contexts/ThemeContext';
@@ -56,6 +56,12 @@ const LoadingScreen = () => (
 
 
 const Homepage = () => {
+  // Capacitor native app: hostname is 'app.jashchar.local' (set in capacitor.config.ts)
+  // Skip marketing homepage entirely — go straight to login
+  if (typeof window !== 'undefined' && window.location.hostname === 'app.jashchar.local') {
+    return <Navigate to="/login" replace />;
+  }
+
   // OPTIMIZATION: Start with false to show default content immediately
   const [loading, setLoading] = useState(true);
   // Initialize with null so we don't show defaults

@@ -142,11 +142,14 @@ const config: CapacitorConfig = {
       sound: 'notification.wav'
     },
     
-    // HTTP Plugin - DISABLED to prevent XMLHttpRequest/fetch patching
-    // which breaks Axios async interceptors in the WebView.
-    // The WebView can make HTTPS requests directly without issues.
+    // HTTP Plugin - ENABLED to route all fetch/XHR through native HTTP.
+    // This bypasses WebView CORS restrictions entirely, which is required
+    // because the WebView origin (https://app.jashchar.local) can cause
+    // CORS/DNS issues with external APIs (Railway, Supabase).
+    // Axios async interceptors work fine because they resolve BEFORE
+    // XMLHttpRequest.send() is called (Capacitor patches send()).
     CapacitorHttp: {
-      enabled: false
+      enabled: true
     },
     
     // Camera

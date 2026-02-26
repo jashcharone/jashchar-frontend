@@ -34,7 +34,7 @@ const AddEmployee = () => {
     const location = useLocation();
     const navigate = useNavigate();
     const { user, organizationId } = useAuth();
-    const { selectedBranch, branches } = useBranch(); // Get all branches to check count
+    const { selectedBranch, setSelectedBranch, branches } = useBranch(); // Get all branches to check count
     
     const stateBranchId = location.state?.branch_id;
     // Enhanced School ID Resolution for Master Admin / Impersonation
@@ -297,7 +297,7 @@ const AddEmployee = () => {
         };
         
         fetchSettingsAndDropdowns();
-    }, [branchId, selectedBranch?.id, branches, stateBranchId, formData.branch_id]);
+    }, [branchId, selectedBranch?.id, branches, stateBranchId]);
 
     /**
      * 🌟 GLOBAL UNIQUE EMPLOYEE ID GENERATOR
@@ -479,6 +479,12 @@ const AddEmployee = () => {
             value = value.replace(/[^a-zA-Z\s.]/g, '');
         }
         setFormData(prev => ({ ...prev, [key]: value }));
+
+        // Sync header branch selector when user changes branch in form
+        if (key === 'branch_id' && value) {
+            const matchedBranch = branches.find(b => b.id === value);
+            if (matchedBranch) setSelectedBranch(matchedBranch);
+        }
     };
 
     const handleSearch = async () => {

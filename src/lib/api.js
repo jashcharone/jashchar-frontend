@@ -1,6 +1,7 @@
 ﻿import axios from 'axios';
 import { supabase } from '@/lib/customSupabaseClient';
 import { getApiBaseUrl } from '@/utils/platform';
+import { getCapacitorAdapter } from '@/lib/capacitorHttpAdapter';
 
 // Default timeout: 30 seconds, Long operations: 5 minutes
 const DEFAULT_TIMEOUT = 30000;
@@ -18,12 +19,17 @@ function resolveApiBaseUrl() {
   return _cachedApiBaseUrl;
 }
 
+// On Capacitor native: use custom adapter that calls CapacitorHttp.request() directly
+// This bypasses WebView XHR entirely → ZERO CORS issues on Android/iOS
+const nativeAdapter = getCapacitorAdapter();
+
 const api = axios.create({
   baseURL: '/api', // placeholder — overridden by request interceptor below
   timeout: DEFAULT_TIMEOUT,
   headers: {
     'Content-Type': 'application/json',
   },
+  ...(nativeAdapter ? { adapter: nativeAdapter } : {}),
 });
 
 // Ensure every request uses the lazily-resolved base URL

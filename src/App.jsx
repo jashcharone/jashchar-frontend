@@ -1,6 +1,7 @@
 import React, { useEffect, Suspense, lazy } from 'react';
 window.deploymentTimestamp = '2025-02-05-chunk-retry-fix';
 import { Routes, Route, Navigate } from 'react-router-dom';
+import { Capacitor } from '@capacitor/core';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import SecurityHeaders from '@/components/SecurityHeaders';
 import { lazyWithRetry } from '@/utils/lazyWithRetry';
@@ -466,6 +467,14 @@ function App() {
   const subdomain = getSubdomain();
   const isSubdomain = !!subdomain;
 
+  // Capacitor native app detection — skip marketing Homepage, go straight to Login
+  const isCapacitorNative = (() => {
+    try { if (Capacitor.isNativePlatform()) return true; } catch(e) {}
+    if (typeof window !== 'undefined' && window.Capacitor?.isNativePlatform) return true;
+    if (typeof window !== 'undefined' && window.location.hostname === 'app.jashchar.local') return true;
+    return false;
+  })();
+
   // ? Initialize Dev Tools on App Mount
   useEffect(() => {
     initDevTools();
@@ -515,7 +524,8 @@ function App() {
               </>
             ) : (
               <>
-                <Route path={ROUTES.PUBLIC.HOME} element={<Homepage />} />
+                {/* Capacitor native → skip marketing homepage, go to login */}
+                <Route path={ROUTES.PUBLIC.HOME} element={isCapacitorNative ? <Navigate to="/login" replace /> : <Homepage />} />
                 <Route path={ROUTES.PUBLIC.LOGIN} element={<Login />} />
                 <Route path={ROUTES.PUBLIC.FORGOT_PASSWORD} element={<ForgotPassword />} />
                 <Route path={ROUTES.PUBLIC.RESET_PASSWORD} element={<ResetPassword />} />

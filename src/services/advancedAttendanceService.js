@@ -6,12 +6,11 @@
 // ═══════════════════════════════════════════════════════════════════════════════
 
 import { supabase } from '../lib/supabase';
+import { getApiBaseUrl } from '@/utils/platform';
 
-// Base URL for API calls
-const isLocalhost = typeof window !== 'undefined' && 
-  (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
-const apiBaseUrl = isLocalhost ? import.meta.env.VITE_API_BASE_URL : null;
-const BASE_URL = apiBaseUrl ? `${apiBaseUrl}/api` : '/api';
+// Platform-aware API URL (Capacitor uses full Railway URL, web uses relative /api)
+const _apiBase = getApiBaseUrl();
+const BASE_URL = _apiBase ? `${_apiBase}/api` : '/api';
 const ADVANCED_BASE = `${BASE_URL}/attendance/advanced`;
 
 /**

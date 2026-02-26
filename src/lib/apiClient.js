@@ -1,15 +1,13 @@
 ﻿import { supabase } from './customSupabaseClient';
+import { getApiBaseUrl } from '@/utils/platform';
 
 /**
  * Centralized API Client with automatic authentication
  * All requests automatically include the Authorization header with the current user's token
  */
 
-// Always use relative /api path - Vercel rewrites to backend
-// Only use VITE_API_BASE_URL for local development
-const isLocalhost = typeof window !== 'undefined' && 
-  (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
-const API_BASE_URL = isLocalhost ? (import.meta.env.VITE_API_BASE_URL || '') : '';
+// Platform-aware API URL (Capacitor uses full Railway URL, web uses relative /api)
+const API_BASE_URL = getApiBaseUrl();
 
 // Default timeout: 30 seconds
 // Long timeout endpoints (approval, setup): 5 minutes

@@ -1,13 +1,10 @@
 ﻿import axios from 'axios';
 import { supabase } from '@/lib/customSupabaseClient';
+import { getApiBaseUrl } from '@/utils/platform';
 
-// Always use relative /api path - Vercel rewrites to backend
-// Only use VITE_API_BASE_URL for local development
-const isLocalhost = typeof window !== 'undefined' && 
-  (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
-const runtimeApiBase = typeof window !== 'undefined' && window.__RUNTIME_CONFIG__ && window.__RUNTIME_CONFIG__.VITE_API_BASE_URL;
-const apiBaseUrl = isLocalhost ? (runtimeApiBase || import.meta.env.VITE_API_BASE_URL) : null;
-const API_URL = apiBaseUrl ? `${apiBaseUrl}/api` : '/api';
+// Platform-aware API URL (Capacitor uses full Railway URL, web uses relative /api)
+const _apiBase = getApiBaseUrl();
+const API_URL = _apiBase ? `${_apiBase}/api` : '/api';
 
 // Retry configuration for 429 errors
 const MAX_RETRIES = 3;

@@ -5,15 +5,26 @@
 // ═══════════════════════════════════════════════════════════════════════════
 
 import { isNativePlatform, isAndroid } from '@/utils/platform';
+import { Capacitor } from '@capacitor/core';
 
 let initialized = false;
+
+/**
+ * Robust native platform detection (matches platform.js isCapacitorApp logic)
+ */
+function isNativeApp() {
+  try { if (Capacitor.isNativePlatform()) return true; } catch(e) {}
+  if (typeof window !== 'undefined' && window.Capacitor?.isNativePlatform) return true;
+  if (typeof window !== 'undefined' && window.location.hostname === 'app.jashchar.local') return true;
+  return false;
+}
 
 /**
  * Initialize all Capacitor native integrations.
  * Safe to call on web — does nothing if not native.
  */
 export async function initCapacitor() {
-  if (!isNativePlatform() || initialized) return;
+  if (!isNativeApp() || initialized) return;
   initialized = true;
 
   console.log('[Capacitor] Initializing native integrations...');

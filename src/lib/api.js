@@ -1,28 +1,36 @@
 ﻿import axios from 'axios';
 import { supabase } from '@/lib/customSupabaseClient';
-
-// Create axios instance for backend API calls
-// Always use relative /api path - Vercel rewrites to Railway backend
-// Only use VITE_API_BASE_URL for local development
-const isLocalhost = typeof window !== 'undefined' && 
-  (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
-
-const runtimeApiBase = typeof window !== 'undefined' && window.__RUNTIME_CONFIG__ && window.__RUNTIME_CONFIG__.VITE_API_BASE_URL;
-const envApiBase = import.meta.env.VITE_API_BASE_URL;
-
-// Use configured URL only for localhost, otherwise always use relative /api
-const apiBaseUrl = isLocalhost ? (runtimeApiBase || envApiBase) : null;
+import { getApiBaseUrl } from '@/utils/platform';
 
 // Default timeout: 30 seconds, Long operations: 5 minutes
 const DEFAULT_TIMEOUT = 30000;
 const LONG_TIMEOUT = 300000; // 5 minutes for heavy operations like approval
 
+// Lazily compute API base URL to ensure Capacitor bridge is ready.
+// The URL is cached after first call.
+let _cachedApiBaseUrl = null;
+function resolveApiBaseUrl() {
+  if (_cachedApiBaseUrl === null) {
+    const base = getApiBaseUrl();
+    _cachedApiBaseUrl = base ? `${base}/api` : '/api';
+    console.log('[API] Resolved baseURL:', _cachedApiBaseUrl);
+  }
+  return _cachedApiBaseUrl;
+}
+
 const api = axios.create({
-  baseURL: apiBaseUrl ? `${apiBaseUrl}/api` : '/api',
+  baseURL: '/api', // placeholder — overridden by request interceptor below
   timeout: DEFAULT_TIMEOUT,
   headers: {
     'Content-Type': 'application/json',
   },
+});
+
+// Ensure every request uses the lazily-resolved base URL
+// This runs BEFORE the auth interceptor below.
+api.interceptors.request.use((config) => {
+  config.baseURL = resolveApiBaseUrl();
+  return config;
 });
 
 import { errorLoggerService } from '@/services/errorLoggerService';

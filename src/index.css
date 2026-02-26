@@ -230,3 +230,61 @@ body {
     min-width: 44px;
   }
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════ */
+/* MOBILE APP OPTIMIZATIONS                                                   */
+/* Make tables, cards, and dashboard components mobile-friendly               */
+/* ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Tables scroll horizontally on mobile */
+@media (max-width: 768px) {
+  .table-container,
+  [class*="overflow-x-auto"] {
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Make cards full-width on mobile */
+  .grid {
+    gap: 0.75rem !important;
+  }
+  
+  /* Compact data tables for mobile */
+  table th,
+  table td {
+    padding: 0.5rem 0.75rem !important;
+    font-size: 0.8125rem !important;
+  }
+  
+  /* Ensure dialog/modal content doesn't overflow */
+  [role="dialog"] {
+    max-width: calc(100vw - 1rem) !important;
+    max-height: calc(100vh - 2rem) !important;
+  }
+  
+  /* Make form inputs comfortable size on mobile */
+  input, select, textarea {
+    font-size: 16px !important; /* Prevents iOS auto-zoom */
+  }
+}
+
+/* WhatsApp-style colors for bottom nav in dark mode */
+.dark .wa-bottom-nav {
+  background-color: #1F2C34;
+  border-color: #233138;
+}
+
+/* Smooth page transitions */
+.page-enter {
+  opacity: 0;
+  transform: translateY(8px);
+}
+.page-enter-active {
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity 200ms ease-out, transform 200ms ease-out;
+}
+
+/* Bottom nav safe padding for content */
+.has-bottom-nav {
+  padding-bottom: calc(60px + env(safe-area-inset-bottom, 0px));
+}

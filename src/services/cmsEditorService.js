@@ -1,6 +1,11 @@
 ﻿import { supabase } from '@/lib/customSupabaseClient';
 import { masterAdminSafetyService } from '@/services/masterAdminSafetyService';
 import axios from 'axios';
+import { getApiBaseUrl } from '@/utils/platform';
+
+// Platform-aware API base for direct axios calls
+const _cmsApiBase = getApiBaseUrl();
+const CMS_API_BASE = _cmsApiBase ? `${_cmsApiBase}/api` : '/api';
 
 // Get auth token for API calls
 const getAuthToken = async () => {
@@ -41,7 +46,7 @@ export const cmsEditorService = {
   getSchoolLoginSettings: async (branchId) => {
     try {
       const token = await getAuthToken();
-      const response = await axios.get('/api/front-cms/login-settings', {
+      const response = await axios.get(`${CMS_API_BASE}/front-cms/login-settings`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'x-school-id': branchId
@@ -59,7 +64,7 @@ export const cmsEditorService = {
 
   upsertSchoolLoginSettings: async (branchId, data) => {
     const token = await getAuthToken();
-    const response = await axios.put('/api/front-cms/login-settings', data, {
+    const response = await axios.put(`${CMS_API_BASE}/front-cms/login-settings`, data, {
       headers: {
         'Authorization': `Bearer ${token}`,
         'x-school-id': branchId

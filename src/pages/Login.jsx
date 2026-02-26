@@ -270,13 +270,16 @@ const Login = () => {
       const { error } = await signIn(identifier, password, rememberMe);
 
       if (error) {
+        // Include API URL in error for debugging on mobile
+        const apiUrl = (await import('@/utils/platform')).getApiBaseUrl();
+        const debugInfo = apiUrl ? ` [API: ${apiUrl}]` : ' [API: relative]';
         toast({
           variant: "destructive",
           title: "Authentication Failed",
           description:
             error.message === "Invalid login credentials"
               ? "Incorrect username or password. Please try again."
-              : error.message,
+              : error.message + debugInfo,
         });
         setLoading(false);
         return;

@@ -56,6 +56,8 @@ const config: CapacitorConfig = {
     allowNavigation: [
       'https://*.supabase.co',
       'https://*.jashchar.com',
+      'https://*.jashcharerp.com',
+      'https://*.up.railway.app',
       'https://api.razorpay.com',
       'https://checkout.razorpay.com',
       'https://*.google.com',
@@ -69,8 +71,8 @@ const config: CapacitorConfig = {
     allowMixedContent: BUILD_ENV === 'development',
     // Capture keyboard input
     captureInput: true,
-    // Enable WebView debugging in non-production
-    webContentsDebuggingEnabled: BUILD_ENV !== 'production',
+    // Enable WebView debugging (so we can use chrome://inspect)
+    webContentsDebuggingEnabled: true,
     // Background color (before app loads)
     backgroundColor: '#FFFFFF',
     // Flavor (for white-label builds)
@@ -140,9 +142,11 @@ const config: CapacitorConfig = {
       sound: 'notification.wav'
     },
     
-    // HTTP Plugin
+    // HTTP Plugin - DISABLED to prevent XMLHttpRequest/fetch patching
+    // which breaks Axios async interceptors in the WebView.
+    // The WebView can make HTTPS requests directly without issues.
     CapacitorHttp: {
-      enabled: true
+      enabled: false
     },
     
     // Camera

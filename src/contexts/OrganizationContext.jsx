@@ -17,6 +17,8 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import axios from 'axios';
+import { getApiBaseUrl } from '@/utils/platform';
+import { Capacitor } from '@capacitor/core';
 
 const OrganizationContext = createContext();
 
@@ -33,6 +35,12 @@ const getOrganizationSlug = () => {
     // Development fallback
     if (hostname === 'localhost' || hostname === '127.0.0.1') {
         // Check if slug is stored in localStorage for dev
+        const devSlug = localStorage.getItem('dev-org-slug');
+        return devSlug || null;
+    }
+    
+    // Capacitor native app: hostname is 'app.jashchar.local'
+    if (Capacitor.isNativePlatform() || hostname === 'app.jashchar.local') {
         const devSlug = localStorage.getItem('dev-org-slug');
         return devSlug || null;
     }
@@ -152,11 +160,8 @@ export const OrganizationProvider = ({ children }) => {
             
             console.log('[Organization] Fetching config for:', orgSlug);
             
-            // Fetch organization configuration
-            // Use relative /api for production (Vercel rewrite), only use VITE_API_URL for local dev
-            const isLocalhost = typeof window !== 'undefined' && 
-                (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
-            const apiUrl = isLocalhost ? (import.meta.env.VITE_API_URL || 'http://localhost:5000') : '';
+            // Platform-aware API URL
+            const apiUrl = getApiBaseUrl();
             const response = await axios.get(
                 `${apiUrl}/api/public/org-config?slug=${orgSlug}`
             );

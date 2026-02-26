@@ -15,11 +15,10 @@
  */
 
 import axios from 'axios';
+import { getApiBaseUrl } from '@/utils/platform';
 
-// Use relative /api for production (Vercel rewrite), only use VITE_API_URL for local dev
-const isLocalhost = typeof window !== 'undefined' && 
-    (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
-const API_URL = isLocalhost ? (import.meta.env.VITE_API_URL || 'http://localhost:5000') : '';
+// Platform-aware API URL (Capacitor uses full Railway URL, web uses relative or localhost)
+const API_URL = getApiBaseUrl();
 
 /**
  * Unified Login

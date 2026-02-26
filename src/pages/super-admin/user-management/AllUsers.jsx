@@ -122,8 +122,12 @@ const AllUsers = () => {
 
         setProcessing(true);
         try {
-            const response = await api.patch(`/user-management/users/${selectedUser.id}/status`, {
-                status: selectedUser.is_active ? 'disabled' : 'enabled'
+            // For staff, use user_id (auth user id); for others use profile id
+            const targetId = selectedUser.user_id || selectedUser.id;
+            const response = await api.patch(`/user-management/users/${targetId}/status`, {
+                status: selectedUser.is_active ? 'disabled' : 'enabled',
+                user_type: selectedUser.user_type,
+                profile_id: selectedUser.id
             });
 
             if (response.data.success) {

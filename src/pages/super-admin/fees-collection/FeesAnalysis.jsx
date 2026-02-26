@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
+import { fetchPrintHeaderData, buildOrgHeaderHtml, PRINT_STYLES } from '@/utils/printOrgHeader';
 
 // ═══════════════════════════════════════════════════════════
 // FEES ANALYSIS - World-Class Fee Analytics Module
@@ -73,6 +74,7 @@ const FeesAnalysis = () => {
   const [monthlyCollection, setMonthlyCollection] = useState([]);
   const [topDefaulters, setTopDefaulters] = useState([]);
   const [dailyCollection, setDailyCollection] = useState([]);
+  const [printHeaderData, setPrintHeaderData] = useState({});
 
   const fetchClasses = useCallback(async () => {
     if (!selectedBranch) return;
@@ -89,6 +91,11 @@ const FeesAnalysis = () => {
   }, [selectedBranch]);
 
   useEffect(() => { fetchClasses(); fetchFeeTypes(); }, [fetchClasses, fetchFeeTypes]);
+
+  // Fetch print header data (org logo, school info) for PDF
+  useEffect(() => {
+    if (selectedBranch?.id) fetchPrintHeaderData(supabase, selectedBranch.id).then(setPrintHeaderData);
+  }, [selectedBranch]);
 
   const fetchSessions = useCallback(async () => {
     if (!selectedBranch) return;
@@ -412,7 +419,7 @@ const FeesAnalysis = () => {
       allHostelPayments.forEach(addToModeMap);
       setPaymentModeSplit(Object.values(modeMap).sort((a, b) => b.amount - a.amount));
 
-      // === 8. MONTHLY COLLECTION (all payments) ===
+      // === 8. MONTHLY COLLECTION (all payments — fill full academic year) ===
       const monthMap = {};
       const addToMonthMap = (p) => {
         const d = new Date(p.payment_date || p.created_at);
@@ -425,7 +432,23 @@ const FeesAnalysis = () => {
       allPayments.forEach(addToMonthMap);
       allTransportPayments.forEach(addToMonthMap);
       allHostelPayments.forEach(addToMonthMap);
-      setMonthlyCollection(Object.values(monthMap).sort((a, b) => a.key.localeCompare(b.key)));
+      // Fill empty months across full academic year (Apr to Mar or earliest to current)
+      const sessionObj = sessions.find(s => s.id === selectedSessionId);
+      const sessionName = sessionObj?.name || '';
+      const yearMatch = sessionName.match(/(\d{4})/);
+      const startYear = yearMatch ? parseInt(yearMatch[1]) : new Date().getFullYear();
+      const academicStart = new Date(startYear, 3, 1); // April of start year
+      const now = new Date();
+      const endMonth = now > new Date(startYear + 1, 2, 1) ? new Date(startYear + 1, 2, 1) : now;
+      const allMonths = [];
+      const cur = new Date(academicStart);
+      while (cur <= endMonth) {
+        const key = `${cur.getFullYear()}-${String(cur.getMonth() + 1).padStart(2, '0')}`;
+        const label = format(cur, 'MMM yyyy');
+        allMonths.push(monthMap[key] || { key, label, amount: 0, count: 0 });
+        cur.setMonth(cur.getMonth() + 1);
+      }
+      setMonthlyCollection(allMonths);
 
       // === 9. DAILY COLLECTION (Last 30 days, all payment types) ===
       const last30 = new Date();
@@ -473,26 +496,16 @@ const FeesAnalysis = () => {
   // === EXPORT ===
   const handlePrint = () => {
     const printWindow = window.open('', '_blank');
+    const sessionName = sessions.find(s => s.id === selectedSessionId)?.name || 'Active';
+    const orgHeader = buildOrgHeaderHtml(printHeaderData);
+    const filterInfo = selectedClass !== 'all' ? ` | <strong>Class:</strong> ${classes.find(c => c.id === selectedClass)?.name || ''}` : '';
+    const feeTypeInfo = selectedFeeType !== 'all' ? ` | <strong>Fee Type:</strong> ${feeTypes.find(t => t.id === selectedFeeType)?.name || ''}` : '';
     printWindow.document.write(`
       <html><head><title>Fees Analysis Report - ${selectedBranch?.name || 'School'}</title>
-      <style>
-        body { font-family: 'Segoe UI', sans-serif; margin: 20px; color: #333; }
-        h1 { font-size: 20px; color: #1a1a2e; border-bottom: 2px solid #1a1a2e; padding-bottom: 8px; }
-        h2 { font-size: 16px; margin-top: 24px; color: #16213e; }
-        .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin: 16px 0; }
-        .stat-box { border: 1px solid #ddd; border-radius: 8px; padding: 12px; text-align: center; }
-        .stat-value { font-size: 22px; font-weight: bold; }
-        .stat-label { font-size: 11px; color: #666; text-transform: uppercase; }
-        table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 12px; }
-        th { background: #1a1a2e; color: white; padding: 8px 12px; text-align: left; }
-        td { padding: 6px 12px; border-bottom: 1px solid #eee; }
-        tr:nth-child(even) { background: #f8f9fa; }
-        .text-green { color: #16a34a; } .text-red { color: #dc2626; }
-        .footer { margin-top: 30px; text-align: center; font-size: 10px; color: #999; border-top: 1px solid #ddd; padding-top: 8px; }
-        @media print { body { margin: 10px; } }
-      </style></head><body>
+      <style>${PRINT_STYLES}</style></head><body>
+      ${orgHeader}
       <h1>💰 Fees Analysis Report</h1>
-      <p><strong>School:</strong> ${selectedBranch?.name || ''} | <strong>Session:</strong> ${sessions.find(s => s.id === selectedSessionId)?.name || 'Active'} | <strong>Date:</strong> ${format(new Date(), 'dd MMM yyyy, hh:mm a')}</p>
+      <p class="report-meta"><strong>Session:</strong> ${sessionName}${filterInfo}${feeTypeInfo} | <strong>Generated:</strong> ${format(new Date(), 'dd MMM yyyy, hh:mm a')}</p>
       
       <div class="stats-grid">
         <div class="stat-box"><div class="stat-value">₹${overview.totalAllocated.toLocaleString('en-IN')}</div><div class="stat-label">Total Allocated</div></div>
@@ -500,11 +513,24 @@ const FeesAnalysis = () => {
         <div class="stat-box"><div class="stat-value text-red">₹${overview.totalDue.toLocaleString('en-IN')}</div><div class="stat-label">Due</div></div>
         <div class="stat-box"><div class="stat-value">${overview.collectionRate}%</div><div class="stat-label">Collection Rate</div></div>
       </div>
+      ${overview.totalDiscount > 0 || overview.totalFine > 0 ? `<p style="font-size:11px;color:#666;">Discount: <strong class="text-amber">₹${overview.totalDiscount.toLocaleString('en-IN')}</strong> | Fine: <strong class="text-red">₹${overview.totalFine.toLocaleString('en-IN')}</strong> | Cash Collected: <strong class="text-green">₹${(overview.totalCashCollected || 0).toLocaleString('en-IN')}</strong></p>` : ''}
+
+      <h2>Complete Fee Breakdown</h2>
+      <table>
+        <thead><tr><th>Category</th><th>Allocated</th><th>Collected</th><th>Due</th><th>Rate</th></tr></thead>
+        <tbody>
+          <tr><td>📚 Academic</td><td>₹${(overview.academicAllocated || 0).toLocaleString('en-IN')}</td><td class="text-green">₹${(overview.academicCollected || 0).toLocaleString('en-IN')}</td><td class="text-red">₹${Math.max(0, (overview.academicAllocated || 0) - (overview.academicCollected || 0)).toLocaleString('en-IN')}</td><td>${(overview.academicAllocated || 0) > 0 ? Math.round(((overview.academicCollected || 0) / (overview.academicAllocated || 1)) * 100) : 0}%</td></tr>
+          ${(overview.transportAllocated || 0) > 0 ? `<tr><td>🚌 Transport</td><td>₹${overview.transportAllocated.toLocaleString('en-IN')}</td><td class="text-green">₹${(overview.transportCollected || 0).toLocaleString('en-IN')}</td><td class="text-red">₹${Math.max(0, overview.transportAllocated - (overview.transportCollected || 0)).toLocaleString('en-IN')}</td><td>${Math.round(((overview.transportCollected || 0) / (overview.transportAllocated || 1)) * 100)}%</td></tr>` : ''}
+          ${(overview.hostelAllocated || 0) > 0 ? `<tr><td>🏠 Hostel</td><td>₹${overview.hostelAllocated.toLocaleString('en-IN')}</td><td class="text-green">₹${(overview.hostelCollected || 0).toLocaleString('en-IN')}</td><td class="text-red">₹${Math.max(0, overview.hostelAllocated - (overview.hostelCollected || 0)).toLocaleString('en-IN')}</td><td>${Math.round(((overview.hostelCollected || 0) / (overview.hostelAllocated || 1)) * 100)}%</td></tr>` : ''}
+          <tr style="font-weight:bold;border-top:2px solid #333;"><td>GRAND TOTAL</td><td>₹${overview.totalAllocated.toLocaleString('en-IN')}</td><td class="text-green">₹${overview.totalCollected.toLocaleString('en-IN')}</td><td class="text-red">₹${overview.totalDue.toLocaleString('en-IN')}</td><td>${overview.collectionRate}%</td></tr>
+        </tbody>
+      </table>
 
       <h2>Class-wise Fee Summary</h2>
       <table>
         <thead><tr><th>Class</th><th>Students</th><th>Allocated</th><th>Collected</th><th>Due</th><th>Rate</th><th>Paid</th><th>Partial</th><th>Unpaid</th></tr></thead>
-        <tbody>${classWiseFees.map(c => `<tr><td>${c.name}</td><td>${c.studentCount}</td><td>₹${c.allocated.toLocaleString('en-IN')}</td><td class="text-green">₹${c.collected.toLocaleString('en-IN')}</td><td class="text-red">₹${c.due.toLocaleString('en-IN')}</td><td>${c.rate}%</td><td>${c.fullyPaid}</td><td>${c.partial}</td><td>${c.unpaid}</td></tr>`).join('')}</tbody>
+        <tbody>${classWiseFees.map(c => `<tr><td>${c.name}</td><td>${c.studentCount}</td><td>₹${c.allocated.toLocaleString('en-IN')}</td><td class="text-green">₹${c.collected.toLocaleString('en-IN')}</td><td class="text-red">₹${c.due.toLocaleString('en-IN')}</td><td>${c.rate}%</td><td>${c.fullyPaid}</td><td>${c.partial}</td><td>${c.unpaid}</td></tr>`).join('')}
+        <tr style="font-weight:bold;border-top:2px solid #333;"><td>TOTAL</td><td>${overview.totalStudents}</td><td>₹${overview.totalAllocated.toLocaleString('en-IN')}</td><td class="text-green">₹${overview.totalCollected.toLocaleString('en-IN')}</td><td class="text-red">₹${overview.totalDue.toLocaleString('en-IN')}</td><td>${overview.collectionRate}%</td><td>${overview.fullyPaid}</td><td>${overview.partialPaid}</td><td>${overview.unpaid}</td></tr></tbody>
       </table>
 
       <h2>Fee Type Breakdown</h2>
@@ -519,17 +545,20 @@ const FeesAnalysis = () => {
         <tbody>${paymentModeSplit.map(m => `<tr><td>${m.mode}</td><td>${m.count}</td><td>₹${m.amount.toLocaleString('en-IN')}</td><td>${(overview.totalCashCollected || overview.totalCollected) > 0 ? ((m.amount / (overview.totalCashCollected || overview.totalCollected)) * 100).toFixed(1) : 0}%</td></tr>`).join('')}</tbody>
       </table>
 
-      <h2>Top Defaulters</h2>
+      <h2>Fee Defaulters (${topDefaulters.length} students)</h2>
       <table>
-        <thead><tr><th>#</th><th>Admission No</th><th>Student</th><th>Class</th><th>Father/Guardian</th><th>Mobile</th><th>Total Fee</th><th>Paid</th><th>Due</th></tr></thead>
-        <tbody>${topDefaulters.map((d, i) => `<tr><td>${i + 1}</td><td>${d.student?.school_code || '-'}</td><td>${d.student?.full_name || '-'}</td><td>${d.student?.classes?.name || '-'}</td><td>${d.student?.father_name || '-'}</td><td>${d.student?.father_phone || d.student?.phone || '-'}</td><td>₹${d.total.toLocaleString('en-IN')}</td><td>₹${d.paid.toLocaleString('en-IN')}</td><td class="text-red"><strong>₹${d.due.toLocaleString('en-IN')}</strong></td></tr>`).join('')}</tbody>
+        <thead><tr><th>#</th><th>Adm No</th><th>Student</th><th>Class</th><th>Father/Guardian</th><th>Mobile</th><th>Academic</th><th>Transport</th><th>Hostel</th><th>Total</th><th>Paid</th><th>Due</th></tr></thead>
+        <tbody>${topDefaulters.map((d, i) => {
+          const fb = d.breakdown || {};
+          return `<tr><td>${i + 1}</td><td>${d.student?.school_code || '-'}</td><td>${d.student?.full_name || '-'}</td><td>${d.student?.classes?.name || '-'}</td><td>${d.student?.father_name || '-'}</td><td>${d.student?.father_phone || d.student?.phone || '-'}</td><td>${fb.academic > 0 ? '₹' + fb.academic.toLocaleString('en-IN') : '-'}</td><td>${fb.transport > 0 ? '₹' + fb.transport.toLocaleString('en-IN') : '-'}</td><td>${fb.hostel > 0 ? '₹' + fb.hostel.toLocaleString('en-IN') : '-'}</td><td>₹${d.total.toLocaleString('en-IN')}</td><td class="text-green">₹${d.paid.toLocaleString('en-IN')}</td><td class="text-red"><strong>₹${d.due.toLocaleString('en-IN')}</strong></td></tr>`;
+        }).join('')}</tbody>
       </table>
 
-      <div class="footer">Generated by Jashchar ERP | ${format(new Date(), 'dd MMMM yyyy')}</div>
+      <div class="footer">Generated by Jashchar ERP • ${format(new Date(), 'dd MMMM yyyy, hh:mm a')}</div>
       </body></html>
     `);
     printWindow.document.close();
-    printWindow.print();
+    setTimeout(() => printWindow.print(), 500);
   };
 
   const handleExportExcel = () => {

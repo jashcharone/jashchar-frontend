@@ -229,8 +229,10 @@ const FeesAnalysis = () => {
       // Grand totals (academic + transport + hostel)
       const grandAllocated = totalAllocated + totalTransportAllocated + totalHostelAllocated;
       const grandCollected = totalCollected + totalTransportCollected + totalHostelCollected;
-      const totalDue = Math.max(0, grandAllocated - grandCollected);
-      const collectionRate = grandAllocated > 0 ? Math.round((grandCollected / grandAllocated) * 100) : 0;
+      // Discount reduces what student owes — so effective payment = cash + discount
+      const grandEffective = grandCollected + totalDiscount;
+      const totalDue = Math.max(0, grandAllocated - grandEffective);
+      const collectionRate = grandAllocated > 0 ? Math.round((grandEffective / grandAllocated) * 100) : 0;
 
       // Per-student payment status (all fee types combined)
       const studentPaid = {};
@@ -243,10 +245,13 @@ const FeesAnalysis = () => {
         studentFeeBreakdown[a.student_id].academic += parseFloat(a.fee_master?.amount || 0);
       });
       allPayments.forEach(p => {
-        studentPaid[p.student_id] = (studentPaid[p.student_id] || 0) + parseFloat(p.amount || 0);
+        const amt = parseFloat(p.amount || 0);
+        const disc = parseFloat(p.discount_amount || 0);
+        // Effective payment = cash + discount (discount reduces what student owes)
+        studentPaid[p.student_id] = (studentPaid[p.student_id] || 0) + amt + disc;
         if (studentFeeBreakdown[p.student_id]) {
-          studentFeeBreakdown[p.student_id].academicPaid += parseFloat(p.amount || 0);
-          studentFeeBreakdown[p.student_id].discount += parseFloat(p.discount_amount || 0);
+          studentFeeBreakdown[p.student_id].academicPaid += amt + disc;
+          studentFeeBreakdown[p.student_id].discount += disc;
           studentFeeBreakdown[p.student_id].fine += parseFloat(p.fine_paid || 0);
         }
       });
@@ -258,10 +263,12 @@ const FeesAnalysis = () => {
         studentFeeBreakdown[td.student_id].transport += fee;
       });
       allTransportPayments.forEach(p => {
-        studentPaid[p.student_id] = (studentPaid[p.student_id] || 0) + parseFloat(p.amount || 0);
+        const amt = parseFloat(p.amount || 0);
+        const disc = parseFloat(p.discount_amount || 0);
+        studentPaid[p.student_id] = (studentPaid[p.student_id] || 0) + amt + disc;
         if (studentFeeBreakdown[p.student_id]) {
-          studentFeeBreakdown[p.student_id].transportPaid += parseFloat(p.amount || 0);
-          studentFeeBreakdown[p.student_id].discount += parseFloat(p.discount_amount || 0);
+          studentFeeBreakdown[p.student_id].transportPaid += amt + disc;
+          studentFeeBreakdown[p.student_id].discount += disc;
           studentFeeBreakdown[p.student_id].fine += parseFloat(p.fine_paid || 0);
         }
       });
@@ -273,10 +280,12 @@ const FeesAnalysis = () => {
         studentFeeBreakdown[hd.student_id].hostel += fee;
       });
       allHostelPayments.forEach(p => {
-        studentPaid[p.student_id] = (studentPaid[p.student_id] || 0) + parseFloat(p.amount || 0);
+        const amt = parseFloat(p.amount || 0);
+        const disc = parseFloat(p.discount_amount || 0);
+        studentPaid[p.student_id] = (studentPaid[p.student_id] || 0) + amt + disc;
         if (studentFeeBreakdown[p.student_id]) {
-          studentFeeBreakdown[p.student_id].hostelPaid += parseFloat(p.amount || 0);
-          studentFeeBreakdown[p.student_id].discount += parseFloat(p.discount_amount || 0);
+          studentFeeBreakdown[p.student_id].hostelPaid += amt + disc;
+          studentFeeBreakdown[p.student_id].discount += disc;
           studentFeeBreakdown[p.student_id].fine += parseFloat(p.fine_paid || 0);
         }
       });
@@ -291,14 +300,21 @@ const FeesAnalysis = () => {
         else unpaid++;
       });
 
+      // Pre-compute transport & hostel discount totals (needed by setOverview and fee type breakdown)
+      let transportDiscTotal = 0;
+      allTransportPayments.forEach(p => { transportDiscTotal += parseFloat(p.discount_amount || 0); });
+      let hostelDiscTotal = 0;
+      allHostelPayments.forEach(p => { hostelDiscTotal += parseFloat(p.discount_amount || 0); });
+      const academicDiscTotal = totalDiscount - transportDiscTotal - hostelDiscTotal;
+
       setOverview({
-        totalAllocated: grandAllocated, totalCollected: grandCollected, totalDue, totalDiscount, totalFine,
+        totalAllocated: grandAllocated, totalCollected: grandEffective, totalCashCollected: grandCollected, totalDue, totalDiscount, totalFine,
         collectionRate, totalStudents: allStudents.length, fullyPaid, partialPaid, unpaid,
         totalPayments: allPayments.length + allTransportPayments.length + allHostelPayments.length,
-        // Detailed breakdowns
-        academicAllocated: totalAllocated, academicCollected: totalCollected,
-        transportAllocated: totalTransportAllocated, transportCollected: totalTransportCollected,
-        hostelAllocated: totalHostelAllocated, hostelCollected: totalHostelCollected,
+        // Detailed breakdowns (collected = cash + discount for each)
+        academicAllocated: totalAllocated, academicCollected: totalCollected + academicDiscTotal,
+        transportAllocated: totalTransportAllocated, transportCollected: totalTransportCollected + transportDiscTotal,
+        hostelAllocated: totalHostelAllocated, hostelCollected: totalHostelCollected + hostelDiscTotal,
       });
 
       // === 5. CLASS-WISE FEES (Academic + Transport + Hostel) ===
@@ -326,21 +342,15 @@ const FeesAnalysis = () => {
         classMap[cn].allocated += parseFloat(hd.hostel_fee || 0);
         classMap[cn].students.add(hd.student_id);
       });
-      allPayments.forEach(p => {
+      // Class-wise collected = cash + discount (effective payment)
+      const addToClassCollected = (p) => {
         const s = studentMap[p.student_id];
         const cn = s?.classes?.name || 'Unassigned';
-        if (classMap[cn]) classMap[cn].collected += parseFloat(p.amount || 0);
-      });
-      allTransportPayments.forEach(p => {
-        const s = studentMap[p.student_id];
-        const cn = s?.classes?.name || 'Unassigned';
-        if (classMap[cn]) classMap[cn].collected += parseFloat(p.amount || 0);
-      });
-      allHostelPayments.forEach(p => {
-        const s = studentMap[p.student_id];
-        const cn = s?.classes?.name || 'Unassigned';
-        if (classMap[cn]) classMap[cn].collected += parseFloat(p.amount || 0);
-      });
+        if (classMap[cn]) classMap[cn].collected += parseFloat(p.amount || 0) + parseFloat(p.discount_amount || 0);
+      };
+      allPayments.forEach(addToClassCollected);
+      allTransportPayments.forEach(addToClassCollected);
+      allHostelPayments.forEach(addToClassCollected);
       // Count status per class
       Object.keys(classMap).forEach(cn => {
         classMap[cn].students.forEach(sid => {
@@ -366,11 +376,11 @@ const FeesAnalysis = () => {
       });
       // Add Transport Fee as a type
       if (totalTransportAllocated > 0 || allTransportPayments.length > 0) {
-        typeMap['🚌 Transport Fee'] = { name: '🚌 Transport Fee', allocated: totalTransportAllocated, collected: totalTransportCollected };
+        typeMap['🚌 Transport Fee'] = { name: '🚌 Transport Fee', allocated: totalTransportAllocated, collected: totalTransportCollected + transportDiscTotal };
       }
       // Add Hostel Fee as a type
       if (totalHostelAllocated > 0 || allHostelPayments.length > 0) {
-        typeMap['🏠 Hostel Fee'] = { name: '🏠 Hostel Fee', allocated: totalHostelAllocated, collected: totalHostelCollected };
+        typeMap['🏠 Hostel Fee'] = { name: '🏠 Hostel Fee', allocated: totalHostelAllocated, collected: totalHostelCollected + hostelDiscTotal };
       }
       // Match payments to fee types via fee_master
       const masterToType = {};
@@ -381,7 +391,7 @@ const FeesAnalysis = () => {
       });
       allPayments.forEach(p => {
         const tn = masterToType[p.fee_master_id] || 'Other';
-        if (typeMap[tn]) typeMap[tn].collected += parseFloat(p.amount || 0);
+        if (typeMap[tn]) typeMap[tn].collected += parseFloat(p.amount || 0) + parseFloat(p.discount_amount || 0);
       });
       const typeArr = Object.values(typeMap).map(t => ({
         ...t, due: Math.max(0, t.allocated - t.collected),
@@ -486,7 +496,7 @@ const FeesAnalysis = () => {
       
       <div class="stats-grid">
         <div class="stat-box"><div class="stat-value">₹${overview.totalAllocated.toLocaleString('en-IN')}</div><div class="stat-label">Total Allocated</div></div>
-        <div class="stat-box"><div class="stat-value text-green">₹${overview.totalCollected.toLocaleString('en-IN')}</div><div class="stat-label">Collected</div></div>
+        <div class="stat-box"><div class="stat-value text-green">₹${overview.totalCollected.toLocaleString('en-IN')}</div><div class="stat-label">Collected (Cash+Discount)</div></div>
         <div class="stat-box"><div class="stat-value text-red">₹${overview.totalDue.toLocaleString('en-IN')}</div><div class="stat-label">Due</div></div>
         <div class="stat-box"><div class="stat-value">${overview.collectionRate}%</div><div class="stat-label">Collection Rate</div></div>
       </div>
@@ -506,7 +516,7 @@ const FeesAnalysis = () => {
       <h2>Payment Mode Split</h2>
       <table>
         <thead><tr><th>Mode</th><th>Payments</th><th>Amount</th><th>Share</th></tr></thead>
-        <tbody>${paymentModeSplit.map(m => `<tr><td>${m.mode}</td><td>${m.count}</td><td>₹${m.amount.toLocaleString('en-IN')}</td><td>${overview.totalCollected > 0 ? ((m.amount / overview.totalCollected) * 100).toFixed(1) : 0}%</td></tr>`).join('')}</tbody>
+        <tbody>${paymentModeSplit.map(m => `<tr><td>${m.mode}</td><td>${m.count}</td><td>₹${m.amount.toLocaleString('en-IN')}</td><td>${(overview.totalCashCollected || overview.totalCollected) > 0 ? ((m.amount / (overview.totalCashCollected || overview.totalCollected)) * 100).toFixed(1) : 0}%</td></tr>`).join('')}</tbody>
       </table>
 
       <h2>Top Defaulters</h2>
@@ -617,7 +627,7 @@ const FeesAnalysis = () => {
             {/* ═══ KEY METRICS ═══ */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
               <StatCard title="Total Allocated" value={`₹${overview.totalAllocated.toLocaleString('en-IN')}`} icon={CreditCard} color="text-blue-600" bgColor="bg-blue-100 dark:bg-blue-900/30" subtitle={`${overview.totalStudents} students`} />
-              <StatCard title="Collected" value={`₹${overview.totalCollected.toLocaleString('en-IN')}`} icon={CheckCircle2} color="text-green-600" bgColor="bg-green-100 dark:bg-green-900/30" subtitle={`${overview.totalPayments} payments`} />
+              <StatCard title="Collected (Cash+Disc)" value={`₹${overview.totalCollected.toLocaleString('en-IN')}`} icon={CheckCircle2} color="text-green-600" bgColor="bg-green-100 dark:bg-green-900/30" subtitle={`Cash: ₹${(overview.totalCashCollected || 0).toLocaleString('en-IN')}`} />
               <StatCard title="Due Balance" value={`₹${overview.totalDue.toLocaleString('en-IN')}`} icon={AlertCircle} color="text-red-600" bgColor="bg-red-100 dark:bg-red-900/30" subtitle={`${overview.unpaid + overview.partialPaid} students`} />
               <StatCard title="Collection Rate" value={`${overview.collectionRate}%`} icon={TrendingUp} color={overview.collectionRate >= 80 ? 'text-green-600' : overview.collectionRate >= 50 ? 'text-amber-600' : 'text-red-600'} bgColor={overview.collectionRate >= 80 ? 'bg-green-100 dark:bg-green-900/30' : overview.collectionRate >= 50 ? 'bg-amber-100 dark:bg-amber-900/30' : 'bg-red-100 dark:bg-red-900/30'} />
             </div>
@@ -772,7 +782,7 @@ const FeesAnalysis = () => {
                 <CardContent>
                   <div className="space-y-3">
                     {paymentModeSplit.map((m, i) => {
-                      const share = overview.totalCollected > 0 ? ((m.amount / overview.totalCollected) * 100).toFixed(1) : 0;
+                      const share = (overview.totalCashCollected || overview.totalCollected) > 0 ? ((m.amount / (overview.totalCashCollected || overview.totalCollected)) * 100).toFixed(1) : 0;
                       const colors = ['bg-blue-500', 'bg-green-500', 'bg-purple-500', 'bg-amber-500', 'bg-pink-500'];
                       return (
                         <div key={i} className="flex items-center gap-4">

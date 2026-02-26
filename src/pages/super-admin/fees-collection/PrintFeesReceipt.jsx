@@ -361,15 +361,15 @@ const PrintFeesReceipt = () => {
           />
         </div>
       ) : (
-        <div className='flex justify-between items-center p-3 border-b-2 border-gray-800 bg-gray-50'>
-          <div className='flex items-center gap-3'>
-            {school?.logo_url && <img src={school.logo_url} alt='Logo' className='h-12' />}
+        <div className='flex flex-col sm:flex-row justify-between items-start sm:items-center p-2 sm:p-3 border-b-2 border-gray-800 bg-gray-50 gap-2'>
+          <div className='flex items-center gap-2 sm:gap-3'>
+            {school?.logo_url && <img src={school.logo_url} alt='Logo' className='h-10 sm:h-12' />}
             <div>
-              <h1 className='text-lg font-bold uppercase text-gray-900'>{school?.name || branch?.branch_name || '-'}</h1>
-              {school?.address && <p className='text-xs text-gray-600'>{school.address}</p>}
+              <h1 className='text-sm sm:text-lg font-bold uppercase text-gray-900 leading-tight'>{school?.name || branch?.branch_name || '-'}</h1>
+              {school?.address && <p className='text-[8px] sm:text-xs text-gray-600'>{school.address}</p>}
             </div>
           </div>
-          <div className='text-right text-[9px] text-gray-600'>
+          <div className='text-left sm:text-right text-[8px] sm:text-[9px] text-gray-600'>
             {(school?.pincode || school?.city) && <p>{[school?.city, school?.state, school?.pincode].filter(Boolean).join(', ')}</p>}
             {school?.contact_number && <p>Phone: {school.contact_number}</p>}
             {school?.contact_email && <p>Email: {school.contact_email}</p>}
@@ -378,7 +378,7 @@ const PrintFeesReceipt = () => {
       )}
 
       {/* Title Bar - includes Copy Type, Original/Reprint, & Receipt No */}
-      <div className='bg-gray-900 text-white py-1 px-3 flex justify-between items-center'>
+      <div className='bg-gray-900 text-white py-1 px-2 sm:px-3 flex flex-wrap sm:flex-nowrap justify-between items-center gap-1'>
         <span className='text-[10px] font-bold uppercase tracking-wide opacity-90'>{copyType}</span>
         <div className='text-center'>
           <span className='text-sm font-semibold tracking-wide'>FEES RECEIPT</span>
@@ -393,8 +393,8 @@ const PrintFeesReceipt = () => {
 
       {/* Content */}
       <div className='p-3'>
-        {/* Student & Transaction Info - Compact */}
-        <div className='flex justify-between gap-4 mb-2 text-[11px]' style={{ lineHeight: '1.4' }}>
+        {/* Student & Transaction Info - Compact, stacks on mobile */}
+        <div className='flex flex-col sm:flex-row justify-between gap-1 sm:gap-4 mb-2 text-[11px]' style={{ lineHeight: '1.4' }}>
           <div className='flex-1'>
             <table className='w-full' style={{ borderSpacing: 0 }}>
               <tbody>
@@ -442,7 +442,8 @@ const PrintFeesReceipt = () => {
         </div>
 
         {/* Fee Table - Discount/Fine columns shown only when applicable */}
-        <table className='w-full text-[10px] border-collapse border border-gray-400 mb-2'>
+        <div className='overflow-x-auto -mx-1 sm:mx-0'>
+        <table className='w-full text-[10px] border-collapse border border-gray-400 mb-2' style={{ minWidth: '360px' }}>
           <thead>
             <tr className='bg-gray-800 text-white'>
               <th className='border border-gray-400 p-1.5 text-left w-6'>S.No</th>
@@ -480,6 +481,7 @@ const PrintFeesReceipt = () => {
             </tr>
           </tfoot>
         </table>
+        </div>
 
         {/* Payment Summary Box - Compact */}
         <div className='flex justify-between gap-2 mb-1'>
@@ -514,7 +516,8 @@ const PrintFeesReceipt = () => {
               </span>
             </div>
             {/* Table */}
-            <table className='w-full text-[7px] border-collapse'>
+            <div className='overflow-x-auto'>
+            <table className='w-full text-[7px] border-collapse' style={{ minWidth: '320px' }}>
               <thead>
                 <tr className='bg-gray-50'>
                   <th className='text-left px-2 py-0.5 font-semibold text-gray-600 border-b border-gray-300'>Fee Name</th>
@@ -551,12 +554,13 @@ const PrintFeesReceipt = () => {
                 </tr>
               </tfoot>
             </table>
+            </div>
           </div>
         )}
 
         {/* Footer */}
-        <div className='flex justify-between items-end mt-2 pt-2 border-t border-dashed border-gray-400'>
-          <div className='text-[9px] text-gray-500 italic'>
+        <div className='flex flex-col sm:flex-row justify-between items-start sm:items-end mt-2 pt-2 border-t border-dashed border-gray-400 gap-1'>
+          <div className='text-[8px] sm:text-[9px] text-gray-500 italic'>
             {printSettings?.footer_content ? (
               <span dangerouslySetInnerHTML={{ __html: printSettings.footer_content.replace(/<[^>]*>/g, '') }} />
             ) : (
@@ -685,18 +689,58 @@ const PrintFeesReceipt = () => {
             min-height: 100vh;
             padding: 20px;
           }
+          /* Mobile-responsive receipt on small screens */
+          @media (max-width: 640px) {
+            .print-container {
+              max-width: 100%;
+              padding: 8px;
+              padding-bottom: 80px; /* Space for bottom nav */
+              min-height: auto;
+            }
+            .receipt-box {
+              font-size: 10px;
+            }
+            .receipt-box table {
+              font-size: 9px !important;
+            }
+            .receipt-box .text-lg {
+              font-size: 13px !important;
+            }
+            .receipt-box .text-[11px] {
+              font-size: 10px !important;
+            }
+            .receipt-box .text-[10px] {
+              font-size: 9px !important;
+            }
+            .receipt-box .text-[9px] {
+              font-size: 8px !important;
+            }
+            .receipt-box .w-28 {
+              width: 5rem !important;
+            }
+            .receipt-box .p-3 {
+              padding: 6px !important;
+            }
+            .receipt-box .gap-4 {
+              gap: 4px !important;
+            }
+            .receipt-box th,
+            .receipt-box td {
+              padding: 3px 4px !important;
+            }
+          }
         }
       `}</style>
 
       {/* Screen Header - Hidden in Print */}
-      <div className='print-hidden bg-gradient-to-r from-blue-600 to-blue-800 text-white p-4 sticky top-0 z-50 shadow-lg'>
-        <div className='max-w-4xl mx-auto flex justify-between items-center'>
-          <Button variant='ghost' className='text-white hover:bg-blue-700' onClick={() => navigate(-1)}>
-            <ArrowLeft className='mr-2 h-4 w-4' />Back
+      <div className='print-hidden bg-gradient-to-r from-blue-600 to-blue-800 text-white p-3 sm:p-4 sticky top-0 z-50 shadow-lg'>
+        <div className='max-w-4xl mx-auto flex justify-between items-center gap-2'>
+          <Button variant='ghost' className='text-white hover:bg-blue-700 px-2 sm:px-4' onClick={() => navigate(-1)}>
+            <ArrowLeft className='mr-1 sm:mr-2 h-4 w-4' /><span className='hidden sm:inline'>Back</span>
           </Button>
-          <h1 className='text-lg font-semibold'>Fee Receipt Preview</h1>
-          <Button onClick={handlePrint} className='bg-white text-blue-700 hover:bg-blue-50'>
-            <Printer className='mr-2 h-4 w-4' />Print Receipt
+          <h1 className='text-sm sm:text-lg font-semibold truncate'>Fee Receipt Preview</h1>
+          <Button onClick={handlePrint} className='bg-white text-blue-700 hover:bg-blue-50 px-2 sm:px-4 text-xs sm:text-sm'>
+            <Printer className='mr-1 sm:mr-2 h-4 w-4' /><span className='hidden sm:inline'>Print</span> Receipt
           </Button>
         </div>
       </div>

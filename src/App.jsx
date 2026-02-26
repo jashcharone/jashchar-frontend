@@ -24,6 +24,7 @@ import { initDevTools } from '@/utils/devTools';
 import { getSubdomain } from '@/utils/subdomain';
 import LoadingFallback from '@/components/LoadingFallback';
 import FaviconUpdater from '@/components/FaviconUpdater';
+import MobileAppShell from '@/components/mobile/MobileAppShell';
 
 // ? CRITICAL: Keep these as eager imports for initial page load
 import Homepage from '@/pages/Homepage';
@@ -1731,6 +1732,8 @@ function App() {
             <Route path="*" element={<NotFound />} />
           </Routes>
           </Suspense>
+          {/* Bottom Nav — global for ALL Capacitor pages (authenticated only) */}
+          <MobileAppShell />
           </ParentChildProvider>
         </PermissionProvider>
       </EnvStatusProvider>

@@ -509,6 +509,7 @@ const PrintTransportReceipt = () => {
                 }
                 @media screen {
                     .print-container { max-width: 210mm; margin: 0 auto; background: #f5f5f5; min-height: 100vh; padding: 20px; }
+                    @media (max-width: 640px) { .print-container { max-width: 100%; padding: 8px; padding-bottom: 80px; min-height: auto; } .receipt-box table { font-size: 9px !important; } .receipt-box .p-3 { padding: 6px !important; } }
                 }
             `}</style>
 

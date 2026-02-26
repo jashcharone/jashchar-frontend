@@ -10,7 +10,6 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { Loader2 } from "lucide-react";
 import { Capacitor } from '@capacitor/core';
-import MobileBottomNav from "@/components/mobile/MobileBottomNav";
 
 const DashboardLayout = ({ children }) => {
   const { user, loading } = useAuth();
@@ -161,8 +160,7 @@ const DashboardLayout = ({ children }) => {
         />
       </div>
       
-      {/* Bottom Navigation — ONLY for Capacitor native app, NOT website */}
-      {isCapacitorApp && <MobileBottomNav />}
+      {/* Bottom Navigation is now rendered globally by MobileAppShell in App.jsx */}
     </div>
   );
 };

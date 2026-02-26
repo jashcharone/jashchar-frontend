@@ -102,7 +102,7 @@ const isCapacitorApp = () => {
   } catch (e) { /* ignore */ }
 
   // Method 2: Direct window check (native bridge injects this)
-  if (typeof window !== 'undefined' && window.Capacitor && window.Capacitor.isNativePlatform) return true;
+  if (typeof window !== 'undefined' && window.Capacitor?.isNativePlatform?.()) return true;
 
   // Method 3: Hostname detection (set in capacitor.config.ts)
   if (typeof window !== 'undefined' && window.location.hostname === 'app.jashchar.local') return true;

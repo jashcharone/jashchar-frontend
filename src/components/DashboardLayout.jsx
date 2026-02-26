@@ -29,7 +29,7 @@ const DashboardLayout = ({ children }) => {
   // Bottom nav + compact header ONLY for native app. Website stays original.
   const isCapacitorApp = (() => {
     try { if (Capacitor.isNativePlatform()) return true; } catch(e) {}
-    if (typeof window !== 'undefined' && window.Capacitor?.isNativePlatform) return true;
+    if (typeof window !== 'undefined' && window.Capacitor?.isNativePlatform?.()) return true;
     if (typeof window !== 'undefined' && window.location.hostname === 'app.jashchar.local') return true;
     return false;
   })();

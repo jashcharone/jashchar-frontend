@@ -470,7 +470,7 @@ function App() {
   // Capacitor native app detection — skip marketing Homepage, go straight to Login
   const isCapacitorNative = (() => {
     try { if (Capacitor.isNativePlatform()) return true; } catch(e) {}
-    if (typeof window !== 'undefined' && window.Capacitor?.isNativePlatform) return true;
+    if (typeof window !== 'undefined' && window.Capacitor?.isNativePlatform?.()) return true;
     if (typeof window !== 'undefined' && window.location.hostname === 'app.jashchar.local') return true;
     return false;
   })();

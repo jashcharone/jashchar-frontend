@@ -25,14 +25,14 @@ const DashboardLayout = ({ children }) => {
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
   const [isChatbotOpen, setIsChatbotOpen] = useState(false);
 
-  // Detect if running inside Capacitor native app or mobile-sized screen
+  // Detect if running inside Capacitor native app (NOT web browser)
+  // Bottom nav + compact header ONLY for native app. Website stays original.
   const isCapacitorApp = (() => {
     try { if (Capacitor.isNativePlatform()) return true; } catch(e) {}
     if (typeof window !== 'undefined' && window.Capacitor?.isNativePlatform) return true;
     if (typeof window !== 'undefined' && window.location.hostname === 'app.jashchar.local') return true;
     return false;
   })();
-  const showMobileNav = isCapacitorApp || isMobile;
 
   useEffect(() => {
     const handleResize = () => {
@@ -94,15 +94,15 @@ const DashboardLayout = ({ children }) => {
   return (
     <div className="min-h-screen w-full bg-background text-foreground">
       <div className="relative min-h-screen flex">
-        {/* Mobile overlay for sidebar drawer (only on web mobile, not Capacitor) */}
-        {isMobile && isSidebarOpen && !isCapacitorApp && (
+        {/* Mobile overlay for sidebar drawer */}
+        {isMobile && isSidebarOpen && (
           <div
             className="fixed inset-0 bg-black/50 z-30"
             onClick={() => setIsSidebarOpen(false)}
           ></div>
         )}
         
-        {/* Desktop/Web sidebar — hidden on Capacitor native app */}
+        {/* Sidebar — shown on website (all sizes), hidden ONLY on Capacitor native app */}
         {!isCapacitorApp && (
           <Sidebar
             role={role}
@@ -119,15 +119,14 @@ const DashboardLayout = ({ children }) => {
             !isCapacitorApp && isExpanded && !isMobile ? "md:ml-[270px]" : !isCapacitorApp ? "md:ml-[80px]" : ""
           )}
         >
-          {/* Header — compact on Capacitor */}
-          {!showMobileNav ? (
+          {/* Header — full Header on website, compact on Capacitor native only */}
+          {!isCapacitorApp ? (
             <Header
               toggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
               onThemeSettingsClick={() => setIsCustomizerOpen(true)}
               onChatbotToggle={() => setIsChatbotOpen(!isChatbotOpen)}
             />
           ) : (
-            /* Mobile-friendly compact header */
             <MobileCompactHeader 
               onThemeClick={() => setIsCustomizerOpen(true)}
               onMenuClick={() => setIsSidebarOpen(!isSidebarOpen)}
@@ -137,7 +136,7 @@ const DashboardLayout = ({ children }) => {
           <main 
             className={cn(
               "flex-1 overflow-y-auto",
-              showMobileNav ? "p-3 pb-20" : "p-4 sm:p-6",
+              isCapacitorApp ? "p-3 pb-20" : "p-4 sm:p-6",
             )} 
             id="main-content"
           >
@@ -162,8 +161,8 @@ const DashboardLayout = ({ children }) => {
         />
       </div>
       
-      {/* WhatsApp-style Bottom Navigation for mobile/Capacitor */}
-      {showMobileNav && <MobileBottomNav />}
+      {/* Bottom Navigation — ONLY for Capacitor native app, NOT website */}
+      {isCapacitorApp && <MobileBottomNav />}
     </div>
   );
 };

@@ -108,3 +108,99 @@ export const PRINT_STYLES = `
   @media print { body { margin: 10px; } @page { margin: 10mm; } }
   @page { size: A4 landscape; }
 `;
+
+/**
+ * Download a report as PDF file using html2canvas + jsPDF
+ * @param {object} options
+ * @param {string} options.title - Window title
+ * @param {string} options.orgHeader - HTML from buildOrgHeaderHtml
+ * @param {string} options.bodyHtml - Report body HTML
+ * @param {string} options.fileName - Output file name (without .pdf)
+ */
+export async function downloadReportAsPDF({ title, orgHeader, bodyHtml, fileName }) {
+  // Create a hidden iframe to render the HTML
+  const iframe = document.createElement('iframe');
+  iframe.style.cssText = 'position:fixed; left:-9999px; top:-9999px; width:1200px; height:auto; border:none;';
+  document.body.appendChild(iframe);
+
+  const htmlContent = `
+    <html><head><title>${title}</title>
+    <style>
+      ${PRINT_STYLES}
+      body { width: 1160px; margin: 20px; }
+      @page { size: auto; }
+    </style></head><body>
+    ${orgHeader || ''}
+    ${bodyHtml}
+    </body></html>
+  `;
+
+  iframe.contentDocument.open();
+  iframe.contentDocument.write(htmlContent);
+  iframe.contentDocument.close();
+
+  // Wait for images and content to load
+  await new Promise(resolve => setTimeout(resolve, 800));
+
+  try {
+    const { default: html2canvas } = await import('html2canvas');
+    const { default: jsPDF } = await import('jspdf');
+
+    const body = iframe.contentDocument.body;
+    const canvas = await html2canvas(body, {
+      scale: 2,
+      useCORS: true,
+      allowTaint: true,
+      logging: false,
+      width: 1200,
+      windowWidth: 1200,
+    });
+
+    // A4 landscape dimensions in mm
+    const pdf = new jsPDF('l', 'mm', 'a4');
+    const pageWidth = pdf.internal.pageSize.getWidth();
+    const pageHeight = pdf.internal.pageSize.getHeight();
+
+    const imgWidth = pageWidth - 20; // 10mm margin each side
+    const imgHeight = (canvas.height * imgWidth) / canvas.width;
+    const imgData = canvas.toDataURL('image/jpeg', 0.92);
+
+    if (imgHeight <= pageHeight - 20) {
+      // Fits in one page
+      pdf.addImage(imgData, 'JPEG', 10, 10, imgWidth, imgHeight);
+    } else {
+      // Multi-page: slice the canvas
+      const pageContentHeight = pageHeight - 20; // usable height per page
+      const totalPages = Math.ceil(imgHeight / pageContentHeight);
+
+      for (let i = 0; i < totalPages; i++) {
+        if (i > 0) pdf.addPage();
+        const srcY = (i * pageContentHeight * canvas.width) / imgWidth;
+        const srcH = (pageContentHeight * canvas.width) / imgWidth;
+        const sliceHeight = Math.min(srcH, canvas.height - srcY);
+
+        // Create a slice canvas
+        const sliceCanvas = document.createElement('canvas');
+        sliceCanvas.width = canvas.width;
+        sliceCanvas.height = sliceHeight;
+        const ctx = sliceCanvas.getContext('2d');
+        ctx.drawImage(canvas, 0, srcY, canvas.width, sliceHeight, 0, 0, canvas.width, sliceHeight);
+
+        const sliceData = sliceCanvas.toDataURL('image/jpeg', 0.92);
+        const sliceImgH = (sliceHeight * imgWidth) / canvas.width;
+        pdf.addImage(sliceData, 'JPEG', 10, 10, imgWidth, sliceImgH);
+      }
+    }
+
+    pdf.save(`${fileName || 'Report'}.pdf`);
+  } catch (err) {
+    console.error('PDF download failed:', err);
+    // Fallback: open in new window for manual print-to-PDF
+    const w = window.open('', '_blank');
+    w.document.write(htmlContent);
+    w.document.close();
+    setTimeout(() => w.print(), 500);
+  } finally {
+    document.body.removeChild(iframe);
+  }
+}

@@ -17,7 +17,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
-import { fetchPrintHeaderData, buildOrgHeaderHtml, PRINT_STYLES } from '@/utils/printOrgHeader';
+import { fetchPrintHeaderData, buildOrgHeaderHtml, PRINT_STYLES, downloadReportAsPDF } from '@/utils/printOrgHeader';
 
 // ═══════════════════════════════════════════════════════════
 // FEES ANALYSIS - World-Class Fee Analytics Module
@@ -561,6 +561,46 @@ const FeesAnalysis = () => {
     setTimeout(() => printWindow.print(), 500);
   };
 
+  // === DOWNLOAD PDF ===
+  const handleDownloadPDF = async () => {
+    const sessionName = sessions.find(s => s.id === selectedSessionId)?.name || 'Active';
+    const orgHeader = buildOrgHeaderHtml(printHeaderData);
+    const filterInfo = selectedClass !== 'all' ? ` | <strong>Class:</strong> ${classes.find(c => c.id === selectedClass)?.name || ''}` : '';
+    const feeTypeInfo = selectedFeeType !== 'all' ? ` | <strong>Fee Type:</strong> ${feeTypes.find(t => t.id === selectedFeeType)?.name || ''}` : '';
+    const bodyHtml = `
+      <h1>💰 Fees Analysis Report</h1>
+      <p class="report-meta"><strong>Session:</strong> ${sessionName}${filterInfo}${feeTypeInfo} | <strong>Generated:</strong> ${format(new Date(), 'dd MMM yyyy, hh:mm a')}</p>
+      <div class="stats-grid">
+        <div class="stat-box"><div class="stat-value">₹${overview.totalAllocated.toLocaleString('en-IN')}</div><div class="stat-label">Total Allocated</div></div>
+        <div class="stat-box"><div class="stat-value text-green">₹${overview.totalCollected.toLocaleString('en-IN')}</div><div class="stat-label">Collected (Cash+Discount)</div></div>
+        <div class="stat-box"><div class="stat-value text-red">₹${overview.totalDue.toLocaleString('en-IN')}</div><div class="stat-label">Due</div></div>
+        <div class="stat-box"><div class="stat-value">${overview.collectionRate}%</div><div class="stat-label">Collection Rate</div></div>
+      </div>
+      ${overview.totalDiscount > 0 || overview.totalFine > 0 ? `<p style="font-size:11px;color:#666;">Discount: <strong class="text-amber">₹${overview.totalDiscount.toLocaleString('en-IN')}</strong> | Fine: <strong class="text-red">₹${overview.totalFine.toLocaleString('en-IN')}</strong> | Cash Collected: <strong class="text-green">₹${(overview.totalCashCollected || 0).toLocaleString('en-IN')}</strong></p>` : ''}
+      <h2>Complete Fee Breakdown</h2>
+      <table><thead><tr><th>Category</th><th>Allocated</th><th>Collected</th><th>Due</th><th>Rate</th></tr></thead>
+        <tbody>
+          <tr><td>📚 Academic</td><td>₹${(overview.academicAllocated || 0).toLocaleString('en-IN')}</td><td class="text-green">₹${(overview.academicCollected || 0).toLocaleString('en-IN')}</td><td class="text-red">₹${Math.max(0, (overview.academicAllocated || 0) - (overview.academicCollected || 0)).toLocaleString('en-IN')}</td><td>${(overview.academicAllocated || 0) > 0 ? Math.round(((overview.academicCollected || 0) / (overview.academicAllocated || 1)) * 100) : 0}%</td></tr>
+          ${(overview.transportAllocated || 0) > 0 ? `<tr><td>🚌 Transport</td><td>₹${overview.transportAllocated.toLocaleString('en-IN')}</td><td class="text-green">₹${(overview.transportCollected || 0).toLocaleString('en-IN')}</td><td class="text-red">₹${Math.max(0, overview.transportAllocated - (overview.transportCollected || 0)).toLocaleString('en-IN')}</td><td>${Math.round(((overview.transportCollected || 0) / (overview.transportAllocated || 1)) * 100)}%</td></tr>` : ''}
+          ${(overview.hostelAllocated || 0) > 0 ? `<tr><td>🏠 Hostel</td><td>₹${overview.hostelAllocated.toLocaleString('en-IN')}</td><td class="text-green">₹${(overview.hostelCollected || 0).toLocaleString('en-IN')}</td><td class="text-red">₹${Math.max(0, overview.hostelAllocated - (overview.hostelCollected || 0)).toLocaleString('en-IN')}</td><td>${Math.round(((overview.hostelCollected || 0) / (overview.hostelAllocated || 1)) * 100)}%</td></tr>` : ''}
+          <tr style="font-weight:bold;border-top:2px solid #333;"><td>GRAND TOTAL</td><td>₹${overview.totalAllocated.toLocaleString('en-IN')}</td><td class="text-green">₹${overview.totalCollected.toLocaleString('en-IN')}</td><td class="text-red">₹${overview.totalDue.toLocaleString('en-IN')}</td><td>${overview.collectionRate}%</td></tr>
+        </tbody></table>
+      <h2>Class-wise Fee Summary</h2>
+      <table><thead><tr><th>Class</th><th>Students</th><th>Allocated</th><th>Collected</th><th>Due</th><th>Rate</th><th>Paid</th><th>Partial</th><th>Unpaid</th></tr></thead>
+        <tbody>${classWiseFees.map(c => `<tr><td>${c.name}</td><td>${c.studentCount}</td><td>₹${c.allocated.toLocaleString('en-IN')}</td><td class="text-green">₹${c.collected.toLocaleString('en-IN')}</td><td class="text-red">₹${c.due.toLocaleString('en-IN')}</td><td>${c.rate}%</td><td>${c.fullyPaid}</td><td>${c.partial}</td><td>${c.unpaid}</td></tr>`).join('')}
+        <tr style="font-weight:bold;border-top:2px solid #333;"><td>TOTAL</td><td>${overview.totalStudents}</td><td>₹${overview.totalAllocated.toLocaleString('en-IN')}</td><td class="text-green">₹${overview.totalCollected.toLocaleString('en-IN')}</td><td class="text-red">₹${overview.totalDue.toLocaleString('en-IN')}</td><td>${overview.collectionRate}%</td><td>${overview.fullyPaid}</td><td>${overview.partialPaid}</td><td>${overview.unpaid}</td></tr></tbody></table>
+      <h2>Fee Defaulters (${topDefaulters.length} students)</h2>
+      <table><thead><tr><th>#</th><th>Adm No</th><th>Student</th><th>Class</th><th>Father</th><th>Mobile</th><th>Total</th><th>Paid</th><th>Due</th></tr></thead>
+        <tbody>${topDefaulters.map((d, i) => `<tr><td>${i + 1}</td><td>${d.student?.school_code || '-'}</td><td>${d.student?.full_name || '-'}</td><td>${d.student?.classes?.name || '-'}</td><td>${d.student?.father_name || '-'}</td><td>${d.student?.father_phone || d.student?.phone || '-'}</td><td>₹${d.total.toLocaleString('en-IN')}</td><td class="text-green">₹${d.paid.toLocaleString('en-IN')}</td><td class="text-red"><strong>₹${d.due.toLocaleString('en-IN')}</strong></td></tr>`).join('')}</tbody></table>
+      <div class="footer">Generated by Jashchar ERP • ${format(new Date(), 'dd MMMM yyyy, hh:mm a')}</div>`;
+    await downloadReportAsPDF({
+      title: `Fees Analysis Report - ${selectedBranch?.name || 'School'}`,
+      orgHeader,
+      bodyHtml,
+      fileName: `Fees_Analysis_${selectedBranch?.name || 'School'}_${format(new Date(), 'yyyy-MM-dd')}`,
+    });
+  };
+
   const handleExportExcel = () => {
     // Export class-wise + defaulters to CSV
     const headers = ['Class', 'Students', 'Allocated', 'Collected', 'Due', 'Collection Rate %', 'Fully Paid', 'Partial', 'Unpaid'];
@@ -602,6 +642,9 @@ const FeesAnalysis = () => {
             </Button>
             <Button variant="outline" size="sm" onClick={handlePrint}>
               <Printer className="h-4 w-4 mr-1" /> Print
+            </Button>
+            <Button variant="outline" size="sm" onClick={handleDownloadPDF}>
+              <Download className="h-4 w-4 mr-1" /> Download PDF
             </Button>
             <Button variant="outline" size="sm" onClick={handleExportExcel}>
               <FileSpreadsheet className="h-4 w-4 mr-1" /> Export Excel

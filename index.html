@@ -3,18 +3,18 @@
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
     <meta http-equiv="Content-Security-Policy" content="
-      default-src 'self' http://localhost:*; 
+      default-src 'self' http://localhost:* https://app.jashchar.local capacitor: https:; 
       script-src 'self' 'unsafe-inline' 'unsafe-eval'; 
       style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; 
-      img-src 'self' data: blob: https: http:; 
+      img-src 'self' data: blob: https: http: capacitor:; 
       font-src 'self' data: https://fonts.gstatic.com; 
-      connect-src 'self' https://gqieuyjlpkzfmuedxqiu.supabase.co https://fleelskwjczkamvphvdf.supabase.co https://fexjccrkgaeafyimpobv.supabase.co https://bjuteyzpcpbittmdzveq.supabase.co https://devapi.jashcharerp.com http://localhost:* https://*.jashchar.in https://*.edunexttechnologies.com https://*.up.railway.app https://api.postalpincode.in https://cdn.jsdelivr.net ws://localhost:* wss://*; 
+      connect-src 'self' https://gqieuyjlpkzfmuedxqiu.supabase.co https://fleelskwjczkamvphvdf.supabase.co https://fexjccrkgaeafyimpobv.supabase.co https://bjuteyzpcpbittmdzveq.supabase.co https://devapi.jashcharerp.com http://localhost:* https://*.jashchar.in https://*.edunexttechnologies.com https://*.up.railway.app https://api.postalpincode.in https://cdn.jsdelivr.net ws://localhost:* wss://* capacitor:; 
       frame-src 'self' https://www.youtube.com https://www.youtube-nocookie.com; 
       worker-src 'self' blob:; 
       child-src 'self' blob:; 
-      media-src 'self' blob: https: http:; 
+      media-src 'self' blob: https: http: capacitor:; 
       manifest-src 'self' http://localhost:* https://devapi.jashcharerp.com https://*.supabase.co;
     ">
     

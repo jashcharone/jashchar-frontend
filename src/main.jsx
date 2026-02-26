@@ -11,6 +11,7 @@ import { Toaster } from '@/components/ui/toaster';
 import { initDevTools } from "@/utils/devTools";
 import { initGlobalErrorHandlers } from "@/lib/globalErrorHandlers";
 import { initSentry } from "@/lib/sentry";
+import { initCapacitor } from "@/lib/capacitor";
 import PWAInstallPrompt from '@/components/PWAInstallPrompt';
 import OrgSwitcher from '@/components/OrgSwitcher';
 import '@/index.css';
@@ -23,6 +24,9 @@ initSentry();
 
 // Initialize global error handlers (Queries Finder)
 initGlobalErrorHandlers();
+
+// Initialize Capacitor native integrations (no-op on web)
+initCapacitor();
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <>

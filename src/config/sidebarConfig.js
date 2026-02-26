@@ -447,6 +447,7 @@ export const BASE_SIDEBAR = {
         { title: 'Student Users', path: '/super-admin/user-management/students' },
         { title: 'Staff Users', path: '/super-admin/user-management/staff' },
         { title: 'Parent Users', path: '/super-admin/user-management/parents' },
+        { title: 'Transfer Staff', path: '/super-admin/user-management/transfer-staff' },
       ]
     },
     {

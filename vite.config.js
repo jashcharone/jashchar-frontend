@@ -314,6 +314,7 @@ export default defineConfig({
 			'@supabase/supabase-js',
 			'framer-motion',
 			'lucide-react',
+			'@capacitor/core',
 		],
 		exclude: [
 			'@babel/parser',

@@ -168,3 +168,65 @@ html:not(.dark) {
     padding: 0 !important;
   }
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════ */
+/* CAPACITOR NATIVE APP - Safe area, keyboard, overscroll adjustments        */
+/* These apply only inside Capacitor WebView (Android/iOS)                   */
+/* ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Safe area insets for notch/punch-hole devices */
+html {
+  --safe-area-top: env(safe-area-inset-top, 0px);
+  --safe-area-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-area-left: env(safe-area-inset-left, 0px);
+  --safe-area-right: env(safe-area-inset-right, 0px);
+  --keyboard-height: 0px;
+}
+
+/* Prevent pull-to-refresh in native app (annoying in ERP dashboards) */
+body {
+  overscroll-behavior-y: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Disable text selection highlight on long-press (native-like feel) */
+.native-no-select {
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+
+/* When keyboard is open, account for it so forms stay visible */
+.keyboard-aware {
+  padding-bottom: var(--keyboard-height);
+  transition: padding-bottom 0.2s ease;
+}
+
+/* Capacitor toast animation helper */
+#capacitor-toast {
+  animation: toastSlideUp 0.3s ease;
+}
+
+@keyframes toastSlideUp {
+  from { transform: translateX(-50%) translateY(20px); opacity: 0; }
+  to { transform: translateX(-50%) translateY(0); opacity: 1; }
+}
+
+/* Tablet-specific optimizations (landscape dashboard) */
+@media (min-width: 768px) and (orientation: landscape) {
+  .tablet-sidebar-wider {
+    width: 280px !important;
+  }
+}
+
+/* Touch-friendly tap targets for mobile */
+@media (pointer: coarse) {
+  button, 
+  a, 
+  [role="button"],
+  input[type="checkbox"],
+  input[type="radio"] {
+    min-height: 44px;
+    min-width: 44px;
+  }
+}

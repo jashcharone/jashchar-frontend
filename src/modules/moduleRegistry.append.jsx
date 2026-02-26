@@ -52,6 +52,7 @@ const StudentUsers = lazyLoad(() => import('@/pages/super-admin/user-management/
 const StaffUsers = lazyLoad(() => import('@/pages/super-admin/user-management/StaffUsers'));
 const ParentUsers = lazyLoad(() => import('@/pages/super-admin/user-management/ParentUsers'));
 const AllUsers = lazyLoad(() => import('@/pages/super-admin/user-management/AllUsers'));
+const TransferStaff = lazyLoad(() => import('@/pages/super-admin/user-management/TransferStaff'));
 
 // --- HELPER TO GENERATE MODULE CONFIG ---
 const createModule = (key, role, title, icon, path, submenu = []) => ({
@@ -312,7 +313,8 @@ export const NEW_MODULES = [
         { title: 'All Users', path: '/super-admin/user-management/all-users' },
         { title: 'Student Users', path: '/super-admin/user-management/students' },
         { title: 'Staff Users', path: '/super-admin/user-management/staff' },
-        { title: 'Parent Users', path: '/super-admin/user-management/parents' }
+        { title: 'Parent Users', path: '/super-admin/user-management/parents' },
+        { title: 'Transfer Staff', path: '/super-admin/user-management/transfer-staff' }
       ]
     } 
   },
@@ -321,6 +323,7 @@ export const NEW_MODULES = [
   { key: 'user_management', role: 'super_admin', route: { path: '/super-admin/user-management/students', element: <StudentUsers /> } },
   { key: 'user_management', role: 'super_admin', route: { path: '/super-admin/user-management/staff', element: <StaffUsers /> } },
   { key: 'user_management', role: 'super_admin', route: { path: '/super-admin/user-management/parents', element: <ParentUsers /> } },
+  { key: 'user_management', role: 'super_admin', route: { path: '/super-admin/user-management/transfer-staff', element: <TransferStaff /> } },
 
   // === CORE MODULES (MUST MATCH DATABASE MODULE SLUGS) ===
   // These are the primary modules that come with subscription plans

@@ -8,7 +8,7 @@ android {
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1
-        versionName "1.0"
+        versionName "1.0.0"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
@@ -16,11 +16,34 @@ android {
             ignoreAssetsPattern '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
         }
     }
+
+    // Signing configuration for release builds
+    signingConfigs {
+        release {
+            // These will be set up when generating keystore
+            // storeFile file('jashchar-erp-release.keystore')
+            // storePassword System.getenv('KEYSTORE_PASSWORD') ?: ''
+            // keyAlias 'jashchar-erp'
+            // keyPassword System.getenv('KEY_PASSWORD') ?: ''
+        }
+    }
+
     buildTypes {
         release {
-            minifyEnabled false
-            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            minifyEnabled true
+            shrinkResources false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            // Uncomment after generating keystore:
+            // signingConfig signingConfigs.release
         }
+        debug {
+            debuggable true
+        }
+    }
+
+    // Enable ViewBinding
+    buildFeatures {
+        viewBinding true
     }
 }
 

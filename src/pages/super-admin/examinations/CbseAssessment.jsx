@@ -2,6 +2,7 @@
 import DashboardLayout from '@/components/DashboardLayout';
 import { supabase } from '@/lib/customSupabaseClient';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
+import { useBranch } from '@/contexts/BranchContext';
 import { useToast } from '@/components/ui/use-toast';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -14,7 +15,9 @@ import { v4 as uuidv4 } from 'uuid';
 
 const CbseAssessment = () => {
     const { user } = useAuth();
+    const { selectedBranch } = useBranch();
     const { toast } = useToast();
+    const branchId = selectedBranch?.id || user?.profile?.branch_id;
     const [assessments, setAssessments] = useState([]);
     const [loading, setLoading] = useState(false);
     const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -23,12 +26,12 @@ const CbseAssessment = () => {
     const [formData, setFormData] = useState({ name: '', description: '', types: [{ id: uuidv4(), name: '', code: '', maximum_marks: '', pass_percentage: '', description: '' }] });
     
     const fetchAssessments = useCallback(async () => {
-        if (!user?.profile?.branch_id) return;
+        if (!branchId) return;
         setLoading(true);
         const { data, error } = await supabase
             .from('cbse_assessments')
             .select('*, cbse_assessment_types(*)')
-            .eq('branch_id', user.profile.branch_id)
+            .eq('branch_id', branchId)
             .order('name', { ascending: true });
         
         if (error) {
@@ -37,7 +40,7 @@ const CbseAssessment = () => {
             setAssessments(data);
         }
         setLoading(false);
-    }, [user, toast]);
+    }, [user, branchId, toast]);
 
     useEffect(() => {
         fetchAssessments();
@@ -83,7 +86,7 @@ const CbseAssessment = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        if (!user?.profile?.branch_id) return;
+        if (!branchId) return;
 
         const { name, description, types } = formData;
         if (!name || types.some(t => !t.name || !t.maximum_marks || !t.pass_percentage)) {
@@ -120,21 +123,21 @@ const CbseAssessment = () => {
                 }
 
                 if (typesToInsert.length > 0) {
-                     const recordsToInsert = typesToInsert.map(t => ({...t, assessment_id: assessmentId, branch_id: user.profile.branch_id}));
+                     const recordsToInsert = typesToInsert.map(t => ({...t, assessment_id: assessmentId, branch_id: branchId}));
                     const { error: insertError } = await supabase.from('cbse_assessment_types').insert(recordsToInsert);
                     if (insertError) throw insertError;
                 }
 
             } else {
                 // Create new Assessment
-                const { data: assessmentData, error: assessmentError } = await supabase.from('cbse_assessments').insert({ name, description, branch_id: user.profile.branch_id }).select().single();
+                const { data: assessmentData, error: assessmentError } = await supabase.from('cbse_assessments').insert({ name, description, branch_id: branchId }).select().single();
                 if (assessmentError) throw assessmentError;
                 assessmentId = assessmentData.id;
 
                 const typesToInsert = types.map(t => ({
                     ...t,
                     assessment_id: assessmentId,
-                    branch_id: user.profile.branch_id,
+                    branch_id: branchId,
                 }));
                 
                 const { error: typesError } = await supabase.from('cbse_assessment_types').insert(typesToInsert);

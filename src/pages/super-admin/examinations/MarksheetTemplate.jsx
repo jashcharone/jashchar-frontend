@@ -2,6 +2,7 @@
 import DashboardLayout from '@/components/DashboardLayout';
 import { supabase } from '@/lib/customSupabaseClient';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
+import { useBranch } from '@/contexts/BranchContext';
 import { useToast } from '@/components/ui/use-toast';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -16,6 +17,7 @@ import { v4 as uuidv4 } from 'uuid';
 
 const MarksheetTemplate = () => {
     const { user, currentSessionId, organizationId } = useAuth();
+    const { selectedBranch } = useBranch();
     const { toast } = useToast();
     const [templates, setTemplates] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -57,7 +59,7 @@ const MarksheetTemplate = () => {
     const [middleSignFile, setMiddleSignFile] = useState(null);
     const [rightSignFile, setRightSignFile] = useState(null);
 
-    const branchId = user?.profile?.branch_id;
+    const branchId = selectedBranch?.id || user?.profile?.branch_id;
 
     const fetchTemplates = useCallback(async () => {
         if (!branchId) return;

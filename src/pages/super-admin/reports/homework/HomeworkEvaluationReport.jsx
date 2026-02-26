@@ -1,6 +1,7 @@
 ﻿import React, { useState, useEffect } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
+import { useBranch } from '@/contexts/BranchContext';
 import { supabase } from '@/lib/customSupabaseClient';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -13,7 +14,9 @@ import { useToast } from '@/components/ui/use-toast';
 
 const HomeworkEvaluationReport = () => {
   const { user, currentSessionId } = useAuth();
+  const { selectedBranch } = useBranch();
   const { toast } = useToast();
+  const branchId = selectedBranch?.id || user?.profile?.branch_id;
   
   const [loading, setLoading] = useState(false);
   const [reportData, setReportData] = useState([]);
@@ -33,14 +36,14 @@ const HomeworkEvaluationReport = () => {
   });
 
   useEffect(() => {
-    if (user?.profile?.branch_id) {
+    if (branchId) {
       fetchClasses();
     }
-  }, [user]);
+  }, [branchId]);
 
   // --- Data Fetching for Dropdowns ---
   const fetchClasses = async () => {
-    const { data } = await supabase.from('classes').select('*').eq('branch_id', user.profile.branch_id);
+    const { data } = await supabase.from('classes').select('*').eq('branch_id', branchId);
     setClasses(data || []);
   };
 
@@ -50,7 +53,7 @@ const HomeworkEvaluationReport = () => {
       .from('sections')
       .select('*, class_sections!inner(class_id)')
       .eq('class_sections.class_id', classId)
-      .eq('branch_id', user.profile.branch_id);
+      .eq('branch_id', branchId);
     setSections(data || []);
   };
 
@@ -59,7 +62,7 @@ const HomeworkEvaluationReport = () => {
     const { data } = await supabase
       .from('subject_groups')
       .select('*')
-      .eq('branch_id', user.profile.branch_id)
+      .eq('branch_id', branchId)
       .contains('class_ids', [classId]);
     setSubjectGroups(data || []);
   };
@@ -113,7 +116,7 @@ const HomeworkEvaluationReport = () => {
           classes(name),
           sections(name)
         `)
-        .eq('branch_id', user.profile.branch_id)
+        .eq('branch_id', branchId)
         .eq('class_id', filters.class_id)
         .eq('section_id', filters.section_id);
 
@@ -134,7 +137,7 @@ const HomeworkEvaluationReport = () => {
       let studentCountQuery = supabase
         .from('student_profiles')
         .select('id', { count: 'exact', head: true })
-        .eq('branch_id', user.profile.branch_id)
+        .eq('branch_id', branchId)
         .eq('class_id', filters.class_id)
         .eq('section_id', filters.section_id);
       

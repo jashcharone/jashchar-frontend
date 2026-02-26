@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import DashboardLayout from '@/components/DashboardLayout';
 import { supabase } from '@/lib/customSupabaseClient';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
+import { useBranch } from '@/contexts/BranchContext';
 import { useToast } from '@/components/ui/use-toast';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -24,6 +25,7 @@ import { v4 as uuidv4 } from 'uuid';
 
 const CbseExam = () => {
     const { user, currentSessionId, organizationId } = useAuth();
+    const { selectedBranch } = useBranch();
     const { toast } = useToast();
     const navigate = useNavigate();
     const [exams, setExams] = useState([]);
@@ -44,8 +46,8 @@ const CbseExam = () => {
     const [formData, setFormData] = useState(initialFormData);
 
     const fetchDropdownData = useCallback(async () => {
-        if (!user?.profile?.branch_id) return;
-        const branchId = user.profile.branch_id;
+        if (!user?.profile?.branch_id && !selectedBranch?.id) return;
+        const branchId = selectedBranch?.id || user.profile.branch_id;
         const [termsRes, assessmentsRes, gradesRes, classesRes, sectionsRes, templatesRes] = await Promise.all([
             supabase.from('cbse_terms').select('id, name').eq('branch_id', branchId),
             supabase.from('cbse_assessments').select('id, name').eq('branch_id', branchId),
@@ -60,16 +62,16 @@ const CbseExam = () => {
         setClasses(classesRes.data || []);
         setSections(sectionsRes.data || []);
         setTemplates(templatesRes.data || []);
-    }, [user]);
+    }, [user, selectedBranch?.id]);
 
     const fetchExams = useCallback(async () => {
-        if (!user?.profile?.branch_id) return;
+        if (!user?.profile?.branch_id && !selectedBranch?.id) return;
         setLoading(true);
-        const { data, error } = await supabase.from('cbse_exams').select(`*, cbse_terms(name), classes(name), cbse_assessments(name)`).eq('branch_id', user.profile.branch_id).order('created_at', { ascending: false });
+        const { data, error } = await supabase.from('cbse_exams').select(`*, cbse_terms(name), classes(name), cbse_assessments(name)`).eq('branch_id', selectedBranch?.id || user.profile.branch_id).order('created_at', { ascending: false });
         if (error) toast({ variant: 'destructive', title: 'Error fetching exams', description: error.message });
         else setExams(data);
         setLoading(false);
-    }, [user, toast]);
+    }, [user, selectedBranch?.id, toast]);
 
     useEffect(() => {
         fetchDropdownData();
@@ -112,7 +114,7 @@ const CbseExam = () => {
         }
 
         setLoading(true);
-        const examData = { ...formData, branch_id: user.profile.branch_id, session_id: currentSessionId, organization_id: organizationId };
+        const examData = { ...formData, branch_id: selectedBranch?.id || user.profile.branch_id, session_id: currentSessionId, organization_id: organizationId };
         const { error } = selectedExam ? await supabase.from('cbse_exams').update(examData).eq('id', selectedExam.id) : await supabase.from('cbse_exams').insert(examData);
 
         if (error) toast({ variant: 'destructive', title: 'Error saving exam', description: error.message });

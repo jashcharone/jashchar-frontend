@@ -17,6 +17,7 @@ import DashboardLayout from '@/components/DashboardLayout';
 import MasterAdminSchoolHeader from '@/components/front-cms/MasterAdminSchoolHeader';
 import { useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
+import { useBranch } from '@/contexts/BranchContext';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Progress } from '@/components/ui/progress';
@@ -31,11 +32,13 @@ const STORAGE_LIMIT_MB = 200;
 const MediaManager = () => {
   const { toast } = useToast();
   const { school, user } = useAuth();
+  const { selectedBranch } = useBranch();
   const [searchParams] = useSearchParams();
   const branchId =
     searchParams.get('branch_id') ||
     sessionStorage.getItem('ma_target_branch_id') ||
     school?.id ||
+    selectedBranch?.id ||
     user?.profile?.branch_id;
     
   const [media, setMedia] = useState([]);

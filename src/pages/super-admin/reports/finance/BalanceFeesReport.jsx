@@ -2,6 +2,7 @@
 import DashboardLayout from '@/components/DashboardLayout';
 import { supabase } from '@/lib/customSupabaseClient';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
+import { useBranch } from '@/contexts/BranchContext';
 import { useToast } from '@/components/ui/use-toast';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -10,6 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 const BalanceFeesReport = () => {
     const { user, school } = useAuth();
+    const { selectedBranch } = useBranch();
     const currencySymbol = school?.currency_symbol || '₹';
     const { toast } = useToast();
     const [loading, setLoading] = useState(false);
@@ -19,7 +21,7 @@ const BalanceFeesReport = () => {
     const [reportData, setReportData] = useState(null);
     const [grandTotals, setGrandTotals] = useState({ total_fees: 0, paid_fees: 0, discount: 0, fine: 0, balance: 0 });
 
-    const branchId = user?.profile?.branch_id;
+    const branchId = selectedBranch?.id || user?.profile?.branch_id;
 
     useEffect(() => {
         const fetchClasses = async () => {

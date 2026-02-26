@@ -2,6 +2,7 @@
 import DashboardLayout from '@/components/DashboardLayout';
 import { supabase } from '@/lib/customSupabaseClient';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
+import { useBranch } from '@/contexts/BranchContext';
 import { useToast } from '@/components/ui/use-toast';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -14,7 +15,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 const CbseObservationParameter = () => {
     const { user } = useAuth();
+    const { selectedBranch } = useBranch();
     const { toast } = useToast();
+    const branchId = selectedBranch?.id || user?.profile?.branch_id;
     const [parameters, setParameters] = useState([]);
     const [loading, setLoading] = useState(false);
     const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -23,12 +26,12 @@ const CbseObservationParameter = () => {
     const [formData, setFormData] = useState({ name: '', description: '' });
 
     const fetchParameters = useCallback(async () => {
-        if (!user?.profile?.branch_id) return;
+        if (!branchId) return;
         setLoading(true);
         const { data, error } = await supabase
             .from('cbse_observation_parameters')
             .select('*')
-            .eq('branch_id', user.profile.branch_id)
+            .eq('branch_id', branchId)
             .order('name', { ascending: true });
         
         if (error) {
@@ -37,7 +40,7 @@ const CbseObservationParameter = () => {
             setParameters(data);
         }
         setLoading(false);
-    }, [user, toast]);
+    }, [user, branchId, toast]);
 
     useEffect(() => {
         fetchParameters();
@@ -62,7 +65,7 @@ const CbseObservationParameter = () => {
 
         const paramData = {
             ...formData,
-            branch_id: user.profile.branch_id,
+            branch_id: branchId,
         };
 
         let error;

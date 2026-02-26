@@ -2,6 +2,7 @@
 import { useNavigate } from 'react-router-dom';
 import DashboardLayout from '@/components/DashboardLayout';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
+import { useBranch } from '@/contexts/BranchContext';
 import { supabase } from '@/lib/customSupabaseClient';
 import { useToast } from '@/components/ui/use-toast';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -12,12 +13,13 @@ import { QrCode, Camera, CheckCircle2, XCircle, Settings, AlertCircle } from 'lu
 const QrAttendanceScan = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { selectedBranch } = useBranch();
   const { toast } = useToast();
   const [scanning, setScanning] = useState(false);
   const [settings, setSettings] = useState(null);
   const [recentScans, setRecentScans] = useState([]);
 
-  const branchId = user?.profile?.branch_id;
+  const branchId = selectedBranch?.id || user?.profile?.branch_id;
 
   useEffect(() => {
     const fetchSettings = async () => {

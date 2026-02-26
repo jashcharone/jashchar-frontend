@@ -29,11 +29,12 @@ const ImportStaff = () => {
     // Fetch roles, departments, designations
     React.useEffect(() => {
         const fetchPrereqs = async () => {
-            if (!user?.profile?.branch_id || !selectedBranch) return;
+            if (!selectedBranch?.id && !user?.profile?.branch_id) return;
+            const branchId = selectedBranch?.id || user?.profile?.branch_id;
             const [rolesRes, deptsRes, desigsRes] = await Promise.all([
-                supabase.from('roles').select('id, name').eq('branch_id', user.profile.branch_id).not('name', 'in', '("student","parent")'),
-                supabase.from('departments').select('id, name').eq('branch_id', user.profile.branch_id).eq('branch_id', selectedBranch.id),
-                supabase.from('designations').select('id, name').eq('branch_id', user.profile.branch_id).eq('branch_id', selectedBranch.id)
+                supabase.from('roles').select('id, name').eq('branch_id', branchId).not('name', 'in', '("student","parent")'),
+                supabase.from('departments').select('id, name').eq('branch_id', branchId),
+                supabase.from('designations').select('id, name').eq('branch_id', branchId)
             ]);
             setRoles(rolesRes.data || []);
             setDepartments(deptsRes.data || []);

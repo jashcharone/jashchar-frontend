@@ -13,12 +13,14 @@ import DashboardLayout from '@/components/DashboardLayout';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import MediaSelector from '@/components/front-cms/MediaSelector';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
+import { useBranch } from '@/contexts/BranchContext';
 import MasterAdminSchoolHeader from '@/components/front-cms/MasterAdminSchoolHeader';
 import { useSearchParams } from 'react-router-dom';
 
 const FrontCMSSetting = () => {
   const { toast } = useToast();
   const { refreshAuth, school, user } = useAuth();
+  const { selectedBranch } = useBranch();
   const [searchParams] = useSearchParams();
   
   // Debug log to check branchId sources
@@ -35,6 +37,7 @@ const FrontCMSSetting = () => {
     searchParams.get('branch_id') || 
     sessionStorage.getItem('ma_target_branch_id') || 
     school?.id || 
+    selectedBranch?.id ||
     user?.profile?.branch_id ||
     user?.user_metadata?.branch_id;
     

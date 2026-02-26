@@ -1,6 +1,7 @@
 ﻿import React, { useState, useEffect } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
+import { useBranch } from '@/contexts/BranchContext';
 import { supabase } from '@/lib/customSupabaseClient';
 import { useToast } from '@/components/ui/use-toast';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -12,6 +13,7 @@ import { Loader2, Save, Settings, Camera, CheckCircle2 } from 'lucide-react';
 
 const QrAttendanceSetting = () => {
   const { user, currentSessionId, organizationId } = useAuth();
+  const { selectedBranch } = useBranch();
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -20,7 +22,7 @@ const QrAttendanceSetting = () => {
     selected_camera: 'default'
   });
 
-  const branchId = user?.profile?.branch_id;
+  const branchId = selectedBranch?.id || user?.profile?.branch_id;
 
   useEffect(() => {
     const fetchSettings = async () => {

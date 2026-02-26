@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import DashboardLayout from '@/components/DashboardLayout';
 import { supabase } from '@/lib/customSupabaseClient';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
+import { useBranch } from '@/contexts/BranchContext';
 import { useToast } from '@/components/ui/use-toast';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -185,6 +186,7 @@ const FormSection = ({ title, icon, children }) => {
 const AddStaff = () => {
     const navigate = useNavigate();
     const { user, organizationId } = useAuth();
+    const { selectedBranch } = useBranch();
     const { toast } = useToast();
     const [loading, setLoading] = useState(false);
     const [initializing, setInitializing] = useState(true);
@@ -207,8 +209,9 @@ const AddStaff = () => {
     // Fetch Settings & Data
     useEffect(() => {
         const init = async () => {
-            if (!user?.profile?.branch_id) return;
-            const branchId = user.profile.branch_id;
+            // Use selectedBranch.id (current branch context) for fetching data
+            const branchId = selectedBranch?.id || user?.profile?.branch_id;
+            if (!branchId) return;
             try {
                 // 1. Fetch Form Settings
                 const { data: settings } = await api.get('/form-settings', {
@@ -218,7 +221,7 @@ const AddStaff = () => {
                 setSystemFields(settings.systemFields || []);
                 setCustomFields(settings.customFields || []);
 
-                // 2. Fetch Related Data (Roles, Depts, Desigs)
+                // 2. Fetch Related Data (Roles, Depts, Desigs) - using selectedBranch
                 const [rolesRes, deptsRes, desigsRes] = await Promise.all([
                     supabase.from('roles').select('id, name').eq('branch_id', branchId),
                     supabase.from('departments').select('id, name').eq('branch_id', branchId),
@@ -250,7 +253,7 @@ const AddStaff = () => {
             }
         };
         init();
-    }, [user, toast]);
+    }, [user, selectedBranch?.id, toast]);
 
     const handleFieldChange = (key, value, isCustom = false) => {
         if (isCustom) {
@@ -321,21 +324,20 @@ const AddStaff = () => {
             const full_name = `${formData.first_name} ${formData.last_name || ''}`.trim();
             const password = `password_${uuidv4().substring(0,8)}`;
             
-            // Get organization_id
+            // Get organization_id & branch_id from selectedBranch context
+            const currentBranchId = selectedBranch?.id || user.profile.branch_id;
             let final_organization_id = organizationId;
-            if (!final_organization_id && user.profile.branch_id) {
-                const { data: schoolData } = await supabase.from('schools').select('organization_id').eq('id', user.profile.branch_id).single();
+            if (!final_organization_id && currentBranchId) {
+                const { data: schoolData } = await supabase.from('schools').select('organization_id').eq('id', currentBranchId).single();
                 final_organization_id = schoolData?.organization_id;
             }
 
             // Combine form data with uploaded files
-            // Map file keys back to correct metadata fields if needed, 
-            // for now assuming field keys map directly
             const metadata = {
                 ...formData,
                 ...uploadedUrls,
                 full_name,
-                branch_id: user.profile.branch_id,
+                branch_id: currentBranchId,
                 organization_id: final_organization_id,
                 custom_fields: customFieldValues
             };

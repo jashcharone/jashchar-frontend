@@ -1,6 +1,7 @@
 ﻿import React, { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/lib/customSupabaseClient';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
+import { useBranch } from '@/contexts/BranchContext';
 import { useToast } from '@/components/ui/use-toast';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -10,7 +11,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 
 const TeacherRemarks = ({ exam, onClose }) => {
     const { user } = useAuth();
+    const { selectedBranch } = useBranch();
     const { toast } = useToast();
+    const branchId = selectedBranch?.id || user?.profile?.branch_id;
     const [students, setStudents] = useState([]);
     const [remarks, setRemarks] = useState({});
     const [loading, setLoading] = useState(false);
@@ -52,7 +55,7 @@ const TeacherRemarks = ({ exam, onClose }) => {
             .filter(([_, data]) => data.remark) // Only save if there's a remark
             .map(([student_id, data]) => ({
                 id: data.id,
-                branch_id: user.profile.branch_id,
+                branch_id: branchId,
                 exam_id: exam.id,
                 student_id,
                 remark: data.remark

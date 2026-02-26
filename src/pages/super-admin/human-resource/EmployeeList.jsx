@@ -2,6 +2,7 @@
 import DashboardLayout from '@/components/DashboardLayout';
 import { supabase } from '@/lib/customSupabaseClient';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
+import { useBranch } from '@/contexts/BranchContext';
 import { useToast } from '@/components/ui/use-toast';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -76,6 +77,7 @@ const EmployeeRow = ({ employee }) => {
 const EmployeeList = () => {
     const navigate = useNavigate();
     const { user } = useAuth();
+    const { selectedBranch } = useBranch();
     const { toast } = useToast();
     const [employeeList, setEmployeeList] = useState([]);
     const [roles, setRoles] = useState([]);
@@ -84,7 +86,7 @@ const EmployeeList = () => {
     const [filters, setFilters] = useState({ role_id: '', keyword: '' });
     const [displayedEmployees, setDisplayedEmployees] = useState([]);
     
-    let branchId = user?.profile?.branch_id;
+    let branchId = selectedBranch?.id || user?.profile?.branch_id;
     if (!branchId) {
         branchId = sessionStorage.getItem('ma_target_branch_id');
     }
@@ -165,7 +167,7 @@ const EmployeeList = () => {
 
     useEffect(() => {
         fetchAndSetData();
-    }, [user, toast]);
+    }, [user, toast, selectedBranch?.id]);
 
     const handleSearch = () => {
         let filtered = employeeList;

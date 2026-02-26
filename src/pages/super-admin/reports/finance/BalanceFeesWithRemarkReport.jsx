@@ -2,6 +2,7 @@
 import DashboardLayout from '@/components/DashboardLayout';
 import { supabase } from '@/lib/customSupabaseClient';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
+import { useBranch } from '@/contexts/BranchContext';
 import { useToast } from '@/components/ui/use-toast';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -11,6 +12,7 @@ import { useReactToPrint } from 'react-to-print';
 
 const BalanceFeesWithRemarkReport = () => {
     const { user } = useAuth();
+    const { selectedBranch } = useBranch();
     const { toast } = useToast();
     const [loading, setLoading] = useState(false);
     const [classes, setClasses] = useState([]);
@@ -19,7 +21,7 @@ const BalanceFeesWithRemarkReport = () => {
     const [reportData, setReportData] = useState(null);
     const printRef = useRef();
 
-    const branchId = user?.profile?.branch_id;
+    const branchId = selectedBranch?.id || user?.profile?.branch_id;
 
     useEffect(() => {
         const fetchClasses = async () => {

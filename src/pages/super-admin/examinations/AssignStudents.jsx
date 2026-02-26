@@ -1,6 +1,7 @@
 ﻿import React, { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/lib/customSupabaseClient';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
+import { useBranch } from '@/contexts/BranchContext';
 import { useToast } from '@/components/ui/use-toast';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -11,19 +12,21 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 
 const AssignStudents = ({ exam, onClose }) => {
     const { user } = useAuth();
+    const { selectedBranch } = useBranch();
     const { toast } = useToast();
+    const branchId = selectedBranch?.id || user?.profile?.branch_id;
     const [students, setStudents] = useState([]);
     const [selectedStudents, setSelectedStudents] = useState(new Set());
     const [loading, setLoading] = useState(false);
     const [initialLoading, setInitialLoading] = useState(true);
 
     const fetchStudents = useCallback(async () => {
-        if (!user?.profile?.branch_id || !exam) return;
+        if (!branchId || !exam) return;
         
         const { data, error } = await supabase
             .from('profiles')
             .select('id, full_name, roll_number, classes(name), sections(name)')
-            .eq('branch_id', user.profile.branch_id)
+            .eq('branch_id', branchId)
             .eq('class_id', exam.class_id)
             .in('section_id', exam.section_ids);
 
@@ -32,7 +35,7 @@ const AssignStudents = ({ exam, onClose }) => {
         } else {
             setStudents(data);
         }
-    }, [user, exam, toast]);
+    }, [branchId, exam, toast]);
 
     const fetchAssignedStudents = useCallback(async () => {
         if (!exam) return;
@@ -89,7 +92,7 @@ const AssignStudents = ({ exam, onClose }) => {
         }
 
         const assignments = Array.from(selectedStudents).map(student_id => ({
-            branch_id: user.profile.branch_id,
+            branch_id: branchId,
             exam_id: exam.id,
             student_id: student_id
         }));

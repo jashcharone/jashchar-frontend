@@ -337,7 +337,7 @@ const EditStudentProfile = () => {
         const init = async () => {
             setLoading(true);
             try {
-                const branchId = user.profile.branch_id;
+                const branchId = selectedBranch?.id || user?.profile?.branch_id;
                 
                 // 1. Fetch Settings & Master Data
                 const [
@@ -345,7 +345,7 @@ const EditStudentProfile = () => {
                     classesRes, categoriesRes, routesRes, hostelsRes, hostelRoomTypesRes, religionsRes, castesRes, motherTonguesRes, masterDocsRes, sessionsRes, branchRes
                 ] = await Promise.all([
                     api.get('/form-settings', { params: { branchId, module: 'student_admission' } }),
-                    supabase.from('classes').select('id, name').eq('branch_id', branchId).eq('branch_id', selectedBranch.id),
+                    supabase.from('classes').select('id, name').eq('branch_id', branchId),
                     supabase.from('student_categories').select('id, name').eq('branch_id', branchId),
                     supabase.from('transport_routes').select('id, route_title').eq('branch_id', branchId),
                     supabase.from('hostels').select('id, name').eq('branch_id', branchId),
@@ -854,7 +854,7 @@ const EditStudentProfile = () => {
                      await supabase.from('student_transport_details').update(transportData).eq('id', formData.transport_details.id);
                  } else {
                      // Note: organization_id not in student_transport_details schema
-                     await supabase.from('student_transport_details').insert({ ...transportData, student_id: studentId, branch_id: user.profile.branch_id, session_id: currentSessionId });
+                     await supabase.from('student_transport_details').insert({ ...transportData, student_id: studentId, branch_id: selectedBranch?.id || user?.profile?.branch_id, session_id: currentSessionId });
                  }
             } else if (formData.transport_details?.id) {
                 await supabase.from('student_transport_details').delete().eq('id', formData.transport_details.id);
@@ -865,7 +865,7 @@ const EditStudentProfile = () => {
                 if (formData.hostel_details?.id) {
                      await supabase.from('student_hostel_details').update(hostelData).eq('id', formData.hostel_details.id);
                 } else {
-                     await supabase.from('student_hostel_details').insert({ ...hostelData, student_id: studentId, branch_id: user.profile.branch_id, session_id: currentSessionId, organization_id: organizationId });
+                     await supabase.from('student_hostel_details').insert({ ...hostelData, student_id: studentId, branch_id: selectedBranch?.id || user?.profile?.branch_id, session_id: currentSessionId, organization_id: organizationId });
                 }
             } else if (formData.hostel_details?.id) {
                 await supabase.from('student_hostel_details').delete().eq('id', formData.hostel_details.id);
@@ -876,7 +876,7 @@ const EditStudentProfile = () => {
                 await supabase
                   .from('student_custom_data')
                   .upsert({
-                    branch_id: user.profile.branch_id,
+                    branch_id: selectedBranch?.id || user?.profile?.branch_id,
                     session_id: currentSessionId,
                     student_id: studentId,
                     custom_data: finalCustomValues,

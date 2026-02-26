@@ -2,6 +2,7 @@
 import DashboardLayout from '@/components/DashboardLayout';
 import { supabase } from '@/lib/customSupabaseClient';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
+import { useBranch } from '@/contexts/BranchContext';
 import { useToast } from '@/components/ui/use-toast';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -15,7 +16,9 @@ import { v4 as uuidv4 } from 'uuid';
 
 const CbseExamGrade = () => {
     const { user } = useAuth();
+    const { selectedBranch } = useBranch();
     const { toast } = useToast();
+    const branchId = selectedBranch?.id || user?.profile?.branch_id;
     const [examGrades, setExamGrades] = useState([]);
     const [loading, setLoading] = useState(false);
     const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -24,12 +27,12 @@ const CbseExamGrade = () => {
     const [formData, setFormData] = useState({ grade_title: '', description: '', details: [{ key: uuidv4(), grade: '', maximum_percentage: '', minimum_percentage: '', remark: '' }] });
 
     const fetchExamGrades = useCallback(async () => {
-        if (!user?.profile?.branch_id) return;
+        if (!branchId) return;
         setLoading(true);
         const { data, error } = await supabase
             .from('cbse_exam_grades')
             .select('*, cbse_grade_details(*)')
-            .eq('branch_id', user.profile.branch_id)
+            .eq('branch_id', branchId)
             .order('grade_title', { ascending: true });
         
         if (error) {
@@ -38,7 +41,7 @@ const CbseExamGrade = () => {
             setExamGrades(data);
         }
         setLoading(false);
-    }, [user, toast]);
+    }, [user, branchId, toast]);
 
     useEffect(() => {
         fetchExamGrades();
@@ -84,7 +87,7 @@ const CbseExamGrade = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        if (!user?.profile?.branch_id) return;
+        if (!branchId) return;
 
         const { grade_title, description, details } = formData;
         if (!grade_title || details.some(d => !d.grade || !d.maximum_percentage || !d.minimum_percentage)) {
@@ -105,7 +108,7 @@ const CbseExamGrade = () => {
                 
                 const detailsToUpsert = details.map(d => {
                     const { key, ...rest } = d;
-                    return { ...rest, exam_grade_id: selectedGrade.id, branch_id: user.profile.branch_id };
+                    return { ...rest, exam_grade_id: selectedGrade.id, branch_id: branchId };
                 });
 
                 if (detailsToDelete.length > 0) {
@@ -117,12 +120,12 @@ const CbseExamGrade = () => {
 
             } else {
                 // Create new Grade
-                const { data: gradeData, error: gradeError } = await supabase.from('cbse_exam_grades').insert({ grade_title, description, branch_id: user.profile.branch_id }).select().single();
+                const { data: gradeData, error: gradeError } = await supabase.from('cbse_exam_grades').insert({ grade_title, description, branch_id: branchId }).select().single();
                 if (gradeError) throw gradeError;
 
                 const detailsToInsert = details.map(d => {
                     const { key, ...rest } = d;
-                    return { ...rest, exam_grade_id: gradeData.id, branch_id: user.profile.branch_id };
+                    return { ...rest, exam_grade_id: gradeData.id, branch_id: branchId };
                 });
                 const { error: detailsError } = await supabase.from('cbse_grade_details').insert(detailsToInsert);
                 if (detailsError) throw detailsError;

@@ -1,6 +1,7 @@
 ﻿import React, { useState, useEffect } from 'react';
 import { supabase } from '@/lib/customSupabaseClient';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
+import { useBranch } from '@/contexts/BranchContext';
 import DashboardLayout from '@/components/DashboardLayout';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -15,12 +16,13 @@ import SubscriptionExpiryWidget from '@/components/subscription/SubscriptionExpi
 
 const MySubscriptionPlan = () => {
     const { user, loading: authLoading } = useAuth();
+    const { selectedBranch } = useBranch();
     const { toast } = useToast();
     const [loading, setLoading] = useState(true);
     const [subscription, setSubscription] = useState(null);
     const [schoolUsage, setSchoolUsage] = useState({ active_students: 0, active_staff: 0 });
 
-    const branchId = user?.profile?.branch_id;
+    const branchId = selectedBranch?.id || user?.profile?.branch_id;
 
     useEffect(() => {
         if (authLoading) return;

@@ -7,12 +7,15 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/components/ui/use-toast';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
+import { useBranch } from '@/contexts/BranchContext';
 import { supabase } from '@/lib/customSupabaseClient';
 import { Search, User } from 'lucide-react';
 
 const ParentLoginCredentialReport = () => {
   const { toast } = useToast();
   const { user } = useAuth();
+  const { selectedBranch } = useBranch();
+  const branchId = selectedBranch?.id || user?.profile?.branch_id;
   const [classes, setClasses] = useState([]);
   const [sections, setSections] = useState([]);
   const [selectedClass, setSelectedClass] = useState('');
@@ -23,18 +26,18 @@ const ParentLoginCredentialReport = () => {
 
   useEffect(() => {
     const fetchOptions = async () => {
-      if (!user?.profile?.branch_id) return;
+      if (!branchId) return;
       setIsFetchingOptions(true);
       const { data: classesData, error: classesError } = await supabase
         .from('classes')
         .select('id, name')
-        .eq('branch_id', user.profile.branch_id)
+        .eq('branch_id', branchId)
         .order('name', { ascending: true });
 
       const { data: sectionsData, error: sectionsError } = await supabase
         .from('sections')
         .select('id, name')
-        .eq('branch_id', user.profile.branch_id)
+        .eq('branch_id', branchId)
         .order('name', { ascending: true });
 
       if (classesError) {
@@ -50,7 +53,7 @@ const ParentLoginCredentialReport = () => {
       setIsFetchingOptions(false);
     };
     fetchOptions();
-  }, [user, toast]);
+  }, [branchId, toast]);
 
   const handleSearch = async () => {
     if (!selectedClass || !selectedSection) {
@@ -62,7 +65,7 @@ const ParentLoginCredentialReport = () => {
     const { data, error } = await supabase
       .from('student_profiles')
       .select('school_code, full_name, username, email') // Assuming parent username/password are tied to student profile for simplicity
-      .eq('branch_id', user.profile.branch_id)
+      .eq('branch_id', branchId)
       .eq('class_id', selectedClass)
       .eq('section_id', selectedSection);
 

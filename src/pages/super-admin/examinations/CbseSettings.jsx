@@ -2,6 +2,7 @@
 import DashboardLayout from '@/components/DashboardLayout';
 import { supabase } from '@/lib/customSupabaseClient';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
+import { useBranch } from '@/contexts/BranchContext';
 import { useToast } from '@/components/ui/use-toast';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -11,6 +12,7 @@ import { Loader2, Save } from 'lucide-react';
 
 const CbseSettings = () => {
     const { user } = useAuth();
+    const { selectedBranch } = useBranch();
     const { toast } = useToast();
     const [settings, setSettings] = useState({
         school_name: '',
@@ -20,7 +22,7 @@ const CbseSettings = () => {
     const [loading, setLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
 
-    const branchId = user?.profile?.branch_id;
+    const branchId = selectedBranch?.id || user?.profile?.branch_id;
 
     const fetchSettings = useCallback(async () => {
         if (!branchId) return;

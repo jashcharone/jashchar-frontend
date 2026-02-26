@@ -10,12 +10,14 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/components/ui/use-toast';
 import { supabase } from '@/lib/customSupabaseClient';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
+import { useBranch } from '@/contexts/BranchContext';
 import { Loader2, Eye, Pencil, Trash2, Save } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 
 const DesignAdmitCard = () => {
     const { user } = useAuth();
+    const { selectedBranch } = useBranch();
     const { toast } = useToast();
     const [templates, setTemplates] = useState([]);
     const [loading, setLoading] = useState(false);
@@ -23,7 +25,7 @@ const DesignAdmitCard = () => {
     const [editId, setEditId] = useState(null);
     const [previewTemplate, setPreviewTemplate] = useState(null);
 
-    const branchId = user?.profile?.branch_id;
+    const branchId = selectedBranch?.id || user?.profile?.branch_id;
 
     const { register, handleSubmit, reset, setValue, watch } = useForm({
         defaultValues: {

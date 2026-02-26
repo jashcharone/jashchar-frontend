@@ -2,6 +2,7 @@
 import DashboardLayout from '@/components/DashboardLayout';
 import { supabase } from '@/lib/customSupabaseClient';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
+import { useBranch } from '@/contexts/BranchContext';
 import { useToast } from '@/components/ui/use-toast';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -13,6 +14,7 @@ import { Label } from '@/components/ui/label';
 
 const CbseReports = () => {
     const { user } = useAuth();
+    const { selectedBranch } = useBranch();
     const { toast } = useToast();
     const [loading, setLoading] = useState(false);
     const [classes, setClasses] = useState([]);
@@ -32,7 +34,7 @@ const CbseReports = () => {
 
     const fetchDependencies = useCallback(async () => {
         if (!user) return;
-        const branchId = user.profile.branch_id;
+        const branchId = selectedBranch?.id || user.profile.branch_id;
         const [classesRes, sectionsRes, templatesRes, examsRes] = await Promise.all([
             supabase.from('classes').select('id, name').eq('branch_id', branchId),
             supabase.from('sections').select('id, name').eq('branch_id', branchId),
@@ -43,7 +45,7 @@ const CbseReports = () => {
         setSections(sectionsRes.data || []);
         setTemplates(templatesRes.data || []);
         setExams(examsRes.data || []);
-    }, [user]);
+    }, [user, selectedBranch?.id]);
 
     useEffect(() => { fetchDependencies(); }, [fetchDependencies]);
 

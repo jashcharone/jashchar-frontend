@@ -1,6 +1,7 @@
 ﻿import React, { useState, useEffect } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
+import { useBranch } from '@/contexts/BranchContext';
 import { supabase } from '@/lib/customSupabaseClient';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -10,8 +11,9 @@ import { Loader2, Search, Trophy } from 'lucide-react';
 
 const GenerateRank = () => {
   const { user, currentSessionId } = useAuth();
+  const { selectedBranch } = useBranch();
   const { toast } = useToast();
-  const branchId = user?.profile?.branch_id;
+  const branchId = selectedBranch?.id || user?.profile?.branch_id;
   const [loading, setLoading] = useState(false);
   const [ranks, setRanks] = useState([]);
   

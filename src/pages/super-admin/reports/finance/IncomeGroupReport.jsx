@@ -2,6 +2,7 @@
 import DashboardLayout from '@/components/DashboardLayout';
 import { supabase } from '@/lib/customSupabaseClient';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
+import { useBranch } from '@/contexts/BranchContext';
 import { useToast } from '@/components/ui/use-toast';
 import { Button } from '@/components/ui/button';
 import {
@@ -17,13 +18,14 @@ import { format, startOfMonth, endOfMonth, startOfYear, endOfYear, subMonths } f
 
 const IncomeGroupReport = () => {
     const { user } = useAuth();
+    const { selectedBranch } = useBranch();
     const { toast } = useToast();
     const [loading, setLoading] = useState(false);
     const [incomeHeads, setIncomeHeads] = useState([]);
     const [filters, setFilters] = useState({ search_type: 'this_month', income_head_id: 'all' });
     const [reportData, setReportData] = useState(null);
 
-    const branchId = user?.profile?.branch_id;
+    const branchId = selectedBranch?.id || user?.profile?.branch_id;
 
     useEffect(() => {
         if (!branchId) return;

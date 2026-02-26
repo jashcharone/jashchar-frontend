@@ -2,6 +2,7 @@
 import DashboardLayout from '@/components/DashboardLayout';
 import { supabase } from '@/lib/customSupabaseClient';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
+import { useBranch } from '@/contexts/BranchContext';
 import { useToast } from '@/components/ui/use-toast';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -14,7 +15,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 const CbseTerm = () => {
     const { user, currentSessionId, organizationId } = useAuth();
+    const { selectedBranch } = useBranch();
     const { toast } = useToast();
+    const branchId = selectedBranch?.id || user?.profile?.branch_id;
     const [terms, setTerms] = useState([]);
     const [loading, setLoading] = useState(false);
     const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -23,12 +26,12 @@ const CbseTerm = () => {
     const [formData, setFormData] = useState({ name: '', code: '', description: '' });
 
     const fetchTerms = useCallback(async () => {
-        if (!user?.profile?.branch_id) return;
+        if (!branchId) return;
         setLoading(true);
         const { data, error } = await supabase
             .from('cbse_terms')
             .select('*')
-            .eq('branch_id', user.profile.branch_id)
+            .eq('branch_id', branchId)
             .order('name', { ascending: true });
         
         if (error) {
@@ -37,7 +40,7 @@ const CbseTerm = () => {
             setTerms(data);
         }
         setLoading(false);
-    }, [user, toast]);
+    }, [user, branchId, toast]);
 
     useEffect(() => {
         fetchTerms();
@@ -57,12 +60,12 @@ const CbseTerm = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        if (!user?.profile?.branch_id) return;
+        if (!branchId) return;
         setLoading(true);
 
         const termData = {
             ...formData,
-            branch_id: user.profile.branch_id,
+            branch_id: branchId,
             session_id: currentSessionId,
             organization_id: organizationId,
         };

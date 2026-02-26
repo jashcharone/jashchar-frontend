@@ -226,11 +226,11 @@ const AddEmployee = () => {
 
             try {
                 const [rolesRes, departmentsData, designationsData, empCatsData, formSettingsRes, shiftsRes] = await Promise.all([
-                    supabase.from('roles').select('id, name, description, is_system').eq('branch_id', branchId),
-                    humanResourceApi.getDepartments(branchId, queryBranchId),
-                    humanResourceApi.getDesignations(branchId, queryBranchId),
-                    humanResourceApi.getEmploymentCategories(branchId, queryBranchId),
-                    api.get('/form-settings', { params: { branchId: branchId, module: 'employee_registration' } }),
+                    supabase.from('roles').select('id, name, description, is_system').eq('branch_id', queryBranchId),
+                    humanResourceApi.getDepartments(queryBranchId, queryBranchId),
+                    humanResourceApi.getDesignations(queryBranchId, queryBranchId),
+                    humanResourceApi.getEmploymentCategories(queryBranchId, queryBranchId),
+                    api.get('/form-settings', { params: { branchId: queryBranchId, module: 'employee_registration' } }),
                     supabase.from('attendance_shifts')
                         .select('id, shift_name, shift_code, start_time, end_time, is_default')
                         .eq('branch_id', queryBranchId)

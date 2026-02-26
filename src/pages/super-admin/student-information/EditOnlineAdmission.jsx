@@ -51,8 +51,7 @@ const EditOnlineAdmission = () => {
         const { data: classesData } = await supabase
           .from('classes')
           .select('id, name')
-          .eq('branch_id', user.profile.branch_id)
-          .eq('branch_id', selectedBranch.id);
+          .eq('branch_id', selectedBranch?.id || user?.profile?.branch_id);
         setClasses(classesData || []);
 
         if (data.class_id) {
@@ -140,9 +139,8 @@ const EditOnlineAdmission = () => {
         };
 
         const { data: result, error: enrollError } = await supabase.rpc('create_student_admission', { 
-            p_branch_id: user.profile.branch_id,
-            p_student_data: studentData,
-            p_branch_id: selectedBranch.id
+            p_branch_id: selectedBranch?.id || user?.profile?.branch_id,
+            p_student_data: studentData
         });
 
         if (enrollError) throw enrollError;

@@ -299,6 +299,7 @@ const AddEmployee = () => {
         fetchSettingsAndDropdowns();
     }, [branchId, selectedBranch?.id, branches, stateBranchId]);
 
+    /**
      * 🌟 GLOBAL UNIQUE EMPLOYEE ID GENERATOR
      * Uses Backend API to generate globally unique employee ID
      * Format: PREFIX-SESSION_YEAR-SEQUENCE (e.g., EMP-2026/27-00012)

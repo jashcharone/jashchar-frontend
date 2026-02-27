@@ -1,5 +1,5 @@
 import { 
-  LayoutDashboard, School, Users, CreditCard, Settings, BookOpen, GraduationCap, Calendar, FileText, Bus, Building, MessageSquare, Briefcase, LogOut, X, ChevronDown, ChevronRight, Package, CheckSquare, Library, Layout, Video, MonitorPlay, AlertTriangle, Award, Newspaper, Activity, IndianRupee, UserPlus, GitBranch, BarChart3, Bot, Box, Download, QrCode, KeyRound
+  LayoutDashboard, School, Users, CreditCard, Settings, BookOpen, GraduationCap, Calendar, FileText, Bus, Building, MessageSquare, Briefcase, LogOut, X, ChevronDown, ChevronRight, Package, CheckSquare, Library, Layout, Video, MonitorPlay, AlertTriangle, Award, Newspaper, Activity, IndianRupee, UserPlus, GitBranch, BarChart3, Bot, Box, Download, QrCode, KeyRound, Wallet
 } from 'lucide-react';
 import { ROUTES } from '@/registry/routeRegistry';
 
@@ -1014,10 +1014,18 @@ export const BASE_SIDEBAR = {
   ],
 
   // ═══════════════════════════════════════════════════════════════════
-  // CASHIER - Fee Collection Only
+  // CASHIER - Fee Collection, Finance & Student View
   // ═══════════════════════════════════════════════════════════════════
   cashier: [
     { title: 'Dashboard', icon: LayoutDashboard, path: ROUTES.CASHIER.DASHBOARD },
+    {
+      title: 'Student Information',
+      icon: Users,
+      submenu: [
+        { title: 'Student Details', path: ROUTES.CASHIER.STUDENT_DETAILS },
+        { title: 'Student Admission', path: ROUTES.CASHIER.STUDENT_ADMISSION },
+      ]
+    },
     {
       title: 'Fees Collection',
       icon: CreditCard,
@@ -1028,6 +1036,18 @@ export const BASE_SIDEBAR = {
         { title: 'Offline Bank Payments', path: ROUTES.CASHIER.OFFLINE_PAYMENT },
         { title: 'Online Payment', path: ROUTES.CASHIER.ONLINE_PAYMENT },
         { title: 'Quick Fees', path: ROUTES.CASHIER.QUICK_FEES },
+      ]
+    },
+    {
+      title: 'Finance',
+      icon: Wallet,
+      submenu: [
+        { title: 'Income', path: ROUTES.CASHIER.INCOME },
+        { title: 'Add Income', path: ROUTES.CASHIER.ADD_INCOME },
+        { title: 'Search Income', path: ROUTES.CASHIER.SEARCH_INCOME },
+        { title: 'Expense', path: ROUTES.CASHIER.EXPENSE },
+        { title: 'Add Expense', path: ROUTES.CASHIER.ADD_EXPENSE },
+        { title: 'Search Expense', path: ROUTES.CASHIER.SEARCH_EXPENSE },
       ]
     },
     {

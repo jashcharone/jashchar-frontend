@@ -16,18 +16,21 @@ const FeesReminder = () => {
     const { user, organizationId, currentSessionId } = useAuth();
     const { selectedBranch } = useBranch();
     const { toast } = useToast();
+    
+    // Unified branchId with fallback for staff users
+    const branchId = selectedBranch?.id || user?.profile?.branch_id || user?.user_metadata?.branch_id;
 
     const [reminders, setReminders] = useState([]);
     const [loading, setLoading] = useState(true);
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     const fetchReminders = useCallback(async () => {
-        if (!selectedBranch) return;
+        if (!branchId) return;
         setLoading(true);
         const { data, error } = await supabase
             .from('fee_reminders')
             .select('*')
-            .eq('branch_id', selectedBranch.id)
+            .eq('branch_id', branchId)
             .order('reminder_type')
             .order('days');
 
@@ -54,7 +57,7 @@ const FeesReminder = () => {
     };
 
     const addReminder = (type) => {
-        if (!selectedBranch) return;
+        if (!branchId) return;
         const existingOfType = reminders.filter(r => r.reminder_type === type);
         const defaultDays = existingOfType.length === 0 ? (type === 'before' ? 3 : 1) : 
                            (Math.max(...existingOfType.map(r => r.days)) + 2);
@@ -63,7 +66,7 @@ const FeesReminder = () => {
             ...prev,
             { 
                 id: uuidv4(), 
-                branch_id: selectedBranch.id, 
+                branch_id: branchId, 
                 organization_id: organizationId,
                 session_id: currentSessionId,
                 is_active: true, 
@@ -93,14 +96,14 @@ const FeesReminder = () => {
     };
 
     const handleSave = async () => {
-        if (!selectedBranch) return;
+        if (!branchId) return;
         setIsSubmitting(true);
         
         const remindersToUpsert = reminders.map(r => {
             const { isNew, ...dbReminder } = r;
             return {
                 ...dbReminder,
-                branch_id: selectedBranch.id,
+                branch_id: branchId,
                 organization_id: organizationId,
                 session_id: currentSessionId,
                 created_at: dbReminder.created_at || new Date().toISOString(),

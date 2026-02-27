@@ -304,6 +304,47 @@ export const AuthProvider = ({ children }) => {
                }
            }
         }
+
+        // ✅ NEW FALLBACK: Check employee_profiles for staff users
+        // If we still don't have a school, check employee_profiles.branch_id
+        if (!finalSchool) {
+           console.log('[AuthContext] No school found yet, checking employee_profiles table...');
+           const { data: empProfile } = await supabase
+               .from('employee_profiles')
+               .select('branch_id')
+               .eq('user_id', userId)
+               .limit(1)
+               .maybeSingle();
+           
+           if (empProfile?.branch_id) {
+               console.log('[AuthContext] Found school via employee_profiles:', empProfile.branch_id);
+               const { data: schoolData } = await supabase
+                   .from('schools')
+                   .select('*')
+                   .eq('id', empProfile.branch_id)
+                   .maybeSingle();
+               
+               if (schoolData) {
+                   finalSchool = schoolData;
+                   
+                   const { data: sData } = await supabase
+                       .from('school_website_settings')
+                       .select('cms_url_alias')
+                       .eq('branch_id', finalSchool.id)
+                       .maybeSingle();
+                   finalSettings = sData;
+                   
+                   if (!sessions.length) {
+                       const { data: lateSessions } = await supabase
+                           .from('sessions')
+                           .select('*')
+                           .or(`branch_id.eq.${finalSchool.id},branch_id.is.null`)
+                           .order('created_at', { ascending: false });
+                       if (lateSessions) sessions.push(...lateSessions);
+                   }
+               }
+           }
+        }
         
         // ✅ Check School Status - Block access if school is inactive (except Master Admin)
         if (finalSchool && finalSchool.status === 'Inactive' && finalUser.role !== 'master_admin') {

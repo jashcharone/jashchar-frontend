@@ -18,7 +18,8 @@ const CollectFees = () => {
     const { user, currentSessionId } = useAuth();
     const { selectedBranch } = useBranch();
     const { toast } = useToast();
-    const branchId = user?.profile?.branch_id;
+    // ✅ FIX: Use selectedBranch.id OR fallback to user profile/metadata branch_id
+    const branchId = selectedBranch?.id || user?.profile?.branch_id || user?.user_metadata?.branch_id;
 
     const [classes, setClasses] = useState([]);
     const [sections, setSections] = useState([]);
@@ -31,15 +32,15 @@ const CollectFees = () => {
     const [feesData, setFeesData] = useState({}); // { studentId: { total, paid, balance, progress } }
 
     const fetchClasses = useCallback(async () => {
-        if (!branchId || !selectedBranch) return;
+        if (!branchId) return;
         const { data: classData, error: classError } = await supabase
             .from('classes')
             .select('*')
-            .eq('branch_id', selectedBranch.id)
+            .eq('branch_id', branchId)
             .order('name');
         if (classError) toast({ variant: 'destructive', title: 'Error fetching classes' });
         else setClasses(classData || []);
-    }, [branchId, selectedBranch, toast]);
+    }, [branchId, toast]);
 
     useEffect(() => {
         fetchClasses();
@@ -77,7 +78,7 @@ const CollectFees = () => {
             toast({ variant: 'destructive', title: 'Class is required' });
             return;
         }
-        if (!selectedBranch) {
+        if (!branchId) {
             toast({ variant: 'destructive', title: 'Branch not selected' });
             return;
         }
@@ -92,7 +93,7 @@ const CollectFees = () => {
             let query = supabase
                 .from('student_profiles')
                 .select('id, full_name, father_name, mother_name, phone, father_phone, mother_phone, guardian_phone, school_code, session_id, date_of_birth, gender, photo_url, admission_date, classes!student_profiles_class_id_fkey(name), sections!student_profiles_section_id_fkey(name)')
-                .eq('branch_id', selectedBranch.id)
+                .eq('branch_id', branchId)
                 .eq('class_id', selectedClass);
             
             // Filter by branch's active session
@@ -148,26 +149,26 @@ const CollectFees = () => {
                     .from('student_transport_details')
                     .select('student_id, transport_fee, billing_cycle')
                     .in('student_id', studentIds)
-                    .eq('branch_id', selectedBranch.id),
+                    .eq('branch_id', branchId),
                 // Transport fee payments
                 supabase
                     .from('transport_fee_payments')
                     .select('student_id, amount')
                     .in('student_id', studentIds)
-                    .eq('branch_id', selectedBranch.id)
+                    .eq('branch_id', branchId)
                     .is('reverted_at', null),
                 // Hostel fee details
                 supabase
                     .from('student_hostel_details')
                     .select('student_id, hostel_fee, billing_cycle')
                     .in('student_id', studentIds)
-                    .eq('branch_id', selectedBranch.id),
+                    .eq('branch_id', branchId),
                 // Hostel fee payments
                 supabase
                     .from('hostel_fee_payments')
                     .select('student_id, amount')
                     .in('student_id', studentIds)
-                    .eq('branch_id', selectedBranch.id)
+                    .eq('branch_id', branchId)
                     .is('reverted_at', null)
             ]);
 

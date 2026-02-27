@@ -40,11 +40,14 @@ const CashierDashboard = () => {
     });
     const [recentPayments, setRecentPayments] = useState([]);
 
-    const branchId = selectedBranch?.id;
+    // Use selectedBranch or fallback to user's branch_id from auth metadata
+    const branchId = selectedBranch?.id || user?.user_metadata?.branch_id || school?.id;
 
     useEffect(() => {
         if (branchId) {
             fetchDashboardData();
+        } else {
+            setLoading(false); // Stop loading if no branch
         }
     }, [branchId, currentSessionId]);
 
@@ -58,7 +61,7 @@ const CashierDashboard = () => {
             // Today's collection
             const { data: todayFees } = await supabase
                 .from('fee_payments')
-                .select('id, amount, payment_mode, created_at, students(first_name, last_name)')
+                .select('id, amount, payment_mode, created_at, student_profiles(first_name, last_name)')
                 .eq('branch_id', branchId)
                 .gte('payment_date', todayStart.toISOString())
                 .lte('payment_date', todayEnd.toISOString())
@@ -96,10 +99,10 @@ const CashierDashboard = () => {
     };
 
     const quickActions = [
-        { label: 'Collect Fees', icon: IndianRupee, path: '/super-admin/fees-collection/collect-fees', color: 'bg-green-500' },
-        { label: 'Print Receipt', icon: Printer, path: '/super-admin/fees-collection/search-fee-payment', color: 'bg-blue-500' },
-        { label: 'Due List', icon: FileText, path: '/super-admin/fees-collection/search-fees-due', color: 'bg-orange-500' },
-        { label: 'Fee Reports', icon: Calculator, path: '/super-admin/reports/fees-collection-report', color: 'bg-purple-500' },
+        { label: 'Collect Fees', icon: IndianRupee, path: '/cashier/fees-collection/collect-fees', color: 'bg-green-500' },
+        { label: 'Print Receipt', icon: Printer, path: '/cashier/fees-collection/search-fees-payment', color: 'bg-blue-500' },
+        { label: 'Due List', icon: FileText, path: '/cashier/fees-collection/search-due-fees', color: 'bg-orange-500' },
+        { label: 'Fee Reports', icon: Calculator, path: '/cashier/reports/fees-collection-report', color: 'bg-purple-500' },
     ];
 
     const paymentMethods = [
@@ -191,7 +194,7 @@ const CashierDashboard = () => {
                                             </div>
                                             <div>
                                                 <p className="font-medium">
-                                                    {payment.students?.first_name} {payment.students?.last_name}
+                                                    {payment.student_profiles?.first_name} {payment.student_profiles?.last_name}
                                                 </p>
                                                 <p className="text-xs text-muted-foreground">
                                                     {format(new Date(payment.created_at), 'hh:mm a')} • {payment.payment_mode}

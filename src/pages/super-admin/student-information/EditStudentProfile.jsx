@@ -347,7 +347,7 @@ const EditStudentProfile = () => {
                     api.get('/form-settings', { params: { branchId, module: 'student_admission' } }),
                     supabase.from('classes').select('id, name').eq('branch_id', branchId),
                     supabase.from('student_categories').select('id, name').eq('branch_id', branchId),
-                    supabase.from('transport_routes').select('id, route_title').eq('branch_id', branchId),
+                    supabase.from('transport_routes').select('id, route_title, fare, billing_cycle').eq('branch_id', branchId),
                     supabase.from('hostels').select('id, name').eq('branch_id', branchId),
                     supabase.from('hostel_room_types').select('*').eq('branch_id', branchId),
                     supabase.from('master_religions').select('name'),
@@ -554,12 +554,30 @@ const EditStudentProfile = () => {
         }
     }, [formData.section_id]);
 
-    // Handle Route Change -> Update Pickup Points
+    // Handle Route Change -> Update Pickup Points & Vehicle/Driver Info
      useEffect(() => {
       const fetchTransportDetails = async () => {
         if (formData.transport_route_id && !loading) {
+          // Fetch pickup points
           const { data, error } = await supabase.from('route_pickup_point_mappings').select('pickup_point:transport_pickup_points(id, name), monthly_fees, pickup_time').eq('route_id', formData.transport_route_id);
           if (data) setPickupPoints(data);
+          
+          // 🚗 AUTO-FETCH Vehicle & Driver info from route_vehicle_assignments
+          const { data: assignmentData } = await supabase
+            .from('route_vehicle_assignments')
+            .select('vehicle:vehicle_id(vehicle_number, driver_name, driver_contact)')
+            .eq('route_id', formData.transport_route_id)
+            .maybeSingle();
+          
+          if (assignmentData?.vehicle) {
+            // Auto-populate vehicle and driver info
+            setFormData(prev => ({
+              ...prev,
+              vehicle_number: assignmentData.vehicle.vehicle_number || prev.vehicle_number || '',
+              driver_name: assignmentData.vehicle.driver_name || prev.driver_name || '',
+              driver_contact: assignmentData.vehicle.driver_contact || prev.driver_contact || ''
+            }));
+          }
         } else {
             if(!loading) setPickupPoints([]);
         }
@@ -710,10 +728,16 @@ const EditStudentProfile = () => {
             // CRITICAL: Store transport/hostel values BEFORE cleaning updates object
             const transportRequired = formData.transport_required;
             const hostelRequired = formData.hostel_required;
+            
+            // Get billing_cycle from selected route
+            const selectedRoute = routes.find(r => r.id === formData.transport_route_id);
+            const transportBillingCycle = selectedRoute?.billing_cycle || 'monthly';
+            
             const transportData = {
                 transport_route_id: formData.transport_route_id,
                 transport_pickup_point_id: formData.transport_pickup_point_id,
                 transport_fee: formData.transport_fee,
+                billing_cycle: transportBillingCycle, // 🔧 Save billing_cycle from route
                 pickup_time: formData.pickup_time,
                 drop_time: formData.drop_time,
                 vehicle_number: formData.vehicle_number,
@@ -721,12 +745,18 @@ const EditStudentProfile = () => {
                 driver_contact: formData.driver_contact,
                 special_instructions: formData.transport_special_instructions
             };
+            
+            // Get billing_cycle from selected room type
+            const selectedRoomType = hostelRoomTypes.find(rt => rt.id === formData.hostel_room_type);
+            const hostelBillingCycle = selectedRoomType?.billing_cycle || 'monthly';
+            
             const hostelData = {
                 hostel_id: formData.hostel_id,
                 room_type: formData.hostel_room_type,
                 room_number: formData.room_number,
                 bed_number: formData.bed_number,
                 hostel_fee: formData.hostel_fee,
+                billing_cycle: hostelBillingCycle, // 🔧 Save billing_cycle from room type
                 check_in_date: formData.check_in_date,
                 check_out_date: formData.check_out_date,
                 guardian_contact: formData.hostel_guardian_contact,

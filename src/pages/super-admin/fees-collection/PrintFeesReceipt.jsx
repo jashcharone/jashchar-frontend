@@ -25,11 +25,12 @@ const PrintFeesReceipt = () => {
   const [currentDateTime] = useState(new Date());
   const [isOriginal, setIsOriginal] = useState(true);
   
-  const branchId = user?.profile?.branch_id;
+  // Unified branchId with fallback for staff users
+  const branchId = selectedBranch?.id || user?.profile?.branch_id || user?.user_metadata?.branch_id;
   const userOrgId = organizationId || user?.profile?.organization_id;
 
   const fetchAllDetails = useCallback(async () => {
-    if (!paymentId || !branchId || !selectedBranch) {
+    if (!paymentId || !branchId) {
       setLoading(false);
       return;
     }
@@ -42,7 +43,7 @@ const PrintFeesReceipt = () => {
         .from('fee_payments')
         .select('transaction_id, student_id')
         .in('id', paymentIds)
-        .eq('branch_id', selectedBranch.id)
+        .eq('branch_id', branchId)
         .limit(1)
         .single();
 
@@ -52,7 +53,7 @@ const PrintFeesReceipt = () => {
       const { transaction_id: transactionId, student_id: studentId } = initialData;
 
       // 2. Fetch All Payments
-      let paymentQuery = supabase.from('fee_payments').select('*').eq('branch_id', selectedBranch.id);
+      let paymentQuery = supabase.from('fee_payments').select('*').eq('branch_id', branchId);
       if (transactionId) {
         paymentQuery = paymentQuery.eq('transaction_id', transactionId);
       } else {
@@ -67,7 +68,7 @@ const PrintFeesReceipt = () => {
         .from('student_profiles')
         .select('*, classes!student_profiles_class_id_fkey(name), sections!student_profiles_section_id_fkey(name)')
         .eq('id', studentId)
-        .eq('branch_id', selectedBranch.id)
+        .eq('branch_id', branchId)
         .maybeSingle();
       
       if (studentProfileData) {
@@ -78,7 +79,7 @@ const PrintFeesReceipt = () => {
           .from('profiles')
           .select('*, classes(name), sections(name)')
           .eq('id', studentId)
-          .eq('branch_id', selectedBranch.id)
+          .eq('branch_id', branchId)
           .maybeSingle();
         if (studentProfileData) {
           student = { ...studentProfileData, class: studentProfileData.classes, section: studentProfileData.sections };
@@ -140,14 +141,14 @@ const PrintFeesReceipt = () => {
           )
         `)
         .eq('student_id', studentId)
-        .eq('branch_id', selectedBranch.id);
+        .eq('branch_id', branchId);
 
       // Fetch ALL payments for this student to calculate complete status
       const { data: allStudentPayments } = await supabase
         .from('fee_payments')
         .select('fee_master_id, amount, discount_amount')
         .eq('student_id', studentId)
-        .eq('branch_id', selectedBranch.id)
+        .eq('branch_id', branchId)
         .is('reverted_at', null);
 
       // Calculate complete fee statement summary
@@ -193,7 +194,7 @@ const PrintFeesReceipt = () => {
       const { data: branchSettings } = await supabase
         .from('print_settings')
         .select('*')
-        .eq('branch_id', selectedBranch.id)
+        .eq('branch_id', branchId)
         .eq('type', 'fees_receipt')
         .maybeSingle();
 
@@ -214,14 +215,14 @@ const PrintFeesReceipt = () => {
       const { data: schoolData } = await supabase
         .from('schools')
         .select('*')
-        .eq('id', selectedBranch.id)
+        .eq('id', branchId)
         .single();
 
       // Fetch branch settings for receipt copy options
       const { data: branchData } = await supabase
         .from('branches')
         .select('print_receipt_office_copy, print_receipt_student_copy, print_receipt_bank_copy')
-        .eq('id', selectedBranch.id)
+        .eq('id', branchId)
         .maybeSingle();
 
       // Set receipt copy settings (default to office + student if not configured)

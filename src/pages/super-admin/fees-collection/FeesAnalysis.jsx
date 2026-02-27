@@ -53,6 +53,9 @@ const FeesAnalysis = () => {
   const { selectedBranch } = useBranch();
   const { toast } = useToast();
   const printRef = useRef();
+  
+  // Unified branchId with fallback for staff users
+  const branchId = selectedBranch?.id || user?.profile?.branch_id || user?.user_metadata?.branch_id;
 
   const [loading, setLoading] = useState(true);
   const [classes, setClasses] = useState([]);
@@ -77,47 +80,47 @@ const FeesAnalysis = () => {
   const [printHeaderData, setPrintHeaderData] = useState({});
 
   const fetchClasses = useCallback(async () => {
-    if (!selectedBranch) return;
+    if (!branchId) return;
     const { data } = await supabase.from('classes').select('id, name')
-      .eq('branch_id', selectedBranch.id).order('name');
+      .eq('branch_id', branchId).order('name');
     setClasses(data || []);
-  }, [selectedBranch]);
+  }, [branchId]);
 
   const fetchFeeTypes = useCallback(async () => {
-    if (!selectedBranch) return;
+    if (!branchId) return;
     const { data } = await supabase.from('fee_types').select('id, name')
-      .eq('branch_id', selectedBranch.id).order('name');
+      .eq('branch_id', branchId).order('name');
     setFeeTypes(data || []);
-  }, [selectedBranch]);
+  }, [branchId]);
 
   useEffect(() => { fetchClasses(); fetchFeeTypes(); }, [fetchClasses, fetchFeeTypes]);
 
   // Fetch print header data (org logo, school info) for PDF
   useEffect(() => {
-    if (selectedBranch?.id) fetchPrintHeaderData(supabase, selectedBranch.id).then(setPrintHeaderData);
-  }, [selectedBranch]);
+    if (branchId) fetchPrintHeaderData(supabase, branchId).then(setPrintHeaderData);
+  }, [branchId]);
 
   const fetchSessions = useCallback(async () => {
-    if (!selectedBranch) return;
+    if (!branchId) return;
     const { data } = await supabase.from('sessions')
       .select('id, name, is_active')
-      .eq('branch_id', selectedBranch.id)
+      .eq('branch_id', branchId)
       .order('name', { ascending: false });
     setSessions(data || []);
-  }, [selectedBranch]);
+  }, [branchId]);
 
   useEffect(() => { fetchSessions(); }, [fetchSessions]);
   useEffect(() => { if (currentSessionId) setSelectedSessionId(currentSessionId); }, [currentSessionId]);
 
   const fetchAnalytics = useCallback(async () => {
-    if (!selectedBranch || !selectedSessionId) return;
+    if (!branchId || !selectedSessionId) return;
     setLoading(true);
 
     try {
       // === 1. GET ALL STUDENTS FOR THIS SESSION ===
       let studentQuery = supabase.from('student_profiles')
         .select('id, full_name, school_code, class_id, classes!student_profiles_class_id_fkey(name), sections!student_profiles_section_id_fkey(name), father_name, phone, father_phone, mother_phone, guardian_name, guardian_phone')
-        .eq('branch_id', selectedBranch.id)
+        .eq('branch_id', branchId)
         .eq('session_id', selectedSessionId);
       
       if (selectedClass !== 'all') studentQuery = studentQuery.eq('class_id', selectedClass);
@@ -489,7 +492,7 @@ const FeesAnalysis = () => {
     } finally {
       setLoading(false);
     }
-  }, [selectedBranch, selectedSessionId, selectedClass, selectedFeeType, toast]);
+  }, [branchId, selectedSessionId, selectedClass, selectedFeeType, toast]);
 
   useEffect(() => { fetchAnalytics(); }, [fetchAnalytics]);
 

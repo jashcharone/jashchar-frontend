@@ -12,7 +12,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Plus, Trash2, Shield, Loader2, Settings, Users, Building2 } from 'lucide-react';
+import { Plus, Trash2, Shield, Loader2, Settings, Users, Building2, Pencil } from 'lucide-react';
 
 const RolePermissionSchool = () => {
     const navigate = useNavigate();
@@ -28,6 +28,12 @@ const RolePermissionSchool = () => {
     const [newRoleName, setNewRoleName] = useState('');
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [loading, setLoading] = useState(false);
+    
+    // Edit Role State
+    const [editRoleId, setEditRoleId] = useState(null);
+    const [editRoleName, setEditRoleName] = useState('');
+    const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+    const [saving, setSaving] = useState(false);
 
     // System roles that cannot be deleted - 21 comprehensive roles
     const SYSTEM_ROLES = [
@@ -119,6 +125,37 @@ const RolePermissionSchool = () => {
             toast({ title: 'Success', description: 'Role deleted' });
             setRoles(prev => prev.filter(r => r.id !== id));
         }
+    };
+
+    // Open Edit Dialog
+    const openEditDialog = (role) => {
+        setEditRoleId(role.id);
+        setEditRoleName(role.name);
+        setIsEditDialogOpen(true);
+    };
+
+    // Update Role Name
+    const handleUpdateRole = async () => {
+        if (!editRoleName.trim() || !editRoleId) return;
+        setSaving(true);
+
+        const { data, error } = await supabase
+            .from('roles')
+            .update({ name: editRoleName, updated_at: new Date().toISOString() })
+            .eq('id', editRoleId)
+            .select()
+            .single();
+
+        if (error) {
+            toast({ variant: 'destructive', title: 'Error', description: error.message });
+        } else {
+            toast({ title: 'Success', description: 'Role name updated successfully' });
+            setRoles(prev => prev.map(r => r.id === editRoleId ? { ...r, name: editRoleName } : r));
+            setIsEditDialogOpen(false);
+            setEditRoleId(null);
+            setEditRoleName('');
+        }
+        setSaving(false);
     };
 
     if (branchLoading) {
@@ -274,14 +311,25 @@ const RolePermissionSchool = () => {
                                                             Assign Permission
                                                         </Button>
                                                         {!isSystem && (
-                                                            <Button 
-                                                                variant="ghost" 
-                                                                size="icon" 
-                                                                className="text-destructive hover:text-destructive hover:bg-destructive/10" 
-                                                                onClick={() => handleDeleteRole(role.id)}
-                                                            >
-                                                                <Trash2 className="h-4 w-4" />
-                                                            </Button>
+                                                            <>
+                                                                <Button 
+                                                                    variant="ghost" 
+                                                                    size="icon" 
+                                                                    className="hover:bg-blue-100"
+                                                                    onClick={() => openEditDialog(role)}
+                                                                    title="Edit Role Name"
+                                                                >
+                                                                    <Pencil className="h-4 w-4 text-blue-600" />
+                                                                </Button>
+                                                                <Button 
+                                                                    variant="ghost" 
+                                                                    size="icon" 
+                                                                    className="text-destructive hover:text-destructive hover:bg-destructive/10" 
+                                                                    onClick={() => handleDeleteRole(role.id)}
+                                                                >
+                                                                    <Trash2 className="h-4 w-4" />
+                                                                </Button>
+                                                            </>
                                                         )}
                                                     </div>
                                                 </TableCell>
@@ -293,6 +341,34 @@ const RolePermissionSchool = () => {
                         </Table>
                     </CardContent>
                 </Card>
+
+                {/* Edit Role Dialog */}
+                <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+                    <DialogContent>
+                        <DialogHeader>
+                            <DialogTitle className="flex items-center gap-2">
+                                <Pencil className="h-5 w-5" />
+                                Edit Role Name
+                            </DialogTitle>
+                        </DialogHeader>
+                        <div className="py-4">
+                            <Label>Role Name</Label>
+                            <Input 
+                                value={editRoleName} 
+                                onChange={(e) => setEditRoleName(e.target.value)} 
+                                placeholder="Enter new role name"
+                                className="mt-2"
+                            />
+                        </div>
+                        <DialogFooter>
+                            <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>Cancel</Button>
+                            <Button onClick={handleUpdateRole} disabled={saving || !editRoleName.trim()}>
+                                {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                                Update Role
+                            </Button>
+                        </DialogFooter>
+                    </DialogContent>
+                </Dialog>
             </div>
         </DashboardLayout>
     );

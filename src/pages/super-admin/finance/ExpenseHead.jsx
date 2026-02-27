@@ -26,7 +26,8 @@ const ExpenseHead = () => {
         description: '',
     });
     
-    const branchId = selectedBranch?.id;
+    // Unified branchId with fallback for staff users
+    const branchId = selectedBranch?.id || user?.profile?.branch_id || user?.user_metadata?.branch_id;
 
     const fetchExpenseHeads = useCallback(async () => {
         if (!branchId) return;

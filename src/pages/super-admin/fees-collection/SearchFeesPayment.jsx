@@ -15,7 +15,9 @@ const SearchFeesPayment = () => {
     const { user } = useAuth();
     const { selectedBranch } = useBranch();
     const { toast } = useToast();
-    const branchId = user?.profile?.branch_id;
+    
+    // Unified branchId with fallback for staff users
+    const branchId = selectedBranch?.id || user?.profile?.branch_id || user?.user_metadata?.branch_id;
 
     const [transactionId, setTransactionId] = useState('');
     const [payments, setPayments] = useState([]);
@@ -23,7 +25,7 @@ const SearchFeesPayment = () => {
     const [searched, setSearched] = useState(false);
 
     const handleSearch = async () => {
-        if (!transactionId || !selectedBranch) {
+        if (!transactionId || !branchId) {
             toast({ variant: 'destructive', title: 'Transaction ID is required' });
             return;
         }
@@ -37,7 +39,7 @@ const SearchFeesPayment = () => {
                 student:student_profiles(id, full_name, school_code, class:classes!student_profiles_class_id_fkey(name), section:sections!student_profiles_section_id_fkey(name)),
                 master:fee_masters(fee_group:fee_groups(name), fee_type:fee_types(name))
             `)
-            .eq('branch_id', selectedBranch.id)
+            .eq('branch_id', branchId)
             .ilike('transaction_id', `${transactionId.trim()}%`);
 
         if (error) {

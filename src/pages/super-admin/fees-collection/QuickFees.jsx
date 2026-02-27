@@ -48,25 +48,26 @@ const QuickFees = () => {
     const [assignedGroupId, setAssignedGroupId] = useState(null);
     const [loading, setLoading] = useState(false);
     const [fetching, setFetching] = useState(false);
-    const branchId = user?.profile?.branch_id;
+    // ✅ FIX: Use selectedBranch.id OR fallback to user profile branch_id
+    const branchId = selectedBranch?.id || user?.profile?.branch_id || user?.user_metadata?.branch_id;
 
     useEffect(() => {
-        if (!branchId || !selectedBranch) return;
+        if (!branchId) return;
         const fetchClassesAndSections = async () => {
-            const { data: classesData } = await supabase.from('classes').select('id, name').eq('branch_id', selectedBranch.id);
+            const { data: classesData } = await supabase.from('classes').select('id, name').eq('branch_id', branchId);
             setClasses(classesData || []);
         };
         fetchClassesAndSections();
-    }, [branchId, selectedBranch]);
+    }, [branchId]);
 
     useEffect(() => {
-        if (selectedClass && selectedBranch) {
+        if (selectedClass && branchId) {
              const fetchSections = async () => {
                 // Filter sections by branch_id using inner join
                 const { data } = await supabase.from('class_sections')
                     .select('sections!inner(id, name)')
                     .eq('class_id', selectedClass)
-                    .eq('sections.branch_id', selectedBranch.id);
+                    .eq('sections.branch_id', branchId);
                 setSections(data ? data.map(item => item.sections).filter(Boolean) : []);
             };
             fetchSections();
@@ -74,15 +75,15 @@ const QuickFees = () => {
             setSections([]);
         }
         setSelectedSection('all');
-    }, [selectedClass, selectedBranch]);
+    }, [selectedClass, branchId]);
 
     useEffect(() => {
-        if (selectedClass && currentSessionId && selectedBranch) {
+        if (selectedClass && currentSessionId && branchId) {
             const fetchStudents = async () => {
                 // Filter by current session and branch - using student_profiles table
                 let query = supabase.from('student_profiles')
                     .select('id, full_name, school_code, session_id')
-                    .eq('branch_id', selectedBranch.id)
+                    .eq('branch_id', branchId)
                     .eq('class_id', selectedClass)
                     .eq('status', 'active')
                     .eq('session_id', currentSessionId);
@@ -105,7 +106,7 @@ const QuickFees = () => {
         }
         setSelectedStudentId('');
         resetForm();
-    }, [selectedClass, selectedSection, branchId, currentSessionId, selectedBranch, toast]);
+    }, [selectedClass, selectedSection, branchId, currentSessionId, toast]);
     
     useEffect(() => {
         if (selectedStudentId) {
@@ -221,12 +222,12 @@ const QuickFees = () => {
     };
     
     const handleSave = async () => {
-        if (!selectedBranch) return;
+        if (!branchId) return;
         setLoading(true);
         try {
             // 1. Create Fee Group
             const groupName = `Quick Fees - ${selectedStudent.school_code}`;
-            const { data: feeGroup, error: groupError } = await supabase.from('fee_groups').insert({ branch_id: selectedBranch.id, session_id: currentSessionId, organization_id: organizationId, name: groupName, description: 'Auto-generated quick fees' }).select().single();
+            const { data: feeGroup, error: groupError } = await supabase.from('fee_groups').insert({ branch_id: branchId, session_id: currentSessionId, organization_id: organizationId, name: groupName, description: 'Auto-generated quick fees' }).select().single();
             if (groupError) throw groupError;
 
             const feeMastersToInsert = [];
@@ -236,18 +237,18 @@ const QuickFees = () => {
             
             for (const inst of installments) {
                 // 2. Check if Fee Type exists or create it
-                 let { data: feeType, error: typeError } = await supabase.from('fee_types').select('id').eq('branch_id', selectedBranch.id).eq('code', inst.fee_code).maybeSingle();
+                 let { data: feeType, error: typeError } = await supabase.from('fee_types').select('id').eq('branch_id', branchId).eq('code', inst.fee_code).maybeSingle();
                 if (typeError) throw typeError;
 
                 if (!feeType) {
-                    const { data: newFeeType, error: newTypeError } = await supabase.from('fee_types').insert({ branch_id: selectedBranch.id, session_id: currentSessionId, organization_id: organizationId, name: inst.fee_type, code: inst.fee_code, description: 'Quick Fees Installment' }).select().single();
+                    const { data: newFeeType, error: newTypeError } = await supabase.from('fee_types').insert({ branch_id: branchId, session_id: currentSessionId, organization_id: organizationId, name: inst.fee_type, code: inst.fee_code, description: 'Quick Fees Installment' }).select().single();
                     if (newTypeError) throw newTypeError;
                     feeType = newFeeType;
                 }
                 
                 // 3. Prepare Fee Master
                 feeMastersToInsert.push({
-                    branch_id: selectedBranch.id,
+                    branch_id: branchId,
                     session_id: currentSessionId,
                     organization_id: organizationId,
                     fee_group_id: feeGroup.id,
@@ -264,7 +265,7 @@ const QuickFees = () => {
             if (masterError) throw masterError;
 
             // 5. Batch insert Allocations
-            const allocations = feeMasters.map(master => ({ branch_id: selectedBranch.id, session_id: currentSessionId, organization_id: organizationId, student_id: selectedStudentId, fee_master_id: master.id, fee_group_id: feeGroup.id, id: uuidv4() }));
+            const allocations = feeMasters.map(master => ({ branch_id: branchId, session_id: currentSessionId, organization_id: organizationId, student_id: selectedStudentId, fee_master_id: master.id, fee_group_id: feeGroup.id, id: uuidv4() }));
             const { error: allocError } = await supabase.from('student_fee_allocations').insert(allocations);
             
             if (allocError) throw allocError;

@@ -48,6 +48,7 @@ const ProtectedRoute = ({ children, allowedRoles, requiredModule }) => {
     else if (userRole === 'admin') dashboardPath = ROUTES.ADMIN.DASHBOARD; // /Admin/dashboard
     else if (userRole === 'principal') dashboardPath = ROUTES.PRINCIPAL.DASHBOARD; // /Principal/dashboard
     else if (userRole === 'accountant') dashboardPath = ROUTES.ACCOUNTANT.DASHBOARD; // /Accountant/dashboard
+    else if (userRole === 'cashier') dashboardPath = ROUTES.CASHIER?.DASHBOARD || '/Cashier/dashboard';
     else if (userRole === 'receptionist') dashboardPath = ROUTES.RECEPTIONIST.DASHBOARD; // /Receptionist/dashboard
     else if (userRole === 'librarian') dashboardPath = ROUTES.LIBRARIAN.DASHBOARD; // /Librarian/dashboard
     else if (userRole === 'teacher') dashboardPath = ROUTES.TEACHER.DASHBOARD; // /Teacher/dashboard

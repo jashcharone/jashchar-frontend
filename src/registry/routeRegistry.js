@@ -567,6 +567,10 @@ export const ROUTES = {
   },
   CASHIER: {
     DASHBOARD: '/Cashier/dashboard',
+    // Student Information
+    STUDENT_DETAILS: '/cashier/student-information/details',
+    STUDENT_ADMISSION: '/cashier/student-information/admission',
+    // Fees Collection
     COLLECT_FEES: '/cashier/fees-collection/collect-fees',
     SEARCH_FEES_PAYMENT: '/cashier/fees-collection/search-fees-payment',
     SEARCH_DUE_FEES: '/cashier/fees-collection/search-due-fees',
@@ -575,6 +579,14 @@ export const ROUTES = {
     QUICK_FEES: '/cashier/fees-collection/quick-fees',
     PRINT_FEES_RECEIPT: '/cashier/fees-collection/print-fees-receipt/:paymentId',
     STUDENT_FEES: '/cashier/fees-collection/student-fees/:studentId',
+    // Finance
+    INCOME: '/cashier/finance/income',
+    ADD_INCOME: '/cashier/finance/add-income',
+    SEARCH_INCOME: '/cashier/finance/search-income',
+    EXPENSE: '/cashier/finance/expense',
+    ADD_EXPENSE: '/cashier/finance/add-expense',
+    SEARCH_EXPENSE: '/cashier/finance/search-expense',
+    // Reports
     REPORT_DAILY_COLLECTION: '/cashier/reports/daily-collection-report',
     REPORT_FEES_COLLECTION: '/cashier/reports/fees-collection-report',
     REPORT_BALANCE_FEES: '/cashier/reports/balance-fees-report',

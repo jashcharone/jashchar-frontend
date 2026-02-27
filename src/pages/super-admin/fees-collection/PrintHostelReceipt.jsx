@@ -20,9 +20,12 @@ const PrintHostelReceipt = () => {
     const [receiptCopySettings, setReceiptCopySettings] = useState({ office_copy: true, student_copy: true, bank_copy: false });
     const [isOriginal, setIsOriginal] = useState(true);
     const [currentDateTime] = useState(new Date());
+    
+    // Unified branchId with fallback for staff users
+    const branchId = selectedBranch?.id || user?.profile?.branch_id || user?.user_metadata?.branch_id;
 
     const fetchDetails = useCallback(async () => {
-        if (!paymentId || !selectedBranch?.id) {
+        if (!paymentId || !branchId) {
             setLoading(false);
             return;
         }
@@ -33,7 +36,7 @@ const PrintHostelReceipt = () => {
                 .from('hostel_fee_payments')
                 .select('*')
                 .eq('id', paymentId)
-                .eq('branch_id', selectedBranch.id)
+                .eq('branch_id', branchId)
                 .single();
 
             if (paymentError) throw paymentError;
@@ -44,7 +47,7 @@ const PrintHostelReceipt = () => {
                 .from('hostel_fee_payments')
                 .select('*')
                 .eq('transaction_id', initialPayment.transaction_id)
-                .eq('branch_id', selectedBranch.id)
+                .eq('branch_id', branchId)
                 .order('created_at', { ascending: true });
 
             // Use all payments from same transaction, or fallback to single payment
@@ -67,21 +70,21 @@ const PrintHostelReceipt = () => {
                     room_type:hostel_room_type(name, cost)
                 `)
                 .eq('student_id', payment.student_id)
-                .eq('branch_id', selectedBranch.id)
+                .eq('branch_id', branchId)
                 .maybeSingle();
 
             // Fetch school info
             const { data: school } = await supabase
                 .from('schools')
                 .select('*')
-                .eq('id', selectedBranch.id)
+                .eq('id', branchId)
                 .maybeSingle();
 
             // Fetch print header image from print_settings
             const { data: printSettings } = await supabase
                 .from('print_settings')
                 .select('header_image_url')
-                .eq('branch_id', selectedBranch.id)
+                .eq('branch_id', branchId)
                 .eq('type', 'fees_receipt')
                 .maybeSingle();
 
@@ -93,7 +96,7 @@ const PrintHostelReceipt = () => {
             const { data: branchData } = await supabase
                 .from('branches')
                 .select('print_receipt_office_copy, print_receipt_student_copy, print_receipt_bank_copy')
-                .eq('id', selectedBranch.id)
+                .eq('id', branchId)
                 .maybeSingle();
 
             if (branchData) {
@@ -109,7 +112,7 @@ const PrintHostelReceipt = () => {
                 .from('hostel_fee_payments')
                 .select('*')
                 .eq('student_id', payment.student_id)
-                .eq('branch_id', selectedBranch.id)
+                .eq('branch_id', branchId)
                 .is('reverted_at', null);
 
             // Calculate hostel fee summary (respecting billing cycle)

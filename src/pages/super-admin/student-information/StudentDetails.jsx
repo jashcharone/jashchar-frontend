@@ -56,7 +56,8 @@ const StudentDetails = () => {
     const [disableFormData, setDisableFormData] = useState({ reason_id: '', note: '' });
     const [disableLoading, setDisableLoading] = useState(false);
 
-    const branchId = user?.profile?.branch_id;
+    // ✅ FIX: Use selectedBranch.id OR fallback to user profile/metadata branch_id
+    const branchId = selectedBranch?.id || user?.profile?.branch_id || user?.user_metadata?.branch_id;
 
     const calculateAge = (dob) => {
         if (!dob) return '-';
@@ -192,24 +193,24 @@ const StudentDetails = () => {
     };
 
     useEffect(() => {
-        if (!branchId || !selectedBranch?.id) return;
+        if (!branchId) return;
         const fetchPrereqs = async () => {
             const { data: classData } = await supabase
                 .from('classes')
                 .select('id, name')
-                .eq('branch_id', selectedBranch.id);
+                .eq('branch_id', branchId);
             setClasses(sortClasses(classData || []));
             
             // Fetch disable reasons for branch
             const { data: reasonsData } = await supabase
                 .from('disable_reasons')
                 .select('id, reason')
-                .eq('branch_id', selectedBranch.id)
+                .eq('branch_id', branchId)
                 .order('reason');
             setDisableReasons(reasonsData || []);
         };
         fetchPrereqs();
-    }, [branchId, selectedBranch]);
+    }, [branchId]);
 
     // Auto-load: Select first class and trigger search when classes are loaded
     useEffect(() => {
@@ -252,7 +253,7 @@ const StudentDetails = () => {
             class:classes!student_profiles_class_id_fkey( name ),
             section:sections!student_profiles_section_id_fkey( name )
         `, { count: 'exact' })
-        .eq('branch_id', selectedBranch.id)
+        .eq('branch_id', branchId)
         .order('roll_number', { ascending: true, nullsFirst: false });
         
         // Apply status filter (Active/Inactive/All)

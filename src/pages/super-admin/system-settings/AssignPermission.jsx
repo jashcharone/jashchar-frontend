@@ -139,48 +139,95 @@ const AssignPermissionSchool = () => {
     };
 
     const applyRoleDefaults = (roleName, modules, permMap) => {
+        // Normalize role name for matching (handle typos like 'Casher' vs 'Cashier')
+        const normalizedRoleName = roleName?.toLowerCase().replace(/_/g, ' ').trim();
+        
         const roleDefaults = {
-            'Super Admin': {
+            'super admin': {
                 modules: 'all',
                 permissions: { view: true, add: true, edit: true, delete: true }
             },
-            'Admin': {
+            'admin': {
                 modules: 'all',
                 permissions: { view: true, add: true, edit: true, delete: true }
             },
-            'Principal': {
+            'principal': {
                 modules: 'all',
                 permissions: { view: true, add: true, edit: true, delete: false }
             },
-            'Accountant': {
-                modules: ['fees_collection', 'finance', 'reports'],
+            'vice principal': {
+                modules: 'all',
+                permissions: { view: true, add: true, edit: true, delete: false }
+            },
+            'coordinator': {
+                modules: ['academics', 'examinations', 'attendance', 'homework', 'student_information', 'communicate', 'behaviour_records', 'reports'],
+                permissions: { view: true, add: true, edit: true, delete: false }
+            },
+            'accountant': {
+                modules: ['fees_collection', 'finance', 'reports', 'student_information'],
                 permissions: { view: true, add: true, edit: true, delete: true }
             },
-            'Receptionist': {
+            // Cashier - Same as Accountant (for fee collection)
+            'cashier': {
+                modules: ['fees_collection', 'finance', 'reports', 'student_information'],
+                permissions: { view: true, add: true, edit: true, delete: false }
+            },
+            // Handle typo 'Casher'
+            'casher': {
+                modules: ['fees_collection', 'finance', 'reports', 'student_information'],
+                permissions: { view: true, add: true, edit: true, delete: false }
+            },
+            'receptionist': {
                 modules: ['front_office', 'communicate', 'student_information'],
                 permissions: { view: true, add: true, edit: true, delete: false }
             },
-            'Teacher': {
+            'teacher': {
                 modules: ['academics', 'examinations', 'attendance', 'homework', 
-                         'communicate', 'library', 'behaviour_records'],
+                         'communicate', 'library', 'behaviour_records', 'student_information'],
                 permissions: { view: true, add: true, edit: true, delete: false }
             },
-            'Librarian': {
+            'class teacher': {
+                modules: ['academics', 'examinations', 'attendance', 'homework', 
+                         'communicate', 'library', 'behaviour_records', 'student_information', 'reports'],
+                permissions: { view: true, add: true, edit: true, delete: false }
+            },
+            'subject teacher': {
+                modules: ['academics', 'examinations', 'attendance', 'homework', 'communicate'],
+                permissions: { view: true, add: true, edit: true, delete: false }
+            },
+            'librarian': {
                 modules: ['library'],
                 permissions: { view: true, add: true, edit: true, delete: true }
             },
-            'Parent': {
+            'lab assistant': {
+                modules: ['academics', 'inventory'],
+                permissions: { view: true, add: true, edit: false, delete: false }
+            },
+            'driver': {
+                modules: ['transport'],
+                permissions: { view: true, add: false, edit: false, delete: false }
+            },
+            'hostel warden': {
+                modules: ['hostel', 'student_information', 'communicate'],
+                permissions: { view: true, add: true, edit: true, delete: false }
+            },
+            'sports coach': {
+                modules: ['sports', 'student_information', 'communicate'],
+                permissions: { view: true, add: true, edit: true, delete: false }
+            },
+            'parent': {
                 modules: ['fees_collection', 'attendance', 'examinations', 'homework', 'communicate'],
                 permissions: { view: true, add: false, edit: false, delete: false }
             },
-            'Student': {
+            'student': {
                 modules: ['fees_collection', 'attendance', 'examinations', 'homework', 
                          'library', 'communicate'],
                 permissions: { view: true, add: false, edit: false, delete: false }
             }
         };
 
-        const roleConfig = roleDefaults[roleName];
+        // Use normalized name to find config (handles case and typos)
+        const roleConfig = roleDefaults[normalizedRoleName];
         if (!roleConfig) return;
 
         modules.forEach(m => {

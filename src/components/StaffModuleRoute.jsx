@@ -24,7 +24,8 @@ const StaffModuleRoute = ({ children, requiredModule }) => {
     return <Navigate to="/login" replace />;
   }
 
-  const userRole = user.role;
+  // Normalize role to lowercase for consistent lookup (DB may have 'Cashier' vs 'cashier')
+  const userRole = (user.role || '').toLowerCase().replace(/\s+/g, '_');
   const expectedSlug = ROLE_TO_SLUG[userRole];
 
   // Validate: URL's roleSlug must match the user's expected slug

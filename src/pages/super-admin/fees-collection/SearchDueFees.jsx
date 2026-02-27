@@ -18,7 +18,9 @@ const SearchDueFees = () => {
     const { selectedBranch } = useBranch();
     const { toast } = useToast();
     const navigate = useNavigate();
-    const branchId = user?.profile?.branch_id;
+    
+    // Unified branchId with fallback for staff users
+    const branchId = selectedBranch?.id || user?.profile?.branch_id || user?.user_metadata?.branch_id;
 
     const [feeGroups, setFeeGroups] = useState([]);
     const [classes, setClasses] = useState([]);
@@ -33,16 +35,16 @@ const SearchDueFees = () => {
     const [searched, setSearched] = useState(false);
 
     const fetchPrerequisites = useCallback(async () => {
-        if (!branchId || !selectedBranch) return;
+        if (!branchId) return;
         const [groupsRes, classesRes, sectionsRes] = await Promise.all([
-            supabase.from('fee_groups').select('id, name').eq('branch_id', selectedBranch.id),
-            supabase.from('classes').select('id, name').eq('branch_id', selectedBranch.id),
-            supabase.from('sections').select('id, name').eq('branch_id', selectedBranch.id),
+            supabase.from('fee_groups').select('id, name').eq('branch_id', branchId),
+            supabase.from('classes').select('id, name').eq('branch_id', branchId),
+            supabase.from('sections').select('id, name').eq('branch_id', branchId),
         ]);
         setFeeGroups(groupsRes.data || []);
         setClasses(classesRes.data || []);
         setSections(sectionsRes.data || []);
-    }, [branchId, selectedBranch]);
+    }, [branchId]);
 
     useEffect(() => {
         fetchPrerequisites();
@@ -63,8 +65,8 @@ const SearchDueFees = () => {
         setSearched(true);
 
         const { data, error } = await supabase.rpc('get_due_fees_students', {
-            p_school_id: selectedBranch.id,
-            p_branch_id: selectedBranch.id,
+            p_school_id: branchId,
+            p_branch_id: branchId,
             p_class_id: selectedClass,
             p_section_id: selectedSection === 'all' ? null : selectedSection,
             p_fee_group_ids: selectedGroups

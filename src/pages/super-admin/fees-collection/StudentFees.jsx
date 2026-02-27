@@ -347,7 +347,7 @@ const StudentFees = () => {
                 .from('student_transport_details')
                 .select(`
                     *,
-                    route:transport_route_id(id, route_title),
+                    route:transport_route_id(id, route_title, billing_cycle),
                     pickup_point:transport_pickup_point_id(id, name)
                 `)
                 .eq('student_id', studentId)
@@ -363,8 +363,8 @@ const StudentFees = () => {
                     .eq('branch_id', selectedBranch.id)
                     .is('reverted_at', null);
 
-                // Get billing cycle from student_transport_details or default to monthly
-                const billingCycle = transportData.billing_cycle || 'monthly';
+                // Get billing cycle from route (set in Routes page) or fallback to student_transport_details or default to monthly
+                const billingCycle = transportData.route?.billing_cycle || transportData.billing_cycle || 'monthly';
                 const periodFee = Number(transportData.transport_fee) || 0;
                 const isAnnualType = billingCycle === 'annual' || billingCycle === 'one_time';
                 
@@ -425,7 +425,7 @@ const StudentFees = () => {
                 .select(`
                     *,
                     room:room_id(id, room_number_name, cost_per_bed),
-                    room_type:hostel_room_type(id, name, cost)
+                    room_type:hostel_room_type(id, name, cost, billing_cycle)
                 `)
                 .eq('student_id', studentId)
                 .eq('branch_id', selectedBranch.id)
@@ -440,8 +440,8 @@ const StudentFees = () => {
                     .eq('branch_id', selectedBranch.id)
                     .is('reverted_at', null);
 
-                // Get billing cycle from student_hostel_details or default to monthly
-                const billingCycle = hostelData.billing_cycle || 'monthly';
+                // Get billing cycle from room_type (set in Room Types page) or fallback to student_hostel_details or default to monthly
+                const billingCycle = hostelData.room_type?.billing_cycle || hostelData.billing_cycle || 'monthly';
                 const periodFee = Number(hostelData.hostel_fee) || 0;
                 const isAnnualType = billingCycle === 'annual' || billingCycle === 'one_time';
                 

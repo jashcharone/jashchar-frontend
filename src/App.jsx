@@ -143,6 +143,7 @@ const StudentInformationReport = lazy(() => import('@/pages/super-admin/reports/
 
 // ? Fees Collection
 const CollectFees = lazy(() => import('@/pages/super-admin/fees-collection/CollectFees'));
+const OfflineBankPayments = lazy(() => import('@/pages/super-admin/fees-collection/OfflineBankPayments'));
 
 // ? Behaviour Records
 const AssignIncident = lazy(() => import('@/pages/super-admin/behaviour-records/AssignIncident'));
@@ -1388,6 +1389,7 @@ function App() {
             <Route path={ROUTES.SUPER_ADMIN.PRINT_SELECTED_FEES} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'accountant']}><PrintSelectedFees /></ProtectedRoute>} />
             <Route path={ROUTES.SUPER_ADMIN.QUICK_FEES} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'accountant']}><QuickFees /></ProtectedRoute>} />
             <Route path={ROUTES.SUPER_ADMIN.ONLINE_PAYMENT} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'accountant']}><OnlinePayment /></ProtectedRoute>} />
+            <Route path="/super-admin/fees-collection/offline-bank-payments" element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'accountant']}><OfflineBankPayments /></ProtectedRoute>} />
             <Route path={ROUTES.SUPER_ADMIN.FEES_ANALYSIS} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'accountant', 'principal']}><FeesAnalysis /></ProtectedRoute>} />
             <Route path={ROUTES.SUPER_ADMIN.REFUND_APPROVALS} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']}><RefundApprovals /></ProtectedRoute>} />
             <Route path={ROUTES.SUPER_ADMIN.PRINT_REFUND_RECEIPT} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'accountant']}><PrintRefundReceipt /></ProtectedRoute>} />
@@ -1478,7 +1480,7 @@ function App() {
             <Route path="/super-admin/system-settings/assign-permission" element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="system_settings"><AssignPermissionSchoolPage /></ProtectedRoute>} />
             <Route path="/super-admin/system-settings/assign-permission/:roleId" element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="system_settings"><AssignPermissionSchoolPage /></ProtectedRoute>} />
 
-            {/* ? Front CMS - Specific routes first to avoid route conflicts */}}
+            {/* Front CMS - Specific routes first to avoid route conflicts */}
             <Route path="/super-admin/front-cms/menus/:menuId/items" element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="front_cms"><MenuItems /></ProtectedRoute>} />
             <Route path="/super-admin/front-cms/menus" element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="front_cms"><Menus /></ProtectedRoute>} />
             
@@ -1591,7 +1593,7 @@ function App() {
             <Route path="/:roleSlug/fees-collection/fees-discount" element={<StaffModuleRoute requiredModule="fees_collection"><FeesDiscount /></StaffModuleRoute>} />
             <Route path="/:roleSlug/fees-collection/fees-reminder" element={<StaffModuleRoute><FeesReminder /></StaffModuleRoute>} />
             <Route path="/:roleSlug/fees-collection/quick-fees" element={<StaffModuleRoute requiredModule="fees_collection"><QuickFees /></StaffModuleRoute>} />
-            <Route path="/:roleSlug/fees-collection/offline-bank-payments" element={<StaffModuleRoute requiredModule="fees_collection"><CollectFees /></StaffModuleRoute>} />
+            <Route path="/:roleSlug/fees-collection/offline-bank-payments" element={<StaffModuleRoute requiredModule="fees_collection"><OfflineBankPayments /></StaffModuleRoute>} />
             <Route path="/:roleSlug/fees-collection/online-payment" element={<StaffModuleRoute requiredModule="fees_collection"><OnlinePayment /></StaffModuleRoute>} />
             <Route path="/:roleSlug/fees-collection/student-fees/:studentId" element={<StaffModuleRoute requiredModule="fees_collection"><StudentFees /></StaffModuleRoute>} />
             <Route path="/:roleSlug/fees-collection/print-fees-receipt/:paymentId" element={<StaffModuleRoute><PrintFeesReceipt /></StaffModuleRoute>} />
@@ -1601,9 +1603,11 @@ function App() {
             {/* Finance */}
             <Route path="/:roleSlug/finance/income" element={<StaffModuleRoute requiredModule="income"><Income /></StaffModuleRoute>} />
             <Route path="/:roleSlug/finance/add-income" element={<StaffModuleRoute requiredModule="income"><AddIncome /></StaffModuleRoute>} />
+            <Route path="/:roleSlug/finance/search-income" element={<StaffModuleRoute requiredModule="income"><SearchIncome /></StaffModuleRoute>} />
             <Route path="/:roleSlug/finance/income-head" element={<StaffModuleRoute requiredModule="income"><IncomeHead /></StaffModuleRoute>} />
             <Route path="/:roleSlug/finance/expense" element={<StaffModuleRoute requiredModule="expenses"><Expense /></StaffModuleRoute>} />
             <Route path="/:roleSlug/finance/add-expense" element={<StaffModuleRoute requiredModule="expenses"><AddExpense /></StaffModuleRoute>} />
+            <Route path="/:roleSlug/finance/search-expense" element={<StaffModuleRoute requiredModule="expenses"><SearchExpense /></StaffModuleRoute>} />
             <Route path="/:roleSlug/finance/expense-head" element={<StaffModuleRoute requiredModule="expenses"><ExpenseHead /></StaffModuleRoute>} />
             
             {/* Human Resource */}

@@ -324,15 +324,18 @@ const AddSiblingModal = ({ onSiblingAdd }) => {
   const [selectedClass, setSelectedClass] = useState('');
   const [selectedSection, setSelectedSection] = useState('');
   const [selectedStudent, setSelectedStudent] = useState(null);
+  
+  // Unified branchId with fallback for staff users
+  const branchId = selectedBranch?.id || user?.profile?.branch_id || user?.user_metadata?.branch_id;
 
   useEffect(() => {
-    if (!selectedBranch?.id) return;
+    if (!branchId) return;
     const fetchClasses = async () => {
-      const { data } = await supabase.from('classes').select('id, name').eq('branch_id', selectedBranch.id);
+      const { data } = await supabase.from('classes').select('id, name').eq('branch_id', branchId);
       setClasses(sortClasses(data || []));
     };
     fetchClasses();
-  }, [selectedBranch]);
+  }, [branchId]);
 
   useEffect(() => {
     if (selectedClass) {
@@ -1732,11 +1735,12 @@ const StudentAdmission = () => {
   }, [fetchSchoolSettings, resetStudentEmailValidation, resetFatherEmailValidation, resetAadharValidation]);
   
   useEffect(() => {
-    if (!selectedBranch?.id) {
+    // ✅ FIX: Use selectedBranch.id OR fallback to user profile/metadata branch_id
+    const branchId = selectedBranch?.id || user?.profile?.branch_id || user?.user_metadata?.branch_id;
+    if (!branchId) {
       setPageLoading(false);
       return;
     }
-    const branchId = selectedBranch.id;
     setPageLoading(true); // 🔄 Start loading
     fetchSchoolSettings();
     const fetchPrereqs = async () => {
@@ -1763,7 +1767,7 @@ const StudentAdmission = () => {
         ] = await Promise.all([
           supabase.from('classes').select('id, name').eq('branch_id', branchId),
           supabase.from('student_categories').select('id, name').eq('branch_id', branchId),
-          supabase.from('transport_routes').select('id, route_title').eq('branch_id', branchId),
+          supabase.from('transport_routes').select('id, route_title, fare, billing_cycle').eq('branch_id', branchId),
           supabase.from('hostels').select('id, name').eq('branch_id', branchId),
           supabase.from('hostel_room_types').select('*').eq('branch_id', branchId),
           supabase.from('fee_groups').select(`id, name, fee_masters (*, fee_types(name, code))`).eq('branch_id', branchId),
@@ -1976,6 +1980,7 @@ const StudentAdmission = () => {
   useEffect(() => {
     const fetchTransportDetails = async () => {
       if (formData.transport_route_id) {
+        // Fetch pickup points for this route
         const { data, error } = await supabase.from('route_pickup_point_mappings').select('pickup_point:transport_pickup_points(id, name), monthly_fees, pickup_time').eq('route_id', formData.transport_route_id);
         if (error) {
           toast({ variant: 'destructive', title: 'Error fetching pickup points' });
@@ -1983,10 +1988,42 @@ const StudentAdmission = () => {
         } else {
           setPickupPoints(data || []);
         }
+        
+        // 🚗 AUTO-FETCH Vehicle & Driver info from route_vehicle_assignments
+        const { data: assignmentData } = await supabase
+          .from('route_vehicle_assignments')
+          .select('vehicle:vehicle_id(vehicle_number, driver_name, driver_contact)')
+          .eq('route_id', formData.transport_route_id)
+          .maybeSingle();
+        
+        if (assignmentData?.vehicle) {
+          // Auto-populate vehicle and driver info
+          setFormData(prev => ({
+            ...prev,
+            vehicle_number: assignmentData.vehicle.vehicle_number || '',
+            driver_name: assignmentData.vehicle.driver_name || '',
+            driver_contact: assignmentData.vehicle.driver_contact || ''
+          }));
+        } else {
+          // Clear vehicle info if no assignment found
+          setFormData(prev => ({
+            ...prev,
+            vehicle_number: '',
+            driver_name: '',
+            driver_contact: ''
+          }));
+        }
       } else {
         setPickupPoints([]);
+        // Clear vehicle info when no route selected
+        setFormData(prev => ({
+          ...prev,
+          vehicle_number: '',
+          driver_name: '',
+          driver_contact: ''
+        }));
       }
-      // Only reset if transport_route_id actually changed
+      // Only reset pickup point and fee if transport_route_id actually changed
       if (prevTransportRouteRef.current !== formData.transport_route_id) {
         setFormData(prev => ({ ...prev, transport_pickup_point_id: '', transport_fee: 0 }));
         prevTransportRouteRef.current = formData.transport_route_id;
@@ -2372,6 +2409,10 @@ const StudentAdmission = () => {
     try {
       let transport_details_id = null;
       if (formData.transport_required) {
+        // Get billing_cycle from selected route
+        const selectedRoute = routes.find(r => r.id === formData.transport_route_id);
+        const transportBillingCycle = selectedRoute?.billing_cycle || 'monthly';
+        
         const { data: transportData, error: transportError } = await supabase
           .from('student_transport_details')
           .insert({
@@ -2381,6 +2422,7 @@ const StudentAdmission = () => {
             transport_route_id: formData.transport_route_id,
             transport_pickup_point_id: formData.transport_pickup_point_id,
             transport_fee: formData.transport_fee,
+            billing_cycle: transportBillingCycle, // 🔧 Save billing_cycle from route
             pickup_time: formData.pickup_time || null,
             drop_time: formData.drop_time || null,
             vehicle_number: formData.vehicle_number,
@@ -2394,6 +2436,10 @@ const StudentAdmission = () => {
       
       let hostel_details_id = null;
       if (formData.hostel_required) {
+        // Get billing_cycle from selected room type
+        const selectedRoomType = hostelRoomTypes.find(rt => rt.id === formData.hostel_room_type);
+        const hostelBillingCycle = selectedRoomType?.billing_cycle || 'monthly';
+        
         const { data: hostelData, error: hostelError } = await supabase
           .from('student_hostel_details')
           .insert({
@@ -2405,6 +2451,7 @@ const StudentAdmission = () => {
             room_number: formData.room_number,
             bed_number: formData.bed_number,
             hostel_fee: formData.hostel_fee,
+            billing_cycle: hostelBillingCycle, // 🔧 Save billing_cycle from room type
             check_in_date: formData.check_in_date,
             check_out_date: formData.check_out_date,
             guardian_contact: formData.hostel_guardian_contact,

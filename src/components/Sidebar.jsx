@@ -157,7 +157,13 @@ const Sidebar = ({ role, isSidebarOpen, isMobile, toggleSidebar, closeSidebar, o
         return false;
       }
       
-      const hasAccess = canView(moduleSlug);
+      // ✅ FIX: Finance module → Income/Expenses mapping
+      // If user has 'finance' permission, also grant access to 'income' and 'expenses' menus
+      // This prevents duplicates: Assign Permission shows Finance, Sidebar shows Income/Expenses
+      let hasAccess = canView(moduleSlug);
+      if (!hasAccess && (moduleSlug === 'income' || moduleSlug === 'expenses')) {
+        hasAccess = canView('finance');
+      }
       
       // Check if this is an attendance module
       const isAttendanceModule = moduleSlug === 'attendance' || item.title?.toLowerCase().includes('attendance');

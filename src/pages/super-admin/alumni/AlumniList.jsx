@@ -295,14 +295,14 @@ const AlumniList = () => {
           <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
             {!selectedBranch && (
             <Select
-              value={filters.branch_id}
-              onValueChange={(value) => handleFilterChange('branch_id', value)}
+              value={filters.branch_id || 'all'}
+              onValueChange={(value) => handleFilterChange('branch_id', value === 'all' ? '' : value)}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Select Branch" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All Branches</SelectItem>
+                <SelectItem value="all">All Branches</SelectItem>
                 {branches.map(branch => (
                   <SelectItem key={branch.id} value={branch.id}>
                     {branch.branch_name}
@@ -313,14 +313,14 @@ const AlumniList = () => {
             )}
 
             <Select
-              value={filters.session_id}
-              onValueChange={(value) => handleFilterChange('session_id', value)}
+              value={filters.session_id || 'all'}
+              onValueChange={(value) => handleFilterChange('session_id', value === 'all' ? '' : value)}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Passing Session" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All Sessions</SelectItem>
+                <SelectItem value="all">All Sessions</SelectItem>
                 {sessions.map(session => (
                   <SelectItem key={session.id} value={session.id}>
                     {session.session_year}
@@ -330,14 +330,14 @@ const AlumniList = () => {
             </Select>
 
             <Select
-              value={filters.class_id}
-              onValueChange={(value) => handleFilterChange('class_id', value)}
+              value={filters.class_id || 'all'}
+              onValueChange={(value) => handleFilterChange('class_id', value === 'all' ? '' : value)}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Select Class" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All Classes</SelectItem>
+                <SelectItem value="all">All Classes</SelectItem>
                 {classes.map(cls => (
                   <SelectItem key={cls.id} value={cls.id}>
                     {cls.class_name}
@@ -347,15 +347,15 @@ const AlumniList = () => {
             </Select>
 
             <Select
-              value={filters.section_id}
-              onValueChange={(value) => handleFilterChange('section_id', value)}
+              value={filters.section_id || 'all'}
+              onValueChange={(value) => handleFilterChange('section_id', value === 'all' ? '' : value)}
               disabled={!filters.class_id}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Select Section" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All Sections</SelectItem>
+                <SelectItem value="all">All Sections</SelectItem>
                 {sections.map(section => (
                   <SelectItem key={section.id} value={section.id}>
                     {section.section_name}

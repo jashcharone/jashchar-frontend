@@ -594,14 +594,6 @@ export const PermissionProvider = ({ children }) => {
                     };
                 }
             });
-
-            // ✅ Always ensure dashboard + profile access for all staff roles
-            if (!permMap['dashboard']) {
-                permMap['dashboard'] = { can_view: true, can_add: false, can_edit: false, can_delete: false };
-            }
-            if (!permMap['my_profile']) {
-                permMap['my_profile'] = { can_view: true, can_add: false, can_edit: true, can_delete: false };
-            }
         } else if (normalizedRole === 'school_owner' || normalizedRole === 'admin' || normalizedRole === 'organization_owner') {
             // Fallback: School Owner gets ALL permissions for allowed modules if no specific permissions set
             // If allowedModules is empty (e.g. plan fetch failed), we default to ALL modules for safety in dev
@@ -660,6 +652,15 @@ export const PermissionProvider = ({ children }) => {
             });
         }
         
+        // ✅ STRICT MODE: For ALL staff roles, ALWAYS ensure dashboard + profile access
+        // This runs AFTER all role-specific logic, ensuring basic access even if no permissions assigned
+        if (!permMap['dashboard']) {
+            permMap['dashboard'] = { can_view: true, can_add: false, can_edit: false, can_delete: false };
+        }
+        if (!permMap['my_profile']) {
+            permMap['my_profile'] = { can_view: true, can_add: false, can_edit: true, can_delete: false };
+        }
+        
         // ✅ FIX: Mark as loaded for this user/school/role combo
         loadedForRef.current = { userId, schoolId, role: userRole };
         
@@ -710,9 +711,45 @@ export const PermissionProvider = ({ children }) => {
       if (action === 'delete') return exactPerm.can_delete;
     }
 
+    // ✅ FIX: Finance → Income/Expenses mapping
+    // If checking income/expenses and not found, check if finance permission exists
+    // This prevents duplicates: Assign Permission shows Finance, Sidebar shows Income/Expenses
+    if (!exactPerm && (moduleSlug === 'income' || moduleSlug === 'expenses')) {
+      const financePerm = permissions['finance'];
+      if (financePerm) {
+        if (action === 'view') return financePerm.can_view;
+        if (action === 'add') return financePerm.can_add;
+        if (action === 'edit') return financePerm.can_edit;
+        if (action === 'delete') return financePerm.can_delete;
+      }
+    }
+
     // If no exact match AND it's a submodule (contains dot)
     if (moduleSlug.includes('.')) {
       const parentModule = moduleSlug.split('.')[0];
+      const childPart = moduleSlug.split('.').slice(1).join('.');
+      
+      // ✅ FIX: Map income/expenses submodules to finance
+      // income.add_income → check finance.add_income
+      // expenses.expense_head → check finance.expense_head
+      if (parentModule === 'income' || parentModule === 'expenses') {
+        const financeKey = `finance.${childPart}`;
+        const financePerm = permissions[financeKey];
+        if (financePerm) {
+          if (action === 'view') return financePerm.can_view;
+          if (action === 'add') return financePerm.can_add;
+          if (action === 'edit') return financePerm.can_edit;
+          if (action === 'delete') return financePerm.can_delete;
+        }
+        // Also check if finance parent permission exists
+        const financeParent = permissions['finance'];
+        if (financeParent) {
+          if (action === 'view') return financeParent.can_view;
+          if (action === 'add') return financeParent.can_add;
+          if (action === 'edit') return financeParent.can_edit;
+          if (action === 'delete') return financeParent.can_delete;
+        }
+      }
       
       // Check if parent is explicitly disabled
       const parentPerm = permissions[parentModule];

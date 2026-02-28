@@ -256,7 +256,7 @@ export const MODULE_CATALOG = {
     slug: "reports",
     submodules: [
       { label: "Student Information", slug: "student_information" },
-      { label: "Finance", slug: "finance" },
+      { label: "Finance Report", slug: "finance_report" },  // ✅ Changed from 'finance' to avoid duplicate
       { label: "Attendance", slug: "attendance" },
       { label: "Examinations", slug: "examinations" },
       { label: "Human Resource", slug: "human_resource" },

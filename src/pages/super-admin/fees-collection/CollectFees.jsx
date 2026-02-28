@@ -16,7 +16,7 @@ import { Search, Loader2, IndianRupee, Users, AlertCircle, CheckCircle2, Clock, 
 const CollectFees = () => {
     const navigate = useNavigate();
     const { user, currentSessionId } = useAuth();
-    const { selectedBranch } = useBranch();
+    const { selectedBranch, loading: branchLoading } = useBranch();
     const { toast } = useToast();
     // ✅ FIX: Use selectedBranch.id OR fallback to user profile/metadata branch_id
     const branchId = selectedBranch?.id || user?.profile?.branch_id || user?.user_metadata?.branch_id;
@@ -31,20 +31,33 @@ const CollectFees = () => {
     const [searched, setSearched] = useState(false);
     const [feesData, setFeesData] = useState({}); // { studentId: { total, paid, balance, progress } }
 
-    const fetchClasses = useCallback(async () => {
-        if (!branchId) return;
-        const { data: classData, error: classError } = await supabase
-            .from('classes')
-            .select('*')
-            .eq('branch_id', branchId)
-            .order('name');
-        if (classError) toast({ variant: 'destructive', title: 'Error fetching classes' });
-        else setClasses(classData || []);
-    }, [branchId, toast]);
+    // DEBUG: Log branch resolution
+    console.log('[CollectFees] branchId:', branchId, '| selectedBranch:', selectedBranch?.id, '| branchLoading:', branchLoading);
 
+    // ✅ FIX: Fetch classes when branchId changes - direct dependency
     useEffect(() => {
+        const fetchClasses = async () => {
+            console.log('[CollectFees] fetchClasses called, branchId:', branchId);
+            if (!branchId) {
+                console.log('[CollectFees] branchId is empty, skipping fetch');
+                setClasses([]);
+                return;
+            }
+            const { data: classData, error: classError } = await supabase
+                .from('classes')
+                .select('*')
+                .eq('branch_id', branchId)
+                .order('name');
+            console.log('[CollectFees] Classes fetched:', classData?.length, 'Error:', classError?.message);
+            if (classError) {
+                toast({ variant: 'destructive', title: 'Error fetching classes' });
+            } else {
+                setClasses(classData || []);
+            }
+        };
+        
         fetchClasses();
-    }, [fetchClasses]);
+    }, [branchId, toast]);
 
     // Fetch sections when selectedClass changes
     useEffect(() => {

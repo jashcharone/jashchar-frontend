@@ -110,14 +110,14 @@ const MessageLogs = () => {
             </div>
             <div className="w-40">
               <Select 
-                value={filters.status} 
-                onValueChange={(v) => setFilters(prev => ({ ...prev, status: v }))}
+                value={filters.status || 'all'} 
+                onValueChange={(v) => setFilters(prev => ({ ...prev, status: v === 'all' ? '' : v }))}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="All Status" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All Status</SelectItem>
+                  <SelectItem value="all">All Status</SelectItem>
                   <SelectItem value="sent">Sent</SelectItem>
                   <SelectItem value="delivered">Delivered</SelectItem>
                   <SelectItem value="read">Read</SelectItem>

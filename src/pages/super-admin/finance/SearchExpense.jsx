@@ -91,14 +91,14 @@ const SearchExpense = () => {
                         <div>
                             <Label>Search By</Label>
                             <Select 
-                                value={searchParams.expense_head_id} 
-                                onValueChange={v => setSearchParams(p => ({...p, expense_head_id: v}))}
+                                value={searchParams.expense_head_id || 'all'} 
+                                onValueChange={v => setSearchParams(p => ({...p, expense_head_id: v === 'all' ? '' : v}))}
                             >
                                 <SelectTrigger>
                                     <SelectValue placeholder="Select" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="">All Expense Heads</SelectItem>
+                                    <SelectItem value="all">All Expense Heads</SelectItem>
                                     {expenseHeads.map(head => (
                                         <SelectItem key={head.id} value={head.id}>{head.name}</SelectItem>
                                     ))}

@@ -471,15 +471,15 @@ const AlumniEvents = () => {
               <div>
                 <Label htmlFor="branch_id">Branch</Label>
                 <Select
-                  value={formData.branch_id}
-                  onValueChange={(value) => setFormData({ ...formData, branch_id: value })}
+                  value={formData.branch_id || 'all'}
+                  onValueChange={(value) => setFormData({ ...formData, branch_id: value === 'all' ? '' : value })}
                   disabled={isViewMode}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select Branch" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">All Branches</SelectItem>
+                    <SelectItem value="all">All Branches</SelectItem>
                     {branches.map(branch => (
                       <SelectItem key={branch.id} value={branch.id}>
                         {branch.branch_name}

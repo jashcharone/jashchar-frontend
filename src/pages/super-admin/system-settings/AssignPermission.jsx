@@ -88,8 +88,20 @@ const AssignPermissionSchool = () => {
         const structuredModules = [];
         const processedSlugs = new Set();
 
+        // ✅ FIX: Deduplicate overlapping modules
+        // If 'finance' exists, skip 'income' and 'expenses' (they're submodules of finance)
+        // This prevents showing same items 3 times: income, finance(with income/expense), expenses
+        const hasFinance = allowedModules.some(m => m.slug === 'finance');
+        const skipSlugs = hasFinance ? ['income', 'expenses'] : [];
+
         allowedModules.forEach(m => {
             const slug = m.slug;
+            
+            // Skip if this is a duplicate (income/expenses when finance exists)
+            if (skipSlugs.includes(slug)) {
+                return;
+            }
+            
             // Try MODULE_CATALOG first for nice display names, fallback to DB name
             const catalogEntry = MODULE_CATALOG[slug];
             const displayName = catalogEntry?.label || m.name;
@@ -109,11 +121,12 @@ const AssignPermissionSchool = () => {
 
         setModules(structuredModules);
 
-        // 4. Load Existing Permissions
+        // 4. Load Existing Permissions (MUST filter by branch_id for multi-tenant isolation)
         const { data: existingPerms, error: permError } = await supabase
             .from('role_permissions')
             .select('*')
-            .eq('role_id', roleId);
+            .eq('role_id', roleId)
+            .eq('branch_id', branchId);  // ✅ FIX: Filter by branch for proper data isolation
 
         if (permError) {
             console.error('Permission fetch error:', permError);
@@ -129,15 +142,18 @@ const AssignPermissionSchool = () => {
                     delete: p.can_delete
                 };
             });
-        } else {
-            // Apply Defaults
-            applyRoleDefaults(role.name, structuredModules, permMap);
         }
+        // ✅ STRICT MODE: No defaults applied
+        // If no permissions saved in database, user sees empty checkboxes
+        // They must explicitly assign permissions - matching sidebar behavior 100%
 
         setPermissions(permMap);
         setLoading(false);
     };
 
+    // ⚠️ DEPRECATED: applyRoleDefaults removed for 100% strict permission logic
+    // Sidebar now shows ONLY what's in role_permissions table
+    // This function is kept for reference but not called
     const applyRoleDefaults = (roleName, modules, permMap) => {
         // Normalize role name for matching (handle typos like 'Casher' vs 'Cashier')
         const normalizedRoleName = roleName?.toLowerCase().replace(/_/g, ' ').trim();

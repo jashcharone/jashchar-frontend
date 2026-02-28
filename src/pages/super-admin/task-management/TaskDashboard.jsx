@@ -539,7 +539,7 @@ const TaskDashboard = () => {
           <Button 
             className="w-full justify-start" 
             variant="outline"
-            onClick={() => navigate(`/${basePath}/task-management/tasks?filter=overdue`)}}
+            onClick={() => navigate(`/${basePath}/task-management/tasks?filter=overdue`)}
           >
             <AlertTriangle className="mr-2 h-4 w-4" />
             Overdue Tasks

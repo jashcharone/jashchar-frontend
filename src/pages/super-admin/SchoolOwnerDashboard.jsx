@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import DashboardLayout from '@/components/DashboardLayout';
+import SmartInsights from '@/components/dashboard/SmartInsights';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { useBranch } from '@/contexts/BranchContext';
 import { supabase } from '@/lib/customSupabaseClient';
@@ -948,6 +949,11 @@ const SchoolOwnerDashboard = () => {
             color="green"
           />
         </div>
+
+        {/* ================================================================ */}
+        {/* SMART INSIGHTS - AI-POWERED ACTIONABLE INSIGHTS */}
+        {/* ================================================================ */}
+        <SmartInsights />
 
         {/* ================================================================ */}
         {/* STATS CARDS WITH ANIMATIONS */}

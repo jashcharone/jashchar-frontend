@@ -272,20 +272,20 @@ const SubjectTeacher = () => {
             </p>
           </div>
           <div className="flex items-center gap-3">
-            <Badge variant="outline" className="px-3 py-1.5 bg-blue-50 border-blue-200">
-              <Users className="h-4 w-4 mr-1.5 text-blue-600" />
-              <span className="text-blue-700">{teachers.length} Teachers</span>
+            <Badge variant="outline" className="px-3 py-1.5 bg-blue-500/10 dark:bg-blue-500/20 border-blue-500/30">
+              <Users className="h-4 w-4 mr-1.5 text-blue-600 dark:text-blue-400" />
+              <span className="text-blue-700 dark:text-blue-300">{teachers.length} Teachers</span>
             </Badge>
-            <Badge variant="outline" className="px-3 py-1.5 bg-green-50 border-green-200">
-              <BookOpen className="h-4 w-4 mr-1.5 text-green-600" />
-              <span className="text-green-700">{assignments.length} Assignments</span>
+            <Badge variant="outline" className="px-3 py-1.5 bg-green-500/10 dark:bg-green-500/20 border-green-500/30">
+              <BookOpen className="h-4 w-4 mr-1.5 text-green-600 dark:text-green-400" />
+              <span className="text-green-700 dark:text-green-300">{assignments.length} Assignments</span>
             </Badge>
           </div>
         </div>
 
         <div className="grid gap-6 lg:grid-cols-2">
           {/* Assignment Form - Enhanced */}
-          <Card className="shadow-lg border-0 bg-gradient-to-br from-white to-blue-50/30">
+          <Card className="shadow-lg border-0 bg-card">
             <CardHeader className="bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-t-lg">
               <CardTitle className="flex items-center gap-2">
                 <GraduationCap className="h-5 w-5" />
@@ -301,7 +301,7 @@ const SubjectTeacher = () => {
                   <div className="space-y-2">
                     <Label className="text-sm font-medium">Class *</Label>
                     <Select value={selectedClass} onValueChange={setSelectedClass}>
-                      <SelectTrigger className="h-11 border-gray-200 focus:border-blue-500 focus:ring-blue-500">
+                      <SelectTrigger className="h-11 border-border focus:border-primary focus:ring-primary">
                         <SelectValue placeholder="Select class" />
                       </SelectTrigger>
                       <SelectContent>
@@ -317,7 +317,7 @@ const SubjectTeacher = () => {
                   <div className="space-y-2">
                     <Label className="text-sm font-medium">Section *</Label>
                     <Select value={selectedSection} onValueChange={setSelectedSection} disabled={!selectedClass}>
-                      <SelectTrigger className="h-11 border-gray-200 focus:border-blue-500 focus:ring-blue-500">
+                      <SelectTrigger className="h-11 border-border focus:border-primary focus:ring-primary">
                         <SelectValue placeholder="Select section" />
                       </SelectTrigger>
                       <SelectContent>
@@ -334,7 +334,7 @@ const SubjectTeacher = () => {
                 <div className="space-y-2">
                   <Label className="text-sm font-medium">Subject *</Label>
                   <Select value={selectedSubject} onValueChange={setSelectedSubject}>
-                    <SelectTrigger className="h-11 border-gray-200 focus:border-blue-500 focus:ring-blue-500">
+                    <SelectTrigger className="h-11 border-border focus:border-primary focus:ring-primary">
                       <SelectValue placeholder="Select subject" />
                     </SelectTrigger>
                     <SelectContent>
@@ -350,15 +350,15 @@ const SubjectTeacher = () => {
                 <div className="space-y-3">
                   <Label className="text-sm font-medium">Teachers *</Label>
                   <div className="relative">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <Input
                       placeholder="Search teachers..."
                       value={teacherSearch}
                       onChange={(e) => setTeacherSearch(e.target.value)}
-                      className="pl-9 h-11 border-gray-200 focus:border-blue-500 focus:ring-blue-500"
+                      className="pl-9 h-11 border-border focus:border-primary focus:ring-primary"
                     />
                   </div>
-                  <div className="border rounded-lg p-4 max-h-64 overflow-y-auto bg-white space-y-1">
+                  <div className="border rounded-lg p-4 max-h-64 overflow-y-auto bg-background space-y-1">
                     {filteredTeachers.length === 0 ? (
                       <p className="text-sm text-muted-foreground text-center py-4">No teachers found</p>
                     ) : (
@@ -367,8 +367,8 @@ const SubjectTeacher = () => {
                           key={teacher.id} 
                           className={`flex items-center gap-3 p-2.5 rounded-lg cursor-pointer transition-all ${
                             selectedTeachers.includes(teacher.id) 
-                              ? 'bg-blue-50 border border-blue-200' 
-                              : 'hover:bg-gray-50 border border-transparent'
+                              ? 'bg-primary/10 border border-primary/30' 
+                              : 'hover:bg-muted/50 border border-transparent'
                           }`}
                           onClick={() => handleTeacherToggle(teacher.id)}
                         >
@@ -376,9 +376,9 @@ const SubjectTeacher = () => {
                             id={`teacher-${teacher.id}`}
                             checked={selectedTeachers.includes(teacher.id)}
                             onCheckedChange={() => handleTeacherToggle(teacher.id)}
-                            className="data-[state=checked]:bg-blue-600 data-[state=checked]:border-blue-600"
+                            className="data-[state=checked]:bg-primary data-[state=checked]:border-primary"
                           />
-                          <Avatar className="h-9 w-9 border-2 border-white shadow-sm">
+                          <Avatar className="h-9 w-9 border-2 border-background shadow-sm">
                             <AvatarImage src={teacher.photo_url} alt={getTeacherName(teacher)} />
                             <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-500 text-white text-xs font-medium">
                               {getInitials(teacher.full_name)}
@@ -393,19 +393,19 @@ const SubjectTeacher = () => {
                             )}
                           </div>
                           {selectedTeachers.includes(teacher.id) && (
-                            <CheckCircle2 className="h-5 w-5 text-blue-600 flex-shrink-0" />
+                            <CheckCircle2 className="h-5 w-5 text-primary flex-shrink-0" />
                           )}
                         </div>
                       ))
                     )}
                   </div>
                   {selectedTeachers.length > 0 && (
-                    <p className="text-xs text-blue-600 font-medium">{selectedTeachers.length} teacher(s) selected</p>
+                    <p className="text-xs text-primary font-medium">{selectedTeachers.length} teacher(s) selected</p>
                   )}
                 </div>
               </form>
             </CardContent>
-            <CardFooter className="bg-gray-50/50 rounded-b-lg">
+            <CardFooter className="bg-muted/50 rounded-b-lg">
               <Button 
                 onClick={handleSubmit} 
                 disabled={loading} 
@@ -435,17 +435,17 @@ const SubjectTeacher = () => {
             <CardContent className="p-0">
               {assignments.length === 0 ? (
                 <div className="text-center py-12 px-4">
-                  <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gray-100 mb-4">
-                    <BookOpen className="h-8 w-8 text-gray-400" />
+                  <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-muted mb-4">
+                    <BookOpen className="h-8 w-8 text-muted-foreground" />
                   </div>
-                  <p className="text-gray-500 font-medium">No assignments yet</p>
-                  <p className="text-sm text-gray-400 mt-1">Use the form to assign teachers to subjects</p>
+                  <p className="text-muted-foreground font-medium">No assignments yet</p>
+                  <p className="text-sm text-muted-foreground/70 mt-1">Use the form to assign teachers to subjects</p>
                 </div>
               ) : (
                 <div className="overflow-x-auto">
                   <Table>
                     <TableHeader>
-                      <TableRow className="bg-gray-50/80">
+                      <TableRow className="bg-muted/50">
                         <TableHead className="font-semibold">Class</TableHead>
                         <TableHead className="font-semibold">Section</TableHead>
                         <TableHead className="font-semibold">Subject</TableHead>
@@ -455,23 +455,23 @@ const SubjectTeacher = () => {
                     </TableHeader>
                     <TableBody>
                       {assignments.map((a) => (
-                        <TableRow key={a.id} className="hover:bg-blue-50/30 transition-colors">
+                        <TableRow key={a.id} className="hover:bg-muted/50 transition-colors">
                           <TableCell>
-                            <Badge variant="secondary" className="bg-blue-100 text-blue-700 font-medium">
+                            <Badge variant="secondary" className="bg-primary/10 text-primary font-medium">
                               {a.classes?.name || '-'}
                             </Badge>
                           </TableCell>
                           <TableCell>
-                            <Badge variant="outline" className="border-gray-300">
+                            <Badge variant="outline" className="border-border">
                               {a.sections?.name || '-'}
                             </Badge>
                           </TableCell>
                           <TableCell>
-                            <span className="font-medium text-gray-700">{a.subjects?.name || '-'}</span>
+                            <span className="font-medium text-foreground">{a.subjects?.name || '-'}</span>
                           </TableCell>
                           <TableCell>
                             <div className="flex items-center gap-2">
-                              <Avatar className="h-8 w-8 border border-gray-200">
+                              <Avatar className="h-8 w-8 border border-border">
                                 <AvatarImage src={a.teacher?.photo_url} alt={a.teacher?.full_name} />
                                 <AvatarFallback className="bg-gradient-to-br from-green-500 to-teal-500 text-white text-xs">
                                   {getInitials(a.teacher?.full_name)}
@@ -486,7 +486,7 @@ const SubjectTeacher = () => {
                                 variant="ghost" 
                                 size="icon" 
                                 onClick={() => startEdit(a)}
-                                className="h-8 w-8 hover:bg-blue-100 hover:text-blue-600"
+                                className="h-8 w-8 hover:bg-primary/10 hover:text-primary"
                               >
                                 <Edit2 className="h-4 w-4" />
                               </Button>
@@ -496,7 +496,7 @@ const SubjectTeacher = () => {
                                     variant="ghost" 
                                     size="icon" 
                                     disabled={isDeleting === a.id}
-                                    className="h-8 w-8 hover:bg-red-100 hover:text-red-600"
+                                    className="h-8 w-8 hover:bg-destructive/10 hover:text-destructive"
                                   >
                                     {isDeleting === a.id ? (
                                       <Loader2 className="h-4 w-4 animate-spin" />
@@ -547,23 +547,23 @@ const SubjectTeacher = () => {
             </AlertDialogHeader>
             <div className="py-4">
               <Label className="text-sm font-medium mb-3 block">Select New Teacher</Label>
-              <div className="border rounded-lg p-3 max-h-64 overflow-y-auto space-y-1">
+              <div className="border rounded-lg p-3 max-h-64 overflow-y-auto space-y-1 bg-background">
                 {teachers.map((teacher) => (
                   <div 
                     key={teacher.id} 
                     className={`flex items-center gap-3 p-2.5 rounded-lg cursor-pointer transition-all ${
                       editTeachers.includes(teacher.id) 
-                        ? 'bg-blue-50 border border-blue-200' 
-                        : 'hover:bg-gray-50 border border-transparent'
+                        ? 'bg-primary/10 border border-primary/30' 
+                        : 'hover:bg-muted/50 border border-transparent'
                     }`}
                     onClick={() => handleEditTeacherToggle(teacher.id)}
                   >
                     <Checkbox
                       checked={editTeachers.includes(teacher.id)}
                       onCheckedChange={() => handleEditTeacherToggle(teacher.id)}
-                      className="data-[state=checked]:bg-blue-600 data-[state=checked]:border-blue-600"
+                      className="data-[state=checked]:bg-primary data-[state=checked]:border-primary"
                     />
-                    <Avatar className="h-8 w-8 border border-gray-200">
+                    <Avatar className="h-8 w-8 border border-border">
                       <AvatarImage src={teacher.photo_url} alt={getTeacherName(teacher)} />
                       <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-500 text-white text-xs">
                         {getInitials(teacher.full_name)}

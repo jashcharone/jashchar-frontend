@@ -1,5 +1,5 @@
 ﻿import React, { useState, useEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import DashboardLayout from '@/components/DashboardLayout';
 import { supabase } from '@/lib/customSupabaseClient';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
@@ -18,6 +18,8 @@ const SearchDueFees = () => {
     const { selectedBranch } = useBranch();
     const { toast } = useToast();
     const navigate = useNavigate();
+    const { roleSlug } = useParams();
+    const basePath = roleSlug || 'super-admin';
     
     // Unified branchId with fallback for staff users
     const branchId = selectedBranch?.id || user?.profile?.branch_id || user?.user_metadata?.branch_id;
@@ -83,7 +85,7 @@ const SearchDueFees = () => {
     };
 
     const handleAddFees = (studentId, feeGroupNames) => {
-        navigate(`/super-admin/fees-collection/student-fees/${studentId}`);
+        navigate(`/${basePath}/fees-collection/student-fees/${studentId}`);
     };
 
     return (

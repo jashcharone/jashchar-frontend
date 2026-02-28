@@ -5,7 +5,7 @@
 // ============================================================================
 
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import DashboardLayout from '@/components/DashboardLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -193,6 +193,8 @@ const AnimatedStatCard = ({ title, value, icon: Icon, color, trend, trendValue, 
 
 const OnlineAdmissionList = () => {
   const navigate = useNavigate();
+  const { roleSlug } = useParams();
+  const basePath = roleSlug || 'super-admin';
   const { toast } = useToast();
   const { selectedBranch } = useBranch();
   const { organizationId } = useAuth();
@@ -1126,7 +1128,7 @@ const OnlineAdmissionList = () => {
                                     <DropdownMenuItem onClick={() => setViewDialog({ open: true, admission })}>
                                       <Eye className="mr-2 h-4 w-4" /> View Details
                                     </DropdownMenuItem>
-                                    <DropdownMenuItem onClick={() => navigate(`/super-admin/student-information/online-admission/edit/${admission.id}`)}>
+                                    <DropdownMenuItem onClick={() => navigate(`/${basePath}/student-information/online-admission/edit/${admission.id}`)}>
                                       <Edit2 className="mr-2 h-4 w-4" /> Edit & Enroll
                                     </DropdownMenuItem>
                                     <DropdownMenuSeparator />
@@ -1823,7 +1825,7 @@ const OnlineAdmissionList = () => {
               </Button>
               <Button 
                 onClick={() => {
-                  navigate(`/super-admin/student-information/online-admission/edit/${viewDialog.admission?.id}`);
+                  navigate(`/${basePath}/student-information/online-admission/edit/${viewDialog.admission?.id}`);
                   setViewDialog({ open: false, admission: null });
                 }}
                 className="bg-gradient-to-r from-indigo-600 to-purple-600"

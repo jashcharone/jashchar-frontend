@@ -17,7 +17,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { useBranch } from '@/contexts/BranchContext';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { format } from 'date-fns';
 import WelcomeMessage from '@/components/WelcomeMessage';
 import StatCard from '@/components/StatCard';
@@ -26,6 +26,8 @@ const SecurityGuardDashboard = () => {
     const { user, school } = useAuth();
     const { selectedBranch } = useBranch();
     const navigate = useNavigate();
+    const { roleSlug } = useParams();
+    const basePath = roleSlug || 'super-admin';
     
     const [stats] = useState({
         visitorsToday: 12,
@@ -48,8 +50,8 @@ const SecurityGuardDashboard = () => {
     ];
 
     const quickActions = [
-        { label: 'Register Visitor', icon: UserCheck, path: '/super-admin/front-office/visitor-book', color: 'bg-blue-500' },
-        { label: 'Gate Pass', icon: DoorOpen, path: '/super-admin/front-office/gate-pass', color: 'bg-green-500' },
+        { label: 'Register Visitor', icon: UserCheck, path: `/${basePath}/front-office/visitor-book`, color: 'bg-blue-500' },
+        { label: 'Gate Pass', icon: DoorOpen, path: `/${basePath}/front-office/gate-pass`, color: 'bg-green-500' },
         { label: 'Emergency Alert', icon: AlertTriangle, path: '#', color: 'bg-red-500' },
         { label: 'Contact Admin', icon: Phone, path: '#', color: 'bg-purple-500' },
     ];

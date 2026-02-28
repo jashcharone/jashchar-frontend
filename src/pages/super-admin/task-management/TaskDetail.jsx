@@ -65,8 +65,9 @@ const UPDATE_TYPE_ICONS = {
 };
 
 const TaskDetail = () => {
-  const { id } = useParams();
+  const { id, roleSlug } = useParams();
   const navigate = useNavigate();
+  const basePath = roleSlug || 'super-admin';
   const [searchParams] = useSearchParams();
   const { user } = useAuth();
   const { toast } = useToast();
@@ -106,7 +107,7 @@ const TaskDetail = () => {
         title: 'Error loading task',
         description: error.response?.data?.message || 'Task not found'
       });
-      navigate('/super-admin/task-management/tasks');
+      navigate(`/${basePath}/task-management/tasks`);
     } finally {
       setLoading(false);
     }
@@ -240,7 +241,7 @@ const TaskDetail = () => {
       const response = await api.delete(`/tasks/${id}`);
       if (response.data.success) {
         toast({ title: 'Task deleted' });
-        navigate('/super-admin/task-management/tasks');
+        navigate(`/${basePath}/task-management/tasks`);
       }
     } catch (error) {
       toast({ variant: 'destructive', title: 'Failed to delete task' });
@@ -300,7 +301,7 @@ const TaskDetail = () => {
       <DashboardLayout>
         <div className="flex flex-col items-center justify-center h-64">
           <h2 className="text-xl font-bold">Task not found</h2>
-          <Button onClick={() => navigate('/super-admin/task-management/tasks')} className="mt-4">
+          <Button onClick={() => navigate(`/${basePath}/task-management/tasks`)} className="mt-4">
             Back to Tasks
           </Button>
         </div>
@@ -317,7 +318,7 @@ const TaskDetail = () => {
             <Button 
               variant="ghost" 
               size="sm" 
-              onClick={() => navigate('/super-admin/task-management/tasks')}
+              onClick={() => navigate(`/${basePath}/task-management/tasks`)}
               className="mb-2"
             >
               <ArrowLeft className="mr-2 h-4 w-4" />
@@ -359,7 +360,7 @@ const TaskDetail = () => {
             </PermissionButton>
 
             <PermissionButton moduleSlug="task_management.tasks" action="edit">
-              <Button variant="outline" onClick={() => navigate(`/super-admin/task-management/tasks/${id}/edit`)}>
+              <Button variant="outline" onClick={() => navigate(`/${basePath}/task-management/tasks/${id}/edit`)}>
                 <Edit className="mr-2 h-4 w-4" />
                 Edit
               </Button>

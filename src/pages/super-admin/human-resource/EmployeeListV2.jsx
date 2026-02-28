@@ -4,7 +4,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -21,6 +21,8 @@ import { Plus, Search, Eye, Edit, Trash2, Download, Filter, Users, Building, Bri
 
 const EmployeeListV2 = () => {
     const navigate = useNavigate();
+    const { roleSlug } = useParams();
+    const basePath = roleSlug || 'super-admin';
     const { user } = useAuth();
     const { toast } = useToast();
     
@@ -115,7 +117,7 @@ const EmployeeListV2 = () => {
                     <h1 className="text-2xl font-bold">Employee Directory</h1>
                     <p className="text-gray-500">Manage all employees in your organization</p>
                 </div>
-                <Button onClick={() => navigate('/super-admin/human-resource/add-employee-v2')}>
+                <Button onClick={() => navigate(`/${basePath}/human-resource/add-employee-v2`)}>
                     <Plus className="w-4 h-4 mr-2" /> Add Employee
                 </Button>
             </div>
@@ -223,7 +225,7 @@ const EmployeeListV2 = () => {
                         <div className="flex flex-col items-center justify-center h-64 text-gray-500">
                             <Users className="w-12 h-12 mb-4" />
                             <p>No employees found</p>
-                            <Button variant="link" onClick={() => navigate('/super-admin/human-resource/add-employee-v2')}>
+                            <Button variant="link" onClick={() => navigate(`/${basePath}/human-resource/add-employee-v2`)}>
                                 Add your first employee
                             </Button>
                         </div>
@@ -288,7 +290,7 @@ const EmployeeListV2 = () => {
                                                 <Button 
                                                     variant="ghost" 
                                                     size="sm"
-                                                    onClick={() => navigate(`/super-admin/human-resource/edit-employee-v2/${emp.id}`)}
+                                                    onClick={() => navigate(`/${basePath}/human-resource/edit-employee-v2/${emp.id}`)}
                                                 >
                                                     <Edit className="w-4 h-4" />
                                                 </Button>

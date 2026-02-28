@@ -4,7 +4,7 @@
  */
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import DashboardLayout from '@/components/DashboardLayout';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { useToast } from '@/components/ui/use-toast';
@@ -44,6 +44,8 @@ const MyTasks = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
+  const { roleSlug } = useParams();
+  const basePath = roleSlug || 'super-admin';
 
   const [assignments, setAssignments] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -302,7 +304,7 @@ const MyTasks = () => {
                             </div>
                             <h3 
                               className="font-semibold cursor-pointer hover:text-primary"
-                              onClick={() => navigate(`/super-admin/task-management/tasks/${task?.id}`)}
+                              onClick={() => navigate(`/${basePath}/task-management/tasks/${task?.id}`)}
                             >
                               {task?.title}
                             </h3>
@@ -376,7 +378,7 @@ const MyTasks = () => {
                             <Button 
                               size="sm" 
                               variant="ghost"
-                              onClick={() => navigate(`/super-admin/task-management/tasks/${task?.id}`)}
+                              onClick={() => navigate(`/${basePath}/task-management/tasks/${task?.id}`)}
                             >
                               <Eye className="h-4 w-4" />
                             </Button>

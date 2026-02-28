@@ -10,7 +10,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { 
     Users, GraduationCap, Briefcase, UserPlus, 
     Activity, Shield, Key, FileText, 
@@ -26,6 +26,8 @@ import api from '@/lib/api';
 
 const UserManagementDashboard = () => {
     const navigate = useNavigate();
+    const { roleSlug } = useParams();
+    const basePath = roleSlug || 'super-admin';
     const { organizationId } = useAuth();
     const { branches, selectedBranch } = useBranch();
     
@@ -127,7 +129,7 @@ const UserManagementDashboard = () => {
                     value={stats?.students?.total || 0}
                     subValue={`${stats?.students?.withLogin || 0} with login, ${stats?.students?.withoutLogin || 0} without`}
                     color="text-blue-500"
-                    onClick={() => navigate('/super-admin/user-management/student-users')}
+                    onClick={() => navigate(`/${basePath}/user-management/student-users`)}
                 />
                 <StatCard
                     title="Total Parents"
@@ -135,7 +137,7 @@ const UserManagementDashboard = () => {
                     value={stats?.parents?.total || 0}
                     subValue={`${stats?.parents?.withLogin || 0} with login, ${stats?.parents?.withoutLogin || 0} without`}
                     color="text-green-500"
-                    onClick={() => navigate('/super-admin/user-management/parent-users')}
+                    onClick={() => navigate(`/${basePath}/user-management/parent-users`)}
                 />
                 <StatCard
                     title="Total Staff"
@@ -143,7 +145,7 @@ const UserManagementDashboard = () => {
                     value={stats?.staff?.total || 0}
                     subValue={`${stats?.staff?.withLogin || 0} with login, ${stats?.staff?.withoutLogin || 0} without`}
                     color="text-purple-500"
-                    onClick={() => navigate('/super-admin/user-management/staff-users')}
+                    onClick={() => navigate(`/${basePath}/user-management/staff-users`)}
                 />
                 <StatCard
                     title="Active Sessions"
@@ -151,7 +153,7 @@ const UserManagementDashboard = () => {
                     value={stats?.sessions?.active || 0}
                     subValue="Currently online"
                     color="text-orange-500"
-                    onClick={() => navigate('/super-admin/user-management/active-sessions')}
+                    onClick={() => navigate(`/${basePath}/user-management/active-sessions`)}
                 />
             </div>
 
@@ -206,42 +208,42 @@ const UserManagementDashboard = () => {
                         description="Manage student login accounts"
                         icon={GraduationCap}
                         color="bg-blue-500"
-                        onClick={() => navigate('/super-admin/user-management/student-users')}
+                        onClick={() => navigate(`/${basePath}/user-management/student-users`)}
                     />
                     <QuickActionCard
                         title="Parent Users"
                         description="Manage parent login accounts"
                         icon={UserPlus}
                         color="bg-green-500"
-                        onClick={() => navigate('/super-admin/user-management/parent-users')}
+                        onClick={() => navigate(`/${basePath}/user-management/parent-users`)}
                     />
                     <QuickActionCard
                         title="Staff Users"
                         description="Manage staff login accounts"
                         icon={Briefcase}
                         color="bg-purple-500"
-                        onClick={() => navigate('/super-admin/user-management/staff-users')}
+                        onClick={() => navigate(`/${basePath}/user-management/staff-users`)}
                     />
                     <QuickActionCard
                         title="All Users"
                         description="View all users in one place"
                         icon={Users}
                         color="bg-gray-700"
-                        onClick={() => navigate('/super-admin/user-management/all-users')}
+                        onClick={() => navigate(`/${basePath}/user-management/all-users`)}
                     />
                     <QuickActionCard
                         title="Login Logs"
                         description="View login history"
                         icon={FileText}
                         color="bg-orange-500"
-                        onClick={() => navigate('/super-admin/user-management/login-logs')}
+                        onClick={() => navigate(`/${basePath}/user-management/login-logs`)}
                     />
                     <QuickActionCard
                         title="Security Settings"
                         description="Configure security policies"
                         icon={Shield}
                         color="bg-red-500"
-                        onClick={() => navigate('/super-admin/user-management/security-settings')}
+                        onClick={() => navigate(`/${basePath}/user-management/security-settings`)}
                     />
                 </div>
             </div>
@@ -261,7 +263,7 @@ const UserManagementDashboard = () => {
                                 <Button 
                                     variant="outline" 
                                     className="border-yellow-500 text-yellow-700 hover:bg-yellow-100"
-                                    onClick={() => navigate('/super-admin/user-management/student-users?has_login=false')}
+                                    onClick={() => navigate(`/${basePath}/user-management/student-users?has_login=false`)}
                                 >
                                     <GraduationCap className="h-4 w-4 mr-2" />
                                     {stats.students.withoutLogin} Students need login
@@ -271,7 +273,7 @@ const UserManagementDashboard = () => {
                                 <Button 
                                     variant="outline"
                                     className="border-yellow-500 text-yellow-700 hover:bg-yellow-100"
-                                    onClick={() => navigate('/super-admin/user-management/staff-users?has_login=false')}
+                                    onClick={() => navigate(`/${basePath}/user-management/staff-users?has_login=false`)}
                                 >
                                     <Briefcase className="h-4 w-4 mr-2" />
                                     {stats.staff.withoutLogin} Staff need login
@@ -281,7 +283,7 @@ const UserManagementDashboard = () => {
                                 <Button 
                                     variant="outline"
                                     className="border-yellow-500 text-yellow-700 hover:bg-yellow-100"
-                                    onClick={() => navigate('/super-admin/user-management/parent-users?has_login=false')}
+                                    onClick={() => navigate(`/${basePath}/user-management/parent-users?has_login=false`)}
                                 >
                                     <UserPlus className="h-4 w-4 mr-2" />
                                     {stats.parents.withoutLogin} Parents need login

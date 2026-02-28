@@ -19,7 +19,7 @@ import {
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { useBranch } from '@/contexts/BranchContext';
 import { supabase } from '@/lib/customSupabaseClient';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import WelcomeMessage from '@/components/WelcomeMessage';
 import StatCard from '@/components/StatCard';
 
@@ -27,6 +27,8 @@ const HostelWardenDashboard = () => {
     const { user, school, currentSessionId } = useAuth();
     const { selectedBranch } = useBranch();
     const navigate = useNavigate();
+    const { roleSlug } = useParams();
+    const basePath = roleSlug || 'super-admin';
     
     const [loading, setLoading] = useState(true);
     const [stats, setStats] = useState({
@@ -76,10 +78,10 @@ const HostelWardenDashboard = () => {
     };
 
     const quickActions = [
-        { label: 'Room Allocation', icon: Key, path: '/super-admin/hostel/rooms', color: 'bg-blue-500' },
-        { label: 'Student List', icon: Users, path: '/super-admin/hostel/hostel-students', color: 'bg-green-500' },
-        { label: 'Attendance', icon: ClipboardList, path: '/super-admin/hostel/attendance', color: 'bg-purple-500' },
-        { label: 'Mess Management', icon: UtensilsCrossed, path: '/super-admin/hostel', color: 'bg-orange-500' },
+        { label: 'Room Allocation', icon: Key, path: `/${basePath}/hostel/rooms`, color: 'bg-blue-500' },
+        { label: 'Student List', icon: Users, path: `/${basePath}/hostel/hostel-students`, color: 'bg-green-500' },
+        { label: 'Attendance', icon: ClipboardList, path: `/${basePath}/hostel/attendance`, color: 'bg-purple-500' },
+        { label: 'Mess Management', icon: UtensilsCrossed, path: `/${basePath}/hostel`, color: 'bg-orange-500' },
     ];
 
     const recentActivities = [

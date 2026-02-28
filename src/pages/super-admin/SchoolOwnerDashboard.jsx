@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import DashboardLayout from '@/components/DashboardLayout';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { useBranch } from '@/contexts/BranchContext';
@@ -775,15 +775,18 @@ const SchoolOwnerDashboard = () => {
   }, [user, currentSessionId, selectedBranch]);
 
   // Quick Actions Configuration
+  const { roleSlug } = useParams();
+  const basePath = roleSlug || 'super-admin';
+  
   const quickActions = [
-    { name: 'Student Details', path: '/super-admin/student-information/details', icon: Users, gradient: gradients.primary, description: 'View all students' },
-    { name: 'New Admission', path: '/super-admin/student-information/admission', icon: UserPlus, gradient: gradients.success, description: 'Add new student' },
-    { name: 'Collect Fees', path: '/super-admin/fees-collection/collect-fees', icon: Wallet, gradient: gradients.warning, description: 'Fee collection' },
-    { name: 'Add Income', path: '/super-admin/finance/add-income', icon: TrendingUp, gradient: gradients.info, description: 'Record income' },
-    { name: 'Add Expense', path: '/super-admin/finance/add-expense', icon: Receipt, gradient: gradients.danger, description: 'Record expense' },
-    { name: 'Staff Directory', path: '/super-admin/human-resource/employees', icon: Contact, gradient: gradients.cosmic, description: 'Manage staff' },
-    { name: 'Attendance', path: '/super-admin/attendance/student-attendance', icon: CalendarCheck, gradient: gradients.aurora, description: 'Mark attendance' },
-    { name: 'Notice Board', path: '/super-admin/communicate/notice-board', icon: Clipboard, gradient: gradients.sunset, description: 'Announcements' },
+    { name: 'Student Details', path: `/${basePath}/student-information/details`, icon: Users, gradient: gradients.primary, description: 'View all students' },
+    { name: 'New Admission', path: `/${basePath}/student-information/admission`, icon: UserPlus, gradient: gradients.success, description: 'Add new student' },
+    { name: 'Collect Fees', path: `/${basePath}/fees-collection/collect-fees`, icon: Wallet, gradient: gradients.warning, description: 'Fee collection' },
+    { name: 'Add Income', path: `/${basePath}/finance/add-income`, icon: TrendingUp, gradient: gradients.info, description: 'Record income' },
+    { name: 'Add Expense', path: `/${basePath}/finance/add-expense`, icon: Receipt, gradient: gradients.danger, description: 'Record expense' },
+    { name: 'Staff Directory', path: `/${basePath}/human-resource/employees`, icon: Contact, gradient: gradients.cosmic, description: 'Manage staff' },
+    { name: 'Attendance', path: `/${basePath}/attendance/student-attendance`, icon: CalendarCheck, gradient: gradients.aurora, description: 'Mark attendance' },
+    { name: 'Notice Board', path: `/${basePath}/communicate/notice-board`, icon: Clipboard, gradient: gradients.sunset, description: 'Announcements' },
   ];
 
   // Recent Activity Mock Data

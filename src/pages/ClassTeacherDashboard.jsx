@@ -19,7 +19,7 @@ import {
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { useBranch } from '@/contexts/BranchContext';
 import { supabase } from '@/lib/customSupabaseClient';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import WelcomeMessage from '@/components/WelcomeMessage';
 import StatCard from '@/components/StatCard';
 
@@ -27,6 +27,8 @@ const ClassTeacherDashboard = () => {
     const { user, school, currentSessionId } = useAuth();
     const { selectedBranch } = useBranch();
     const navigate = useNavigate();
+    const { roleSlug } = useParams();
+    const basePath = roleSlug || 'super-admin';
     
     const [loading, setLoading] = useState(true);
     const [stats, setStats] = useState({
@@ -64,10 +66,10 @@ const ClassTeacherDashboard = () => {
     };
 
     const quickActions = [
-        { label: 'Mark Attendance', icon: ClipboardCheck, path: '/super-admin/attendance/student-attendance', color: 'bg-green-500' },
-        { label: 'Class Students', icon: Users, path: '/super-admin/student-details', color: 'bg-blue-500' },
-        { label: 'Leave Requests', icon: FileText, path: '/super-admin/attendance/approve-leave', color: 'bg-orange-500' },
-        { label: 'Send Notice', icon: MessageSquare, path: '/super-admin/communicate/send-email', color: 'bg-purple-500' },
+        { label: 'Mark Attendance', icon: ClipboardCheck, path: `/${basePath}/attendance/student-attendance`, color: 'bg-green-500' },
+        { label: 'Class Students', icon: Users, path: `/${basePath}/student-details`, color: 'bg-blue-500' },
+        { label: 'Leave Requests', icon: FileText, path: `/${basePath}/attendance/approve-leave`, color: 'bg-orange-500' },
+        { label: 'Send Notice', icon: MessageSquare, path: `/${basePath}/communicate/send-email`, color: 'bg-purple-500' },
     ];
 
     const recentActivity = [

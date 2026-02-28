@@ -4,7 +4,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -19,6 +19,8 @@ import { ArrowLeft, Save, User, Briefcase, Building, CreditCard, FileCheck } fro
 
 const AddEmployeeV2 = () => {
     const navigate = useNavigate();
+    const { roleSlug } = useParams();
+    const basePath = roleSlug || 'super-admin';
     const { user } = useAuth();
     const { toast } = useToast();
     
@@ -119,7 +121,7 @@ const AddEmployeeV2 = () => {
             
             await hrApi.createEmployee(payload);
             toast({ title: 'Success', description: 'Employee created successfully' });
-            navigate('/super-admin/human-resource/employee-list-v2');
+            navigate(`/${basePath}/human-resource/employee-list-v2`);
         } catch (error) {
             toast({ 
                 title: 'Error', 

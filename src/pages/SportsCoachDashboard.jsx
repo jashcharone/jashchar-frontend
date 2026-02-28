@@ -17,7 +17,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { useBranch } from '@/contexts/BranchContext';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import WelcomeMessage from '@/components/WelcomeMessage';
 import StatCard from '@/components/StatCard';
 
@@ -25,6 +25,8 @@ const SportsCoachDashboard = () => {
     const { user, school } = useAuth();
     const { selectedBranch } = useBranch();
     const navigate = useNavigate();
+    const { roleSlug } = useParams();
+    const basePath = roleSlug || 'super-admin';
     
     const [stats] = useState({
         totalTeams: 8,
@@ -47,10 +49,10 @@ const SportsCoachDashboard = () => {
     ];
 
     const quickActions = [
-        { label: 'Class Schedule', icon: Calendar, path: '/super-admin/academics/class-timetable', color: 'bg-blue-500' },
-        { label: 'Student Attendance', icon: ClipboardList, path: '/super-admin/attendance/student-attendance', color: 'bg-green-500' },
-        { label: 'Equipment', icon: Dumbbell, path: '/super-admin/inventory/item-list', color: 'bg-purple-500' },
-        { label: 'Events Calendar', icon: Trophy, path: '/super-admin/annual-calendar', color: 'bg-orange-500' },
+        { label: 'Class Schedule', icon: Calendar, path: `/${basePath}/academics/class-timetable`, color: 'bg-blue-500' },
+        { label: 'Student Attendance', icon: ClipboardList, path: `/${basePath}/attendance/student-attendance`, color: 'bg-green-500' },
+        { label: 'Equipment', icon: Dumbbell, path: `/${basePath}/inventory/item-list`, color: 'bg-purple-500' },
+        { label: 'Events Calendar', icon: Trophy, path: `/${basePath}/annual-calendar`, color: 'bg-orange-500' },
     ];
 
     const teams = [

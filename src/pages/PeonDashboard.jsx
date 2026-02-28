@@ -17,7 +17,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { useBranch } from '@/contexts/BranchContext';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { format } from 'date-fns';
 import WelcomeMessage from '@/components/WelcomeMessage';
 import StatCard from '@/components/StatCard';
@@ -26,6 +26,8 @@ const PeonDashboard = () => {
     const { user } = useAuth();
     const { selectedBranch } = useBranch();
     const navigate = useNavigate();
+    const { roleSlug } = useParams();
+    const basePath = roleSlug || 'super-admin';
     
     const [stats] = useState({
         pendingTasks: 5,
@@ -44,7 +46,7 @@ const PeonDashboard = () => {
     ];
 
     const quickActions = [
-        { label: 'View All Tasks', icon: ClipboardList, path: '/super-admin/task-management', color: 'bg-blue-500' },
+        { label: 'View All Tasks', icon: ClipboardList, path: `/${basePath}/task-management`, color: 'bg-blue-500' },
         { label: 'Mark Complete', icon: CheckCircle2, path: '#', color: 'bg-green-500' },
         { label: 'Notifications', icon: Bell, path: '#', color: 'bg-orange-500' },
         { label: 'Contact Admin', icon: User, path: '#', color: 'bg-purple-500' },

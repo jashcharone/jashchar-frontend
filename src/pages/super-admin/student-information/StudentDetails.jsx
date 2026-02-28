@@ -24,7 +24,7 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { format, differenceInYears } from 'date-fns';
 import { ROUTES } from '@/registry/routeRegistry';
 
@@ -34,6 +34,10 @@ const StudentDetails = () => {
     const { selectedBranch } = useBranch();
     const { toast } = useToast();
     const navigate = useNavigate();
+    const { roleSlug } = useParams();
+    
+    // Dynamic base path for navigation (uses roleSlug from URL or defaults to super-admin)
+    const basePath = roleSlug || 'super-admin';
     const [loading, setLoading] = useState(false);
     const [students, setStudents] = useState([]);
     const [classes, setClasses] = useState([]);
@@ -602,7 +606,7 @@ const StudentDetails = () => {
                                             </td>
                                             <td className="p-3">
                                                 <div className="flex items-center gap-2">
-                                                    <span className="font-medium text-primary hover:underline cursor-pointer" onClick={() => navigate(ROUTES.SUPER_ADMIN.STUDENT_PROFILE.replace(':studentId', s.id))}>{s.full_name}</span>
+                                                    <span className="font-medium text-primary hover:underline cursor-pointer" onClick={() => navigate(`/${basePath}/student-information/profile/${s.id}`)}>{s.full_name}</span>
                                                     {s.is_disabled && (
                                                         <span className="px-1.5 py-0.5 text-[10px] font-medium bg-red-100 text-red-700 rounded dark:bg-red-900 dark:text-red-300">
                                                             DISABLED
@@ -639,11 +643,11 @@ const StudentDetails = () => {
                                             </td>
                                             <td className="p-3">
                                                 <div className="flex items-center justify-center gap-1">
-                                                    <Button variant="ghost" size="icon" className="h-8 w-8 bg-blue-500/10 hover:bg-blue-500/20" onClick={() => navigate(ROUTES.SUPER_ADMIN.STUDENT_PROFILE.replace(':studentId', s.id))} title="View">
+                                                    <Button variant="ghost" size="icon" className="h-8 w-8 bg-blue-500/10 hover:bg-blue-500/20" onClick={() => navigate(`/${basePath}/student-information/profile/${s.id}`)} title="View">
                                                         <Eye className="h-4 w-4 text-blue-600" />
                                                     </Button>
                                                     {canEdit('student_information.student_details') && (
-                                                        <Button variant="ghost" size="icon" className="h-8 w-8 bg-orange-500/10 hover:bg-orange-500/20" onClick={() => navigate(ROUTES.SUPER_ADMIN.EDIT_STUDENT.replace(':id', s.id))} title="Edit">
+                                                        <Button variant="ghost" size="icon" className="h-8 w-8 bg-orange-500/10 hover:bg-orange-500/20" onClick={() => navigate(`/${basePath}/student-information/edit/${s.id}`)} title="Edit">
                                                             <Edit className="h-4 w-4 text-orange-600" />
                                                         </Button>
                                                     )}

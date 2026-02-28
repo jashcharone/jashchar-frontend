@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent } from "@/components/ui/card";
 import { Loader2, Search, Grid, List, Eye, Edit, Phone, MapPin, Plus } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { ROUTES } from '@/registry/routeRegistry';
 import {
   Table,
@@ -22,9 +22,13 @@ import {
 
 const StaffDirectory = () => {
     const navigate = useNavigate();
+    const { roleSlug } = useParams();
     const { user } = useAuth();
     const { selectedBranch } = useBranch();
     const { toast } = useToast();
+    
+    // Dynamic base path for navigation
+    const basePath = roleSlug || 'super-admin';
     const [viewMode, setViewMode] = useState('grid');
     const [loading, setLoading] = useState(true);
     const [employees, setEmployees] = useState([]);
@@ -131,15 +135,15 @@ const StaffDirectory = () => {
     });
 
     const handleViewProfile = (id) => {
-        navigate(ROUTES.SUPER_ADMIN.STAFF_PROFILE.replace(':employeeId', id));
+        navigate(`/${basePath}/human-resource/staff-profile/${id}`);
     };
     
     const handleEditProfile = (id) => {
-        navigate(ROUTES.SUPER_ADMIN.EDIT_EMPLOYEE.replace(':employeeId', id));
+        navigate(`/${basePath}/human-resource/edit-employee/${id}`);
     };
 
     const handleAddStaff = () => {
-        navigate(ROUTES.SUPER_ADMIN.ADD_EMPLOYEE);
+        navigate(`/${basePath}/human-resource/add-employee`);
     };
 
     return (

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import DashboardLayout from '@/components/DashboardLayout';
 import { supabase } from '@/lib/customSupabaseClient';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
@@ -666,6 +667,9 @@ const StepIndicator = ({ currentStep, steps }) => {
 // MAIN BULK UPLOAD COMPONENT
 // ═══════════════════════════════════════════════════════════════════════════════
 const BulkUpload = () => {
+    const navigate = useNavigate();
+    const { roleSlug } = useParams();
+    const basePath = roleSlug || 'super-admin';
     const { user, currentSessionId, organizationId } = useAuth();
     const { selectedBranch } = useBranch();
     const { toast } = useToast();
@@ -2605,7 +2609,7 @@ const BulkUpload = () => {
                                 Upload More Students
                             </Button>
                             <Button 
-                                onClick={() => window.location.href = '/super-admin/student-information/details'}
+                                onClick={() => navigate(`/${basePath}/student-information/details`)}
                                 className="gap-2"
                             >
                                 View All Students <ArrowRight className="h-4 w-4" />

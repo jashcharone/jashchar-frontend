@@ -4,7 +4,7 @@
  */
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import DashboardLayout from '@/components/DashboardLayout';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { useBranch } from '@/contexts/BranchContext';
@@ -74,6 +74,8 @@ const TaskDashboard = () => {
   const { selectedBranch } = useBranch();
   const { toast } = useToast();
   const navigate = useNavigate();
+  const { roleSlug } = useParams();
+  const basePath = roleSlug || 'super-admin';
   
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState(null);
@@ -368,7 +370,7 @@ const TaskDashboard = () => {
           </CardTitle>
           <CardDescription>Latest tasks created</CardDescription>
         </div>
-        <Button variant="ghost" size="sm" onClick={() => navigate('/super-admin/task-management/tasks')}>
+        <Button variant="ghost" size="sm" onClick={() => navigate(`/${basePath}/task-management/tasks`)}>
           View All <ArrowRight className="ml-2 h-4 w-4" />
         </Button>
       </CardHeader>
@@ -381,7 +383,7 @@ const TaskDashboard = () => {
               <div
                 key={task.id}
                 className="flex items-center justify-between p-3 rounded-lg border hover:bg-muted/50 cursor-pointer transition-colors"
-                onClick={() => navigate(`/super-admin/task-management/tasks/${task.id}`)}
+                onClick={() => navigate(`/${basePath}/task-management/tasks/${task.id}`)}
               >
                 <div className="flex-1">
                   <div className="flex items-center gap-2">
@@ -423,7 +425,7 @@ const TaskDashboard = () => {
           </CardTitle>
           <CardDescription>Tasks assigned to you</CardDescription>
         </div>
-        <Button variant="ghost" size="sm" onClick={() => navigate('/super-admin/task-management/my-tasks')}>
+        <Button variant="ghost" size="sm" onClick={() => navigate(`/${basePath}/task-management/my-tasks`)}>
           View All <ArrowRight className="ml-2 h-4 w-4" />
         </Button>
       </CardHeader>
@@ -436,7 +438,7 @@ const TaskDashboard = () => {
               <div
                 key={assignment.id}
                 className="p-3 rounded-lg border hover:bg-muted/50 cursor-pointer transition-colors"
-                onClick={() => navigate(`/super-admin/task-management/tasks/${assignment.task?.id}`)}
+                onClick={() => navigate(`/${basePath}/task-management/tasks/${assignment.task?.id}`)}
               >
                 <div className="flex items-center justify-between mb-2">
                   <span className="font-medium">{assignment.task?.title}</span>
@@ -483,7 +485,7 @@ const TaskDashboard = () => {
                 <div
                   key={task.id}
                   className="flex items-center justify-between p-3 rounded-lg border hover:bg-muted/50 cursor-pointer transition-colors"
-                  onClick={() => navigate(`/super-admin/task-management/tasks/${task.id}`)}
+                  onClick={() => navigate(`/${basePath}/task-management/tasks/${task.id}`)}
                 >
                   <div>
                     <span className="font-medium">{task.title}</span>
@@ -520,7 +522,7 @@ const TaskDashboard = () => {
             <Button 
               className="w-full justify-start" 
               variant="outline"
-              onClick={() => navigate('/super-admin/task-management/tasks/create')}
+              onClick={() => navigate(`/${basePath}/task-management/tasks/create`)}
             >
               <Plus className="mr-2 h-4 w-4" />
               Create Task
@@ -529,7 +531,7 @@ const TaskDashboard = () => {
           <Button 
             className="w-full justify-start" 
             variant="outline"
-            onClick={() => navigate('/super-admin/task-management/my-tasks')}
+            onClick={() => navigate(`/${basePath}/task-management/my-tasks`)}
           >
             <UserCheck className="mr-2 h-4 w-4" />
             My Tasks
@@ -537,7 +539,7 @@ const TaskDashboard = () => {
           <Button 
             className="w-full justify-start" 
             variant="outline"
-            onClick={() => navigate('/super-admin/task-management/tasks?filter=overdue')}
+            onClick={() => navigate(`/${basePath}/task-management/tasks?filter=overdue`)}}
           >
             <AlertTriangle className="mr-2 h-4 w-4" />
             Overdue Tasks
@@ -545,7 +547,7 @@ const TaskDashboard = () => {
           <Button 
             className="w-full justify-start" 
             variant="outline"
-            onClick={() => navigate('/super-admin/task-management/categories')}
+            onClick={() => navigate(`/${basePath}/task-management/categories`)}
           >
             <Filter className="mr-2 h-4 w-4" />
             Categories
@@ -582,7 +584,7 @@ const TaskDashboard = () => {
               Refresh
             </Button>
             <PermissionButton moduleSlug="task_management.tasks" action="add">
-              <Button onClick={() => navigate('/super-admin/task-management/tasks/create')}>
+              <Button onClick={() => navigate(`/${basePath}/task-management/tasks/create`)}>
                 <Plus className="mr-2 h-4 w-4" />
                 Create Task
               </Button>

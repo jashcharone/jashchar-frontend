@@ -177,12 +177,15 @@ const TimelineItem = ({ icon: Icon, title, description, date, status = "complete
 // ═══════════════════════════════════════════════════════════════════════════════
 
 const StudentProfile = () => {
-  const { studentId } = useParams();
+  const { studentId, roleSlug } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
   const { user, currentSessionId } = useAuth();
   const { selectedBranch } = useBranch();
   const { toast } = useToast();
+  
+  // Dynamic base path for navigation
+  const basePath = roleSlug || 'super-admin';
   
   const [student, setStudent] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -728,7 +731,7 @@ const StudentProfile = () => {
         
         // TC-60 FIX: Generate QR Code for student profile
         try {
-          const profileUrl = `${window.location.origin}/super-admin/student-information/profile/${targetId}`;
+          const profileUrl = `${window.location.origin}/${basePath}/student-information/profile/${targetId}`;
           const qrDataUrl = await QRCode.toDataURL(profileUrl, {
             width: 200,
             margin: 2,
@@ -886,7 +889,7 @@ const StudentProfile = () => {
               <Button 
                 variant="secondary" 
                 className="bg-white/20 hover:bg-white/30 text-white border-0 shadow-lg"
-                onClick={() => navigate(`/super-admin/student-information/edit/${targetId}`)}
+                onClick={() => navigate(`/${basePath}/student-information/edit/${targetId}`)}
               >
                 <Edit className="mr-2 h-4 w-4" /> Edit Profile
               </Button>
@@ -1072,7 +1075,7 @@ const StudentProfile = () => {
                         <div 
                           key={sibling.id} 
                           className="flex items-center gap-3 p-3 rounded-xl bg-muted/30 hover:bg-muted/50 cursor-pointer transition-colors"
-                          onClick={() => navigate(`/super-admin/student-information/profile/${sibling.id}`)}
+                          onClick={() => navigate(`/${basePath}/student-information/profile/${sibling.id}`)}
                         >
                           <Avatar className="h-10 w-10">
                             <AvatarImage src={sibling.photo_url} />

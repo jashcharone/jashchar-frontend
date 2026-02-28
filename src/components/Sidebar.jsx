@@ -196,6 +196,27 @@ const Sidebar = ({ role, isSidebarOpen, isMobile, toggleSidebar, closeSidebar, o
           // ✅ Show all children if parent module has permission (for simple modules)
           if ((moduleSlug === 'income' || moduleSlug === 'expenses') && canView(moduleSlug)) return true;
           
+          // ✅ REPORTS MODULE: Map report items to related module permissions
+          // Users with module access can see that module's reports without explicit reports.xxx permission
+          if (moduleSlug === 'reports') {
+            const reportToModuleMap = {
+              'student_information': ['students', 'student_information'],
+              'finance': ['fees_collection', 'finance', 'income', 'expenses'],
+              'attendance': ['attendance'],
+              'examinations': ['examinations', 'cbse_examination'],
+              'human_resource': ['human_resource', 'hr'],
+              'library': ['library'],
+              'transport': ['transport'],
+              'hostel': ['hostel'],
+              'homework': ['homework'],
+              'homework_evaluation': ['homework']
+            };
+            const relatedModules = reportToModuleMap[subSlug];
+            if (relatedModules && relatedModules.some(mod => canView(mod))) {
+              return true;
+            }
+          }
+          
           // ⚠️ REMOVED FALLBACK: Previously showed all children if parent had access
           // Now STRICT: Each submodule must have explicit permission
           // This ensures Permission DNA page controls exactly which sub-modules appear

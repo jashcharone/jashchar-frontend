@@ -14,8 +14,9 @@ import { MODULE_CATALOG } from '@/config/moduleCatalog';
 import api from '@/lib/api';
 
 const AssignPermissionSchool = () => {
-    const { roleId } = useParams();
+    const { roleId, roleSlug } = useParams();
     const navigate = useNavigate();
+    const basePath = roleSlug || 'super-admin';
     const { toast } = useToast();
     const { user, school } = useAuth();
     const { selectedBranch, loading: branchLoading } = useBranch();
@@ -442,7 +443,7 @@ const AssignPermissionSchool = () => {
                 {/* Header */}
                 <div className="flex items-center justify-between gap-4">
                     <div className="flex items-center gap-4">
-                        <Button variant="ghost" size="icon" onClick={() => navigate('/super-admin/system-settings/role-permission')}>
+                        <Button variant="ghost" size="icon" onClick={() => navigate(`/${basePath}/system-settings/role-permission`)}>
                             <ArrowLeft className="h-5 w-5" />
                         </Button>
                         <div>

@@ -1,5 +1,5 @@
 ﻿import React, { useState, useEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import DashboardLayout from '@/components/DashboardLayout';
 import { supabase } from '@/lib/customSupabaseClient';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
@@ -16,6 +16,8 @@ import { Plus, Trash2, Shield, Loader2, Settings, Users, Building2, Pencil } fro
 
 const RolePermissionSchool = () => {
     const navigate = useNavigate();
+    const { roleSlug } = useParams();
+    const basePath = roleSlug || 'super-admin';
     const { toast } = useToast();
     const { user, school, currentSessionId, organizationId } = useAuth();
     const { selectedBranch, branches, loading: branchLoading } = useBranch();
@@ -305,7 +307,7 @@ const RolePermissionSchool = () => {
                                                         <Button 
                                                             variant="outline" 
                                                             size="sm" 
-                                                            onClick={() => navigate(`/super-admin/system-settings/assign-permission/${role.id}`)}
+                                                            onClick={() => navigate(`/${basePath}/system-settings/assign-permission/${role.id}`)}
                                                         >
                                                             <Settings className="mr-2 h-4 w-4" />
                                                             Assign Permission

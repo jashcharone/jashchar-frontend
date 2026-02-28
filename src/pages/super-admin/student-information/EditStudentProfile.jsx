@@ -279,12 +279,15 @@ const AddSiblingModal = ({ onSiblingAdd, currentStudentId }) => {
 };
 
 const EditStudentProfile = () => {
-    const { id } = useParams();
+    const { id, roleSlug } = useParams();
     const studentId = id;
     const navigate = useNavigate();
     const { user, currentSessionId, organizationId } = useAuth();
     const { selectedBranch } = useBranch();
     const { toast } = useToast();
+    
+    // Dynamic base path for navigation
+    const basePath = roleSlug || 'super-admin';
     
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
@@ -916,7 +919,7 @@ const EditStudentProfile = () => {
 
             toast({ title: 'Profile Updated' });
             // Navigate to student profile page after save with refresh state
-            navigate(`/super-admin/student-information/profile/${studentId}`, { 
+            navigate(`/${basePath}/student-information/profile/${studentId}`, { 
               state: { refreshTime: Date.now() },
               replace: true 
             });

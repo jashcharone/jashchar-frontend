@@ -1,5 +1,5 @@
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import DashboardLayout from '@/components/DashboardLayout';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -7,6 +7,8 @@ import { Calendar, Clock } from 'lucide-react';
 
 const Timetable = () => {
   const navigate = useNavigate();
+  const { roleSlug } = useParams();
+  const basePath = roleSlug || 'super-admin';
 
   return (
     <DashboardLayout>
@@ -37,7 +39,7 @@ const Timetable = () => {
               <CardContent className="space-y-4">
                 <div className="grid gap-4 md:grid-cols-2">
                   <Card className="border-2 hover:border-primary/50 transition-colors cursor-pointer"
-                    onClick={() => navigate('/super-admin/academics/class-timetable')}>
+                    onClick={() => navigate(`/${basePath}/academics/class-timetable`)}>
                     <CardHeader className="pb-2">
                       <CardTitle className="text-lg">Class Timetable</CardTitle>
                     </CardHeader>
@@ -50,7 +52,7 @@ const Timetable = () => {
                   </Card>
 
                   <Card className="border-2 hover:border-primary/50 transition-colors cursor-pointer"
-                    onClick={() => navigate('/super-admin/academics/teacher-timetable')}>
+                    onClick={() => navigate(`/${basePath}/academics/teacher-timetable`)}>
                     <CardHeader className="pb-2">
                       <CardTitle className="text-lg">Teacher Timetable</CardTitle>
                     </CardHeader>

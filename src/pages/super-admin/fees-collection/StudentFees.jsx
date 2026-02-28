@@ -161,8 +161,9 @@ const InfoRow = ({ icon: Icon, label, value, className = '' }) => (
 );
 
 const StudentFees = () => {
-    const { studentId } = useParams();
+    const { studentId, roleSlug } = useParams();
     const navigate = useNavigate();
+    const basePath = roleSlug || 'super-admin';
     const { user, school, currentSessionId, organizationId } = useAuth();
     const { selectedBranch } = useBranch();
     const { toast } = useToast();
@@ -701,7 +702,7 @@ const StudentFees = () => {
             // Navigate to the new receipt page (use first payment's ID)
             const firstPaymentId = insertedPayments?.[0]?.id;
             if (firstPaymentId) {
-                navigate(`/super-admin/fees-collection/print-fees-receipt/${firstPaymentId}`);
+                navigate(`/${basePath}/fees-collection/print-fees-receipt/${firstPaymentId}`);
             }
 
         } catch (error) {
@@ -713,7 +714,7 @@ const StudentFees = () => {
     };
     
     const printReceipt = (payment) => {
-        navigate(`/super-admin/fees-collection/print-fees-receipt/${payment.id}`);
+        navigate(`/${basePath}/fees-collection/print-fees-receipt/${payment.id}`);
     }
 
     // Collect Transport Fee
@@ -815,7 +816,7 @@ const StudentFees = () => {
             
             // Print receipt (use first payment's ID)
             if (data && data.length > 0) {
-                navigate(`/super-admin/fees-collection/print-transport-receipt/${data[0].id}`);
+                navigate(`/${basePath}/fees-collection/print-transport-receipt/${data[0].id}`);
             }
         } catch (error) {
             toast({ variant: 'destructive', title: 'Payment failed', description: error.message });
@@ -923,7 +924,7 @@ const StudentFees = () => {
             
             // Print receipt (use first payment's ID)
             if (data && data.length > 0) {
-                navigate(`/super-admin/fees-collection/print-hostel-receipt/${data[0].id}`);
+                navigate(`/${basePath}/fees-collection/print-hostel-receipt/${data[0].id}`);
             }
         } catch (error) {
             toast({ variant: 'destructive', title: 'Payment failed', description: error.message });
@@ -1174,7 +1175,7 @@ const StudentFees = () => {
                                 <InfoRow icon={Mail} label="Email" value={student.email || student.father_email} />
                             </div>
 
-                            <Link to={`/super-admin/student-information/profile/${studentId}`} target="_blank">
+                            <Link to={`/${basePath}/student-information/profile/${studentId}`} target="_blank">
                                 <Button variant="outline" className="w-full mt-3" size="sm">
                                     <ExternalLink className="mr-2 h-4 w-4" />View Full Profile
                                 </Button>
@@ -2088,7 +2089,7 @@ const StudentFees = () => {
                                                                 <td className="p-3 text-center">
                                                                     {!group.allReverted ? (
                                                                         <div className="flex justify-center gap-1">
-                                                                            <Button variant="outline" size="sm" onClick={() => navigate(`/super-admin/fees-collection/print-transport-receipt/${p.id}`)}>
+                                                                            <Button variant="outline" size="sm" onClick={() => navigate(`/${basePath}/fees-collection/print-transport-receipt/${p.id}`)}>
                                                                                 <Printer className="h-3 w-3" />
                                                                             </Button>
                                                                             {!hasExistingRefund(p.id, 'transport') && (
@@ -2146,7 +2147,7 @@ const StudentFees = () => {
                                                                 <td className="p-3 text-center">
                                                                     {!group.allReverted ? (
                                                                         <div className="flex justify-center gap-1">
-                                                                            <Button variant="outline" size="sm" onClick={() => navigate(`/super-admin/fees-collection/print-hostel-receipt/${p.id}`)}>
+                                                                            <Button variant="outline" size="sm" onClick={() => navigate(`/${basePath}/fees-collection/print-hostel-receipt/${p.id}`)}>
                                                                                 <Printer className="h-3 w-3" />
                                                                             </Button>
                                                                             {!hasExistingRefund(p.id, 'hostel') && (

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import DashboardLayout from '@/components/DashboardLayout';
 import { supabase } from '@/lib/customSupabaseClient';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
@@ -21,6 +21,8 @@ import { format, parseISO } from 'date-fns';
 
 const RefundApprovals = () => {
     const navigate = useNavigate();
+    const { roleSlug } = useParams();
+    const basePath = roleSlug || 'super-admin';
     const { user, currentSessionId, organizationId } = useAuth();
     const { selectedBranch } = useBranch();
     const { toast } = useToast();
@@ -324,7 +326,7 @@ const RefundApprovals = () => {
                                                             <Button 
                                                                 variant="outline" 
                                                                 size="sm"
-                                                                onClick={() => navigate(`/super-admin/fees-collection/print-refund-receipt/${refund.id}`)}
+                                                                onClick={() => navigate(`/${basePath}/fees-collection/print-refund-receipt/${refund.id}`)}
                                                             >
                                                                 <Printer className="h-3 w-3" />
                                                             </Button>
@@ -337,7 +339,7 @@ const RefundApprovals = () => {
                                                         <Button 
                                                             variant="ghost" 
                                                             size="sm"
-                                                            onClick={() => navigate(`/super-admin/fees-collection/student-fees/${refund.student_id}`)}
+                                                            onClick={() => navigate(`/${basePath}/fees-collection/student-fees/${refund.student_id}`)}
                                                         >
                                                             <Eye className="h-3 w-3" />
                                                         </Button>

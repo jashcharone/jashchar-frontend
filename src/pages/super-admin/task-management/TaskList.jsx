@@ -4,7 +4,7 @@
  */
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams, useParams } from 'react-router-dom';
 import DashboardLayout from '@/components/DashboardLayout';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { useBranch } from '@/contexts/BranchContext';
@@ -70,6 +70,8 @@ const TaskList = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
+  const { roleSlug } = useParams();
+  const basePath = roleSlug || 'super-admin';
 
   // State
   const [tasks, setTasks] = useState([]);
@@ -295,7 +297,7 @@ const TaskList = () => {
               Refresh
             </Button>
             <PermissionButton moduleSlug="task_management.tasks" action="add">
-              <Button onClick={() => navigate('/super-admin/task-management/tasks/create')}>
+              <Button onClick={() => navigate(`/${basePath}/task-management/tasks/create`)}>
                 <Plus className="mr-2 h-4 w-4" />
                 Create Task
               </Button>
@@ -468,7 +470,7 @@ const TaskList = () => {
                     : 'Create your first task to get started'}
                 </p>
                 <PermissionButton moduleSlug="task_management.tasks" action="add">
-                  <Button onClick={() => navigate('/super-admin/task-management/tasks/create')}>
+                  <Button onClick={() => navigate(`/${basePath}/task-management/tasks/create`)}>
                     <Plus className="mr-2 h-4 w-4" />
                     Create Task
                   </Button>
@@ -511,7 +513,7 @@ const TaskList = () => {
                       </TableCell>
                       <TableCell 
                         className="font-medium"
-                        onClick={() => navigate(`/super-admin/task-management/tasks/${task.id}`)}
+                        onClick={() => navigate(`/${basePath}/task-management/tasks/${task.id}`)}
                       >
                         <div>
                           <div className="flex items-center gap-2">
@@ -568,13 +570,13 @@ const TaskList = () => {
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => navigate(`/super-admin/task-management/tasks/${task.id}`)}>
+                            <DropdownMenuItem onClick={() => navigate(`/${basePath}/task-management/tasks/${task.id}`)}>
                               <Eye className="mr-2 h-4 w-4" /> View Details
                             </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => navigate(`/super-admin/task-management/tasks/${task.id}/edit`)}>
+                            <DropdownMenuItem onClick={() => navigate(`/${basePath}/task-management/tasks/${task.id}/edit`)}>
                               <Edit className="mr-2 h-4 w-4" /> Edit
                             </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => navigate(`/super-admin/task-management/tasks/${task.id}?tab=assign`)}>
+                            <DropdownMenuItem onClick={() => navigate(`/${basePath}/task-management/tasks/${task.id}?tab=assign`)}>
                               <UserPlus className="mr-2 h-4 w-4" /> Assign
                             </DropdownMenuItem>
                             <DropdownMenuSeparator />

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { LogOut, User, Settings, Sun, Moon, Menu, Clock, Bell, Download, Search, Command, Calendar, Mail, Key, Briefcase, Bug, MessageCircle } from 'lucide-react';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
@@ -21,7 +21,11 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 const Header = ({ toggleSidebar, onThemeSettingsClick, onChatbotToggle }) => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { user, signOut, school } = useAuth();
+  
+  // Extract roleSlug from current URL path (e.g., /cashier/fees-collection/... → cashier)
+  const currentPathSlug = location.pathname.split('/')[1] || 'super-admin';
   const { settings, toggleMode } = useTheme();
   const { toast } = useToast();
   const [currentDateTime, setCurrentDateTime] = useState(new Date());
@@ -52,11 +56,15 @@ const Header = ({ toggleSidebar, onThemeSettingsClick, onChatbotToggle }) => {
   const userType = user?.userType || user?.profile?.type; // 'owner' or 'staff'
 
   const getRoleBasedPath = (type) => {
+    // For school staff, use the current URL path slug to maintain navigation context
+    // This ensures /cashier/profile stays as /cashier/profile, not /super-admin/profile
+    const isSchoolStaff = ['super_admin', 'school_owner', 'organization_owner', 'admin', 'teacher', 'principal', 'accountant', 'receptionist', 'librarian', 'cashier'].includes(role);
+    const staffBasePath = isSchoolStaff ? `/${currentPathSlug}` : '/super-admin';
     
     switch (type) {
       case 'profile':
         if (role === 'master_admin') return '/master-admin/profile';
-        if (role === 'super_admin' || role === 'school_owner' || role === 'organization_owner' || role === 'admin' || role === 'teacher' || role === 'principal' || role === 'accountant' || role === 'receptionist' || role === 'librarian') return '/super-admin/profile';
+        if (isSchoolStaff) return `${staffBasePath}/profile`;
         if (role === 'student') return '/Student/profile';
         if (role === 'parent') return '/Parent/profile';
         // Fallback to Student/profile if role is unknown (better than broken /profile route)
@@ -65,7 +73,7 @@ const Header = ({ toggleSidebar, onThemeSettingsClick, onChatbotToggle }) => {
         
       case 'reset-password':
         if (role === 'master_admin') return '/master-admin/reset-password';
-        if (role === 'super_admin' || role === 'school_owner' || role === 'organization_owner' || role === 'admin' || role === 'teacher' || role === 'principal' || role === 'accountant' || role === 'receptionist' || role === 'librarian') return '/super-admin/reset-password';
+        if (isSchoolStaff) return `${staffBasePath}/reset-password`;
         if (role === 'student') return '/Student/reset-password';
         if (role === 'parent') return '/Parent/reset-password';
         return '/reset-password';

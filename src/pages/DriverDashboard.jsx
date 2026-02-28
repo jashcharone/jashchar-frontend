@@ -17,7 +17,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { useBranch } from '@/contexts/BranchContext';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import WelcomeMessage from '@/components/WelcomeMessage';
 import StatCard from '@/components/StatCard';
 
@@ -25,6 +25,8 @@ const DriverDashboard = () => {
     const { user, school } = useAuth();
     const { selectedBranch } = useBranch();
     const navigate = useNavigate();
+    const { roleSlug } = useParams();
+    const basePath = roleSlug || 'super-admin';
     
     const [stats, setStats] = useState({
         assignedRoute: 'Route A - North Zone',
@@ -44,8 +46,8 @@ const DriverDashboard = () => {
 
     const quickActions = [
         { label: 'Start Trip', icon: Navigation, path: '#', color: 'bg-green-500' },
-        { label: 'Route Details', icon: Route, path: '/super-admin/transport/routes', color: 'bg-blue-500' },
-        { label: 'Student List', icon: Users, path: '/super-admin/transport/assign-vehicle', color: 'bg-purple-500' },
+        { label: 'Route Details', icon: Route, path: `/${basePath}/transport/routes`, color: 'bg-blue-500' },
+        { label: 'Student List', icon: Users, path: `/${basePath}/transport/assign-vehicle`, color: 'bg-purple-500' },
         { label: 'Emergency Contact', icon: Phone, path: '#', color: 'bg-red-500' },
     ];
 

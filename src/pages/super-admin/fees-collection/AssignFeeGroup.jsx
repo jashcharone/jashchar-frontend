@@ -12,11 +12,14 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Search, Save } from 'lucide-react';
 
 const AssignFeeGroup = () => {
-    const { masterId } = useParams();
+    const { masterId, roleSlug } = useParams();
     const navigate = useNavigate();
     const { user, currentSessionId, organizationId } = useAuth();
     const { selectedBranch } = useBranch();
     const { toast } = useToast();
+    
+    // Dynamic base path for navigation
+    const basePath = roleSlug || 'super-admin';
 
     const [master, setMaster] = useState(null);
     const [classes, setClasses] = useState([]);
@@ -99,7 +102,7 @@ const AssignFeeGroup = () => {
             toast({ variant: 'destructive', title: 'Error saving allocations', description: error.message });
         } else {
             toast({ title: 'Student Allocations Saved!' });
-            navigate('/super-admin/fees-collection/master');
+            navigate(`/${basePath}/fees-collection/master`);
         }
         setLoading(false);
     };

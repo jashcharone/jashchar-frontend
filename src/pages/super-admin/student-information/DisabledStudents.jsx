@@ -32,7 +32,7 @@ import {
   Search, Eye, RefreshCcw, UserX, Users, Loader2, 
   Copy, FileDown, Printer, ChevronLeft, ChevronRight 
 } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { format } from 'date-fns';
 import { ROUTES } from '@/registry/routeRegistry';
 import { sortClasses, sortSections } from '@/utils/classOrderUtils';
@@ -42,6 +42,10 @@ const DisabledStudents = () => {
   const { selectedBranch } = useBranch();
   const { toast } = useToast();
   const navigate = useNavigate();
+  const { roleSlug } = useParams();
+  
+  // Dynamic base path for navigation
+  const basePath = roleSlug || 'super-admin';
   
   // Data States
   const [loading, setLoading] = useState(false);
@@ -514,7 +518,7 @@ const DisabledStudents = () => {
                     <td className="p-3">
                       <span 
                         className="font-medium text-primary hover:underline cursor-pointer"
-                        onClick={() => navigate(ROUTES.SUPER_ADMIN.STUDENT_PROFILE.replace(':studentId', s.id))}
+                        onClick={() => navigate(`/${basePath}/student-information/profile/${s.id}`)}
                       >
                         {s.full_name}
                       </span>
@@ -542,7 +546,7 @@ const DisabledStudents = () => {
                           variant="ghost" 
                           size="icon" 
                           className="h-8 w-8 bg-blue-500/10 hover:bg-blue-500/20" 
-                          onClick={() => navigate(ROUTES.SUPER_ADMIN.STUDENT_PROFILE.replace(':studentId', s.id))} 
+                          onClick={() => navigate(`/${basePath}/student-information/profile/${s.id}`)} 
                           title="View Profile"
                         >
                           <Eye className="h-4 w-4 text-blue-600" />

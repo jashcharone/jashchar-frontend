@@ -68,7 +68,7 @@ const getQuickActionsForRole = (role) => {
 };
 
 // ─── BOTTOM NAV ITEMS ──────────────────────────────────────────────────
-const getNavTabs = (role) => {
+const getNavTabs = (role, currentPathSlug = 'super-admin') => {
   const getDashboardPath = () => {
     switch (role) {
       case 'master_admin': return '/master-admin/dashboard';
@@ -83,16 +83,16 @@ const getNavTabs = (role) => {
     { id: 'updates', label: 'Updates', icon: BarChart3 },
     { id: 'menu', label: 'Menu', icon: Menu },
     { id: 'alerts', label: 'Alerts', icon: Bell, badge: 0 },
-    { id: 'profile', label: 'Profile', icon: User, path: getProfilePath(role) },
+    { id: 'profile', label: 'Profile', icon: User, path: getProfilePath(role, currentPathSlug) },
   ];
 };
 
-function getProfilePath(role) {
+function getProfilePath(role, currentPathSlug = 'super-admin') {
   switch (role) {
     case 'master_admin': return '/master-admin/profile';
     case 'student': return '/Student/profile';
     case 'parent': return '/Parent/profile';
-    default: return '/super-admin/profile';
+    default: return `/${currentPathSlug}/profile`;
   }
 }
 
@@ -106,11 +106,14 @@ export function MobileBottomNav({ className }) {
   const { detectedRole } = usePermissions();
   const role = detectedRole || user?.role || user?.profile?.role || user?.user_metadata?.role || 'super_admin';
   
+  // Extract roleSlug from current URL path (e.g., /cashier/fees-collection/... → cashier)
+  const currentPathSlug = location.pathname.split('/')[1] || 'super-admin';
+  
   const [activeSheet, setActiveSheet] = useState(null);
   const [menuSearch, setMenuSearch] = useState('');
   const sheetRef = useRef(null);
   
-  const navTabs = getNavTabs(role);
+  const navTabs = getNavTabs(role, currentPathSlug);
   const quickActions = getQuickActionsForRole(role);
 
   // Close sheet when navigating

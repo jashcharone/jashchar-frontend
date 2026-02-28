@@ -1,5 +1,5 @@
 ﻿import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useParams } from 'react-router-dom';
 import DashboardLayout from '@/components/DashboardLayout';
 import { supabase } from '@/lib/customSupabaseClient';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
@@ -15,6 +15,8 @@ const SearchFeesPayment = () => {
     const { user } = useAuth();
     const { selectedBranch } = useBranch();
     const { toast } = useToast();
+    const { roleSlug } = useParams();
+    const basePath = roleSlug || 'super-admin';
     
     // Unified branchId with fallback for staff users
     const branchId = selectedBranch?.id || user?.profile?.branch_id || user?.user_metadata?.branch_id;
@@ -88,7 +90,7 @@ const SearchFeesPayment = () => {
                                                 <td className="p-2 font-mono">{p.transaction_id}</td>
                                                 <td className="p-2">{format(new Date(p.payment_date), 'dd-MM-yyyy')}</td>
                                                 <td className="p-2">
-                                                    <Link to={`/super-admin/student-information/profile/${p.student?.id}`} className="hover:underline">
+                                                    <Link to={`/${basePath}/student-information/profile/${p.student?.id}`} className="hover:underline">
                                                         {p.student?.full_name} ({p.student?.school_code})
                                                     </Link>
                                                 </td>
@@ -100,7 +102,7 @@ const SearchFeesPayment = () => {
                                                 <td className="p-2 text-right">{Number(p.discount_amount).toFixed(2)}</td>
                                                 <td className="p-2 text-right">{Number(p.fine_paid).toFixed(2)}</td>
                                                 <td className="p-2 text-center">
-                                                    <Link to={`/super-admin/fees-collection/receipt/${p.id}`}>
+                                                    <Link to={`/${basePath}/fees-collection/receipt/${p.id}`}>
                                                         <Button size="sm" variant="outline"><Eye className="mr-2 h-4 w-4" />View</Button>
                                                     </Link>
                                                 </td>

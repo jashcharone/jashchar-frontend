@@ -20,7 +20,7 @@ import {
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { useBranch } from '@/contexts/BranchContext';
 import { supabase } from '@/lib/customSupabaseClient';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import WelcomeMessage from '@/components/WelcomeMessage';
 import StatCard from '@/components/StatCard';
 
@@ -28,6 +28,8 @@ const VicePrincipalDashboard = () => {
     const { user, school, currentSessionId } = useAuth();
     const { selectedBranch } = useBranch();
     const navigate = useNavigate();
+    const { roleSlug } = useParams();
+    const basePath = roleSlug || 'vice-principal';
     
     const [loading, setLoading] = useState(true);
     const [stats, setStats] = useState({
@@ -87,10 +89,10 @@ const VicePrincipalDashboard = () => {
     };
 
     const quickActions = [
-        { label: 'Teacher Attendance', icon: UserCheck, path: '/super-admin/human-resource/staff-attendance', color: 'bg-blue-500' },
-        { label: 'Leave Requests', icon: FileText, path: '/super-admin/human-resource/approve-leave-request', color: 'bg-green-500' },
-        { label: 'Exam Schedule', icon: Calendar, path: '/super-admin/examinations/exam-schedule', color: 'bg-purple-500' },
-        { label: 'Student Reports', icon: GraduationCap, path: '/super-admin/reports', color: 'bg-orange-500' },
+        { label: 'Teacher Attendance', icon: UserCheck, path: `/${basePath}/human-resource/staff-attendance`, color: 'bg-blue-500' },
+        { label: 'Leave Requests', icon: FileText, path: `/${basePath}/human-resource/approve-leave-request`, color: 'bg-green-500' },
+        { label: 'Exam Schedule', icon: Calendar, path: `/${basePath}/examinations/exam-schedule`, color: 'bg-purple-500' },
+        { label: 'Student Reports', icon: GraduationCap, path: `/${basePath}/reports`, color: 'bg-orange-500' },
     ];
 
     const todaySchedule = [
@@ -206,7 +208,7 @@ const VicePrincipalDashboard = () => {
                         <Button 
                             variant="outline" 
                             className="border-orange-500 text-orange-600 hover:bg-orange-100"
-                            onClick={() => navigate('/super-admin/human-resource/approve-leave-request')}
+                            onClick={() => navigate(`/${basePath}/human-resource/approve-leave-request`)}
                         >
                             Review Now
                         </Button>

@@ -18,7 +18,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { useBranch } from '@/contexts/BranchContext';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import WelcomeMessage from '@/components/WelcomeMessage';
 import StatCard from '@/components/StatCard';
 
@@ -26,6 +26,8 @@ const LabAssistantDashboard = () => {
     const { user, school } = useAuth();
     const { selectedBranch } = useBranch();
     const navigate = useNavigate();
+    const { roleSlug } = useParams();
+    const basePath = roleSlug || 'super-admin';
     
     const [loading, setLoading] = useState(false);
     const [stats, setStats] = useState({
@@ -48,10 +50,10 @@ const LabAssistantDashboard = () => {
     ];
 
     const quickActions = [
-        { label: 'Lab Schedule', icon: Calendar, path: '/super-admin/academics/class-timetable', color: 'bg-blue-500' },
-        { label: 'Equipment List', icon: Package, path: '/super-admin/inventory/item-list', color: 'bg-green-500' },
-        { label: 'Issue Items', icon: ClipboardList, path: '/super-admin/inventory/issue-item', color: 'bg-purple-500' },
-        { label: 'Maintenance Log', icon: Wrench, path: '/super-admin/inventory', color: 'bg-orange-500' },
+        { label: 'Lab Schedule', icon: Calendar, path: `/${basePath}/academics/class-timetable`, color: 'bg-blue-500' },
+        { label: 'Equipment List', icon: Package, path: `/${basePath}/inventory/item-list`, color: 'bg-green-500' },
+        { label: 'Issue Items', icon: ClipboardList, path: `/${basePath}/inventory/issue-item`, color: 'bg-purple-500' },
+        { label: 'Maintenance Log', icon: Wrench, path: `/${basePath}/inventory`, color: 'bg-orange-500' },
     ];
 
     const statCards = [

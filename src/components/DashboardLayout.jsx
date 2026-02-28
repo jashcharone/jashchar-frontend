@@ -170,15 +170,19 @@ const DashboardLayout = ({ children }) => {
 function MobileCompactHeader({ onThemeClick, onMenuClick }) {
   const { user, school } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const { detectedRole } = usePermissions();
   const role = detectedRole || user?.role || user?.profile?.role || user?.user_metadata?.role || 'user';
+  
+  // Extract roleSlug from current URL path (e.g., /cashier/fees-collection/... → cashier)
+  const currentPathSlug = location.pathname.split('/')[1] || 'super-admin';
   
   const getProfilePath = () => {
     switch (role) {
       case 'master_admin': return '/master-admin/profile';
       case 'student': return '/Student/profile';
       case 'parent': return '/Parent/profile';
-      default: return '/super-admin/profile';
+      default: return `/${currentPathSlug}/profile`;
     }
   };
 

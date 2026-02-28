@@ -1,5 +1,5 @@
 ﻿import React, { useState, useEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import DashboardLayout from '@/components/DashboardLayout';
 import { supabase } from '@/lib/customSupabaseClient';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
@@ -15,9 +15,13 @@ import { Search, Loader2, IndianRupee, Users, AlertCircle, CheckCircle2, Clock, 
 
 const CollectFees = () => {
     const navigate = useNavigate();
+    const { roleSlug } = useParams();
     const { user, currentSessionId } = useAuth();
     const { selectedBranch, loading: branchLoading } = useBranch();
     const { toast } = useToast();
+    
+    // Dynamic base path for navigation
+    const basePath = roleSlug || 'super-admin';
     // ✅ FIX: Use selectedBranch.id OR fallback to user profile/metadata branch_id
     const branchId = selectedBranch?.id || user?.profile?.branch_id || user?.user_metadata?.branch_id;
 
@@ -34,10 +38,17 @@ const CollectFees = () => {
     // DEBUG: Log branch resolution
     console.log('[CollectFees] branchId:', branchId, '| selectedBranch:', selectedBranch?.id, '| branchLoading:', branchLoading);
 
-    // ✅ FIX: Fetch classes when branchId changes - direct dependency
+    // ✅ FIX: Fetch classes when branchId changes - wait for branch loading to complete
     useEffect(() => {
         const fetchClasses = async () => {
-            console.log('[CollectFees] fetchClasses called, branchId:', branchId);
+            console.log('[CollectFees] fetchClasses called, branchId:', branchId, 'branchLoading:', branchLoading);
+            
+            // Wait for BranchContext to finish loading
+            if (branchLoading) {
+                console.log('[CollectFees] Branch still loading, waiting...');
+                return;
+            }
+            
             if (!branchId) {
                 console.log('[CollectFees] branchId is empty, skipping fetch');
                 setClasses([]);
@@ -57,7 +68,7 @@ const CollectFees = () => {
         };
         
         fetchClasses();
-    }, [branchId, toast]);
+    }, [branchId, branchLoading, toast]);
 
     // Fetch sections when selectedClass changes
     useEffect(() => {
@@ -537,7 +548,7 @@ const CollectFees = () => {
                                                             <Button 
                                                                 size="sm" 
                                                                 className={fee.balance > 0 ? 'bg-red-600 hover:bg-red-700 text-white' : 'bg-green-600 hover:bg-green-700 text-white'}
-                                                                onClick={() => navigate(`/super-admin/fees-collection/student-fees/${student.id}`)}
+                                                                onClick={() => navigate(`/${basePath}/fees-collection/student-fees/${student.id}`)}
                                                             >
                                                                 <IndianRupee className="h-3.5 w-3.5 mr-1" />
                                                                 {fee.balance > 0 ? 'Collect' : 'View'}

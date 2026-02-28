@@ -30,8 +30,9 @@ import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 
 const CreateEditTask = () => {
-  const { id } = useParams();
+  const { id, roleSlug } = useParams();
   const navigate = useNavigate();
+  const basePath = roleSlug || 'super-admin';
   const { user } = useAuth();
   const { selectedBranch } = useBranch();
   const { toast } = useToast();
@@ -144,7 +145,7 @@ const CreateEditTask = () => {
           title: 'Error loading task',
           description: 'Task not found or you don\'t have access'
         });
-        navigate('/super-admin/task-management/tasks');
+        navigate(`/${basePath}/task-management/tasks`);
       } finally {
         setLoading(false);
       }
@@ -297,7 +298,7 @@ const CreateEditTask = () => {
         toast({ 
           title: isEditing ? 'Task updated successfully' : 'Task created successfully' 
         });
-        navigate(`/super-admin/task-management/tasks/${response.data.data?.id || id}`);
+        navigate(`/${basePath}/task-management/tasks/${response.data.data?.id || id}`);
       }
     } catch (error) {
       console.error('Submit error:', error);
@@ -339,7 +340,7 @@ const CreateEditTask = () => {
           <Button 
             variant="ghost" 
             size="sm" 
-            onClick={() => navigate('/super-admin/task-management/tasks')}
+            onClick={() => navigate(`/${basePath}/task-management/tasks`)}
             className="mb-2"
           >
             <ArrowLeft className="mr-2 h-4 w-4" />
@@ -796,7 +797,7 @@ const CreateEditTask = () => {
             <Button
               type="button"
               variant="outline"
-              onClick={() => navigate('/super-admin/task-management/tasks')}
+              onClick={() => navigate(`/${basePath}/task-management/tasks`)}
             >
               Cancel
             </Button>

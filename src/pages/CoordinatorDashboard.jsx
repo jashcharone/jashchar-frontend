@@ -18,7 +18,7 @@ import {
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { useBranch } from '@/contexts/BranchContext';
 import { supabase } from '@/lib/customSupabaseClient';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import WelcomeMessage from '@/components/WelcomeMessage';
 import StatCard from '@/components/StatCard';
 
@@ -26,6 +26,8 @@ const CoordinatorDashboard = () => {
     const { user, school, currentSessionId } = useAuth();
     const { selectedBranch } = useBranch();
     const navigate = useNavigate();
+    const { roleSlug } = useParams();
+    const basePath = roleSlug || 'super-admin';
     
     const [loading, setLoading] = useState(true);
     const [stats, setStats] = useState({
@@ -67,10 +69,10 @@ const CoordinatorDashboard = () => {
     };
 
     const quickActions = [
-        { label: 'Class Timetable', icon: Calendar, path: '/super-admin/academics/class-timetable', color: 'bg-blue-500' },
-        { label: 'Assign Subjects', icon: BookOpen, path: '/super-admin/academics/assign-class-teacher', color: 'bg-green-500' },
-        { label: 'Lesson Plans', icon: FileText, path: '/super-admin/lesson-planning', color: 'bg-purple-500' },
-        { label: 'Teacher Schedule', icon: Users, path: '/super-admin/academics/teachers-timetable', color: 'bg-orange-500' },
+        { label: 'Class Timetable', icon: Calendar, path: `/${basePath}/academics/class-timetable`, color: 'bg-blue-500' },
+        { label: 'Assign Subjects', icon: BookOpen, path: `/${basePath}/academics/assign-class-teacher`, color: 'bg-green-500' },
+        { label: 'Lesson Plans', icon: FileText, path: `/${basePath}/lesson-planning`, color: 'bg-purple-500' },
+        { label: 'Teacher Schedule', icon: Users, path: `/${basePath}/academics/teachers-timetable`, color: 'bg-orange-500' },
     ];
 
     const departmentProgress = [

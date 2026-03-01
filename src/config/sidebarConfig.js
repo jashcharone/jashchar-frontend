@@ -188,6 +188,7 @@ export const BASE_SIDEBAR = {
         { title: 'Exam Result', path: ROUTES.SUPER_ADMIN.GENERAL_EXAM_RESULT },
         { title: 'Marks Entry', path: ROUTES.SUPER_ADMIN.MARKS_ENTRY },
         { title: 'Marks Grade', path: ROUTES.SUPER_ADMIN.MARKS_GRADE },
+        { title: 'Marks Division', path: ROUTES.SUPER_ADMIN.MARKS_DIVISION },
         { title: 'Admit Card', path: ROUTES.SUPER_ADMIN.PRINT_ADMIT_CARD },
         { title: 'Marksheet', path: ROUTES.SUPER_ADMIN.PRINT_MARKSHEET },
         { title: 'Report Card', path: ROUTES.SUPER_ADMIN.REPORT_CARD },

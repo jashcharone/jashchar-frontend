@@ -10,7 +10,7 @@ import { DialogFooter } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 const ExamAttendance = ({ exam, onClose }) => {
-    const { user } = useAuth();
+    const { user, currentSessionId, organizationId } = useAuth();
     const { selectedBranch } = useBranch();
     const { toast } = useToast();
     const branchId = selectedBranch?.id || user?.profile?.branch_id;
@@ -83,7 +83,9 @@ const ExamAttendance = ({ exam, onClose }) => {
                     exam_id: exam.id,
                     student_id: studentId,
                     total_attendance_days: data.total_attendance_days || null,
-                    present_days: data.present_days || null
+                    present_days: data.present_days || null,
+                    session_id: currentSessionId,
+                    organization_id: organizationId
                 };
             });
 

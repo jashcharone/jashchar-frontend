@@ -12,7 +12,7 @@ import { Loader2, Save, Search } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 const MarksEntry = () => {
-    const { branchId } = useAuth();
+    const { branchId, currentSessionId, organizationId } = useAuth();
     const { toast } = useToast();
     const [loading, setLoading] = useState(false);
     const [saving, setSaving] = useState(false);
@@ -215,7 +215,10 @@ const MarksEntry = () => {
                     total_max_marks: totalMax,
                     total_get_marks: totalGet,
                     percentage: percentage,
-                    result_status: resultStatus
+                    result_status: resultStatus,
+                    branch_id: branchId,
+                    session_id: currentSessionId,
+                    organization_id: organizationId
                 };
 
                 if (existing) {

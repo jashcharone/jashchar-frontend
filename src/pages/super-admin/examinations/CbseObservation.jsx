@@ -14,7 +14,7 @@ import { PlusCircle, Edit, Trash2, Loader2 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 const CbseObservation = () => {
-    const { user } = useAuth();
+    const { user, currentSessionId, organizationId } = useAuth();
     const { selectedBranch } = useBranch();
     const { toast } = useToast();
     const branchId = selectedBranch?.id || user?.profile?.branch_id;
@@ -66,6 +66,8 @@ const CbseObservation = () => {
         const obsData = {
             ...formData,
             branch_id: branchId,
+            session_id: currentSessionId,
+            organization_id: organizationId,
         };
 
         let error;

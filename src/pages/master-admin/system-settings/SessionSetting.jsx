@@ -58,7 +58,7 @@ const SessionSetting = () => {
     const [editSessionForm, setEditSessionForm] = useState({ startDate: '', endDate: '' });
     const [updatingSession, setUpdatingSession] = useState(false);
 
-    // Format session name: YYYY-YY (e.g., 2025-26)
+    // Format session name: YYYY-YYYY (e.g., 2025-2026) - 8 digit format for 100 year stability
     const formatSessionName = (value) => {
         // Remove all non-digits
         const digits = value.replace(/\D/g, '');
@@ -66,27 +66,40 @@ const SessionSetting = () => {
         if (digits.length === 0) return '';
         if (digits.length <= 4) return digits;
         
-        // Format as YYYY-YY
+        // Format as YYYY-YYYY
         const year1 = digits.substring(0, 4);
-        const year2 = digits.substring(4, 6);
+        const year2 = digits.substring(4, 8);
         return `${year1}-${year2}`;
     };
 
-    // Validate session name format (YYYY-YY)
+    // Auto-generate session name from year
+    const generateSessionName = (startYear) => {
+        const year1 = parseInt(startYear);
+        if (isNaN(year1) || year1 < 2000 || year1 > 2199) return '';
+        return `${year1}-${year1 + 1}`;
+    };
+
+    // Get next session name based on current session
+    const getNextSessionName = (currentSessionName) => {
+        const match = currentSessionName?.match(/^(\d{4})-(\d{4})$/);
+        if (!match) return '';
+        const currentEndYear = parseInt(match[2]);
+        return `${currentEndYear}-${currentEndYear + 1}`;
+    };
+
+    // Validate session name format (YYYY-YYYY)
     const validateSessionName = (name) => {
-        const pattern = /^\d{4}-\d{2}$/;
+        const pattern = /^\d{4}-\d{4}$/;
         if (!pattern.test(name)) {
-            return 'Session name must be in format YYYY-YY (e.g., 2025-26)';
+            return 'Session name must be in format YYYY-YYYY (e.g., 2025-2026)';
         }
         
         const [year1, year2] = name.split('-');
         const year1Num = parseInt(year1);
         const year2Num = parseInt(year2);
         
-        // Check if year2 is the last 2 digits of year1+1
-        const expectedYear2 = (year1Num + 1) % 100;
-        if (year2Num !== expectedYear2) {
-            return `Year should be ${year1}-${String(expectedYear2).padStart(2, '0')}`;
+        if (year2Num !== year1Num + 1) {
+            return `Year should be ${year1}-${year1Num + 1}`;
         }
         
         return null;
@@ -476,7 +489,7 @@ const SessionSetting = () => {
                             Global Session Templates
                         </CardTitle>
                         <CardDescription>
-                            Define standard academic sessions (e.g., 2025-26) that can be quickly assigned to new schools during registration.
+                            Define standard academic sessions (e.g., 2025-2026) that can be quickly assigned to new schools during registration.
                         </CardDescription>
                     </CardHeader>
                     <CardContent>
@@ -491,12 +504,12 @@ const SessionSetting = () => {
                                 />
                             </div>
                             <div>
-                                <Label className="text-xs mb-1.5 block">Session Name (YYYY-YY)</Label>
+                                <Label className="text-xs mb-1.5 block">Session Name (YYYY-YYYY)</Label>
                                 <Input 
-                                    placeholder="2025-26" 
+                                    placeholder="2025-2026" 
                                     value={newTemplate.name}
                                     onChange={(e) => setNewTemplate(prev => ({ ...prev, name: formatSessionName(e.target.value) }))}
-                                    maxLength={7}
+                                    maxLength={9}
                                     className="h-9"
                                 />
                             </div>
@@ -726,7 +739,7 @@ const SessionSetting = () => {
                                                                     <DialogHeader>
                                                                         <DialogTitle className="text-xl">Create New Session</DialogTitle>
                                                                         <DialogDescription>
-                                                                            Add a new academic session for <strong>{branch.branch_label}</strong>. Format: YYYY-YY (e.g., 2025-26)
+                                                                            Add a new academic session for <strong>{branch.branch_label}</strong>. Format: YYYY-YYYY (e.g., 2025-2026)
                                                                         </DialogDescription>
                                                                     </DialogHeader>
                                                                     <div className="space-y-4 py-4">
@@ -769,7 +782,7 @@ const SessionSetting = () => {
                                                                             </Label>
                                                                             <Input
                                                                                 id={`session-name-${branch.id}`}
-                                                                                placeholder="2025-26"
+                                                                                placeholder="2025-2026"
                                                                                 value={newSession[branch.id]?.name || ''}
                                                                                 onChange={(e) => {
                                                                                     const formatted = formatSessionName(e.target.value);
@@ -778,11 +791,11 @@ const SessionSetting = () => {
                                                                                         [branch.id]: { ...(prev[branch.id] || {}), name: formatted }
                                                                                     }));
                                                                                 }}
-                                                                                maxLength={7}
+                                                                                maxLength={9}
                                                                                 className="mt-1.5"
                                                                             />
                                                                             <p className="text-xs text-muted-foreground mt-1.5">
-                                                                                Format: YYYY-YY (e.g., 2025-26)
+                                                                                Format: YYYY-YYYY (e.g., 2025-2026)
                                                                             </p>
                                                                         </div>
                                                                         <div className="grid grid-cols-2 gap-4">

@@ -1571,6 +1571,7 @@ function App() {
             
             {/* Examinations */}
             <Route path="/:roleSlug/examinations/exam-group" element={<StaffModuleRoute requiredModule="examinations"><ExamGroup /></StaffModuleRoute>} />
+            <Route path="/:roleSlug/examinations/exam-group/:groupId/exams" element={<StaffModuleRoute requiredModule="examinations"><ExamList /></StaffModuleRoute>} />
             <Route path="/:roleSlug/examinations/exam-schedule" element={<StaffModuleRoute requiredModule="examinations"><ExamSchedule /></StaffModuleRoute>} />
             <Route path="/:roleSlug/examinations/general-exam-result" element={<StaffModuleRoute requiredModule="examinations"><GeneralExamResult /></StaffModuleRoute>} />
             <Route path="/:roleSlug/examinations/marks-entry" element={<StaffModuleRoute requiredModule="examinations"><MarksEntry /></StaffModuleRoute>} />

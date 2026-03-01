@@ -10,7 +10,7 @@ import { DialogFooter } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 const TeacherRemarks = ({ exam, onClose }) => {
-    const { user } = useAuth();
+    const { user, currentSessionId, organizationId } = useAuth();
     const { selectedBranch } = useBranch();
     const { toast } = useToast();
     const branchId = selectedBranch?.id || user?.profile?.branch_id;
@@ -58,7 +58,9 @@ const TeacherRemarks = ({ exam, onClose }) => {
                 branch_id: branchId,
                 exam_id: exam.id,
                 student_id,
-                remark: data.remark
+                remark: data.remark,
+                session_id: currentSessionId,
+                organization_id: organizationId
         }));
 
         if (remarksToUpsert.length > 0) {

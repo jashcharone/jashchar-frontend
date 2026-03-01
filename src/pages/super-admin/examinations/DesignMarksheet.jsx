@@ -24,7 +24,7 @@ import {
 } from "@/components/ui/alert-dialog";
 
 const DesignMarksheet = () => {
-  const { branchId } = useAuth();
+  const { branchId, currentSessionId, organizationId } = useAuth();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [templates, setTemplates] = useState([]);
@@ -83,7 +83,7 @@ const DesignMarksheet = () => {
     e.preventDefault();
     setLoading(true);
     try {
-      const { error } = await supabase.from('marksheet_templates').insert([{ ...formData, branch_id: branchId }]);
+      const { error } = await supabase.from('marksheet_templates').insert([{ ...formData, branch_id: branchId, session_id: currentSessionId, organization_id: organizationId }]);
       if (error) throw error;
       toast({ title: "Success", description: "Template saved successfully" });
       fetchTemplates();

@@ -16,7 +16,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 
 const DesignAdmitCard = () => {
-    const { user } = useAuth();
+    const { user, currentSessionId, organizationId } = useAuth();
     const { selectedBranch } = useBranch();
     const { toast } = useToast();
     const [templates, setTemplates] = useState([]);
@@ -59,7 +59,7 @@ const DesignAdmitCard = () => {
     const onSubmit = async (data) => {
         setSaving(true);
         try {
-            const payload = { ...data, branch_id: branchId };
+            const payload = { ...data, branch_id: branchId, session_id: currentSessionId, organization_id: organizationId };
             
             if (editId) {
                 const { error } = await supabase.from('admit_card_templates').update(payload).eq('id', editId);

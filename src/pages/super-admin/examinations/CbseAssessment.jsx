@@ -14,7 +14,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { v4 as uuidv4 } from 'uuid';
 
 const CbseAssessment = () => {
-    const { user } = useAuth();
+    const { user, currentSessionId, organizationId } = useAuth();
     const { selectedBranch } = useBranch();
     const { toast } = useToast();
     const branchId = selectedBranch?.id || user?.profile?.branch_id;
@@ -123,14 +123,14 @@ const CbseAssessment = () => {
                 }
 
                 if (typesToInsert.length > 0) {
-                     const recordsToInsert = typesToInsert.map(t => ({...t, assessment_id: assessmentId, branch_id: branchId}));
+                     const recordsToInsert = typesToInsert.map(t => ({...t, assessment_id: assessmentId, branch_id: branchId, session_id: currentSessionId, organization_id: organizationId}));
                     const { error: insertError } = await supabase.from('cbse_assessment_types').insert(recordsToInsert);
                     if (insertError) throw insertError;
                 }
 
             } else {
                 // Create new Assessment
-                const { data: assessmentData, error: assessmentError } = await supabase.from('cbse_assessments').insert({ name, description, branch_id: branchId }).select().single();
+                const { data: assessmentData, error: assessmentError } = await supabase.from('cbse_assessments').insert({ name, description, branch_id: branchId, session_id: currentSessionId, organization_id: organizationId }).select().single();
                 if (assessmentError) throw assessmentError;
                 assessmentId = assessmentData.id;
 
@@ -138,6 +138,8 @@ const CbseAssessment = () => {
                     ...t,
                     assessment_id: assessmentId,
                     branch_id: branchId,
+                    session_id: currentSessionId,
+                    organization_id: organizationId,
                 }));
                 
                 const { error: typesError } = await supabase.from('cbse_assessment_types').insert(typesToInsert);

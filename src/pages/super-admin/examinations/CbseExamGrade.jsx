@@ -15,7 +15,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { v4 as uuidv4 } from 'uuid';
 
 const CbseExamGrade = () => {
-    const { user } = useAuth();
+    const { user, currentSessionId, organizationId } = useAuth();
     const { selectedBranch } = useBranch();
     const { toast } = useToast();
     const branchId = selectedBranch?.id || user?.profile?.branch_id;
@@ -108,7 +108,7 @@ const CbseExamGrade = () => {
                 
                 const detailsToUpsert = details.map(d => {
                     const { key, ...rest } = d;
-                    return { ...rest, exam_grade_id: selectedGrade.id, branch_id: branchId };
+                    return { ...rest, exam_grade_id: selectedGrade.id, branch_id: branchId, session_id: currentSessionId, organization_id: organizationId };
                 });
 
                 if (detailsToDelete.length > 0) {
@@ -120,12 +120,12 @@ const CbseExamGrade = () => {
 
             } else {
                 // Create new Grade
-                const { data: gradeData, error: gradeError } = await supabase.from('cbse_exam_grades').insert({ grade_title, description, branch_id: branchId }).select().single();
+                const { data: gradeData, error: gradeError } = await supabase.from('cbse_exam_grades').insert({ grade_title, description, branch_id: branchId, session_id: currentSessionId, organization_id: organizationId }).select().single();
                 if (gradeError) throw gradeError;
 
                 const detailsToInsert = details.map(d => {
                     const { key, ...rest } = d;
-                    return { ...rest, exam_grade_id: gradeData.id, branch_id: branchId };
+                    return { ...rest, exam_grade_id: gradeData.id, branch_id: branchId, session_id: currentSessionId, organization_id: organizationId };
                 });
                 const { error: detailsError } = await supabase.from('cbse_grade_details').insert(detailsToInsert);
                 if (detailsError) throw detailsError;

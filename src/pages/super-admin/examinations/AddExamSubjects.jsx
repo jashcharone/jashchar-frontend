@@ -13,7 +13,7 @@ import { v4 as uuidv4 } from 'uuid';
 import DatePicker from '@/components/ui/DatePicker';
 
 const AddExamSubjects = ({ exam, onClose }) => {
-    const { user } = useAuth();
+    const { user, currentSessionId, organizationId } = useAuth();
     const { selectedBranch } = useBranch();
     const { toast } = useToast();
     const branchId = selectedBranch?.id || user?.profile?.branch_id;
@@ -88,6 +88,8 @@ const AddExamSubjects = ({ exam, onClose }) => {
                 ...rest,
                 exam_id: exam.id,
                 branch_id: branchId,
+                session_id: currentSessionId,
+                organization_id: organizationId,
             };
         });
 

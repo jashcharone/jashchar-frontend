@@ -1322,7 +1322,7 @@ const EditSchoolRequest = () => {
                                         ...prev,
                                         0: { ...prev[0], name: e.target.value }
                                     }))}
-                                    placeholder="2025-26"
+                                    placeholder="2025-2026"
                                     className="dark:bg-slate-950 dark:border-slate-700"
                                 />
                             </div>
@@ -1403,7 +1403,7 @@ const EditSchoolRequest = () => {
                                                 ...prev,
                                                 [branchIdx]: { ...prev[branchIdx], name: e.target.value }
                                             }))}
-                                            placeholder="2025-26"
+                                            placeholder="2025-2026"
                                             className="dark:bg-slate-950 dark:border-slate-700"
                                         />
                                     </div>

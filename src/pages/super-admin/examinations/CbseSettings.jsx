@@ -11,7 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Loader2, Save } from 'lucide-react';
 
 const CbseSettings = () => {
-    const { user } = useAuth();
+    const { user, currentSessionId, organizationId } = useAuth();
     const { selectedBranch } = useBranch();
     const { toast } = useToast();
     const [settings, setSettings] = useState({
@@ -62,6 +62,8 @@ const CbseSettings = () => {
                 branch_id: branchId,
                 setting_key: 'marksheet_print_settings',
                 setting_value: settings,
+                session_id: currentSessionId,
+                organization_id: organizationId,
             }, { onConflict: 'branch_id,setting_key' });
 
         if (error) {

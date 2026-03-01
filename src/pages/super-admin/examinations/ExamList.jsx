@@ -49,15 +49,16 @@ import LinkExamModal from '@/components/examinations/LinkExamModal';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 const ExamList = () => {
-    const { groupId } = useParams();
+    const { groupId, roleSlug } = useParams();
     const navigate = useNavigate();
-    const { user, currentSessionId, organizationId } = useAuth();
+    const { currentSessionId, organizationId } = useAuth();
     const { selectedBranch } = useBranch();
     const { toast } = useToast();
     
     const [group, setGroup] = useState(null);
     const [exams, setExams] = useState([]);
     const [sessions, setSessions] = useState([]);
+    const [marksheetTemplates, setMarksheetTemplates] = useState([]);
     const [loading, setLoading] = useState(true);
     
     // Modal states
@@ -74,8 +75,6 @@ const ExamList = () => {
     const [deleteId, setDeleteId] = useState(null);
     const [isDeleteAlertOpen, setIsDeleteAlertOpen] = useState(false);
 
-    const branchId = user?.profile?.branch_id;
-
     const { register, handleSubmit, reset, setValue, watch, formState: { errors } } = useForm({
         defaultValues: {
             name: '',
@@ -83,25 +82,33 @@ const ExamList = () => {
             is_publish: false,
             is_publish_result: false,
             roll_no_type: 'admit_card',
+            marksheet_template_id: '',
             passing_percentage: '',
             description: ''
         }
     });
 
     const fetchGroupDetails = useCallback(async () => {
-        if (!branchId || !groupId) return;
+        if (!selectedBranch?.id || !groupId) return;
         const { data } = await supabase.from('exam_groups').select('*').eq('id', groupId).single();
         setGroup(data);
-    }, [branchId, groupId]);
+    }, [selectedBranch?.id, groupId]);
 
     const fetchSessions = useCallback(async () => {
-        if (!branchId) return;
-        const { data } = await supabase.from('sessions').select('id, name').eq('branch_id', branchId).order('created_at', { ascending: false });
+        if (!selectedBranch?.id) return;
+        const { data } = await supabase.from('sessions').select('id, name').eq('branch_id', selectedBranch.id).order('created_at', { ascending: false });
         setSessions(data || []);
-    }, [branchId]);
+    }, [selectedBranch?.id]);
+
+    const fetchMarksheetTemplates = useCallback(async () => {
+        if (!selectedBranch?.id) return;
+        const { data } = await supabase.from('marksheet_templates').select('id, template_name').eq('branch_id', selectedBranch.id).eq('is_active', true);
+        setMarksheetTemplates(data || []);
+    }, [selectedBranch?.id]);
 
     const fetchExams = useCallback(async () => {
         if (!selectedBranch?.id) return;
+        if (!currentSessionId) return;
         setLoading(true);
         const { data, error } = await supabase
             .from('exams')
@@ -113,6 +120,7 @@ const ExamList = () => {
             `)
             .eq('exam_group_id', groupId)
             .eq('branch_id', selectedBranch.id)
+            .eq('session_id', currentSessionId)
             .order('created_at', { ascending: false });
         
         if (error) {
@@ -126,15 +134,16 @@ const ExamList = () => {
             setExams(examsWithCount);
         }
         setLoading(false);
-    }, [groupId, toast, selectedBranch]);
+    }, [groupId, toast, selectedBranch, currentSessionId]);
 
     useEffect(() => {
-        if (branchId && groupId && selectedBranch?.id) {
+        if (groupId && selectedBranch?.id) {
             fetchGroupDetails();
             fetchSessions();
+            fetchMarksheetTemplates();
             fetchExams();
         }
-    }, [branchId, groupId, selectedBranch?.id, fetchGroupDetails, fetchSessions, fetchExams]);
+    }, [groupId, selectedBranch?.id, fetchGroupDetails, fetchSessions, fetchMarksheetTemplates, fetchExams]);
 
     const openExamModal = (exam = null) => {
         if (exam) {
@@ -144,6 +153,7 @@ const ExamList = () => {
             setValue('is_publish', exam.is_publish);
             setValue('is_publish_result', exam.is_publish_result);
             setValue('roll_no_type', exam.roll_no_type);
+            setValue('marksheet_template_id', exam.marksheet_template_id || '');
             setValue('passing_percentage', exam.passing_percentage);
             setValue('description', exam.description);
         } else {
@@ -154,6 +164,7 @@ const ExamList = () => {
                 is_publish: false,
                 is_publish_result: false,
                 roll_no_type: 'admit_card',
+                marksheet_template_id: '',
                 passing_percentage: '',
                 description: ''
             });
@@ -189,6 +200,7 @@ const ExamList = () => {
                 session_id: currentSessionId,
                 organization_id: organizationId,
                 exam_group_id: groupId,
+                marksheet_template_id: data.marksheet_template_id || null,
                 passing_percentage: data.passing_percentage ? parseFloat(data.passing_percentage) : null
             };
 
@@ -238,7 +250,7 @@ const ExamList = () => {
             <div className="p-6 space-y-6">
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-4">
-                        <Button variant="outline" size="icon" onClick={() => navigate('/school-owner/examinations/exam-group')}>
+                        <Button variant="outline" size="icon" onClick={() => navigate(`/${roleSlug || 'super-admin'}/examinations/exam-group`)}>
                             <ArrowLeft className="h-4 w-4" />
                         </Button>
                         <div>
@@ -404,6 +416,16 @@ const ExamList = () => {
                         </div>
 
                         <div className="space-y-2">
+                            <Label>Marksheet Template</Label>
+                            <Select onValueChange={(v) => setValue('marksheet_template_id', v)} value={watch('marksheet_template_id')}>
+                                <SelectTrigger><SelectValue placeholder="Select Template" /></SelectTrigger>
+                                <SelectContent>
+                                    {marksheetTemplates.map(t => <SelectItem key={t.id} value={t.id}>{t.template_name}</SelectItem>)}
+                                </SelectContent>
+                            </Select>
+                        </div>
+
+                        <div className="space-y-2">
                             <Label>Description</Label>
                             <Textarea {...register('description')} />
                         </div>
@@ -421,28 +443,28 @@ const ExamList = () => {
                 isOpen={isStudentModalOpen} 
                 onClose={() => { setIsStudentModalOpen(false); fetchExams(); }} 
                 exam={selectedExam}
-                branchId={branchId}
+                branchId={selectedBranch?.id}
             />
 
             <AddExamSubjectsModal 
                 isOpen={isSubjectModalOpen}
                 onClose={() => { setIsSubjectModalOpen(false); fetchExams(); }}
                 exam={selectedExam}
-                branchId={branchId}
+                branchId={selectedBranch?.id}
             />
 
             <EnterMarksModal
                 isOpen={isMarksModalOpen}
                 onClose={() => setIsMarksModalOpen(false)}
                 exam={selectedExam}
-                branchId={branchId}
+                branchId={selectedBranch?.id}
             />
 
             <LinkExamModal
                 isOpen={isLinkModalOpen}
                 onClose={() => setIsLinkModalOpen(false)}
                 group={group}
-                branchId={branchId}
+                branchId={selectedBranch?.id}
             />
 
             <AlertDialog open={isDeleteAlertOpen} onOpenChange={setIsDeleteAlertOpen}>

@@ -1,6 +1,6 @@
 ﻿import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import DashboardLayout from '@/components/DashboardLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -43,7 +43,8 @@ const examTypes = [
   "General Purpose (Pass/Fail)",
   "School Based Grading System",
   "College Based Grading System",
-  "GPA Grading System"
+  "GPA Grading System",
+  "Average Passing"
 ];
 
 const ExamGroup = () => {
@@ -51,6 +52,7 @@ const ExamGroup = () => {
   const { selectedBranch } = useBranch();
   const { toast } = useToast();
   const navigate = useNavigate();
+  const { roleSlug } = useParams();
   const [examGroups, setExamGroups] = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -277,7 +279,7 @@ const ExamGroup = () => {
                                <TooltipProvider>
                                 <Tooltip>
                                   <TooltipTrigger asChild>
-                                    <Button variant="ghost" size="icon" onClick={() => navigate(`/school-owner/examinations/exam-group/${group.id}/exams`)}>
+                                    <Button variant="ghost" size="icon" onClick={() => navigate(`/${roleSlug || 'super-admin'}/examinations/exam-group/${group.id}/exams`)}>
                                       <Plus className="h-4 w-4 text-green-600" />
                                     </Button>
                                   </TooltipTrigger>

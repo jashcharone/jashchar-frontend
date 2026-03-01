@@ -27,11 +27,13 @@ const CbseTerm = () => {
 
     const fetchTerms = useCallback(async () => {
         if (!branchId) return;
+        if (!currentSessionId) return;
         setLoading(true);
         const { data, error } = await supabase
             .from('cbse_terms')
             .select('*')
             .eq('branch_id', branchId)
+            .eq('session_id', currentSessionId)
             .order('name', { ascending: true });
         
         if (error) {
@@ -40,7 +42,7 @@ const CbseTerm = () => {
             setTerms(data);
         }
         setLoading(false);
-    }, [user, branchId, toast]);
+    }, [user, branchId, currentSessionId, toast]);
 
     useEffect(() => {
         fetchTerms();

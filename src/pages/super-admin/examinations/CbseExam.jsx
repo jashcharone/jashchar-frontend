@@ -66,12 +66,13 @@ const CbseExam = () => {
 
     const fetchExams = useCallback(async () => {
         if (!user?.profile?.branch_id && !selectedBranch?.id) return;
+        if (!currentSessionId) return;
         setLoading(true);
-        const { data, error } = await supabase.from('cbse_exams').select(`*, cbse_terms(name), classes(name), cbse_assessments(name)`).eq('branch_id', selectedBranch?.id || user.profile.branch_id).order('created_at', { ascending: false });
+        const { data, error } = await supabase.from('cbse_exams').select(`*, cbse_terms(name), classes(name), cbse_assessments(name)`).eq('branch_id', selectedBranch?.id || user.profile.branch_id).eq('session_id', currentSessionId).order('created_at', { ascending: false });
         if (error) toast({ variant: 'destructive', title: 'Error fetching exams', description: error.message });
         else setExams(data);
         setLoading(false);
-    }, [user, selectedBranch?.id, toast]);
+    }, [user, selectedBranch?.id, currentSessionId, toast]);
 
     useEffect(() => {
         fetchDropdownData();

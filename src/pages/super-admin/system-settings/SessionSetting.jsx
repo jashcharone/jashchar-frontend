@@ -61,28 +61,42 @@ const SessionSetting = () => {
     // Get organization ID from user profile or localStorage
     const orgId = organizationId || user?.profile?.organization_id || localStorage.getItem('selectedOrganizationId');
 
-    // Format session name: YYYY-YY (e.g., 2025-26)
+    // Format session name: YYYY-YYYY (e.g., 2025-2026) - 8 digit format for 100 year stability
     const formatSessionName = (value) => {
         const digits = value.replace(/\D/g, '');
         if (digits.length === 0) return '';
         if (digits.length <= 4) return digits;
         const year1 = digits.substring(0, 4);
-        const year2 = digits.substring(4, 6);
+        const year2 = digits.substring(4, 8);
         return `${year1}-${year2}`;
     };
 
-    // Validate session name format (YYYY-YY)
+    // Auto-generate session name from year
+    const generateSessionName = (startYear) => {
+        const year1 = parseInt(startYear);
+        if (isNaN(year1) || year1 < 2000 || year1 > 2199) return '';
+        return `${year1}-${year1 + 1}`;
+    };
+
+    // Get next session name based on current session
+    const getNextSessionName = (currentSessionName) => {
+        const match = currentSessionName?.match(/^(\d{4})-(\d{4})$/);
+        if (!match) return '';
+        const currentEndYear = parseInt(match[2]);
+        return `${currentEndYear}-${currentEndYear + 1}`;
+    };
+
+    // Validate session name format (YYYY-YYYY)
     const validateSessionName = (name) => {
-        const pattern = /^\d{4}-\d{2}$/;
+        const pattern = /^\d{4}-\d{4}$/;
         if (!pattern.test(name)) {
-            return 'Session name must be in format YYYY-YY (e.g., 2025-26)';
+            return 'Session name must be in format YYYY-YYYY (e.g., 2025-2026)';
         }
         const [year1, year2] = name.split('-');
         const year1Num = parseInt(year1);
         const year2Num = parseInt(year2);
-        const expectedYear2 = (year1Num + 1) % 100;
-        if (year2Num !== expectedYear2) {
-            return `Year should be ${year1}-${String(expectedYear2).padStart(2, '0')}`;
+        if (year2Num !== year1Num + 1) {
+            return `Year should be ${year1}-${year1Num + 1}`;
         }
         return null;
     };
@@ -95,6 +109,99 @@ const SessionSetting = () => {
         const month = String(date.getMonth() + 1).padStart(2, '0');
         const year = date.getFullYear();
         return `${day}-${month}-${year}`;
+    };
+
+    // Check if any session is ending soon or has already ended
+    const checkSessionExpiry = (branchesWithSessions) => {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const warningDays = 30; // Warn 30 days before end
+        
+        branchesWithSessions.forEach(branch => {
+            const activeSession = branch.sessions?.find(s => s.is_active);
+            if (!activeSession?.end_date) return;
+            
+            const endDate = new Date(activeSession.end_date);
+            const daysUntilEnd = Math.ceil((endDate - today) / (1000 * 60 * 60 * 24));
+            
+            // Check if next session exists
+            const nextSessionName = getNextSessionName(activeSession.name);
+            const nextSessionExists = branch.sessions?.some(s => s.name === nextSessionName);
+            
+            if (daysUntilEnd < 0 && !nextSessionExists) {
+                // Session has already ended!
+                toast({ 
+                    variant: 'destructive', 
+                    title: `⚠️ Session Expired - ${branch.branch_name}`,
+                    description: `Session "${activeSession.name}" has ended. Please create next session "${nextSessionName}".`,
+                    duration: 10000
+                });
+            } else if (daysUntilEnd <= warningDays && daysUntilEnd >= 0 && !nextSessionExists) {
+                // Session ending soon
+                toast({ 
+                    title: `📅 Session Ending Soon - ${branch.branch_name}`,
+                    description: `Session "${activeSession.name}" ends in ${daysUntilEnd} days. Consider creating "${nextSessionName}".`,
+                    duration: 8000
+                });
+            }
+        });
+    };
+
+    // Quick create next session for a branch
+    const quickCreateNextSession = async (branchId, currentSession) => {
+        const nextSessionName = getNextSessionName(currentSession.name);
+        if (!nextSessionName) {
+            toast({ variant: 'destructive', title: 'Error', description: 'Cannot determine next session name' });
+            return;
+        }
+
+        // Check if next session already exists
+        const branch = branches.find(b => b.id === branchId);
+        if (branch?.sessions?.some(s => s.name === nextSessionName)) {
+            toast({ variant: 'destructive', title: 'Error', description: `Session "${nextSessionName}" already exists` });
+            return;
+        }
+
+        // Calculate default dates: next day after current session ends, 1 year duration
+        let startDate = '';
+        let endDate = '';
+        if (currentSession.end_date) {
+            const start = new Date(currentSession.end_date);
+            start.setDate(start.getDate() + 1);
+            startDate = start.toISOString().split('T')[0];
+            
+            const end = new Date(start);
+            end.setFullYear(end.getFullYear() + 1);
+            end.setDate(end.getDate() - 1); // End one day before next year
+            endDate = end.toISOString().split('T')[0];
+        }
+
+        setCreating(prev => ({ ...prev, [branchId]: true }));
+        try {
+            const { error } = await supabase
+                .from('sessions')
+                .insert({
+                    branch_id: branchId,
+                    organization_id: organizationId,
+                    name: nextSessionName,
+                    start_date: startDate || null,
+                    end_date: endDate || null,
+                    is_active: false // Don't auto-activate, let admin activate when ready
+                });
+
+            if (error) throw error;
+
+            toast({ 
+                title: '✅ Next Session Created', 
+                description: `Session "${nextSessionName}" created. Activate it when ready.` 
+            });
+            fetchData();
+        } catch (error) {
+            console.error('Error creating next session:', error);
+            toast({ variant: 'destructive', title: 'Error', description: error.message || 'Failed to create session' });
+        } finally {
+            setCreating(prev => ({ ...prev, [branchId]: false }));
+        }
     };
 
     // Fetch all branches and their sessions for this organization
@@ -135,6 +242,9 @@ const SessionSetting = () => {
             );
 
             setBranches(branchesWithSessions);
+            
+            // Check for sessions expiring soon or already ended - notify user
+            checkSessionExpiry(branchesWithSessions);
             
             // Expand all branches by default
             const expanded = {};
@@ -385,7 +495,7 @@ const SessionSetting = () => {
                             return (
                                 <Card key={branch.id} className="overflow-hidden">
                                     <Collapsible open={isExpanded} onOpenChange={() => toggleBranch(branch.id)}>
-                                        <CollapsibleTrigger className="w-full">
+                                        <CollapsibleTrigger asChild>
                                             <CardHeader className="cursor-pointer hover:bg-muted/50 transition-colors">
                                                 <div className="flex items-center justify-between">
                                                     <div className="flex items-center gap-3">
@@ -558,6 +668,37 @@ const SessionSetting = () => {
                                                         </TableBody>
                                                     </Table>
                                                 )}
+                                                
+                                                {/* Quick Create Next Session Button */}
+                                                {activeSession && !branch.sessions?.some(s => s.name === getNextSessionName(activeSession.name)) && (
+                                                    <div className="mt-4 p-4 border-2 border-dashed border-primary/30 rounded-lg bg-primary/5">
+                                                        <div className="flex items-center justify-between">
+                                                            <div>
+                                                                <p className="font-medium text-primary">
+                                                                    📅 Create Next Session
+                                                                </p>
+                                                                <p className="text-sm text-muted-foreground">
+                                                                    Suggested: <span className="font-semibold">{getNextSessionName(activeSession.name)}</span>
+                                                                    {activeSession.end_date && (
+                                                                        <> (starts after {formatDate(activeSession.end_date)})</>
+                                                                    )}
+                                                                </p>
+                                                            </div>
+                                                            <Button
+                                                                onClick={() => quickCreateNextSession(branch.id, activeSession)}
+                                                                disabled={creating[branch.id]}
+                                                                className="gap-2"
+                                                            >
+                                                                {creating[branch.id] ? (
+                                                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                                                ) : (
+                                                                    <Plus className="h-4 w-4" />
+                                                                )}
+                                                                Quick Create
+                                                            </Button>
+                                                        </div>
+                                                    </div>
+                                                )}
                                             </CardContent>
                                         </CollapsibleContent>
                                     </Collapsible>
@@ -581,16 +722,16 @@ const SessionSetting = () => {
                                                     </Label>
                                                     <Input
                                                         id={`session-name-${branch.id}`}
-                                                        placeholder="2025-26"
+                                                        placeholder="2025-2026"
                                                         value={newSession[branch.id]?.name || ''}
                                                         onChange={(e) => setNewSession(prev => ({ 
                                                             ...prev, 
                                                             [branch.id]: { ...(prev[branch.id] || {}), name: formatSessionName(e.target.value) }
                                                         }))}
-                                                        maxLength={7}
+                                                        maxLength={9}
                                                         className="mt-1.5"
                                                     />
-                                                    <p className="text-xs text-muted-foreground mt-1">Format: YYYY-YY (e.g., 2025-26)</p>
+                                                    <p className="text-xs text-muted-foreground mt-1">Format: YYYY-YYYY (e.g., 2025-2026)</p>
                                                 </div>
                                                 <div className="grid grid-cols-2 gap-4">
                                                     <div>

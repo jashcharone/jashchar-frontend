@@ -11,7 +11,7 @@ import { DialogFooter } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 const AssignStudents = ({ exam, onClose }) => {
-    const { user } = useAuth();
+    const { user, currentSessionId, organizationId } = useAuth();
     const { selectedBranch } = useBranch();
     const { toast } = useToast();
     const branchId = selectedBranch?.id || user?.profile?.branch_id;
@@ -94,7 +94,9 @@ const AssignStudents = ({ exam, onClose }) => {
         const assignments = Array.from(selectedStudents).map(student_id => ({
             branch_id: branchId,
             exam_id: exam.id,
-            student_id: student_id
+            student_id: student_id,
+            session_id: currentSessionId,
+            organization_id: organizationId
         }));
 
         if (assignments.length > 0) {

@@ -63,11 +63,13 @@ const MarksheetTemplate = () => {
 
     const fetchTemplates = useCallback(async () => {
         if (!branchId) return;
+        if (!currentSessionId) return;
         setLoading(true);
         const { data, error } = await supabase
             .from('cbse_marksheet_templates')
             .select('*')
             .eq('branch_id', branchId)
+            .eq('session_id', currentSessionId)
             .order('created_at', { ascending: false });
 
         if (error) {
@@ -76,7 +78,7 @@ const MarksheetTemplate = () => {
             setTemplates(data);
         }
         setLoading(false);
-    }, [branchId, toast]);
+    }, [branchId, currentSessionId, toast]);
 
     useEffect(() => {
         fetchTemplates();

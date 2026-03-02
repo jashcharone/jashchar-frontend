@@ -13,7 +13,7 @@ import {
   IndianRupee, Users, Loader2, Download, Printer, FileSpreadsheet,
   BarChart3, TrendingUp, TrendingDown, Calendar, Filter, RefreshCw,
   AlertCircle, CheckCircle2, Clock, CreditCard, Wallet, PieChart,
-  ArrowUpRight, ArrowDownRight, GraduationCap, Search
+  ArrowUpRight, ArrowDownRight, GraduationCap, Search, Undo2
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
@@ -68,7 +68,7 @@ const FeesAnalysis = () => {
   // Analytics Data
   const [overview, setOverview] = useState({
     totalAllocated: 0, totalCollected: 0, totalDue: 0, totalDiscount: 0,
-    totalFine: 0, collectionRate: 0, totalStudents: 0, fullyPaid: 0,
+    totalFine: 0, totalRefunded: 0, collectionRate: 0, totalStudents: 0, fullyPaid: 0,
     partialPaid: 0, unpaid: 0, totalPayments: 0,
   });
   const [classWiseFees, setClassWiseFees] = useState([]);
@@ -131,7 +131,7 @@ const FeesAnalysis = () => {
       allStudents.forEach(s => { studentMap[s.id] = s; });
 
       if (studentIds.length === 0) {
-        setOverview({ totalAllocated: 0, totalCollected: 0, totalDue: 0, totalDiscount: 0, totalFine: 0, collectionRate: 0, totalStudents: 0, fullyPaid: 0, partialPaid: 0, unpaid: 0, totalPayments: 0 });
+        setOverview({ totalAllocated: 0, totalCollected: 0, totalDue: 0, totalDiscount: 0, totalFine: 0, totalRefunded: 0, collectionRate: 0, totalStudents: 0, fullyPaid: 0, partialPaid: 0, unpaid: 0, totalPayments: 0 });
         setClassWiseFees([]); setFeeTypeBreakdown([]); setPaymentModeSplit([]); setMonthlyCollection([]); setTopDefaulters([]); setDailyCollection([]);
         setLoading(false);
         return;
@@ -207,6 +207,17 @@ const FeesAnalysis = () => {
         if (payRes.data) allHostelPayments.push(...payRes.data);
       }
 
+      // === 3D. FETCH APPROVED REFUNDS ===
+      let allRefunds = [];
+      for (let i = 0; i < studentIds.length; i += batchSize) {
+        const batch = studentIds.slice(i, i + batchSize);
+        const { data } = await supabase.from('fee_refunds')
+          .select('id, student_id, refund_amount, refund_type, status')
+          .in('student_id', batch)
+          .eq('status', 'approved');
+        if (data) allRefunds.push(...data);
+      }
+
       // === 4. COMPUTE OVERVIEW ===
       let totalAllocated = 0, totalDiscount = 0, totalFine = 0;
       allAllocations.forEach(a => { totalAllocated += parseFloat(a.fee_master?.amount || 0); });
@@ -241,7 +252,12 @@ const FeesAnalysis = () => {
       const grandCollected = totalCollected + totalTransportCollected + totalHostelCollected;
       // Discount reduces what student owes — so effective payment = cash + discount
       const grandEffective = grandCollected + totalDiscount;
-      const totalDue = Math.max(0, grandAllocated - grandEffective);
+      
+      // Calculate total refunded (approved refunds = money returned to students)
+      const totalRefunded = allRefunds.reduce((sum, r) => sum + parseFloat(r.refund_amount || 0), 0);
+      
+      // Balance Due = Total Allocated - Effective Paid + Refunded (refund adds back to balance)
+      const totalDue = Math.max(0, grandAllocated - grandEffective + totalRefunded);
       const collectionRate = grandAllocated > 0 ? Math.round((grandEffective / grandAllocated) * 100) : 0;
 
       // Per-student payment status (all fee types combined)
@@ -318,7 +334,7 @@ const FeesAnalysis = () => {
       const academicDiscTotal = totalDiscount - transportDiscTotal - hostelDiscTotal;
 
       setOverview({
-        totalAllocated: grandAllocated, totalCollected: grandEffective, totalCashCollected: grandCollected, totalDue, totalDiscount, totalFine,
+        totalAllocated: grandAllocated, totalCollected: grandEffective, totalCashCollected: grandCollected, totalDue, totalDiscount, totalFine, totalRefunded,
         collectionRate, totalStudents: allStudents.length, fullyPaid, partialPaid, unpaid,
         totalPayments: allPayments.length + allTransportPayments.length + allHostelPayments.length,
         // Detailed breakdowns (collected = cash + discount for each)
@@ -700,9 +716,12 @@ const FeesAnalysis = () => {
         ) : (
           <>
             {/* ═══ KEY METRICS ═══ */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+            <div className={`grid grid-cols-2 ${overview.totalRefunded > 0 ? 'md:grid-cols-5' : 'md:grid-cols-4'} gap-4 mb-6`}>
               <StatCard title="Total Allocated" value={`₹${overview.totalAllocated.toLocaleString('en-IN')}`} icon={CreditCard} color="text-blue-600" bgColor="bg-blue-100 dark:bg-blue-900/30" subtitle={`${overview.totalStudents} students`} />
               <StatCard title="Collected (Cash+Disc)" value={`₹${overview.totalCollected.toLocaleString('en-IN')}`} icon={CheckCircle2} color="text-green-600" bgColor="bg-green-100 dark:bg-green-900/30" subtitle={`Cash: ₹${(overview.totalCashCollected || 0).toLocaleString('en-IN')}`} />
+              {overview.totalRefunded > 0 && (
+                <StatCard title="Total Refunded" value={`₹${overview.totalRefunded.toLocaleString('en-IN')}`} icon={Undo2} color="text-amber-600" bgColor="bg-amber-100 dark:bg-amber-900/30" subtitle="Approved refunds" />
+              )}
               <StatCard title="Due Balance" value={`₹${overview.totalDue.toLocaleString('en-IN')}`} icon={AlertCircle} color="text-red-600" bgColor="bg-red-100 dark:bg-red-900/30" subtitle={`${overview.unpaid + overview.partialPaid} students`} />
               <StatCard title="Collection Rate" value={`${overview.collectionRate}%`} icon={TrendingUp} color={overview.collectionRate >= 80 ? 'text-green-600' : overview.collectionRate >= 50 ? 'text-amber-600' : 'text-red-600'} bgColor={overview.collectionRate >= 80 ? 'bg-green-100 dark:bg-green-900/30' : overview.collectionRate >= 50 ? 'bg-amber-100 dark:bg-amber-900/30' : 'bg-red-100 dark:bg-red-900/30'} />
             </div>

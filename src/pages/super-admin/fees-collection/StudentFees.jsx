@@ -245,6 +245,72 @@ const StudentFees = () => {
             }
             setStudent(studentRes.data);
 
+            // ====================================================================
+            // AUTO-ALLOCATE FEES: If fee group is assigned to student's class,
+            // automatically create student_fee_allocations for this student
+            // ====================================================================
+            if (studentRes.data.class_id) {
+                // Step 1: Get fee_group_class_assignments for this student's class
+                const { data: classAssignments } = await supabase
+                    .from('fee_group_class_assignments')
+                    .select('fee_group_id')
+                    .eq('class_id', studentRes.data.class_id)
+                    .eq('branch_id', selectedBranch.id)
+                    .eq('session_id', currentSessionId)
+                    .eq('is_active', true)
+                    .or(`section_id.is.null,section_id.eq.${studentRes.data.section_id || 'null'}`);
+                
+                if (classAssignments && classAssignments.length > 0) {
+                    const feeGroupIds = [...new Set(classAssignments.map(a => a.fee_group_id))];
+                    
+                    // Step 2: Get all fee_masters for these fee groups
+                    const { data: feeMasters } = await supabase
+                        .from('fee_masters')
+                        .select('id')
+                        .in('fee_group_id', feeGroupIds)
+                        .eq('branch_id', selectedBranch.id)
+                        .eq('session_id', currentSessionId);
+                    
+                    if (feeMasters && feeMasters.length > 0) {
+                        // Step 3: Get existing allocations for this student
+                        const { data: existingAllocations } = await supabase
+                            .from('student_fee_allocations')
+                            .select('fee_master_id')
+                            .eq('student_id', studentId)
+                            .eq('branch_id', selectedBranch.id);
+                        
+                        const existingMasterIds = new Set((existingAllocations || []).map(a => a.fee_master_id));
+                        
+                        // Step 4: Create missing allocations
+                        const missingAllocations = feeMasters
+                            .filter(fm => !existingMasterIds.has(fm.id))
+                            .map(fm => ({
+                                student_id: studentId,
+                                fee_master_id: fm.id,
+                                branch_id: selectedBranch.id,
+                                session_id: currentSessionId,
+                                organization_id: organizationId,
+                            }));
+                        
+                        if (missingAllocations.length > 0) {
+                            const { error: allocError } = await supabase
+                                .from('student_fee_allocations')
+                                .upsert(missingAllocations, { 
+                                    onConflict: 'student_id,fee_master_id',
+                                    ignoreDuplicates: true 
+                                });
+                            
+                            if (allocError) {
+                                console.warn('Auto-allocation error (may be duplicates):', allocError);
+                            } else {
+                                console.log(`Auto-allocated ${missingAllocations.length} fees for student`);
+                            }
+                        }
+                    }
+                }
+            }
+            // ====================================================================
+
             // Fetch class teacher if class exists
             if (studentRes.data.class_id) {
                 const { data: teacherData } = await supabase
@@ -610,18 +676,40 @@ const StudentFees = () => {
         const totalPaid = academicPaid + transportPaid + hostelPaid;
         const totalDiscount = academicDiscount + transportDiscount + hostelDiscount;
         
-        // Refund totals (completed refunds only)
+        // Refund totals (approved refunds only - these are the ones where money was returned)
         const totalRefunded = studentRefunds
-            .filter(r => r.status === 'completed')
+            .filter(r => r.status === 'approved')
             .reduce((sum, r) => sum + Number(r.refund_amount || 0), 0);
         
-        const balance = totalFees - totalPaid - totalDiscount;
+        // Balance = Total Fees - Paid - Discount + Refunded
+        // (Refund adds back to balance because money was returned to student)
+        const balance = totalFees - totalPaid - totalDiscount + totalRefunded;
 
         const overdueCount = fees.filter(f => f.isOverdue && f.balance > 0).length;
         const unpaidCount = fees.filter(f => f.balance > 0).length;
 
         return { totalFees, totalPaid, totalDiscount, totalRefunded, balance, overdueCount, unpaidCount };
     }, [fees, payments, transportDetails, hostelDetails, studentRefunds]);
+
+    // Calculate Transport balance including transport-specific refunds
+    const transportBalanceWithRefunds = useMemo(() => {
+        if (!transportDetails) return 0;
+        const transportRefunds = studentRefunds
+            .filter(r => r.refund_type === 'transport' && r.status === 'approved')
+            .reduce((sum, r) => sum + Number(r.refund_amount || 0), 0);
+        // Balance = Original Balance + Refunds (refund adds back to what student owes)
+        return Math.max(0, (transportDetails.balance || 0) + transportRefunds);
+    }, [transportDetails, studentRefunds]);
+
+    // Calculate Hostel balance including hostel-specific refunds
+    const hostelBalanceWithRefunds = useMemo(() => {
+        if (!hostelDetails) return 0;
+        const hostelRefunds = studentRefunds
+            .filter(r => r.refund_type === 'hostel' && r.status === 'approved')
+            .reduce((sum, r) => sum + Number(r.refund_amount || 0), 0);
+        // Balance = Original Balance + Refunds (refund adds back to what student owes)
+        return Math.max(0, (hostelDetails.balance || 0) + hostelRefunds);
+    }, [hostelDetails, studentRefunds]);
 
     const collectFees = async () => {
         if (!selectedFees.length) {
@@ -736,8 +824,8 @@ const StudentFees = () => {
                 toast({ variant: 'destructive', title: 'Invalid amount', description: 'Please enter an amount to pay.' });
                 return;
             }
-            if (totalAmount > transportDetails.balance) {
-                toast({ variant: 'destructive', title: 'Exceeds balance', description: `Amount cannot exceed balance of ${currencySymbol}${transportDetails.balance.toLocaleString('en-IN')}` });
+            if (totalAmount > transportBalanceWithRefunds) {
+                toast({ variant: 'destructive', title: 'Exceeds balance', description: `Amount cannot exceed balance of ${currencySymbol}${transportBalanceWithRefunds.toLocaleString('en-IN')}` });
                 return;
             }
         } else {
@@ -844,8 +932,8 @@ const StudentFees = () => {
                 toast({ variant: 'destructive', title: 'Invalid amount', description: 'Please enter an amount to pay.' });
                 return;
             }
-            if (totalAmount > hostelDetails.balance) {
-                toast({ variant: 'destructive', title: 'Exceeds balance', description: `Amount cannot exceed balance of ${currencySymbol}${hostelDetails.balance.toLocaleString('en-IN')}` });
+            if (totalAmount > hostelBalanceWithRefunds) {
+                toast({ variant: 'destructive', title: 'Exceeds balance', description: `Amount cannot exceed balance of ${currencySymbol}${hostelBalanceWithRefunds.toLocaleString('en-IN')}` });
                 return;
             }
         } else {
@@ -1378,10 +1466,13 @@ const StudentFees = () => {
                 {/* Right Column - Fees & Payment History */}
                 <div className="xl:col-span-3 space-y-4">
                     {/* Summary Cards */}
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div className="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-5 gap-4">
                         <SummaryCard title="Total Fees" amount={feeSummary.totalFees} icon={FileText} variant="primary" currencySymbol={currencySymbol} />
                         <SummaryCard title="Paid Amount" amount={feeSummary.totalPaid} icon={CheckCircle} variant="success" currencySymbol={currencySymbol} />
                         <SummaryCard title="Discount Given" amount={feeSummary.totalDiscount} icon={Receipt} variant="default" currencySymbol={currencySymbol} />
+                        {feeSummary.totalRefunded > 0 && (
+                            <SummaryCard title="Total Refunded" amount={feeSummary.totalRefunded} icon={Undo2} variant="warning" currencySymbol={currencySymbol} />
+                        )}
                         <SummaryCard title="Balance Due" amount={feeSummary.balance} icon={feeSummary.balance > 0 ? AlertTriangle : Clock} variant={feeSummary.balance > 0 ? 'danger' : 'success'} currencySymbol={currencySymbol} />
                     </div>
 
@@ -1536,7 +1627,7 @@ const StudentFees = () => {
                                                         </div>
                                                         <div>
                                                             <p className="text-xs text-muted-foreground">Balance {!transportDetails.isAnnualType ? `(${transportDetails.unpaidMonthsCount || 0} months)` : 'Due'}</p>
-                                                            <p className={`font-bold text-lg ${transportDetails.balance > 0 ? 'text-red-600' : 'text-green-600'}`}>{currencySymbol}{(transportDetails.balance || 0).toLocaleString('en-IN')}</p>
+                                                            <p className={`font-bold text-lg ${transportBalanceWithRefunds > 0 ? 'text-red-600' : 'text-green-600'}`}>{currencySymbol}{transportBalanceWithRefunds.toLocaleString('en-IN')}</p>
                                                         </div>
                                                     </div>
                                                     <Badge variant={transportDetails.status === 'Paid' ? 'success' : transportDetails.status === 'Partial' ? 'warning' : 'destructive'}>
@@ -1545,7 +1636,7 @@ const StudentFees = () => {
                                                 </div>
                                                 
                                                 {/* Transport Fee Collection Form */}
-                                                {transportDetails.balance > 0 && (
+                                                {transportBalanceWithRefunds > 0 && (
                                                     <div className="border-t pt-4 mt-4">
                                                         
                                                         {/* ANNUAL/ONE-TIME: Simple amount input (any amount up to balance) */}
@@ -1554,7 +1645,7 @@ const StudentFees = () => {
                                                                 <p className="text-sm font-medium mb-3">
                                                                     Enter Amount to Pay 
                                                                     <span className="text-xs text-muted-foreground ml-2">
-                                                                        (Balance: {currencySymbol}{transportDetails.balance.toLocaleString('en-IN')} — pay any amount)
+                                                                        (Balance: {currencySymbol}{transportBalanceWithRefunds.toLocaleString('en-IN')} — pay any amount)
                                                                     </span>
                                                                 </p>
                                                                 <div className="grid sm:grid-cols-3 gap-3">
@@ -1564,8 +1655,8 @@ const StudentFees = () => {
                                                                             type="number"
                                                                             value={transportPaymentDetails.amount}
                                                                             onChange={e => setTransportPaymentDetails(p => ({...p, amount: e.target.value}))}
-                                                                            placeholder={`Max ${transportDetails.balance.toLocaleString('en-IN')}`}
-                                                                            max={transportDetails.balance}
+                                                                            placeholder={`Max ${transportBalanceWithRefunds.toLocaleString('en-IN')}`}
+                                                                            max={transportBalanceWithRefunds}
                                                                         />
                                                                     </div>
                                                                     <div>
@@ -1788,7 +1879,7 @@ const StudentFees = () => {
                                                         </div>
                                                         <div>
                                                             <p className="text-xs text-muted-foreground">Balance {!hostelDetails.isAnnualType ? `(${hostelDetails.unpaidMonthsCount || 0} months)` : 'Due'}</p>
-                                                            <p className={`font-bold text-lg ${hostelDetails.balance > 0 ? 'text-red-600' : 'text-green-600'}`}>{currencySymbol}{(hostelDetails.balance || 0).toLocaleString('en-IN')}</p>
+                                                            <p className={`font-bold text-lg ${hostelBalanceWithRefunds > 0 ? 'text-red-600' : 'text-green-600'}`}>{currencySymbol}{hostelBalanceWithRefunds.toLocaleString('en-IN')}</p>
                                                         </div>
                                                     </div>
                                                     <Badge variant={hostelDetails.status === 'Paid' ? 'success' : hostelDetails.status === 'Partial' ? 'warning' : 'destructive'}>
@@ -1797,7 +1888,7 @@ const StudentFees = () => {
                                                 </div>
                                                 
                                                 {/* Hostel Fee Collection Form */}
-                                                {hostelDetails.balance > 0 && (
+                                                {hostelBalanceWithRefunds > 0 && (
                                                     <div className="border-t pt-4 mt-4">
                                                         
                                                         {/* ANNUAL/ONE-TIME: Simple amount input */}
@@ -1806,7 +1897,7 @@ const StudentFees = () => {
                                                                 <p className="text-sm font-medium mb-3">
                                                                     Enter Amount to Pay 
                                                                     <span className="text-xs text-muted-foreground ml-2">
-                                                                        (Balance: {currencySymbol}{hostelDetails.balance.toLocaleString('en-IN')} — pay any amount)
+                                                                        (Balance: {currencySymbol}{hostelBalanceWithRefunds.toLocaleString('en-IN')} — pay any amount)
                                                                     </span>
                                                                 </p>
                                                                 <div className="grid sm:grid-cols-3 gap-3">
@@ -1816,8 +1907,8 @@ const StudentFees = () => {
                                                                             type="number"
                                                                             value={hostelPaymentDetails.amount}
                                                                             onChange={e => setHostelPaymentDetails(p => ({...p, amount: e.target.value}))}
-                                                                            placeholder={`Max ${hostelDetails.balance.toLocaleString('en-IN')}`}
-                                                                            max={hostelDetails.balance}
+                                                                            placeholder={`Max ${hostelBalanceWithRefunds.toLocaleString('en-IN')}`}
+                                                                            max={hostelBalanceWithRefunds}
                                                                         />
                                                                     </div>
                                                                     <div>

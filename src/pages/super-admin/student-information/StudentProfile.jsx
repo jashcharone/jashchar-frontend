@@ -699,9 +699,21 @@ const StudentProfile = () => {
           .eq('branch_id', branchId)
           .is('reverted_at', null);
         
+        // Fetch refunds for this student (approved = money was returned)
+        const { data: refundsData } = await supabase
+          .from('fee_refunds')
+          .select('refund_amount')
+          .eq('student_id', targetId)
+          .eq('branch_id', branchId)
+          .eq('status', 'approved');
+        
         const totalFees = (feesData || []).reduce((sum, item) => sum + (item.fee_master?.amount || 0), 0);
-        const totalPaid = (paymentsData || []).reduce((sum, p) => sum + (p.amount || 0) + (p.discount_amount || 0), 0);
-        setFeesSummary({ total: totalFees, paid: totalPaid, balance: totalFees - totalPaid });
+        const totalPaid = (paymentsData || []).reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
+        const totalDiscount = (paymentsData || []).reduce((sum, p) => sum + (Number(p.discount_amount) || 0), 0);
+        const totalRefunded = (refundsData || []).reduce((sum, r) => sum + (Number(r.refund_amount) || 0), 0);
+        // Balance = Total - Paid - Discount + Refunded (refunds add back to balance)
+        const balance = totalFees - totalPaid - totalDiscount + totalRefunded;
+        setFeesSummary({ total: totalFees, paid: totalPaid, discount: totalDiscount, refunded: totalRefunded, balance });
         
         // 6. Fetch Siblings
         let siblings = [];

@@ -16,7 +16,7 @@ import { Search, Loader2, IndianRupee, Users, AlertCircle, CheckCircle2, Clock, 
 const CollectFees = () => {
     const navigate = useNavigate();
     const { roleSlug } = useParams();
-    const { user, currentSessionId } = useAuth();
+    const { user, currentSessionId, organizationId } = useAuth();
     const { selectedBranch, loading: branchLoading } = useBranch();
     const { toast } = useToast();
     
@@ -138,6 +138,93 @@ const CollectFees = () => {
             if (error) throw error;
             setStudents(data || []);
             
+            // ====================================================================
+            // AUTO-ALLOCATE FEES: Based on fee_group_class_assignments for this class
+            // This ensures ALL students in the class get their fees allocated
+            // ====================================================================
+            if (data && data.length > 0 && selectedClass) {
+                try {
+                    // Step 1: Get fee_group_class_assignments for this class
+                    let assignmentsQuery = supabase
+                        .from('fee_group_class_assignments')
+                        .select('fee_group_id')
+                        .eq('class_id', selectedClass)
+                        .eq('branch_id', branchId)
+                        .eq('session_id', currentSessionId)
+                        .eq('is_active', true);
+                    
+                    // If specific section selected, filter by section or null (all sections)
+                    if (selectedSection && selectedSection !== 'all') {
+                        assignmentsQuery = assignmentsQuery.or(`section_id.is.null,section_id.eq.${selectedSection}`);
+                    }
+                    
+                    const { data: classAssignments } = await assignmentsQuery;
+                    
+                    if (classAssignments && classAssignments.length > 0) {
+                        const feeGroupIds = [...new Set(classAssignments.map(a => a.fee_group_id))];
+                        
+                        // Step 2: Get all fee_masters for these fee groups
+                        const { data: feeMasters } = await supabase
+                            .from('fee_masters')
+                            .select('id')
+                            .in('fee_group_id', feeGroupIds)
+                            .eq('branch_id', branchId)
+                            .eq('session_id', currentSessionId);
+                        
+                        if (feeMasters && feeMasters.length > 0) {
+                            const studentIds = data.map(s => s.id);
+                            
+                            // Step 3: Get existing allocations for these students
+                            const { data: existingAllocations } = await supabase
+                                .from('student_fee_allocations')
+                                .select('student_id, fee_master_id')
+                                .in('student_id', studentIds)
+                                .eq('branch_id', branchId);
+                            
+                            // Create a set of existing student+fee combinations
+                            const existingSet = new Set(
+                                (existingAllocations || []).map(a => `${a.student_id}_${a.fee_master_id}`)
+                            );
+                            
+                            // Step 4: Create missing allocations
+                            const missingAllocations = [];
+                            for (const student of data) {
+                                for (const feeMaster of feeMasters) {
+                                    const key = `${student.id}_${feeMaster.id}`;
+                                    if (!existingSet.has(key)) {
+                                        missingAllocations.push({
+                                            student_id: student.id,
+                                            fee_master_id: feeMaster.id,
+                                            branch_id: branchId,
+                                            session_id: currentSessionId,
+                                            organization_id: organizationId,
+                                        });
+                                    }
+                                }
+                            }
+                            
+                            // Step 5: Batch insert missing allocations
+                            if (missingAllocations.length > 0) {
+                                const batchSize = 100;
+                                for (let i = 0; i < missingAllocations.length; i += batchSize) {
+                                    const batch = missingAllocations.slice(i, i + batchSize);
+                                    await supabase
+                                        .from('student_fee_allocations')
+                                        .upsert(batch, { 
+                                            onConflict: 'student_id,fee_master_id',
+                                            ignoreDuplicates: true 
+                                        });
+                                }
+                                console.log(`Auto-allocated ${missingAllocations.length} fees for ${data.length} students`);
+                            }
+                        }
+                    }
+                } catch (allocErr) {
+                    console.warn('Auto-allocation error (non-critical):', allocErr);
+                }
+            }
+            // ====================================================================
+            
             // Fetch fees progress for found students
             if (data && data.length > 0) {
                 await fetchFeesProgress(data.map(s => s.id));
@@ -156,16 +243,16 @@ const CollectFees = () => {
     // Fetch fee allocations and payments for fee progress display (including transport & hostel)
     const fetchFeesProgress = async (studentIds) => {
         try {
-            const [allocRes, payRes, transportRes, transportPayRes, hostelRes, hostelPayRes] = await Promise.all([
+            const [allocRes, payRes, transportRes, transportPayRes, hostelRes, hostelPayRes, refundsRes] = await Promise.all([
                 // Academic fee allocations
                 supabase
                     .from('student_fee_allocations')
                     .select('student_id, fee_master:fee_masters(amount)')
                     .in('student_id', studentIds),
-                // Academic fee payments
+                // Academic fee payments (with discount)
                 supabase
                     .from('fee_payments')
-                    .select('student_id, amount')
+                    .select('student_id, amount, discount_amount')
                     .in('student_id', studentIds)
                     .is('reverted_at', null),
                 // Transport fee details
@@ -174,10 +261,10 @@ const CollectFees = () => {
                     .select('student_id, transport_fee, billing_cycle')
                     .in('student_id', studentIds)
                     .eq('branch_id', branchId),
-                // Transport fee payments
+                // Transport fee payments (with discount)
                 supabase
                     .from('transport_fee_payments')
-                    .select('student_id, amount')
+                    .select('student_id, amount, discount_amount')
                     .in('student_id', studentIds)
                     .eq('branch_id', branchId)
                     .is('reverted_at', null),
@@ -187,18 +274,25 @@ const CollectFees = () => {
                     .select('student_id, hostel_fee, billing_cycle')
                     .in('student_id', studentIds)
                     .eq('branch_id', branchId),
-                // Hostel fee payments
+                // Hostel fee payments (with discount)
                 supabase
                     .from('hostel_fee_payments')
-                    .select('student_id, amount')
+                    .select('student_id, amount, discount_amount')
                     .in('student_id', studentIds)
                     .eq('branch_id', branchId)
-                    .is('reverted_at', null)
+                    .is('reverted_at', null),
+                // Fee refunds (approved only - money returned to student)
+                supabase
+                    .from('fee_refunds')
+                    .select('student_id, refund_amount')
+                    .in('student_id', studentIds)
+                    .eq('branch_id', branchId)
+                    .eq('status', 'approved')
             ]);
 
             const progressMap = {};
             studentIds.forEach(id => {
-                progressMap[id] = { total: 0, paid: 0, balance: 0, progress: 0 };
+                progressMap[id] = { total: 0, paid: 0, discount: 0, refunded: 0, balance: 0, progress: 0 };
             });
 
             // Add academic fee allocations
@@ -211,11 +305,12 @@ const CollectFees = () => {
                 });
             }
 
-            // Add academic fee payments
+            // Add academic fee payments (with discount)
             if (payRes.data) {
                 payRes.data.forEach(pay => {
                     if (progressMap[pay.student_id]) {
                         progressMap[pay.student_id].paid += parseFloat(pay.amount || 0);
+                        progressMap[pay.student_id].discount += parseFloat(pay.discount_amount || 0);
                     }
                 });
             }
@@ -241,11 +336,12 @@ const CollectFees = () => {
                 });
             }
 
-            // Add transport fee payments
+            // Add transport fee payments (with discount)
             if (transportPayRes.data) {
                 transportPayRes.data.forEach(pay => {
                     if (progressMap[pay.student_id]) {
                         progressMap[pay.student_id].paid += parseFloat(pay.amount || 0);
+                        progressMap[pay.student_id].discount += parseFloat(pay.discount_amount || 0);
                     }
                 });
             }
@@ -271,20 +367,31 @@ const CollectFees = () => {
                 });
             }
 
-            // Add hostel fee payments
+            // Add hostel fee payments (with discount)
             if (hostelPayRes.data) {
                 hostelPayRes.data.forEach(pay => {
                     if (progressMap[pay.student_id]) {
                         progressMap[pay.student_id].paid += parseFloat(pay.amount || 0);
+                        progressMap[pay.student_id].discount += parseFloat(pay.discount_amount || 0);
+                    }
+                });
+            }
+
+            // Add approved refunds (money returned to student, increases their balance)
+            if (refundsRes.data) {
+                refundsRes.data.forEach(refund => {
+                    if (progressMap[refund.student_id]) {
+                        progressMap[refund.student_id].refunded += parseFloat(refund.refund_amount || 0);
                     }
                 });
             }
 
             // Calculate balance and progress
+            // Balance = Total - Paid - Discount + Refunded (refund adds back to balance)
             Object.keys(progressMap).forEach(id => {
-                const { total, paid } = progressMap[id];
-                progressMap[id].balance = Math.max(0, total - paid);
-                progressMap[id].progress = total > 0 ? Math.min(100, Math.round((paid / total) * 100)) : 0;
+                const { total, paid, discount, refunded } = progressMap[id];
+                progressMap[id].balance = Math.max(0, total - paid - discount + refunded);
+                progressMap[id].progress = total > 0 ? Math.min(100, Math.round(((paid + discount) / total) * 100)) : 0;
             });
 
             setFeesData(progressMap);
@@ -484,7 +591,7 @@ const CollectFees = () => {
                                         </thead>
                                         <tbody>
                                             {students.length > 0 ? students.map((student, index) => {
-                                                const fee = feesData[student.id] || { total: 0, paid: 0, balance: 0, progress: 0 };
+                                                const fee = feesData[student.id] || { total: 0, paid: 0, discount: 0, refunded: 0, balance: 0, progress: 0 };
                                                 const progressColor = fee.progress >= 100 ? 'text-green-600 dark:text-green-400' : fee.progress > 0 ? 'text-amber-600 dark:text-amber-400' : 'text-red-600 dark:text-red-400';
                                                 const progressBg = fee.progress >= 100 ? 'bg-green-50 dark:bg-green-950/30' : fee.progress > 0 ? 'bg-amber-50 dark:bg-amber-950/20' : '';
                                                 const badgeColor = fee.progress >= 100 ? 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300' : fee.progress > 0 ? 'bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-300' : 'bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300';

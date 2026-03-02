@@ -595,7 +595,8 @@ export const STUDENT_TEMPLATES = [
     key: 'birthday_month',
     name: 'Birthday Report - Month',
     category: TEMPLATE_CATEGORIES.DEMOGRAPHICS,
-    description: 'Students with birthdays in selected month',
+    description: 'Students with birthdays in current month',
+    isBirthdayReport: 'current_month',
     columns: [
       { key: 'admission_number', label: 'Adm. No', type: 'string' },
       { key: 'full_name', label: 'Name', type: 'computed' },
@@ -614,6 +615,7 @@ export const STUDENT_TEMPLATES = [
     name: 'Birthday Report - Today/Week',
     category: TEMPLATE_CATEGORIES.DEMOGRAPHICS,
     description: 'Students with birthdays today or this week',
+    isBirthdayReport: 'today_week',
     columns: [
       { key: 'full_name', label: 'Name', type: 'computed' },
       { key: 'date_of_birth', label: 'DOB', type: 'date' },

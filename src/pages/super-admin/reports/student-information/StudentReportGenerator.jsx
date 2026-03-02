@@ -284,8 +284,8 @@ const StudentReportGenerator = () => {
           girls_count: counts.girls,
           total_count: total,
           ratio: ratio,
-          boys_percent: total > 0 ? ((counts.boys / total) * 100).toFixed(1) + '%' : '0%',
-          girls_percent: total > 0 ? ((counts.girls / total) * 100).toFixed(1) + '%' : '0%'
+          male_percent: total > 0 ? ((counts.boys / total) * 100).toFixed(1) + '%' : '0%',
+          female_percent: total > 0 ? ((counts.girls / total) * 100).toFixed(1) + '%' : '0%'
         };
       }).sort((a, b) => a.class_name.localeCompare(b.class_name));
     }
@@ -294,31 +294,42 @@ const StudentReportGenerator = () => {
     if (templateKey === 'age_wise_distribution') {
       const ageMap = new Map();
       const currentYear = new Date().getFullYear();
+      const totalStudents = data.length;
       data.forEach(student => {
         const dob = student.date_of_birth;
-        let age = 'Unknown';
+        let ageGroup = 'Unknown';
         if (dob) {
           const birthYear = new Date(dob).getFullYear();
-          age = currentYear - birthYear;
+          const age = currentYear - birthYear;
+          ageGroup = `${age} years`;
         }
-        if (!ageMap.has(age)) {
-          ageMap.set(age, { boys: 0, girls: 0 });
+        if (!ageMap.has(ageGroup)) {
+          ageMap.set(ageGroup, { boys: 0, girls: 0 });
         }
-        const counts = ageMap.get(age);
+        const counts = ageMap.get(ageGroup);
         if (isMale(student.gender)) counts.boys++;
         else if (isFemale(student.gender)) counts.girls++;
       });
-      return Array.from(ageMap.entries()).map(([age, counts]) => ({
-        age: age,
-        boys_count: counts.boys,
-        girls_count: counts.girls,
-        total_count: counts.boys + counts.girls
-      })).sort((a, b) => (typeof a.age === 'number' ? a.age : 999) - (typeof b.age === 'number' ? b.age : 999));
+      return Array.from(ageMap.entries()).map(([ageGroup, counts]) => {
+        const total = counts.boys + counts.girls;
+        return {
+          age_group: ageGroup,
+          boys_count: counts.boys,
+          girls_count: counts.girls,
+          total_count: total,
+          percentage: totalStudents > 0 ? ((total / totalStudents) * 100).toFixed(1) + '%' : '0%'
+        };
+      }).sort((a, b) => {
+        const ageA = parseInt(a.age_group) || 999;
+        const ageB = parseInt(b.age_group) || 999;
+        return ageA - ageB;
+      });
     }
 
     // Category-wise strength
     if (templateKey === 'category_wise_strength') {
       const categoryMap = new Map();
+      const totalStudents = data.length;
       data.forEach(student => {
         const category = student.category || 'General';
         if (!categoryMap.has(category)) {
@@ -328,12 +339,385 @@ const StudentReportGenerator = () => {
         if (isMale(student.gender)) counts.boys++;
         else if (isFemale(student.gender)) counts.girls++;
       });
-      return Array.from(categoryMap.entries()).map(([category, counts]) => ({
-        category: category,
+      return Array.from(categoryMap.entries()).map(([category, counts]) => {
+        const total = counts.boys + counts.girls;
+        return {
+          category: category,
+          boys_count: counts.boys,
+          girls_count: counts.girls,
+          total_count: total,
+          percentage: totalStudents > 0 ? ((total / totalStudents) * 100).toFixed(1) + '%' : '0%'
+        };
+      }).sort((a, b) => a.category.localeCompare(b.category));
+    }
+
+    // Month-wise closing strength - Student count at end of each month (Apr-Mar)
+    if (templateKey === 'month_wise_closing') {
+      // Month keys in academic year order (Apr to Mar)
+      const monthKeys = ['apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec', 'jan', 'feb', 'mar'];
+      // Calendar month indices (0-11): Apr=3, May=4, ..., Dec=11, Jan=0, Feb=1, Mar=2
+      const monthIndices = { apr: 3, may: 4, jun: 5, jul: 6, aug: 7, sep: 8, oct: 9, nov: 10, dec: 11, jan: 0, feb: 1, mar: 2 };
+      
+      // Determine current date for comparison
+      const currentDate = new Date();
+      const currentMonth = currentDate.getMonth();
+      const currentYear = currentDate.getFullYear();
+      
+      // Academic year start: If current month >= April (3), use current year; otherwise previous year
+      const academicYearStart = currentMonth >= 3 ? currentYear : currentYear - 1;
+      
+      const classMap = new Map();
+      
+      data.forEach(student => {
+        const className = student.class?.name || 'Unknown';
+        if (!classMap.has(className)) {
+          // Initialize all months to 0
+          const monthData = {};
+          monthKeys.forEach(m => monthData[m] = 0);
+          classMap.set(className, monthData);
+        }
+        
+        // Get admission date and left date if available
+        const admissionDate = student.admission_date ? new Date(student.admission_date) : null;
+        const leftDate = student.left_date ? new Date(student.left_date) : null;
+        const isActive = student.status?.toLowerCase() === 'active';
+        
+        // Skip if no admission date
+        if (!admissionDate) return;
+        
+        const counts = classMap.get(className);
+        
+        // For each month, check if student was present at the end of that month
+        monthKeys.forEach((monthKey) => {
+          const calendarMonth = monthIndices[monthKey];
+          // Determine the year for this month in academic year
+          // Apr-Dec are in academicYearStart, Jan-Mar are in academicYearStart + 1
+          const monthYear = calendarMonth >= 3 ? academicYearStart : academicYearStart + 1;
+          
+          // Last day of the month
+          const lastDayOfMonth = new Date(monthYear, calendarMonth + 1, 0);
+          
+          // Skip future months
+          if (lastDayOfMonth > currentDate) return;
+          
+          // Student is counted if:
+          // 1. Admission date is on or before end of this month
+          // 2. AND (student is still active OR left date is after this month's end)
+          const wasAdmitted = admissionDate <= lastDayOfMonth;
+          const stillPresent = isActive || !leftDate || leftDate > lastDayOfMonth;
+          
+          if (wasAdmitted && stillPresent) {
+            counts[monthKey]++;
+          }
+        });
+      });
+      
+      return Array.from(classMap.entries()).map(([className, monthData]) => ({
+        class_name: className,
+        ...monthData
+      })).sort((a, b) => a.class_name.localeCompare(b.class_name));
+    }
+
+    // RTE vs Non-RTE strength
+    if (templateKey === 'rte_vs_non_rte') {
+      const classMap = new Map();
+      data.forEach(student => {
+        const className = student.class?.name || 'Unknown';
+        if (!classMap.has(className)) {
+          classMap.set(className, { rte: 0, nonRte: 0 });
+        }
+        const counts = classMap.get(className);
+        const isRte = student.is_rte === true || student.rte_status?.toLowerCase() === 'yes';
+        if (isRte) counts.rte++;
+        else counts.nonRte++;
+      });
+      return Array.from(classMap.entries()).map(([className, counts]) => ({
+        class_name: className,
+        rte_count: counts.rte,
+        non_rte_count: counts.nonRte,
+        total_count: counts.rte + counts.nonRte
+      })).sort((a, b) => a.class_name.localeCompare(b.class_name));
+    }
+
+    // House-wise strength
+    if (templateKey === 'house_wise_strength') {
+      const houseMap = new Map();
+      data.forEach(student => {
+        const house = student.house || student.house_name || 'Unassigned';
+        if (!houseMap.has(house)) {
+          houseMap.set(house, { boys: 0, girls: 0 });
+        }
+        const counts = houseMap.get(house);
+        if (isMale(student.gender)) counts.boys++;
+        else if (isFemale(student.gender)) counts.girls++;
+      });
+      return Array.from(houseMap.entries()).map(([house, counts]) => ({
+        house: house,
         boys_count: counts.boys,
         girls_count: counts.girls,
         total_count: counts.boys + counts.girls
-      })).sort((a, b) => a.category.localeCompare(b.category));
+      })).sort((a, b) => a.house.localeCompare(b.house));
+    }
+
+    // Medium-wise strength
+    if (templateKey === 'medium_wise_strength') {
+      const mediumMap = new Map();
+      const totalStudents = data.length;
+      data.forEach(student => {
+        const medium = student.medium || student.medium_of_instruction || 'English';
+        if (!mediumMap.has(medium)) {
+          mediumMap.set(medium, 0);
+        }
+        mediumMap.set(medium, mediumMap.get(medium) + 1);
+      });
+      return Array.from(mediumMap.entries()).map(([medium, count]) => ({
+        medium: medium,
+        total_count: count,
+        percentage: totalStudents > 0 ? ((count / totalStudents) * 100).toFixed(1) + '%' : '0%'
+      })).sort((a, b) => a.medium.localeCompare(b.medium));
+    }
+
+    // Shift-wise strength
+    if (templateKey === 'shift_wise_strength') {
+      const shiftMap = new Map();
+      const totalStudents = data.length;
+      data.forEach(student => {
+        const shift = student.shift || 'Morning';
+        if (!shiftMap.has(shift)) {
+          shiftMap.set(shift, 0);
+        }
+        shiftMap.set(shift, shiftMap.get(shift) + 1);
+      });
+      return Array.from(shiftMap.entries()).map(([shift, count]) => ({
+        shift: shift,
+        total_count: count,
+        percentage: totalStudents > 0 ? ((count / totalStudents) * 100).toFixed(1) + '%' : '0%'
+      })).sort((a, b) => a.shift.localeCompare(b.shift));
+    }
+
+    // Vacancy Report - seats available per class/section
+    if (templateKey === 'vacancy_report') {
+      const sectionMap = new Map();
+      data.forEach(student => {
+        const className = student.class?.name || 'Unknown';
+        const sectionName = student.section?.name || 'A';
+        const key = `${className}|${sectionName}`;
+        if (!sectionMap.has(key)) {
+          // Default capacity 40 - can be made configurable
+          sectionMap.set(key, { className, sectionName, capacity: 40, filled: 0 });
+        }
+        sectionMap.get(key).filled++;
+      });
+      return Array.from(sectionMap.values()).map(item => ({
+        class_name: item.className,
+        section_name: item.sectionName,
+        capacity: item.capacity,
+        filled: item.filled,
+        vacant: item.capacity - item.filled,
+        fill_percent: ((item.filled / item.capacity) * 100).toFixed(1) + '%'
+      })).sort((a, b) => a.class_name.localeCompare(b.class_name) || a.section_name.localeCompare(b.section_name));
+    }
+
+    // Admission Trends - monthly admission vs left analysis
+    if (templateKey === 'admission_trends') {
+      const monthNames = ['Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec', 'Jan', 'Feb', 'Mar'];
+      const monthMap = new Map();
+      monthNames.forEach(m => monthMap.set(m, { newCount: 0, leftCount: 0 }));
+      
+      data.forEach(student => {
+        const admissionDate = student.admission_date ? new Date(student.admission_date) : null;
+        const leftDate = student.left_date ? new Date(student.left_date) : null;
+        
+        if (admissionDate) {
+          const month = admissionDate.getMonth();
+          // Convert to academic year order (Apr=0, May=1, ..., Mar=11)
+          const academicMonth = month >= 3 ? month - 3 : month + 9;
+          const monthName = monthNames[academicMonth];
+          const counts = monthMap.get(monthName);
+          if (counts) counts.newCount++;
+        }
+        
+        if (leftDate) {
+          const month = leftDate.getMonth();
+          const academicMonth = month >= 3 ? month - 3 : month + 9;
+          const monthName = monthNames[academicMonth];
+          const counts = monthMap.get(monthName);
+          if (counts) counts.leftCount++;
+        }
+      });
+      
+      return monthNames.map(month => {
+        const counts = monthMap.get(month);
+        return {
+          month: month,
+          new_count: counts.newCount,
+          left_count: counts.leftCount,
+          net_change: counts.newCount - counts.leftCount
+        };
+      });
+    }
+
+    // Blood Group Distribution
+    if (templateKey === 'blood_group_distribution') {
+      const bloodMap = new Map();
+      data.forEach(student => {
+        const bg = student.blood_group || 'Not Specified';
+        if (!bloodMap.has(bg)) {
+          bloodMap.set(bg, { count: 0, students: [] });
+        }
+        const entry = bloodMap.get(bg);
+        entry.count++;
+        if (entry.students.length < 5) {
+          entry.students.push(`${student.first_name || ''} ${student.last_name || ''}`.trim());
+        }
+      });
+      return Array.from(bloodMap.entries()).map(([bg, data]) => ({
+        blood_group: bg,
+        total_count: data.count,
+        students: data.students.join(', ') + (data.count > 5 ? '...' : '')
+      })).sort((a, b) => a.blood_group.localeCompare(b.blood_group));
+    }
+
+    // Religion-wise Report
+    if (templateKey === 'religion_wise') {
+      const religionMap = new Map();
+      const totalStudents = data.length;
+      data.forEach(student => {
+        const religion = student.religion || 'Not Specified';
+        if (!religionMap.has(religion)) {
+          religionMap.set(religion, 0);
+        }
+        religionMap.set(religion, religionMap.get(religion) + 1);
+      });
+      return Array.from(religionMap.entries()).map(([religion, count]) => ({
+        religion: religion,
+        total_count: count,
+        percentage: totalStudents > 0 ? ((count / totalStudents) * 100).toFixed(1) + '%' : '0%'
+      })).sort((a, b) => b.total_count - a.total_count);
+    }
+
+    // Caste-wise Report
+    if (templateKey === 'caste_wise') {
+      const casteMap = new Map();
+      const totalStudents = data.length;
+      data.forEach(student => {
+        const caste = student.caste || student.sub_caste || 'Not Specified';
+        if (!casteMap.has(caste)) {
+          casteMap.set(caste, 0);
+        }
+        casteMap.set(caste, casteMap.get(caste) + 1);
+      });
+      return Array.from(casteMap.entries()).map(([caste, count]) => ({
+        caste: caste,
+        total_count: count,
+        percentage: totalStudents > 0 ? ((count / totalStudents) * 100).toFixed(1) + '%' : '0%'
+      })).sort((a, b) => b.total_count - a.total_count);
+    }
+
+    // Mother Tongue Report
+    if (templateKey === 'mother_tongue') {
+      const tongueMap = new Map();
+      const totalStudents = data.length;
+      data.forEach(student => {
+        const tongue = student.mother_tongue || student.language || 'Not Specified';
+        if (!tongueMap.has(tongue)) {
+          tongueMap.set(tongue, 0);
+        }
+        tongueMap.set(tongue, tongueMap.get(tongue) + 1);
+      });
+      return Array.from(tongueMap.entries()).map(([tongue, count]) => ({
+        mother_tongue: tongue,
+        total_count: count,
+        percentage: totalStudents > 0 ? ((count / totalStudents) * 100).toFixed(1) + '%' : '0%'
+      })).sort((a, b) => b.total_count - a.total_count);
+    }
+
+    // Nationality Report
+    if (templateKey === 'nationality_report') {
+      const nationalityMap = new Map();
+      const totalStudents = data.length;
+      data.forEach(student => {
+        const nationality = student.nationality || 'Indian';
+        if (!nationalityMap.has(nationality)) {
+          nationalityMap.set(nationality, 0);
+        }
+        nationalityMap.set(nationality, nationalityMap.get(nationality) + 1);
+      });
+      return Array.from(nationalityMap.entries()).map(([nationality, count]) => ({
+        nationality: nationality,
+        total_count: count,
+        percentage: totalStudents > 0 ? ((count / totalStudents) * 100).toFixed(1) + '%' : '0%'
+      })).sort((a, b) => b.total_count - a.total_count);
+    }
+
+    // Area/Pincode Analysis
+    if (templateKey === 'area_analysis') {
+      const areaMap = new Map();
+      data.forEach(student => {
+        const pincode = student.pincode || 'Not Specified';
+        const city = student.city || student.area || 'Unknown';
+        const key = `${pincode}|${city}`;
+        if (!areaMap.has(key)) {
+          areaMap.set(key, { pincode, city, count: 0 });
+        }
+        areaMap.get(key).count++;
+      });
+      return Array.from(areaMap.values()).map(item => ({
+        pincode: item.pincode,
+        city: item.city,
+        total_count: item.count
+      })).sort((a, b) => b.total_count - a.total_count);
+    }
+
+    // Parent Education Level
+    if (templateKey === 'parent_education') {
+      const eduMap = new Map();
+      const totalStudents = data.length;
+      data.forEach(student => {
+        const edu = student.father_education || student.parent_education || student.mother_education || 'Not Specified';
+        if (!eduMap.has(edu)) {
+          eduMap.set(edu, 0);
+        }
+        eduMap.set(edu, eduMap.get(edu) + 1);
+      });
+      return Array.from(eduMap.entries()).map(([edu, count]) => ({
+        education_level: edu,
+        total_count: count,
+        percentage: totalStudents > 0 ? ((count / totalStudents) * 100).toFixed(1) + '%' : '0%'
+      })).sort((a, b) => b.total_count - a.total_count);
+    }
+
+    // Family Income Analysis
+    if (templateKey === 'family_income') {
+      const incomeSlabs = [
+        { min: 0, max: 100000, label: 'Below 1 Lakh' },
+        { min: 100000, max: 300000, label: '1-3 Lakhs' },
+        { min: 300000, max: 500000, label: '3-5 Lakhs' },
+        { min: 500000, max: 1000000, label: '5-10 Lakhs' },
+        { min: 1000000, max: Infinity, label: 'Above 10 Lakhs' }
+      ];
+      const incomeMap = new Map();
+      const totalStudents = data.length;
+      incomeSlabs.forEach(slab => incomeMap.set(slab.label, 0));
+      incomeMap.set('Not Specified', 0);
+      
+      data.forEach(student => {
+        const income = parseInt(student.family_income || student.annual_income || 0);
+        if (!income || income === 0) {
+          incomeMap.set('Not Specified', incomeMap.get('Not Specified') + 1);
+        } else {
+          const slab = incomeSlabs.find(s => income >= s.min && income < s.max);
+          if (slab) {
+            incomeMap.set(slab.label, incomeMap.get(slab.label) + 1);
+          }
+        }
+      });
+      
+      return Array.from(incomeMap.entries()).map(([slab, count]) => ({
+        income_slab: slab,
+        total_count: count,
+        percentage: totalStudents > 0 ? ((count / totalStudents) * 100).toFixed(1) + '%' : '0%'
+      }));
     }
 
     // Default fallback for other strength reports - aggregate by class
@@ -355,6 +739,54 @@ const StudentReportGenerator = () => {
     })).sort((a, b) => a.class_name.localeCompare(b.class_name));
   }, [data, selectedTemplate]);
 
+  // Birthday filtered data - filter students by birthday today/week/month
+  const birthdayFilteredData = useMemo(() => {
+    if (!selectedTemplate?.isBirthdayReport || !rawFlatData || rawFlatData.length === 0) {
+      return null;
+    }
+
+    const today = new Date();
+    const todayMonth = today.getMonth();
+    const todayDate = today.getDate();
+    
+    // Get start and end of current week (Sunday to Saturday)
+    const dayOfWeek = today.getDay();
+    const weekStart = new Date(today);
+    weekStart.setDate(today.getDate() - dayOfWeek);
+    const weekEnd = new Date(weekStart);
+    weekEnd.setDate(weekStart.getDate() + 6);
+
+    const birthdayType = selectedTemplate.isBirthdayReport;
+
+    return rawFlatData.filter(student => {
+      const dob = student.date_of_birth;
+      if (!dob) return false;
+      
+      const dobDate = new Date(dob);
+      const dobMonth = dobDate.getMonth();
+      const dobDay = dobDate.getDate();
+
+      if (birthdayType === 'today_week') {
+        // Check if birthday is today
+        const isBirthdayToday = dobMonth === todayMonth && dobDay === todayDate;
+        
+        // Check if birthday is this week (same month-day falls within this week)
+        // Create a date in current year with student's birthday
+        const birthdayThisYear = new Date(today.getFullYear(), dobMonth, dobDay);
+        const isBirthdayThisWeek = birthdayThisYear >= weekStart && birthdayThisYear <= weekEnd;
+        
+        return isBirthdayToday || isBirthdayThisWeek;
+      }
+      
+      if (birthdayType === 'current_month') {
+        // Check if birthday is in current month
+        return dobMonth === todayMonth;
+      }
+
+      return false;
+    });
+  }, [rawFlatData, selectedTemplate]);
+
   // Debug log aggregated data
   useEffect(() => {
     if (selectedTemplate?.isStrengthReport) {
@@ -362,12 +794,22 @@ const StudentReportGenerator = () => {
       console.log('[Report Debug] Template columns:', selectedTemplate.columns);
       console.log('[Report Debug] Aggregated data:', aggregatedStrengthData);
     }
-  }, [selectedTemplate, aggregatedStrengthData]);
+    if (selectedTemplate?.isBirthdayReport) {
+      console.log('[Birthday Report] Type:', selectedTemplate.isBirthdayReport);
+      console.log('[Birthday Report] Filtered count:', birthdayFilteredData?.length);
+    }
+  }, [selectedTemplate, aggregatedStrengthData, birthdayFilteredData]);
 
-  // Use aggregated data for strength reports, otherwise use raw data
-  const flatData = selectedTemplate?.isStrengthReport && aggregatedStrengthData 
-    ? aggregatedStrengthData 
-    : rawFlatData;
+  // Use aggregated data for strength reports, birthday filtered for birthday reports, otherwise use raw data
+  const flatData = useMemo(() => {
+    if (selectedTemplate?.isStrengthReport && aggregatedStrengthData) {
+      return aggregatedStrengthData;
+    }
+    if (selectedTemplate?.isBirthdayReport && birthdayFilteredData) {
+      return birthdayFilteredData;
+    }
+    return rawFlatData;
+  }, [selectedTemplate, aggregatedStrengthData, birthdayFilteredData, rawFlatData]);
 
   // Debug log final data for table
   useEffect(() => {
@@ -609,12 +1051,12 @@ const StudentReportGenerator = () => {
           {/* Data Table */}
           <div className="flex-1 overflow-auto p-4 bg-white dark:bg-gray-800">
             <LivePreviewTable
-              data={selectedTemplate?.isStrengthReport ? flatData : groupedData}
+              data={selectedTemplate?.isStrengthReport || selectedTemplate?.isBirthdayReport ? flatData : groupedData}
               columns={displayColumns}
-              groupBy={selectedTemplate?.isStrengthReport ? [] : groupBy}
+              groupBy={selectedTemplate?.isStrengthReport || selectedTemplate?.isBirthdayReport ? [] : groupBy}
               loading={isLoading}
               color={moduleColor}
-              showSubtotals={!selectedTemplate?.isStrengthReport && groupBy.length > 0}
+              showSubtotals={!selectedTemplate?.isStrengthReport && !selectedTemplate?.isBirthdayReport && groupBy.length > 0}
             />
           </div>
         </div>

@@ -18,7 +18,13 @@ import {
   ChevronLeft,
   ChevronRight,
   Sparkles,
-  Cpu
+  Cpu,
+  ClipboardCheck,
+  Heart,
+  Target,
+  Dna,
+  Link2,
+  Baby
 } from 'lucide-react';
 
 const CortexLayout = ({ children }) => {
@@ -67,7 +73,55 @@ const CortexLayout = ({ children }) => {
       label: 'Cortex Vision',
       icon: Eye,
       path: '/super-admin/cortex-ai/vision',
-      description: 'Face AI'
+      description: 'Face Recognition AI'
+    },
+    {
+      id: 'auditor',
+      label: 'Auto Auditor',
+      icon: ClipboardCheck,
+      path: '/super-admin/cortex-ai/auditor',
+      description: 'CBSE/State Compliance',
+      badge: 'NEW'
+    },
+    {
+      id: 'emotion',
+      label: 'Parent Emotion',
+      icon: Heart,
+      path: '/super-admin/cortex-ai/emotion',
+      description: 'Sentiment Analysis',
+      badge: 'NEW'
+    },
+    {
+      id: 'predict',
+      label: 'Student Prediction',
+      icon: Target,
+      path: '/super-admin/cortex-ai/predict',
+      description: 'Dropout & Career AI',
+      badge: 'NEW'
+    },
+    {
+      id: 'dna',
+      label: 'School DNA',
+      icon: Dna,
+      path: '/super-admin/cortex-ai/dna',
+      description: 'Identity Score',
+      badge: 'NEW'
+    },
+    {
+      id: 'trust',
+      label: 'Trust Ledger',
+      icon: Link2,
+      path: '/super-admin/cortex-ai/trust',
+      description: 'Document Verification',
+      badge: 'NEW'
+    },
+    {
+      id: 'parent-insights',
+      label: 'Parent Insights',
+      icon: Baby,
+      path: '/super-admin/cortex-ai/parent-insights',
+      description: 'Daily Child Updates',
+      badge: 'NEW'
     },
     {
       id: 'profit',

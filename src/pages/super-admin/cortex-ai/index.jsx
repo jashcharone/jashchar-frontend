@@ -21,6 +21,12 @@ import CortexSettings from './CortexSettings';
 import ProfitIntelligence from './ProfitIntelligence';
 import CortexUpgradePage from './CortexUpgradePage';
 import AIBrainDashboard from './AIBrainDashboard';
+import AutoAuditor from './AutoAuditor';
+import ParentEmotion from './ParentEmotion';
+import StudentPrediction from './StudentPrediction';
+import SchoolDNA from './SchoolDNA';
+import TrustLedger from './TrustLedger';
+import ParentInsights from './ParentInsights';
 
 const CortexAI = () => {
   const navigate = useNavigate();
@@ -81,6 +87,12 @@ const CortexAI = () => {
         <Route path="vision" element={<CortexVision />} />
         <Route path="profit" element={<ProfitIntelligence />} />
         <Route path="brain" element={<AIBrainDashboard />} />
+        <Route path="auditor" element={<AutoAuditor />} />
+        <Route path="emotion" element={<ParentEmotion />} />
+        <Route path="predict" element={<StudentPrediction />} />
+        <Route path="dna" element={<SchoolDNA />} />
+        <Route path="trust" element={<TrustLedger />} />
+        <Route path="parent-insights" element={<ParentInsights />} />
         <Route path="settings" element={<CortexSettings />} />
         <Route path="upgrade" element={<CortexUpgradePage />} />
         <Route path="*" element={<Navigate to="" replace />} />

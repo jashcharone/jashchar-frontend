@@ -378,10 +378,23 @@ export const useFilterOptions = () => {
   const effectiveSessionId = selectedSessionId || currentSessionId;
 
   const fetchFilterOptions = useCallback(async () => {
-    if (!selectedBranch?.id) return;
+    // Wait for required params to be available
+    if (!selectedBranch?.id || !effectiveSessionId) {
+      console.log('[useFilterOptions] Waiting for params:', { 
+        branchId: selectedBranch?.id, 
+        sessionId: effectiveSessionId 
+      });
+      return;
+    }
 
     setLoading(true);
     try {
+      console.log('[useFilterOptions] Fetching with:', { 
+        branchId: selectedBranch.id, 
+        sessionId: effectiveSessionId,
+        organizationId 
+      });
+
       // Fetch sessions first
       const sessionsRes = await apiClient.get(`/reports/lookups/sessions?branch_id=${selectedBranch.id}`);
       const sessionsData = sessionsRes?.data?.data || sessionsRes?.data || [];
@@ -392,11 +405,15 @@ export const useFilterOptions = () => {
       
       // Fetch classes with session_id
       const classesRes = await apiClient.get(`/reports/lookups/classes?branch_id=${selectedBranch.id}&organization_id=${organizationId}&session_id=${sessionToUse}`);
-      setClasses(classesRes?.data?.data || classesRes?.data || []);
+      const classesData = classesRes?.data?.data || classesRes?.data || [];
+      console.log('[useFilterOptions] Classes loaded:', classesData.length);
+      setClasses(classesData);
 
       // Fetch all sections initially with session_id
       const sectionsRes = await apiClient.get(`/reports/lookups/sections?branch_id=${selectedBranch.id}&organization_id=${organizationId}&session_id=${sessionToUse}`);
-      setSections(sectionsRes?.data?.data || sectionsRes?.data || []);
+      const sectionsData = sectionsRes?.data?.data || sectionsRes?.data || [];
+      console.log('[useFilterOptions] Sections loaded:', sectionsData.length);
+      setSections(sectionsData);
     } catch (err) {
       console.error('Error fetching filter options:', err);
     } finally {

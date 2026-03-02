@@ -1430,11 +1430,11 @@ const StudentAdmission = () => {
        if((field.field_name === 'national_id_no' || field.field_name === 'aadhar_no' || field.field_name === 'father_aadhar_no' || field.field_name === 'mother_aadhar_no') && fieldValue && fieldValue.replace(/\s/g, '').length !== 12) {
            newErrors[mappedFieldName] = "12-digit Aadhaar number is required";
        }
-       // TC-20 to TC-24 FIX: Name field validations - alphabets and spaces only, minimum 2 characters (except last_name)
+       // TC-20 to TC-24 FIX: Name field validations - alphabets and spaces only, minimum 1 character (except last_name)
        if((field.field_name === 'first_name' || field.field_name === 'father_name' || field.field_name === 'mother_name' || field.field_name === 'guardian_name') && fieldValue) {
            const trimmedName = fieldValue.trim();
-           if (trimmedName.length < 2) {
-               newErrors[mappedFieldName] = `${field.field_label} must be at least 2 characters`;
+           if (trimmedName.length < 1) {
+               newErrors[mappedFieldName] = `${field.field_label} is required`;
            } else if (/[^a-zA-Z\s.]/.test(trimmedName)) {
                // Only allow letters, spaces, and periods (for initials like "M.S. Dhoni")
                newErrors[mappedFieldName] = `${field.field_label} should contain only letters and spaces`;
@@ -1457,16 +1457,8 @@ const StudentAdmission = () => {
       if (formData.parent_password !== formData.parent_retype_password) newErrors.parent_retype_password = "Passwords do not match";
     }
 
-    // Fees - Only validate if there are fee groups SPECIFICALLY assigned to selected class
-    // If no fee groups are assigned to the class, fee selection is OPTIONAL
-    if (classAssignedFeeGroupIds.length > 0) {
-      const classFilteredFeeGroups = feeGroups.filter(group => 
-        classAssignedFeeGroupIds.includes(group.id)
-      );
-      if (classFilteredFeeGroups.length > 0 && !Object.values(formData.fee_groups).some(v => v)) {
-        newErrors.fee_groups = "At least one fee must be selected";
-      }
-    }
+    // Fees - Optional, no validation required
+    // Fee selection is always optional - user can assign fees later if needed
     // When no fee groups are assigned to the class, fee selection is optional - no validation needed
 
     // Documents - Check required documents

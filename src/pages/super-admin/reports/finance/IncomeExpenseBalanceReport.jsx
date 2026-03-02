@@ -1,12 +1,12 @@
-﻿import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect, useMemo, useRef } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
+import DataTableExport from '@/components/DataTableExport';
 import { Button } from '@/components/ui/button';
 import DatePicker from '@/components/ui/DatePicker';
 import { useToast } from '@/components/ui/use-toast';
 import { supabase } from '@/lib/customSupabaseClient';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
-import { Search, Loader2, Printer } from 'lucide-react';
-import { useReactToPrint } from 'react-to-print';
+import { Search, Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
 
 const IncomeExpenseBalanceReport = () => {
@@ -18,7 +18,23 @@ const IncomeExpenseBalanceReport = () => {
   
   const [reportData, setReportData] = useState([]);
   const [loading, setLoading] = useState(false);
-  const printRef = React.useRef();
+  const printRef = useRef();
+
+  const columns = useMemo(() => [
+    { key: 'date_formatted', label: 'Date' },
+    { key: 'description', label: 'Description' },
+    { key: 'income_formatted', label: 'Income' },
+    { key: 'expense_formatted', label: 'Expense' }
+  ], []);
+
+  const exportData = useMemo(() => {
+    return reportData.map(row => ({
+      ...row,
+      date_formatted: format(new Date(row.date), 'dd-MM-yyyy'),
+      income_formatted: row.income_money ? row.income_money.toFixed(2) : '-',
+      expense_formatted: row.expense_money ? row.expense_money.toFixed(2) : '-'
+    }));
+  }, [reportData]);
 
   const handleSearch = async () => {
     setLoading(true);
@@ -37,10 +53,6 @@ const IncomeExpenseBalanceReport = () => {
     setLoading(false);
   };
 
-  const handlePrint = useReactToPrint({
-    content: () => printRef.current,
-  });
-
   const totalIncome = reportData.reduce((sum, row) => sum + (row.income_money || 0), 0);
   const totalExpense = reportData.reduce((sum, row) => sum + (row.expense_money || 0), 0);
   const balance = totalIncome - totalExpense;
@@ -54,7 +66,6 @@ const IncomeExpenseBalanceReport = () => {
           <div><label>Date To</label><DatePicker value={dateTo} onChange={setDateTo} /></div>
           <div className="flex gap-2">
             <Button onClick={handleSearch} disabled={loading} className="w-full">{loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Search className="mr-2 h-4 w-4" />} Search</Button>
-            <Button onClick={handlePrint} variant="outline" className="w-full" disabled={reportData.length === 0}><Printer className="mr-2 h-4 w-4" /> Print</Button>
           </div>
         </div>
       </div>
@@ -62,7 +73,19 @@ const IncomeExpenseBalanceReport = () => {
       {loading ? (
         <div className="text-center py-10"><Loader2 className="mx-auto h-8 w-8 animate-spin" /></div>
       ) : (
-        <div ref={printRef} className="bg-card p-4 rounded-lg shadow-sm overflow-x-auto">
+        <div className="bg-card p-4 rounded-lg shadow-sm overflow-x-auto">
+          {reportData.length > 0 && (
+            <div className="bg-card p-3 rounded-lg shadow-sm mb-4">
+              <DataTableExport
+                data={exportData}
+                columns={columns}
+                fileName="Income_Expense_Balance_Report"
+                title="Income vs Expense Report"
+                printRef={printRef}
+              />
+            </div>
+          )}
+          <div ref={printRef}>
           <h2 className="text-xl font-semibold mb-4 text-center">Income vs Expense Report</h2>
           <p className="text-center text-sm mb-4">From {format(new Date(dateFrom), 'dd-MM-yyyy')} to {format(new Date(dateTo), 'dd-MM-yyyy')}</p>
           <table className="w-full text-sm">
@@ -98,6 +121,7 @@ const IncomeExpenseBalanceReport = () => {
               </tr>
             </tfoot>
           </table>
+          </div>
         </div>
       )}
     </DashboardLayout>

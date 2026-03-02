@@ -1,13 +1,13 @@
-﻿import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect, useMemo, useRef } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
+import DataTableExport from '@/components/DataTableExport';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import DatePicker from '@/components/ui/DatePicker';
 import { useToast } from '@/components/ui/use-toast';
 import { supabase } from '@/lib/customSupabaseClient';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
-import { Search, Loader2, Printer } from 'lucide-react';
-import { useReactToPrint } from 'react-to-print';
+import { Search, Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
 
 const StudentAttendanceTypeReport = () => {
@@ -23,7 +23,27 @@ const StudentAttendanceTypeReport = () => {
   
   const [reportData, setReportData] = useState([]);
   const [loading, setLoading] = useState(false);
-  const printRef = React.useRef();
+  const printRef = useRef();
+
+  const columns = useMemo(() => [
+    { key: 'student_name', label: 'Student Name' },
+    { key: 'roll_number', label: 'Roll No' },
+    { key: 'class_section', label: 'Class' },
+    { key: 'date_formatted', label: 'Date' },
+    { key: 'status', label: 'Status' },
+    { key: 'note', label: 'Note' }
+  ], []);
+
+  const exportData = useMemo(() => {
+    return reportData.map(row => ({
+      student_name: row.student?.full_name || '',
+      roll_number: row.student?.roll_number || '',
+      class_section: `${row.student?.class?.name || ''} (${row.student?.section?.name || ''})`,
+      date_formatted: format(new Date(row.date), 'dd-MM-yyyy'),
+      status: row.status || '',
+      note: row.note || ''
+    }));
+  }, [reportData]);
 
   useEffect(() => {
     if (!school?.id) return;
@@ -89,10 +109,6 @@ const StudentAttendanceTypeReport = () => {
     setLoading(false);
   };
 
-  const handlePrint = useReactToPrint({
-    content: () => printRef.current,
-  });
-
   return (
     <DashboardLayout>
       <h1 className="text-2xl font-bold mb-4">Student Attendance Type Report</h1>
@@ -104,7 +120,6 @@ const StudentAttendanceTypeReport = () => {
           <div><label>Date To</label><DatePicker value={dateTo} onChange={setDateTo} /></div>
           <div className="col-span-1 md:col-span-4 flex gap-2">
             <Button onClick={handleSearch} disabled={loading} className="w-full">{loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Search className="mr-2 h-4 w-4" />} Search</Button>
-            <Button onClick={handlePrint} variant="outline" className="w-full" disabled={reportData.length === 0}><Printer className="mr-2 h-4 w-4" /> Print</Button>
           </div>
         </div>
       </div>
@@ -112,7 +127,19 @@ const StudentAttendanceTypeReport = () => {
       {loading ? (
         <div className="text-center py-10"><Loader2 className="mx-auto h-8 w-8 animate-spin" /></div>
       ) : (
-        <div ref={printRef} className="bg-card p-4 rounded-lg shadow-sm overflow-x-auto">
+        <div className="bg-card p-4 rounded-lg shadow-sm overflow-x-auto">
+          {reportData.length > 0 && (
+            <div className="bg-card p-3 rounded-lg shadow-sm mb-4">
+              <DataTableExport
+                data={exportData}
+                columns={columns}
+                fileName="Student_Attendance_Type_Report"
+                title="Student Attendance Type Report"
+                printRef={printRef}
+              />
+            </div>
+          )}
+          <div ref={printRef}>
           <h2 className="text-xl font-semibold mb-4 text-center">Student Attendance Type Report</h2>
           <p className="text-center text-sm mb-4">From {format(new Date(dateFrom), 'dd-MM-yyyy')} to {format(new Date(dateTo), 'dd-MM-yyyy')}</p>
           <table className="w-full text-sm">
@@ -141,6 +168,7 @@ const StudentAttendanceTypeReport = () => {
               )}
             </tbody>
           </table>
+          </div>
         </div>
       )}
     </DashboardLayout>

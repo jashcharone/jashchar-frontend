@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect, useMemo } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -6,9 +6,9 @@ import DatePicker from '@/components/ui/DatePicker';
 import { useToast } from '@/components/ui/use-toast';
 import { supabase } from '@/lib/customSupabaseClient';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
-import { Search, Loader2, Printer } from 'lucide-react';
-import { useReactToPrint } from 'react-to-print';
+import { Search, Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
+import DataTableExport from '@/components/DataTableExport';
 
 const FeesCollectionReport = () => {
   const { school } = useAuth();
@@ -28,6 +28,33 @@ const FeesCollectionReport = () => {
   const [reportData, setReportData] = useState([]);
   const [loading, setLoading] = useState(false);
   const printRef = React.useRef();
+
+  // Column definitions for export
+  const columns = useMemo(() => [
+    { key: 'transaction_id', label: 'Transaction ID' },
+    { key: 'date', label: 'Date' },
+    { key: 'admission_no', label: 'Admission No' },
+    { key: 'student_name', label: 'Name' },
+    { key: 'class_section', label: 'Class' },
+    { key: 'fee_type', label: 'Fee Type' },
+    { key: 'collected_by_full', label: 'Collected By' },
+    { key: 'mode', label: 'Mode' },
+    { key: 'paid', label: 'Paid' },
+    { key: 'discount', label: 'Discount' },
+    { key: 'fine', label: 'Fine' },
+    { key: 'total', label: 'Total' },
+  ], []);
+
+  // Transform data for export
+  const exportData = useMemo(() => {
+    return reportData.map(row => ({
+      ...row,
+      transaction_id: row.transaction_id?.substring(0, 8) || row.payment_id?.substring(0, 8),
+      date: format(new Date(row.date), 'dd-MM-yyyy'),
+      class_section: `${row.class_name} (${row.section_name})`,
+      collected_by_full: `${row.collected_by}${row.collector_role && row.collector_role !== 'N/A' ? ` (${row.collector_role})` : ''}`,
+    }));
+  }, [reportData]);
 
   useEffect(() => {
     if (!school?.id) return;
@@ -72,7 +99,7 @@ const FeesCollectionReport = () => {
   const handleSearch = async () => {
     setLoading(true);
     const { data, error } = await supabase.rpc('get_fees_collection_report', {
-      p_branch_id: school.id,
+      p_school_id: school.id,
       p_date_from: dateFrom,
       p_date_to: dateTo,
       p_class_id: selectedClass === 'all' ? null : selectedClass,
@@ -91,10 +118,6 @@ const FeesCollectionReport = () => {
     setLoading(false);
   };
 
-  const handlePrint = useReactToPrint({
-    content: () => printRef.current,
-  });
-
   const totalPaid = reportData.reduce((sum, row) => sum + row.paid, 0);
   const totalDiscount = reportData.reduce((sum, row) => sum + row.discount, 0);
   const totalFine = reportData.reduce((sum, row) => sum + row.fine, 0);
@@ -112,11 +135,23 @@ const FeesCollectionReport = () => {
           <div><label>Fee Type</label><Select value={selectedFeeType} onValueChange={setSelectedFeeType}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="all">All Fee Types</SelectItem>{feeTypes.map(ft => <SelectItem key={ft.id} value={ft.id}>{ft.name}</SelectItem>)}</SelectContent></Select></div>
           <div><label>Collected By</label><Select value={selectedCollector} onValueChange={setSelectedCollector}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="all">All Collectors</SelectItem>{collectors.map(c => <SelectItem key={c.id} value={c.id}>{c.full_name}</SelectItem>)}</SelectContent></Select></div>
           <div className="col-span-1 md:col-span-2 flex gap-2">
-            <Button onClick={handleSearch} disabled={loading} className="w-full">{loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Search className="mr-2 h-4 w-4" />} Search</Button>
-            <Button onClick={handlePrint} variant="outline" className="w-full" disabled={reportData.length === 0}><Printer className="mr-2 h-4 w-4" /> Print</Button>
+            <Button onClick={handleSearch} disabled={loading} className="flex-shrink-0">{loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Search className="mr-2 h-4 w-4" />} Search</Button>
           </div>
         </div>
       </div>
+
+      {/* Export Buttons */}
+      {reportData.length > 0 && (
+        <div className="bg-card p-3 rounded-lg shadow-sm mb-4">
+          <DataTableExport
+            data={exportData}
+            columns={columns}
+            fileName={`Fees_Collection_Report_${dateFrom}_to_${dateTo}`}
+            title="Fees Collection Report"
+            printRef={printRef}
+          />
+        </div>
+      )}
 
       {loading ? (
         <div className="text-center py-10"><Loader2 className="mx-auto h-8 w-8 animate-spin" /></div>
@@ -127,7 +162,7 @@ const FeesCollectionReport = () => {
           <table className="w-full text-sm">
             <thead>
               <tr className="text-left bg-muted">
-                <th className="p-2">Payment ID</th>
+                <th className="p-2">Transaction ID</th>
                 <th className="p-2">Date</th>
                 <th className="p-2">Admission No</th>
                 <th className="p-2">Name</th>
@@ -144,13 +179,13 @@ const FeesCollectionReport = () => {
             <tbody>
               {reportData.length > 0 ? reportData.map(row => (
                 <tr key={row.payment_id} className="border-b">
-                  <td className="p-2">{row.payment_id.substring(0, 8)}</td>
+                  <td className="p-2">{row.transaction_id?.substring(0, 8) || row.payment_id?.substring(0, 8)}</td>
                   <td className="p-2">{format(new Date(row.date), 'dd-MM-yyyy')}</td>
                   <td className="p-2">{row.admission_no}</td>
                   <td className="p-2">{row.student_name}</td>
                   <td className="p-2">{row.class_name} ({row.section_name})</td>
                   <td className="p-2">{row.fee_type}</td>
-                  <td className="p-2">{row.collected_by}</td>
+                  <td className="p-2">{row.collected_by}{row.collector_role && row.collector_role !== 'N/A' ? ` (${row.collector_role})` : ''}</td>
                   <td className="p-2">{row.mode}</td>
                   <td className="p-2 text-right">{row.paid.toFixed(2)}</td>
                   <td className="p-2 text-right">{row.discount.toFixed(2)}</td>

@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect, useMemo, useRef } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
 import { supabase } from '@/lib/customSupabaseClient';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Search, Loader2 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import DataTableExport from '@/components/DataTableExport';
 
 const BalanceFeesReport = () => {
     const { user, school } = useAuth();
@@ -20,8 +21,37 @@ const BalanceFeesReport = () => {
     const [filters, setFilters] = useState({ class_id: '', section_id: 'all', search_type: 'balance' });
     const [reportData, setReportData] = useState(null);
     const [grandTotals, setGrandTotals] = useState({ total_fees: 0, paid_fees: 0, discount: 0, fine: 0, balance: 0 });
+    const printRef = useRef();
 
     const branchId = selectedBranch?.id || user?.profile?.branch_id;
+
+    // Column definitions for export
+    const columns = useMemo(() => [
+        { key: 'student_name', label: 'Student Name' },
+        { key: 'class_section', label: 'Class' },
+        { key: 'admission_no', label: 'Admission No' },
+        { key: 'roll_number', label: 'Roll Number' },
+        { key: 'father_name', label: 'Father Name' },
+        { key: 'total_fees', label: 'Total Fees' },
+        { key: 'paid_fees', label: 'Paid Fees' },
+        { key: 'discount', label: 'Discount' },
+        { key: 'fine', label: 'Fine' },
+        { key: 'balance', label: 'Balance' },
+    ], []);
+
+    // Transform data for export
+    const exportData = useMemo(() => {
+        if (!reportData) return [];
+        return reportData.map(row => ({
+            ...row,
+            class_section: `${row.class_name} (${row.section_name})`,
+            total_fees: Number(row.total_fees).toFixed(2),
+            paid_fees: Number(row.paid_fees).toFixed(2),
+            discount: Number(row.discount).toFixed(2),
+            fine: Number(row.fine).toFixed(2),
+            balance: Number(row.balance).toFixed(2),
+        }));
+    }, [reportData]);
 
     useEffect(() => {
         const fetchClasses = async () => {
@@ -106,46 +136,59 @@ const BalanceFeesReport = () => {
             </Card>
 
             {reportData && (
-                <Card>
-                    <CardHeader><CardTitle>Balance Fees Report</CardTitle></CardHeader>
-                    <CardContent>
-                        <div className="overflow-x-auto">
-                            <table className="w-full text-sm">
-                                <thead className="bg-muted">
-                                    <tr className="text-left">
-                                        {['Student Name', 'Class', 'Admission No', 'Roll Number', 'Father Name', 'Total Fees', 'Paid Fees', 'Discount', 'Fine', 'Balance'].map(h => <th key={h} className="p-2">{h}</th>)}
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {reportData.map((row, idx) => (
-                                        <tr key={idx} className="border-b">
-                                            <td className="p-2">{row.student_name}</td>
-                                            <td className="p-2">{row.class_name} ({row.section_name})</td>
-                                            <td className="p-2">{row.admission_no}</td>
-                                            <td className="p-2">{row.roll_number}</td>
-                                            <td className="p-2">{row.father_name}</td>
-                                            <td className="p-2 text-right">{currencySymbol}{Number(row.total_fees).toFixed(2)}</td>
-                                            <td className="p-2 text-right">{currencySymbol}{Number(row.paid_fees).toFixed(2)}</td>
-                                            <td className="p-2 text-right">{currencySymbol}{Number(row.discount).toFixed(2)}</td>
-                                            <td className="p-2 text-right">{currencySymbol}{Number(row.fine).toFixed(2)}</td>
-                                            <td className="p-2 text-right font-bold">{currencySymbol}{Number(row.balance).toFixed(2)}</td>
+                <>
+                    {/* Export Buttons */}
+                    <div className="bg-card p-3 rounded-lg shadow-sm mb-4">
+                        <DataTableExport
+                            data={exportData}
+                            columns={columns}
+                            fileName={`Balance_Fees_Report`}
+                            title="Balance Fees Report"
+                            printRef={printRef}
+                        />
+                    </div>
+
+                    <Card>
+                        <CardHeader><CardTitle>Balance Fees Report</CardTitle></CardHeader>
+                        <CardContent>
+                            <div ref={printRef} className="overflow-x-auto">
+                                <table className="w-full text-sm">
+                                    <thead className="bg-muted">
+                                        <tr className="text-left">
+                                            {['Student Name', 'Class', 'Admission No', 'Roll Number', 'Father Name', 'Total Fees', 'Paid Fees', 'Discount', 'Fine', 'Balance'].map(h => <th key={h} className="p-2">{h}</th>)}
                                         </tr>
-                                    ))}
-                                </tbody>
-                                <tfoot className="font-bold bg-muted">
-                                    <tr>
-                                        <td colSpan="5" className="p-2 text-right">Grand Total</td>
-                                        <td className="p-2 text-right">{currencySymbol}{grandTotals.total_fees.toFixed(2)}</td>
-                                        <td className="p-2 text-right">{currencySymbol}{grandTotals.paid_fees.toFixed(2)}</td>
-                                        <td className="p-2 text-right">{currencySymbol}{grandTotals.discount.toFixed(2)}</td>
-                                        <td className="p-2 text-right">{currencySymbol}{grandTotals.fine.toFixed(2)}</td>
-                                        <td className="p-2 text-right">{currencySymbol}{grandTotals.balance.toFixed(2)}</td>
-                                    </tr>
-                                </tfoot>
-                            </table>
-                        </div>
-                    </CardContent>
-                </Card>
+                                    </thead>
+                                    <tbody>
+                                        {reportData.map((row, idx) => (
+                                            <tr key={idx} className="border-b">
+                                                <td className="p-2">{row.student_name}</td>
+                                                <td className="p-2">{row.class_name} ({row.section_name})</td>
+                                                <td className="p-2">{row.admission_no}</td>
+                                                <td className="p-2">{row.roll_number}</td>
+                                                <td className="p-2">{row.father_name}</td>
+                                                <td className="p-2 text-right">{currencySymbol}{Number(row.total_fees).toFixed(2)}</td>
+                                                <td className="p-2 text-right">{currencySymbol}{Number(row.paid_fees).toFixed(2)}</td>
+                                                <td className="p-2 text-right">{currencySymbol}{Number(row.discount).toFixed(2)}</td>
+                                                <td className="p-2 text-right">{currencySymbol}{Number(row.fine).toFixed(2)}</td>
+                                                <td className="p-2 text-right font-bold">{currencySymbol}{Number(row.balance).toFixed(2)}</td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                    <tfoot className="font-bold bg-muted">
+                                        <tr>
+                                            <td colSpan="5" className="p-2 text-right">Grand Total</td>
+                                            <td className="p-2 text-right">{currencySymbol}{grandTotals.total_fees.toFixed(2)}</td>
+                                            <td className="p-2 text-right">{currencySymbol}{grandTotals.paid_fees.toFixed(2)}</td>
+                                            <td className="p-2 text-right">{currencySymbol}{grandTotals.discount.toFixed(2)}</td>
+                                            <td className="p-2 text-right">{currencySymbol}{grandTotals.fine.toFixed(2)}</td>
+                                            <td className="p-2 text-right">{currencySymbol}{grandTotals.balance.toFixed(2)}</td>
+                                        </tr>
+                                    </tfoot>
+                                </table>
+                            </div>
+                        </CardContent>
+                    </Card>
+                </>
             )}
         </DashboardLayout>
     );

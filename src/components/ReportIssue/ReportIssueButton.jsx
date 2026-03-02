@@ -552,8 +552,36 @@ const ReportDialog = ({ isOpen, onClose }) => {
 const ReportIssueButton = () => {
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [portalContainer, setPortalContainer] = useState(null);
+    const [shouldShow, setShouldShow] = useState(false);
 
     useEffect(() => {
+        // 🔒 Only show on PUBLIC pages (homepage, CMS pages)
+        // Hide on admin/dashboard pages
+        const checkIfPublicPage = () => {
+            const path = window.location.pathname;
+            const adminPaths = [
+                '/super-admin',
+                '/master-admin', 
+                '/admin',
+                '/teacher',
+                '/student',
+                '/parent',
+                '/accountant',
+                '/receptionist',
+                '/librarian',
+                '/dashboard',
+                '/login',
+                '/register',
+                '/forgot-password'
+            ];
+            
+            // Show only if NOT on any admin/dashboard path
+            const isPublicPage = !adminPaths.some(adminPath => path.startsWith(adminPath));
+            setShouldShow(isPublicPage);
+        };
+        
+        checkIfPublicPage();
+        
         // Create portal container
         let container = document.getElementById('report-issue-portal');
         if (!container) {
@@ -571,7 +599,8 @@ const ReportIssueButton = () => {
         };
     }, []);
 
-    if (!portalContainer) return null;
+    // Don't render on admin pages
+    if (!shouldShow || !portalContainer) return null;
 
     return createPortal(
         <>

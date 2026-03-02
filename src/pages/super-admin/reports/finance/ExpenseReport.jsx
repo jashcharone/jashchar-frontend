@@ -1,13 +1,13 @@
-﻿import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useMemo } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
 import { Button } from '@/components/ui/button';
 import DatePicker from '@/components/ui/DatePicker';
 import { useToast } from '@/components/ui/use-toast';
 import { supabase } from '@/lib/customSupabaseClient';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
-import { Search, Loader2, Printer } from 'lucide-react';
-import { useReactToPrint } from 'react-to-print';
+import { Search, Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
+import DataTableExport from '@/components/DataTableExport';
 
 const ExpenseReport = () => {
   const { school } = useAuth();
@@ -19,6 +19,25 @@ const ExpenseReport = () => {
   const [reportData, setReportData] = useState([]);
   const [loading, setLoading] = useState(false);
   const printRef = React.useRef();
+
+  // Column definitions for export
+  const columns = useMemo(() => [
+    { key: 'date', label: 'Date' },
+    { key: 'name', label: 'Name' },
+    { key: 'invoice_no', label: 'Invoice No' },
+    { key: 'expense_head_name', label: 'Expense Head' },
+    { key: 'amount', label: 'Amount' },
+  ], []);
+
+  // Transform data for export
+  const exportData = useMemo(() => {
+    return reportData.map(row => ({
+      ...row,
+      date: format(new Date(row.date), 'dd-MM-yyyy'),
+      expense_head_name: row.expense_head?.name || '',
+      amount: row.amount.toFixed(2),
+    }));
+  }, [reportData]);
 
   const handleSearch = async () => {
     setLoading(true);
@@ -45,10 +64,6 @@ const ExpenseReport = () => {
     setLoading(false);
   };
 
-  const handlePrint = useReactToPrint({
-    content: () => printRef.current,
-  });
-
   const grandTotal = reportData.reduce((sum, row) => sum + row.amount, 0);
 
   return (
@@ -59,11 +74,23 @@ const ExpenseReport = () => {
           <div><label>Date From</label><DatePicker value={dateFrom} onChange={setDateFrom} /></div>
           <div><label>Date To</label><DatePicker value={dateTo} onChange={setDateTo} /></div>
           <div className="flex gap-2">
-            <Button onClick={handleSearch} disabled={loading} className="w-full">{loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Search className="mr-2 h-4 w-4" />} Search</Button>
-            <Button onClick={handlePrint} variant="outline" className="w-full" disabled={reportData.length === 0}><Printer className="mr-2 h-4 w-4" /> Print</Button>
+            <Button onClick={handleSearch} disabled={loading} className="flex-shrink-0">{loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Search className="mr-2 h-4 w-4" />} Search</Button>
           </div>
         </div>
       </div>
+
+      {/* Export Buttons */}
+      {reportData.length > 0 && (
+        <div className="bg-card p-3 rounded-lg shadow-sm mb-4">
+          <DataTableExport
+            data={exportData}
+            columns={columns}
+            fileName={`Expense_Report_${dateFrom}_to_${dateTo}`}
+            title="Expense Report"
+            printRef={printRef}
+          />
+        </div>
+      )}
 
       {loading ? (
         <div className="text-center py-10"><Loader2 className="mx-auto h-8 w-8 animate-spin" /></div>
@@ -87,7 +114,7 @@ const ExpenseReport = () => {
                   <td className="p-2">{format(new Date(row.date), 'dd-MM-yyyy')}</td>
                   <td className="p-2">{row.name}</td>
                   <td className="p-2">{row.invoice_no}</td>
-                  <td className="p-2">{row.expense_head.name}</td>
+                  <td className="p-2">{row.expense_head?.name}</td>
                   <td className="p-2 text-right">{row.amount.toFixed(2)}</td>
                 </tr>
               )) : (

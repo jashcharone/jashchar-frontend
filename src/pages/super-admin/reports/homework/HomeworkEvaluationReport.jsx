@@ -1,5 +1,6 @@
-﻿import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect, useMemo, useRef } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
+import DataTableExport from '@/components/DataTableExport';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { useBranch } from '@/contexts/BranchContext';
 import { supabase } from '@/lib/customSupabaseClient';
@@ -8,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Input } from '@/components/ui/input';
-import { Search, Copy, FileSpreadsheet, FileText, Printer } from 'lucide-react';
+import { Search } from 'lucide-react';
 import { format } from 'date-fns';
 import { useToast } from '@/components/ui/use-toast';
 
@@ -21,6 +22,25 @@ const HomeworkEvaluationReport = () => {
   const [loading, setLoading] = useState(false);
   const [reportData, setReportData] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
+  const printRef = useRef();
+
+  const columns = useMemo(() => [
+    { key: 'subject', label: 'Subject' },
+    { key: 'homework_date_formatted', label: 'Homework Date' },
+    { key: 'submission_date_formatted', label: 'Submission Date' },
+    { key: 'complete_incomplete', label: 'Complete / Incomplete' },
+    { key: 'percentage_formatted', label: 'Complete %' }
+  ], []);
+
+  const exportData = useMemo(() => {
+    return reportData.map(item => ({
+      ...item,
+      homework_date_formatted: format(new Date(item.homeworkDate), 'dd/MM/yyyy'),
+      submission_date_formatted: format(new Date(item.submissionDate), 'dd/MM/yyyy'),
+      complete_incomplete: `${item.completed} / ${item.incomplete}`,
+      percentage_formatted: `${item.percentage}%`
+    }));
+  }, [reportData]);
 
   // Filters
   const [classes, setClasses] = useState([]);
@@ -268,15 +288,18 @@ const HomeworkEvaluationReport = () => {
                     className="pl-9"
                   />
                 </div>
-                <div className="flex gap-2">
-                  <Button variant="outline" size="icon" title="Copy"><Copy className="h-4 w-4 text-gray-600" /></Button>
-                  <Button variant="outline" size="icon" title="Excel"><FileSpreadsheet className="h-4 w-4 text-gray-600" /></Button>
-                  <Button variant="outline" size="icon" title="CSV"><FileText className="h-4 w-4 text-gray-600" /></Button>
-                  <Button variant="outline" size="icon" title="Print"><Printer className="h-4 w-4 text-gray-600" /></Button>
-                </div>
+                {exportData.length > 0 && (
+                  <DataTableExport
+                    data={exportData}
+                    columns={columns}
+                    fileName="Homework_Evaluation_Report"
+                    title="Homework Evaluation Report"
+                    printRef={printRef}
+                  />
+                )}
               </div>
 
-              <div className="rounded-md border">
+              <div ref={printRef} className="rounded-md border">
                 <Table>
                   <TableHeader>
                     <TableRow className="bg-gray-50 hover:bg-gray-50">
@@ -299,6 +322,7 @@ const HomeworkEvaluationReport = () => {
                     ))}
                   </TableBody>
                 </Table>
+              </div>
               </div>
               <div className="mt-4 text-sm text-muted-foreground">
                 Records: 1 to {filteredReport.length} of {filteredReport.length}

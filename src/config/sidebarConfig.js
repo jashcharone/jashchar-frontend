@@ -78,6 +78,9 @@ export const BASE_SIDEBAR = {
   super_admin: [
     { title: 'Dashboard', icon: LayoutDashboard, path: ROUTES.SUPER_ADMIN.DASHBOARD },
     { title: 'Advanced Analytics', icon: BarChart3, path: '/admin/advanced-analytics' },
+    // Cortex AI - Add-on subscription based access (NOT module permission)
+    // Always visible in sidebar, access controlled within the module
+    { title: '⚡ Cortex AI', icon: Bot, path: '/super-admin/cortex-ai', badge: 'AI', badgeColor: 'purple' },
     {
       title: 'Front Office',
       icon: Building,
@@ -427,16 +430,15 @@ export const BASE_SIDEBAR = {
       title: 'Reports',
       icon: FileText,
       submenu: [
-          { title: 'Student Information', path: ROUTES.SUPER_ADMIN.REPORT_STUDENT_INFO },
-          { title: 'Finance', path: ROUTES.SUPER_ADMIN.REPORT_INCOME },
-          { title: 'Attendance', path: ROUTES.SUPER_ADMIN.REPORT_ATTENDANCE },
-          { title: 'Examinations', path: ROUTES.SUPER_ADMIN.CBSE_REPORTS },
-          { title: 'Human Resource', path: ROUTES.SUPER_ADMIN.REPORT_PAYROLL },
-          { title: 'Library', path: ROUTES.SUPER_ADMIN.REPORT_LIB_BOOK_ISSUE },
-          { title: 'Transport', path: ROUTES.SUPER_ADMIN.REPORT_TRANSPORT },
-          { title: 'Hostel', path: ROUTES.SUPER_ADMIN.REPORT_HOSTEL },
-          { title: 'Homework', path: ROUTES.SUPER_ADMIN.REPORT_HOMEWORK },
-          { title: 'Homework Evaluation', path: ROUTES.SUPER_ADMIN.REPORT_HOMEWORK_EVAL },
+          { title: 'Student Information', path: '/super-admin/reports/student-generator' },
+          { title: 'Finance', path: '/super-admin/reports/finance-generator' },
+          { title: 'Attendance', path: '/super-admin/reports/attendance-generator' },
+          { title: 'Examinations', path: '/super-admin/reports/exam-generator' },
+          { title: 'Human Resource', path: '/super-admin/reports/hr-generator' },
+          { title: 'Library', path: '/super-admin/reports/library-generator' },
+          { title: 'Transport', path: '/super-admin/reports/transport-generator' },
+          { title: 'Hostel', path: '/super-admin/reports/hostel-generator' },
+          { title: 'Fees Reports', path: '/super-admin/reports/fees-generator' },
       ]
     },
     {

@@ -1,12 +1,12 @@
-﻿import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect, useMemo, useRef } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
+import DataTableExport from '@/components/DataTableExport';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/components/ui/use-toast';
 import { supabase } from '@/lib/customSupabaseClient';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
-import { Search, Loader2, Printer } from 'lucide-react';
-import { useReactToPrint } from 'react-to-print';
+import { Search, Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
 
 const FeesStatementReport = () => {
@@ -22,7 +22,36 @@ const FeesStatementReport = () => {
   
   const [reportData, setReportData] = useState([]);
   const [loading, setLoading] = useState(false);
-  const printRef = React.useRef();
+  const printRef = useRef();
+
+  const columns = useMemo(() => [
+    { key: 'fee_group', label: 'Fees Group' },
+    { key: 'fee_code', label: 'Fees Code' },
+    { key: 'due_date_formatted', label: 'Due Date' },
+    { key: 'status', label: 'Status' },
+    { key: 'amount', label: 'Amount' },
+    { key: 'payment_id_short', label: 'Payment ID' },
+    { key: 'payment_mode', label: 'Mode' },
+    { key: 'payment_date_formatted', label: 'Date' },
+    { key: 'paid', label: 'Paid' },
+    { key: 'discount', label: 'Discount' },
+    { key: 'fine', label: 'Fine' },
+    { key: 'balance', label: 'Balance' }
+  ], []);
+
+  const exportData = useMemo(() => {
+    return reportData.map(row => ({
+      ...row,
+      due_date_formatted: format(new Date(row.due_date), 'dd-MM-yyyy'),
+      payment_id_short: row.payment_id?.substring(0, 8) || '',
+      payment_date_formatted: row.payment_date ? format(new Date(row.payment_date), 'dd-MM-yyyy') : '',
+      amount: row.amount.toFixed(2),
+      paid: row.paid.toFixed(2),
+      discount: row.discount.toFixed(2),
+      fine: row.fine.toFixed(2),
+      balance: row.balance.toFixed(2)
+    }));
+  }, [reportData]);
 
   useEffect(() => {
     if (!school?.id) return;
@@ -80,10 +109,6 @@ const FeesStatementReport = () => {
     setLoading(false);
   };
 
-  const handlePrint = useReactToPrint({
-    content: () => printRef.current,
-  });
-
   const totalAmount = reportData.reduce((sum, row) => sum + row.amount, 0);
   const totalPaid = reportData.reduce((sum, row) => sum + row.paid, 0);
   const totalDiscount = reportData.reduce((sum, row) => sum + row.discount, 0);
@@ -100,7 +125,6 @@ const FeesStatementReport = () => {
           <div><label>Student</label><Select value={selectedStudent} onValueChange={setSelectedStudent} disabled={!selectedSection}><SelectTrigger><SelectValue placeholder="Select Student" /></SelectTrigger><SelectContent>{students.map(s => <SelectItem key={s.id} value={s.id}>{s.full_name}</SelectItem>)}</SelectContent></Select></div>
           <div className="flex gap-2">
             <Button onClick={handleSearch} disabled={loading} className="w-full">{loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Search className="mr-2 h-4 w-4" />} Search</Button>
-            <Button onClick={handlePrint} variant="outline" className="w-full" disabled={reportData.length === 0}><Printer className="mr-2 h-4 w-4" /> Print</Button>
           </div>
         </div>
       </div>
@@ -108,7 +132,19 @@ const FeesStatementReport = () => {
       {loading ? (
         <div className="text-center py-10"><Loader2 className="mx-auto h-8 w-8 animate-spin" /></div>
       ) : (
-        <div ref={printRef} className="bg-card p-4 rounded-lg shadow-sm overflow-x-auto">
+        <div className="bg-card p-4 rounded-lg shadow-sm overflow-x-auto">
+          {reportData.length > 0 && (
+            <div className="bg-card p-3 rounded-lg shadow-sm mb-4">
+              <DataTableExport
+                data={exportData}
+                columns={columns}
+                fileName="Fees_Statement_Report"
+                title="Fees Statement"
+                printRef={printRef}
+              />
+            </div>
+          )}
+          <div ref={printRef}>
           <h2 className="text-xl font-semibold mb-4 text-center">Fees Statement</h2>
           {selectedStudent && <p className="text-center text-sm mb-4">Student: {students.find(s => s.id === selectedStudent)?.full_name}</p>}
           <table className="w-full text-sm">
@@ -160,6 +196,7 @@ const FeesStatementReport = () => {
               </tr>
             </tfoot>
           </table>
+          </div>
         </div>
       )}
     </DashboardLayout>

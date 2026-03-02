@@ -139,7 +139,19 @@ const BalanceFeesStatementReport = lazy(() => import('@/pages/super-admin/report
 const BalanceFeesWithRemarkReport = lazy(() => import('@/pages/super-admin/reports/finance/BalanceFeesWithRemarkReport'));
 const OnlineFeesCollectionReport = lazy(() => import('@/pages/super-admin/reports/finance/OnlineFeesCollectionReport'));
 const PayrollReport = lazy(() => import('@/pages/super-admin/reports/finance/PayrollReport'));
-const StudentInformationReport = lazy(() => import('@/pages/super-admin/reports/student-information/StudentInformationReport'));
+const StudentInformationReport = lazy(() => import('@/pages/super-admin/reports/student-information/StudentInformationReportV2'));
+const StudentReportGenerator = lazy(() => import('@/pages/super-admin/reports/student-information/StudentReportGenerator'));
+const AttendanceReportGenerator = lazy(() => import('@/pages/super-admin/reports/attendance/AttendanceReportGenerator'));
+
+// Report Generators (Coming Soon placeholders)
+const FinanceReportGenerator = lazy(() => import('@/pages/super-admin/reports/finance/FinanceReportGenerator'));
+const ExamReportGenerator = lazy(() => import('@/pages/super-admin/reports/examinations/ExamReportGenerator'));
+const HRReportGenerator = lazy(() => import('@/pages/super-admin/reports/hr/HRReportGenerator'));
+const LibraryReportGenerator = lazy(() => import('@/pages/super-admin/reports/library/LibraryReportGenerator'));
+const TransportReportGenerator = lazy(() => import('@/pages/super-admin/reports/transport/TransportReportGenerator'));
+const HostelReportGenerator = lazy(() => import('@/pages/super-admin/reports/hostel/HostelReportGenerator'));
+const FeesReportGenerator = lazy(() => import('@/pages/super-admin/reports/fees/FeesReportGenerator'));
+const OnlineExamReportGenerator = lazy(() => import('@/pages/super-admin/reports/online-exam/OnlineExamReportGenerator'));
 
 // ? Fees Collection
 const CollectFees = lazy(() => import('@/pages/super-admin/fees-collection/CollectFees'));
@@ -463,6 +475,9 @@ const TaskPriorities = lazy(() => import('@/pages/super-admin/task-management/Ta
 // ? Advanced Analytics & AI
 const AdvancedAnalytics = lazy(() => import('@/pages/super-admin/AdvancedAnalytics'));
 const MasterAdminAnalytics = lazy(() => import('@/pages/master-admin/MasterAdminAnalytics'));
+
+// ? Cortex AI - India's First Thinking ERP
+const CortexAI = lazy(() => import('@/pages/super-admin/cortex-ai'));
 
 // AIChatbot moved to DashboardLayout for header control
 
@@ -1173,6 +1188,17 @@ function App() {
             <Route path={ROUTES.SUPER_ADMIN.REPORT_ONLINE_FEES} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'accountant']} requiredModule="fees_collection"><OnlineFeesCollectionReport /></ProtectedRoute>} />
             <Route path={ROUTES.SUPER_ADMIN.REPORT_PAYROLL} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'accountant', 'principal']} requiredModule="human_resource"><PayrollReport /></ProtectedRoute>} />
             <Route path={ROUTES.SUPER_ADMIN.REPORT_STUDENT_INFO} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'principal']}><StudentInformationReport /></ProtectedRoute>} />
+            {/* 📊 NEW Report Generator V3 - Test Route */}
+            <Route path="/super-admin/reports/student-generator" element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'principal']}><StudentReportGenerator /></ProtectedRoute>} />
+            <Route path="/super-admin/reports/attendance-generator" element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'principal']}><AttendanceReportGenerator /></ProtectedRoute>} />
+            <Route path="/super-admin/reports/finance-generator" element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'accountant']}><FinanceReportGenerator /></ProtectedRoute>} />
+            <Route path="/super-admin/reports/exam-generator" element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'principal']}><ExamReportGenerator /></ProtectedRoute>} />
+            <Route path="/super-admin/reports/hr-generator" element={<ProtectedRoute allowedRoles={['super_admin', 'admin']}><HRReportGenerator /></ProtectedRoute>} />
+            <Route path="/super-admin/reports/library-generator" element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'librarian']}><LibraryReportGenerator /></ProtectedRoute>} />
+            <Route path="/super-admin/reports/transport-generator" element={<ProtectedRoute allowedRoles={['super_admin', 'admin']}><TransportReportGenerator /></ProtectedRoute>} />
+            <Route path="/super-admin/reports/hostel-generator" element={<ProtectedRoute allowedRoles={['super_admin', 'admin']}><HostelReportGenerator /></ProtectedRoute>} />
+            <Route path="/super-admin/reports/fees-generator" element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'accountant']}><FeesReportGenerator /></ProtectedRoute>} />
+            <Route path="/super-admin/reports/online-exam-generator" element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'principal']}><OnlineExamReportGenerator /></ProtectedRoute>} />
 
             {/* ? Fees Collection */}
             <Route
@@ -1369,6 +1395,9 @@ function App() {
             <Route path="/super-admin/task-management/my-tasks" element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'principal', 'vice_principal', 'coordinator', 'accountant', 'cashier', 'receptionist', 'teacher', 'class_teacher', 'subject_teacher', 'librarian', 'lab_assistant', 'driver', 'hostel_warden', 'sports_coach', 'security_guard', 'maintenance_staff', 'peon', 'employee', 'staff']} requiredModule="task_management.my_tasks"><MyTasks /></ProtectedRoute>} />
             <Route path="/super-admin/task-management/categories" element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'principal']} requiredModule="task_management.categories"><TaskCategories /></ProtectedRoute>} />
             <Route path="/super-admin/task-management/priorities" element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'principal']} requiredModule="task_management.priorities"><TaskPriorities /></ProtectedRoute>} />
+
+            {/* ⚡ Cortex AI - India's First Thinking ERP (Add-on billing - NOT module permission) */}
+            <Route path="/super-admin/cortex-ai/*" element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'principal']}><CortexAI /></ProtectedRoute>} />
 
             {/* ? Fees (Remaining) */}
             <Route path={ROUTES.SUPER_ADMIN.COLLECT_FEES} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'accountant']}><CollectFees /></ProtectedRoute>} />

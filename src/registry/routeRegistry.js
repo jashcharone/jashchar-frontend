@@ -310,7 +310,17 @@ export const ROUTES = {
     // QR
     QR_ATTENDANCE_SETTING: '/super-admin/qr-code-attendance/setting',
     QR_ATTENDANCE_SCAN: '/super-admin/qr-code-attendance/scan',
-    // Reports
+    // Report Generators (NEW - World's Best Report System)
+    STUDENT_GENERATOR: '/super-admin/reports/student-generator',
+    ATTENDANCE_GENERATOR: '/super-admin/reports/attendance-generator',
+    FINANCE_GENERATOR: '/super-admin/reports/finance-generator',
+    EXAM_GENERATOR: '/super-admin/reports/exam-generator',
+    HR_GENERATOR: '/super-admin/reports/hr-generator',
+    LIBRARY_GENERATOR: '/super-admin/reports/library-generator',
+    TRANSPORT_GENERATOR: '/super-admin/reports/transport-generator',
+    HOSTEL_GENERATOR: '/super-admin/reports/hostel-generator',
+    FEES_GENERATOR: '/super-admin/reports/fees-generator',
+    // Reports (Legacy)
     REPORT_ATTENDANCE: '/super-admin/reports/attendance-report',
     REPORT_STUDENT_ATT_TYPE: '/super-admin/reports/student-attendance-type-report',
     REPORT_BALANCE_FEES: '/super-admin/reports/balance-fees-report',

@@ -1,5 +1,6 @@
-﻿import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect, useMemo, useRef } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
+import DataTableExport from '@/components/DataTableExport';
 import { supabase } from '@/lib/customSupabaseClient';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { useBranch } from '@/contexts/BranchContext';
@@ -26,6 +27,22 @@ const IncomeGroupReport = () => {
     const [reportData, setReportData] = useState(null);
 
     const branchId = selectedBranch?.id || user?.profile?.branch_id;
+    const printRef = useRef();
+
+    const columns = useMemo(() => [
+        { key: 'income_head', label: 'Income Head' },
+        { key: 'count', label: 'Items Count' },
+        { key: 'total', label: 'Total Amount (₹)' }
+    ], []);
+
+    const exportData = useMemo(() => {
+        if (!reportData) return [];
+        return Object.entries(reportData).map(([head, data]) => ({
+            income_head: head,
+            count: data.count,
+            total: `₹${data.total.toFixed(2)}`
+        }));
+    }, [reportData]);
 
     useEffect(() => {
         if (!branchId) return;
@@ -110,7 +127,18 @@ const IncomeGroupReport = () => {
                 <Card>
                     <CardHeader><CardTitle>Income Group Report</CardTitle></CardHeader>
                     <CardContent>
-                        <div className="overflow-x-auto">
+                        {exportData.length > 0 && (
+                            <div className="bg-card p-3 rounded-lg shadow-sm mb-4">
+                                <DataTableExport
+                                    data={exportData}
+                                    columns={columns}
+                                    fileName="Income_Group_Report"
+                                    title="Income Group Report"
+                                    printRef={printRef}
+                                />
+                            </div>
+                        )}
+                        <div ref={printRef} className="overflow-x-auto">
                             <table className="w-full text-sm">
                                 <thead className="bg-muted"><tr className="text-left"><th className="p-2">Income Head</th><th className="p-2">Total Amount (₹)</th></tr></thead>
                                 <tbody>

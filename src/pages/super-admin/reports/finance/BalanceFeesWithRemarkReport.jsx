@@ -1,14 +1,14 @@
-﻿import React, { useState, useEffect, useRef } from 'react';
+﻿import React, { useState, useEffect, useRef, useMemo } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
+import DataTableExport from '@/components/DataTableExport';
 import { supabase } from '@/lib/customSupabaseClient';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { useBranch } from '@/contexts/BranchContext';
 import { useToast } from '@/components/ui/use-toast';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Search, Loader2, Printer } from 'lucide-react';
+import { Search, Loader2 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { useReactToPrint } from 'react-to-print';
 
 const BalanceFeesWithRemarkReport = () => {
     const { user } = useAuth();
@@ -20,6 +20,31 @@ const BalanceFeesWithRemarkReport = () => {
     const [filters, setFilters] = useState({ class_id: '', section_id: 'all' });
     const [reportData, setReportData] = useState(null);
     const printRef = useRef();
+
+    const columns = useMemo(() => [
+        { key: 'student_info', label: 'Student Name (Admission No)' },
+        { key: 'class_section', label: 'Class' },
+        { key: 'fees_list', label: 'Fees' },
+        { key: 'total_amount_formatted', label: 'Amount' },
+        { key: 'total_paid_formatted', label: 'Paid' },
+        { key: 'balance_formatted', label: 'Balance' },
+        { key: 'guardian_phone', label: 'Guardian Phone' },
+        { key: 'remark', label: 'Remark' }
+    ], []);
+
+    const exportData = useMemo(() => {
+        if (!reportData) return [];
+        return reportData.map(row => ({
+            student_info: `${row.student_name} (${row.admission_no})`,
+            class_section: `${row.class_name} (${row.section_name})`,
+            fees_list: row.fees_details?.join(', ') || '',
+            total_amount_formatted: `₹${Number(row.total_amount).toFixed(2)}`,
+            total_paid_formatted: `₹${Number(row.total_paid).toFixed(2)}`,
+            balance_formatted: `₹${Number(row.balance).toFixed(2)}`,
+            guardian_phone: row.guardian_phone || '',
+            remark: ''
+        }));
+    }, [reportData]);
 
     const branchId = selectedBranch?.id || user?.profile?.branch_id;
 
@@ -72,10 +97,6 @@ const BalanceFeesWithRemarkReport = () => {
         setLoading(false);
     };
 
-    const handlePrint = useReactToPrint({
-        content: () => printRef.current,
-    });
-
     return (
         <DashboardLayout>
             <h1 className="text-2xl font-bold mb-6">Balance Fees Report With Remark</h1>
@@ -100,10 +121,20 @@ const BalanceFeesWithRemarkReport = () => {
                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between">
                         <CardTitle>Balance Fees Report With Remark</CardTitle>
-                        <Button variant="outline" onClick={handlePrint}><Printer className="mr-2 h-4 w-4" /> Print</Button>
                     </CardHeader>
-                    <CardContent ref={printRef}>
-                        <div className="overflow-x-auto">
+                    <CardContent>
+                        {exportData.length > 0 && (
+                            <div className="bg-card p-3 rounded-lg shadow-sm mb-4">
+                                <DataTableExport
+                                    data={exportData}
+                                    columns={columns}
+                                    fileName="Balance_Fees_Report_With_Remark"
+                                    title="Balance Fees Report With Remark"
+                                    printRef={printRef}
+                                />
+                            </div>
+                        )}
+                        <div ref={printRef} className="overflow-x-auto">
                             <table className="w-full text-sm">
                                 <thead className="bg-muted">
                                     <tr className="text-left">

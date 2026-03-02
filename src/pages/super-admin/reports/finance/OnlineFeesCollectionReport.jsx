@@ -1,13 +1,13 @@
-﻿import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect, useMemo, useRef } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
+import DataTableExport from '@/components/DataTableExport';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import DatePicker from '@/components/ui/DatePicker';
 import { useToast } from '@/components/ui/use-toast';
 import { supabase } from '@/lib/customSupabaseClient';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
-import { Search, Loader2, Printer } from 'lucide-react';
-import { useReactToPrint } from 'react-to-print';
+import { Search, Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
 
 const OnlineFeesCollectionReport = () => {
@@ -23,7 +23,27 @@ const OnlineFeesCollectionReport = () => {
   
   const [reportData, setReportData] = useState([]);
   const [loading, setLoading] = useState(false);
-  const printRef = React.useRef();
+  const printRef = useRef();
+
+  const columns = useMemo(() => [
+    { key: 'payment_date_formatted', label: 'Date' },
+    { key: 'admission_no', label: 'Admission No' },
+    { key: 'student_name', label: 'Name' },
+    { key: 'class_section', label: 'Class' },
+    { key: 'transaction_id', label: 'Transaction ID' },
+    { key: 'total_amount', label: 'Amount' }
+  ], []);
+
+  const exportData = useMemo(() => {
+    return reportData.map(row => ({
+      payment_date_formatted: format(new Date(row.payment_date), 'dd-MM-yyyy'),
+      admission_no: row.student?.school_code || '',
+      student_name: row.student?.full_name || '',
+      class_section: `${row.student?.class?.name || ''} (${row.student?.section?.name || ''})`,
+      transaction_id: row.transaction_id || '',
+      total_amount: (row.amount + (row.fine_paid || 0)).toFixed(2)
+    }));
+  }, [reportData]);
 
   useEffect(() => {
     if (!school?.id) return;
@@ -94,10 +114,6 @@ const OnlineFeesCollectionReport = () => {
     setLoading(false);
   };
 
-  const handlePrint = useReactToPrint({
-    content: () => printRef.current,
-  });
-
   const grandTotal = reportData.reduce((sum, row) => sum + row.amount + (row.fine_paid || 0), 0);
 
   return (
@@ -111,7 +127,6 @@ const OnlineFeesCollectionReport = () => {
           <div><label>Section</label><Select value={selectedSection} onValueChange={setSelectedSection} disabled={!selectedClass || selectedClass === 'all'}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="all">All Sections</SelectItem>{sections.map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}</SelectContent></Select></div>
           <div className="col-span-1 md:col-span-4 flex gap-2">
             <Button onClick={handleSearch} disabled={loading} className="w-full">{loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Search className="mr-2 h-4 w-4" />} Search</Button>
-            <Button onClick={handlePrint} variant="outline" className="w-full" disabled={reportData.length === 0}><Printer className="mr-2 h-4 w-4" /> Print</Button>
           </div>
         </div>
       </div>
@@ -119,7 +134,19 @@ const OnlineFeesCollectionReport = () => {
       {loading ? (
         <div className="text-center py-10"><Loader2 className="mx-auto h-8 w-8 animate-spin" /></div>
       ) : (
-        <div ref={printRef} className="bg-card p-4 rounded-lg shadow-sm overflow-x-auto">
+        <div className="bg-card p-4 rounded-lg shadow-sm overflow-x-auto">
+          {reportData.length > 0 && (
+            <div className="bg-card p-3 rounded-lg shadow-sm mb-4">
+              <DataTableExport
+                data={exportData}
+                columns={columns}
+                fileName="Online_Fees_Collection_Report"
+                title="Online Fees Collection Report"
+                printRef={printRef}
+              />
+            </div>
+          )}
+          <div ref={printRef}>
           <h2 className="text-xl font-semibold mb-4 text-center">Online Fees Collection Report</h2>
           <p className="text-center text-sm mb-4">From {format(new Date(dateFrom), 'dd-MM-yyyy')} to {format(new Date(dateTo), 'dd-MM-yyyy')}</p>
           <table className="w-full text-sm">
@@ -154,6 +181,7 @@ const OnlineFeesCollectionReport = () => {
               </tr>
             </tfoot>
           </table>
+          </div>
         </div>
       )}
     </DashboardLayout>

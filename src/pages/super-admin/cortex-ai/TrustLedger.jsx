@@ -38,7 +38,7 @@ const TrustLedger = () => {
     setLoading(true);
     try {
       const [ledgerRes] = await Promise.all([
-        api.get('/cortex/trust/ledger')
+        api.get('/cortex/trust/entries')
       ]);
       setLedgerEntries(ledgerRes.data.data || []);
       setStats({
@@ -98,8 +98,8 @@ const TrustLedger = () => {
     if (!verifyHash.trim()) return;
     setVerifying(true);
     try {
-      const res = await api.post('/cortex/trust/verify', { hash: verifyHash });
-      setVerifyResult(res.data.data);
+      const res = await api.get(`/cortex/trust/verify/${verifyHash}`);
+      setVerifyResult(res.data);
     } catch (error) {
       // Mock verification
       const mockEntry = ledgerEntries.find(e => e.documentHash.includes(verifyHash.slice(0, 10)));

@@ -35,7 +35,7 @@ const SchoolDNA = () => {
     try {
       const [dnaRes, compareRes] = await Promise.all([
         api.get('/cortex/dna/score'),
-        api.get('/cortex/dna/comparison')
+        api.get('/cortex/dna/compare')
       ]);
       setDnaScore(dnaRes.data.data);
       setComparison(compareRes.data.data);

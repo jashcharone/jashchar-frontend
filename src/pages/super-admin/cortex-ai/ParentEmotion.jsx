@@ -37,7 +37,7 @@ const ParentEmotion = () => {
     try {
       const [overviewRes, riskRes] = await Promise.all([
         api.get(`/cortex/emotion/overview?period=${selectedTimeRange}`),
-        api.get('/cortex/emotion/risk-parents')
+        api.get('/cortex/emotion/risk')
       ]);
       setEmotionData(overviewRes.data.data);
       setRiskParents(riskRes.data.data || []);

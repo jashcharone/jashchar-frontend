@@ -14,7 +14,7 @@ import React, { useState, useEffect } from 'react';
 import { 
   Baby, Calendar, Heart, BookOpen, Award, Clock,
   Smile, Frown, Meh, Activity, MessageCircle, RefreshCw,
-  Camera, Bus, Utensils, Moon, Sun, CloudSun
+  Camera, Bus, Utensils, Moon, Sun, CloudSun, Coffee
 } from 'lucide-react';
 import api from '@/services/api';
 import { formatDate, formatTime } from '@/utils/dateUtils';
@@ -35,8 +35,8 @@ const ParentInsights = () => {
     setLoading(true);
     try {
       const [insightsRes, feedRes] = await Promise.all([
-        api.get(`/cortex/parent/insights?date=${selectedDate}`),
-        api.get('/cortex/parent/feed')
+        api.get(`/cortex/parent/insights/all?date=${selectedDate}`),
+        api.get('/cortex/parent/activity-feed')
       ]);
       setInsights(insightsRes.data.data);
       setActivityFeed(feedRes.data.data || []);

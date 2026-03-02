@@ -38,7 +38,7 @@ const StudentPrediction = () => {
     setLoading(true);
     try {
       if (activeTab === 'dropout') {
-        const res = await api.get('/cortex/predict/dropout-risk');
+        const res = await api.get('/cortex/predict/dropout');
         setDropoutRiskList(res.data.data || []);
       } else if (activeTab === 'results') {
         const res = await api.get('/cortex/predict/results');

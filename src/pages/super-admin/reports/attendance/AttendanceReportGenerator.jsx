@@ -60,8 +60,15 @@ const AttendanceReportGenerator = () => {
     showScheduleModal, setShowScheduleModal,
     resetState
   } = useReportState({
-    defaultColumns: COLUMN_SETS.daily_basic.map(key => ATTENDANCE_COLUMNS.find(c => c.key === key)).filter(Boolean)
+    defaultColumns: COLUMN_SETS.daily_basic  // Store as keys (strings), not objects
   });
+
+  // Convert selected column keys to full column objects for table/export
+  const selectedColumnsObjects = useMemo(() => {
+    return selectedColumns
+      .map(key => ATTENDANCE_COLUMNS.find(c => c.key === key))
+      .filter(Boolean);
+  }, [selectedColumns]);
 
   // Templates for sidebar - direct array with category property
   const allTemplates = useMemo(() => ATTENDANCE_TEMPLATES, []);
@@ -70,7 +77,7 @@ const AttendanceReportGenerator = () => {
   const handleTemplateSelect = useCallback((template) => {
     if (template) {
       setSelectedTemplate(template);
-      setSelectedColumns(template.columns);
+      setSelectedColumns(template.columns.map(c => c.key));
       setFilters(template.defaultFilters || {});
       setGroupBy(template.defaultGroupBy || []);
       setSortBy(template.defaultSortBy || []);
@@ -192,7 +199,7 @@ const AttendanceReportGenerator = () => {
   }, [data]);
 
   // Group and sort data
-  const { groupedData, flatData } = useGroupedData(data, groupBy, sortBy, selectedColumns);
+  const { groupedData, flatData } = useGroupedData(data, groupBy, sortBy, selectedColumnsObjects);
 
   return (
     <ReportGeneratorLayout
@@ -309,9 +316,9 @@ const AttendanceReportGenerator = () => {
                 </CardHeader>
                 <CardContent className="px-4 pb-4">
                   <ColumnSelector
-                    allColumns={ATTENDANCE_COLUMNS}
+                    availableColumns={ATTENDANCE_COLUMNS}
                     selectedColumns={selectedColumns}
-                    onColumnChange={setSelectedColumns}
+                    onColumnsChange={setSelectedColumns}
                     moduleColor={moduleColor}
                     compact
                   />
@@ -328,7 +335,7 @@ const AttendanceReportGenerator = () => {
                 </CardHeader>
                 <CardContent className="px-4 pb-4">
                   <GroupSortPanel
-                    columns={selectedColumns}
+                    columns={selectedColumnsObjects}
                     groupBy={groupBy}
                     sortBy={sortBy}
                     onGroupByChange={setGroupBy}
@@ -350,7 +357,7 @@ const AttendanceReportGenerator = () => {
               </span>
               <ExportButtons
                 data={flatData}
-                columns={selectedColumns}
+                columns={selectedColumnsObjects}
                 filename="attendance_report"
                 title={selectedTemplate?.name || 'Attendance Report'}
                 color={moduleColor}
@@ -361,7 +368,7 @@ const AttendanceReportGenerator = () => {
             <div className="flex-1 overflow-auto">
               <LivePreviewTable
                 data={groupedData}
-                columns={selectedColumns}
+                columns={selectedColumnsObjects}
                 groupBy={groupBy}
                 isLoading={isLoading}
                 error={error}
@@ -377,7 +384,7 @@ const AttendanceReportGenerator = () => {
         isOpen={showSaveModal}
         onClose={() => setShowSaveModal(false)}
         template={{
-          columns: selectedColumns,
+          columns: selectedColumnsObjects,
           filters,
           groupBy,
           sortBy

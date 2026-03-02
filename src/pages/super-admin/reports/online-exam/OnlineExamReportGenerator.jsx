@@ -75,10 +75,15 @@ const OnlineExamReportGenerator = () => {
     showScheduleModal, setShowScheduleModal,
     resetState
   } = useReportState({
-    defaultColumns: COLUMN_SETS.online_exam_list?.map(key => 
-      ONLINE_EXAM_COLUMNS.find(c => c.key === key)
-    ).filter(Boolean) || []
+    defaultColumns: COLUMN_SETS.online_exam_list  // Store as keys (strings), not objects
   });
+
+  // Convert selected column keys to full column objects for table/export
+  const selectedColumnsObjects = useMemo(() => {
+    return selectedColumns
+      .map(key => ONLINE_EXAM_COLUMNS.find(c => c.key === key))
+      .filter(Boolean);
+  }, [selectedColumns]);
 
   // Templates for sidebar
   const allTemplates = useMemo(() => ONLINE_EXAM_TEMPLATES, []);
@@ -87,7 +92,7 @@ const OnlineExamReportGenerator = () => {
   const handleTemplateSelect = useCallback((template) => {
     if (template) {
       setSelectedTemplate(template);
-      setSelectedColumns(template.columns);
+      setSelectedColumns(template.columns.map(c => c.key));
       setFilters(template.defaultFilters || {});
       setGroupBy(template.defaultGroupBy || []);
       setSortBy(template.defaultSortBy || []);
@@ -444,7 +449,7 @@ const OnlineExamReportGenerator = () => {
             {/* Column & Group Controls */}
             <div className="flex flex-wrap items-center gap-4">
               <ColumnSelector
-                allColumns={ONLINE_EXAM_COLUMNS}
+                availableColumns={ONLINE_EXAM_COLUMNS}
                 selectedColumns={selectedColumns}
                 setSelectedColumns={setSelectedColumns}
               />
@@ -454,7 +459,7 @@ const OnlineExamReportGenerator = () => {
                 setGroupBy={setGroupBy}
                 sortBy={sortBy}
                 setSortBy={setSortBy}
-                availableColumns={selectedColumns}
+                availableColumns={ONLINE_EXAM_COLUMNS}
               />
               
               <div className="flex-1" />
@@ -471,7 +476,7 @@ const OnlineExamReportGenerator = () => {
               
               <ExportButtons
                 data={data}
-                columns={selectedColumns}
+                columns={selectedColumnsObjects}
                 title={selectedTemplate?.name || 'Online Exam Report'}
                 filename="online_exam_report"
               />
@@ -482,7 +487,7 @@ const OnlineExamReportGenerator = () => {
           <div className="flex-1 overflow-auto p-4">
             <LivePreviewTable
               data={data}
-              columns={selectedColumns}
+              columns={selectedColumnsObjects}
               groupBy={groupBy}
               sortBy={sortBy}
               isLoading={isLoading}
@@ -498,7 +503,7 @@ const OnlineExamReportGenerator = () => {
         show={showSaveModal}
         onClose={() => setShowSaveModal(false)}
         templateData={{
-          columns: selectedColumns,
+          columns: selectedColumnsObjects,
           filters,
           groupBy,
           sortBy

@@ -73,8 +73,15 @@ const FeesReportGenerator = () => {
     showScheduleModal, setShowScheduleModal,
     resetState
   } = useReportState({
-    defaultColumns: getColumns(COLUMN_SETS.student_fee_ledger)
+    defaultColumns: COLUMN_SETS.student_fee_ledger  // Store as keys (strings), not objects
   });
+
+  // Convert selected column keys to full column objects for table/export
+  const selectedColumnsObjects = useMemo(() => {
+    return selectedColumns
+      .map(key => FEES_COLUMNS.find(c => c.key === key))
+      .filter(Boolean);
+  }, [selectedColumns]);
 
   // Templates for sidebar
   const allTemplates = useMemo(() => FEES_TEMPLATES, []);
@@ -83,7 +90,7 @@ const FeesReportGenerator = () => {
   const handleTemplateSelect = useCallback((template) => {
     if (template) {
       setSelectedTemplate(template);
-      setSelectedColumns(template.columns);
+      setSelectedColumns(template.columns.map(c => c.key));
       setFilters(template.defaultFilters || {});
       setGroupBy(template.defaultGroupBy || []);
       setSortBy(template.defaultSortBy || []);
@@ -284,7 +291,7 @@ const FeesReportGenerator = () => {
   };
 
   // Apply grouping and sorting to data
-  const { groupedData, flatData } = useGroupedData(data, groupBy, sortBy, selectedColumns);
+  const { groupedData, flatData } = useGroupedData(data, groupBy, sortBy, selectedColumnsObjects);
 
   // Export functionality
   const { exportToExcel, exportToPDF, exportToCSV, printReport } = useReportExport();
@@ -295,16 +302,16 @@ const FeesReportGenerator = () => {
     
     switch (format) {
       case 'excel':
-        exportToExcel(flatData, selectedColumns, title);
+        exportToExcel(flatData, selectedColumnsObjects, title);
         break;
       case 'pdf':
-        exportToPDF(flatData, selectedColumns, title, moduleColor);
+        exportToPDF(flatData, selectedColumnsObjects, title, moduleColor);
         break;
       case 'csv':
-        exportToCSV(flatData, selectedColumns, title);
+        exportToCSV(flatData, selectedColumnsObjects, title);
         break;
       case 'print':
-        printReport(flatData, selectedColumns, title);
+        printReport(flatData, selectedColumnsObjects, title);
         break;
       default:
         break;
@@ -498,7 +505,7 @@ const FeesReportGenerator = () => {
                 </CardHeader>
                 <CardContent className="px-4 pb-4">
                   <GroupSortPanel
-                    columns={selectedColumns}
+                    columns={selectedColumnsObjects}
                     groupBy={groupBy}
                     sortBy={sortBy}
                     onGroupByChange={setGroupBy}
@@ -526,7 +533,7 @@ const FeesReportGenerator = () => {
             </div>
             <ExportButtons
               data={flatData}
-              columns={selectedColumns}
+              columns={selectedColumnsObjects}
               title={selectedTemplate?.name || 'Fees Report'}
               filename="fees_report"
               color={moduleColor}
@@ -537,7 +544,7 @@ const FeesReportGenerator = () => {
           <div className="flex-1 overflow-auto p-4 bg-white dark:bg-gray-800">
             <LivePreviewTable
               data={groupedData}
-              columns={selectedColumns}
+              columns={selectedColumnsObjects}
               groupBy={groupBy}
               isLoading={isLoading}
               error={error}
@@ -557,7 +564,7 @@ const FeesReportGenerator = () => {
             id: `custom_${Date.now()}`,
             name,
             description,
-            columns: selectedColumns,
+            columns: selectedColumnsObjects,
             filters,
             groupBy,
             sortBy,
@@ -567,7 +574,7 @@ const FeesReportGenerator = () => {
           setSavedTemplates([...savedTemplates, newTemplate]);
           setShowSaveModal(false);
         }}
-        config={{ columns: selectedColumns, filters, groupBy, sortBy }}
+        config={{ columns: selectedColumnsObjects, filters, groupBy, sortBy }}
         moduleColor={moduleColor}
       />
 

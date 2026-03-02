@@ -69,8 +69,15 @@ const StudentReportGenerator = () => {
     showScheduleModal, setShowScheduleModal,
     resetState
   } = useReportState({
-    defaultColumns: COLUMN_SETS.basic.map(key => STUDENT_COLUMNS.find(c => c.key === key)).filter(Boolean)
+    defaultColumns: COLUMN_SETS.basic  // Store as keys (strings), not objects
   });
+
+  // Convert selected column keys to full column objects for table/export
+  const selectedColumnsObjects = useMemo(() => {
+    return selectedColumns
+      .map(key => STUDENT_COLUMNS.find(c => c.key === key))
+      .filter(Boolean);
+  }, [selectedColumns]);
 
   // Templates for sidebar - direct array with category property
   const allTemplates = useMemo(() => STUDENT_TEMPLATES, []);
@@ -79,7 +86,8 @@ const StudentReportGenerator = () => {
   const handleTemplateSelect = useCallback((template) => {
     if (template) {
       setSelectedTemplate(template);
-      setSelectedColumns(template.columns);
+      // Store column keys, not full objects
+      setSelectedColumns(template.columns.map(c => c.key));
       setFilters(template.defaultFilters || {});
       setGroupBy(template.defaultGroupBy || []);
       setSortBy(template.defaultSortBy || []);
@@ -168,32 +176,243 @@ const StudentReportGenerator = () => {
   };
 
   // Apply grouping and sorting to data
-  const { groupedData, flatData } = useGroupedData(data, groupBy, sortBy, selectedColumns);
+  const { groupedData, flatData: rawFlatData } = useGroupedData(data, groupBy, sortBy, selectedColumnsObjects);
+
+  // Debug log raw data
+  useEffect(() => {
+    if (data.length > 0) {
+      console.log('[Report Debug] Raw data sample:', data[0]);
+      console.log('[Report Debug] Total data count:', data.length);
+      const genders = [...new Set(data.map(s => s.gender))];
+      console.log('[Report Debug] Unique genders in data:', genders);
+    }
+  }, [data]);
+
+  // Debug: Log template changes
+  useEffect(() => {
+    console.log('[Report Debug] Template changed:', {
+      key: selectedTemplate?.key,
+      isStrengthReport: selectedTemplate?.isStrengthReport,
+      columns: selectedTemplate?.columns?.map(c => c.key)
+    });
+  }, [selectedTemplate]);
+
+  // Aggregate data for strength reports
+  const aggregatedStrengthData = useMemo(() => {
+    console.log('[Report Debug] aggregatedStrengthData useMemo running:', {
+      templateKey: selectedTemplate?.key,
+      isStrengthReport: selectedTemplate?.isStrengthReport,
+      dataLength: data?.length || 0
+    });
+
+    if (!selectedTemplate?.isStrengthReport || !data || data.length === 0) {
+      console.log('[Report Debug] Returning null from aggregatedStrengthData:', {
+        notStrengthReport: !selectedTemplate?.isStrengthReport,
+        noData: !data,
+        emptyData: data?.length === 0
+      });
+      return null;
+    }
+
+    // Helper: case-insensitive gender check
+    const isMale = (g) => g?.toLowerCase() === 'male';
+    const isFemale = (g) => g?.toLowerCase() === 'female';
+
+    const templateKey = selectedTemplate.key;
+    
+    // Class-wise strength
+    if (templateKey === 'class_wise_strength') {
+      const classMap = new Map();
+      data.forEach(student => {
+        const className = student.class?.name || 'Unknown';
+        if (!classMap.has(className)) {
+          classMap.set(className, { boys: 0, girls: 0 });
+        }
+        const counts = classMap.get(className);
+        if (isMale(student.gender)) counts.boys++;
+        else if (isFemale(student.gender)) counts.girls++;
+      });
+      return Array.from(classMap.entries()).map(([className, counts]) => ({
+        class_name: className,
+        boys_count: counts.boys,
+        girls_count: counts.girls,
+        total_count: counts.boys + counts.girls
+      })).sort((a, b) => a.class_name.localeCompare(b.class_name));
+    }
+    
+    // Section-wise strength
+    if (templateKey === 'section_wise_strength') {
+      const sectionMap = new Map();
+      data.forEach(student => {
+        const className = student.class?.name || 'Unknown';
+        const sectionName = student.section?.name || 'Unknown';
+        const key = `${className}|${sectionName}`;
+        if (!sectionMap.has(key)) {
+          sectionMap.set(key, { className, sectionName, boys: 0, girls: 0 });
+        }
+        const counts = sectionMap.get(key);
+        if (isMale(student.gender)) counts.boys++;
+        else if (isFemale(student.gender)) counts.girls++;
+      });
+      return Array.from(sectionMap.values()).map(item => ({
+        class_name: item.className,
+        section_name: item.sectionName,
+        boys_count: item.boys,
+        girls_count: item.girls,
+        total_count: item.boys + item.girls
+      })).sort((a, b) => a.class_name.localeCompare(b.class_name) || a.section_name.localeCompare(b.section_name));
+    }
+
+    // Gender ratio analysis
+    if (templateKey === 'gender_ratio') {
+      const classMap = new Map();
+      data.forEach(student => {
+        const className = student.class?.name || 'Unknown';
+        if (!classMap.has(className)) {
+          classMap.set(className, { boys: 0, girls: 0 });
+        }
+        const counts = classMap.get(className);
+        if (isMale(student.gender)) counts.boys++;
+        else if (isFemale(student.gender)) counts.girls++;
+      });
+      return Array.from(classMap.entries()).map(([className, counts]) => {
+        const total = counts.boys + counts.girls;
+        const ratio = counts.girls > 0 ? (counts.boys / counts.girls).toFixed(2) : 'N/A';
+        return {
+          class_name: className,
+          boys_count: counts.boys,
+          girls_count: counts.girls,
+          total_count: total,
+          ratio: ratio,
+          boys_percent: total > 0 ? ((counts.boys / total) * 100).toFixed(1) + '%' : '0%',
+          girls_percent: total > 0 ? ((counts.girls / total) * 100).toFixed(1) + '%' : '0%'
+        };
+      }).sort((a, b) => a.class_name.localeCompare(b.class_name));
+    }
+
+    // Age-wise distribution
+    if (templateKey === 'age_wise_distribution') {
+      const ageMap = new Map();
+      const currentYear = new Date().getFullYear();
+      data.forEach(student => {
+        const dob = student.date_of_birth;
+        let age = 'Unknown';
+        if (dob) {
+          const birthYear = new Date(dob).getFullYear();
+          age = currentYear - birthYear;
+        }
+        if (!ageMap.has(age)) {
+          ageMap.set(age, { boys: 0, girls: 0 });
+        }
+        const counts = ageMap.get(age);
+        if (isMale(student.gender)) counts.boys++;
+        else if (isFemale(student.gender)) counts.girls++;
+      });
+      return Array.from(ageMap.entries()).map(([age, counts]) => ({
+        age: age,
+        boys_count: counts.boys,
+        girls_count: counts.girls,
+        total_count: counts.boys + counts.girls
+      })).sort((a, b) => (typeof a.age === 'number' ? a.age : 999) - (typeof b.age === 'number' ? b.age : 999));
+    }
+
+    // Category-wise strength
+    if (templateKey === 'category_wise_strength') {
+      const categoryMap = new Map();
+      data.forEach(student => {
+        const category = student.category || 'General';
+        if (!categoryMap.has(category)) {
+          categoryMap.set(category, { boys: 0, girls: 0 });
+        }
+        const counts = categoryMap.get(category);
+        if (isMale(student.gender)) counts.boys++;
+        else if (isFemale(student.gender)) counts.girls++;
+      });
+      return Array.from(categoryMap.entries()).map(([category, counts]) => ({
+        category: category,
+        boys_count: counts.boys,
+        girls_count: counts.girls,
+        total_count: counts.boys + counts.girls
+      })).sort((a, b) => a.category.localeCompare(b.category));
+    }
+
+    // Default fallback for other strength reports - aggregate by class
+    const classMap = new Map();
+    data.forEach(student => {
+      const className = student.class?.name || 'Unknown';
+      if (!classMap.has(className)) {
+        classMap.set(className, { boys: 0, girls: 0 });
+      }
+      const counts = classMap.get(className);
+      if (isMale(student.gender)) counts.boys++;
+      else if (isFemale(student.gender)) counts.girls++;
+    });
+    return Array.from(classMap.entries()).map(([className, counts]) => ({
+      class_name: className,
+      boys_count: counts.boys,
+      girls_count: counts.girls,
+      total_count: counts.boys + counts.girls
+    })).sort((a, b) => a.class_name.localeCompare(b.class_name));
+  }, [data, selectedTemplate]);
+
+  // Debug log aggregated data
+  useEffect(() => {
+    if (selectedTemplate?.isStrengthReport) {
+      console.log('[Report Debug] Selected template:', selectedTemplate.key);
+      console.log('[Report Debug] Template columns:', selectedTemplate.columns);
+      console.log('[Report Debug] Aggregated data:', aggregatedStrengthData);
+    }
+  }, [selectedTemplate, aggregatedStrengthData]);
+
+  // Use aggregated data for strength reports, otherwise use raw data
+  const flatData = selectedTemplate?.isStrengthReport && aggregatedStrengthData 
+    ? aggregatedStrengthData 
+    : rawFlatData;
+
+  // Debug log final data for table
+  useEffect(() => {
+    const isUsingAggregated = selectedTemplate?.isStrengthReport && aggregatedStrengthData;
+    console.log('[Report Debug] flatData decision:', {
+      isStrengthReport: selectedTemplate?.isStrengthReport,
+      hasAggregatedData: !!aggregatedStrengthData,
+      aggregatedLength: aggregatedStrengthData?.length,
+      rawFlatDataLength: rawFlatData?.length,
+      isUsingAggregated,
+      finalFlatDataLength: flatData?.length
+    });
+    console.log('[Report Debug] flatData sample:', flatData?.[0]);
+  }, [flatData, selectedTemplate, aggregatedStrengthData, rawFlatData]);
 
   // Export functionality
   const { exportToExcel, exportToPDF, exportToCSV, printReport } = useReportExport();
 
   // Handle export
+  // Get columns for export/display - use template columns for strength reports, otherwise use selected columns
+  const displayColumns = useMemo(() => {
+    return selectedTemplate?.isStrengthReport ? selectedTemplate.columns : selectedColumnsObjects;
+  }, [selectedTemplate, selectedColumnsObjects]);
+
   const handleExport = useCallback((format) => {
     const title = selectedTemplate?.name || 'Student Report';
+    const columnsToUse = displayColumns;
     
     switch (format) {
       case 'excel':
-        exportToExcel(flatData, selectedColumns, title);
+        exportToExcel(flatData, columnsToUse, title);
         break;
       case 'pdf':
-        exportToPDF(flatData, selectedColumns, title, moduleColor);
+        exportToPDF(flatData, columnsToUse, title, moduleColor);
         break;
       case 'csv':
-        exportToCSV(flatData, selectedColumns, title);
+        exportToCSV(flatData, columnsToUse, title);
         break;
       case 'print':
-        printReport(flatData, selectedColumns, title);
+        printReport(flatData, columnsToUse, title);
         break;
       default:
         break;
     }
-  }, [flatData, selectedColumns, selectedTemplate, moduleColor, exportToExcel, exportToPDF, exportToCSV, printReport]);
+  }, [flatData, displayColumns, selectedTemplate, moduleColor, exportToExcel, exportToPDF, exportToCSV, printReport]);
 
   // Initial data load
   useEffect(() => {
@@ -212,9 +431,9 @@ const StudentReportGenerator = () => {
   const stats = useMemo(() => {
     if (!data || data.length === 0) return null;
     
-    const active = data.filter(s => s.status === 'active').length;
-    const boys = data.filter(s => s.gender === 'Male').length;
-    const girls = data.filter(s => s.gender === 'Female').length;
+    const active = data.filter(s => s.status?.toLowerCase() === 'active').length;
+    const boys = data.filter(s => s.gender?.toLowerCase() === 'male').length;
+    const girls = data.filter(s => s.gender?.toLowerCase() === 'female').length;
     
     return { total: data.length, active, boys, girls };
   }, [data]);
@@ -352,7 +571,7 @@ const StudentReportGenerator = () => {
                 </CardHeader>
                 <CardContent className="px-4 pb-4">
                   <GroupSortPanel
-                    columns={selectedColumns}
+                    columns={selectedColumnsObjects}
                     groupBy={groupBy}
                     sortBy={sortBy}
                     onGroupByChange={setGroupBy}
@@ -380,7 +599,7 @@ const StudentReportGenerator = () => {
             </div>
             <ExportButtons
               data={flatData}
-              columns={selectedColumns}
+              columns={displayColumns}
               title={selectedTemplate?.name || 'Student Report'}
               filename="student_report"
               color={moduleColor}
@@ -390,13 +609,12 @@ const StudentReportGenerator = () => {
           {/* Data Table */}
           <div className="flex-1 overflow-auto p-4 bg-white dark:bg-gray-800">
             <LivePreviewTable
-              data={groupedData}
-              columns={selectedColumns}
-              groupBy={groupBy}
-              isLoading={isLoading}
-              error={error}
-              moduleColor={moduleColor}
-              showGroupTotals={groupBy.length > 0}
+              data={selectedTemplate?.isStrengthReport ? flatData : groupedData}
+              columns={displayColumns}
+              groupBy={selectedTemplate?.isStrengthReport ? [] : groupBy}
+              loading={isLoading}
+              color={moduleColor}
+              showSubtotals={!selectedTemplate?.isStrengthReport && groupBy.length > 0}
             />
           </div>
         </div>
@@ -411,7 +629,7 @@ const StudentReportGenerator = () => {
             key: `custom_${Date.now()}`,
             name,
             description,
-            columns: selectedColumns,
+            columns: selectedColumnsObjects,  // Save as objects so template loading works
             filters,
             groupBy,
             sortBy,
@@ -421,7 +639,7 @@ const StudentReportGenerator = () => {
           setSavedTemplates([...savedTemplates, newTemplate]);
           setShowSaveModal(false);
         }}
-        config={{ columns: selectedColumns, filters, groupBy, sortBy }}
+        config={{ columns: selectedColumnsObjects, filters, groupBy, sortBy }}
         moduleColor={moduleColor}
       />
 

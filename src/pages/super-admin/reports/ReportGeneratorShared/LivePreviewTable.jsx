@@ -101,14 +101,17 @@ const LivePreviewTable = ({
 
   // Format cell value based on type
   const formatCellValue = (value, column, row) => {
-    if (value === null || value === undefined) return '-';
-
-    // Custom render function
+    // Custom render function should run FIRST (for computed columns)
     if (column.render) {
       return column.render(value, row);
     }
 
+    if (value === null || value === undefined) return '-';
+
     switch (column.type) {
+      case 'computed':
+        // Computed columns without render function just show the value
+        return value !== null && value !== undefined ? String(value) : '-';
       case 'date':
         return formatDate(value);
       case 'datetime':

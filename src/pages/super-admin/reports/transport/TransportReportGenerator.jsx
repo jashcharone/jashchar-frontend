@@ -125,8 +125,7 @@ const TransportReportGenerator = () => {
     } catch (err) {
       console.error('Fetch error:', err);
       setError(err.message);
-      // For demo, use sample data
-      setData(generateSampleData());
+      setData([]);
     } finally {
       setIsLoading(false);
     }

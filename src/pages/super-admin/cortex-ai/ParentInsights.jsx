@@ -14,7 +14,7 @@ import React, { useState, useEffect } from 'react';
 import { 
   Baby, Calendar, Heart, BookOpen, Award, Clock,
   Smile, Frown, Meh, Activity, MessageCircle, RefreshCw,
-  Camera, Bus, Utensils, Moon, Sun, CloudSun, Coffee
+  Camera, Bus, Utensils, Moon, Sun, CloudSun, CirclePause
 } from 'lucide-react';
 import api from '@/services/api';
 import { formatDate, formatTime } from '@/utils/dateUtils';
@@ -109,7 +109,7 @@ const ParentInsights = () => {
       attendance: Activity,
       class: BookOpen,
       achievement: Award,
-      break: Coffee,
+      break: CirclePause,
       lunch: Utensils,
       transport: Bus
     };

@@ -1641,6 +1641,7 @@ const AddEmployee = () => {
                                                     value={formData.password} 
                                                     onChange={e => handleChange('password', e.target.value)} 
                                                     placeholder="Enter Password"
+                                                    autoComplete="new-password"
                                                 />
                                             </div>
                                             <div className="space-y-2">
@@ -1650,6 +1651,7 @@ const AddEmployee = () => {
                                                     value={formData.retype_password} 
                                                     onChange={e => handleChange('retype_password', e.target.value)} 
                                                     placeholder="Retype Password"
+                                                    autoComplete="new-password"
                                                 />
                                             </div>
                                         </div>

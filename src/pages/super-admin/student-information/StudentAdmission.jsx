@@ -782,6 +782,7 @@ const StudentAdmission = () => {
                     type={showStudentPassword ? "text" : "password"} 
                     value={formData[field.field_name]} 
                     placeholder="Enter password"
+                    autoComplete="new-password"
                     onChange={e => handleChange(field.field_name, e.target.value)} 
                     onBlur={() => handleBlur(field.field_name)} 
                     disabled={schoolSettings?.password_auto_generation} 
@@ -807,6 +808,7 @@ const StudentAdmission = () => {
                     type={showStudentRetypePassword ? "text" : "password"} 
                     value={formData[field.field_name]} 
                     placeholder="Re-type password"
+                    autoComplete="new-password"
                     onChange={e => handleChange(field.field_name, e.target.value)} 
                     onBlur={() => handleBlur(field.field_name)} 
                     disabled={schoolSettings?.password_auto_generation} 
@@ -832,6 +834,7 @@ const StudentAdmission = () => {
                     type={showParentPassword ? "text" : "password"} 
                     value={formData[field.field_name]} 
                     placeholder="Enter password"
+                    autoComplete="new-password"
                     onChange={e => handleChange(field.field_name, e.target.value)} 
                     onBlur={() => handleBlur(field.field_name)} 
                     disabled={schoolSettings?.password_auto_generation} 
@@ -857,6 +860,7 @@ const StudentAdmission = () => {
                     type={showParentRetypePassword ? "text" : "password"} 
                     value={formData[field.field_name]} 
                     placeholder="Re-type password"
+                    autoComplete="new-password"
                     onChange={e => handleChange(field.field_name, e.target.value)} 
                     onBlur={() => handleBlur(field.field_name)} 
                     disabled={schoolSettings?.password_auto_generation} 

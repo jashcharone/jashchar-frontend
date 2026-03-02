@@ -327,8 +327,9 @@ const LibraryReportGenerator = () => {
                     onReset={handleResetFilters}
                     classes={classes}
                     sections={sections}
+                    sessions={sessions}
                     filterConfig={{
-                      session: false,
+                      session: true,
                       class: true,
                       section: true,
                       status: true,
@@ -397,9 +398,11 @@ const LibraryReportGenerator = () => {
               </span>
             </div>
             <ExportButtons
-              onExport={handleExport}
-              disabled={flatData.length === 0}
-              moduleColor={moduleColor}
+              data={flatData}
+              columns={selectedColumns}
+              title={selectedTemplate?.name || 'Library Report'}
+              filename="library_report"
+              color={moduleColor}
             />
           </div>
 

@@ -371,40 +371,50 @@ export const useFilterOptions = () => {
   const [classes, setClasses] = useState([]);
   const [sections, setSections] = useState([]);
   const [sessions, setSessions] = useState([]);
+  const [selectedSessionId, setSelectedSessionId] = useState(null);
   const [loading, setLoading] = useState(false);
+
+  // Use selected session or fall back to current session
+  const effectiveSessionId = selectedSessionId || currentSessionId;
 
   const fetchFilterOptions = useCallback(async () => {
     if (!selectedBranch?.id) return;
 
     setLoading(true);
     try {
-      // Fetch classes
-      const classesRes = await apiClient.get(`/reports/lookups/classes?branch_id=${selectedBranch.id}&organization_id=${organizationId}`);
-      setClasses(classesRes?.data || classesRes || []);
-
-      // Fetch all sections initially
-      const sectionsRes = await apiClient.get(`/reports/lookups/sections?branch_id=${selectedBranch.id}&organization_id=${organizationId}`);
-      setSections(sectionsRes?.data || sectionsRes || []);
-
-      // Fetch sessions
+      // Fetch sessions first
       const sessionsRes = await apiClient.get(`/reports/lookups/sessions?branch_id=${selectedBranch.id}`);
-      setSessions(sessionsRes?.data || sessionsRes || []);
+      const sessionsData = sessionsRes?.data?.data || sessionsRes?.data || [];
+      setSessions(sessionsData);
+
+      // Use effectiveSessionId for classes and sections
+      const sessionToUse = effectiveSessionId;
+      
+      // Fetch classes with session_id
+      const classesRes = await apiClient.get(`/reports/lookups/classes?branch_id=${selectedBranch.id}&organization_id=${organizationId}&session_id=${sessionToUse}`);
+      setClasses(classesRes?.data?.data || classesRes?.data || []);
+
+      // Fetch all sections initially with session_id
+      const sectionsRes = await apiClient.get(`/reports/lookups/sections?branch_id=${selectedBranch.id}&organization_id=${organizationId}&session_id=${sessionToUse}`);
+      setSections(sectionsRes?.data?.data || sectionsRes?.data || []);
     } catch (err) {
       console.error('Error fetching filter options:', err);
     } finally {
       setLoading(false);
     }
-  }, [selectedBranch, organizationId]);
+  }, [selectedBranch, organizationId, effectiveSessionId]);
 
   // Fetch sections by class ID
   const fetchSectionsByClass = useCallback(async (classId) => {
     if (!selectedBranch?.id) return;
     
+    const sessionToUse = effectiveSessionId;
+    
     if (!classId) {
       // If no classId, fetch all sections
       try {
-        const sectionsRes = await apiClient.get(`/reports/lookups/sections?branch_id=${selectedBranch.id}&organization_id=${organizationId}`);
-        setSections(sectionsRes?.data || sectionsRes || []);
+        const sectionsRes = await apiClient.get(`/reports/lookups/sections?branch_id=${selectedBranch.id}&organization_id=${organizationId}&session_id=${sessionToUse}`);
+        setSections(sectionsRes?.data?.data || sectionsRes?.data || []);
       } catch (err) {
         console.error('Error fetching sections:', err);
       }
@@ -412,18 +422,30 @@ export const useFilterOptions = () => {
     }
 
     try {
-      const sectionsRes = await apiClient.get(`/reports/lookups/sections?branch_id=${selectedBranch.id}&organization_id=${organizationId}&classId=${classId}`);
-      setSections(sectionsRes?.data || sectionsRes || []);
+      const sectionsRes = await apiClient.get(`/reports/lookups/sections?branch_id=${selectedBranch.id}&organization_id=${organizationId}&classId=${classId}&session_id=${sessionToUse}`);
+      setSections(sectionsRes?.data?.data || sectionsRes?.data || []);
     } catch (err) {
       console.error('Error fetching sections by class:', err);
     }
-  }, [selectedBranch, organizationId]);
+  }, [selectedBranch, organizationId, effectiveSessionId]);
 
   useEffect(() => {
     fetchFilterOptions();
   }, [fetchFilterOptions]);
 
-  return { classes, sections, sessions, loading, refetch: fetchFilterOptions, fetchSectionsByClass, setSections };
+  return { 
+    classes, 
+    sections, 
+    sessions, 
+    loading, 
+    refetch: fetchFilterOptions, 
+    fetchSectionsByClass, 
+    setSections,
+    // Session selection
+    selectedSessionId,
+    setSelectedSessionId,
+    effectiveSessionId
+  };
 };
 
 // Helper functions

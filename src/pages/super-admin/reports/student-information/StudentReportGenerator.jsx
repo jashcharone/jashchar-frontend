@@ -42,7 +42,16 @@ const StudentReportGenerator = () => {
   const moduleColor = moduleConfig?.color || 'blue';
 
   // Master data for filters (from shared hook)
-  const { classes, sections, sessions, fetchSectionsByClass } = useFilterOptions();
+  const { 
+    classes, 
+    sections, 
+    sessions, 
+    fetchSectionsByClass,
+    selectedSessionId,
+    setSelectedSessionId,
+    effectiveSessionId,
+    refetch: refetchFilterOptions 
+  } = useFilterOptions();
   
   // Report state management
   const {
@@ -290,10 +299,17 @@ const StudentReportGenerator = () => {
                     onFiltersChange={setFilters}
                     onReset={handleResetFilters}
                     onClassChange={fetchSectionsByClass}
+                    onSessionChange={(sessionId) => {
+                      setSelectedSessionId(sessionId);
+                      // Clear class/section when session changes
+                      setFilters(prev => ({ ...prev, class_id: '', section_id: '' }));
+                    }}
                     classes={classes}
                     sections={sections}
+                    sessions={sessions}
+                    selectedSessionId={selectedSessionId || currentSessionId}
                     filterConfig={{
-                      session: false,
+                      session: true,
                       class: true,
                       section: true,
                       status: true,
@@ -363,9 +379,11 @@ const StudentReportGenerator = () => {
               </span>
             </div>
             <ExportButtons
-              onExport={handleExport}
-              disabled={flatData.length === 0}
-              moduleColor={moduleColor}
+              data={flatData}
+              columns={selectedColumns}
+              title={selectedTemplate?.name || 'Student Report'}
+              filename="student_report"
+              color={moduleColor}
             />
           </div>
 

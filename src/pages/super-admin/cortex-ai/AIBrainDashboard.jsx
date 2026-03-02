@@ -50,23 +50,38 @@ const AIBrainDashboard = () => {
 
     const fetchAllData = async () => {
         setLoading(true);
+        
+        // Fetch each API independently so one failure doesn't block others
         try {
-            const [statusRes, logsRes, historyRes, rulesRes] = await Promise.all([
-                api.get('/cortex/brain/status'),
-                api.get('/cortex/brain/logs?limit=10'),
-                api.get('/cortex/brain/history?days=7'),
-                api.get('/cortex/brain/rules')
-            ]);
-            
+            const statusRes = await api.get('/cortex/brain/status');
+            console.log('[AI Brain] Status response:', statusRes.data);
             setBrainStatus(statusRes.data);
+        } catch (error) {
+            console.error('[AI Brain] Status API error:', error?.response?.data || error.message);
+        }
+        
+        try {
+            const logsRes = await api.get('/cortex/brain/logs?limit=10');
             setDecisionLogs(logsRes.data?.data || []);
+        } catch (error) {
+            console.error('[AI Brain] Logs API error:', error?.response?.data || error.message);
+        }
+        
+        try {
+            const historyRes = await api.get('/cortex/brain/history?days=7');
             setAnalysisHistory(historyRes.data || []);
+        } catch (error) {
+            console.error('[AI Brain] History API error:', error?.response?.data || error.message);
+        }
+        
+        try {
+            const rulesRes = await api.get('/cortex/brain/rules');
             setAIRules(rulesRes.data || []);
         } catch (error) {
-            console.error('Error fetching brain data:', error);
-        } finally {
-            setLoading(false);
+            console.error('[AI Brain] Rules API error:', error?.response?.data || error.message);
         }
+        
+        setLoading(false);
     };
 
     const triggerAnalysis = async () => {

@@ -284,8 +284,9 @@ const AttendanceReportGenerator = () => {
                     onReset={() => setFilters({})}
                     classes={classes}
                     sections={sections}
+                    sessions={sessions}
                     filterConfig={{
-                      session: false,
+                      session: true,
                       class: true,
                       section: true,
                       status: true,
@@ -350,9 +351,9 @@ const AttendanceReportGenerator = () => {
               <ExportButtons
                 data={flatData}
                 columns={selectedColumns}
-                filename={`attendance_report_${new Date().toISOString().split('T')[0]}`}
+                filename="attendance_report"
                 title={selectedTemplate?.name || 'Attendance Report'}
-                moduleColor={moduleColor}
+                color={moduleColor}
               />
             </div>
 

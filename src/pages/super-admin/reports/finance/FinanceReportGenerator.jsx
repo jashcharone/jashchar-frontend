@@ -512,9 +512,11 @@ const FinanceReportGenerator = () => {
               </span>
             </div>
             <ExportButtons
-              onExport={handleExport}
-              disabled={flatData.length === 0}
-              moduleColor={moduleColor}
+              data={flatData}
+              columns={selectedColumns}
+              title={selectedTemplate?.name || 'Finance Report'}
+              filename="finance_report"
+              color={moduleColor}
             />
           </div>
 

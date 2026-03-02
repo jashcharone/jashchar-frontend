@@ -431,10 +431,11 @@ const HomeworkReportGenerator = () => {
                     onReset={handleResetFilters}
                     classes={classes}
                     sections={sections}
+                    sessions={sessions}
                     subjects={subjects}
                     teachers={teachers}
                     filterConfig={{
-                      session: false,
+                      session: true,
                       class: true,
                       section: true,
                       subject: true,
@@ -506,9 +507,11 @@ const HomeworkReportGenerator = () => {
               </span>
             </div>
             <ExportButtons
-              onExport={handleExport}
-              disabled={flatData.length === 0}
-              moduleColor={moduleColor}
+              data={flatData}
+              columns={selectedColumns}
+              title={selectedTemplate?.name || 'Homework Report'}
+              filename="homework_report"
+              color={moduleColor}
             />
           </div>
 

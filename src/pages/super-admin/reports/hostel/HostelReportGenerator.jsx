@@ -374,8 +374,9 @@ const HostelReportGenerator = () => {
                     onReset={handleResetFilters}
                     classes={classes}
                     sections={sections}
+                    sessions={sessions}
                     filterConfig={{
-                      session: false,
+                      session: true,
                       class: true,
                       section: true,
                       status: true,
@@ -444,9 +445,11 @@ const HostelReportGenerator = () => {
               </span>
             </div>
             <ExportButtons
-              onExport={handleExport}
-              disabled={flatData.length === 0}
-              moduleColor={moduleColor}
+              data={flatData}
+              columns={selectedColumns}
+              title={selectedTemplate?.name || 'Hostel Report'}
+              filename="hostel_report"
+              color={moduleColor}
             />
           </div>
 

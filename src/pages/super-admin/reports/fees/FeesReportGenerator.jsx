@@ -453,8 +453,9 @@ const FeesReportGenerator = () => {
                     onReset={() => setFilters({})}
                     classes={classes}
                     sections={sections}
+                    sessions={sessions}
                     filterConfig={{
-                      session: false,
+                      session: true,
                       class: true,
                       section: true,
                       dateRange: true,
@@ -524,9 +525,11 @@ const FeesReportGenerator = () => {
               </span>
             </div>
             <ExportButtons
-              onExport={handleExport}
-              disabled={flatData.length === 0}
-              moduleColor={moduleColor}
+              data={flatData}
+              columns={selectedColumns}
+              title={selectedTemplate?.name || 'Fees Report'}
+              filename="fees_report"
+              color={moduleColor}
             />
           </div>
 

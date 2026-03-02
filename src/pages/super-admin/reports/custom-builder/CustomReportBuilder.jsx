@@ -713,8 +713,9 @@ const CustomReportBuilder = () => {
                     onReset={handleResetFilters}
                     classes={classes}
                     sections={sections}
+                    sessions={sessions}
                     filterConfig={{
-                      session: false,
+                      session: true,
                       class: true,
                       section: true,
                       dateRange: true
@@ -758,9 +759,11 @@ const CustomReportBuilder = () => {
               </span>
             </div>
             <ExportButtons
-              onExport={handleExport}
-              disabled={flatData.length === 0}
-              moduleColor="violet"
+              data={flatData}
+              columns={selectedColumns}
+              title="Custom Report"
+              filename="custom_report"
+              color="violet"
             />
           </div>
 

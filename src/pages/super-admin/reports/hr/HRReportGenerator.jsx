@@ -578,8 +578,9 @@ const HRReportGenerator = () => {
                     filters={filters}
                     onFiltersChange={setFilters}
                     onReset={() => setFilters({})}
+                    sessions={sessions}
                     filterConfig={{
-                      session: false,
+                      session: true,
                       department: true,
                       designation: true,
                       staffType: true,
@@ -649,9 +650,11 @@ const HRReportGenerator = () => {
               </span>
             </div>
             <ExportButtons
-              onExport={handleExport}
-              disabled={flatData.length === 0}
-              moduleColor={moduleColor}
+              data={flatData}
+              columns={selectedColumns}
+              title={selectedTemplate?.name || 'HR Report'}
+              filename="hr_report"
+              color={moduleColor}
             />
           </div>
 

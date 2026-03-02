@@ -368,8 +368,9 @@ const TransportReportGenerator = () => {
                     onReset={handleResetFilters}
                     classes={classes}
                     sections={sections}
+                    sessions={sessions}
                     filterConfig={{
-                      session: false,
+                      session: true,
                       class: true,
                       section: true,
                       status: true,
@@ -438,9 +439,11 @@ const TransportReportGenerator = () => {
               </span>
             </div>
             <ExportButtons
-              onExport={handleExport}
-              disabled={flatData.length === 0}
-              moduleColor={moduleColor}
+              data={flatData}
+              columns={selectedColumns}
+              title={selectedTemplate?.name || 'Transport Report'}
+              filename="transport_report"
+              color={moduleColor}
             />
           </div>
 

@@ -430,8 +430,9 @@ const OnlineExamReportGenerator = () => {
               onReset={() => setFilters({})}
               classes={classes}
               sections={sections}
+              sessions={sessions}
               filterConfig={{
-                session: false,
+                session: true,
                 class: true,
                 section: true,
                 exam: true,
@@ -471,8 +472,8 @@ const OnlineExamReportGenerator = () => {
               <ExportButtons
                 data={data}
                 columns={selectedColumns}
-                templateName={selectedTemplate?.name || 'Online Exam Report'}
-                moduleId="online-exam"
+                title={selectedTemplate?.name || 'Online Exam Report'}
+                filename="online_exam_report"
               />
             </div>
           </div>

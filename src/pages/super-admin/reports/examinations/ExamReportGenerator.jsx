@@ -443,8 +443,9 @@ const ExamReportGenerator = () => {
               onReset={() => setFilters({})}
               classes={classes}
               sections={sections}
+              sessions={sessions}
               filterConfig={{
-                session: false,
+                session: true,
                 class: true,
                 section: true,
                 exam: true,
@@ -484,8 +485,8 @@ const ExamReportGenerator = () => {
               <ExportButtons
                 data={data}
                 columns={selectedColumns}
-                templateName={selectedTemplate?.name || 'Examination Report'}
-                moduleId="examinations"
+                title={selectedTemplate?.name || 'Examination Report'}
+                filename="examination_report"
               />
             </div>
           </div>

@@ -21,6 +21,8 @@ const FilterPanel = ({
   onApply,                  // Apply filters callback
   onReset,                  // Reset filters callback
   onClassChange,            // Callback when class changes (for fetching sections)
+  onSessionChange,          // Callback when session changes (for refetching classes/sections)
+  selectedSessionId,        // Currently selected session ID (for controlled component)
   color = 'blue',
   compact = false
 }) => {
@@ -120,18 +122,25 @@ const FilterPanel = ({
       {expanded && (
         <div className={compact ? "grid grid-cols-1 gap-2" : "grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3"}>
           {/* Session Filter */}
-          {(filterConfig.session !== false) && (
+          {(filterConfig.session !== false) && sessions && sessions.length > 0 && (
             <div>
               <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Session</label>
               <select
-                value={filters.session_id || ''}
-                onChange={(e) => updateFilter('session_id', e.target.value)}
+                value={selectedSessionId || filters.session_id || ''}
+                onChange={(e) => {
+                  const newSessionId = e.target.value;
+                  updateFilter('session_id', newSessionId);
+                  // Call session change callback to refetch classes/sections
+                  if (onSessionChange) {
+                    onSessionChange(newSessionId);
+                  }
+                }}
                 className="w-full px-3 py-2 text-sm border dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 dark:text-gray-200 focus:ring-2 focus:ring-blue-500"
               >
-                <option value="">All Sessions</option>
+                <option value="">Current Session</option>
                 {sessions.map(session => (
                   <option key={session.id} value={session.id}>
-                    {session.session_name || session.name}
+                    {session.session_name || session.name} {session.is_active ? '(Active)' : ''}
                   </option>
                 ))}
               </select>

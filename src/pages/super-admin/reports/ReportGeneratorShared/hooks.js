@@ -378,12 +378,9 @@ export const useFilterOptions = () => {
   const effectiveSessionId = selectedSessionId || currentSessionId;
 
   const fetchFilterOptions = useCallback(async () => {
-    // Wait for required params to be available
-    if (!selectedBranch?.id || !effectiveSessionId) {
-      console.log('[useFilterOptions] Waiting for params:', { 
-        branchId: selectedBranch?.id, 
-        sessionId: effectiveSessionId 
-      });
+    // Only need branchId to start - sessions fetch first, then classes/sections
+    if (!selectedBranch?.id) {
+      console.log('[useFilterOptions] Waiting for branchId');
       return;
     }
 
@@ -391,26 +388,47 @@ export const useFilterOptions = () => {
     try {
       console.log('[useFilterOptions] Fetching with:', { 
         branchId: selectedBranch.id, 
-        sessionId: effectiveSessionId,
+        currentSessionId,
+        selectedSessionId,
+        effectiveSessionId,
         organizationId 
       });
 
-      // Fetch sessions first
+      // Fetch sessions first (no session_id needed)
       const sessionsRes = await apiClient.get(`/reports/lookups/sessions?branch_id=${selectedBranch.id}`);
       const sessionsData = sessionsRes?.data?.data || sessionsRes?.data || [];
+      console.log('[useFilterOptions] Sessions loaded:', sessionsData.length);
       setSessions(sessionsData);
 
-      // Use effectiveSessionId for classes and sections
-      const sessionToUse = effectiveSessionId;
+      // Determine which session to use - priority: selected > current > active from list
+      let sessionToUse = effectiveSessionId;
+      if (!sessionToUse && sessionsData.length > 0) {
+        // Get active session from the sessions list
+        const activeSession = sessionsData.find(s => s.is_active);
+        sessionToUse = activeSession?.id || sessionsData[0]?.id;
+        console.log('[useFilterOptions] Using session from list:', sessionToUse);
+      }
+
+      if (!sessionToUse) {
+        console.log('[useFilterOptions] No session available, skipping classes/sections');
+        return;
+      }
+      
+      // Build classes URL with valid params only
+      const classParams = [`branch_id=${selectedBranch.id}`, `session_id=${sessionToUse}`];
+      if (organizationId) classParams.push(`organization_id=${organizationId}`);
       
       // Fetch classes with session_id
-      const classesRes = await apiClient.get(`/reports/lookups/classes?branch_id=${selectedBranch.id}&organization_id=${organizationId}&session_id=${sessionToUse}`);
+      const classesRes = await apiClient.get(`/reports/lookups/classes?${classParams.join('&')}`);
       const classesData = classesRes?.data?.data || classesRes?.data || [];
       console.log('[useFilterOptions] Classes loaded:', classesData.length);
       setClasses(classesData);
 
       // Fetch all sections initially with session_id
-      const sectionsRes = await apiClient.get(`/reports/lookups/sections?branch_id=${selectedBranch.id}&organization_id=${organizationId}&session_id=${sessionToUse}`);
+      const sectionParams = [`branch_id=${selectedBranch.id}`, `session_id=${sessionToUse}`];
+      if (organizationId) sectionParams.push(`organization_id=${organizationId}`);
+      
+      const sectionsRes = await apiClient.get(`/reports/lookups/sections?${sectionParams.join('&')}`);
       const sectionsData = sectionsRes?.data?.data || sectionsRes?.data || [];
       console.log('[useFilterOptions] Sections loaded:', sectionsData.length);
       setSections(sectionsData);
@@ -419,18 +437,26 @@ export const useFilterOptions = () => {
     } finally {
       setLoading(false);
     }
-  }, [selectedBranch, organizationId, effectiveSessionId]);
+  }, [selectedBranch, organizationId, currentSessionId, selectedSessionId, effectiveSessionId]);
 
   // Fetch sections by class ID
   const fetchSectionsByClass = useCallback(async (classId) => {
     if (!selectedBranch?.id) return;
     
-    const sessionToUse = effectiveSessionId;
+    // Build params - session_id is required
+    const sessionToUse = effectiveSessionId || sessions.find(s => s.is_active)?.id || sessions[0]?.id;
+    if (!sessionToUse) {
+      console.log('[fetchSectionsByClass] No session available');
+      return;
+    }
+    
+    const baseParams = [`branch_id=${selectedBranch.id}`, `session_id=${sessionToUse}`];
+    if (organizationId) baseParams.push(`organization_id=${organizationId}`);
     
     if (!classId) {
       // If no classId, fetch all sections
       try {
-        const sectionsRes = await apiClient.get(`/reports/lookups/sections?branch_id=${selectedBranch.id}&organization_id=${organizationId}&session_id=${sessionToUse}`);
+        const sectionsRes = await apiClient.get(`/reports/lookups/sections?${baseParams.join('&')}`);
         setSections(sectionsRes?.data?.data || sectionsRes?.data || []);
       } catch (err) {
         console.error('Error fetching sections:', err);
@@ -439,12 +465,14 @@ export const useFilterOptions = () => {
     }
 
     try {
-      const sectionsRes = await apiClient.get(`/reports/lookups/sections?branch_id=${selectedBranch.id}&organization_id=${organizationId}&classId=${classId}&session_id=${sessionToUse}`);
+      // Add classId to params
+      baseParams.push(`classId=${classId}`);
+      const sectionsRes = await apiClient.get(`/reports/lookups/sections?${baseParams.join('&')}`);
       setSections(sectionsRes?.data?.data || sectionsRes?.data || []);
     } catch (err) {
       console.error('Error fetching sections by class:', err);
     }
-  }, [selectedBranch, organizationId, effectiveSessionId]);
+  }, [selectedBranch, organizationId, effectiveSessionId, sessions]);
 
   useEffect(() => {
     fetchFilterOptions();

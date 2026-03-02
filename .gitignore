@@ -78,6 +78,6 @@ test_*.ts
 test_*.tsx
 testModule*.js
 
-# Audit files
+# Audit report files (not component files)
 AUDIT_REPORT*
-*AUDIT*
+*_AUDIT_*

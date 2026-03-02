@@ -1627,10 +1627,11 @@ const StudentAdmission = () => {
       ...prev,
       school_code: newId,
       username: studentUsername,
-      password: settings.password_auto_generation ? settings.password_default || '' : prev.password,
-      retype_password: settings.password_auto_generation ? settings.password_default || '' : prev.retype_password,
-      parent_password: settings.password_auto_generation ? settings.password_default || '' : prev.parent_password,
-      parent_retype_password: settings.password_auto_generation ? settings.password_default || '' : prev.parent_retype_password
+      // Only auto-fill password when setting is ON, otherwise keep empty (don't use prev values)
+      password: settings.password_auto_generation ? settings.password_default || '' : '',
+      retype_password: settings.password_auto_generation ? settings.password_default || '' : '',
+      parent_password: settings.password_auto_generation ? settings.password_default || '' : '',
+      parent_retype_password: settings.password_auto_generation ? settings.password_default || '' : ''
     }));
     
     checkStudentUsernameDuplicate(studentUsername);
@@ -1680,10 +1681,11 @@ const StudentAdmission = () => {
         ...prev,
         school_code: newId,
         username: studentUsername, // Student username is ALWAYS admission number
-        password: settings.password_auto_generation ? settings.password_default || '' : prev.password,
-        retype_password: settings.password_auto_generation ? settings.password_default || '' : prev.retype_password,
-        parent_password: settings.password_auto_generation ? settings.password_default || '' : prev.parent_password,
-        parent_retype_password: settings.password_auto_generation ? settings.password_default || '' : prev.parent_retype_password
+        // Only auto-fill password when setting is ON, otherwise keep empty (don't use prev values)
+        password: settings.password_auto_generation ? settings.password_default || '' : '',
+        retype_password: settings.password_auto_generation ? settings.password_default || '' : '',
+        parent_password: settings.password_auto_generation ? settings.password_default || '' : '',
+        parent_retype_password: settings.password_auto_generation ? settings.password_default || '' : ''
       }));
       
       // Check student username for duplicates (should never happen with global unique)

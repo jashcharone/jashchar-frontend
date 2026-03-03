@@ -297,8 +297,11 @@ const MediaVault = ({
         setSelectedIds(filteredMedia.map(m => m.id));
     };
     
-    const deleteMedia = async (ids) => {
-        setMedia(prev => prev.filter(m => !ids.includes(m.id)));
+    const handleDeleteMedia = async (ids) => {
+        // Use deleteMedia from hook for each id
+        for (const id of ids) {
+            await deleteMedia(id);
+        }
         setSelectedIds([]);
     };
     
@@ -346,7 +349,7 @@ const MediaVault = ({
                                     <Button 
                                         variant="destructive" 
                                         size="sm"
-                                        onClick={() => deleteMedia(selectedIds)}
+                                        onClick={() => handleDeleteMedia(selectedIds)}
                                     >
                                         <Trash2 className="h-4 w-4 mr-1" />
                                         Delete ({selectedIds.length})
@@ -708,7 +711,7 @@ const MediaVault = ({
                                                 </DropdownMenuItem>
                                                 <DropdownMenuSeparator className="bg-gray-700" />
                                                 <DropdownMenuItem 
-                                                    onClick={() => deleteMedia([item.id])}
+                                                    onClick={() => handleDeleteMedia([item.id])}
                                                     className="text-red-400"
                                                 >
                                                     <Trash2 className="h-4 w-4 mr-2" />

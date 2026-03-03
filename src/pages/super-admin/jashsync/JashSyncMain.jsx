@@ -281,6 +281,7 @@ const JashSyncMain = () => {
                   <ChatList 
                     onSelectChat={setSelectedChat}
                     selectedChatId={selectedChat?.id}
+                    newConversation={selectedChat}
                     onNewChat={() => setShowNewChatModal(true)}
                     className="w-80 lg:w-96 shrink-0"
                   />

@@ -1049,22 +1049,22 @@ const StudentReportGenerator = () => {
       <SaveTemplateModal
         isOpen={showSaveModal}
         onClose={() => setShowSaveModal(false)}
-        onSave={(name, description, isFavorite) => {
+        onSave={(templateData) => {
           const newTemplate = {
             key: `custom_${Date.now()}`,
-            name,
-            description,
+            name: templateData.name,
+            description: templateData.description,
             columns: selectedColumnsObjects,  // Save as objects so template loading works
             filters,
             groupBy,
             sortBy,
-            isFavorite,
+            isFavorite: templateData.is_favorite,
             createdAt: new Date().toISOString()
           };
           setSavedTemplates([...savedTemplates, newTemplate]);
           setShowSaveModal(false);
         }}
-        config={{ columns: selectedColumnsObjects, filters, groupBy, sortBy }}
+        templateConfig={{ columns: selectedColumnsObjects, filters, groupBy, sortBy }}
         moduleColor={moduleColor}
       />
 

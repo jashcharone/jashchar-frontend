@@ -21,6 +21,7 @@ const ChatList = ({
     onSelectChat, 
     selectedChatId, 
     onNewChat, 
+    newConversation, // Add this prop to add new conversation to list
     className 
 }) => {
     const [conversations, setConversations] = useState([]);
@@ -30,13 +31,27 @@ const ChatList = ({
     
     const { isConnected, onlineUsers, on, off } = useJashSyncSocket();
     
+    // Add new conversation to list when created
+    useEffect(() => {
+        if (newConversation?.id) {
+            setConversations(prev => {
+                // Check if already exists
+                const exists = prev.some(c => c.id === newConversation.id);
+                if (exists) return prev;
+                // Add to top of list
+                return [newConversation, ...prev];
+            });
+        }
+    }, [newConversation?.id]);
+    
     // Fetch conversations
     useEffect(() => {
         const fetchConversations = async () => {
             try {
                 setLoading(true);
-                const response = await api.get('/jashsync/conversations');
-                setConversations(response.data || []);
+                const data = await api.get('/jashsync/conversations');
+                console.log('[ChatList] Conversations fetched:', data?.length || 0, data);
+                setConversations(data || []);
             } catch (error) {
                 console.error('Failed to fetch conversations:', error);
             } finally {
@@ -58,7 +73,7 @@ const ChatList = ({
                     const updated = [...prev];
                     updated[idx] = {
                         ...updated[idx],
-                        last_message_text: data.message.content,
+                        last_message_preview: data.message.content,
                         last_message_at: data.message.created_at,
                         unread_count: (updated[idx].unread_count || 0) + 1
                     };
@@ -101,7 +116,7 @@ const ChatList = ({
             const query = search.toLowerCase();
             result = result.filter(c => 
                 c.name?.toLowerCase().includes(query) ||
-                c.last_message_text?.toLowerCase().includes(query)
+                c.last_message_preview?.toLowerCase().includes(query)
             );
         }
         
@@ -118,17 +133,13 @@ const ChatList = ({
     
     // Get display name for conversation
     const getDisplayName = (conv) => {
-        if (conv.type === 'group') return conv.name;
-        // For 1:1, show other person's name
-        const otherMember = conv.members?.find(m => !m.is_current_user);
-        return otherMember?.name || otherMember?.email || conv.name || 'Unknown';
+        // For all conversations, name is now populated from API
+        return conv.name || 'Unknown';
     };
     
     // Get avatar for conversation
     const getAvatar = (conv) => {
-        if (conv.type === 'group') return conv.avatar_url;
-        const otherMember = conv.members?.find(m => !m.is_current_user);
-        return otherMember?.avatar_url;
+        return conv.avatar_url;
     };
     
     // Get initials
@@ -298,6 +309,7 @@ const ChatList = ({
                                             <div className="flex items-center justify-between mb-0.5">
                                                 <span className="font-medium text-gray-900 dark:text-white truncate flex items-center gap-1">
                                                     {conv.is_pinned && <Pin className="h-3 w-3 text-yellow-500" />}
+                                                    {conv.type === 'group' && <Users className="h-3.5 w-3.5 text-purple-400" />}
                                                     {displayName}
                                                 </span>
                                                 <span className="text-xs text-gray-500 dark:text-gray-400 shrink-0 ml-2">
@@ -310,7 +322,7 @@ const ChatList = ({
                                                         <MessageStatus status={conv.last_message_status} />
                                                     )}
                                                     <span className="truncate">
-                                                        {conv.last_message_text || 'Start a conversation'}
+                                                        {conv.last_message_preview || 'Start a conversation'}
                                                     </span>
                                                 </div>
                                                 {conv.unread_count > 0 && (

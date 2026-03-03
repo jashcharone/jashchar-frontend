@@ -34,12 +34,19 @@ const apiCall = async (endpoint, method = 'GET', body = null) => {
     const token = await getAuthToken();
     const context = getUserContext();
     
+    // Check if body is FormData (for file uploads)
+    const isFormData = body instanceof FormData;
+    
     const options = {
       method,
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: {},
     };
+
+    // Only set Content-Type for non-FormData requests
+    // For FormData, browser sets it automatically with boundary
+    if (!isFormData) {
+      options.headers['Content-Type'] = 'application/json';
+    }
 
     // Add Authorization header if token exists
     if (token) {
@@ -58,14 +65,14 @@ const apiCall = async (endpoint, method = 'GET', body = null) => {
     }
 
     if (body) {
-      options.body = JSON.stringify(body);
+      options.body = isFormData ? body : JSON.stringify(body);
     }
 
     const response = await fetch(`${BASE_URL}${endpoint}`, options);
     const data = await response.json();
 
     if (!response.ok) {
-      throw new Error(data.message || 'Something went wrong');
+      throw new Error(data.message || data.error || 'Something went wrong');
     }
 
     return data;

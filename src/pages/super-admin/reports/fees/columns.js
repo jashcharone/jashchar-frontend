@@ -447,6 +447,9 @@ export const getAggregatableColumns = () => {
   return FEES_COLUMNS.filter(c => c.aggregate);
 };
 
+// Alias for backward compatibility
+export const FEE_COLUMNS = FEES_COLUMNS;
+
 export default {
   FEES_COLUMNS,
   COLUMN_SETS,

@@ -62,7 +62,7 @@ const ReportGeneratorLayout = ({
 
   // Handle back navigation
   const handleBack = () => {
-    navigate('/super-admin/reports');
+    navigate('/super-admin/reports/dashboard');
   };
 
   return (

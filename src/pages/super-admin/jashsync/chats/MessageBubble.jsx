@@ -64,7 +64,8 @@ const MessageBubble = ({
     const renderMedia = () => {
         if (!message.media_url) return null;
         
-        const mediaType = message.message_type;
+        // Support both content_type (DB) and message_type
+        const mediaType = message.content_type || message.message_type;
         
         switch (mediaType) {
             case 'image':

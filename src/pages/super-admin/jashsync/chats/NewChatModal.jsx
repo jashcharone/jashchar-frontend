@@ -112,9 +112,13 @@ const NewChatModal = ({
         try {
             const isGroup = isGroupMode && chatUsers.length > 1;
             
+            // Generate default group name if not provided
+            const defaultGroupName = chatUsers.slice(0, 3).map(u => u.name?.split(' ')[0]).join(', ') 
+                + (chatUsers.length > 3 ? ` +${chatUsers.length - 3} more` : '');
+            
             const response = await api.post('/jashsync/conversations', {
                 type: isGroup ? 'group' : 'direct',
-                name: isGroup ? groupName || `Group (${chatUsers.length} members)` : null,
+                name: isGroup ? (groupName || defaultGroupName) : null,
                 members: chatUsers.map(u => u.id)
             });
             

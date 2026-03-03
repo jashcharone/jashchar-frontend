@@ -78,35 +78,56 @@ export const fetchFeesDataFromSupabase = async ({
   branchId, organizationId, sessionId,
   dateFrom, dateTo, classId, feeHeadId, paymentStatus
 }) => {
-  // Using embedded selects for related data
+  // Using nested joins - fee_payments -> student_profiles -> classes
+  // Note: fee_payments doesn't have direct FK to classes or fee_heads
   let query = supabase
     .from('fee_payments')
     .select(`
       *,
-      student:student_profiles(id, school_code, first_name, last_name),
-      class:classes(id, name),
-      fee_head:fee_heads(id, name)
+      student:student_profiles(
+        id, 
+        school_code, 
+        first_name, 
+        last_name,
+        class_id,
+        section_id,
+        class:classes(id, name),
+        section:sections(id, name)
+      )
     `)
     .eq('branch_id', branchId)
     .eq('session_id', sessionId);
 
   if (dateFrom) query = query.gte('payment_date', dateFrom);
   if (dateTo) query = query.lte('payment_date', dateTo);
-  if (classId) query = query.eq('class_id', classId);
-  if (feeHeadId) query = query.eq('fee_head_id', feeHeadId);
   if (paymentStatus) query = query.eq('status', paymentStatus);
 
   const { data, error } = await query.order('payment_date', { ascending: false });
-  if (error) throw error;
+  if (error) {
+    console.log('[fetchFeesData] Error:', error.message);
+    return [];
+  }
   
-  // Map school_code to admission_number
-  return (data || []).map(row => ({
+  // Map data and apply client-side class filtering
+  let mappedData = (data || []).map(row => ({
     ...row,
+    class_name: row.student?.class?.name || '',
+    section_name: row.student?.section?.name || '',
+    class_id: row.student?.class_id || null,
+    section_id: row.student?.section_id || null,
+    fee_head: row.note || 'Fee Payment',
     student: row.student ? {
       ...row.student,
       admission_number: row.student.school_code
     } : null
   }));
+  
+  // Apply class filter client-side
+  if (classId) {
+    mappedData = mappedData.filter(row => row.class_id === classId);
+  }
+  
+  return mappedData;
 };
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -312,6 +333,7 @@ export const fetchFinanceDataFromSupabase = async ({
 }) => {
   // Use fee_payments table for finance/collection reports
   // Get class/section through student_profiles (nested join)
+  // Note: fee_name is not directly available - fee_payments links to fee_masters which links to fee_types
   let query = supabase
     .from('fee_payments')
     .select(`
@@ -325,8 +347,7 @@ export const fetchFinanceDataFromSupabase = async ({
         section_id,
         class:classes(id, name),
         section:sections(id, name)
-      ),
-      fee_head:fee_heads(id, name)
+      )
     `)
     .eq('branch_id', branchId)
     .eq('session_id', sessionId);
@@ -355,7 +376,7 @@ export const fetchFinanceDataFromSupabase = async ({
     section_name: row.student?.section?.name || '',
     class_id: row.student?.class_id || null,
     section_id: row.student?.section_id || null,
-    fee_head: row.fee_head?.name || '',
+    fee_head: row.note || 'Fee Payment',
     cashier_name: row.received_by || 'Admin',
     student: row.student ? {
       ...row.student,

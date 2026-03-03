@@ -817,7 +817,7 @@ const CustomReportBuilder = () => {
         isOpen={showSaveModal}
         onClose={() => setShowSaveModal(false)}
         onSave={handleSaveTemplate}
-        config={{ columns: selectedColumns, filters, groupBy, sortBy, calculatedFields }}
+        templateConfig={{ columns: selectedColumns, filters, groupBy, sortBy, calculatedFields }}
         moduleColor="violet"
       />
 

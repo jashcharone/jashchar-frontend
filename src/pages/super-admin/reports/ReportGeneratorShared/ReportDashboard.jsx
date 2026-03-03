@@ -6,6 +6,7 @@
 
 import React, { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
+import DashboardLayout from '@/components/DashboardLayout';
 import {
   BarChart3,
   FileText,
@@ -27,6 +28,7 @@ import {
   TrendingUp,
   Wand2,
   ArrowRight,
+  ArrowLeft,
   Star,
   Zap,
   Play,
@@ -223,20 +225,30 @@ const ReportDashboard = () => {
   ];
 
   return (
+    <DashboardLayout>
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-6">
       {/* Header */}
       <div className="mb-8">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-800 dark:text-white flex items-center gap-3">
-              <div className="p-2 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-xl">
-                <BarChart3 className="h-8 w-8 text-white" />
-              </div>
-              Report Center
-            </h1>
-            <p className="text-gray-500 dark:text-gray-400 mt-2">
-              {totalTemplates}+ templates across {Object.keys(MODULE_CONFIG).length} modules
-            </p>
+          <div className="flex items-center gap-4">
+            <button
+              onClick={() => navigate('/super-admin/dashboard')}
+              className="p-2 rounded-lg bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition"
+              title="Back to Dashboard"
+            >
+              <ArrowLeft className="h-5 w-5 text-gray-600 dark:text-gray-300" />
+            </button>
+            <div>
+              <h1 className="text-3xl font-bold text-gray-800 dark:text-white flex items-center gap-3">
+                <div className="p-2 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-xl">
+                  <BarChart3 className="h-8 w-8 text-white" />
+                </div>
+                Report Center
+              </h1>
+              <p className="text-gray-500 dark:text-gray-400 mt-2">
+                {totalTemplates}+ templates across {Object.keys(MODULE_CONFIG).length} modules
+              </p>
+            </div>
           </div>
           
           <div className="flex items-center gap-3">
@@ -520,6 +532,7 @@ const ReportDashboard = () => {
         onClose={() => setShowSearch(false)} 
       />
     </div>
+    </DashboardLayout>
   );
 };
 

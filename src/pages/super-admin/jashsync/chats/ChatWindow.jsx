@@ -6,7 +6,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { 
     Send, Paperclip, Smile, Mic, MoreVertical, Phone, Video,
     Search, ArrowLeft, Check, CheckCheck, Clock, Image, File,
-    Pin, Trash2, Copy, Forward, Reply, X, Download
+    Pin, Trash2, Copy, Forward, Reply, X, Download, Users
 } from "lucide-react";
 import {
     DropdownMenu,
@@ -62,11 +62,12 @@ const ChatWindow = ({
         
         try {
             setLoading(true);
-            const response = await api.get(`/jashsync/conversations/${conversation.id}/messages`, {
+            const data = await api.get(`/jashsync/conversations/${conversation.id}/messages`, {
                 params: { page: pageNum, limit: 50 }
             });
             
-            const newMessages = response.data || [];
+            // api.get returns data directly, not response.data
+            const newMessages = Array.isArray(data) ? data : [];
             
             if (pageNum === 1) {
                 setMessages(newMessages);
@@ -242,15 +243,12 @@ const ChatWindow = ({
     
     // Get display info
     const getDisplayName = () => {
-        if (conversation?.type === 'group') return conversation.name;
-        const otherMember = conversation?.members?.find(m => m.user_id !== user?.id);
-        return otherMember?.name || otherMember?.email || 'Unknown';
+        // Name is now directly populated from API for both direct and group chats
+        return conversation?.name || 'Unknown';
     };
     
     const getAvatar = () => {
-        if (conversation?.type === 'group') return conversation.avatar_url;
-        const otherMember = conversation?.members?.find(m => m.user_id !== user?.id);
-        return otherMember?.avatar_url;
+        return conversation?.avatar_url;
     };
     
     const getOnlineStatus = () => {
@@ -334,16 +332,25 @@ const ChatWindow = ({
                 <Avatar className="h-10 w-10 border-2 border-gray-200 dark:border-gray-700">
                     <AvatarImage src={getAvatar()} />
                     <AvatarFallback className="bg-purple-600/30 text-purple-300">
-                        {getDisplayName()?.slice(0, 2).toUpperCase()}
+                        {conversation?.type === 'group' ? (
+                            <Users className="h-5 w-5" />
+                        ) : (
+                            getDisplayName()?.slice(0, 2).toUpperCase()
+                        )}
                     </AvatarFallback>
                 </Avatar>
                 
                 {/* Name and status */}
                 <div className="flex-1 min-w-0">
-                    <h3 className="font-semibold text-gray-900 dark:text-white truncate">{getDisplayName()}</h3>
+                    <h3 className="font-semibold text-gray-900 dark:text-white truncate flex items-center gap-1.5">
+                        {conversation?.type === 'group' && <Users className="h-4 w-4 text-purple-400" />}
+                        {getDisplayName()}
+                    </h3>
                     <p className="text-xs text-gray-500 dark:text-gray-400">
                         {typingUsers.length > 0 ? (
                             <span className="text-green-400">typing...</span>
+                        ) : conversation?.type === 'group' ? (
+                            'Group chat'
                         ) : (
                             getOnlineStatus()
                         )}

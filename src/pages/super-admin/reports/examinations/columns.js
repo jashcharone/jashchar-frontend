@@ -419,8 +419,12 @@ export const getColumnsByCategory = (category) => {
   }
 };
 
+// Alias for backward compatibility
+export const EXAM_COLUMNS = EXAMINATION_COLUMNS;
+
 export default {
   EXAMINATION_COLUMNS,
+  EXAM_COLUMNS,
   MARKS_COLUMNS,
   COMPARATIVE_COLUMNS,
   ADMIN_COLUMNS,

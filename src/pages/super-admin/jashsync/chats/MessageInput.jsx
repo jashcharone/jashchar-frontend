@@ -11,6 +11,7 @@ import {
     PopoverTrigger,
 } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
+import api from "@/services/api";
 
 // Common emojis for quick access
 const QUICK_EMOJIS = [
@@ -135,9 +136,6 @@ const MessageInput = ({
         setShowAttachMenu(false);
         
         try {
-            // For now, create a local URL (in production, upload to server)
-            const url = URL.createObjectURL(file);
-            
             // Determine message type
             let messageType = type;
             if (type === 'auto') {
@@ -147,16 +145,42 @@ const MessageInput = ({
                 else messageType = 'document';
             }
             
+            // Create local preview URL for immediate display
+            const localPreviewUrl = URL.createObjectURL(file);
+            
+            // Upload to server
+            const formData = new FormData();
+            formData.append('file', file);
+            
+            console.log('[MessageInput] Uploading file:', file.name, file.type, file.size);
+            
+            const response = await api.post('/jashsync/media/upload', formData);
+            
+            console.log('[MessageInput] Upload response:', response);
+            
+            // api.post returns data directly
+            const uploadedMedia = response || {};
+            const publicUrl = uploadedMedia.media?.public_url || uploadedMedia.public_url;
+            const thumbnailUrl = uploadedMedia.media?.thumbnail_url || uploadedMedia.thumbnail_url;
+            
+            if (!publicUrl) {
+                throw new Error('Upload failed - no URL returned');
+            }
+            
+            console.log('[MessageInput] File uploaded, URL:', publicUrl);
+            
             setAttachedFile({
                 file,
-                url,
+                url: publicUrl,
+                localPreview: localPreviewUrl, // Keep local preview for immediate display
                 name: file.name,
                 size: file.size,
                 type: messageType,
-                thumbnail: file.type.startsWith('image/') ? url : null
+                thumbnail: thumbnailUrl || (file.type.startsWith('image/') ? publicUrl : null)
             });
         } catch (error) {
             console.error('File upload error:', error);
+            alert('Failed to upload file. Please try again.');
         } finally {
             setIsUploading(false);
         }
@@ -167,8 +191,8 @@ const MessageInput = ({
     
     // Remove attached file
     const removeAttachment = () => {
-        if (attachedFile?.url) {
-            URL.revokeObjectURL(attachedFile.url);
+        if (attachedFile?.localPreview) {
+            URL.revokeObjectURL(attachedFile.localPreview);
         }
         setAttachedFile(null);
     };
@@ -247,13 +271,23 @@ const MessageInput = ({
     
     return (
         <div className={cn("border-t border-gray-200 dark:border-gray-700/50 bg-white/50 dark:bg-gray-900/50", className)}>
+            {/* Uploading indicator */}
+            {isUploading && (
+                <div className="px-4 pt-3">
+                    <div className="flex items-center gap-3 bg-blue-900/20 border border-blue-500/30 rounded-lg p-3">
+                        <Loader2 className="h-5 w-5 text-blue-400 animate-spin" />
+                        <span className="text-blue-400">Uploading file...</span>
+                    </div>
+                </div>
+            )}
+            
             {/* Attachment preview */}
-            {attachedFile && (
+            {attachedFile && !isUploading && (
                 <div className="px-4 pt-3">
                     <div className="flex items-center gap-3 bg-gray-100/50 dark:bg-gray-800/50 rounded-lg p-3">
                         {attachedFile.type === 'image' ? (
                             <img 
-                                src={attachedFile.url} 
+                                src={attachedFile.localPreview || attachedFile.url} 
                                 alt={attachedFile.name}
                                 className="w-16 h-16 object-cover rounded"
                             />

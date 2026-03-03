@@ -557,7 +557,7 @@ const FeesReportGenerator = () => {
           setSavedTemplates([...savedTemplates, newTemplate]);
           setShowSaveModal(false);
         }}
-        config={{ columns: selectedColumnsObjects, filters, groupBy, sortBy }}
+        templateConfig={{ columns: selectedColumnsObjects, filters, groupBy, sortBy }}
         moduleColor={moduleColor}
       />
 

@@ -153,6 +153,7 @@ const TransportReportGenerator = lazy(() => import('@/pages/super-admin/reports/
 const HostelReportGenerator = lazy(() => import('@/pages/super-admin/reports/hostel/HostelReportGenerator'));
 const FeesReportGenerator = lazy(() => import('@/pages/super-admin/reports/fees/FeesReportGenerator'));
 const OnlineExamReportGenerator = lazy(() => import('@/pages/super-admin/reports/online-exam/OnlineExamReportGenerator'));
+const ReportCenterRoutes = lazy(() => import('@/pages/super-admin/reports/ReportCenterRoutes'));
 
 // ? Fees Collection
 const CollectFees = lazy(() => import('@/pages/super-admin/fees-collection/CollectFees'));
@@ -1211,6 +1212,9 @@ function App() {
             <Route path="/super-admin/reports/hostel-generator" element={<ProtectedRoute allowedRoles={['super_admin', 'admin']}><HostelReportGenerator /></ProtectedRoute>} />
             <Route path="/super-admin/reports/fees-generator" element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'accountant']}><FeesReportGenerator /></ProtectedRoute>} />
             <Route path="/super-admin/reports/online-exam-generator" element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'principal']}><OnlineExamReportGenerator /></ProtectedRoute>} />
+            
+            {/* 📊 Report Center - Dashboard & Unified Reports */}
+            <Route path="/super-admin/reports/*" element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'principal', 'accountant']}><ReportCenterRoutes /></ProtectedRoute>} />
 
             {/* ? Fees Collection */}
             <Route

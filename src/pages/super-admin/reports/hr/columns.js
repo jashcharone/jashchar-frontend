@@ -222,6 +222,9 @@ export const HR_COLUMNS = [
   { key: 'performance_rating', label: 'Rating', type: 'number', sortable: true, groupable: true, width: '100px' },
   { key: 'performance_grade', label: 'Grade', type: 'text', sortable: true, groupable: true, width: '80px' },
   { key: 'increment_percentage', label: 'Increment %', type: 'percentage', sortable: true, groupable: false, width: '110px' },
+  { key: 'previous_salary', label: 'Previous Salary', type: 'currency', sortable: true, groupable: false, width: '130px', aggregate: 'sum' },
+  { key: 'current_salary', label: 'Current Salary', type: 'currency', sortable: true, groupable: false, width: '130px', aggregate: 'sum' },
+  { key: 'effective_date', label: 'Effective Date', type: 'date', sortable: true, groupable: false, width: '120px' },
   { key: 'promotion_status', label: 'Promotion', type: 'badge', sortable: true, groupable: true, width: '110px' },
 
   // ─────────────────────────────────────────────────────────────────────────────

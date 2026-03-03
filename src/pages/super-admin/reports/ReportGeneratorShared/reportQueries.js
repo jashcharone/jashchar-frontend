@@ -51,7 +51,7 @@ export const fetchStudentsFromSupabase = async ({
       ? supabase.from('sections').select('id, name').in('id', sectionIds)
       : { data: [] },
     categoryIds.length > 0
-      ? supabase.from('categories').select('id, name').in('id', categoryIds)
+      ? supabase.from('student_categories').select('id, name').in('id', categoryIds)
       : { data: [] }
   ]);
 

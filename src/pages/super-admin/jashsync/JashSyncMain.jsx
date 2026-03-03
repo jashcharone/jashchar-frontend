@@ -63,6 +63,7 @@ const JashSyncMain = () => {
   const [showNewChatModal, setShowNewChatModal] = useState(false);
   const [selectedChannel, setSelectedChannel] = useState(null);
   const [showCreateChannelModal, setShowCreateChannelModal] = useState(false);
+  const [channelRefreshKey, setChannelRefreshKey] = useState(0);
   const [selectedBroadcast, setSelectedBroadcast] = useState(null);
   const [broadcastView, setBroadcastView] = useState('list'); // 'list', 'compose', 'detail'
   const [showNotificationSettings, setShowNotificationSettings] = useState(false);
@@ -91,8 +92,51 @@ const JashSyncMain = () => {
     channelCount: 0
   });
 
-  // Tab configuration
-  const tabs = [
+  // ═══════════════════════════════════════════════════════════════════
+  // ROLE-BASED TAB VISIBILITY CONFIG
+  // ═══════════════════════════════════════════════════════════════════
+  // Tier 1: master_admin — Full platform control
+  // Tier 2: super_admin, admin, organization_owner, school_owner — Full school control
+  // Tier 3: principal, vice_principal, coordinator — School leadership
+  // Tier 4A: teacher, class_teacher, subject_teacher — Academic staff
+  // Tier 4B: accountant, cashier, receptionist, librarian, lab_assistant,
+  //          hostel_warden, driver, sports_coach, security_guard, maintenance_staff, peon — Support staff
+  // Tier 5: student, parent — End users
+  // ═══════════════════════════════════════════════════════════════════
+
+  const userRole = (user?.role || user?.user_metadata?.role || '').toLowerCase().replace(/\s+/g, '_');
+
+  // Role groups for tab access
+  const ADMIN_ROLES = ['master_admin', 'super_admin', 'admin', 'organization_owner', 'school_owner'];
+  const LEADERSHIP_ROLES = ['principal', 'vice_principal', 'coordinator'];
+  const TEACHING_ROLES = ['teacher', 'class_teacher', 'subject_teacher'];
+  const FINANCE_ROLES = ['accountant', 'cashier'];
+  const SUPPORT_ROLES = ['receptionist', 'librarian', 'lab_assistant', 'hostel_warden', 'driver', 'sports_coach', 'security_guard', 'maintenance_staff', 'maintenance', 'peon'];
+  const END_USER_ROLES = ['student', 'parent'];
+
+  const isAdmin = ADMIN_ROLES.includes(userRole);
+  const isLeadership = LEADERSHIP_ROLES.includes(userRole);
+  const isTeacher = TEACHING_ROLES.includes(userRole);
+  const isFinance = FINANCE_ROLES.includes(userRole);
+  const isSupport = SUPPORT_ROLES.includes(userRole);
+  const isEndUser = END_USER_ROLES.includes(userRole);
+
+  // Tab visibility rules per tab
+  const TAB_ACCESS = {
+    chats:         true, // ALL roles
+    channels:      true, // ALL roles
+    broadcast:     isAdmin || isLeadership || isTeacher, // Admins + Leadership + Teachers can send broadcasts
+    notifications: true, // ALL roles — personal alert inbox
+    media:         isAdmin || isLeadership || isTeacher, // Admins + Leadership + Teachers manage media
+    wallet:        isAdmin, // ONLY school admins manage billing/recharge
+    ai:            isAdmin || isLeadership || isTeacher, // AI assist for admins + leadership + teachers
+    automation:    isAdmin, // ONLY admins set up auto-reply rules
+    privacy:       true, // ALL roles — personal privacy settings
+    admin:         isAdmin, // ONLY admins — moderation, permissions, analytics
+  };
+
+  // Full tab configuration — filtered by role
+  const allTabs = [
     { id: 'chats', label: 'Chats', icon: MessageCircle, badge: stats.unreadMessages || null },
     { id: 'channels', label: 'Channels', icon: Hash },
     { id: 'broadcast', label: 'Broadcast', icon: Megaphone },
@@ -104,6 +148,8 @@ const JashSyncMain = () => {
     { id: 'privacy', label: 'Privacy', icon: Lock },
     { id: 'admin', label: 'Admin', icon: Settings },
   ];
+
+  const tabs = allTabs.filter(tab => TAB_ACCESS[tab.id]);
 
   // Fetch initial data
   useEffect(() => {
@@ -200,7 +246,7 @@ const JashSyncMain = () => {
                 </div>
               </div>
 
-              {/* Wallet Status */}
+              {/* Header Right Section */}
               <div className="flex items-center gap-4">
                 {/* Notification Badge - Day 22-23 */}
                 <NotificationBadge 
@@ -208,34 +254,38 @@ const JashSyncMain = () => {
                   onSettingsClick={() => setShowNotificationSettings(true)}
                 />
                 
-                {/* Trial/Wallet Badge */}
-                {trialStatus?.isActive ? (
-                  <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-green-500/10 border border-green-500/30">
-                    <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-                    <span className="text-sm text-green-400">
-                      Trial: {trialStatus.daysLeft} days left
-                    </span>
-                  </div>
-                ) : (
-                  <div className="flex items-center gap-3 px-4 py-2 rounded-xl jashsync-wallet">
-                    <div className="text-right">
-                      <p className="text-xs text-gray-500 dark:text-gray-400">Wallet Balance</p>
-                      <p className="text-lg font-bold text-gray-900 dark:text-white">
-                        ₹{walletData?.balance?.toLocaleString() || '0'}
-                      </p>
-                    </div>
-                    <div className="w-px h-8 bg-gray-200 dark:bg-gray-700" />
-                    <div className="text-right">
-                      <p className="text-xs text-gray-500 dark:text-gray-400">Messages Left</p>
-                      <p className="text-lg font-bold text-purple-600 dark:text-purple-400">
-                        ~{walletData?.messagesLeft?.toLocaleString() || '0'}
-                      </p>
-                    </div>
-                    <Button size="sm" className="ml-2 bg-purple-600 hover:bg-purple-700">
-                      <Wallet className="w-4 h-4 mr-1" />
-                      Recharge
-                    </Button>
-                  </div>
+                {/* Wallet/Trial Status — ONLY for admin roles */}
+                {isAdmin && (
+                  <>
+                    {trialStatus?.isActive ? (
+                      <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-green-500/10 border border-green-500/30">
+                        <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+                        <span className="text-sm text-green-400">
+                          Trial: {trialStatus.daysLeft} days left
+                        </span>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-3 px-4 py-2 rounded-xl jashsync-wallet">
+                        <div className="text-right">
+                          <p className="text-xs text-gray-500 dark:text-gray-400">Wallet Balance</p>
+                          <p className="text-lg font-bold text-gray-900 dark:text-white">
+                            ₹{walletData?.balance?.toLocaleString() || '0'}
+                          </p>
+                        </div>
+                        <div className="w-px h-8 bg-gray-200 dark:bg-gray-700" />
+                        <div className="text-right">
+                          <p className="text-xs text-gray-500 dark:text-gray-400">Messages Left</p>
+                          <p className="text-lg font-bold text-purple-600 dark:text-purple-400">
+                            ~{walletData?.messagesLeft?.toLocaleString() || '0'}
+                          </p>
+                        </div>
+                        <Button size="sm" className="ml-2 bg-purple-600 hover:bg-purple-700">
+                          <Wallet className="w-4 h-4 mr-1" />
+                          Recharge
+                        </Button>
+                      </div>
+                    )}
+                  </>
                 )}
               </div>
             </div>
@@ -303,6 +353,7 @@ const JashSyncMain = () => {
                     onSelectChannel={setSelectedChannel}
                     selectedChannelId={selectedChannel?.id}
                     onCreateChannel={() => setShowCreateChannelModal(true)}
+                    refreshTrigger={channelRefreshKey}
                     className="w-80 lg:w-96 shrink-0"
                   />
                   
@@ -471,6 +522,7 @@ const JashSyncMain = () => {
           onChannelCreated={(channel) => {
             setSelectedChannel(channel);
             setShowCreateChannelModal(false);
+            setChannelRefreshKey(prev => prev + 1);
           }}
         />
         

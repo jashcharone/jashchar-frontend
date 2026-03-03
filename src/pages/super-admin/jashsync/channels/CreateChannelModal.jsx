@@ -82,21 +82,11 @@ const CreateChannelModal = ({
         const fetchUsers = async () => {
             setLoading(true);
             try {
-                const response = await api.get('/jashsync/users/available');
-                setUsers(response.data || []);
+                const data = await api.get('/jashsync/users/available');
+                setUsers(data || []);
             } catch (error) {
                 console.error('Failed to fetch users:', error);
-                // Mock data
-                setUsers([
-                    { id: '1', name: 'John Parent', email: 'john@parent.com', role: 'parent', isOnline: true },
-                    { id: '2', name: 'Sarah Teacher', email: 'sarah@school.com', role: 'teacher', isOnline: false },
-                    { id: '3', name: 'Mike Staff', email: 'mike@school.com', role: 'staff', isOnline: true },
-                    { id: '4', name: 'Emily Parent', email: 'emily@parent.com', role: 'parent', isOnline: false },
-                    { id: '5', name: 'David Principal', email: 'david@school.com', role: 'admin', isOnline: true },
-                    { id: '6', name: 'Lisa Teacher', email: 'lisa@school.com', role: 'teacher', isOnline: false },
-                    { id: '7', name: 'Priya Parent', email: 'priya@parent.com', role: 'parent', isOnline: true },
-                    { id: '8', name: 'Rahul HOD', email: 'rahul@school.com', role: 'teacher', isOnline: false },
-                ]);
+                setUsers([]);
             } finally {
                 setLoading(false);
             }
@@ -136,14 +126,14 @@ const CreateChannelModal = ({
         
         setCreating(true);
         try {
-            const response = await api.post('/jashsync/channels', {
+            const data = await api.post('/jashsync/channels', {
                 name: channelName.trim(),
                 description: channelDescription.trim(),
-                type: channelType,
+                channel_type: channelType,
                 member_ids: selectedUsers.map(u => u.id)
             });
             
-            onChannelCreated?.(response.data);
+            onChannelCreated?.(data);
             handleClose();
             
         } catch (error) {

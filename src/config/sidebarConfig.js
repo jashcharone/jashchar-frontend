@@ -772,6 +772,8 @@ export const BASE_SIDEBAR = {
         { title: 'Leave Management', path: ROUTES.TEACHER.LEAVE_MANAGEMENT },
       ]
     },
+    // JashSync - Brain-Connected Messenger
+    { title: '💬 JashSync', icon: MessageSquare, path: ROUTES.SUPER_ADMIN.JASHSYNC, badge: 'NEW', badgeColor: 'green' },
     { title: 'My Profile', icon: Users, path: ROUTES.TEACHER.PROFILE },
   ],
   

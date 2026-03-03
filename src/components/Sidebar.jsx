@@ -150,6 +150,10 @@ const Sidebar = ({ role, isSidebarOpen, isMobile, toggleSidebar, closeSidebar, o
       // Dashboard always visible for all roles
       if (item.title === 'Dashboard') return true;
       
+      // JashSync & My Profile always visible for all authenticated roles
+      if (item.title.includes('JashSync')) return true;
+      if (item.title === 'My Profile') return true;
+      
       const moduleSlug = item.slug || SIDEBAR_TO_MODULE_MAP[item.title] || item.title.toLowerCase().replace(/\s+/g, '_');
       
       // Strict check: Hide System Settings if permission denied

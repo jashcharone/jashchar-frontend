@@ -29,6 +29,7 @@ const ChannelList = ({
     onSelectChannel, 
     selectedChannelId,
     onCreateChannel,
+    refreshTrigger,
     className 
 }) => {
     const [search, setSearch] = useState('');
@@ -51,116 +52,18 @@ const ChannelList = ({
         const fetchChannels = async () => {
             setLoading(true);
             try {
-                const response = await api.get('/jashsync/channels');
-                setChannels(response.data || []);
+                const data = await api.get('/jashsync/channels');
+                setChannels(data || []);
             } catch (error) {
                 console.error('Failed to fetch channels:', error);
-                // Mock data for development
-                setChannels([
-                    {
-                        id: '1',
-                        name: 'Class 10-A',
-                        type: 'class',
-                        description: 'Class 10 Section A announcements',
-                        memberCount: 45,
-                        unreadCount: 5,
-                        isPinned: true,
-                        isMuted: false,
-                        lastMessage: {
-                            content: 'Tomorrow exam schedule has been updated',
-                            timestamp: new Date(Date.now() - 1800000).toISOString(),
-                            sender: 'Sarah Teacher'
-                        },
-                        avatar: null
-                    },
-                    {
-                        id: '2',
-                        name: 'Class 10-B',
-                        type: 'class',
-                        description: 'Class 10 Section B announcements',
-                        memberCount: 42,
-                        unreadCount: 0,
-                        isPinned: false,
-                        isMuted: false,
-                        lastMessage: {
-                            content: 'Science project submission extended to Friday',
-                            timestamp: new Date(Date.now() - 7200000).toISOString(),
-                            sender: 'Mike Sir'
-                        },
-                        avatar: null
-                    },
-                    {
-                        id: '3',
-                        name: 'School Announcements',
-                        type: 'announcement',
-                        description: 'Official school-wide announcements',
-                        memberCount: 850,
-                        unreadCount: 2,
-                        isPinned: true,
-                        isMuted: false,
-                        lastMessage: {
-                            content: '🎉 Annual Day celebration on March 15th!',
-                            timestamp: new Date(Date.now() - 3600000).toISOString(),
-                            sender: 'Principal'
-                        },
-                        avatar: null
-                    },
-                    {
-                        id: '4',
-                        name: 'Science Department',
-                        type: 'department',
-                        description: 'Science teachers coordination',
-                        memberCount: 12,
-                        unreadCount: 0,
-                        isPinned: false,
-                        isMuted: true,
-                        lastMessage: {
-                            content: 'Lab equipment list shared',
-                            timestamp: new Date(Date.now() - 86400000).toISOString(),
-                            sender: 'HOD Science'
-                        },
-                        avatar: null
-                    },
-                    {
-                        id: '5',
-                        name: 'Staff Room',
-                        type: 'private',
-                        description: 'Staff only discussions',
-                        memberCount: 65,
-                        unreadCount: 12,
-                        isPinned: false,
-                        isMuted: false,
-                        lastMessage: {
-                            content: 'Meeting at 3 PM today',
-                            timestamp: new Date(Date.now() - 900000).toISOString(),
-                            sender: 'Admin'
-                        },
-                        avatar: null
-                    },
-                    {
-                        id: '6',
-                        name: 'PTA Group',
-                        type: 'public',
-                        description: 'Parent Teacher Association',
-                        memberCount: 320,
-                        unreadCount: 0,
-                        isPinned: false,
-                        isMuted: false,
-                        lastMessage: {
-                            content: 'Next meeting agenda shared',
-                            timestamp: new Date(Date.now() - 172800000).toISOString(),
-                            sender: 'PTA Secretary'
-                        },
-                        avatar: null
-                    }
-                ]);
+                setChannels([]);
             } finally {
                 setLoading(false);
             }
         };
         
         fetchChannels();
-    }, []);
+    }, [refreshTrigger]);
     
     // Socket listeners for real-time updates
     useEffect(() => {

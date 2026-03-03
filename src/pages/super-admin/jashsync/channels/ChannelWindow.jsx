@@ -66,49 +66,11 @@ const ChannelWindow = ({
         const fetchMessages = async () => {
             setLoading(true);
             try {
-                const response = await api.get(`/jashsync/channels/${channel.id}/messages`);
-                setMessages(response.data || []);
+                const data = await api.get(`/jashsync/channels/${channel.id}/messages`);
+                setMessages(data || []);
             } catch (error) {
                 console.error('Failed to fetch channel messages:', error);
-                // Mock messages for development
-                setMessages([
-                    {
-                        id: '1',
-                        content: 'Welcome to the channel! 🎉',
-                        sender: { id: 'system', name: 'System', avatar: null },
-                        timestamp: new Date(Date.now() - 86400000).toISOString(),
-                        type: 'system'
-                    },
-                    {
-                        id: '2',
-                        content: 'Tomorrow we have a unit test. Please prepare chapters 5-7.',
-                        sender: { id: '2', name: 'Sarah Teacher', avatar: null, role: 'teacher' },
-                        timestamp: new Date(Date.now() - 7200000).toISOString(),
-                        type: 'text'
-                    },
-                    {
-                        id: '3',
-                        content: 'Syllabus for the test has been shared in the attachments.',
-                        sender: { id: '2', name: 'Sarah Teacher', avatar: null, role: 'teacher' },
-                        timestamp: new Date(Date.now() - 7100000).toISOString(),
-                        type: 'text'
-                    },
-                    {
-                        id: '4',
-                        content: 'Thank you, ma\'am! Will the test be online or offline?',
-                        sender: { id: '3', name: 'Rahul Parent', avatar: null, role: 'parent' },
-                        timestamp: new Date(Date.now() - 3600000).toISOString(),
-                        type: 'text'
-                    },
-                    {
-                        id: '5',
-                        content: 'It will be offline in the school auditorium. Timing: 10 AM - 12 PM',
-                        sender: { id: '2', name: 'Sarah Teacher', avatar: null, role: 'teacher' },
-                        timestamp: new Date(Date.now() - 1800000).toISOString(),
-                        type: 'text',
-                        replyTo: { id: '4', content: 'Will the test be online or offline?', sender: 'Rahul Parent' }
-                    }
-                ]);
+                setMessages([]);
             } finally {
                 setLoading(false);
             }
@@ -116,17 +78,11 @@ const ChannelWindow = ({
         
         const fetchMembers = async () => {
             try {
-                const response = await api.get(`/jashsync/channels/${channel.id}/members`);
-                setMembers(response.data || []);
+                const data = await api.get(`/jashsync/channels/${channel.id}/members`);
+                setMembers(data || []);
             } catch (error) {
-                // Mock members
-                setMembers([
-                    { id: '1', name: 'Principal Sir', role: 'admin', isOnline: true },
-                    { id: '2', name: 'Sarah Teacher', role: 'teacher', isOnline: true },
-                    { id: '3', name: 'Rahul Parent', role: 'parent', isOnline: false },
-                    { id: '4', name: 'Priya Parent', role: 'parent', isOnline: true },
-                    { id: '5', name: 'Mike Sir', role: 'teacher', isOnline: false },
-                ]);
+                console.error('Failed to fetch channel members:', error);
+                setMembers([]);
             }
         };
         
@@ -196,15 +152,19 @@ const ChannelWindow = ({
         
         setSending(true);
         try {
-            const messageData = {
+            const newMsg = await api.post(`/jashsync/channels/${channel.id}/messages`, {
                 content: inputValue.trim(),
-                channelId: channel.id,
-                replyToId: replyTo?.id
-            };
+                content_type: 'text',
+                reply_to_id: replyTo?.id
+            });
             
-            await api.post(`/jashsync/channels/${channel.id}/messages`, messageData);
+            // Add to local messages
+            if (newMsg) {
+                setMessages(prev => [...prev, newMsg]);
+            }
             setInputValue('');
             setReplyTo(null);
+            scrollToBottom();
         } catch (error) {
             console.error('Failed to send message:', error);
         } finally {
@@ -229,7 +189,8 @@ const ChannelWindow = ({
     const groupedMessages = useMemo(() => {
         const groups = {};
         messages.forEach(msg => {
-            const date = new Date(msg.timestamp).toLocaleDateString('en-IN', {
+            const msgTime = msg.timestamp || msg.created_at;
+            const date = new Date(msgTime).toLocaleDateString('en-IN', {
                 day: 'numeric', month: 'short', year: 'numeric'
             });
             if (!groups[date]) groups[date] = [];
@@ -318,20 +279,16 @@ const ChannelWindow = ({
                                     <div key={member.id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800">
                                         <div className="relative">
                                             <Avatar className="h-10 w-10">
+                                                <AvatarImage src={member.user_avatar || member.avatar} />
                                                 <AvatarFallback className="bg-purple-600/30">
-                                                    {getInitials(member.name)}
+                                                    {getInitials(member.user_name || member.name)}
                                                 </AvatarFallback>
                                             </Avatar>
-                                            <OnlineStatus 
-                                                isOnline={member.isOnline} 
-                                                size="sm"
-                                                className="absolute bottom-0 right-0"
-                                            />
                                         </div>
                                         <div className="flex-1">
-                                            <p className="text-gray-900 dark:text-white font-medium">{member.name}</p>
+                                            <p className="text-gray-900 dark:text-white font-medium">{member.user_name || member.name || 'Unknown'}</p>
                                             <Badge variant="outline" className="text-xs">
-                                                {member.role}
+                                                {member.role || 'member'}
                                             </Badge>
                                         </div>
                                     </div>
@@ -525,7 +482,7 @@ const ChannelMessage = ({ message, showSender, onReply, isOwn }) => {
                                 {message.sender?.role}
                             </Badge>
                             <span className="text-xs text-gray-600 dark:text-gray-500">
-                                {new Date(message.timestamp).toLocaleTimeString('en-IN', {
+                                {new Date(message.timestamp || message.created_at).toLocaleTimeString('en-IN', {
                                     hour: '2-digit',
                                     minute: '2-digit'
                                 })}

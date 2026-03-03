@@ -1505,7 +1505,7 @@ function App() {
             <Route path={ROUTES.SUPER_ADMIN.WHATSAPP} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="communicate"><WhatsAppDashboard /></ProtectedRoute>} />
 
             {/* ? JashSync - Brain-Connected Messenger (Separate Module) */}
-            <Route path={ROUTES.SUPER_ADMIN.JASHSYNC} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']}><JashSyncMain /></ProtectedRoute>} />
+            <Route path={ROUTES.SUPER_ADMIN.JASHSYNC} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'teacher', 'principal', 'class_teacher', 'subject_teacher']}><JashSyncMain /></ProtectedRoute>} />
 
             {/* ? QR Attendance */}
             <Route path={ROUTES.SUPER_ADMIN.QR_ATTENDANCE_SETTING} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="qr_code_attendance"><QrAttendanceSetting /></ProtectedRoute>} />

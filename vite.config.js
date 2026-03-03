@@ -299,6 +299,17 @@ export default defineConfig({
 				target: 'http://127.0.0.1:5000',
                 changeOrigin: true,
                 secure: false,
+                configure: (proxy, options) => {
+                    proxy.on('error', (err, req, res) => {
+                        console.log('[Proxy] Connection error - backend may still be starting:', err.code);
+                    });
+                    proxy.on('proxyReq', (proxyReq, req, res) => {
+                        // Log proxy requests in development
+                        if (isDev) {
+                            console.log('[Proxy]', req.method, req.url, '-> backend');
+                        }
+                    });
+                }
             }
         },
 		headers: {

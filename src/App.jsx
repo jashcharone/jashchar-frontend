@@ -16,6 +16,7 @@ import { PermissionProvider } from '@/contexts/PermissionContext';
 import { RecoveryProvider } from '@/contexts/RecoveryContext';
 import { EnvStatusProvider } from '@/contexts/EnvStatusContext';
 import { ParentChildProvider } from '@/contexts/ParentChildContext';
+import { JashSyncSocketProvider } from '@/contexts/JashSyncSocketContext';
 import OfflineIndicator from '@/components/OfflineIndicator';
 import EnvWarningBanner from '@/components/EnvWarningBanner';
 import PwaUpdater from '@/components/PwaUpdater';
@@ -166,6 +167,7 @@ const BehaviourSetting = lazy(() => import('@/pages/super-admin/behaviour-record
 const DemoAutomationV2 = lazy(() => import('@/pages/master-admin/DemoAutomationV2'));
 const SchoolOwnerDiagnostics = lazy(() => import('@/pages/master-admin/SchoolOwnerDiagnostics'));
 const WhatsAppManager = lazy(() => import('@/pages/master-admin/whatsapp/WhatsAppManager'));
+const JashSyncControlMain = lazy(() => import('@/pages/master-admin/jashsync-control/JashSyncControlMain'));
 
 const DomainList = lazy(() => import('@/pages/master-admin/custom-domain/DomainList'));
 const DomainSettings = lazy(() => import('@/pages/master-admin/custom-domain/DomainSettings'));
@@ -411,6 +413,7 @@ const SendSms = lazy(() => import('@/pages/super-admin/communicate/SendSms'));
 const ComposeMessage = lazy(() => import('@/pages/super-admin/communicate/ComposeMessage'));
 const EmailSmsLog = lazy(() => import('@/pages/super-admin/communicate/EmailSmsLog'));
 const WhatsAppDashboard = lazy(() => import('@/pages/super-admin/whatsapp/WhatsAppDashboard'));
+const JashSyncMain = lazy(() => import('@/pages/super-admin/jashsync/JashSyncMain'));
 
 // QR
 const QrAttendanceSetting = lazy(() => import('@/pages/super-admin/qr-code-attendance/QrAttendanceSetting'));
@@ -517,6 +520,7 @@ function App() {
         {/* AIChatbot moved to DashboardLayout - controlled via Header icon */}
         <PermissionProvider>
           <ParentChildProvider>
+          <JashSyncSocketProvider>
           <Suspense fallback={<LoadingFallback />}>
             <Routes>
             {/* ? Demo Login Page - Marketing */}
@@ -663,6 +667,14 @@ function App() {
               element={
                 <ProtectedRoute allowedRoles={['master_admin']}>
                   <WhatsAppManager />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path={ROUTES.MASTER_ADMIN.JASHSYNC_CONTROL}
+              element={
+                <ProtectedRoute allowedRoles={['master_admin']}>
+                  <JashSyncControlMain />
                 </ProtectedRoute>
               }
             />
@@ -1488,6 +1500,9 @@ function App() {
             <Route path={ROUTES.SUPER_ADMIN.EMAIL_SMS_LOG} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="communicate"><EmailSmsLog /></ProtectedRoute>} />
             <Route path={ROUTES.SUPER_ADMIN.WHATSAPP} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="communicate"><WhatsAppDashboard /></ProtectedRoute>} />
 
+            {/* ? JashSync - Brain-Connected Messenger (Separate Module) */}
+            <Route path={ROUTES.SUPER_ADMIN.JASHSYNC} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']}><JashSyncMain /></ProtectedRoute>} />
+
             {/* ? QR Attendance */}
             <Route path={ROUTES.SUPER_ADMIN.QR_ATTENDANCE_SETTING} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="qr_code_attendance"><QrAttendanceSetting /></ProtectedRoute>} />
             <Route path={ROUTES.SUPER_ADMIN.QR_ATTENDANCE_SCAN} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="qr_code_attendance"><QrAttendanceScan /></ProtectedRoute>} />
@@ -1772,6 +1787,7 @@ function App() {
           </Suspense>
           {/* Bottom Nav — global for ALL Capacitor pages (authenticated only) */}
           <MobileAppShell />
+          </JashSyncSocketProvider>
           </ParentChildProvider>
         </PermissionProvider>
       </EnvStatusProvider>

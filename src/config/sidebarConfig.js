@@ -15,6 +15,7 @@ export const BASE_SIDEBAR = {
     { title: 'Organization Requests', icon: UserPlus, path: ROUTES.MASTER_ADMIN.ORGANIZATION_REQUESTS },
     { title: 'Branch Management', icon: GitBranch, path: '/master-admin/branch-management' },
     { title: 'WhatsApp Manager', icon: MessageSquare, path: ROUTES.MASTER_ADMIN.WHATSAPP_MANAGER },
+    { title: 'JashSync Control', icon: MessageSquare, path: ROUTES.MASTER_ADMIN.JASHSYNC_CONTROL, badge: 'NEW' },
     {
       title: 'Subscriptions',
       icon: CreditCard,
@@ -81,6 +82,8 @@ export const BASE_SIDEBAR = {
     // Cortex AI - Add-on subscription based access (NOT module permission)
     // Always visible in sidebar, access controlled within the module
     { title: '⚡ Cortex AI', icon: Bot, path: '/super-admin/cortex-ai', badge: 'AI', badgeColor: 'purple' },
+    // JashSync - Brain-Connected Messenger (Separate Module)
+    { title: '💬 JashSync', icon: MessageSquare, path: ROUTES.SUPER_ADMIN.JASHSYNC, badge: 'NEW', badgeColor: 'green' },
     {
       title: 'Front Office',
       icon: Building,

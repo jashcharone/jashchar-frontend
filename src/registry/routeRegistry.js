@@ -52,6 +52,7 @@ export const ROUTES = {
     ASSIGN_PERMISSION_FULL: '/master-admin/assign-permission/:branchId/:roleId',
     COMMUNICATION_SETTINGS: '/master-admin/communication-settings',
     WHATSAPP_MANAGER: '/master-admin/whatsapp-manager',
+    JASHSYNC_CONTROL: '/master-admin/jashsync-control',
     EMAIL_SETTINGS: '/master-admin/email-settings',
     PAYMENT_SETTINGS: '/master-admin/payment-settings',
     LOGIN_PAGE_SETTINGS: '/master-admin/login-page-settings',
@@ -307,6 +308,8 @@ export const ROUTES = {
     EMAIL_SMS_LOG: '/super-admin/communicate/email-sms-log',
     WHATSAPP: '/super-admin/communicate/whatsapp',
     PUSH_NOTIFICATION: '/super-admin/communicate/push-notification',
+    // JashSync - Separate Module (Brain-Connected Messenger)
+    JASHSYNC: '/super-admin/jashsync',
     // QR
     QR_ATTENDANCE_SETTING: '/super-admin/qr-code-attendance/setting',
     QR_ATTENDANCE_SCAN: '/super-admin/qr-code-attendance/scan',

@@ -27,6 +27,7 @@ import {
 } from '../ReportGeneratorShared';
 import { FEES_TEMPLATES, FEES_CATEGORIES, getPopularTemplates } from './templates';
 import { FEES_COLUMNS, COLUMN_SETS, getColumns } from './columns';
+import { fetchFeesDataFromSupabase } from '../ReportGeneratorShared/reportQueries';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -43,8 +44,6 @@ import {
   AlertTriangle
 } from 'lucide-react';
 import { formatDate } from '@/utils/dateUtils';
-
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
 const FeesReportGenerator = () => {
   const { user, currentSessionId, organizationId } = useAuth();
@@ -97,7 +96,7 @@ const FeesReportGenerator = () => {
     }
   }, [setSelectedTemplate, setSelectedColumns, setFilters, setGroupBy, setSortBy]);
 
-  // Fetch data from API
+  // Fetch data directly from Supabase (no backend required)
   const fetchData = useCallback(async () => {
     if (!selectedBranch?.id || !currentSessionId || !organizationId) {
       setError('Please select branch and session');
@@ -108,33 +107,18 @@ const FeesReportGenerator = () => {
     setError(null);
 
     try {
-      const queryParams = new URLSearchParams({
-        organization_id: organizationId,
-        branch_id: selectedBranch.id,
-        session_id: currentSessionId,
-        ...filters
+      const feesData = await fetchFeesDataFromSupabase({
+        branchId: selectedBranch.id,
+        organizationId,
+        sessionId: currentSessionId,
+        dateFrom: filters.date_from,
+        dateTo: filters.date_to,
+        classId: filters.class_id,
+        feeHeadId: filters.fee_head_id,
+        paymentStatus: filters.payment_status
       });
 
-      // Get Supabase session token
-      const { data: { session } } = await supabase.auth.getSession();
-      const token = session?.access_token;
-
-      const response = await fetch(
-        `${API_BASE}/reports/fees?${queryParams}`,
-        {
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-          }
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error('Failed to fetch data');
-      }
-
-      const result = await response.json();
-      setData(result.data || []);
+      setData(feesData);
     } catch (err) {
       console.error('Fetch error:', err);
       setError(err.message);

@@ -27,12 +27,11 @@ import {
 } from '../ReportGeneratorShared';
 import { HOSTEL_TEMPLATES, TEMPLATE_CATEGORIES } from './templates';
 import { HOSTEL_COLUMNS, getColumns, COLUMN_SETS } from './columns';
+import { fetchHostelDataFromSupabase } from '../ReportGeneratorShared/reportQueries';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Building, Bed, Users, FileText, BarChart3, Download, Filter, RefreshCw, DoorOpen, AlertTriangle } from 'lucide-react';
-
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
 const HostelReportGenerator = () => {
   const { user, currentSessionId, organizationId } = useAuth();
@@ -85,7 +84,7 @@ const HostelReportGenerator = () => {
     }
   }, [setSelectedTemplate, setSelectedColumns, setFilters, setGroupBy, setSortBy]);
 
-  // Fetch data from API
+  // Fetch data directly from Supabase (no backend required)
   const fetchData = useCallback(async () => {
     if (!selectedBranch?.id || !currentSessionId || !organizationId) {
       setError('Please select branch and session');
@@ -96,32 +95,15 @@ const HostelReportGenerator = () => {
     setError(null);
 
     try {
-      const queryParams = new URLSearchParams({
-        organization_id: organizationId,
-        branch_id: selectedBranch.id,
-        session_id: currentSessionId,
-        ...filters
+      const hostelData = await fetchHostelDataFromSupabase({
+        branchId: selectedBranch.id,
+        organizationId,
+        sessionId: currentSessionId,
+        hostelId: filters.hostel_id,
+        roomId: filters.room_id
       });
 
-      const { data: { session } } = await supabase.auth.getSession();
-      const token = session?.access_token;
-
-      const response = await fetch(
-        `${API_BASE}/reports/hostel?${queryParams}`,
-        {
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-          }
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error('Failed to fetch data');
-      }
-
-      const result = await response.json();
-      setData(result.data || []);
+      setData(hostelData);
     } catch (err) {
       console.error('Fetch error:', err);
       setError(err.message);

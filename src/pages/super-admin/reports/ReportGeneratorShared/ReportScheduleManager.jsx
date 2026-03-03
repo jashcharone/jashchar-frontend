@@ -36,8 +36,6 @@ import {
 import { REPORT_MODULES, SCHEDULE_FREQUENCIES, EXPORT_FORMATS } from './constants';
 import { formatDate, formatDateTime } from '@/utils/dateUtils';
 
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
-
 // Sample scheduled reports data
 const SAMPLE_SCHEDULES = [
   {
@@ -144,26 +142,21 @@ const ReportScheduleManager = () => {
   const [selectedSchedule, setSelectedSchedule] = useState(null);
   const [showEditModal, setShowEditModal] = useState(false);
 
-  // Fetch schedules from API
+  // Fetch schedules directly from Supabase
   const fetchSchedules = useCallback(async () => {
     setIsLoading(true);
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      const token = session?.access_token;
+      const { data, error } = await supabase
+        .from('report_schedules')
+        .select('*')
+        .eq('organization_id', organizationId)
+        .eq('branch_id', selectedBranch?.id)
+        .order('created_at', { ascending: false });
       
-      const response = await fetch(
-        `${API_BASE}/reports/schedules?organization_id=${organizationId}&branch_id=${selectedBranch?.id}`,
-        {
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        }
-      );
-      
-      if (response.ok) {
-        const data = await response.json();
-        setSchedules(data.schedules || SAMPLE_SCHEDULES);
+      if (!error && data?.length > 0) {
+        setSchedules(data);
       }
+      // Keep sample data if no data from DB
     } catch (err) {
       console.error('Error fetching schedules:', err);
       // Keep sample data for demo

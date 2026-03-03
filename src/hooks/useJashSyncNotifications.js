@@ -72,7 +72,7 @@ const useJashSyncNotifications = (options = {}) => {
             if (type) params.append('type', type);
             
             const response = await api.get(`/jashsync/notifications?${params}`);
-            const data = response.data;
+            const data = response?.data || {};
             
             if (reset) {
                 setNotifications(data.notifications || []);

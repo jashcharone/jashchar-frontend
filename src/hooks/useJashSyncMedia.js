@@ -125,13 +125,14 @@ export const useJashSyncMedia = () => {
             if (params.branchId) queryParams.set('branch_id', params.branchId);
 
             const response = await api.get(`/jashsync/media?${queryParams.toString()}`);
+            const data = response?.data || {};
 
-            setMediaList(response.data.media || []);
+            setMediaList(data.media || []);
             setPagination({
-                page: response.data.page || 1,
-                limit: response.data.limit || 20,
-                total: response.data.total || 0,
-                totalPages: response.data.totalPages || 0
+                page: data.page || 1,
+                limit: data.limit || 20,
+                total: data.total || 0,
+                totalPages: data.totalPages || 0
             });
 
             setLoading(false);
@@ -257,9 +258,10 @@ export const useJashSyncMedia = () => {
             const queryParams = branchId ? `?branch_id=${branchId}` : '';
             const response = await api.get(`/jashsync/media-stats${queryParams}`);
             
-            setStats(response.data.stats);
+            const data = response?.data || {};
+            setStats(data.stats || {});
             setLoading(false);
-            return response.data.stats;
+            return data.stats || {};
         } catch (err) {
             setError(err.response?.data?.error || err.message);
             setLoading(false);

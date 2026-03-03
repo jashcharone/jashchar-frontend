@@ -81,8 +81,6 @@ import {
   X
 } from 'lucide-react';
 
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
-
 // Module definitions with their columns
 const MODULES = [
   { key: 'student', name: 'Student Information', icon: Users, color: 'blue', columns: STUDENT_COLUMNS || [] },
@@ -212,7 +210,7 @@ const CustomReportBuilder = () => {
     setSelectedColumns(prev => prev.filter(c => c.key !== key));
   }, [setSelectedColumns]);
 
-  // Fetch data from API
+  // Fetch data directly from Supabase based on primary module
   const fetchData = useCallback(async () => {
     if (!selectedBranch?.id || !currentSessionId || !organizationId) {
       setError('Please select branch and session');
@@ -228,34 +226,53 @@ const CustomReportBuilder = () => {
     setError(null);
 
     try {
-      const queryParams = new URLSearchParams({
-        organization_id: organizationId,
-        branch_id: selectedBranch.id,
-        session_id: currentSessionId,
-        primary_module: primaryModule,
-        columns: selectedColumns.map(c => c.fullKey || c.key).join(','),
+      const baseParams = {
+        branchId: selectedBranch.id,
+        organizationId,
+        sessionId: currentSessionId,
         ...filters
-      });
+      };
 
-      const { data: { session } } = await supabase.auth.getSession();
-      const token = session?.access_token;
-
-      const response = await fetch(
-        `${API_BASE}/reports/custom?${queryParams}`,
-        {
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-          }
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error('Failed to fetch data');
+      let result = [];
+      switch(primaryModule) {
+        case 'student':
+          result = await fetchStudentsFromSupabase(baseParams);
+          break;
+        case 'fees':
+          result = await fetchFeesDataFromSupabase(baseParams);
+          break;
+        case 'attendance':
+          result = await fetchAttendanceDataFromSupabase(baseParams);
+          break;
+        case 'hr':
+          result = await fetchHRDataFromSupabase(baseParams);
+          break;
+        case 'examination':
+          result = await fetchExamDataFromSupabase(baseParams);
+          break;
+        case 'online-exam':
+          result = await fetchOnlineExamDataFromSupabase(baseParams);
+          break;
+        case 'library':
+          result = await fetchLibraryDataFromSupabase(baseParams);
+          break;
+        case 'transport':
+          result = await fetchTransportDataFromSupabase(baseParams);
+          break;
+        case 'hostel':
+          result = await fetchHostelDataFromSupabase(baseParams);
+          break;
+        case 'homework':
+          result = await fetchHomeworkDataFromSupabase(baseParams);
+          break;
+        case 'homework-eval':
+          result = await fetchHomeworkEvaluationDataFromSupabase(baseParams);
+          break;
+        default:
+          result = await fetchStudentsFromSupabase(baseParams);
       }
 
-      const result = await response.json();
-      setData(result.data || []);
+      setData(result);
     } catch (err) {
       console.error('Fetch error:', err);
       // For demo, generate sample data

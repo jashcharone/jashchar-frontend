@@ -27,6 +27,7 @@ import {
 } from '../ReportGeneratorShared';
 import { HOMEWORK_TEMPLATES, TEMPLATE_CATEGORIES } from './templates';
 import { HOMEWORK_COLUMNS, getColumns, COLUMN_SETS } from './columns';
+import { fetchHomeworkDataFromSupabase } from '../ReportGeneratorShared/reportQueries';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -44,8 +45,6 @@ import {
   Clock, 
   Calendar 
 } from 'lucide-react';
-
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
 const HomeworkReportGenerator = () => {
   const { user, currentSessionId, organizationId } = useAuth();
@@ -98,7 +97,7 @@ const HomeworkReportGenerator = () => {
     }
   }, [setSelectedTemplate, setSelectedColumns, setFilters, setGroupBy, setSortBy]);
 
-  // Fetch data from API
+  // Fetch data directly from Supabase (no backend required)
   const fetchData = useCallback(async () => {
     if (!selectedBranch?.id || !currentSessionId || !organizationId) {
       setError('Please select branch and session');
@@ -109,32 +108,18 @@ const HomeworkReportGenerator = () => {
     setError(null);
 
     try {
-      const queryParams = new URLSearchParams({
-        organization_id: organizationId,
-        branch_id: selectedBranch.id,
-        session_id: currentSessionId,
-        ...filters
+      const homeworkData = await fetchHomeworkDataFromSupabase({
+        branchId: selectedBranch.id,
+        organizationId,
+        sessionId: currentSessionId,
+        dateFrom: filters.date_from,
+        dateTo: filters.date_to,
+        classId: filters.class_id,
+        subjectId: filters.subject_id,
+        status: filters.status
       });
 
-      const { data: { session } } = await supabase.auth.getSession();
-      const token = session?.access_token;
-
-      const response = await fetch(
-        `${API_BASE}/reports/homework?${queryParams}`,
-        {
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-          }
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error('Failed to fetch data');
-      }
-
-      const result = await response.json();
-      setData(result.data || []);
+      setData(homeworkData);
     } catch (err) {
       console.error('Fetch error:', err);
       setError(err.message);

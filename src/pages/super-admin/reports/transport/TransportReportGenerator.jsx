@@ -27,12 +27,11 @@ import {
 } from '../ReportGeneratorShared';
 import { TRANSPORT_TEMPLATES, TEMPLATE_CATEGORIES } from './templates';
 import { TRANSPORT_COLUMNS, getColumns, COLUMN_SETS } from './columns';
+import { fetchTransportDataFromSupabase } from '../ReportGeneratorShared/reportQueries';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Bus, MapPin, Users, FileText, BarChart3, Download, Filter, RefreshCw, Route, AlertTriangle } from 'lucide-react';
-
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
 const TransportReportGenerator = () => {
   const { user, currentSessionId, organizationId } = useAuth();
@@ -85,7 +84,7 @@ const TransportReportGenerator = () => {
     }
   }, [setSelectedTemplate, setSelectedColumns, setFilters, setGroupBy, setSortBy]);
 
-  // Fetch data from API
+  // Fetch data directly from Supabase (no backend required)
   const fetchData = useCallback(async () => {
     if (!selectedBranch?.id || !currentSessionId || !organizationId) {
       setError('Please select branch and session');
@@ -96,32 +95,16 @@ const TransportReportGenerator = () => {
     setError(null);
 
     try {
-      const queryParams = new URLSearchParams({
-        organization_id: organizationId,
-        branch_id: selectedBranch.id,
-        session_id: currentSessionId,
-        ...filters
+      const transportData = await fetchTransportDataFromSupabase({
+        branchId: selectedBranch.id,
+        organizationId,
+        sessionId: currentSessionId,
+        routeId: filters.route_id,
+        vehicleId: filters.vehicle_id,
+        stopId: filters.stop_id
       });
 
-      const { data: { session } } = await supabase.auth.getSession();
-      const token = session?.access_token;
-
-      const response = await fetch(
-        `${API_BASE}/reports/transport?${queryParams}`,
-        {
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-          }
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error('Failed to fetch data');
-      }
-
-      const result = await response.json();
-      setData(result.data || []);
+      setData(transportData);
     } catch (err) {
       console.error('Fetch error:', err);
       setError(err.message);

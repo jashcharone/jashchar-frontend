@@ -34,8 +34,6 @@ import {
 import { REPORT_MODULES } from './constants';
 import { formatDate, formatDateTime, getRelativeDate } from '@/utils/dateUtils';
 
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
-
 // Sample history data
 const SAMPLE_HISTORY = [
   {
@@ -202,28 +200,25 @@ const ReportHistory = () => {
   const [filterStatus, setFilterStatus] = useState('all');
   const [filterDateRange, setFilterDateRange] = useState('all');
 
-  // Fetch history from API
+  // Fetch history directly from Supabase
   const fetchHistory = useCallback(async () => {
     setIsLoading(true);
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      const token = session?.access_token;
+      const { data, error } = await supabase
+        .from('report_history')
+        .select('*')
+        .eq('organization_id', organizationId)
+        .eq('branch_id', selectedBranch?.id)
+        .order('generated_at', { ascending: false })
+        .limit(100);
       
-      const response = await fetch(
-        `${API_BASE}/reports/history?organization_id=${organizationId}&branch_id=${selectedBranch?.id}`,
-        {
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        }
-      );
-      
-      if (response.ok) {
-        const data = await response.json();
-        setHistory(data.history || SAMPLE_HISTORY);
+      if (!error && data?.length > 0) {
+        setHistory(data);
       }
+      // Keep sample data if no data from DB
     } catch (err) {
       console.error('Error fetching history:', err);
+      // Keep sample data for demo
     } finally {
       setIsLoading(false);
     }

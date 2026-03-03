@@ -44,14 +44,39 @@ export function JashSyncSocketProvider({ children }) {
     const socketRef = useRef(null);
     const reconnectAttempts = useRef(0);
     const maxReconnectAttempts = 5;
+    const hasLoggedDisabled = useRef(false);
     
     // Get socket URL from environment or default
-    const socketUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+    const socketUrl = import.meta.env.VITE_JASHSYNC_URL || import.meta.env.VITE_API_URL || 'http://localhost:5000';
+    
+    // Check if JashSync is enabled - disable in production unless explicitly enabled
+    const isJashSyncEnabled = (() => {
+        // Explicitly set via env var takes priority
+        if (import.meta.env.VITE_JASHSYNC_ENABLED === 'true') return true;
+        if (import.meta.env.VITE_JASHSYNC_ENABLED === 'false') return false;
+        
+        // In production, disable by default unless socket URL is explicitly set
+        if (import.meta.env.PROD) {
+            return !!import.meta.env.VITE_JASHSYNC_URL;
+        }
+        
+        // In development, enable by default
+        return true;
+    })();
     
     /**
      * Initialize socket connection
      */
     const connect = useCallback(() => {
+        // Skip connection if JashSync is disabled
+        if (!isJashSyncEnabled) {
+            if (!hasLoggedDisabled.current) {
+                console.log('[JashSync] Socket disabled in production - set VITE_JASHSYNC_URL or VITE_JASHSYNC_ENABLED=true to enable');
+                hasLoggedDisabled.current = true;
+            }
+            return;
+        }
+        
         if (!user?.id || !organizationId) {
             console.log('JashSync Socket: Missing auth data, skipping connection');
             return;
@@ -144,7 +169,7 @@ export function JashSyncSocketProvider({ children }) {
         socketRef.current = newSocket;
         setSocket(newSocket);
         
-    }, [user?.id, organizationId, selectedBranch?.id, currentSessionId, token, socketUrl]);
+    }, [user?.id, organizationId, selectedBranch?.id, currentSessionId, token, socketUrl, isJashSyncEnabled]);
     
     /**
      * Disconnect socket

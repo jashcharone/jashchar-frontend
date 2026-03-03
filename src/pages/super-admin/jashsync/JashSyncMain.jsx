@@ -27,6 +27,10 @@ import { AutomationDashboard, CreateRuleModal, ScheduledMessages } from './autom
 import { PrivacySettings, BlockedUsers, OnlineStatusControl } from './privacy';
 import { AdminDashboard, ModerationPanel, PermissionsManager, AnalyticsView } from './admin';
 
+// Day 22-23: Real-time notification components
+import NotificationBadge from '@/components/jashsync/NotificationBadge';
+import NotificationToast from '@/components/jashsync/NotificationToast';
+
 /**
  * JashSync — The Brain-Connected Messenger
  * WhatsApp × Slack × AI = JashSync
@@ -198,6 +202,12 @@ const JashSyncMain = () => {
 
               {/* Wallet Status */}
               <div className="flex items-center gap-4">
+                {/* Notification Badge - Day 22-23 */}
+                <NotificationBadge 
+                  variant="icon"
+                  onSettingsClick={() => setShowNotificationSettings(true)}
+                />
+                
                 {/* Trial/Wallet Badge */}
                 {trialStatus?.isActive ? (
                   <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-green-500/10 border border-green-500/30">
@@ -569,6 +579,9 @@ const JashSyncMain = () => {
           onOpenChange={setShowAnalyticsView}
         />
       </div>
+      
+      {/* Real-time Notification Toast - Day 22-23 */}
+      <NotificationToast />
     </DashboardLayout>
   );
 };

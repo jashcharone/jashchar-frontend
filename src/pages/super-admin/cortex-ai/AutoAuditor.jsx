@@ -197,8 +197,8 @@ const AutoAuditor = () => {
               {complianceData?.overallScore || 0}%
             </span>
           </div>
-          <h3 className="text-white font-medium">Compliance Score</h3>
-          <p className="text-sm text-gray-400 mt-1">
+          <h3 className="text-gray-900 dark:text-white font-medium">Compliance Score</h3>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
             {complianceData?.overallScore >= 80 ? 'Excellent' : 
              complianceData?.overallScore >= 60 ? 'Needs Improvement' : 'Critical Issues'}
           </p>
@@ -212,8 +212,8 @@ const AutoAuditor = () => {
               {complianceData?.compliantCount || 0}
             </span>
           </div>
-          <h3 className="text-white font-medium">Compliant Rules</h3>
-          <p className="text-sm text-gray-400 mt-1">Meeting requirements</p>
+          <h3 className="text-gray-900 dark:text-white font-medium">Compliant Rules</h3>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Meeting requirements</p>
         </div>
 
         {/* Non-Compliant */}
@@ -224,20 +224,20 @@ const AutoAuditor = () => {
               {complianceData?.nonCompliantCount || 0}
             </span>
           </div>
-          <h3 className="text-white font-medium">Non-Compliant</h3>
-          <p className="text-sm text-gray-400 mt-1">Requires attention</p>
+          <h3 className="text-gray-900 dark:text-white font-medium">Non-Compliant</h3>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Requires attention</p>
         </div>
 
         {/* Total Rules */}
-        <div className="p-6 rounded-xl bg-gray-800 border border-gray-700">
+        <div className="p-6 rounded-xl bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
           <div className="flex items-center justify-between mb-4">
             <FileText className="w-8 h-8 text-gray-400" />
-            <span className="text-3xl font-bold text-white">
+            <span className="text-3xl font-bold text-gray-900 dark:text-white">
               {complianceData?.totalRules || 0}
             </span>
           </div>
-          <h3 className="text-white font-medium">Total Rules</h3>
-          <p className="text-sm text-gray-400 mt-1">{selectedBoard.toUpperCase()} guidelines</p>
+          <h3 className="text-gray-900 dark:text-white font-medium">Total Rules</h3>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{selectedBoard.toUpperCase()} guidelines</p>
         </div>
       </div>
 

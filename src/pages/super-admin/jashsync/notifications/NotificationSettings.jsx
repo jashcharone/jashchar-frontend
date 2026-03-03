@@ -3,7 +3,7 @@ import {
     Bell, BellOff, Moon, Sun, Volume2, VolumeX, Clock,
     MessageCircle, Megaphone, Hash, Calendar, CreditCard, 
     Settings, AlertTriangle, Save, ChevronRight, X, 
-    Smartphone, Mail, Globe
+    Smartphone, Mail, Globe, Loader2
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
@@ -38,13 +38,14 @@ import api from "@/services/api";
 
 /**
  * NotificationSettings - Comprehensive notification preferences
- * Quiet hours, per-channel settings, delivery preferences
+ * Day 23 Implementation - Quiet hours, per-channel settings, delivery preferences
  */
 const NotificationSettings = ({ 
     open, 
     onOpenChange 
 }) => {
     const { toast } = useToast();
+    const [loading, setLoading] = useState(true);
     const [settings, setSettings] = useState({
         // Global settings
         enabled: true,
@@ -53,7 +54,7 @@ const NotificationSettings = ({
         vibration: true,
         showPreview: true,
         
-        // Quiet hours
+        // Quiet hours (mapped to backend fields)
         quietHoursEnabled: false,
         quietHoursStart: '22:00',
         quietHoursEnd: '07:00',
@@ -66,7 +67,7 @@ const NotificationSettings = ({
         smsEnabled: false,
         smsOnlyUrgent: true,
         
-        // Per-type settings
+        // Per-type settings (mapped to backend fields)
         typeSettings: {
             message: { enabled: true, sound: true, priority: 'normal' },
             broadcast: { enabled: true, sound: true, priority: 'normal' },
@@ -93,10 +94,86 @@ const NotificationSettings = ({
         { key: 'system', label: 'System', icon: Settings, description: 'App notifications' }
     ];
     
+    // Load settings from backend
+    useEffect(() => {
+        const loadSettings = async () => {
+            if (!open) return;
+            
+            setLoading(true);
+            try {
+                const response = await api.get('/jashsync/notifications/preferences');
+                const prefs = response.data || {};
+                
+                // Map backend fields to frontend state
+                setSettings(prev => ({
+                    ...prev,
+                    enabled: prefs.push_enabled ?? true,
+                    sound: prefs.push_sound ?? true,
+                    
+                    // Quiet hours
+                    quietHoursEnabled: prefs.quiet_hours_enabled ?? false,
+                    quietHoursStart: prefs.quiet_hours_start?.slice(0, 5) || '22:00',
+                    quietHoursEnd: prefs.quiet_hours_end?.slice(0, 5) || '07:00',
+                    quietHoursAllowUrgent: prefs.always_notify_urgent ?? true,
+                    
+                    // Per-type settings
+                    typeSettings: {
+                        message: { enabled: prefs.notify_direct_messages ?? true, sound: true, priority: 'normal' },
+                        broadcast: { enabled: prefs.notify_broadcasts ?? true, sound: true, priority: 'normal' },
+                        channel: { enabled: prefs.notify_channel_messages ?? true, sound: true, priority: 'normal' },
+                        fee: { enabled: true, sound: true, priority: 'high' },
+                        event: { enabled: true, sound: true, priority: 'normal' },
+                        system: { enabled: true, sound: false, priority: 'low' }
+                    },
+                    
+                    // Other preferences
+                    alwaysNotifyAdmin: prefs.always_notify_from_admin ?? true,
+                    notifyMentions: prefs.notify_mentions ?? true,
+                    notifyReactions: prefs.notify_reactions ?? true,
+                    notifyGroupMessages: prefs.notify_group_messages ?? true
+                }));
+            } catch (error) {
+                console.error('Failed to load notification settings:', error);
+            } finally {
+                setLoading(false);
+            }
+        };
+        
+        loadSettings();
+    }, [open]);
+    
+    // Save settings to backend
     const handleSave = async () => {
         setSaving(true);
         try {
-            await api.post('/jashsync/notification-settings', settings);
+            // Map frontend state to backend fields
+            const payload = {
+                push_enabled: settings.enabled,
+                push_sound: settings.sound,
+                
+                // Quiet hours
+                quiet_hours_enabled: settings.quietHoursEnabled,
+                quiet_hours_start: settings.quietHoursStart + ':00',
+                quiet_hours_end: settings.quietHoursEnd + ':00',
+                
+                // Per-type settings
+                notify_direct_messages: settings.typeSettings.message?.enabled ?? true,
+                notify_group_messages: settings.typeSettings.channel?.enabled ?? true,
+                notify_channel_messages: settings.typeSettings.channel?.enabled ?? true,
+                notify_broadcasts: settings.typeSettings.broadcast?.enabled ?? true,
+                notify_mentions: true,
+                notify_reactions: true,
+                
+                // Override settings
+                always_notify_urgent: settings.quietHoursAllowUrgent,
+                always_notify_from_admin: true
+            };
+            
+            await api.put('/jashsync/notifications/preferences', payload);
+            
+            // Save to localStorage for immediate use
+            localStorage.setItem('jashsync_notification_sound', settings.sound ? 'true' : 'false');
+            
             toast({ title: "Success", description: 'Settings saved successfully' });
             onOpenChange(false);
         } catch (error) {

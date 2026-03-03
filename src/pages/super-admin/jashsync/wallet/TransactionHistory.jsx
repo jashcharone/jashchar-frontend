@@ -458,7 +458,7 @@ const TransactionHistory = ({
                     <Dialog open={!!selectedTx} onOpenChange={() => setSelectedTx(null)}>
                             <DialogContent className="bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700 max-w-md">
                             <DialogHeader>
-                                <DialogTitle className="text-white">Transaction Details</DialogTitle>
+                                <DialogTitle className="text-gray-900 dark:text-white">Transaction Details</DialogTitle>
                             </DialogHeader>
                             
                             <div className="space-y-4">
@@ -480,8 +480,8 @@ const TransactionHistory = ({
                                 {/* Details */}
                                 <div className="space-y-3">
                                     <div className="flex justify-between text-sm">
-                                        <span className="text-gray-400">Transaction ID</span>
-                                        <span className="text-white font-mono">{selectedTx.id}</span>
+                                        <span className="text-gray-500 dark:text-gray-400">Transaction ID</span>
+                                        <span className="text-gray-900 dark:text-white font-mono">{selectedTx.id}</span>
                                     </div>
                                     <div className="flex justify-between text-sm">
                                         <span className="text-gray-400">Type</span>
@@ -496,25 +496,25 @@ const TransactionHistory = ({
                                         </span>
                                     </div>
                                     <div className="flex justify-between text-sm">
-                                        <span className="text-gray-400">Date</span>
-                                        <span className="text-white">{formatDate(selectedTx.date)}</span>
+                                        <span className="text-gray-500 dark:text-gray-400">Date</span>
+                                        <span className="text-gray-900 dark:text-white">{formatDate(selectedTx.date)}</span>
                                     </div>
                                     <div className="flex justify-between text-sm">
-                                        <span className="text-gray-400">Description</span>
-                                        <span className="text-white text-right max-w-[60%]">{selectedTx.description}</span>
+                                        <span className="text-gray-500 dark:text-gray-400">Description</span>
+                                        <span className="text-gray-900 dark:text-white text-right max-w-[60%]">{selectedTx.description}</span>
                                     </div>
                                     
                                     {selectedTx.paymentMethod && (
                                         <div className="flex justify-between text-sm">
-                                            <span className="text-gray-400">Payment Method</span>
-                                            <span className="text-white">{selectedTx.paymentMethod}</span>
+                                            <span className="text-gray-500 dark:text-gray-400">Payment Method</span>
+                                            <span className="text-gray-900 dark:text-white">{selectedTx.paymentMethod}</span>
                                         </div>
                                     )}
                                     
                                     {selectedTx.messagesCount && (
                                         <div className="flex justify-between text-sm">
-                                            <span className="text-gray-400">Messages</span>
-                                            <span className="text-white">{selectedTx.messagesCount.toLocaleString()}</span>
+                                            <span className="text-gray-500 dark:text-gray-400">Messages</span>
+                                            <span className="text-gray-900 dark:text-white">{selectedTx.messagesCount.toLocaleString()}</span>
                                         </div>
                                     )}
                                     

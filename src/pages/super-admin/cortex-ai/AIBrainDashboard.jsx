@@ -152,11 +152,11 @@ const AIBrainDashboard = () => {
             {/* Header */}
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <div>
-                    <h1 className="text-2xl font-bold text-white flex items-center gap-3">
+                    <h1 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-3">
                         <Brain className="w-8 h-8 text-purple-500" />
                         AI Brain Engine
                     </h1>
-                    <p className="text-gray-400 mt-1">Monitor and control Cortex AI processing</p>
+                    <p className="text-gray-500 dark:text-gray-400 mt-1">Monitor and control Cortex AI processing</p>
                 </div>
                 
                 <button
@@ -188,7 +188,7 @@ const AIBrainDashboard = () => {
                 <div className={`p-6 rounded-xl border ${getBrainStatusBg(brainStatus?.status)}`}>
                     <div className="flex items-center justify-between">
                         <div>
-                            <p className="text-gray-400 text-sm">Brain Status</p>
+                            <p className="text-gray-500 dark:text-gray-400 text-sm">Brain Status</p>
                             <p className={`text-2xl font-bold capitalize ${getBrainStatusColor(brainStatus?.status)}`}>
                                 {brainStatus?.status || 'Unknown'}
                             </p>
@@ -203,10 +203,10 @@ const AIBrainDashboard = () => {
                 </div>
 
                 {/* Health Score */}
-                <div className="p-6 rounded-xl border border-gray-700 bg-gray-800/50">
+                <div className="p-6 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-100/50 dark:bg-gray-800/50">
                     <div className="flex items-center justify-between">
                         <div>
-                            <p className="text-gray-400 text-sm">Health Score</p>
+                            <p className="text-gray-500 dark:text-gray-400 text-sm">Health Score</p>
                             <p className={`text-2xl font-bold ${getHealthScoreColor(brainStatus?.healthScore)}`}>
                                 {brainStatus?.healthScore || 0}%
                             </p>
@@ -228,10 +228,10 @@ const AIBrainDashboard = () => {
                 </div>
 
                 {/* Today's Alerts */}
-                <div className="p-6 rounded-xl border border-gray-700 bg-gray-800/50">
+                <div className="p-6 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-100/50 dark:bg-gray-800/50">
                     <div className="flex items-center justify-between">
                         <div>
-                            <p className="text-gray-400 text-sm">Today's Alerts</p>
+                            <p className="text-gray-500 dark:text-gray-400 text-sm">Today's Alerts</p>
                             <p className="text-2xl font-bold text-orange-400">
                                 {brainStatus?.todaysStats?.alerts || 0}
                             </p>
@@ -246,10 +246,10 @@ const AIBrainDashboard = () => {
                 </div>
 
                 {/* Insights Generated */}
-                <div className="p-6 rounded-xl border border-gray-700 bg-gray-800/50">
+                <div className="p-6 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-100/50 dark:bg-gray-800/50">
                     <div className="flex items-center justify-between">
                         <div>
-                            <p className="text-gray-400 text-sm">Today's Insights</p>
+                            <p className="text-gray-500 dark:text-gray-400 text-sm">Today's Insights</p>
                             <p className="text-2xl font-bold text-purple-400">
                                 {brainStatus?.todaysStats?.insights || 0}
                             </p>

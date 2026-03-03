@@ -17,11 +17,11 @@ import {
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 import { useToast } from '@/components/ui/use-toast';
-import api from "@/services/api";
+import { useJashSyncMedia } from "@/hooks/useJashSyncMedia";
 
 /**
  * MediaUploader - Drag-drop upload with progress tracking
- * Supports batch uploads with AI auto-tagging
+ * Day 24-25: Now integrated with backend API
  */
 const MediaUploader = ({ 
     open, 
@@ -29,6 +29,7 @@ const MediaUploader = ({
     onUploadComplete 
 }) => {
     const { toast } = useToast();
+    const { uploadFile, triggerAITagging } = useJashSyncMedia();
     const [files, setFiles] = useState([]);
     const [uploading, setUploading] = useState(false);
     const [dragOver, setDragOver] = useState(false);
@@ -122,14 +123,18 @@ const MediaUploader = ({
         setFiles([]);
     };
     
-    // Upload files
+    // Upload files using backend API
     const startUpload = async () => {
         if (files.length === 0) return;
         
         setUploading(true);
+        let completedCount = 0;
         
         for (const item of files) {
-            if (item.status === 'completed') continue;
+            if (item.status === 'completed') {
+                completedCount++;
+                continue;
+            }
             
             // Update status to uploading
             setFiles(prev => prev.map(f => 
@@ -137,51 +142,56 @@ const MediaUploader = ({
             ));
             
             try {
-                // Simulate upload progress
-                for (let progress = 0; progress <= 100; progress += 10) {
-                    await new Promise(resolve => setTimeout(resolve, 100));
-                    setFiles(prev => prev.map(f => 
-                        f.id === item.id ? { ...f, progress } : f
-                    ));
-                }
+                // Simulate progress while uploading
+                const progressInterval = setInterval(() => {
+                    setFiles(prev => prev.map(f => {
+                        if (f.id === item.id && f.status === 'uploading' && f.progress < 90) {
+                            return { ...f, progress: f.progress + 10 };
+                        }
+                        return f;
+                    }));
+                }, 200);
+                
+                // Upload file via API
+                const result = await uploadFile(item.file, {
+                    enableAITags: true
+                });
+                
+                clearInterval(progressInterval);
                 
                 // Update status to processing (AI tagging)
                 setFiles(prev => prev.map(f => 
                     f.id === item.id ? { ...f, status: 'processing', progress: 100 } : f
                 ));
                 
-                // Simulate AI processing
+                // Wait a moment for AI processing
                 await new Promise(resolve => setTimeout(resolve, 500));
                 
-                // Mock AI tags based on file type
-                const mockTags = {
-                    image: ['photo', 'uploaded', 'media'],
-                    video: ['video', 'recording', 'media'],
-                    audio: ['audio', 'recording', 'voice'],
-                    document: ['document', 'file', 'text'],
-                    other: ['file', 'attachment']
-                };
+                // Get AI tags from result
+                const aiTags = result.media?.ai_tags || ['uploaded', item.type];
                 
                 // Update status to completed
                 setFiles(prev => prev.map(f => 
                     f.id === item.id ? { 
                         ...f, 
                         status: 'completed', 
-                        aiTags: mockTags[item.type] || mockTags.other 
+                        aiTags: aiTags,
+                        mediaId: result.media?.id
                     } : f
                 ));
+                
+                completedCount++;
                 
             } catch (error) {
                 console.error('Upload failed:', error);
                 setFiles(prev => prev.map(f => 
-                    f.id === item.id ? { ...f, status: 'error', error: 'Upload failed' } : f
+                    f.id === item.id ? { ...f, status: 'error', error: error.message || 'Upload failed' } : f
                 ));
             }
         }
         
         setUploading(false);
         
-        const completedCount = files.filter(f => f.status === 'completed' || files.find(fn => fn.id === f.id)?.status === 'completed').length;
         if (completedCount > 0) {
             toast({ title: "Success", description: `${completedCount} file(s) uploaded successfully` });
             onUploadComplete?.();

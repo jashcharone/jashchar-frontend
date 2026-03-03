@@ -147,20 +147,20 @@ const ParentEmotion = () => {
               {emotionData?.trend > 0 && <TrendingUp className="w-5 h-5 text-green-400" />}
             </div>
           </div>
-          <h3 className="text-white font-medium">Avg Satisfaction</h3>
-          <p className="text-sm text-gray-400 mt-1">
+          <h3 className="text-gray-900 dark:text-white font-medium">Avg Satisfaction</h3>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
             {emotionData?.trend > 0 ? `+${emotionData.trend}%` : `${emotionData?.trend}%`} from last month
           </p>
         </div>
 
         {/* Total Parents */}
-        <div className="p-6 rounded-xl bg-gray-800 border border-gray-700">
+        <div className="p-6 rounded-xl bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
           <div className="flex items-center justify-between mb-4">
             <Users className="w-8 h-8 text-blue-400" />
-            <span className="text-3xl font-bold text-white">{emotionData?.totalParents || 0}</span>
+            <span className="text-3xl font-bold text-gray-900 dark:text-white">{emotionData?.totalParents || 0}</span>
           </div>
-          <h3 className="text-white font-medium">Active Parents</h3>
-          <p className="text-sm text-gray-400 mt-1">Engaged in communication</p>
+          <h3 className="text-gray-900 dark:text-white font-medium">Active Parents</h3>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Engaged in communication</p>
         </div>
 
         {/* Risk Alerts */}
@@ -169,8 +169,8 @@ const ParentEmotion = () => {
             <AlertTriangle className="w-8 h-8 text-red-500" />
             <span className="text-3xl font-bold text-red-400">{emotionData?.riskCount || 0}</span>
           </div>
-          <h3 className="text-white font-medium">TC Risk Alerts</h3>
-          <p className="text-sm text-gray-400 mt-1">Require immediate attention</p>
+          <h3 className="text-gray-900 dark:text-white font-medium">TC Risk Alerts</h3>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Require immediate attention</p>
         </div>
 
         {/* Engagement Rate */}
@@ -179,8 +179,8 @@ const ParentEmotion = () => {
             <MessageCircle className="w-8 h-8 text-purple-400" />
             <span className="text-3xl font-bold text-purple-400">{emotionData?.engagementRate || 0}%</span>
           </div>
-          <h3 className="text-white font-medium">Engagement Rate</h3>
-          <p className="text-sm text-gray-400 mt-1">Response & participation</p>
+          <h3 className="text-gray-900 dark:text-white font-medium">Engagement Rate</h3>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Response & participation</p>
         </div>
       </div>
 

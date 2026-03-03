@@ -37,7 +37,7 @@ export const TypingIndicator = ({
     // Default bubble variant
     return (
         <div className={cn("flex items-center gap-2 animate-fadeIn", className)}>
-            <div className="bg-gray-800 rounded-2xl rounded-bl-sm px-4 py-3">
+            <div className="bg-gray-200 dark:bg-gray-800 rounded-2xl rounded-bl-sm px-4 py-3">
                 <div className="flex items-center gap-1.5">
                     <span 
                         className="w-2 h-2 bg-gray-500 rounded-full animate-typing-dot"

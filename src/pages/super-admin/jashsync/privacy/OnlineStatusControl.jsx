@@ -312,17 +312,17 @@ const OnlineStatusControl = ({
                                             {searchResults.map((user) => (
                                                 <div 
                                                     key={user.id}
-                                                    className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-700/50 cursor-pointer"
+                                                    className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700/50 cursor-pointer"
                                                     onClick={() => hideFromUser(user)}
                                                 >
                                                     <Avatar className="w-8 h-8">
-                                                        <AvatarFallback className="bg-gray-700 text-xs">
+                                                        <AvatarFallback className="bg-gray-200 dark:bg-gray-700 text-xs">
                                                             {getInitials(user.name)}
                                                         </AvatarFallback>
                                                     </Avatar>
                                                     <div className="flex-1">
-                                                        <p className="text-sm text-white">{user.name}</p>
-                                                        <p className="text-xs text-gray-400">{user.role}</p>
+                                                        <p className="text-sm text-gray-900 dark:text-white">{user.name}</p>
+                                                        <p className="text-xs text-gray-500 dark:text-gray-400">{user.role}</p>
                                                     </div>
                                                     <Button size="sm" variant="ghost" className="text-red-400 hover:text-red-300">
                                                         <EyeOff className="w-4 h-4" />
@@ -351,13 +351,13 @@ const OnlineStatusControl = ({
                                                         </AvatarFallback>
                                                     </Avatar>
                                                     <div className="flex-1">
-                                                        <p className="text-sm font-medium text-white">{user.name}</p>
-                                                        <p className="text-xs text-gray-400">{user.role}</p>
+                                                        <p className="text-sm font-medium text-gray-900 dark:text-white">{user.name}</p>
+                                                        <p className="text-xs text-gray-500 dark:text-gray-400">{user.role}</p>
                                                     </div>
                                                     <Button 
                                                         size="sm" 
                                                         variant="outline"
-                                                        className="border-gray-600 text-green-400 hover:bg-green-500/10"
+                                                        className="border-gray-300 dark:border-gray-600 text-green-400 hover:bg-green-500/10"
                                                         onClick={() => unhideFromUser(user.id)}
                                                     >
                                                         <Eye className="w-4 h-4 mr-1" />
@@ -393,17 +393,17 @@ const OnlineStatusControl = ({
                                             {searchResults.map((user) => (
                                                 <div 
                                                     key={user.id}
-                                                    className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-700/50 cursor-pointer"
+                                                    className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700/50 cursor-pointer"
                                                     onClick={() => addAlwaysVisible(user)}
                                                 >
                                                     <Avatar className="w-8 h-8">
-                                                        <AvatarFallback className="bg-gray-700 text-xs">
+                                                        <AvatarFallback className="bg-gray-200 dark:bg-gray-700 text-xs">
                                                             {getInitials(user.name)}
                                                         </AvatarFallback>
                                                     </Avatar>
                                                     <div className="flex-1">
-                                                        <p className="text-sm text-white">{user.name}</p>
-                                                        <p className="text-xs text-gray-400">{user.role}</p>
+                                                        <p className="text-sm text-gray-900 dark:text-white">{user.name}</p>
+                                                        <p className="text-xs text-gray-500 dark:text-gray-400">{user.role}</p>
                                                     </div>
                                                     <Button size="sm" variant="ghost" className="text-green-400 hover:text-green-300">
                                                         <UserPlus className="w-4 h-4" />
@@ -432,13 +432,13 @@ const OnlineStatusControl = ({
                                                         </AvatarFallback>
                                                     </Avatar>
                                                     <div className="flex-1">
-                                                        <p className="text-sm font-medium text-white">{user.name}</p>
-                                                        <p className="text-xs text-gray-400">{user.role}</p>
+                                                        <p className="text-sm font-medium text-gray-900 dark:text-white">{user.name}</p>
+                                                        <p className="text-xs text-gray-500 dark:text-gray-400">{user.role}</p>
                                                     </div>
                                                     <Button 
                                                         size="sm" 
                                                         variant="outline"
-                                                        className="border-gray-600 text-red-400 hover:bg-red-500/10"
+                                                        className="border-gray-300 dark:border-gray-600 text-red-400 hover:bg-red-500/10"
                                                         onClick={() => removeAlwaysVisible(user.id)}
                                                     >
                                                         <X className="w-4 h-4 mr-1" />

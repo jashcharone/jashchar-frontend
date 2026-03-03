@@ -1,9 +1,9 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { 
     FolderOpen, Search, Filter, Upload, Grid, List, Download,
     Image, FileText, Film, Music, File, Trash2, MoreVertical,
     Calendar, User, Tag, Eye, Share2, Copy, Check, RefreshCw,
-    ChevronDown, X, Sparkles, Hash, MessageCircle, Megaphone
+    ChevronDown, X, Sparkles, Hash, MessageCircle, Megaphone, Loader2
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -26,20 +26,37 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
-import api from "@/services/api";
+import { useJashSyncMedia } from "@/hooks/useJashSyncMedia";
+import { useToast } from "@/components/ui/use-toast";
 
 /**
  * MediaVault - Centralized media storage with AI tagging
- * All shared photos, documents, voice notes in one place
+ * Day 24-25: Now integrated with backend API
  */
 const MediaVault = ({ 
     onUpload,
     onViewMedia,
     className 
 }) => {
+    const { toast } = useToast();
+    const {
+        loading,
+        uploading,
+        uploadProgress,
+        error,
+        mediaList,
+        stats: mediaStats,
+        pagination,
+        searchMedia,
+        uploadFile,
+        deleteMedia,
+        triggerAITagging,
+        getMediaStats,
+        formatFileSize,
+        getFileTypeIcon
+    } = useJashSyncMedia();
+    
     const [search, setSearch] = useState('');
-    const [media, setMedia] = useState([]);
-    const [loading, setLoading] = useState(true);
     const [viewMode, setViewMode] = useState('grid'); // 'grid' | 'list'
     const [activeFilter, setActiveFilter] = useState('all');
     const [sortBy, setSortBy] = useState('newest');
@@ -62,142 +79,147 @@ const MediaVault = ({
         broadcast: { icon: Megaphone, color: 'text-red-400' }
     };
     
-    // Fetch media
+    // Fetch media from backend
+    const fetchMedia = useCallback(async () => {
+        try {
+            await searchMedia({
+                query: search || undefined,
+                fileType: activeFilter !== 'all' ? activeFilter : undefined,
+                page: 1,
+                limit: 50
+            });
+            await getMediaStats();
+        } catch (err) {
+            console.error('Failed to fetch media:', err);
+            toast({
+                title: "Error",
+                description: "Failed to load media files",
+                variant: "destructive"
+            });
+        }
+    }, [search, activeFilter, searchMedia, getMediaStats, toast]);
+    
+    // Initial fetch
     useEffect(() => {
-        const fetchMedia = async () => {
-            setLoading(true);
-            try {
-                const response = await api.get('/jashsync/media');
-                setMedia(response.data || []);
-            } catch (error) {
-                console.error('Failed to fetch media:', error);
-                // Mock data for development
-                setMedia([
-                    {
-                        id: '1',
-                        name: 'Annual_Day_2026_Photo1.jpg',
-                        type: 'image',
-                        size: 2456789,
-                        url: 'https://picsum.photos/800/600?random=1',
-                        thumbnail: 'https://picsum.photos/200/150?random=1',
-                        uploadedAt: new Date(Date.now() - 3600000).toISOString(),
-                        uploadedBy: { name: 'Principal Sir', avatar: null },
-                        source: { type: 'channel', name: '#announcements' },
-                        aiTags: ['event', 'students', 'stage', 'ceremony'],
-                        views: 234
-                    },
-                    {
-                        id: '2',
-                        name: 'Fee_Structure_2026-27.pdf',
-                        type: 'document',
-                        size: 1234567,
-                        url: '/documents/fee-structure.pdf',
-                        thumbnail: null,
-                        uploadedAt: new Date(Date.now() - 86400000).toISOString(),
-                        uploadedBy: { name: 'Admin Office', avatar: null },
-                        source: { type: 'broadcast', name: 'Fee Circular' },
-                        aiTags: ['fee', 'official', 'academic year'],
-                        views: 1456
-                    },
-                    {
-                        id: '3',
-                        name: 'Class_10_Group_Photo.jpg',
-                        type: 'image',
-                        size: 3456789,
-                        url: 'https://picsum.photos/800/600?random=2',
-                        thumbnail: 'https://picsum.photos/200/150?random=2',
-                        uploadedAt: new Date(Date.now() - 172800000).toISOString(),
-                        uploadedBy: { name: 'Class Teacher', avatar: null },
-                        source: { type: 'channel', name: '#class-10-a' },
-                        aiTags: ['class photo', 'students', 'group'],
-                        views: 89
-                    },
-                    {
-                        id: '4',
-                        name: 'Morning_Assembly_Recording.mp4',
-                        type: 'video',
-                        size: 45678901,
-                        url: '/videos/assembly.mp4',
-                        thumbnail: 'https://picsum.photos/200/150?random=3',
-                        duration: '12:34',
-                        uploadedAt: new Date(Date.now() - 259200000).toISOString(),
-                        uploadedBy: { name: 'Sports Teacher', avatar: null },
-                        source: { type: 'channel', name: '#announcements' },
-                        aiTags: ['assembly', 'morning', 'prayer', 'school'],
-                        views: 567
-                    },
-                    {
-                        id: '5',
-                        name: 'Parent_Meeting_Audio.mp3',
-                        type: 'audio',
-                        size: 8765432,
-                        url: '/audio/meeting.mp3',
-                        thumbnail: null,
-                        duration: '45:12',
-                        uploadedAt: new Date(Date.now() - 345600000).toISOString(),
-                        uploadedBy: { name: 'Principal Sir', avatar: null },
-                        source: { type: 'chat', name: 'Parent Group' },
-                        aiTags: ['meeting', 'parent', 'discussion'],
-                        views: 123
-                    },
-                    {
-                        id: '6',
-                        name: 'Science_Project_Instructions.docx',
-                        type: 'document',
-                        size: 567890,
-                        url: '/documents/science-project.docx',
-                        thumbnail: null,
-                        uploadedAt: new Date(Date.now() - 432000000).toISOString(),
-                        uploadedBy: { name: 'Science Teacher', avatar: null },
-                        source: { type: 'channel', name: '#class-9-b' },
-                        aiTags: ['project', 'science', 'instructions', 'homework'],
-                        views: 78
-                    },
-                    {
-                        id: '7',
-                        name: 'Sports_Day_Highlights.mp4',
-                        type: 'video',
-                        size: 98765432,
-                        url: '/videos/sports-day.mp4',
-                        thumbnail: 'https://picsum.photos/200/150?random=4',
-                        duration: '8:45',
-                        uploadedAt: new Date(Date.now() - 518400000).toISOString(),
-                        uploadedBy: { name: 'PE Teacher', avatar: null },
-                        source: { type: 'broadcast', name: 'Sports Update' },
-                        aiTags: ['sports', 'events', 'students', 'competition'],
-                        views: 892
-                    },
-                    {
-                        id: '8',
-                        name: 'Exam_Timetable_March.png',
-                        type: 'image',
-                        size: 345678,
-                        url: 'https://picsum.photos/800/600?random=5',
-                        thumbnail: 'https://picsum.photos/200/150?random=5',
-                        uploadedAt: new Date(Date.now() - 604800000).toISOString(),
-                        uploadedBy: { name: 'Exam Cell', avatar: null },
-                        source: { type: 'broadcast', name: 'Exam Notice' },
-                        aiTags: ['exam', 'timetable', 'schedule', 'march'],
-                        views: 2341
-                    }
-                ]);
-            } finally {
-                setLoading(false);
-            }
-        };
-        
         fetchMedia();
     }, []);
     
+    // Re-fetch when filter changes
+    useEffect(() => {
+        fetchMedia();
+    }, [activeFilter]);
+    
+    // Debounced search
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            if (search !== undefined) {
+                fetchMedia();
+            }
+        }, 500);
+        return () => clearTimeout(timer);
+    }, [search]);
+    
+    // Map backend media to component format
+    const media = useMemo(() => {
+        return mediaList.map(m => ({
+            id: m.id,
+            name: m.original_filename || m.filename,
+            type: m.file_type,
+            size: m.file_size,
+            url: m.public_url,
+            thumbnail: m.thumbnail_url,
+            uploadedAt: m.created_at,
+            uploadedBy: { name: 'User', avatar: null },
+            source: { type: 'chat', name: 'JashSync' },
+            aiTags: m.ai_tags || [],
+            views: m.usage_count || 0,
+            duration: m.duration ? `${Math.floor(m.duration / 60)}:${String(m.duration % 60).padStart(2, '0')}` : null
+        }));
+    }, [mediaList]);
+    
     // Calculate stats
     const stats = useMemo(() => {
+        if (mediaStats) {
+            return {
+                images: mediaStats.byType?.image?.count || 0,
+                videos: mediaStats.byType?.video?.count || 0,
+                documents: mediaStats.byType?.document?.count || 0,
+                audio: mediaStats.byType?.audio?.count || 0,
+                total: mediaStats.totalFiles || 0,
+                totalSize: mediaStats.totalSize || 0,
+                totalSizeFormatted: mediaStats.totalSizeFormatted || '0 Bytes'
+            };
+        }
+        // Fallback to calculating from media list
         const images = media.filter(m => m.type === 'image').length;
         const videos = media.filter(m => m.type === 'video').length;
         const documents = media.filter(m => m.type === 'document').length;
         const audio = media.filter(m => m.type === 'audio').length;
         const totalSize = media.reduce((sum, m) => sum + (m.size || 0), 0);
-        return { images, videos, documents, audio, total: media.length, totalSize };
-    }, [media]);
+        return { 
+            images, videos, documents, audio, 
+            total: media.length, 
+            totalSize,
+            totalSizeFormatted: formatFileSize(totalSize)
+        };
+    }, [media, mediaStats, formatFileSize]);
+    
+    // Handle file upload
+    const handleFileUpload = async (event) => {
+        const files = event.target.files;
+        if (!files || files.length === 0) return;
+        
+        try {
+            for (const file of files) {
+                await uploadFile(file);
+            }
+            toast({
+                title: "Success",
+                description: `${files.length} file(s) uploaded successfully`
+            });
+            fetchMedia(); // Refresh list
+        } catch (err) {
+            toast({
+                title: "Upload Failed",
+                description: err.message,
+                variant: "destructive"
+            });
+        }
+    };
+    
+    // Handle delete
+    const handleDelete = async (mediaId) => {
+        try {
+            await deleteMedia(mediaId);
+            toast({
+                title: "Success",
+                description: "File deleted successfully"
+            });
+        } catch (err) {
+            toast({
+                title: "Delete Failed",
+                description: err.message,
+                variant: "destructive"
+            });
+        }
+    };
+    
+    // Handle AI tagging
+    const handleAITag = async (mediaId) => {
+        try {
+            await triggerAITagging(mediaId);
+            toast({
+                title: "Success",
+                description: "AI tags generated"
+            });
+        } catch (err) {
+            toast({
+                title: "AI Tagging Failed",
+                description: err.message,
+                variant: "destructive"
+            });
+        }
+    };
     
     // Format file size
     const formatSize = (bytes) => {

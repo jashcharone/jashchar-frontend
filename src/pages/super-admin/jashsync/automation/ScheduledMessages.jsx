@@ -460,7 +460,7 @@ const ScheduledMessages = ({ onBack, onScheduleNew }) => {
                             >
                                 <ChevronLeft className="w-5 h-5" />
                             </Button>
-                            <h3 className="text-lg font-medium text-white">
+                            <h3 className="text-lg font-medium text-gray-900 dark:text-white">
                                 {monthNames[currentMonth.getMonth()]} {currentMonth.getFullYear()}
                             </h3>
                             <Button 

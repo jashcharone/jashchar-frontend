@@ -266,10 +266,10 @@ const RechargeModal = ({
                             
                             {/* Summary */}
                             {total.amount > 0 && (
-                                <div className="p-4 rounded-lg bg-gray-800/50 border border-gray-700/50">
+                                <div className="p-4 rounded-lg bg-gray-100 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700/50">
                                     <div className="flex items-center justify-between text-sm">
-                                        <span className="text-gray-400">Amount</span>
-                                        <span className="text-white">₹{total.amount}</span>
+                                        <span className="text-gray-500 dark:text-gray-400">Amount</span>
+                                        <span className="text-gray-900 dark:text-white">₹{total.amount}</span>
                                     </div>
                                     {total.bonus > 0 && (
                                         <div className="flex items-center justify-between text-sm mt-2">
@@ -280,9 +280,9 @@ const RechargeModal = ({
                                             <span className="text-green-400">+₹{total.bonus}</span>
                                         </div>
                                     )}
-                                    <div className="border-t border-gray-700 my-2" />
+                                    <div className="border-t border-gray-200 dark:border-gray-700 my-2" />
                                     <div className="flex items-center justify-between font-medium">
-                                        <span className="text-white">Total Credits</span>
+                                        <span className="text-gray-900 dark:text-white">Total Credits</span>
                                         <span className="text-purple-400">₹{total.totalCredits}</span>
                                     </div>
                                     <div className="text-xs text-gray-500 mt-1 text-right">
@@ -317,7 +317,7 @@ const RechargeModal = ({
                                         </div>
                                         <div className="flex-1">
                                             <div className="flex items-center gap-2">
-                                                <span className="font-medium text-white">{method.label}</span>
+                                                <span className="font-medium text-gray-900 dark:text-white">{method.label}</span>
                                                 {method.popular && (
                                                     <Badge className="bg-green-500/20 text-green-400 text-[10px]">Fastest</Badge>
                                                 )}
@@ -344,8 +344,8 @@ const RechargeModal = ({
                             {/* Payment Summary */}
                             <div className="p-4 rounded-lg bg-gradient-to-r from-purple-500/10 to-pink-500/10 border border-purple-500/30">
                                 <div className="flex items-center justify-between">
-                                    <span className="text-gray-400">Amount to Pay</span>
-                                    <span className="text-2xl font-bold text-white">₹{total.amount}</span>
+                                    <span className="text-gray-500 dark:text-gray-400">Amount to Pay</span>
+                                    <span className="text-2xl font-bold text-gray-900 dark:text-white">₹{total.amount}</span>
                                 </div>
                                 <div className="flex items-center gap-2 mt-2 text-xs text-gray-400">
                                     <Shield className="h-3 w-3 text-green-400" />
@@ -361,7 +361,7 @@ const RechargeModal = ({
                             <div className="w-20 h-20 rounded-full bg-purple-500/20 flex items-center justify-center mx-auto mb-6">
                                 <Loader2 className="h-10 w-10 text-purple-400 animate-spin" />
                             </div>
-                            <h3 className="text-xl font-semibold text-white mb-2">Processing Payment</h3>
+                            <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">Processing Payment</h3>
                             <p className="text-gray-400">Please wait while we verify your payment...</p>
                             <div className="flex items-center justify-center gap-2 mt-4 text-sm text-gray-500">
                                 <Clock className="h-4 w-4" />
@@ -376,14 +376,14 @@ const RechargeModal = ({
                             <div className="w-20 h-20 rounded-full bg-green-500/20 flex items-center justify-center mx-auto mb-6">
                                 <CheckCircle className="h-10 w-10 text-green-400" />
                             </div>
-                            <h3 className="text-xl font-semibold text-white mb-2">Payment Successful!</h3>
-                            <p className="text-gray-400 mb-6">
+                            <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">Payment Successful!</h3>
+                            <p className="text-gray-500 dark:text-gray-400 mb-6">
                                 ₹{total.totalCredits} has been added to your wallet
                             </p>
                             
-                            <div className="p-4 rounded-lg bg-gray-800/50 border border-gray-700/50 text-left mb-4">
+                            <div className="p-4 rounded-lg bg-gray-100 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700/50 text-left mb-4">
                                 <div className="flex items-center justify-between text-sm mb-2">
-                                    <span className="text-gray-400">Transaction ID</span>
+                                    <span className="text-gray-500 dark:text-gray-400">Transaction ID</span>
                                     <button 
                                         onClick={copyTxId}
                                         className="flex items-center gap-1 text-purple-400 hover:text-purple-300"
@@ -393,8 +393,8 @@ const RechargeModal = ({
                                     </button>
                                 </div>
                                 <div className="flex items-center justify-between text-sm mb-2">
-                                    <span className="text-gray-400">Amount Paid</span>
-                                    <span className="text-white">₹{total.amount}</span>
+                                    <span className="text-gray-500 dark:text-gray-400">Amount Paid</span>
+                                    <span className="text-gray-900 dark:text-white">₹{total.amount}</span>
                                 </div>
                                 {total.bonus > 0 && (
                                     <div className="flex items-center justify-between text-sm mb-2">
@@ -402,9 +402,9 @@ const RechargeModal = ({
                                         <span className="text-green-400">+₹{total.bonus}</span>
                                     </div>
                                 )}
-                                <div className="border-t border-gray-700 my-2" />
+                                <div className="border-t border-gray-200 dark:border-gray-700 my-2" />
                                 <div className="flex items-center justify-between font-medium">
-                                    <span className="text-white">Total Credits</span>
+                                    <span className="text-gray-900 dark:text-white">Total Credits</span>
                                     <span className="text-purple-400">₹{total.totalCredits}</span>
                                 </div>
                             </div>

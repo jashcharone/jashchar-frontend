@@ -126,15 +126,15 @@ const AdminDashboard = ({
     const getActivityDescription = (activity) => {
         switch (activity.type) {
             case 'user_joined':
-                return <><strong className="text-white">{activity.user}</strong> joined as {activity.role}</>;
+                return <><strong className="text-gray-900 dark:text-white">{activity.user}</strong> joined as {activity.role}</>;
             case 'broadcast_sent':
-                return <><strong className="text-white">{activity.user}</strong> sent broadcast to {activity.target} ({activity.count} recipients)</>;
+                return <><strong className="text-gray-900 dark:text-white">{activity.user}</strong> sent broadcast to {activity.target} ({activity.count} recipients)</>;
             case 'channel_created':
-                return <><strong className="text-white">{activity.channel}</strong> channel created by {activity.creator}</>;
+                return <><strong className="text-gray-900 dark:text-white">{activity.channel}</strong> channel created by {activity.creator}</>;
             case 'message_reported':
-                return <><strong className="text-white">{activity.reporter}</strong> reported a message: {activity.reason}</>;
+                return <><strong className="text-gray-900 dark:text-white">{activity.reporter}</strong> reported a message: {activity.reason}</>;
             case 'user_blocked':
-                return <><strong className="text-white">{activity.user}</strong> blocked by {activity.by} ({activity.reason})</>;
+                return <><strong className="text-gray-900 dark:text-white">{activity.user}</strong> blocked by {activity.by} ({activity.reason})</>;
             default:
                 return 'Unknown activity';
         }
@@ -354,7 +354,7 @@ const AdminDashboard = ({
                         </Card>
                         
                         <Card 
-                            className="bg-gray-800/50 border-gray-700 cursor-pointer hover:border-blue-500/50 transition-colors"
+                            className="bg-gray-100/50 dark:bg-gray-800/50 border-gray-200 dark:border-gray-700 cursor-pointer hover:border-blue-500/50 transition-colors"
                             onClick={onViewPermissions}
                         >
                             <CardContent className="p-4 flex items-center gap-4">
@@ -362,15 +362,15 @@ const AdminDashboard = ({
                                     <UserCog className="w-6 h-6 text-blue-400" />
                                 </div>
                                 <div className="flex-1">
-                                    <p className="font-medium text-white">Permissions</p>
-                                    <p className="text-xs text-gray-400">Manage user roles</p>
+                                    <p className="font-medium text-gray-900 dark:text-white">Permissions</p>
+                                    <p className="text-xs text-gray-500 dark:text-gray-400">Manage user roles</p>
                                 </div>
                                 <ChevronRight className="w-5 h-5 text-gray-500" />
                             </CardContent>
                         </Card>
                         
                         <Card 
-                            className="bg-gray-800/50 border-gray-700 cursor-pointer hover:border-green-500/50 transition-colors"
+                            className="bg-gray-100/50 dark:bg-gray-800/50 border-gray-200 dark:border-gray-700 cursor-pointer hover:border-green-500/50 transition-colors"
                             onClick={onViewAnalytics}
                         >
                             <CardContent className="p-4 flex items-center gap-4">
@@ -378,8 +378,8 @@ const AdminDashboard = ({
                                     <BarChart3 className="w-6 h-6 text-green-400" />
                                 </div>
                                 <div className="flex-1">
-                                    <p className="font-medium text-white">Analytics</p>
-                                    <p className="text-xs text-gray-400">View detailed reports</p>
+                                    <p className="font-medium text-gray-900 dark:text-white">Analytics</p>
+                                    <p className="text-xs text-gray-500 dark:text-gray-400">View detailed reports</p>
                                 </div>
                                 <ChevronRight className="w-5 h-5 text-gray-500" />
                             </CardContent>
@@ -390,7 +390,7 @@ const AdminDashboard = ({
                     <Card className="bg-gray-100/50 dark:bg-gray-800/50 border-gray-200 dark:border-gray-700">
                         <CardHeader className="pb-2">
                             <div className="flex items-center justify-between">
-                                <CardTitle className="text-sm text-gray-300 flex items-center gap-2">
+                                <CardTitle className="text-sm text-gray-600 dark:text-gray-300 flex items-center gap-2">
                                     <Activity className="w-4 h-4" />
                                     Recent Activity
                                 </CardTitle>
@@ -401,12 +401,12 @@ const AdminDashboard = ({
                         </CardHeader>
                         <CardContent className="space-y-3">
                             {recentActivities.map((activity) => (
-                                <div key={activity.id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-700/30">
-                                    <div className="w-8 h-8 rounded-lg bg-gray-700/50 flex items-center justify-center">
+                                <div key={activity.id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700/30">
+                                    <div className="w-8 h-8 rounded-lg bg-gray-200 dark:bg-gray-700/50 flex items-center justify-center">
                                         {getActivityIcon(activity.type)}
                                     </div>
                                     <div className="flex-1 min-w-0">
-                                        <p className="text-sm text-gray-300 truncate">
+                                        <p className="text-sm text-gray-600 dark:text-gray-300 truncate">
                                             {getActivityDescription(activity)}
                                         </p>
                                     </div>
@@ -422,35 +422,35 @@ const AdminDashboard = ({
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                         <Card className="bg-gray-100/50 dark:bg-gray-800/50 border-gray-200 dark:border-gray-700">
                             <CardHeader className="pb-2">
-                                <CardTitle className="text-sm text-gray-300">Message Distribution</CardTitle>
+                                <CardTitle className="text-sm text-gray-600 dark:text-gray-300">Message Distribution</CardTitle>
                             </CardHeader>
                             <CardContent>
                                 <div className="space-y-3">
                                     <div className="flex items-center justify-between">
-                                        <span className="text-sm text-gray-400">Direct Messages</span>
+                                        <span className="text-sm text-gray-500 dark:text-gray-400">Direct Messages</span>
                                         <div className="flex items-center gap-2">
-                                            <div className="w-32 h-2 bg-gray-700 rounded-full overflow-hidden">
+                                            <div className="w-32 h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
                                                 <div className="w-[60%] h-full bg-blue-500 rounded-full" />
                                             </div>
-                                            <span className="text-sm text-white">60%</span>
+                                            <span className="text-sm text-gray-900 dark:text-white">60%</span>
                                         </div>
                                     </div>
                                     <div className="flex items-center justify-between">
-                                        <span className="text-sm text-gray-400">Channel Messages</span>
+                                        <span className="text-sm text-gray-500 dark:text-gray-400">Channel Messages</span>
                                         <div className="flex items-center gap-2">
-                                            <div className="w-32 h-2 bg-gray-700 rounded-full overflow-hidden">
+                                            <div className="w-32 h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
                                                 <div className="w-[25%] h-full bg-purple-500 rounded-full" />
                                             </div>
-                                            <span className="text-sm text-white">25%</span>
+                                            <span className="text-sm text-gray-900 dark:text-white">25%</span>
                                         </div>
                                     </div>
                                     <div className="flex items-center justify-between">
-                                        <span className="text-sm text-gray-400">Broadcasts</span>
+                                        <span className="text-sm text-gray-500 dark:text-gray-400">Broadcasts</span>
                                         <div className="flex items-center gap-2">
-                                            <div className="w-32 h-2 bg-gray-700 rounded-full overflow-hidden">
+                                            <div className="w-32 h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
                                                 <div className="w-[15%] h-full bg-green-500 rounded-full" />
                                             </div>
-                                            <span className="text-sm text-white">15%</span>
+                                            <span className="text-sm text-gray-900 dark:text-white">15%</span>
                                         </div>
                                     </div>
                                 </div>
@@ -459,35 +459,35 @@ const AdminDashboard = ({
                         
                         <Card className="bg-gray-100/50 dark:bg-gray-800/50 border-gray-200 dark:border-gray-700">
                             <CardHeader className="pb-2">
-                                <CardTitle className="text-sm text-gray-300">User Engagement</CardTitle>
+                                <CardTitle className="text-sm text-gray-600 dark:text-gray-300">User Engagement</CardTitle>
                             </CardHeader>
                             <CardContent>
                                 <div className="space-y-3">
                                     <div className="flex items-center justify-between">
-                                        <span className="text-sm text-gray-400">Parents</span>
+                                        <span className="text-sm text-gray-500 dark:text-gray-400">Parents</span>
                                         <div className="flex items-center gap-2">
-                                            <div className="w-32 h-2 bg-gray-700 rounded-full overflow-hidden">
+                                            <div className="w-32 h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
                                                 <div className="w-[75%] h-full bg-orange-500 rounded-full" />
                                             </div>
-                                            <span className="text-sm text-white">75%</span>
+                                            <span className="text-sm text-gray-900 dark:text-white">75%</span>
                                         </div>
                                     </div>
                                     <div className="flex items-center justify-between">
-                                        <span className="text-sm text-gray-400">Teachers</span>
+                                        <span className="text-sm text-gray-500 dark:text-gray-400">Teachers</span>
                                         <div className="flex items-center gap-2">
-                                            <div className="w-32 h-2 bg-gray-700 rounded-full overflow-hidden">
+                                            <div className="w-32 h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
                                                 <div className="w-[90%] h-full bg-blue-500 rounded-full" />
                                             </div>
-                                            <span className="text-sm text-white">90%</span>
+                                            <span className="text-sm text-gray-900 dark:text-white">90%</span>
                                         </div>
                                     </div>
                                     <div className="flex items-center justify-between">
-                                        <span className="text-sm text-gray-400">Staff</span>
+                                        <span className="text-sm text-gray-500 dark:text-gray-400">Staff</span>
                                         <div className="flex items-center gap-2">
-                                            <div className="w-32 h-2 bg-gray-700 rounded-full overflow-hidden">
+                                            <div className="w-32 h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
                                                 <div className="w-[85%] h-full bg-green-500 rounded-full" />
                                             </div>
-                                            <span className="text-sm text-white">85%</span>
+                                            <span className="text-sm text-gray-900 dark:text-white">85%</span>
                                         </div>
                                     </div>
                                 </div>

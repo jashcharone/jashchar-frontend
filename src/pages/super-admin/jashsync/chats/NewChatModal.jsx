@@ -42,8 +42,9 @@ const NewChatModal = ({
             setLoading(true);
             try {
                 // Fetch users from different categories
-                const response = await api.get('/jashsync/users/available');
-                setUsers(response.data || []);
+                const data = await api.get('/jashsync/users/available');
+                console.log('[NewChatModal] Users fetched:', data?.length, data);
+                setUsers(data || []);
             } catch (error) {
                 console.error('Failed to fetch users:', error);
                 // Mock data for development
@@ -114,10 +115,10 @@ const NewChatModal = ({
             const response = await api.post('/jashsync/conversations', {
                 type: isGroup ? 'group' : 'direct',
                 name: isGroup ? groupName || `Group (${chatUsers.length} members)` : null,
-                member_ids: chatUsers.map(u => u.id)
+                members: chatUsers.map(u => u.id)
             });
             
-            onChatCreated?.(response.data);
+            onChatCreated?.(response);
             handleClose();
             
         } catch (error) {

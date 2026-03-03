@@ -22,6 +22,7 @@ import {
   useFetchReport,
   useReportExport,
   useGroupedData,
+  useFilterOptions,
   REPORT_MODULES
 } from '../ReportGeneratorShared';
 import { FINANCE_TEMPLATES, FINANCE_CATEGORIES, getPopularTemplates } from './templates';
@@ -51,6 +52,9 @@ const FinanceReportGenerator = () => {
   // Module configuration
   const moduleConfig = REPORT_MODULES['finance'];
   const moduleColor = moduleConfig?.color || 'green';
+  
+  // Master data for filters (from shared hook)
+  const { classes, sections, sessions, fetchSectionsByClass, selectedSessionId, setSelectedSessionId } = useFilterOptions();
   
   // Report state management
   const {
@@ -106,11 +110,12 @@ const FinanceReportGenerator = () => {
       const financeData = await fetchFinanceDataFromSupabase({
         branchId: selectedBranch.id,
         organizationId,
-        sessionId: currentSessionId,
+        sessionId: selectedSessionId || currentSessionId,
         dateFrom: filters.date_from,
         dateTo: filters.date_to,
         paymentMode: filters.payment_mode,
-        voucherType: filters.voucher_type
+        classId: filters.class_id,
+        sectionId: filters.section_id
       });
 
       setData(financeData);
@@ -121,7 +126,7 @@ const FinanceReportGenerator = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [selectedBranch, currentSessionId, organizationId, filters, setIsLoading, setError, setData]);
+  }, [selectedBranch, currentSessionId, selectedSessionId, organizationId, filters, setIsLoading, setError, setData]);
 
   // Generate sample data for demo/preview based on template category
   const generateSampleData = () => {
@@ -427,7 +432,17 @@ const FinanceReportGenerator = () => {
                 <CardContent className="px-4 pb-4">
                   <FilterPanel
                     filters={filters}
-                    onFilterChange={(key, value) => setFilters({ ...filters, [key]: value })}
+                    onFiltersChange={setFilters}
+                    onReset={() => setFilters({})}
+                    onClassChange={fetchSectionsByClass}
+                    onSessionChange={(sessionId) => {
+                      setSelectedSessionId(sessionId);
+                      setFilters(prev => ({ ...prev, class_id: '', section_id: '' }));
+                    }}
+                    classes={classes}
+                    sections={sections}
+                    sessions={sessions}
+                    selectedSessionId={selectedSessionId || currentSessionId}
                     filterConfig={{
                       session: true,
                       class: true,
@@ -437,7 +452,7 @@ const FinanceReportGenerator = () => {
                       feeHead: true,
                       status: selectedTemplate?.category === 'outstanding'
                     }}
-                    moduleColor={moduleColor}
+                    color={moduleColor}
                     compact
                   />
                 </CardContent>

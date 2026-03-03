@@ -108,7 +108,12 @@ const ChatWindow = ({
         
         const handleNewMessage = (data) => {
             if (data.conversationId === conversation.id) {
-                setMessages(prev => [...prev, data.message]);
+                // Prevent duplicate messages by checking if already exists
+                setMessages(prev => {
+                    const exists = prev.some(m => m.id === data.message?.id);
+                    if (exists) return prev;
+                    return [...prev, data.message];
+                });
                 // Auto-mark as read since we're viewing
                 markAllRead(conversation.id);
                 scrollToBottom();
@@ -190,7 +195,7 @@ const ChatWindow = ({
             
             const payload = {
                 content: content?.trim(),
-                message_type: type,
+                content_type: type, // Changed from message_type to content_type
                 ...(media && {
                     media_url: media.url,
                     media_thumbnail_url: media.thumbnail,
@@ -200,13 +205,20 @@ const ChatWindow = ({
                 ...(replyTo && { reply_to_id: replyTo.id })
             };
             
-            const response = await api.post(
+            const message = await api.post(
                 `/jashsync/conversations/${conversation.id}/messages`,
                 payload
             );
             
-            // Add to local messages immediately
-            setMessages(prev => [...prev, response.data]);
+            // Add to local messages immediately (api.post returns data directly)
+            // Prevent duplicate by checking if ID already exists
+            if (message?.id) {
+                setMessages(prev => {
+                    const exists = prev.some(m => m.id === message.id);
+                    if (exists) return prev;
+                    return [...prev, message];
+                });
+            }
             scrollToBottom();
             setReplyTo(null);
             
@@ -253,6 +265,7 @@ const ChatWindow = ({
         let currentGroup = [];
         
         messages.forEach(msg => {
+            if (!msg || !msg.created_at) return; // Skip invalid messages
             const msgDate = new Date(msg.created_at).toDateString();
             
             if (msgDate !== currentDate) {

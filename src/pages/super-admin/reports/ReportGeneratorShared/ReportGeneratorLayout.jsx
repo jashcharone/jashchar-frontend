@@ -5,10 +5,11 @@
  */
 
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Users, DollarSign, Calendar, FileText, Briefcase, BookOpen,
   Bus, Home, Edit3, CheckSquare, CreditCard, Monitor,
-  Save, Clock, PanelLeftClose, PanelLeft, RefreshCw
+  Save, Clock, PanelLeftClose, PanelLeft, RefreshCw, ArrowLeft
 } from 'lucide-react';
 
 // Gradient colors by module
@@ -55,8 +56,14 @@ const ReportGeneratorLayout = ({
   isLoading = false,        // Loading state
   children                  // Main content (handles sidebar internally)
 }) => {
+  const navigate = useNavigate();
   const gradient = GRADIENTS[moduleColor] || GRADIENTS.blue;
   const IconComponent = ICONS[moduleColor] || Users;
+
+  // Handle back navigation
+  const handleBack = () => {
+    navigate('/super-admin/reports');
+  };
 
   return (
     <div className="h-screen flex flex-col bg-gray-100 dark:bg-gray-900">
@@ -64,8 +71,17 @@ const ReportGeneratorLayout = ({
       <header className={`bg-gradient-to-r ${gradient} text-white shadow-lg flex-shrink-0`}>
         <div className="px-4 py-3">
           <div className="flex items-center justify-between">
-            {/* Left: Sidebar Toggle + Title */}
+            {/* Left: Back + Sidebar Toggle + Title */}
             <div className="flex items-center gap-3">
+              {/* Back Button */}
+              <button
+                onClick={handleBack}
+                className="p-2 hover:bg-white/20 rounded-lg transition"
+                title="Back to Reports"
+              >
+                <ArrowLeft className="w-5 h-5" />
+              </button>
+              
               {onToggleSidebar && (
                 <button
                   onClick={onToggleSidebar}

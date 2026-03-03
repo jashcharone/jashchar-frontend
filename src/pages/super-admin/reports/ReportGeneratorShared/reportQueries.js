@@ -308,26 +308,49 @@ export const fetchExamDataFromSupabase = async ({
 
 export const fetchFinanceDataFromSupabase = async ({
   branchId, organizationId, sessionId,
-  dateFrom, dateTo, paymentMode, voucherType
+  dateFrom, dateTo, paymentMode, classId, sectionId
 }) => {
+  // Use fee_payments table for finance/collection reports
   let query = supabase
-    .from('finance_transactions')
-    .select('*')
+    .from('fee_payments')
+    .select(`
+      *,
+      student:student_profiles(id, school_code, first_name, last_name, class_id, section_id),
+      class:classes(id, name),
+      section:sections(id, name),
+      fee_head:fee_heads(id, name)
+    `)
     .eq('branch_id', branchId)
     .eq('session_id', sessionId);
 
-  if (dateFrom) query = query.gte('transaction_date', dateFrom);
-  if (dateTo) query = query.lte('transaction_date', dateTo);
+  if (dateFrom) query = query.gte('payment_date', dateFrom);
+  if (dateTo) query = query.lte('payment_date', dateTo);
   if (paymentMode) query = query.eq('payment_mode', paymentMode);
-  if (voucherType) query = query.eq('voucher_type', voucherType);
+  if (classId) query = query.eq('class_id', classId);
+  if (sectionId) query = query.eq('section_id', sectionId);
 
-  const { data, error } = await query.order('transaction_date', { ascending: false });
+  const { data, error } = await query.order('payment_date', { ascending: false });
   if (error) {
-    console.log('[fetchFinanceData] Table may not exist:', error.message);
+    console.log('[fetchFinanceData] Error:', error.message);
     return [];
   }
   
-  return data || [];
+  // Map student data
+  return (data || []).map(row => ({
+    ...row,
+    receipt_no: row.receipt_number || row.id?.substring(0, 8),
+    date: row.payment_date,
+    student_name: row.student ? `${row.student.first_name || ''} ${row.student.last_name || ''}`.trim() : '',
+    admission_number: row.student?.school_code || '',
+    class_name: row.class?.name || '',
+    section_name: row.section?.name || '',
+    fee_head: row.fee_head?.name || '',
+    cashier_name: row.received_by || 'Admin',
+    student: row.student ? {
+      ...row.student,
+      admission_number: row.student.school_code
+    } : null
+  }));
 };
 
 // ═══════════════════════════════════════════════════════════════════════════════

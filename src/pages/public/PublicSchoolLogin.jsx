@@ -407,7 +407,7 @@ const PublicSchoolLogin = () => {
             </p>
 
             {/* Feature Cards */}
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               {features.map((feature, idx) => (
                 <div 
                   key={idx}
@@ -482,7 +482,7 @@ const PublicSchoolLogin = () => {
               <p className="text-xs text-amber-700 mb-4">Click any role to instantly login and explore the dashboard</p>
               
               {/* Demo Role Buttons */}
-              <div className="grid grid-cols-3 gap-2">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                 {DEMO_ROLES.map((role) => (
                   <Button
                     key={role}

@@ -286,7 +286,7 @@ const ProfitIntelligence = () => {
                   <h4 className="font-medium text-gray-900 dark:text-white">{branch.name}</h4>
                   <span className="text-sm text-gray-500">{branch.students} students</span>
                 </div>
-                <div className="grid grid-cols-3 gap-4 text-sm">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm">
                   <div>
                     <p className="text-gray-500">Revenue</p>
                     <p className="font-semibold text-green-600">{formatCurrency(branch.revenue)}</p>
@@ -329,7 +329,7 @@ const ProfitIntelligence = () => {
                     ROI: {teacher.roi}x
                   </span>
                 </div>
-                <div className="grid grid-cols-3 gap-4 text-sm">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm">
                   <div>
                     <p className="text-gray-500">Salary</p>
                     <p className="font-medium">₹{teacher.salary.toLocaleString()}</p>

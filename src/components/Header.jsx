@@ -110,10 +110,10 @@ const Header = ({ toggleSidebar, onThemeSettingsClick, onChatbotToggle }) => {
   };
 
   return (
-    <header className="px-6 pt-3 pb-2 sticky top-0 z-40">
+    <header className="px-2 sm:px-6 pt-2 sm:pt-3 pb-1 sm:pb-2 sticky top-0 z-40">
       <div 
         className={cn(
-          "border shadow-sm backdrop-blur-xl px-6 py-3 flex items-center justify-between transition-all duration-300",
+          "border shadow-sm backdrop-blur-xl px-3 sm:px-6 py-2 sm:py-3 flex items-center justify-between transition-all duration-300",
           "bg-background/80 supports-[backdrop-filter]:bg-background/60"
         )}
         style={{
@@ -123,11 +123,11 @@ const Header = ({ toggleSidebar, onThemeSettingsClick, onChatbotToggle }) => {
         }}
       >
         {/* LEFT: Mobile Toggle & Time */}
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-2 sm:gap-4">
           <Button 
             variant="ghost" 
             size="icon" 
-            className="md:hidden rounded-xl"
+            className="md:hidden rounded-xl h-9 w-9"
             onClick={toggleSidebar}
           >
             <Menu className="h-5 w-5" />
@@ -155,7 +155,7 @@ const Header = ({ toggleSidebar, onThemeSettingsClick, onChatbotToggle }) => {
         </div>
 
         {/* RIGHT: Actions */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1 sm:gap-2">
           
           {/* PWA Install */}
           {canInstall && (

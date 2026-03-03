@@ -228,7 +228,7 @@ const MediaSelectorModal = ({ isOpen, onClose, onSelect, allowMultiple = false, 
               <p className="text-sm text-slate-500 dark:text-slate-400">Loading media...</p>
             </div>
           ) : (
-            <div className="grid grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
               {media.filter(m => {
                 const name = m.file_name || m.name || '';
                 return name.toLowerCase().includes((search || '').toLowerCase());

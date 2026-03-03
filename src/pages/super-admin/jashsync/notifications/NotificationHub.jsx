@@ -257,7 +257,7 @@ const NotificationHub = ({
                 </div>
                 
                 {/* Quick Stats */}
-                <div className="grid grid-cols-4 gap-2 mb-4">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-4">
                     {[
                         { label: 'Unread', value: stats.unread, color: 'text-blue-400', filter: 'unread' },
                         { label: 'Urgent', value: stats.urgent, color: 'text-red-400', filter: 'urgent' },

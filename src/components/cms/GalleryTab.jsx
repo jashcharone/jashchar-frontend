@@ -83,7 +83,7 @@ const GalleryTab = ({ branchId }) => {
               <h4 className="font-bold">{selectedAlbum.title_en} - Images</h4>
               <Button size="sm" onClick={() => setMediaOpen(true)}><Plus className="h-4 w-4 mr-2" /> Add Images</Button>
             </div>
-            <div className="grid grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
               {images.map(img => (
                 <div key={img.id} className="relative group aspect-square bg-slate-100 rounded overflow-hidden">
                   <img src={img.image_url} className="w-full h-full object-cover" />

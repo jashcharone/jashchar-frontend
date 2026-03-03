@@ -366,7 +366,7 @@ const TransactionHistory = ({
                     </div>
                     
                     {/* Summary Cards */}
-                    <div className="grid grid-cols-3 gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                         <div className="p-3 rounded-lg bg-green-500/10 border border-green-500/30">
                             <p className="text-xs text-gray-500 dark:text-gray-400">Credits</p>
                             <p className="text-lg font-bold text-green-400">+{formatCurrency(totals.credits)}</p>

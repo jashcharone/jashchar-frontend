@@ -254,19 +254,57 @@ body {
   /* Compact data tables for mobile */
   table th,
   table td {
-    padding: 0.5rem 0.75rem !important;
-    font-size: 0.8125rem !important;
+    padding: 0.5rem 0.5rem !important;
+    font-size: 0.75rem !important;
   }
   
   /* Ensure dialog/modal content doesn't overflow */
   [role="dialog"] {
     max-width: calc(100vw - 1rem) !important;
     max-height: calc(100vh - 2rem) !important;
+    overflow-y: auto !important;
   }
   
   /* Make form inputs comfortable size on mobile */
   input, select, textarea {
     font-size: 16px !important; /* Prevents iOS auto-zoom */
+  }
+  
+  /* Card padding reduction on mobile */
+  .p-6 {
+    padding: 1rem !important;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════ */
+/* AUTO-RESPONSIVE GRID FIX                                                   */
+/* Fixes bare grid-cols-N (no responsive prefix) to work on mobile            */
+/* Elements with sm:/md:/lg: prefixed grid-cols are NOT affected              */
+/* ═══════════════════════════════════════════════════════════════════════════ */
+
+@media (max-width: 639px) {
+  /* 4-column grids → 2 columns on mobile */
+  .grid-cols-4 {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+  
+  /* 5-column grids → 2 columns on mobile */
+  .grid-cols-5 {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+  
+  /* 6-column grids → 2 columns on mobile */
+  .grid-cols-6 {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+}
+
+@media (max-width: 480px) {
+  /* Extra small screens — further reduce */
+  .grid-cols-4,
+  .grid-cols-5,
+  .grid-cols-6 {
+    grid-template-columns: repeat(1, minmax(0, 1fr)) !important;
   }
 }
 

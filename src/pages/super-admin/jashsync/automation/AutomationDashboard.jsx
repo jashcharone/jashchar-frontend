@@ -265,7 +265,7 @@ const AutomationDashboard = ({
                 </div>
                 
                 {/* Stats */}
-                <div className="grid grid-cols-4 gap-3">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                     <Card className="bg-gray-100/50 dark:bg-gray-800/50 border-gray-200 dark:border-gray-700">
                         <CardContent className="p-3 flex items-center gap-3">
                             <div className="w-10 h-10 rounded-lg bg-blue-500/20 flex items-center justify-center">

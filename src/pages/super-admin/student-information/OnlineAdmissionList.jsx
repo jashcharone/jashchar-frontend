@@ -1210,7 +1210,7 @@ const OnlineAdmissionList = () => {
                   {/* Color Preset */}
                   <div className="space-y-2">
                     <Label className="font-medium dark:text-gray-200">Color Preset</Label>
-                    <div className="grid grid-cols-3 gap-2">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                       {QR_COLOR_PRESETS.map(preset => (
                         <button
                           key={preset.id}
@@ -1309,7 +1309,7 @@ const OnlineAdmissionList = () => {
                       </div>
 
                       {/* Action Buttons */}
-                      <div className="grid grid-cols-3 gap-3">
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                         <Button 
                           variant="outline" 
                           onClick={downloadQRCode}

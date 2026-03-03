@@ -923,7 +923,7 @@ const AdmissionFormSettings = () => {
                 </div>
 
                 {/* Stats Overview */}
-                <div className="grid grid-cols-4 gap-4">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                     <Card className="bg-gradient-to-br from-blue-50 to-blue-100/50 border-blue-200 dark:from-blue-950 dark:to-blue-900/50 dark:border-blue-800">
                         <CardContent className="p-4">
                             <div className="flex items-center gap-3">

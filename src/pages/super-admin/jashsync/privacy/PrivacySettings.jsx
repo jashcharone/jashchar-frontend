@@ -236,7 +236,7 @@ const PrivacySettings = ({
                 </div>
                 
                 {/* Quick Stats */}
-                <div className="grid grid-cols-3 gap-3 mt-4">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-4">
                     <Card 
                         className="bg-gray-800/50 border-gray-700 cursor-pointer hover:border-gray-600 transition-colors"
                         onClick={onViewBlocked}

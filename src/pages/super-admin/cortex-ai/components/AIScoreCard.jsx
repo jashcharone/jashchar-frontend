@@ -157,7 +157,7 @@ const AIScoreCard = ({ score = 0, isLoading = false, previousScore = 75, breakdo
       </div>
 
       {/* Score Breakdown Preview */}
-      <div className="mt-4 grid grid-cols-3 gap-2 relative">
+      <div className="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-2 relative">
         {[
           { label: 'Academic', value: breakdown.attendanceScore || 82 },
           { label: 'Finance', value: breakdown.feeScore || 75 },

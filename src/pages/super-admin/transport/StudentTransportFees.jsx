@@ -393,7 +393,7 @@ const StudentTransportFees = () => {
                       </SelectContent>
                     </Select>
                   </div>
-                  <div className="grid grid-cols-3 gap-2">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                     <div className="space-y-1">
                       <Label className="text-xs">Fee (₹)</Label>
                       <Input type="number" value={formData.transport_fee} onChange={(e) => setFormData({...formData, transport_fee: e.target.value})} placeholder="Fee" />
@@ -407,7 +407,7 @@ const StudentTransportFees = () => {
                       <Input type="time" value={formData.drop_time} onChange={(e) => setFormData({...formData, drop_time: e.target.value})} />
                     </div>
                   </div>
-                  <div className="grid grid-cols-3 gap-2">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                     <div className="space-y-1">
                       <Label className="text-xs">Vehicle No.</Label>
                       <Input value={formData.vehicle_number} onChange={(e) => setFormData({...formData, vehicle_number: e.target.value})} placeholder="KA-01-XX" />

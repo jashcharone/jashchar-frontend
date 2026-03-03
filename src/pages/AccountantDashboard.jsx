@@ -261,12 +261,12 @@ const AccountantDashboard = () => {
     if (loading) {
         return (
             <DashboardLayout>
-                <div className="p-6 space-y-6">
+                <div className="p-4 sm:p-6 space-y-4 sm:space-y-6">
                     <Skeleton className="h-24 w-full" />
-                    <div className="grid grid-cols-4 gap-4">
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                         {[1,2,3,4].map(i => <Skeleton key={i} className="h-32" />)}
                     </div>
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <Skeleton className="h-80" />
                         <Skeleton className="h-80" />
                     </div>
@@ -277,11 +277,11 @@ const AccountantDashboard = () => {
 
     return (
         <DashboardLayout>
-            <div className="p-6 space-y-6">
+            <div className="p-3 sm:p-6 space-y-4 sm:space-y-6">
                 {/* Header */}
-                <div className="flex justify-between items-center">
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
                     <div>
-                        <h1 className="text-2xl font-bold text-gray-900">
+                        <h1 className="text-lg sm:text-2xl font-bold text-gray-900">
                             Welcome, {user?.profile?.full_name || 'Accountant'}! 👋
                         </h1>
                         <p className="text-gray-500">

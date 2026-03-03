@@ -831,11 +831,11 @@ const SchoolOwnerDashboard = () => {
 
   return (
     <DashboardLayout>
-      <div className="space-y-6 animate-in fade-in duration-500">
+      <div className="space-y-4 sm:space-y-6 animate-in fade-in duration-500">
         {/* ================================================================ */}
         {/* WELCOME HEADER WITH ANIMATED GRADIENT */}
         {/* ================================================================ */}
-        <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-violet-600 via-purple-600 to-indigo-700 p-8 text-white shadow-2xl">
+        <div className="relative overflow-hidden rounded-2xl sm:rounded-3xl bg-gradient-to-br from-violet-600 via-purple-600 to-indigo-700 p-4 sm:p-8 text-white shadow-2xl">
           {/* Animated Background Elements */}
           <div className="absolute inset-0 overflow-hidden">
             <div className="absolute w-96 h-96 -top-48 -right-48 bg-white/10 rounded-full blur-3xl animate-pulse" />
@@ -848,15 +848,15 @@ const SchoolOwnerDashboard = () => {
           <div className="relative flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
             <div>
               {/* Organization & Branch Info */}
-              <div className="flex items-center gap-2 mb-3">
-                <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/15 backdrop-blur-sm border border-white/20">
-                  <Building2 className="h-4 w-4 text-yellow-300" />
-                  <span className="text-sm font-medium text-white/90">{school?.name || 'Organization'}</span>
+              <div className="flex items-center gap-2 mb-3 flex-wrap">
+                <div className="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1 sm:py-1.5 rounded-full bg-white/15 backdrop-blur-sm border border-white/20">
+                  <Building2 className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-yellow-300" />
+                  <span className="text-xs sm:text-sm font-medium text-white/90 truncate max-w-[120px] sm:max-w-none">{school?.name || 'Organization'}</span>
                 </div>
-                <div className="text-white/50">•</div>
-                <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/15 backdrop-blur-sm border border-white/20">
-                  <MapPin className="h-4 w-4 text-green-300" />
-                  <span className="text-sm font-medium text-white/90">{selectedBranch?.name || 'Branch'}</span>
+                <div className="text-white/50 hidden sm:block">•</div>
+                <div className="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1 sm:py-1.5 rounded-full bg-white/15 backdrop-blur-sm border border-white/20">
+                  <MapPin className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-green-300" />
+                  <span className="text-xs sm:text-sm font-medium text-white/90 truncate max-w-[100px] sm:max-w-none">{selectedBranch?.name || 'Branch'}</span>
                 </div>
               </div>
               
@@ -867,10 +867,10 @@ const SchoolOwnerDashboard = () => {
                   Super Admin
                 </Badge>
               </div>
-              <h1 className="text-3xl md:text-4xl font-bold mb-2">
+              <h1 className="text-xl sm:text-3xl md:text-4xl font-bold mb-2">
                 Welcome back, {user?.profile?.full_name || 'Admin'}!
               </h1>
-              <p className="text-white/80 text-lg flex items-center gap-2">
+              <p className="text-white/80 text-sm sm:text-lg flex items-center gap-2">
                 <Sparkles className="h-5 w-5 text-yellow-300" />
                 {(() => {
                   const hour = new Date().getHours();
@@ -893,8 +893,8 @@ const SchoolOwnerDashboard = () => {
               </p>
             </div>
             
-            <div className="flex flex-col items-end gap-2">
-              <div className="text-4xl font-bold font-mono tracking-wider">
+            <div className="flex flex-col items-end gap-1 sm:gap-2">
+              <div className="text-2xl sm:text-4xl font-bold font-mono tracking-wider">
                 {currentTime.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}
               </div>
               <div className="text-white/70 text-sm">

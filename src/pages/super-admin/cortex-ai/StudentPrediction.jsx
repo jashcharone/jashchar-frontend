@@ -485,7 +485,7 @@ const StudentPrediction = () => {
               {showStudent.careerSuggestions && (
                 <div>
                   <h4 className="font-medium text-white mb-3">Career Suggestions</h4>
-                  <div className="grid grid-cols-3 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                     {showStudent.careerSuggestions.map((cs, idx) => (
                       <div key={idx} className="p-3 bg-gray-800 rounded-lg text-center">
                         <div className="text-2xl font-bold text-blue-400">{cs.match}%</div>

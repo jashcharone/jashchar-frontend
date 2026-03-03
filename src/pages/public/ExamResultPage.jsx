@@ -402,7 +402,7 @@ const ExamResultPage = () => {
                     </div>
 
                     {/* Marks Summary */}
-                    <div className="grid grid-cols-3 gap-4 mb-6">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
                       <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200">
                         <CardContent className="p-4 text-center">
                           <BookOpen className="h-6 w-6 text-blue-600 mx-auto mb-2" />

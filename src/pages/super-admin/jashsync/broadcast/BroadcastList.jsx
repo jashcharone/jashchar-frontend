@@ -252,7 +252,7 @@ const BroadcastList = ({
                 </div>
                 
                 {/* Quick Stats */}
-                <div className="grid grid-cols-4 gap-2 mb-4">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-4">
                     {[
                         { label: 'Total Sent', value: stats.totalRecipients?.toLocaleString() || '0', icon: Send, color: 'text-green-400' },
                         { label: 'Sent', value: stats.sent || 0, icon: CheckCircle, color: 'text-blue-400' },

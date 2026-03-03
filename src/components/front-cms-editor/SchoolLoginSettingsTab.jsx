@@ -424,7 +424,7 @@ const SchoolLoginSettingsTab = ({ branchId }) => {
                       <Wand2 className="h-4 w-4 text-purple-500" />
                       <Label className="font-medium dark:text-slate-200">Quick Presets</Label>
                     </div>
-                    <div className="grid grid-cols-3 gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                       {presetThemes.map(theme => (
                         <button
                           key={theme.name}

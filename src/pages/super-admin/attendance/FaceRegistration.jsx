@@ -519,7 +519,7 @@ const QuickRegisterDialog = ({ open, onClose, person, personType, branchId, orga
                             </AlertDescription>
                         </Alert>
                         
-                        <div className="grid grid-cols-3 gap-2">
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                             {capturedPhotos.map((photo) => (
                                 <div key={photo.id} className="relative rounded-lg overflow-hidden">
                                     <img src={photo.data} alt={photo.angle} className="w-full aspect-square object-cover" />
@@ -649,7 +649,7 @@ const EditFaceDialog = ({ open, onClose, registration, branchId, organizationId,
                             </AlertDescription>
                         </Alert>
                         
-                        <div className="grid grid-cols-3 gap-2">
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                             {capturedPhotos.map((photo) => (
                                 <div key={photo.id} className="relative rounded-lg overflow-hidden">
                                     <img src={photo.data} alt={photo.angle} className="w-full aspect-square object-cover" />

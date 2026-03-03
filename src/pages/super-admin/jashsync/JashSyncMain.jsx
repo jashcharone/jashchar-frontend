@@ -14,6 +14,7 @@ import DashboardLayout from "@/components/DashboardLayout";
 import api from '@/services/api';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { useBranch } from '@/contexts/BranchContext';
+import { useIsMobile } from '@/hooks/useIsMobile';
 
 // Import Sub-modules
 import { ChatList, ChatWindow, NewChatModal } from './chats';
@@ -55,6 +56,7 @@ const JashSyncMain = () => {
   const { user, organizationId, currentSessionId } = useAuth();
   const { selectedBranch } = useBranch();
   
+  const { isMobile } = useIsMobile();
   const [activeTab, setActiveTab] = useState("chats");
   const [walletData, setWalletData] = useState(null);
   const [trialStatus, setTrialStatus] = useState(null);
@@ -228,26 +230,26 @@ const JashSyncMain = () => {
       <div className="jashsync-container">
         {/* Header */}
         <div className="jashsync-header sticky top-0 z-10">
-          <div className="max-w-[1800px] mx-auto px-4 py-4">
-            <div className="flex items-center justify-between">
+          <div className="max-w-[1800px] mx-auto px-2 sm:px-4 py-2 sm:py-4">
+            <div className="flex items-center justify-between gap-2">
               {/* Logo & Title */}
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-600 to-blue-600 flex items-center justify-center shadow-lg shadow-purple-500/20">
-                  <Brain className="w-6 h-6 text-white" />
+              <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+                <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-br from-purple-600 to-blue-600 flex items-center justify-center shadow-lg shadow-purple-500/20 shrink-0">
+                  <Brain className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
                 </div>
-                <div>
-                  <h1 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                <div className="min-w-0">
+                  <h1 className="text-base sm:text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
                     JashSync
-                    <Badge variant="outline" className="text-xs text-purple-600 dark:text-purple-400 border-purple-300 dark:border-purple-400/50">
+                    <Badge variant="outline" className="text-[10px] sm:text-xs text-purple-600 dark:text-purple-400 border-purple-300 dark:border-purple-400/50">
                       BETA
                     </Badge>
                   </h1>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">The Brain-Connected Messenger</p>
+                  <p className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400 hidden sm:block">The Brain-Connected Messenger</p>
                 </div>
               </div>
 
               {/* Header Right Section */}
-              <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2 sm:gap-4 shrink-0">
                 {/* Notification Badge - Day 22-23 */}
                 <NotificationBadge 
                   variant="icon"
@@ -258,32 +260,44 @@ const JashSyncMain = () => {
                 {isAdmin && (
                   <>
                     {trialStatus?.isActive ? (
-                      <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-green-500/10 border border-green-500/30">
+                      <div className="flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-1 sm:py-1.5 rounded-full bg-green-500/10 border border-green-500/30">
                         <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-                        <span className="text-sm text-green-400">
-                          Trial: {trialStatus.daysLeft} days left
+                        <span className="text-xs sm:text-sm text-green-400">
+                          {isMobile ? `${trialStatus.daysLeft}d` : `Trial: ${trialStatus.daysLeft} days left`}
                         </span>
                       </div>
                     ) : (
-                      <div className="flex items-center gap-3 px-4 py-2 rounded-xl jashsync-wallet">
-                        <div className="text-right">
-                          <p className="text-xs text-gray-500 dark:text-gray-400">Wallet Balance</p>
-                          <p className="text-lg font-bold text-gray-900 dark:text-white">
+                      /* Desktop: full wallet | Mobile: compact badge */
+                      isMobile ? (
+                        <div className="flex items-center gap-2 px-2 py-1 rounded-lg jashsync-wallet">
+                          <span className="text-xs font-bold text-gray-900 dark:text-white">
                             ₹{walletData?.balance?.toLocaleString() || '0'}
-                          </p>
+                          </span>
+                          <Button size="sm" className="h-7 px-2 text-xs bg-purple-600 hover:bg-purple-700">
+                            <Wallet className="w-3 h-3" />
+                          </Button>
                         </div>
-                        <div className="w-px h-8 bg-gray-200 dark:bg-gray-700" />
-                        <div className="text-right">
-                          <p className="text-xs text-gray-500 dark:text-gray-400">Messages Left</p>
-                          <p className="text-lg font-bold text-purple-600 dark:text-purple-400">
-                            ~{walletData?.messagesLeft?.toLocaleString() || '0'}
-                          </p>
+                      ) : (
+                        <div className="flex items-center gap-3 px-4 py-2 rounded-xl jashsync-wallet">
+                          <div className="text-right">
+                            <p className="text-xs text-gray-500 dark:text-gray-400">Wallet Balance</p>
+                            <p className="text-lg font-bold text-gray-900 dark:text-white">
+                              ₹{walletData?.balance?.toLocaleString() || '0'}
+                            </p>
+                          </div>
+                          <div className="w-px h-8 bg-gray-200 dark:bg-gray-700" />
+                          <div className="text-right">
+                            <p className="text-xs text-gray-500 dark:text-gray-400">Messages Left</p>
+                            <p className="text-lg font-bold text-purple-600 dark:text-purple-400">
+                              ~{walletData?.messagesLeft?.toLocaleString() || '0'}
+                            </p>
+                          </div>
+                          <Button size="sm" className="ml-2 bg-purple-600 hover:bg-purple-700">
+                            <Wallet className="w-4 h-4 mr-1" />
+                            Recharge
+                          </Button>
                         </div>
-                        <Button size="sm" className="ml-2 bg-purple-600 hover:bg-purple-700">
-                          <Wallet className="w-4 h-4 mr-1" />
-                          Recharge
-                        </Button>
-                      </div>
+                      )
                     )}
                   </>
                 )}
@@ -293,27 +307,27 @@ const JashSyncMain = () => {
         </div>
 
         {/* Main Content */}
-        <div className="max-w-[1800px] mx-auto px-4 py-4">
+        <div className="max-w-[1800px] mx-auto px-2 sm:px-4 py-2 sm:py-4">
           <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
-            {/* Tab Navigation */}
-            <TabsList className="w-full flex flex-wrap justify-start gap-1 jashsync-tabs p-1 rounded-xl mb-4">
+            {/* Tab Navigation — horizontal scroll on mobile, no wrap */}
+            <TabsList className="w-full flex overflow-x-auto no-scrollbar justify-start gap-1 jashsync-tabs p-1 rounded-xl mb-3 sm:mb-4">
               {tabs.map((tab) => (
                 <TabsTrigger
                   key={tab.id}
                   value={tab.id}
-                  className="flex items-center gap-2 px-4 py-2 rounded-lg data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-600 data-[state=active]:to-blue-600 data-[state=active]:text-white text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-all"
+                  className="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-4 py-1.5 sm:py-2 rounded-lg whitespace-nowrap shrink-0 data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-600 data-[state=active]:to-blue-600 data-[state=active]:text-white text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-all text-xs sm:text-sm"
                 >
-                  <tab.icon className="w-4 h-4" />
+                  <tab.icon className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                   <span className="hidden sm:inline">{tab.label}</span>
                   {tab.badge && (
-                    <Badge className="ml-1 bg-red-500 text-white text-xs px-1.5 py-0">
+                    <Badge className="ml-1 bg-red-500 text-white text-[10px] sm:text-xs px-1 sm:px-1.5 py-0">
                       {tab.badge}
                     </Badge>
                   )}
                   {tab.badgeText && (
                     <Badge 
                       variant="outline" 
-                      className={`ml-1 text-xs ${tab.badgeColor === 'purple' ? 'text-purple-400 border-purple-400/50' : ''}`}
+                      className={`ml-1 text-[10px] sm:text-xs ${tab.badgeColor === 'purple' ? 'text-purple-400 border-purple-400/50' : ''}`}
                     >
                       {tab.badgeText}
                     </Badge>
@@ -323,46 +337,54 @@ const JashSyncMain = () => {
             </TabsList>
 
             {/* Tab Contents */}
-            <div className="jashsync-card min-h-[600px]">
-              {/* Chats */}
-              <TabsContent value="chats" className="m-0 h-[calc(100vh-280px)]">
+            <div className="jashsync-card min-h-[300px] sm:min-h-[600px]">
+              {/* Chats — WhatsApp-style: on mobile show list OR window, on desktop show both */}
+              <TabsContent value="chats" className="m-0 h-[calc(100vh-220px)] sm:h-[calc(100vh-280px)]">
                 <div className="flex h-full">
-                  {/* Chat List - Left Panel */}
-                  <ChatList 
-                    onSelectChat={setSelectedChat}
-                    selectedChatId={selectedChat?.id}
-                    newConversation={selectedChat}
-                    onNewChat={() => setShowNewChatModal(true)}
-                    className="w-80 lg:w-96 shrink-0"
-                  />
+                  {/* Chat List - show on desktop always, on mobile only when no chat selected */}
+                  {(!isMobile || !selectedChat) && (
+                    <ChatList 
+                      onSelectChat={setSelectedChat}
+                      selectedChatId={selectedChat?.id}
+                      newConversation={selectedChat}
+                      onNewChat={() => setShowNewChatModal(true)}
+                      className={isMobile ? "w-full" : "w-80 lg:w-96 shrink-0"}
+                    />
+                  )}
                   
-                  {/* Chat Window - Right Panel */}
-                  <ChatWindow 
-                    conversation={selectedChat}
-                    onBack={() => setSelectedChat(null)}
-                    className="flex-1"
-                  />
+                  {/* Chat Window - show on desktop always, on mobile only when chat selected */}
+                  {(!isMobile || selectedChat) && (
+                    <ChatWindow 
+                      conversation={selectedChat}
+                      onBack={() => setSelectedChat(null)}
+                      className={isMobile ? "w-full" : "flex-1"}
+                    />
+                  )}
                 </div>
               </TabsContent>
 
-              {/* Channels */}
-              <TabsContent value="channels" className="m-0 h-[calc(100vh-280px)]">
+              {/* Channels — same WhatsApp-style toggle */}
+              <TabsContent value="channels" className="m-0 h-[calc(100vh-220px)] sm:h-[calc(100vh-280px)]">
                 <div className="flex h-full">
-                  {/* Channel List - Left Panel */}
-                  <ChannelList 
-                    onSelectChannel={setSelectedChannel}
-                    selectedChannelId={selectedChannel?.id}
-                    onCreateChannel={() => setShowCreateChannelModal(true)}
-                    refreshTrigger={channelRefreshKey}
-                    className="w-80 lg:w-96 shrink-0"
-                  />
+                  {/* Channel List - show on desktop always, on mobile only when no channel selected */}
+                  {(!isMobile || !selectedChannel) && (
+                    <ChannelList 
+                      onSelectChannel={setSelectedChannel}
+                      selectedChannelId={selectedChannel?.id}
+                      onCreateChannel={() => setShowCreateChannelModal(true)}
+                      refreshTrigger={channelRefreshKey}
+                      className={isMobile ? "w-full" : "w-80 lg:w-96 shrink-0"}
+                    />
+                  )}
                   
-                  {/* Channel Window - Right Panel */}
-                  <ChannelWindow 
-                    channel={selectedChannel}
-                    onBack={() => setSelectedChannel(null)}
-                    className="flex-1"
-                  />
+                  {/* Channel Window - show on desktop always, on mobile only when channel selected */}
+                  {(!isMobile || selectedChannel) && (
+                    <ChannelWindow 
+                      channel={selectedChannel}
+                      onBack={() => setSelectedChannel(null)}
+                      className={isMobile ? "w-full" : "flex-1"}
+                    />
+                  )}
                 </div>
               </TabsContent>
 

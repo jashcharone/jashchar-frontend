@@ -727,7 +727,7 @@ const FeesAnalysis = () => {
             </div>
 
             {/* Student Payment Status */}
-            <div className="grid grid-cols-3 gap-4 mb-6">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
               <Card className="border-green-200 dark:border-green-800">
                 <CardContent className="p-4 flex items-center gap-4">
                   <div className="p-3 rounded-full bg-green-100 dark:bg-green-900/30"><CheckCircle2 className="h-6 w-6 text-green-600" /></div>

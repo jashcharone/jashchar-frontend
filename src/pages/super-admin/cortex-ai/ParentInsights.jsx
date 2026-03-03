@@ -377,7 +377,7 @@ const ParentInsights = () => {
           <Camera className="w-5 h-5 text-cyan-400" />
           Today's Photos
         </h3>
-        <div className="grid grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
           {[1, 2, 3, 4].map((i) => (
             <div key={i} className="aspect-square bg-gray-700/50 rounded-lg flex items-center justify-center border border-gray-600">
               <Camera className="w-8 h-8 text-gray-500" />

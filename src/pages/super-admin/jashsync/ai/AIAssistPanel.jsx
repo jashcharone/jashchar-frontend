@@ -446,7 +446,7 @@ const AIAssistPanel = ({
                                 <Label className="text-sm text-gray-500 dark:text-gray-400 mb-2 block">
                                     Select Tone
                                 </Label>
-                                <div className="grid grid-cols-3 gap-2">
+                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                                     {toneOptions.map((tone) => (
                                         <Button
                                             key={tone.id}

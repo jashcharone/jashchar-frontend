@@ -133,13 +133,13 @@ const DesignMarksheet = () => {
                   <div className="space-y-2"><Label>Printing Date</Label><Input type="date" name="printing_date" value={formData.printing_date} onChange={handleInputChange} /></div>
                 </div>
                 
-                <div className="grid grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                   <div className="space-y-2"><Label>Left Logo</Label><Input type="file" onChange={(e) => handleFileUpload(e, 'left_logo')} /></div>
                   <div className="space-y-2"><Label>Right Logo</Label><Input type="file" onChange={(e) => handleFileUpload(e, 'right_logo')} /></div>
                   <div className="space-y-2"><Label>Background</Label><Input type="file" onChange={(e) => handleFileUpload(e, 'background_image')} /></div>
                 </div>
 
-                <div className="grid grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                   <div className="space-y-2"><Label>Left Sign</Label><Input type="file" onChange={(e) => handleFileUpload(e, 'left_sign')} /></div>
                   <div className="space-y-2"><Label>Middle Sign</Label><Input type="file" onChange={(e) => handleFileUpload(e, 'middle_sign')} /></div>
                   <div className="space-y-2"><Label>Right Sign</Label><Input type="file" onChange={(e) => handleFileUpload(e, 'right_sign')} /></div>

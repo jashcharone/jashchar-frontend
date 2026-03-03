@@ -246,7 +246,7 @@ const WearableCard = ({ wearable, onEdit, onUnpair, onViewHistory, onPing }) => 
                     )}
                     
                     {/* Device Stats */}
-                    <div className="grid grid-cols-3 gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                         <div className="text-center p-2 bg-muted/30 rounded-lg">
                             <BatteryStatus level={wearable.battery_level || 0} isCharging={wearable.is_charging} />
                             <p className="text-xs text-muted-foreground mt-1">Battery</p>

@@ -23,7 +23,7 @@ import { useBranchAttendanceModules, PATH_TO_ATTENDANCE_MODULE } from '@/hooks/u
 // --- CONFIGURATION ---
 const SIDEBAR_WIDTH_EXPANDED = "w-[270px]";
 const SIDEBAR_WIDTH_COLLAPSED = "w-[80px]";
-const MOBILE_DRAWER_WIDTH = "w-[300px]";
+const MOBILE_DRAWER_WIDTH = "w-[280px]";
 
 const Sidebar = ({ role, isSidebarOpen, isMobile, toggleSidebar, closeSidebar, onHoverChange }) => {
   const { settings } = useTheme();

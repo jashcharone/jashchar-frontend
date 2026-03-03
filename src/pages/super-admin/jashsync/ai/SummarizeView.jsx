@@ -287,7 +287,7 @@ STATISTICS
                         {summary && (
                             <>
                                 {/* Stats Cards */}
-                                <div className="grid grid-cols-3 gap-3">
+                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                                     <Card className="bg-gray-100/50 dark:bg-gray-800/50 border-gray-200 dark:border-gray-700">
                                         <CardContent className="p-3 text-center">
                                             <MessageSquare className="w-5 h-5 mx-auto mb-1 text-blue-400" />

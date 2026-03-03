@@ -380,7 +380,7 @@ const MediaVault = ({
                 </div>
                 
                 {/* Quick Stats */}
-                <div className="grid grid-cols-5 gap-2 mb-4">
+                <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 mb-4">
                     {[
                         { label: 'All', value: stats.total, filter: 'all', color: 'text-white' },
                         { label: 'Images', value: stats.images, filter: 'image', color: 'text-blue-400' },

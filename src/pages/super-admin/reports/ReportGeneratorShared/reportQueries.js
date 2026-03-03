@@ -311,13 +311,21 @@ export const fetchFinanceDataFromSupabase = async ({
   dateFrom, dateTo, paymentMode, classId, sectionId
 }) => {
   // Use fee_payments table for finance/collection reports
+  // Get class/section through student_profiles (nested join)
   let query = supabase
     .from('fee_payments')
     .select(`
       *,
-      student:student_profiles(id, school_code, first_name, last_name, class_id, section_id),
-      class:classes(id, name),
-      section:sections(id, name),
+      student:student_profiles(
+        id, 
+        school_code, 
+        first_name, 
+        last_name, 
+        class_id, 
+        section_id,
+        class:classes(id, name),
+        section:sections(id, name)
+      ),
       fee_head:fee_heads(id, name)
     `)
     .eq('branch_id', branchId)
@@ -326,24 +334,27 @@ export const fetchFinanceDataFromSupabase = async ({
   if (dateFrom) query = query.gte('payment_date', dateFrom);
   if (dateTo) query = query.lte('payment_date', dateTo);
   if (paymentMode) query = query.eq('payment_mode', paymentMode);
-  if (classId) query = query.eq('class_id', classId);
-  if (sectionId) query = query.eq('section_id', sectionId);
-
+  
+  // Filter by class/section through student relationship if needed
+  // Note: Direct filtering requires student_id join, so we filter in post-processing
+  
   const { data, error } = await query.order('payment_date', { ascending: false });
   if (error) {
     console.log('[fetchFinanceData] Error:', error.message);
     return [];
   }
   
-  // Map student data
-  return (data || []).map(row => ({
+  // Map student data and apply client-side class/section filters
+  let mappedData = (data || []).map(row => ({
     ...row,
     receipt_no: row.receipt_number || row.id?.substring(0, 8),
     date: row.payment_date,
     student_name: row.student ? `${row.student.first_name || ''} ${row.student.last_name || ''}`.trim() : '',
     admission_number: row.student?.school_code || '',
-    class_name: row.class?.name || '',
-    section_name: row.section?.name || '',
+    class_name: row.student?.class?.name || '',
+    section_name: row.student?.section?.name || '',
+    class_id: row.student?.class_id || null,
+    section_id: row.student?.section_id || null,
     fee_head: row.fee_head?.name || '',
     cashier_name: row.received_by || 'Admin',
     student: row.student ? {
@@ -351,6 +362,16 @@ export const fetchFinanceDataFromSupabase = async ({
       admission_number: row.student.school_code
     } : null
   }));
+  
+  // Apply class/section filters client-side
+  if (classId) {
+    mappedData = mappedData.filter(row => row.class_id === classId);
+  }
+  if (sectionId) {
+    mappedData = mappedData.filter(row => row.section_id === sectionId);
+  }
+  
+  return mappedData;
 };
 
 // ═══════════════════════════════════════════════════════════════════════════════

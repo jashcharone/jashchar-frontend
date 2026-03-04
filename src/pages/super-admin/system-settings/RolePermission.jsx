@@ -37,13 +37,20 @@ const RolePermissionSchool = () => {
     const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
     const [saving, setSaving] = useState(false);
 
-    // System roles that cannot be deleted - 21 comprehensive roles
-    const SYSTEM_ROLES = [
-        'Super Admin', 'Admin', 'Principal', 'Vice Principal', 'Coordinator',
-        'Accountant', 'Cashier', 'Receptionist', 'Teacher', 'Class Teacher',
-        'Subject Teacher', 'Librarian', 'Lab Assistant', 'Driver', 'Hostel Warden',
-        'Sports Coach', 'Security Guard', 'Maintenance Staff', 'Peon', 'Student', 'Parent'
+    // System roles in display order (40 roles) - These cannot be deleted
+    const SYSTEM_ROLES_ORDER = [
+        'Super Admin', 'Admin', 'Principal', 'Vice Principal', 'Academic Dean',
+        'Coordinator', 'Assistant Co-Ordinator', 'Accountant', 'Cashier', 'Receptionist',
+        'Teacher', 'Subject Teacher', 'Lecturer', 'PET Teacher', 'Music Teacher',
+        'Yoga Teacher', 'Lab Assistant', 'Librarian', 'Hostel Warden', 'Transport Incharge',
+        'Driver', 'Sports Coach', 'Security Guard', 'Maintenance Staff', 'Electrician and Plumber',
+        'Peon', 'Ayah Incharge', 'Store Manager', 'Bookstall Incharge', 'Canteen Incharge',
+        'CCTV Incharge', 'Website Incharge', 'DTP Worker', 'Document Clerk', 'Telecaller',
+        'D.O PA to Admin', 'PA to Admin', 'Typist', 'Student', 'Parent'
     ];
+    
+    // For backwards compatibility
+    const SYSTEM_ROLES = SYSTEM_ROLES_ORDER;
 
     // Fetch Roles when branch changes
     const fetchRoles = useCallback(async () => {
@@ -62,24 +69,24 @@ const RolePermissionSchool = () => {
             // Filter out duplicates and School Owner role
             const uniqueRoles = [];
             const seenNames = new Set();
-            
-            const sortedData = (data || []).sort((a, b) => {
-                if (a.is_system_default && !b.is_system_default) return -1;
-                if (!a.is_system_default && b.is_system_default) return 1;
-                const aIsTitle = a.name[0] === a.name[0].toUpperCase();
-                const bIsTitle = b.name[0] === b.name[0].toUpperCase();
-                if (aIsTitle && !bIsTitle) return -1;
-                if (!aIsTitle && bIsTitle) return 1;
-                return 0;
-            });
 
-            sortedData.forEach(role => {
+            (data || []).forEach(role => {
                 const lowerName = role.name.toLowerCase().replace(/_/g, ' ').trim();
-                if (lowerName === 'school owner' || lowerName === 'super admin') return;
+                if (lowerName === 'school owner') return;
                 if (!seenNames.has(lowerName)) {
                     seenNames.add(lowerName);
                     uniqueRoles.push(role);
                 }
+            });
+            
+            // Sort by predefined order
+            uniqueRoles.sort((a, b) => {
+                const orderA = SYSTEM_ROLES_ORDER.findIndex(r => r.toLowerCase() === a.name.toLowerCase());
+                const orderB = SYSTEM_ROLES_ORDER.findIndex(r => r.toLowerCase() === b.name.toLowerCase());
+                // If role not in list, put at end
+                const posA = orderA === -1 ? 999 : orderA;
+                const posB = orderB === -1 ? 999 : orderB;
+                return posA - posB;
             });
             
             setRoles(uniqueRoles);

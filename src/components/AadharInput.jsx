@@ -29,10 +29,17 @@ const AadharInput = ({ value, onChange, label, required, checkDuplicates = false
     }
     setIsChecking(true);
     try {
-      // Check in student_profiles table (not profiles) for aadhar_no
+      // Check in student_profiles table with organization & branch details
       const { data, error: dbError } = await supabase
         .from('student_profiles')
-        .select('id, first_name, last_name')
+        .select(`
+          id, 
+          first_name, 
+          last_name,
+          full_name,
+          organizations:organization_id (name),
+          branches:branch_id (name)
+        `)
         .eq('aadhar_no', aadharNumber)
         .limit(1)
         .maybeSingle();
@@ -42,8 +49,11 @@ const AadharInput = ({ value, onChange, label, required, checkDuplicates = false
       }
 
       if (data) {
-        const studentName = `${data.first_name || ''} ${data.last_name || ''}`.trim();
-        setError(`This Aadhar number is already registered${studentName ? ` to ${studentName}` : ''}.`);
+        const studentName = data.full_name || `${data.first_name || ''} ${data.last_name || ''}`.trim();
+        const branchName = data.branches?.name || '';
+        const orgName = data.organizations?.name || '';
+        const location = branchName ? ` (${branchName}${orgName ? ` - ${orgName}` : ''})` : '';
+        setError(`This Aadhar number is already registered to ${studentName || 'another student'}${location}.`);
       } else {
         setError('');
       }

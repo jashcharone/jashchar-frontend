@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useCallback } from 'react';
+﻿import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
 import { supabase } from '@/lib/customSupabaseClient';
 import api from '@/lib/api';
@@ -42,12 +42,13 @@ const StudentDetails = () => {
     const [students, setStudents] = useState([]);
     const [classes, setClasses] = useState([]);
     const [sections, setSections] = useState([]);
-    const [filters, setFilters] = useState({ class_id: '', section_id: '', keyword: '', status: 'active' });
+    const [filters, setFilters] = useState({ class_id: 'all', section_id: '', keyword: '', status: 'active' });
     const [selectedStudents, setSelectedStudents] = useState([]);
     const [currentPage, setCurrentPage] = useState(1);
     const [pageSize, setPageSize] = useState(25);
     const [feesData, setFeesData] = useState({}); // { studentId: { total, paid, progress } }
     const [initialLoadDone, setInitialLoadDone] = useState(false); // For auto-load on page open
+    const [allStudents, setAllStudents] = useState([]); // Store all fetched students for client-side filtering
     const [visibleColumns, setVisibleColumns] = useState({
         photo: true, name: true, class: true, section: true, gender: true, 
         mobile: true, register: true, roll: true, age: true, guardian: true, fees: true
@@ -66,6 +67,18 @@ const StudentDetails = () => {
     const calculateAge = (dob) => {
         if (!dob) return '-';
         return differenceInYears(new Date(), new Date(dob));
+    };
+
+    // 🔍 Highlight search text in results
+    const highlightText = (text, searchTerm) => {
+        if (!searchTerm || !text) return text;
+        const regex = new RegExp(`(${searchTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+        const parts = String(text).split(regex);
+        return parts.map((part, i) => 
+            regex.test(part) 
+                ? <mark key={i} className="bg-yellow-300 dark:bg-yellow-600 px-0.5 rounded">{part}</mark>
+                : part
+        );
     };
 
     // TC-11 FIX: Copy to clipboard functionality
@@ -216,17 +229,15 @@ const StudentDetails = () => {
         fetchPrereqs();
     }, [branchId]);
 
-    // Auto-load: Select first class and trigger search when classes are loaded
+    // Auto-load: Set initial load done when classes are loaded (no auto-select, default is 'all')
     useEffect(() => {
-        if (classes.length > 0 && !initialLoadDone && !filters.class_id) {
-            const firstClassId = classes[0].id;
-            setFilters(prev => ({ ...prev, class_id: firstClassId }));
+        if (classes.length > 0 && !initialLoadDone) {
             setInitialLoadDone(true);
         }
-    }, [classes, initialLoadDone, filters.class_id]);
+    }, [classes, initialLoadDone]);
 
     useEffect(() => {
-        if (filters.class_id) {
+        if (filters.class_id && filters.class_id !== 'all') {
             const fetchSections = async () => {
                 const { data } = await supabase.from('class_sections').select('sections(id, name)').eq('class_id', filters.class_id);
                 const sectionsList = data ? data.map(item => item.sections).filter(Boolean) : [];
@@ -235,17 +246,36 @@ const StudentDetails = () => {
             fetchSections();
         } else {
             setSections([]);
+            setFilters(prev => ({ ...prev, section_id: '' }));
         }
     }, [filters.class_id]);
 
-    const handleSearch = async () => {
-        // TC-10 FIX: Allow searching by keyword (min 2 chars) without class filter OR just class selection
-        const isQuickSearch = filters.keyword && filters.keyword.length >= 2;
-        
-        if (!filters.class_id && !isQuickSearch) {
-            toast({ variant: 'destructive', title: 'Please select a class or enter a search term (min 2 chars).' });
-            return;
+    // Client-side instant search filter
+    const filteredStudents = useMemo(() => {
+        if (!filters.keyword || !filters.keyword.trim()) {
+            return allStudents;
         }
+        const keyword = filters.keyword.toLowerCase().trim();
+        return allStudents.filter(s => {
+            const fullName = (s.full_name || `${s.first_name || ''} ${s.last_name || ''}`).toLowerCase();
+            const schoolCode = (s.school_code || '').toLowerCase();
+            const rollNumber = (s.roll_number || '').toLowerCase();
+            const phone = (s.phone || '').toLowerCase();
+            const fatherName = (s.father_name || '').toLowerCase();
+            return fullName.includes(keyword) || 
+                   schoolCode.includes(keyword) || 
+                   rollNumber.includes(keyword) || 
+                   phone.includes(keyword) ||
+                   fatherName.includes(keyword);
+        });
+    }, [allStudents, filters.keyword]);
+
+    // Update students display when filtered results change
+    useEffect(() => {
+        setStudents(filteredStudents);
+    }, [filteredStudents]);
+
+    const handleSearch = async () => {
         setLoading(true);
         
         // Use session from header dropdown (currentSessionId) — this respects user's session selection
@@ -273,8 +303,8 @@ const StudentDetails = () => {
             studentQuery = studentQuery.eq('session_id', activeSessionId);
         }
         
-        // Only add class filter if selected
-        if (filters.class_id) {
+        // Only add class filter if specific class selected (not 'all')
+        if (filters.class_id && filters.class_id !== 'all') {
             studentQuery = studentQuery.eq('class_id', filters.class_id);
         }
         
@@ -282,9 +312,8 @@ const StudentDetails = () => {
             studentQuery = studentQuery.eq('section_id', filters.section_id);
         }
 
-        if (filters.keyword) {
-            studentQuery = studentQuery.or(`full_name.ilike.%${filters.keyword}%,school_code.ilike.%${filters.keyword}%,roll_number.ilike.%${filters.keyword}%,phone.ilike.%${filters.keyword}%`);
-        }
+        // NOTE: Keyword search is done client-side for instant results
+        // No server-side keyword filter needed
 
         const { data: studentsData, error: studentsError, count } = await studentQuery;
 
@@ -315,17 +344,19 @@ const StudentDetails = () => {
             toast({ title: "No students found." });
         }
         
+        // Store all students for client-side instant search
+        setAllStudents(studentsData || []);
         setStudents(studentsData || []);
         setSelectedStudents([]);
         setLoading(false);
     };
 
-    // Auto-search: Trigger search automatically when first class is auto-selected on page load
+    // Auto-search: Trigger search automatically on page load (with 'all' classes default)
     useEffect(() => {
-        if (initialLoadDone && filters.class_id && students.length === 0 && !loading) {
+        if (initialLoadDone && filters.class_id === 'all' && students.length === 0 && !loading) {
             handleSearch();
         }
-    }, [initialLoadDone, filters.class_id]);
+    }, [initialLoadDone]);
 
     // Re-fetch when session changes from header dropdown
     useEffect(() => {
@@ -394,6 +425,8 @@ const StudentDetails = () => {
     const handleFilterChange = (key, value) => {
         setFilters(prev => ({ ...prev, [key]: value }));
         if(key === 'class_id') setFilters(prev => ({ ...prev, section_id: ''}));
+        // Reset to page 1 when search keyword changes for instant search
+        if(key === 'keyword') setCurrentPage(1);
     };
 
     const toggleSelectAll = () => {
@@ -509,12 +542,15 @@ const StudentDetails = () => {
                             <label className="text-sm font-medium mb-1 block">Class</label>
                             <Select value={filters.class_id} onValueChange={v => handleFilterChange('class_id', v)}>
                                 <SelectTrigger><SelectValue placeholder="Select Class" /></SelectTrigger>
-                                <SelectContent>{classes.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent>
+                                <SelectContent>
+                                    <SelectItem value="all">All Classes</SelectItem>
+                                    {classes.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
+                                </SelectContent>
                             </Select>
                         </div>
                         <div>
                             <label className="text-sm font-medium mb-1 block">Section</label>
-                            <Select value={filters.section_id} onValueChange={v => handleFilterChange('section_id', v)} disabled={!filters.class_id}>
+                            <Select value={filters.section_id} onValueChange={v => handleFilterChange('section_id', v)} disabled={!filters.class_id || filters.class_id === 'all'}>
                                 <SelectTrigger><SelectValue placeholder="Select Section" /></SelectTrigger>
                                 <SelectContent>
                                     <SelectItem value="all">All Sections</SelectItem>
@@ -546,17 +582,17 @@ const StudentDetails = () => {
                             </Select>
                         </div>
                         <div className="md:col-span-2">
-                            <label className="text-sm font-medium mb-1 block">Search</label>
-                            <Input placeholder="Search by name, admission no, phone..." value={filters.keyword} onChange={e => handleFilterChange('keyword', e.target.value)} />
+                            <label className="text-sm font-medium mb-1 block">Instant Search</label>
+                            <Input placeholder="Type any letter to search..." value={filters.keyword} onChange={e => handleFilterChange('keyword', e.target.value)} />
                         </div>
                         <Button onClick={handleSearch} disabled={loading} className="h-10">
-                            <Search className="mr-2 h-4 w-4" />{loading ? 'Searching...' : 'Search'}
+                            <RefreshCcw className="mr-2 h-4 w-4" />{loading ? 'Loading...' : 'Refresh'}
                         </Button>
                     </div>
                 </CardContent>
             </Card>
 
-            {students.length > 0 && (
+            {allStudents.length > 0 && (
                 <Card>
                     <div className="flex items-center justify-between p-4 border-b">
                         <div className="flex items-center gap-2">
@@ -565,8 +601,25 @@ const StudentDetails = () => {
                             <Button variant="outline" size="sm" title="Excel" onClick={handleExportExcel}><FileDown className="h-4 w-4" /></Button>
                             <Button variant="outline" size="sm" title="Print" onClick={handlePrint}><Printer className="h-4 w-4" /></Button>
                             <Button variant="outline" size="sm" title="Columns"><LayoutGrid className="h-4 w-4" /></Button>
+                            <span className="text-sm text-muted-foreground ml-2">
+                                {filters.keyword 
+                                    ? `Showing ${students.length} of ${allStudents.length} students` 
+                                    : `Total: ${allStudents.length} students`}
+                            </span>
                         </div>
-                        <Input placeholder="Search..." className="w-48 h-8" value={filters.keyword} onChange={e => handleFilterChange('keyword', e.target.value)} />
+                        <div className="flex items-center gap-2">
+                            <Input 
+                                placeholder="Type to search instantly..." 
+                                className="w-64 h-8" 
+                                value={filters.keyword} 
+                                onChange={e => handleFilterChange('keyword', e.target.value)} 
+                            />
+                            {filters.keyword && (
+                                <Button variant="ghost" size="sm" className="h-8 px-2" onClick={() => handleFilterChange('keyword', '')}>
+                                    ✕
+                                </Button>
+                            )}
+                        </div>
                     </div>
 
                     <div className="overflow-x-auto">
@@ -606,7 +659,7 @@ const StudentDetails = () => {
                                             </td>
                                             <td className="p-3">
                                                 <div className="flex items-center gap-2">
-                                                    <span className="font-medium text-primary hover:underline cursor-pointer" onClick={() => navigate(`/${basePath}/student-information/profile/${s.id}`)}>{s.full_name}</span>
+                                                    <span className="font-medium text-primary hover:underline cursor-pointer" onClick={() => navigate(`/${basePath}/student-information/profile/${s.id}`)}>{highlightText(s.full_name, filters.keyword)}</span>
                                                     {s.is_disabled && (
                                                         <span className="px-1.5 py-0.5 text-[10px] font-medium bg-red-100 text-red-700 rounded dark:bg-red-900 dark:text-red-300">
                                                             DISABLED
@@ -614,22 +667,22 @@ const StudentDetails = () => {
                                                     )}
                                                 </div>
                                             </td>
-                                            <td className="p-3">{s.class?.name}</td>
-                                            <td className="p-3">{s.section?.name}</td>
-                                            <td className="p-3">{s.gender}</td>
-                                            <td className="p-3">{s.phone || '-'}</td>
+                                            <td className="p-3">{highlightText(s.class?.name, filters.keyword)}</td>
+                                            <td className="p-3">{highlightText(s.section?.name, filters.keyword)}</td>
+                                            <td className="p-3">{highlightText(s.gender, filters.keyword)}</td>
+                                            <td className="p-3">{highlightText(s.phone, filters.keyword) || '-'}</td>
                                             <td className="p-3">
                                                 <div>
-                                                    <span className="font-medium">{s.school_code}</span>
+                                                    <span className="font-medium">{highlightText(s.school_code, filters.keyword)}</span>
                                                     <div className="text-xs text-muted-foreground">{s.admission_date ? format(new Date(s.admission_date), 'dd MMM yyyy') : ''}</div>
                                                 </div>
                                             </td>
-                                            <td className="p-3">{s.roll_number || '-'}</td>
+                                            <td className="p-3">{highlightText(s.roll_number, filters.keyword) || '-'}</td>
                                             <td className="p-3">{age}</td>
                                             <td className="p-3">
                                                 <div>
-                                                    <span>{guardian.name}</span>
-                                                    {guardian.phone && <div className="text-xs text-emerald-600">{guardian.phone}</div>}
+                                                    <span>{highlightText(guardian.name, filters.keyword)}</span>
+                                                    {guardian.phone && <div className="text-xs text-emerald-600">{highlightText(guardian.phone, filters.keyword)}</div>}
                                                 </div>
                                             </td>
                                             <td className="p-3 min-w-[140px]">
@@ -676,17 +729,18 @@ const StudentDetails = () => {
                         </table>
                     </div>
 
-                    <div className="flex items-center justify-between p-4 border-t">
-                        <span className="text-sm text-muted-foreground">Showing {((currentPage - 1) * pageSize) + 1} to {Math.min(currentPage * pageSize, students.length)} of {students.length} entries</span>
-                        <div className="flex items-center gap-2">
-                            <Select value={pageSize.toString()} onValueChange={v => { setPageSize(Number(v)); setCurrentPage(1); }}>
-                                <SelectTrigger className="w-20 h-8"><SelectValue /></SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="10">10</SelectItem>
-                                    <SelectItem value="25">25</SelectItem>
-                                    <SelectItem value="50">50</SelectItem>
-                                    <SelectItem value="100">100</SelectItem>
-                                </SelectContent>
+                    {students.length > 0 && (
+                        <div className="flex items-center justify-between p-4 border-t">
+                            <span className="text-sm text-muted-foreground">Showing {((currentPage - 1) * pageSize) + 1} to {Math.min(currentPage * pageSize, students.length)} of {students.length} entries</span>
+                            <div className="flex items-center gap-2">
+                                <Select value={pageSize.toString()} onValueChange={v => { setPageSize(Number(v)); setCurrentPage(1); }}>
+                                    <SelectTrigger className="w-20 h-8"><SelectValue /></SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="10">10</SelectItem>
+                                        <SelectItem value="25">25</SelectItem>
+                                        <SelectItem value="50">50</SelectItem>
+                                        <SelectItem value="100">100</SelectItem>
+                                    </SelectContent>
                             </Select>
                             <div className="flex items-center gap-1">
                                 <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1}><ChevronLeft className="h-4 w-4" /></Button>
@@ -694,15 +748,28 @@ const StudentDetails = () => {
                                 <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages}><ChevronRight className="h-4 w-4" /></Button>
                             </div>
                         </div>
+                        </div>
+                    )}
+                </Card>
+            )}
+
+            {students.length === 0 && !loading && allStudents.length === 0 && (
+                <Card className="p-10">
+                    <div className="text-center text-muted-foreground">
+                        <Users className="h-12 w-12 mx-auto mb-4 opacity-30" />
+                        <p>No students found. Click Refresh to load students.</p>
                     </div>
                 </Card>
             )}
 
-            {students.length === 0 && !loading && (
+            {students.length === 0 && !loading && allStudents.length > 0 && filters.keyword && (
                 <Card className="p-10">
                     <div className="text-center text-muted-foreground">
-                        <Users className="h-12 w-12 mx-auto mb-4 opacity-30" />
-                        <p>No students found. Please select a class and click Search.</p>
+                        <Search className="h-12 w-12 mx-auto mb-4 opacity-30" />
+                        <p>No students match "{filters.keyword}"</p>
+                        <Button variant="link" className="mt-2" onClick={() => handleFilterChange('keyword', '')}>
+                            Clear search
+                        </Button>
                     </div>
                 </Card>
             )}

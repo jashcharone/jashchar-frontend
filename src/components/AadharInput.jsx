@@ -15,7 +15,7 @@ const formatAadhar = (value) => {
   return parts.join(' ');
 };
 
-const AadharInput = ({ value, onChange, label, required, checkDuplicates = false, initialError = '', hideLabel = false, className }) => {
+const AadharInput = ({ value, onChange, label, required, checkDuplicates = false, organizationId = null, initialError = '', hideLabel = false, className }) => {
   const [formattedValue, setFormattedValue] = useState(formatAadhar(value || ''));
   const [isChecking, setIsChecking] = useState(false);
   const [error, setError] = useState(initialError);
@@ -29,8 +29,8 @@ const AadharInput = ({ value, onChange, label, required, checkDuplicates = false
     }
     setIsChecking(true);
     try {
-      // Check in student_profiles table with organization & branch details
-      const { data, error: dbError } = await supabase
+      // Check in student_profiles table - ONLY within same organization
+      let query = supabase
         .from('student_profiles')
         .select(`
           id, 
@@ -40,9 +40,14 @@ const AadharInput = ({ value, onChange, label, required, checkDuplicates = false
           organizations:organization_id (name),
           branches:branch_id (name)
         `)
-        .eq('aadhar_no', aadharNumber)
-        .limit(1)
-        .maybeSingle();
+        .eq('aadhar_no', aadharNumber);
+      
+      // 🔒 IMPORTANT: Only check duplicates within SAME organization
+      if (organizationId) {
+        query = query.eq('organization_id', organizationId);
+      }
+      
+      const { data, error: dbError } = await query.limit(1).maybeSingle();
 
       if (dbError) {
         throw dbError;
@@ -51,9 +56,7 @@ const AadharInput = ({ value, onChange, label, required, checkDuplicates = false
       if (data) {
         const studentName = data.full_name || `${data.first_name || ''} ${data.last_name || ''}`.trim();
         const branchName = data.branches?.name || '';
-        const orgName = data.organizations?.name || '';
-        const location = branchName ? ` (${branchName}${orgName ? ` - ${orgName}` : ''})` : '';
-        setError(`This Aadhar number is already registered to ${studentName || 'another student'}${location}.`);
+        setError(`This Aadhar number is already registered to ${studentName || 'another student'} (${branchName}).`);
       } else {
         setError('');
       }
@@ -63,7 +66,7 @@ const AadharInput = ({ value, onChange, label, required, checkDuplicates = false
     } finally {
       setIsChecking(false);
     }
-  }, [checkDuplicates]);
+  }, [checkDuplicates, organizationId]);
 
   useEffect(() => {
     // This effect ensures that if an initial error is passed, it is displayed.

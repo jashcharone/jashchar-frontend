@@ -7,7 +7,7 @@ export const useAadharValidation = (initialError = '') => {
   const [duplicateDetails, setDuplicateDetails] = useState(null); // Store full duplicate info
   const validationTimeout = useRef(null);
 
-  const validateAadhar = useCallback((aadharNumber, currentStudentId = null) => {
+  const validateAadhar = useCallback((aadharNumber, currentStudentId = null, organizationId = null) => {
     clearTimeout(validationTimeout.current);
     setError('');
     setDuplicateDetails(null);
@@ -20,7 +20,7 @@ export const useAadharValidation = (initialError = '') => {
     setIsChecking(true);
     validationTimeout.current = setTimeout(async () => {
       try {
-        // Check in student_profiles table with organization & branch details
+        // Check in student_profiles table - ONLY within same organization
         let query = supabase
           .from('student_profiles')
           .select(`
@@ -29,11 +29,18 @@ export const useAadharValidation = (initialError = '') => {
             last_name, 
             full_name,
             school_code,
+            organization_id,
             organizations:organization_id (id, name, code),
             branches:branch_id (id, name, code)
           `)
-          .eq('aadhar_no', aadharNumber)
-          .limit(1);
+          .eq('aadhar_no', aadharNumber);
+        
+        // 🔒 IMPORTANT: Only check duplicates within SAME organization
+        if (organizationId) {
+          query = query.eq('organization_id', organizationId);
+        }
+        
+        query = query.limit(1);
         
         // Exclude current student (for edit mode)
         if (currentStudentId) {

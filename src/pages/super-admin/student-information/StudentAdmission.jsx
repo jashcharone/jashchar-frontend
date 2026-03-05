@@ -630,9 +630,11 @@ const StudentAdmission = () => {
                   value={formData[actualKey] || ''} 
                   onChange={val => {
                     handleChange(actualKey, val);
-                    if(actualKey === 'aadhar_no') validateAadhar(val);
+                    // 🔐 Check duplicates only within SAME organization
+                    if(actualKey === 'aadhar_no') validateAadhar(val, null, organizationId);
                   }} 
-                  checkDuplicates={actualKey === 'aadhar_no'} 
+                  checkDuplicates={actualKey === 'aadhar_no'}
+                  organizationId={organizationId}
                   hideLabel={true}
                   className="h-11"
                 />

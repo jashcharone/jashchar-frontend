@@ -14,7 +14,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Progress } from '@/components/ui/progress';
-import { Search, Eye, Edit, Trash2, Users, Copy, FileDown, Printer, LayoutGrid, ChevronLeft, ChevronRight, UserX, Loader2, RefreshCcw } from 'lucide-react';
+import { Search, Eye, Edit, Trash2, Users, Copy, FileDown, Printer, LayoutGrid, ChevronLeft, ChevronRight, UserX, Loader2, RefreshCcw, Bus, Home } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -49,6 +49,8 @@ const StudentDetails = () => {
     const [feesData, setFeesData] = useState({}); // { studentId: { total, paid, progress } }
     const [initialLoadDone, setInitialLoadDone] = useState(false); // For auto-load on page open
     const [allStudents, setAllStudents] = useState([]); // Store all fetched students for client-side filtering
+    const [hostelAssignments, setHostelAssignments] = useState({}); // { studentId: { hostel_name, room_no } }
+    const [transportAssignments, setTransportAssignments] = useState({}); // { studentId: { route, pickup_point } }
     const [visibleColumns, setVisibleColumns] = useState({
         photo: true, name: true, class: true, section: true, gender: true, 
         mobile: true, register: true, roll: true, age: true, guardian: true, fees: true
@@ -340,6 +342,8 @@ const StudentDetails = () => {
             // Fetch fees progress for all students
             const studentIds = studentsData.map(s => s.id);
             await fetchFeesProgress(studentIds);
+            await fetchHostelAssignments(studentIds);
+            await fetchTransportAssignments(studentIds);
         } else {
             toast({ title: "No students found." });
         }
@@ -378,17 +382,50 @@ const StudentDetails = () => {
                 `)
                 .in('student_id', studentIds);
             
-            // Get payments for students (fee_payments has no status column, filter by reverted_at being null)
+            // Get payments for students including discount and fine
             const { data: payments } = await supabase
                 .from('fee_payments')
-                .select('student_id, amount')
+                .select('student_id, amount, discount_amount, fine_paid')
                 .in('student_id', studentIds)
                 .is('reverted_at', null);
+            
+            // Get transport details for fee calculation
+            const { data: transportDetails } = await supabase
+                .from('student_transport_details')
+                .select('student_id, monthly_fee')
+                .in('student_id', studentIds);
+            
+            // Get transport payments
+            const { data: transportPayments } = await supabase
+                .from('transport_fee_payments')
+                .select('student_id, amount, discount_amount, fine_paid')
+                .in('student_id', studentIds)
+                .is('reverted_at', null);
+            
+            // Get hostel details for fee calculation
+            const { data: hostelDetails } = await supabase
+                .from('student_hostel_details')
+                .select('student_id, hostel_fee, billing_cycle')
+                .in('student_id', studentIds);
+            
+            // Get hostel payments
+            const { data: hostelPayments } = await supabase
+                .from('hostel_fee_payments')
+                .select('student_id, amount, discount_amount, fine_paid')
+                .in('student_id', studentIds)
+                .is('reverted_at', null);
+            
+            // Get approved refunds
+            const { data: refunds } = await supabase
+                .from('fee_refunds')
+                .select('student_id, refund_amount')
+                .in('student_id', studentIds)
+                .eq('status', 'approved');
             
             // Calculate progress per student
             const progressMap = {};
             studentIds.forEach(id => {
-                progressMap[id] = { total: 0, paid: 0, progress: 0 };
+                progressMap[id] = { total: 0, paid: 0, discount: 0, fine: 0, refunded: 0, balance: 0, progress: 0 };
             });
             
             // Sum up total fees from allocations
@@ -401,24 +438,129 @@ const StudentDetails = () => {
                 });
             }
             
-            // Sum up paid amount from payments
-            if (payments) {
-                payments.forEach(pay => {
-                    if (progressMap[pay.student_id]) {
-                        progressMap[pay.student_id].paid += parseFloat(pay.amount || 0);
+            // Add transport fees to total (monthly * 12)
+            if (transportDetails) {
+                transportDetails.forEach(t => {
+                    if (progressMap[t.student_id]) {
+                        progressMap[t.student_id].total += parseFloat(t.monthly_fee || 0) * 12;
                     }
                 });
             }
             
-            // Calculate percentage (cap at 100% to prevent overflow from migration data)
+            // Add hostel fees to total based on billing cycle
+            if (hostelDetails) {
+                hostelDetails.forEach(h => {
+                    const fee = parseFloat(h.hostel_fee || 0);
+                    const billingCycle = h.billing_cycle || 'monthly';
+                    let totalHostelFee = fee;
+                    if (billingCycle === 'monthly') totalHostelFee = fee * 12;
+                    else if (billingCycle === 'quarterly') totalHostelFee = fee * 4;
+                    else if (billingCycle === 'half_yearly') totalHostelFee = fee * 2;
+                    if (progressMap[h.student_id]) {
+                        progressMap[h.student_id].total += totalHostelFee;
+                    }
+                });
+            }
+            
+            // Sum up paid amount, discount and fine from academic payments
+            if (payments) {
+                payments.forEach(pay => {
+                    if (progressMap[pay.student_id]) {
+                        progressMap[pay.student_id].paid += parseFloat(pay.amount || 0);
+                        progressMap[pay.student_id].discount += parseFloat(pay.discount_amount || 0);
+                        progressMap[pay.student_id].fine += parseFloat(pay.fine_paid || 0);
+                    }
+                });
+            }
+            
+            // Add transport payments
+            if (transportPayments) {
+                transportPayments.forEach(pay => {
+                    if (progressMap[pay.student_id]) {
+                        progressMap[pay.student_id].paid += parseFloat(pay.amount || 0);
+                        progressMap[pay.student_id].discount += parseFloat(pay.discount_amount || 0);
+                        progressMap[pay.student_id].fine += parseFloat(pay.fine_paid || 0);
+                    }
+                });
+            }
+            
+            // Add hostel payments
+            if (hostelPayments) {
+                hostelPayments.forEach(pay => {
+                    if (progressMap[pay.student_id]) {
+                        progressMap[pay.student_id].paid += parseFloat(pay.amount || 0);
+                        progressMap[pay.student_id].discount += parseFloat(pay.discount_amount || 0);
+                        progressMap[pay.student_id].fine += parseFloat(pay.fine_paid || 0);
+                    }
+                });
+            }
+            
+            // Add refunds
+            if (refunds) {
+                refunds.forEach(refund => {
+                    if (progressMap[refund.student_id]) {
+                        progressMap[refund.student_id].refunded += parseFloat(refund.refund_amount || 0);
+                    }
+                });
+            }
+            
+            // Calculate balance and progress
+            // Balance = Total + Fine - Paid - Discount + Refunded
             Object.keys(progressMap).forEach(id => {
-                const { total, paid } = progressMap[id];
-                progressMap[id].progress = total > 0 ? Math.min(100, Math.round((paid / total) * 100)) : 0;
+                const { total, paid, discount, fine, refunded } = progressMap[id];
+                progressMap[id].balance = Math.max(0, total + fine - paid - discount + refunded);
+                progressMap[id].progress = (total + fine) > 0 ? Math.min(100, Math.round(((paid + discount) / (total + fine)) * 100)) : 0;
             });
             
             setFeesData(progressMap);
         } catch (error) {
             console.error('Error fetching fees progress:', error);
+        }
+    };
+
+    // Fetch hostel assignments for students
+    const fetchHostelAssignments = async (studentIds) => {
+        try {
+            const { data: hostelData } = await supabase
+                .from('student_hostel_details')
+                .select('student_id, room_no, hostel:hostels(name)')
+                .in('student_id', studentIds);
+            
+            const hostelMap = {};
+            if (hostelData) {
+                hostelData.forEach(h => {
+                    hostelMap[h.student_id] = {
+                        hostel_name: h.hostel?.name || 'Hostel',
+                        room_no: h.room_no || '-'
+                    };
+                });
+            }
+            setHostelAssignments(hostelMap);
+        } catch (error) {
+            console.error('Error fetching hostel assignments:', error);
+        }
+    };
+
+    // Fetch transport assignments for students
+    const fetchTransportAssignments = async (studentIds) => {
+        try {
+            const { data: transportData } = await supabase
+                .from('student_transport_details')
+                .select('student_id, route:transport_routes(route_title), pickup:transport_pickup_points(name)')
+                .in('student_id', studentIds);
+            
+            const transportMap = {};
+            if (transportData) {
+                transportData.forEach(t => {
+                    transportMap[t.student_id] = {
+                        route: t.route?.route_title || 'Transport',
+                        pickup_point: t.pickup?.name || '-'
+                    };
+                });
+            }
+            setTransportAssignments(transportMap);
+        } catch (error) {
+            console.error('Error fetching transport assignments:', error);
         }
     };
 
@@ -637,6 +779,8 @@ const StudentDetails = () => {
                                     <th className="p-3 text-left font-medium">Roll</th>
                                     <th className="p-3 text-left font-medium">Age</th>
                                     <th className="p-3 text-left font-medium">Father/Guardian</th>
+                                    <th className="p-3 text-center font-medium">Hostel</th>
+                                    <th className="p-3 text-center font-medium">Transport</th>
                                     <th className="p-3 text-left font-medium">Fees Progress</th>
                                     <th className="p-3 text-center font-medium">Action</th>
                                 </tr>
@@ -645,7 +789,7 @@ const StudentDetails = () => {
                                 {paginatedStudents.map((s) => {
                                     const guardian = getGuardianInfo(s);
                                     const age = calculateAge(s.date_of_birth);
-                                    const studentFees = feesData[s.id] || { total: 0, paid: 0, progress: 0 };
+                                    const studentFees = feesData[s.id] || { total: 0, paid: 0, discount: 0, fine: 0, refunded: 0, balance: 0, progress: 0 };
                                     const feesProgress = studentFees.progress;
                                     
                                     return (
@@ -685,13 +829,55 @@ const StudentDetails = () => {
                                                     {guardian.phone && <div className="text-xs text-emerald-600">{highlightText(guardian.phone, filters.keyword)}</div>}
                                                 </div>
                                             </td>
-                                            <td className="p-3 min-w-[140px]">
-                                                <div className="flex items-center gap-2" title={`Paid: ₹${studentFees.paid.toLocaleString()} / Total: ₹${studentFees.total.toLocaleString()}`}>
-                                                    <Progress 
-                                                        value={feesProgress} 
-                                                        className={`h-2 flex-1 ${feesProgress === 100 ? '[&>div]:bg-green-500' : feesProgress > 0 ? '[&>div]:bg-amber-500' : '[&>div]:bg-red-400'}`} 
-                                                    />
-                                                    <span className={`text-xs font-medium w-10 ${feesProgress === 100 ? 'text-green-600' : feesProgress > 0 ? 'text-amber-600' : 'text-red-500'}`}>{feesProgress}%</span>
+                                            <td className="p-3 text-center">
+                                                {hostelAssignments[s.id] ? (
+                                                    <div className="inline-flex items-center gap-1 px-2 py-1 bg-purple-100 text-purple-700 rounded-full dark:bg-purple-900 dark:text-purple-300" title={`${hostelAssignments[s.id].hostel_name} - Room ${hostelAssignments[s.id].room_no}`}>
+                                                        <Home className="h-3.5 w-3.5" />
+                                                        <span className="text-xs font-medium">Yes</span>
+                                                    </div>
+                                                ) : (
+                                                    <span className="text-xs text-muted-foreground">-</span>
+                                                )}
+                                            </td>
+                                            <td className="p-3 text-center">
+                                                {transportAssignments[s.id] ? (
+                                                    <div className="inline-flex items-center gap-1 px-2 py-1 bg-blue-100 text-blue-700 rounded-full dark:bg-blue-900 dark:text-blue-300" title={`${transportAssignments[s.id].route} - ${transportAssignments[s.id].pickup_point}`}>
+                                                        <Bus className="h-3.5 w-3.5" />
+                                                        <span className="text-xs font-medium">Yes</span>
+                                                    </div>
+                                                ) : (
+                                                    <span className="text-xs text-muted-foreground">-</span>
+                                                )}
+                                            </td>
+                                            <td className="p-3 min-w-[180px]">
+                                                <div className="space-y-1" title={`Total: ₹${studentFees.total.toLocaleString()} | Paid: ₹${studentFees.paid.toLocaleString()} | Balance: ₹${studentFees.balance.toLocaleString()}`}>
+                                                    <div className="flex items-center gap-2">
+                                                        <Progress 
+                                                            value={feesProgress} 
+                                                            className={`h-2 flex-1 ${feesProgress === 100 ? '[&>div]:bg-green-500' : feesProgress > 0 ? '[&>div]:bg-amber-500' : '[&>div]:bg-red-400'}`} 
+                                                        />
+                                                        <span className={`text-xs font-medium w-10 ${feesProgress === 100 ? 'text-green-600' : feesProgress > 0 ? 'text-amber-600' : 'text-red-500'}`}>{feesProgress}%</span>
+                                                    </div>
+                                                    <div className="flex items-center justify-between text-xs">
+                                                        <span className="text-green-600">₹{studentFees.paid.toLocaleString('en-IN')}</span>
+                                                        <span className="text-muted-foreground">/</span>
+                                                        <span className="text-muted-foreground">₹{studentFees.total.toLocaleString('en-IN')}</span>
+                                                    </div>
+                                                    {/* Show discount, fine, and refund if present */}
+                                                    <div className="flex flex-wrap gap-1 text-[10px]">
+                                                        {studentFees.discount > 0 && (
+                                                            <span className="text-amber-600" title="Discount">D:₹{studentFees.discount.toLocaleString('en-IN')}</span>
+                                                        )}
+                                                        {studentFees.fine > 0 && (
+                                                            <span className="text-orange-600" title="Fine">F:₹{studentFees.fine.toLocaleString('en-IN')}</span>
+                                                        )}
+                                                        {studentFees.refunded > 0 && (
+                                                            <span className="text-blue-600" title="Refund">R:₹{studentFees.refunded.toLocaleString('en-IN')}</span>
+                                                        )}
+                                                    </div>
+                                                    {studentFees.balance > 0 && (
+                                                        <div className="text-xs text-red-600 font-medium">Due: ₹{studentFees.balance.toLocaleString('en-IN')}</div>
+                                                    )}
                                                 </div>
                                             </td>
                                             <td className="p-3">

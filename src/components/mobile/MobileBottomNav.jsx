@@ -27,7 +27,7 @@ const getQuickActionsForRole = (role) => {
     { label: 'Transport', icon: Bus, path: '/school/transport/routes', color: '#0284C7' },
     { label: 'Library', icon: Library, path: '/school/library/book-list', color: '#B45309' },
     { label: 'Staff', icon: Briefcase, path: '/school/human-resource/staff-directory', color: '#BE185D' },
-    { label: 'Reports', icon: BarChart3, path: '/admin/advanced-analytics', color: '#0D9488' },
+    { label: 'Reports', icon: BarChart3, path: '/super-admin/advanced-analytics', color: '#0D9488' },
     { label: 'Income', icon: IndianRupee, path: '/school/income/income', color: '#16A34A' },
     { label: 'Expenses', icon: IndianRupee, path: '/school/expense/expense', color: '#EA580C' },
     { label: 'Front Office', icon: Building, path: '/school/front-office/admission-enquiry', color: '#6366F1' },

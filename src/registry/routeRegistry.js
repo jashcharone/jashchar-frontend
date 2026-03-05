@@ -79,6 +79,7 @@ export const ROUTES = {
   },
   SUPER_ADMIN: {
     DASHBOARD: '/super-admin/dashboard',
+    ADVANCED_ANALYTICS: '/super-admin/advanced-analytics',
     PROFILE: '/super-admin/profile',
     RESET_PASSWORD: '/super-admin/reset-password',
     MY_SUBSCRIPTION: '/super-admin/my-subscription',

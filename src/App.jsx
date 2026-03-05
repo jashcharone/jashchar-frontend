@@ -1092,7 +1092,7 @@ function App() {
 
             {/* ? Advanced Analytics Dashboard - School Admins */}
             <Route
-              path="/admin/advanced-analytics"
+              path="/super-admin/advanced-analytics"
               element={
                 <ProtectedRoute allowedRoles={['super_admin', 'admin']}>
                   <AdvancedAnalytics />

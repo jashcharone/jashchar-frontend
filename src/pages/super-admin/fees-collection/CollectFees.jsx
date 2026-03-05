@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useCallback } from 'react';
+﻿import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import DashboardLayout from '@/components/DashboardLayout';
 import { supabase } from '@/lib/customSupabaseClient';
@@ -10,7 +10,8 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
-import { Search, Loader2, IndianRupee, Users, AlertCircle, CheckCircle2, Clock, Phone } from 'lucide-react';
+import { Search, Loader2, IndianRupee, Users, AlertCircle, CheckCircle2, Clock, Phone, RefreshCcw, Bus, Home } from 'lucide-react';
+import { sortClasses, sortSections } from '@/utils/classOrderUtils';
 
 
 const CollectFees = () => {
@@ -27,13 +28,17 @@ const CollectFees = () => {
 
     const [classes, setClasses] = useState([]);
     const [sections, setSections] = useState([]);
-    const [selectedClass, setSelectedClass] = useState('');
+    const [selectedClass, setSelectedClass] = useState('all');
     const [selectedSection, setSelectedSection] = useState('all');
     const [keyword, setKeyword] = useState('');
     const [students, setStudents] = useState([]);
+    const [allStudents, setAllStudents] = useState([]); // Store all fetched students for client-side filtering
     const [loading, setLoading] = useState(false);
     const [searched, setSearched] = useState(false);
+    const [initialLoadDone, setInitialLoadDone] = useState(false); // For auto-load on page open
     const [feesData, setFeesData] = useState({}); // { studentId: { total, paid, balance, progress } }
+    const [hostelAssignments, setHostelAssignments] = useState({}); // { studentId: { hostel_name, room_no } }
+    const [transportAssignments, setTransportAssignments] = useState({}); // { studentId: { route, pickup_point } }
 
     // DEBUG: Log branch resolution
     console.log('[CollectFees] branchId:', branchId, '| selectedBranch:', selectedBranch?.id, '| branchLoading:', branchLoading);
@@ -63,17 +68,24 @@ const CollectFees = () => {
             if (classError) {
                 toast({ variant: 'destructive', title: 'Error fetching classes' });
             } else {
-                setClasses(classData || []);
+                setClasses(sortClasses(classData || []));
             }
         };
         
         fetchClasses();
     }, [branchId, branchLoading, toast]);
 
+    // Auto-load: Set initial load done when classes are loaded
+    useEffect(() => {
+        if (classes.length > 0 && !initialLoadDone) {
+            setInitialLoadDone(true);
+        }
+    }, [classes, initialLoadDone]);
+
     // Fetch sections when selectedClass changes
     useEffect(() => {
         const fetchSections = async () => {
-            if (!selectedClass) {
+            if (!selectedClass || selectedClass === 'all') {
                 setSections([]);
                 setSelectedSection('all');
                 return;
@@ -89,7 +101,8 @@ const CollectFees = () => {
                 console.error('Error fetching sections:', error);
                 toast({ variant: 'destructive', title: 'Error fetching sections' });
             } else {
-                setSections(data.map(item => item.sections).filter(Boolean));
+                const sectionsList = data.map(item => item.sections).filter(Boolean);
+                setSections(sortSections(sectionsList));
                 setSelectedSection('all'); // Reset section selection
             }
         };
@@ -97,11 +110,30 @@ const CollectFees = () => {
         fetchSections();
     }, [selectedClass, toast]);
 
-    const handleSearch = async () => {
-        if (!selectedClass) {
-            toast({ variant: 'destructive', title: 'Class is required' });
-            return;
+    // Client-side instant search filter
+    const filteredStudents = useMemo(() => {
+        if (!keyword || !keyword.trim()) {
+            return allStudents;
         }
+        const searchTerm = keyword.toLowerCase().trim();
+        return allStudents.filter(s => {
+            const fullName = (s.full_name || '').toLowerCase();
+            const schoolCode = (s.school_code || '').toLowerCase();
+            const fatherName = (s.father_name || '').toLowerCase();
+            const phone = (s.father_phone || s.mother_phone || s.guardian_phone || s.phone || '').toLowerCase();
+            return fullName.includes(searchTerm) || 
+                   schoolCode.includes(searchTerm) || 
+                   fatherName.includes(searchTerm) ||
+                   phone.includes(searchTerm);
+        });
+    }, [allStudents, keyword]);
+
+    // Update students display when filtered results change
+    useEffect(() => {
+        setStudents(filteredStudents);
+    }, [filteredStudents]);
+
+    const handleSearch = async () => {
         if (!branchId) {
             toast({ variant: 'destructive', title: 'Branch not selected' });
             return;
@@ -117,32 +149,45 @@ const CollectFees = () => {
             let query = supabase
                 .from('student_profiles')
                 .select('id, full_name, father_name, mother_name, phone, father_phone, mother_phone, guardian_phone, school_code, session_id, date_of_birth, gender, photo_url, admission_date, classes!student_profiles_class_id_fkey(name), sections!student_profiles_section_id_fkey(name)')
-                .eq('branch_id', branchId)
-                .eq('class_id', selectedClass);
+                .eq('branch_id', branchId);
             
             // Filter by branch's active session
             if (activeSessionId) {
                 query = query.eq('session_id', activeSessionId);
             }
 
+            // Only add class filter if specific class selected (not 'all')
+            if (selectedClass && selectedClass !== 'all') {
+                query = query.eq('class_id', selectedClass);
+            }
+
             if (selectedSection && selectedSection !== 'all') {
                 query = query.eq('section_id', selectedSection);
             }
 
-            if (keyword) {
-                query = query.or(`full_name.ilike.%${keyword}%,school_code.ilike.%${keyword}%`);
-            }
+            // NOTE: Keyword search is done client-side for instant results
+            // No server-side keyword filter needed
 
             const { data, error } = await query.order('full_name');
 
             if (error) throw error;
+            
+            // Store all students for client-side instant search
+            setAllStudents(data || []);
             setStudents(data || []);
+            
+            if (data && data.length > 0) {
+                toast({ title: `${data.length} students found.`});
+            } else {
+                toast({ title: "No students found." });
+            }
             
             // ====================================================================
             // AUTO-ALLOCATE FEES: Based on fee_group_class_assignments for this class
             // This ensures ALL students in the class get their fees allocated
+            // Only run when a specific class is selected (not 'all')
             // ====================================================================
-            if (data && data.length > 0 && selectedClass) {
+            if (data && data.length > 0 && selectedClass && selectedClass !== 'all') {
                 try {
                     // Step 1: Get fee_group_class_assignments for this class
                     let assignmentsQuery = supabase
@@ -227,7 +272,10 @@ const CollectFees = () => {
             
             // Fetch fees progress for found students
             if (data && data.length > 0) {
-                await fetchFeesProgress(data.map(s => s.id));
+                const studentIds = data.map(s => s.id);
+                await fetchFeesProgress(studentIds);
+                await fetchHostelAssignments(studentIds);
+                await fetchTransportAssignments(studentIds);
             } else {
                 setFeesData({});
             }
@@ -235,10 +283,25 @@ const CollectFees = () => {
             console.error('Search error:', error);
             toast({ variant: 'destructive', title: 'Error searching students', description: error.message });
             setStudents([]);
+            setAllStudents([]);
         } finally {
             setLoading(false);
         }
     };
+
+    // Auto-search: Trigger search automatically on page load (with 'all' classes default)
+    useEffect(() => {
+        if (initialLoadDone && selectedClass === 'all' && students.length === 0 && !loading) {
+            handleSearch();
+        }
+    }, [initialLoadDone]);
+
+    // Re-fetch when session changes from header dropdown
+    useEffect(() => {
+        if (currentSessionId && initialLoadDone && selectedClass) {
+            handleSearch();
+        }
+    }, [currentSessionId]);
 
     // Fetch fee allocations and payments for fee progress display (including transport & hostel)
     const fetchFeesProgress = async (studentIds) => {
@@ -249,10 +312,10 @@ const CollectFees = () => {
                     .from('student_fee_allocations')
                     .select('student_id, fee_master:fee_masters(amount)')
                     .in('student_id', studentIds),
-                // Academic fee payments (with discount)
+                // Academic fee payments (with discount and fine)
                 supabase
                     .from('fee_payments')
-                    .select('student_id, amount, discount_amount')
+                    .select('student_id, amount, discount_amount, fine_paid')
                     .in('student_id', studentIds)
                     .is('reverted_at', null),
                 // Transport fee details
@@ -261,10 +324,10 @@ const CollectFees = () => {
                     .select('student_id, transport_fee, billing_cycle')
                     .in('student_id', studentIds)
                     .eq('branch_id', branchId),
-                // Transport fee payments (with discount)
+                // Transport fee payments (with discount and fine)
                 supabase
                     .from('transport_fee_payments')
-                    .select('student_id, amount, discount_amount')
+                    .select('student_id, amount, discount_amount, fine_paid')
                     .in('student_id', studentIds)
                     .eq('branch_id', branchId)
                     .is('reverted_at', null),
@@ -274,10 +337,10 @@ const CollectFees = () => {
                     .select('student_id, hostel_fee, billing_cycle')
                     .in('student_id', studentIds)
                     .eq('branch_id', branchId),
-                // Hostel fee payments (with discount)
+                // Hostel fee payments (with discount and fine)
                 supabase
                     .from('hostel_fee_payments')
-                    .select('student_id, amount, discount_amount')
+                    .select('student_id, amount, discount_amount, fine_paid')
                     .in('student_id', studentIds)
                     .eq('branch_id', branchId)
                     .is('reverted_at', null),
@@ -292,7 +355,7 @@ const CollectFees = () => {
 
             const progressMap = {};
             studentIds.forEach(id => {
-                progressMap[id] = { total: 0, paid: 0, discount: 0, refunded: 0, balance: 0, progress: 0 };
+                progressMap[id] = { total: 0, paid: 0, discount: 0, fine: 0, refunded: 0, balance: 0, progress: 0 };
             });
 
             // Add academic fee allocations
@@ -305,12 +368,13 @@ const CollectFees = () => {
                 });
             }
 
-            // Add academic fee payments (with discount)
+            // Add academic fee payments (with discount and fine)
             if (payRes.data) {
                 payRes.data.forEach(pay => {
                     if (progressMap[pay.student_id]) {
                         progressMap[pay.student_id].paid += parseFloat(pay.amount || 0);
                         progressMap[pay.student_id].discount += parseFloat(pay.discount_amount || 0);
+                        progressMap[pay.student_id].fine += parseFloat(pay.fine_paid || 0);
                     }
                 });
             }
@@ -336,12 +400,13 @@ const CollectFees = () => {
                 });
             }
 
-            // Add transport fee payments (with discount)
+            // Add transport fee payments (with discount and fine)
             if (transportPayRes.data) {
                 transportPayRes.data.forEach(pay => {
                     if (progressMap[pay.student_id]) {
                         progressMap[pay.student_id].paid += parseFloat(pay.amount || 0);
                         progressMap[pay.student_id].discount += parseFloat(pay.discount_amount || 0);
+                        progressMap[pay.student_id].fine += parseFloat(pay.fine_paid || 0);
                     }
                 });
             }
@@ -367,12 +432,13 @@ const CollectFees = () => {
                 });
             }
 
-            // Add hostel fee payments (with discount)
+            // Add hostel fee payments (with discount and fine)
             if (hostelPayRes.data) {
                 hostelPayRes.data.forEach(pay => {
                     if (progressMap[pay.student_id]) {
                         progressMap[pay.student_id].paid += parseFloat(pay.amount || 0);
                         progressMap[pay.student_id].discount += parseFloat(pay.discount_amount || 0);
+                        progressMap[pay.student_id].fine += parseFloat(pay.fine_paid || 0);
                     }
                 });
             }
@@ -387,17 +453,75 @@ const CollectFees = () => {
             }
 
             // Calculate balance and progress
-            // Balance = Total - Paid - Discount + Refunded (refund adds back to balance)
+            // Balance = Total + Fine - Paid - Discount + Refunded (refund adds back to balance, fine adds to total due)
             Object.keys(progressMap).forEach(id => {
-                const { total, paid, discount, refunded } = progressMap[id];
-                progressMap[id].balance = Math.max(0, total - paid - discount + refunded);
-                progressMap[id].progress = total > 0 ? Math.min(100, Math.round(((paid + discount) / total) * 100)) : 0;
+                const { total, paid, discount, fine, refunded } = progressMap[id];
+                progressMap[id].balance = Math.max(0, total + fine - paid - discount + refunded);
+                progressMap[id].progress = (total + fine) > 0 ? Math.min(100, Math.round(((paid + discount) / (total + fine)) * 100)) : 0;
             });
 
             setFeesData(progressMap);
         } catch (error) {
             console.error('Error fetching fees progress:', error);
         }
+    };
+
+    // Fetch hostel assignments for students
+    const fetchHostelAssignments = async (studentIds) => {
+        try {
+            const { data: hostelData } = await supabase
+                .from('student_hostel_details')
+                .select('student_id, room_no, hostel:hostels(name)')
+                .in('student_id', studentIds);
+            
+            const hostelMap = {};
+            if (hostelData) {
+                hostelData.forEach(h => {
+                    hostelMap[h.student_id] = {
+                        hostel_name: h.hostel?.name || 'Hostel',
+                        room_no: h.room_no || '-'
+                    };
+                });
+            }
+            setHostelAssignments(hostelMap);
+        } catch (error) {
+            console.error('Error fetching hostel assignments:', error);
+        }
+    };
+
+    // Fetch transport assignments for students
+    const fetchTransportAssignments = async (studentIds) => {
+        try {
+            const { data: transportData } = await supabase
+                .from('student_transport_details')
+                .select('student_id, route:transport_routes(route_title), pickup:transport_pickup_points(name)')
+                .in('student_id', studentIds);
+            
+            const transportMap = {};
+            if (transportData) {
+                transportData.forEach(t => {
+                    transportMap[t.student_id] = {
+                        route: t.route?.route_title || 'Transport',
+                        pickup_point: t.pickup?.name || '-'
+                    };
+                });
+            }
+            setTransportAssignments(transportMap);
+        } catch (error) {
+            console.error('Error fetching transport assignments:', error);
+        }
+    };
+
+    // 🔍 Highlight search text in results
+    const highlightText = (text, searchTerm) => {
+        if (!searchTerm || !text) return text;
+        const regex = new RegExp(`(${searchTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+        const parts = String(text).split(regex);
+        return parts.map((part, i) => 
+            regex.test(part) 
+                ? <mark key={i} className="bg-yellow-300 dark:bg-yellow-600 px-0.5 rounded">{part}</mark>
+                : part
+        );
     };
 
     // Summary stats for the searched students
@@ -440,19 +564,20 @@ const CollectFees = () => {
                     <CardTitle>Select Criteria</CardTitle>
                 </CardHeader>
                 <CardContent>
-                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+                    <div className="grid grid-cols-1 md:grid-cols-5 gap-4 items-end">
                         <div className="space-y-2">
-                            <label className="text-sm font-medium flex items-center">Class <span className="text-red-500 ml-1">*</span></label>
+                            <label className="text-sm font-medium">Class</label>
                             <Select value={selectedClass} onValueChange={setSelectedClass}>
                                 <SelectTrigger><SelectValue placeholder="Select Class" /></SelectTrigger>
                                 <SelectContent>
+                                    <SelectItem value="all">All Classes</SelectItem>
                                     {classes.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
                                 </SelectContent>
                             </Select>
                         </div>
                         <div className="space-y-2">
                              <label className="text-sm font-medium">Section</label>
-                            <Select value={selectedSection} onValueChange={setSelectedSection}>
+                            <Select value={selectedSection} onValueChange={setSelectedSection} disabled={!selectedClass || selectedClass === 'all'}>
                                 <SelectTrigger><SelectValue placeholder="Select Section" /></SelectTrigger>
                                 <SelectContent>
                                     <SelectItem value="all">All Sections</SelectItem>
@@ -460,23 +585,22 @@ const CollectFees = () => {
                                 </SelectContent>
                             </Select>
                         </div>
-                         <div className="space-y-2">
-                            <label className="text-sm font-medium">Search By Keyword</label>
+                         <div className="space-y-2 md:col-span-2">
+                            <label className="text-sm font-medium">Instant Search</label>
                             <Input 
-                                placeholder="Student Name, Admission No..."
+                                placeholder="Type any letter to search..."
                                 value={keyword}
                                 onChange={e => setKeyword(e.target.value)}
                             />
                         </div>
-                        <Button onClick={handleSearch} disabled={loading}>
-                            {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Search className="mr-2 h-4 w-4" />}
-                            Search
+                        <Button onClick={handleSearch} disabled={loading} className="h-10">
+                            <RefreshCcw className="mr-2 h-4 w-4" />{loading ? 'Loading...' : 'Refresh'}
                         </Button>
                     </div>
                 </CardContent>
             </Card>
 
-            {searched && (
+            {allStudents.length > 0 && (
                 <>
                     {/* Summary Stats Cards */}
                     {students.length > 0 && (
@@ -569,11 +693,30 @@ const CollectFees = () => {
                     {/* Student List Table */}
                     <Card>
                         <CardHeader className="pb-3">
-                            <CardTitle className="flex items-center gap-2">
-                                <Users className="h-5 w-5" />
-                                Student List
-                                {students.length > 0 && <span className="text-sm font-normal text-muted-foreground ml-2">({students.length} students)</span>}
-                            </CardTitle>
+                            <div className="flex items-center justify-between">
+                                <CardTitle className="flex items-center gap-2">
+                                    <Users className="h-5 w-5" />
+                                    Student List
+                                    <span className="text-sm font-normal text-muted-foreground ml-2">
+                                        {keyword 
+                                            ? `Showing ${students.length} of ${allStudents.length} students` 
+                                            : `Total: ${allStudents.length} students`}
+                                    </span>
+                                </CardTitle>
+                                <div className="flex items-center gap-2">
+                                    <Input 
+                                        placeholder="Type to search instantly..." 
+                                        className="w-64 h-8" 
+                                        value={keyword} 
+                                        onChange={e => setKeyword(e.target.value)} 
+                                    />
+                                    {keyword && (
+                                        <Button variant="ghost" size="sm" className="h-8 px-2" onClick={() => setKeyword('')}>
+                                            ✕
+                                        </Button>
+                                    )}
+                                </div>
+                            </div>
                         </CardHeader>
                         <CardContent>
                             {loading ? <div className="flex justify-center p-8"><Loader2 className="animate-spin" /></div> : (
@@ -585,6 +728,8 @@ const CollectFees = () => {
                                                 <th className="p-3 font-semibold text-left">Student</th>
                                                 <th className="p-3 font-semibold text-left">Class</th>
                                                 <th className="p-3 font-semibold text-left">Guardian / Phone</th>
+                                                <th className="p-3 font-semibold text-center">Hostel</th>
+                                                <th className="p-3 font-semibold text-center">Transport</th>
                                                 <th className="p-3 font-semibold text-left min-w-[220px]">Fees Status</th>
                                                 <th className="p-3 font-semibold text-center">Action</th>
                                             </tr>
@@ -611,8 +756,8 @@ const CollectFees = () => {
                                                                     )}
                                                                 </div>
                                                                 <div>
-                                                                    <p className="font-semibold text-foreground">{student.full_name}</p>
-                                                                    <p className="text-xs text-muted-foreground">{student.school_code || 'No Admission No'}</p>
+                                                                    <p className="font-semibold text-foreground">{highlightText(student.full_name, keyword)}</p>
+                                                                    <p className="text-xs text-muted-foreground">{highlightText(student.school_code, keyword) || 'No Admission No'}</p>
                                                                 </div>
                                                             </div>
                                                         </td>
@@ -624,12 +769,32 @@ const CollectFees = () => {
                                                         </td>
                                                         <td className="p-3">
                                                             <div>
-                                                                <p className="font-medium text-sm">{student.father_name || student.mother_name || '-'}</p>
+                                                                <p className="font-medium text-sm">{highlightText(student.father_name || student.mother_name, keyword) || '-'}</p>
                                                                 <p className="text-xs text-emerald-600 dark:text-emerald-400 flex items-center gap-1 mt-0.5">
                                                                     <Phone className="h-3 w-3" />
-                                                                    {getGuardianPhone(student)}
+                                                                    {highlightText(getGuardianPhone(student), keyword)}
                                                                 </p>
                                                             </div>
+                                                        </td>
+                                                        <td className="p-3 text-center">
+                                                            {hostelAssignments[student.id] ? (
+                                                                <div className="inline-flex items-center gap-1 px-2 py-1 bg-purple-100 text-purple-700 rounded-full dark:bg-purple-900 dark:text-purple-300" title={`${hostelAssignments[student.id].hostel_name} - Room ${hostelAssignments[student.id].room_no}`}>
+                                                                    <Home className="h-3.5 w-3.5" />
+                                                                    <span className="text-xs font-medium">Yes</span>
+                                                                </div>
+                                                            ) : (
+                                                                <span className="text-xs text-muted-foreground">-</span>
+                                                            )}
+                                                        </td>
+                                                        <td className="p-3 text-center">
+                                                            {transportAssignments[student.id] ? (
+                                                                <div className="inline-flex items-center gap-1 px-2 py-1 bg-blue-100 text-blue-700 rounded-full dark:bg-blue-900 dark:text-blue-300" title={`${transportAssignments[student.id].route} - ${transportAssignments[student.id].pickup_point}`}>
+                                                                    <Bus className="h-3.5 w-3.5" />
+                                                                    <span className="text-xs font-medium">Yes</span>
+                                                                </div>
+                                                            ) : (
+                                                                <span className="text-xs text-muted-foreground">-</span>
+                                                            )}
                                                         </td>
                                                         <td className="p-3">
                                                             <div className="space-y-1.5">
@@ -642,6 +807,24 @@ const CollectFees = () => {
                                                                     <span className="text-green-600 dark:text-green-400 flex items-center"><IndianRupee className="h-3 w-3" />{fee.paid.toLocaleString('en-IN')}</span>
                                                                     <span className="text-muted-foreground">/</span>
                                                                     <span className="text-muted-foreground flex items-center"><IndianRupee className="h-3 w-3" />{fee.total.toLocaleString('en-IN')}</span>
+                                                                </div>
+                                                                {/* Show discount, fine, and refund if present */}
+                                                                <div className="flex flex-wrap gap-1.5 text-xs">
+                                                                    {fee.discount > 0 && (
+                                                                        <span className="text-amber-600 dark:text-amber-400 flex items-center gap-0.5" title="Discount Given">
+                                                                            Disc: <IndianRupee className="h-2.5 w-2.5" />{fee.discount.toLocaleString('en-IN')}
+                                                                        </span>
+                                                                    )}
+                                                                    {fee.fine > 0 && (
+                                                                        <span className="text-orange-600 dark:text-orange-400 flex items-center gap-0.5" title="Fine Charged">
+                                                                            Fine: <IndianRupee className="h-2.5 w-2.5" />{fee.fine.toLocaleString('en-IN')}
+                                                                        </span>
+                                                                    )}
+                                                                    {fee.refunded > 0 && (
+                                                                        <span className="text-blue-600 dark:text-blue-400 flex items-center gap-0.5" title="Refund Given">
+                                                                            Refund: <IndianRupee className="h-2.5 w-2.5" />{fee.refunded.toLocaleString('en-IN')}
+                                                                        </span>
+                                                                    )}
                                                                 </div>
                                                                 {fee.balance > 0 && (
                                                                     <p className="text-xs text-red-600 dark:text-red-400 font-medium flex items-center gap-0.5">
@@ -665,7 +848,7 @@ const CollectFees = () => {
                                                 );
                                             }) : (
                                                 <tr>
-                                                    <td colSpan="6" className="p-12 text-center">
+                                                    <td colSpan="8" className="p-12 text-center">
                                                         <div className="flex flex-col items-center gap-2 text-muted-foreground">
                                                             <Users className="h-10 w-10 opacity-30" />
                                                             <p className="text-lg font-medium">No students found</p>
@@ -681,6 +864,27 @@ const CollectFees = () => {
                         </CardContent>
                     </Card>
                 </>
+            )}
+
+            {students.length === 0 && !loading && allStudents.length === 0 && (
+                <Card className="p-10">
+                    <div className="text-center text-muted-foreground">
+                        <Users className="h-12 w-12 mx-auto mb-4 opacity-30" />
+                        <p>No students found. Click Refresh to load students.</p>
+                    </div>
+                </Card>
+            )}
+
+            {students.length === 0 && !loading && allStudents.length > 0 && keyword && (
+                <Card className="p-10">
+                    <div className="text-center text-muted-foreground">
+                        <Search className="h-12 w-12 mx-auto mb-4 opacity-30" />
+                        <p>No students match "{keyword}"</p>
+                        <Button variant="link" className="mt-2" onClick={() => setKeyword('')}>
+                            Clear search
+                        </Button>
+                    </div>
+                </Card>
             )}
         </DashboardLayout>
     );

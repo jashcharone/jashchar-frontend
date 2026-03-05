@@ -78,7 +78,7 @@ export const BASE_SIDEBAR = {
   ],
   super_admin: [
     { title: 'Dashboard', icon: LayoutDashboard, path: ROUTES.SUPER_ADMIN.DASHBOARD },
-    { title: 'Advanced Analytics', icon: BarChart3, path: '/admin/advanced-analytics' },
+    { title: 'Advanced Analytics', icon: BarChart3, path: ROUTES.SUPER_ADMIN.ADVANCED_ANALYTICS },
     // Cortex AI - Add-on subscription based access (NOT module permission)
     // Always visible in sidebar, access controlled within the module
     { title: '⚡ Cortex AI', icon: Bot, path: '/super-admin/cortex-ai', badge: 'AI', badgeColor: 'purple' },

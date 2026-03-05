@@ -332,8 +332,7 @@ export const fetchFinanceDataFromSupabase = async ({
   dateFrom, dateTo, paymentMode, classId, sectionId
 }) => {
   // Use fee_payments table for finance/collection reports
-  // Get class/section through student_profiles (nested join)
-  // Note: fee_name is not directly available - fee_payments links to fee_masters which links to fee_types
+  // Get class/section and additional student info through student_profiles (nested join)
   let query = supabase
     .from('fee_payments')
     .select(`
@@ -345,6 +344,10 @@ export const fetchFinanceDataFromSupabase = async ({
         last_name, 
         class_id, 
         section_id,
+        roll_number,
+        father_name,
+        father_phone,
+        mother_phone,
         class:classes(id, name),
         section:sections(id, name)
       )
@@ -365,24 +368,74 @@ export const fetchFinanceDataFromSupabase = async ({
     return [];
   }
   
+  console.log('[fetchFinanceData] Raw data count:', data?.length || 0);
+  if (data?.length > 0) {
+    console.log('[fetchFinanceData] Sample row:', data[0]);
+    console.log('[fetchFinanceData] Keys:', Object.keys(data[0]));
+  }
+  
   // Map student data and apply client-side class/section filters
-  let mappedData = (data || []).map(row => ({
-    ...row,
-    receipt_no: row.receipt_number || row.id?.substring(0, 8),
-    date: row.payment_date,
-    student_name: row.student ? `${row.student.first_name || ''} ${row.student.last_name || ''}`.trim() : '',
-    admission_number: row.student?.school_code || '',
-    class_name: row.student?.class?.name || '',
-    section_name: row.student?.section?.name || '',
-    class_id: row.student?.class_id || null,
-    section_id: row.student?.section_id || null,
-    fee_head: row.note || 'Fee Payment',
-    cashier_name: row.received_by || 'Admin',
-    student: row.student ? {
-      ...row.student,
-      admission_number: row.student.school_code
-    } : null
-  }));
+  // Map payment mode to specific amount fields for reports
+  let mappedData = (data || []).map(row => {
+    const paymentModeValue = (row.payment_mode || '').toLowerCase();
+    const paymentAmount = Number(row.amount) || 0;
+    
+    return {
+      ...row,
+      // Receipt info
+      receipt_no: row.receipt_number || row.id?.substring(0, 8),
+      date: row.payment_date,
+      
+      // Student info
+      student_name: row.student ? `${row.student.first_name || ''} ${row.student.last_name || ''}`.trim() : '',
+      admission_number: row.student?.school_code || '',
+      admission_no: row.student?.school_code || '',
+      class_name: row.student?.class?.name || '',
+      section_name: row.student?.section?.name || '',
+      class_id: row.student?.class_id || null,
+      section_id: row.student?.section_id || null,
+      roll_no: row.student?.roll_number || '',
+      roll_number: row.student?.roll_number || '',
+      father_name: row.student?.father_name || '',
+      father_phone: row.student?.father_phone || '',
+      mother_phone: row.student?.mother_phone || '',
+      
+      // Fee/Payment info
+      fee_head: row.note || 'Fee Payment',
+      cashier_name: row.received_by || 'Admin',
+      
+      // Payment mode-specific amounts for reports
+      cash_amount: paymentModeValue === 'cash' ? paymentAmount : 0,
+      online_amount: (paymentModeValue === 'online' || paymentModeValue === 'upi' || paymentModeValue === 'neft') ? paymentAmount : 0,
+      cheque_amount: paymentModeValue === 'cheque' ? paymentAmount : 0,
+      card_amount: paymentModeValue === 'card' ? paymentAmount : 0,
+      upi_amount: paymentModeValue === 'upi' ? paymentAmount : 0,
+      
+      // Total amounts for aggregation
+      total_collection: paymentAmount,
+      total_fee: paymentAmount,
+      paid_amount: paymentAmount,
+      balance: 0, // Would need fee_masters to calculate actual balance
+      advance_amount: 0,
+      
+      // Payment count (1 per row for aggregation)
+      payment_count: 1,
+      receipt_count: 1,
+      student_count: 1,
+      
+      // Collection stats (for single row, percentage will be aggregated)
+      collection_percentage: 100,
+      
+      // Timestamps
+      last_payment_date: row.payment_date,
+      
+      // Original student object
+      student: row.student ? {
+        ...row.student,
+        admission_number: row.student.school_code
+      } : null
+    };
+  });
   
   // Apply class/section filters client-side
   if (classId) {
@@ -390,6 +443,19 @@ export const fetchFinanceDataFromSupabase = async ({
   }
   if (sectionId) {
     mappedData = mappedData.filter(row => row.section_id === sectionId);
+  }
+  
+  console.log('[fetchFinanceData] Mapped data count:', mappedData?.length || 0);
+  if (mappedData?.length > 0) {
+    console.log('[fetchFinanceData] Mapped sample:', {
+      date: mappedData[0].date,
+      payment_mode: mappedData[0].payment_mode,
+      amount: mappedData[0].amount,
+      cash_amount: mappedData[0].cash_amount,
+      total_fee: mappedData[0].total_fee,
+      student_name: mappedData[0].student_name,
+      cashier_name: mappedData[0].cashier_name
+    });
   }
   
   return mappedData;

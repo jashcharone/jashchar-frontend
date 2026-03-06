@@ -326,6 +326,12 @@ const PrintTransportReceipt = () => {
                                     <td className='font-semibold text-gray-700' style={{ padding: '1px 0' }}>Payment Mode</td>
                                     <td style={{ padding: '1px 0' }}>: <span className='uppercase font-medium'>{payment.payment_mode || 'Cash'}</span></td>
                                 </tr>
+                                {['Online', 'UPI'].includes(payment.payment_mode) && payment.utr_number && (
+                                <tr>
+                                    <td className='font-semibold text-gray-700' style={{ padding: '1px 0' }}>UTR Number</td>
+                                    <td style={{ padding: '1px 0' }}>: <span className='font-mono font-bold text-purple-700 bg-purple-50 px-1 rounded'>{payment.utr_number}</span></td>
+                                </tr>
+                                )}
                             </tbody>
                         </table>
                     </div>

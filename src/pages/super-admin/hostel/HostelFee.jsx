@@ -24,6 +24,7 @@ const HostelFee = () => {
   const [rooms, setRooms] = useState([]);
   const [roomTypes, setRoomTypes] = useState([]);
   const [classes, setClasses] = useState([]);
+  const [assignedBeds, setAssignedBeds] = useState({}); // { roomId: ['B1', 'B2', ...] }
   const [loading, setLoading] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -131,7 +132,7 @@ const HostelFee = () => {
     setLoading(false);
   };
 
-  const handleSelectStudent = (student) => {
+  const handleSelectStudent = async (student) => {
     setSelectedStudent(student);
     const hostel = student.hostel;
     setFormData({
@@ -145,6 +146,13 @@ const HostelFee = () => {
       check_out_date: hostel?.check_out_date || '',
       hostel_guardian_contact: hostel?.hostel_guardian_contact || ''
     });
+    
+    // Fetch assigned beds for the room if student already has hostel assignment
+    if (hostel?.room_id) {
+      const assigned = await fetchAssignedBeds(hostel.room_id, student.id);
+      setAssignedBeds({ [hostel.room_id]: assigned });
+    }
+    
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -154,20 +162,59 @@ const HostelFee = () => {
       hostel_id: '', room_id: '', room_type_id: '', bed_number: '',
       hostel_fee: '', billing_cycle: 'monthly', check_in_date: '', check_out_date: '', hostel_guardian_contact: ''
     });
+    setAssignedBeds({});
+  };
+
+  // Fetch assigned beds for a specific room
+  const fetchAssignedBeds = async (roomId, excludeStudentId = null) => {
+    if (!roomId) return [];
+    
+    let query = supabase
+      .from('student_hostel_details')
+      .select('bed_number')
+      .eq('room_id', roomId)
+      .eq('branch_id', branchId)
+      .not('bed_number', 'is', null);
+    
+    // Exclude current student's bed when editing
+    if (excludeStudentId) {
+      query = query.neq('student_id', excludeStudentId);
+    }
+    
+    const { data } = await query;
+    return data?.map(d => d.bed_number) || [];
   };
 
   const handleHostelChange = (hostelId) => {
-    setFormData(prev => ({ ...prev, hostel_id: hostelId, room_id: '' }));
+    setFormData(prev => ({ 
+      ...prev, 
+      hostel_id: hostelId, 
+      room_id: '', 
+      room_type_id: '', 
+      bed_number: '',
+      hostel_fee: ''
+    }));
+    setAssignedBeds({});
   };
 
-  const handleRoomChange = (roomId) => {
+  const handleRoomChange = async (roomId) => {
     const room = rooms.find(r => r.id === roomId);
     if (room) {
+      // Get assigned beds for this room (excluding current student if editing)
+      const assigned = await fetchAssignedBeds(roomId, selectedStudent?.id);
+      setAssignedBeds({ [roomId]: assigned });
+      
+      // Get fee from room type (NOT from room.cost_per_bed)
+      // Room Type cost is the actual hostel fee shown to users
+      const roomTypeForFee = roomTypes.find(rt => rt.id === room.room_type_id);
+      const feeFromRoomType = roomTypeForFee?.cost || room.cost_per_bed || '';
+      
       setFormData(prev => ({
         ...prev,
         room_id: roomId,
         room_type_id: room.room_type_id || '',
-        hostel_fee: room.cost_per_bed || ''
+        bed_number: '',
+        hostel_fee: feeFromRoomType
       }));
     }
   };
@@ -184,9 +231,25 @@ const HostelFee = () => {
     }
   };
 
+  const handleBedChange = (bedNumber) => {
+    setFormData(prev => ({ ...prev, bed_number: bedNumber }));
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!selectedStudent) return;
+
+    // Validation
+    if (!formData.hostel_id) {
+      toast({ variant: 'destructive', title: 'Hostel is required', description: 'Please select a hostel' });
+      return;
+    }
+    
+    // If room is selected, bed number is required
+    if (formData.room_id && !formData.bed_number) {
+      toast({ variant: 'destructive', title: 'Bed Number is required', description: 'Please select a bed number for the selected room' });
+      return;
+    }
 
     setIsSubmitting(true);
 
@@ -238,9 +301,39 @@ const HostelFee = () => {
   const getHostelName = (hostelId) => hostels.find(h => h.id === hostelId)?.name || '-';
   const getRoomName = (roomId) => rooms.find(r => r.id === roomId)?.room_number_name || '-';
 
+  // Filtered rooms based on selected hostel
   const filteredRooms = formData.hostel_id 
     ? rooms.filter(r => r.hostel_id === formData.hostel_id)
     : rooms;
+
+  // Filtered room types - only show room types that exist in rooms of selected hostel
+  const filteredRoomTypes = formData.hostel_id 
+    ? roomTypes.filter(rt => 
+        filteredRooms.some(r => r.room_type_id === rt.id)
+      )
+    : roomTypes;
+
+  // Get available beds for selected room
+  const getAvailableBeds = () => {
+    if (!formData.room_id) return [];
+    const room = rooms.find(r => r.id === formData.room_id);
+    if (!room || !room.num_of_beds) return [];
+    
+    const totalBeds = room.num_of_beds;
+    const assigned = assignedBeds[formData.room_id] || [];
+    const allBeds = Array.from({ length: totalBeds }, (_, i) => `B${i + 1}`);
+    
+    // Return beds that are not assigned
+    // The fetchAssignedBeds already excludes the current student's bed when editing
+    return allBeds.filter(bed => !assigned.includes(bed));
+  };
+
+  const availableBeds = getAvailableBeds();
+  
+  // If editing and current student has a bed, include it in selection if not already there
+  const bedsForSelection = formData.bed_number && !availableBeds.includes(formData.bed_number)
+    ? [formData.bed_number, ...availableBeds]
+    : availableBeds;
 
   const assignedCount = students.filter(s => s.hostel).length;
 
@@ -360,19 +453,37 @@ const HostelFee = () => {
 
                   <div className="space-y-2">
                     <Label>Room Type</Label>
-                    <Select value={formData.room_type_id} onValueChange={handleRoomTypeChange}>
-                      <SelectTrigger><SelectValue placeholder="Select Room Type" /></SelectTrigger>
+                    <Select value={formData.room_type_id} onValueChange={handleRoomTypeChange} disabled={!formData.hostel_id}>
+                      <SelectTrigger><SelectValue placeholder={formData.hostel_id ? "Select Room Type" : "First select hostel"} /></SelectTrigger>
                       <SelectContent>
-                        {roomTypes.map(rt => (
+                        {filteredRoomTypes.map(rt => (
                           <SelectItem key={rt.id} value={rt.id}>{rt.name} - ₹{rt.cost || 0}</SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
+                    {formData.hostel_id && filteredRoomTypes.length === 0 && (
+                      <p className="text-xs text-muted-foreground">No room types available for this hostel</p>
+                    )}
                   </div>
 
                   <div className="space-y-2">
-                    <Label>Bed Number</Label>
-                    <Input value={formData.bed_number} onChange={(e) => setFormData({...formData, bed_number: e.target.value})} placeholder="e.g. B1" />
+                    <Label>Bed Number *</Label>
+                    <Select value={formData.bed_number} onValueChange={handleBedChange} disabled={!formData.room_id}>
+                      <SelectTrigger><SelectValue placeholder={formData.room_id ? "Select Bed" : "First select room"} /></SelectTrigger>
+                      <SelectContent>
+                        {bedsForSelection.map(bed => (
+                          <SelectItem key={bed} value={bed}>{bed}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {formData.room_id && (
+                      <p className="text-xs text-muted-foreground">
+                        {availableBeds.length > 0 
+                          ? `${availableBeds.length} beds available`
+                          : 'No beds available - room full'
+                        }
+                      </p>
+                    )}
                   </div>
 
                   <div className="space-y-2">

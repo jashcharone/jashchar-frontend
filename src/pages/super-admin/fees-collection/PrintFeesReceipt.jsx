@@ -433,6 +433,12 @@ const PrintFeesReceipt = () => {
                   <td className='font-semibold text-gray-700' style={{ padding: '1px 0' }}>Payment Mode</td>
                   <td style={{ padding: '1px 0' }}>: <span className='uppercase font-medium'>{payments[0]?.payment_mode || 'Cash'}</span></td>
                 </tr>
+                {['Online', 'UPI'].includes(payments[0]?.payment_mode) && payments[0]?.utr_number && (
+                <tr>
+                  <td className='font-semibold text-gray-700' style={{ padding: '1px 0' }}>UTR Number</td>
+                  <td style={{ padding: '1px 0' }}>: <span className='font-mono font-bold text-purple-700 bg-purple-50 px-1 rounded'>{payments[0]?.utr_number}</span></td>
+                </tr>
+                )}
                 <tr>
                   <td className='font-semibold text-gray-700' style={{ padding: '1px 0' }}>Branch</td>
                   <td style={{ padding: '1px 0' }}>: {school?.name || branch?.branch_name || '-'}</td>

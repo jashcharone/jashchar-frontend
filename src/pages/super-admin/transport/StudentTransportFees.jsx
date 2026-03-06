@@ -19,6 +19,7 @@ const StudentTransportFees = () => {
   const [students, setStudents] = useState([]);
   const [routes, setRoutes] = useState([]);
   const [pickupPoints, setPickupPoints] = useState([]);
+  const [routePickupPoints, setRoutePickupPoints] = useState([]); // Pickup points for selected route
   const [classes, setClasses] = useState([]);
   const [vehicles, setVehicles] = useState([]);
   const [routeVehicles, setRouteVehicles] = useState([]); // Vehicles assigned to selected route
@@ -156,8 +157,27 @@ const StudentTransportFees = () => {
       special_instructions: transport?.special_instructions || ''
     });
     
-    // Load vehicles assigned to existing route if present
+    // Load pickup points and vehicles assigned to existing route if present
     if (transport?.transport_route_id) {
+      // Fetch pickup points for the route
+      const { data: mappings } = await supabase
+        .from('route_pickup_point_mappings')
+        .select('pickup_point_id, monthly_fees, pickup_time, stop_order, pickup_point:pickup_point_id(id, name)')
+        .eq('route_id', transport.transport_route_id)
+        .order('stop_order');
+      
+      if (mappings && mappings.length > 0) {
+        setRoutePickupPoints(mappings.filter(m => m.pickup_point).map(m => ({
+          ...m.pickup_point,
+          monthly_fees: m.monthly_fees,
+          pickup_time: m.pickup_time,
+          stop_order: m.stop_order
+        })));
+      } else {
+        setRoutePickupPoints([]);
+      }
+      
+      // Fetch vehicles for the route
       const { data: assignments } = await supabase
         .from('route_vehicle_assignments')
         .select('vehicle_id, vehicle:vehicle_id(*)')
@@ -169,12 +189,15 @@ const StudentTransportFees = () => {
         setRouteVehicles([]);
       }
     } else {
+      setRoutePickupPoints([]);
       setRouteVehicles([]);
     }
   };
 
   const handleCancel = () => {
     setSelectedStudent(null);
+    setRoutePickupPoints([]);
+    setRouteVehicles([]);
     setFormData({
       transport_route_id: '', transport_pickup_point_id: '', transport_fee: '',
       billing_cycle: 'monthly', pickup_time: '', drop_time: '', vehicle_number: '',
@@ -197,8 +220,31 @@ const StudentTransportFees = () => {
       driver_contact: ''
     }));
     
-    // Fetch vehicles assigned to this route
+    // Reset route-specific data
+    setRoutePickupPoints([]);
+    setRouteVehicles([]);
+    
     if (routeId) {
+      // Fetch pickup points mapped to this route
+      const { data: mappings, error: mappingsError } = await supabase
+        .from('route_pickup_point_mappings')
+        .select('pickup_point_id, monthly_fees, pickup_time, stop_order, pickup_point:pickup_point_id(id, name)')
+        .eq('route_id', routeId)
+        .order('stop_order');
+      
+      console.log('Route change - pickup points:', routeId, mappings);
+      
+      if (mappings && mappings.length > 0) {
+        // Extract pickup point details with fee info
+        setRoutePickupPoints(mappings.filter(m => m.pickup_point).map(m => ({
+          ...m.pickup_point,
+          monthly_fees: m.monthly_fees,
+          pickup_time: m.pickup_time,
+          stop_order: m.stop_order
+        })));
+      }
+      
+      // Fetch vehicles assigned to this route
       const { data: assignments, error } = await supabase
         .from('route_vehicle_assignments')
         .select('vehicle_id, vehicle:vehicle_id(*)')
@@ -208,11 +254,7 @@ const StudentTransportFees = () => {
       
       if (assignments && assignments.length > 0) {
         setRouteVehicles(assignments.filter(a => a.vehicle).map(a => a.vehicle));
-      } else {
-        setRouteVehicles([]);
       }
-    } else {
-      setRouteVehicles([]);
     }
   };
 
@@ -253,6 +295,18 @@ const StudentTransportFees = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!selectedStudent) return;
+
+    // Validation
+    if (!formData.transport_route_id) {
+      toast({ variant: 'destructive', title: 'Route is required', description: 'Please select a transport route' });
+      return;
+    }
+    
+    // If route is selected, pickup point is recommended
+    if (formData.transport_route_id && !formData.transport_pickup_point_id) {
+      toast({ variant: 'destructive', title: 'Pickup Point is required', description: 'Please select a pickup point for the selected route' });
+      return;
+    }
 
     setIsSubmitting(true);
 
@@ -372,9 +426,15 @@ const StudentTransportFees = () => {
                   <div className="space-y-2">
                     <Label>Pickup Point</Label>
                     <Select value={formData.transport_pickup_point_id} onValueChange={handlePickupPointChange} disabled={!formData.transport_route_id}>
-                      <SelectTrigger><SelectValue placeholder="Select Pickup Point" /></SelectTrigger>
+                      <SelectTrigger>
+                        <SelectValue placeholder={!formData.transport_route_id ? "Select Route first" : routePickupPoints.length === 0 ? "No pickup points for route" : "Select Pickup Point"} />
+                      </SelectTrigger>
                       <SelectContent>
-                        {pickupPoints.map(p => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
+                        {routePickupPoints.length > 0 ? (
+                          routePickupPoints.map(p => <SelectItem key={p.id} value={p.id}>{p.name} {p.monthly_fees ? `(₹${p.monthly_fees})` : ''}</SelectItem>)
+                        ) : (
+                          <div className="px-2 py-2 text-sm text-muted-foreground">No pickup points mapped to this route</div>
+                        )}
                       </SelectContent>
                     </Select>
                   </div>

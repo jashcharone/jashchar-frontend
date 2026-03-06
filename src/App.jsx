@@ -42,6 +42,7 @@ const SchoolHomepage = lazy(() => import('@/pages/SchoolHomepage'));
 
 // ? LAZY LOAD: Public Pages
 const PublicSchoolLogin = lazy(() => import('@/pages/public/PublicSchoolLogin'));
+const LoginV2 = lazy(() => import('@/pages/LoginV2')); // 🆕 V2 Auth (Mobile + Face + PIN)
 const DemoLoginPage = lazy(() => import('@/pages/public/DemoLoginPage'));
 const PublicForgotPassword = lazy(() => import('@/pages/public/PublicForgotPassword'));
 const PublicSignUp = lazy(() => import('@/pages/public/PublicSignUp'));
@@ -566,6 +567,11 @@ function App() {
                 {/* ? New Dynamic School Homepage (Testing Route) */}
                 <Route path="/s/:domain" element={<NewSchoolHomepage />} />
                 <Route path="/s/:domain/login" element={<PublicSchoolLogin />} />
+                <Route path="/s/:domain/login-v2" element={<LoginV2 />} /> {/* 🆕 V2 Auth */}
+                
+                {/* 🆕 Standalone V2 Login Route */}
+                <Route path="/login-v2" element={<LoginV2 />} />
+                <Route path="/login-v2/:alias" element={<LoginV2 />} />
                 
                 {/* Explicit /school/slug routes requested by user */}
                 <Route path="/school/:schoolSlug" element={<SchoolPublicHome />} />

@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import SessionSwitcher from './SessionSwitcher';
 import BranchSelector from './BranchSelector';
 import BugReportModal from './BugReportModal';
+import { RoleSwitcher } from './auth-v2';
 import { useToast } from '@/components/ui/use-toast';
 import { cn } from '@/lib/utils';
 import {
@@ -156,6 +157,11 @@ const Header = ({ toggleSidebar, onThemeSettingsClick, onChatbotToggle }) => {
 
         {/* RIGHT: Actions */}
         <div className="flex items-center gap-1 sm:gap-2">
+          
+          {/* Role Switcher - For V2 Auth multi-role users */}
+          <div className="hidden sm:block">
+            <RoleSwitcher />
+          </div>
           
           {/* PWA Install */}
           {canInstall && (

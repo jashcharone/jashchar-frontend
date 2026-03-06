@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, Link, useLocation, useSearchParams } from 'react-router-dom';
 import { useSchoolSlug } from '@/hooks/useSchoolSlug';
 import { useSchoolPublicData } from '@/hooks/useSchoolPublicData';
@@ -10,9 +10,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/components/ui/use-toast';
-import { Loader2, GraduationCap, User, Lock, ArrowRight, Eye, EyeOff, Sparkles, Shield, BookOpen, Users, Play } from 'lucide-react';
+import { Loader2, GraduationCap, User, Lock, ArrowRight, Eye, EyeOff, Sparkles, Shield, BookOpen, Users, Play, Smartphone, ScanFace, KeyRound, ArrowLeft } from 'lucide-react';
 import { Helmet } from 'react-helmet';
 import cmsService from '@/services/cmsService';
+import unifiedAuthV2Service from '@/services/unifiedAuthV2Service';
 
 // Demo credentials for quick login
 const DEMO_CREDENTIALS = {
@@ -62,6 +63,25 @@ const PublicSchoolLogin = () => {
   // Check if demo mode is enabled via URL param
   const isDemoMode = searchParams.get('demo') === 'true' || searchParams.get('demo') === '1';
 
+  // V2 Auth State
+  const [loginMethod, setLoginMethod] = useState('password'); // password, otp, face, pin
+  const [mobileNumber, setMobileNumber] = useState('');
+  const [otpChannel, setOtpChannel] = useState('whatsapp');
+  const [otp, setOtp] = useState(['', '', '', '', '', '']);
+  const [pin, setPin] = useState(['', '', '', '', '', '']);
+  const [otpStep, setOtpStep] = useState('mobile'); // mobile, otp, role
+  const [otpLoading, setOtpLoading] = useState(false);
+  const [otpCountdown, setOtpCountdown] = useState(0);
+  const [userRoles, setUserRoles] = useState([]);
+  const [unifiedUserId, setUnifiedUserId] = useState(null);
+  
+  // Refs for OTP/PIN inputs
+  const otpRefs = useRef([]);
+  const pinRefs = useRef([]);
+  const videoRef = useRef(null);
+  const [cameraStream, setCameraStream] = useState(null);
+  const [faceScanning, setFaceScanning] = useState(false);
+
   useEffect(() => {
     const fetchLoginSettings = async () => {
       if (!schoolAlias) return;
@@ -91,6 +111,214 @@ const PublicSchoolLogin = () => {
       }
     }
   }, [loginSettings]);
+
+  // OTP countdown timer
+  useEffect(() => {
+    if (otpCountdown > 0) {
+      const timer = setTimeout(() => setOtpCountdown(otpCountdown - 1), 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [otpCountdown]);
+
+  // Cleanup camera on unmount
+  useEffect(() => {
+    return () => {
+      if (cameraStream) {
+        cameraStream.getTracks().forEach(track => track.stop());
+      }
+    };
+  }, [cameraStream]);
+
+  // V2 Auth Handlers
+  const handleSendOTP = async () => {
+    if (!mobileNumber || mobileNumber.length !== 10) {
+      toast({ variant: 'destructive', title: 'Invalid Mobile', description: '10 ಅಂಕಿಯ ಮೊಬೈಲ್ ನಂಬರ್ ನಮೂದಿಸಿ' });
+      return;
+    }
+    setOtpLoading(true);
+    try {
+      const response = await unifiedAuthV2Service.sendOTP(`+91${mobileNumber}`, otpChannel);
+      if (response.success) {
+        toast({ title: 'OTP ಕಳುಹಿಸಲಾಗಿದೆ', description: `${otpChannel === 'whatsapp' ? 'WhatsApp' : 'SMS'} ಗೆ OTP ಕಳುಹಿಸಲಾಗಿದೆ` });
+        setOtpStep('otp');
+        setOtpCountdown(60);
+      } else {
+        toast({ variant: 'destructive', title: 'Error', description: response.error || 'OTP ಕಳುಹಿಸಲು ವಿಫಲವಾಗಿದೆ' });
+      }
+    } catch (error) {
+      toast({ variant: 'destructive', title: 'Error', description: error.message });
+    }
+    setOtpLoading(false);
+  };
+
+  const handleVerifyOTP = async () => {
+    const otpCode = otp.join('');
+    if (otpCode.length !== 6) {
+      toast({ variant: 'destructive', title: 'Invalid OTP', description: '6 ಅಂಕಿಯ OTP ನಮೂದಿಸಿ' });
+      return;
+    }
+    setOtpLoading(true);
+    try {
+      const response = await unifiedAuthV2Service.verifyOTP(`+91${mobileNumber}`, otpCode);
+      if (response.success) {
+        setUnifiedUserId(response.user.id);
+        const rolesResponse = await unifiedAuthV2Service.getRoles(response.user.id);
+        if (rolesResponse.success && rolesResponse.roles.length > 0) {
+          setUserRoles(rolesResponse.roles);
+          setOtpStep('role');
+        } else {
+          toast({ variant: 'destructive', title: 'No Roles', description: 'ಈ ಮೊಬೈಲ್ ನಂಬರ್‌ಗೆ ಯಾವುದೇ role ಲಿಂಕ್ ಆಗಿಲ್ಲ' });
+          resetV2State();
+        }
+      } else {
+        toast({ variant: 'destructive', title: 'Invalid OTP', description: response.error || 'OTP ತಪ್ಪಾಗಿದೆ' });
+      }
+    } catch (error) {
+      toast({ variant: 'destructive', title: 'Error', description: error.message });
+    }
+    setOtpLoading(false);
+  };
+
+  const handleRoleSelect = async (role) => {
+    setOtpLoading(true);
+    try {
+      const response = await unifiedAuthV2Service.selectRole(unifiedUserId, role.id);
+      if (response.success) {
+        toast({ title: 'ಯಶಸ್ವಿ!', description: `${role.role_type} ಆಗಿ ಲಾಗಿನ್ ಆಗಿದೆ` });
+        localStorage.setItem('unified_session', JSON.stringify(response.session));
+        navigate('/dashboard');
+      } else {
+        toast({ variant: 'destructive', title: 'Error', description: response.error });
+      }
+    } catch (error) {
+      toast({ variant: 'destructive', title: 'Error', description: error.message });
+    }
+    setOtpLoading(false);
+  };
+
+  const handlePinLogin = async () => {
+    const pinCode = pin.join('');
+    if (!mobileNumber || mobileNumber.length !== 10) {
+      toast({ variant: 'destructive', title: 'Invalid Mobile', description: '10 ಅಂಕಿಯ ಮೊಬೈಲ್ ನಂಬರ್ ನಮೂದಿಸಿ' });
+      return;
+    }
+    if (pinCode.length !== 6) {
+      toast({ variant: 'destructive', title: 'Invalid PIN', description: '6 ಅಂಕಿಯ PIN ನಮೂದಿಸಿ' });
+      return;
+    }
+    setOtpLoading(true);
+    try {
+      const response = await unifiedAuthV2Service.loginWithPin(`+91${mobileNumber}`, pinCode);
+      if (response.success) {
+        setUnifiedUserId(response.user.id);
+        const rolesResponse = await unifiedAuthV2Service.getRoles(response.user.id);
+        if (rolesResponse.success && rolesResponse.roles.length > 0) {
+          setUserRoles(rolesResponse.roles);
+          setOtpStep('role');
+          setLoginMethod('otp');
+        } else {
+          toast({ variant: 'destructive', title: 'No Roles', description: 'ಈ ಮೊಬೈಲ್ ನಂಬರ್‌ಗೆ ಯಾವುದೇ role ಲಿಂಕ್ ಆಗಿಲ್ಲ' });
+        }
+      } else {
+        toast({ variant: 'destructive', title: 'Invalid PIN', description: response.error || 'PIN ತಪ್ಪಾಗಿದೆ' });
+      }
+    } catch (error) {
+      toast({ variant: 'destructive', title: 'Error', description: error.message });
+    }
+    setOtpLoading(false);
+  };
+
+  const startFaceScan = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } });
+      setCameraStream(stream);
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+      }
+      setFaceScanning(true);
+    } catch (error) {
+      toast({ variant: 'destructive', title: 'Camera Error', description: 'ಕ್ಯಾಮರಾ ಆಕ್ಸೆಸ್ ಅನುಮತಿ ನೀಡಿ' });
+    }
+  };
+
+  const captureFace = async () => {
+    if (!videoRef.current) return;
+    setOtpLoading(true);
+    
+    const canvas = document.createElement('canvas');
+    canvas.width = videoRef.current.videoWidth;
+    canvas.height = videoRef.current.videoHeight;
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(videoRef.current, 0, 0);
+    const faceData = canvas.toDataURL('image/jpeg', 0.8);
+    
+    try {
+      const response = await unifiedAuthV2Service.loginWithFace(faceData);
+      if (response.success) {
+        setUnifiedUserId(response.user.id);
+        const rolesResponse = await unifiedAuthV2Service.getRoles(response.user.id);
+        if (rolesResponse.success && rolesResponse.roles.length > 0) {
+          setUserRoles(rolesResponse.roles);
+          setOtpStep('role');
+          setLoginMethod('otp');
+          stopCamera();
+        }
+      } else {
+        toast({ variant: 'destructive', title: 'Face Not Recognized', description: 'ಮುಖ ಗುರುತಿಸಲಾಗಲಿಲ್ಲ. ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ.' });
+      }
+    } catch (error) {
+      toast({ variant: 'destructive', title: 'Error', description: error.message });
+    }
+    setOtpLoading(false);
+  };
+
+  const stopCamera = () => {
+    if (cameraStream) {
+      cameraStream.getTracks().forEach(track => track.stop());
+      setCameraStream(null);
+    }
+    setFaceScanning(false);
+  };
+
+  const resetV2State = () => {
+    setMobileNumber('');
+    setOtp(['', '', '', '', '', '']);
+    setPin(['', '', '', '', '', '']);
+    setOtpStep('mobile');
+    setUserRoles([]);
+    setUnifiedUserId(null);
+    stopCamera();
+  };
+
+  const handleOtpChange = (index, value) => {
+    if (!/^\d*$/.test(value)) return;
+    const newOtp = [...otp];
+    newOtp[index] = value.slice(-1);
+    setOtp(newOtp);
+    if (value && index < 5) {
+      otpRefs.current[index + 1]?.focus();
+    }
+  };
+
+  const handlePinChange = (index, value) => {
+    if (!/^\d*$/.test(value)) return;
+    const newPin = [...pin];
+    newPin[index] = value.slice(-1);
+    setPin(newPin);
+    if (value && index < 5) {
+      pinRefs.current[index + 1]?.focus();
+    }
+  };
+
+  const handleKeyDown = (index, e, type) => {
+    if (e.key === 'Backspace') {
+      const arr = type === 'otp' ? otp : pin;
+      const refs = type === 'otp' ? otpRefs : pinRefs;
+      if (!arr[index] && index > 0) {
+        refs.current[index - 1]?.focus();
+      }
+    }
+  };
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -377,11 +605,11 @@ const PublicSchoolLogin = () => {
             {logo ? (
               <div className="relative group">
                 <div className="absolute -inset-2 bg-white/20 rounded-2xl blur-xl group-hover:bg-white/30 transition-all duration-500"></div>
-                <img src={logo} alt="Logo" className="relative h-14 w-auto object-contain drop-shadow-lg" />
+                <img src={logo} alt="Logo" className="relative h-24 w-auto object-contain drop-shadow-lg" />
               </div>
             ) : (
-              <div className="w-14 h-14 bg-white/10 backdrop-blur-md rounded-xl flex items-center justify-center border border-white/20">
-                <GraduationCap className="h-8 w-8 text-white" />
+              <div className="w-24 h-24 bg-white/10 backdrop-blur-md rounded-xl flex items-center justify-center border border-white/20">
+                <GraduationCap className="h-12 w-12 text-white" />
               </div>
             )}
             <div>
@@ -444,7 +672,17 @@ const PublicSchoolLogin = () => {
       </div>
 
       {/* ===== RIGHT SIDE - LOGIN FORM ===== */}
-      <div className="w-full lg:w-[45%] flex items-center justify-center bg-gradient-to-br from-slate-50 via-white to-slate-100 relative">
+      <div 
+        className="w-full lg:w-[45%] flex items-center justify-center bg-gradient-to-br from-slate-50 via-white to-slate-100 relative"
+        style={{
+          '--background': '#ffffff',
+          '--foreground': '#0f172a',
+          '--input': '#f1f5f9',
+          '--border': '#e2e8f0',
+          '--muted': 'hsl(220 14.3% 95.9% / 0.7)',
+          '--muted-foreground': '#64748b',
+        }}
+      >
         
         {/* Subtle Background Pattern */}
         <div className="absolute inset-0 opacity-30">
@@ -452,7 +690,7 @@ const PublicSchoolLogin = () => {
           <div className="absolute bottom-0 left-0 w-96 h-96 bg-purple-100 rounded-full blur-3xl translate-y-1/2 -translate-x-1/2"></div>
         </div>
 
-        <div className="relative z-10 w-full max-w-md px-8 py-12">
+        <div className="relative z-10 w-full max-w-md px-8 py-12 login-form-light">
           
           {/* Mobile Logo */}
           <div className="lg:hidden text-center mb-8">
@@ -467,13 +705,65 @@ const PublicSchoolLogin = () => {
           </div>
 
           {/* Form Header */}
-          <div className="mb-8">
+          <div className="mb-6">
             <h2 className="text-3xl font-bold text-slate-900 mb-2">{welcomeText}</h2>
             <p className="text-slate-500">{formSubtitle}</p>
           </div>
 
+          {/* Login Method Tabs */}
+          <div className="flex gap-1 mb-6 p-1.5 rounded-xl border" style={{ backgroundColor: '#f1f5f9', borderColor: '#e2e8f0' }}>
+            <button
+              type="button"
+              onClick={() => { setLoginMethod('password'); resetV2State(); }}
+              className={`flex-1 py-2.5 px-3 text-xs font-medium rounded-lg flex items-center justify-center gap-1.5 transition-all ${
+                loginMethod === 'password' 
+                  ? 'bg-white shadow-sm text-slate-800' 
+                  : 'text-slate-500 hover:text-slate-700 hover:bg-white/50'
+              }`}
+            >
+              <Lock size={14} />
+              <span>Password</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => { setLoginMethod('otp'); resetV2State(); }}
+              className={`flex-1 py-2.5 px-3 text-xs font-medium rounded-lg flex items-center justify-center gap-1.5 transition-all ${
+                loginMethod === 'otp' 
+                  ? 'bg-white shadow-sm text-slate-800' 
+                  : 'text-slate-500 hover:text-slate-700 hover:bg-white/50'
+              }`}
+            >
+              <Smartphone size={14} />
+              <span>OTP</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => { setLoginMethod('face'); resetV2State(); }}
+              className={`flex-1 py-2.5 px-3 text-xs font-medium rounded-lg flex items-center justify-center gap-1.5 transition-all ${
+                loginMethod === 'face' 
+                  ? 'bg-white shadow-sm text-slate-800' 
+                  : 'text-slate-500 hover:text-slate-700 hover:bg-white/50'
+              }`}
+            >
+              <ScanFace size={14} />
+              <span>Face</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => { setLoginMethod('pin'); resetV2State(); }}
+              className={`flex-1 py-2.5 px-3 text-xs font-medium rounded-lg flex items-center justify-center gap-1.5 transition-all ${
+                loginMethod === 'pin' 
+                  ? 'bg-white shadow-sm text-slate-800' 
+                  : 'text-slate-500 hover:text-slate-700 hover:bg-white/50'
+              }`}
+            >
+              <KeyRound size={14} />
+              <span>PIN</span>
+            </button>
+          </div>
+
           {/* ===== DEMO QUICK LOGIN PANEL ===== */}
-          {isDemoMode && (
+          {isDemoMode && loginMethod === 'password' && (
             <div className="mb-8 p-4 bg-gradient-to-br from-amber-50 to-orange-50 border border-amber-200 rounded-2xl">
               <div className="flex items-center gap-2 mb-4">
                 <Play className="h-5 w-5 text-amber-600" />
@@ -534,8 +824,9 @@ const PublicSchoolLogin = () => {
             </div>
           )}
 
-          {/* Login Form */}
-          <form onSubmit={handleLogin} className="space-y-5">
+          {/* ===== PASSWORD LOGIN FORM ===== */}
+          {loginMethod === 'password' && (
+            <form onSubmit={handleLogin} className="space-y-5">
             
             {/* Email Field */}
             <div className="space-y-2">
@@ -544,8 +835,9 @@ const PublicSchoolLogin = () => {
                 <div className="absolute -inset-0.5 bg-gradient-to-r from-blue-500 to-purple-500 rounded-xl opacity-0 group-hover:opacity-20 blur transition duration-300"></div>
                 <div className="relative">
                   <User className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400 group-focus-within:text-blue-500 transition-colors" />
-                  <Input 
-                    className="pl-12 h-12 bg-white border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all shadow-sm" 
+                  <input 
+                    className="w-full pl-12 h-12 rounded-xl border focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none transition-all shadow-sm text-sm" 
+                    style={{ backgroundColor: '#ffffff', borderColor: '#e2e8f0', color: '#1e293b' }}
                     placeholder="Email, Admission No. or Mobile" 
                     value={formData.email} 
                     onChange={e => setFormData({...formData, email: e.target.value})}
@@ -571,9 +863,10 @@ const PublicSchoolLogin = () => {
                 <div className="absolute -inset-0.5 bg-gradient-to-r from-blue-500 to-purple-500 rounded-xl opacity-0 group-hover:opacity-20 blur transition duration-300"></div>
                 <div className="relative">
                   <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400 group-focus-within:text-blue-500 transition-colors" />
-                  <Input 
+                  <input 
                     type={showPassword ? "text" : "password"} 
-                    className="pl-12 pr-12 h-12 bg-white border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all shadow-sm" 
+                    className="w-full pl-12 pr-12 h-12 rounded-xl border focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none transition-all shadow-sm text-sm" 
+                    style={{ backgroundColor: '#ffffff', borderColor: '#e2e8f0', color: '#1e293b' }}
                     placeholder="••••••••" 
                     value={formData.password} 
                     onChange={e => setFormData({...formData, password: e.target.value})}
@@ -652,6 +945,260 @@ const PublicSchoolLogin = () => {
               </>
             )}
           </form>
+          )}
+
+          {/* ===== OTP LOGIN ===== */}
+          {loginMethod === 'otp' && (
+            <div className="space-y-5">
+              {otpStep === 'mobile' && (
+                <>
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium text-slate-700">Mobile Number</Label>
+                    <div className="relative group">
+                      <div className="absolute -inset-0.5 bg-gradient-to-r from-green-500 to-emerald-500 rounded-xl opacity-0 group-hover:opacity-20 blur transition duration-300"></div>
+                      <div className="relative flex gap-2">
+                        <div className="flex items-center px-4 rounded-xl text-sm font-medium border bg-slate-50 border-slate-200 text-slate-600">
+                          +91
+                        </div>
+                        <input
+                          type="tel"
+                          placeholder="9876543210"
+                          maxLength={10}
+                          value={mobileNumber}
+                          onChange={(e) => setMobileNumber(e.target.value.replace(/\D/g, ''))}
+                          disabled={otpLoading}
+                          className="flex-1 h-12 px-4 rounded-xl border focus:ring-2 focus:ring-green-500/20 focus:border-green-500 focus:outline-none transition-all shadow-sm text-sm"
+                          style={{ backgroundColor: '#ffffff', borderColor: '#e2e8f0', color: '#1e293b' }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium text-slate-700">OTP Channel</Label>
+                    <div className="flex gap-3">
+                      <button
+                        type="button"
+                        onClick={() => setOtpChannel('whatsapp')}
+                        className={`flex-1 py-3 px-4 rounded-xl text-sm font-medium border-2 transition-all ${
+                          otpChannel === 'whatsapp' 
+                            ? 'border-green-500 bg-green-50 text-green-700' 
+                            : 'border-slate-200 hover:border-slate-300 text-slate-600'
+                        }`}
+                      >
+                        📱 WhatsApp
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setOtpChannel('sms')}
+                        className={`flex-1 py-3 px-4 rounded-xl text-sm font-medium border-2 transition-all ${
+                          otpChannel === 'sms' 
+                            ? 'border-blue-500 bg-blue-50 text-blue-700' 
+                            : 'border-slate-200 hover:border-slate-300 text-slate-600'
+                        }`}
+                      >
+                        💬 SMS
+                      </button>
+                    </div>
+                  </div>
+                  <Button 
+                    onClick={handleSendOTP} 
+                    className="w-full h-12 text-base font-semibold rounded-xl shadow-lg"
+                    disabled={otpLoading}
+                    style={{ background: `linear-gradient(135deg, ${accentColor} 0%, ${accentColor}dd 100%)` }}
+                  >
+                    {otpLoading ? <Loader2 className="animate-spin h-5 w-5" /> : 'Send OTP'}
+                  </Button>
+                </>
+              )}
+
+              {otpStep === 'otp' && (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => setOtpStep('mobile')}
+                    className="flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-700 mb-2"
+                  >
+                    <ArrowLeft size={16} /> Change Number
+                  </button>
+                  <div className="text-center mb-4 p-4 bg-slate-50 rounded-xl">
+                    <p className="text-sm text-slate-500">OTP sent to</p>
+                    <p className="font-semibold text-slate-800">+91 {mobileNumber}</p>
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium text-slate-700">Enter 6-digit OTP</Label>
+                    <div className="flex gap-2 justify-center">
+                      {otp.map((digit, index) => (
+                        <input
+                          key={index}
+                          ref={(el) => (otpRefs.current[index] = el)}
+                          type="text"
+                          inputMode="numeric"
+                          maxLength={1}
+                          value={digit}
+                          onChange={(e) => handleOtpChange(index, e.target.value)}
+                          onKeyDown={(e) => handleKeyDown(index, e, 'otp')}
+                          className="w-12 h-14 text-center text-xl font-bold rounded-xl border focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none"
+                          style={{ backgroundColor: '#ffffff', borderColor: '#e2e8f0', color: '#1e293b' }}
+                          disabled={otpLoading}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                  <Button 
+                    onClick={handleVerifyOTP} 
+                    className="w-full h-12 text-base font-semibold rounded-xl shadow-lg"
+                    disabled={otpLoading}
+                    style={{ background: `linear-gradient(135deg, ${accentColor} 0%, ${accentColor}dd 100%)` }}
+                  >
+                    {otpLoading ? <Loader2 className="animate-spin h-5 w-5" /> : 'Verify OTP'}
+                  </Button>
+                  <div className="text-center">
+                    {otpCountdown > 0 ? (
+                      <p className="text-sm text-slate-500">Resend OTP in {otpCountdown}s</p>
+                    ) : (
+                      <button type="button" onClick={handleSendOTP} className="text-sm font-medium" style={{ color: accentColor }}>
+                        Resend OTP
+                      </button>
+                    )}
+                  </div>
+                </>
+              )}
+
+              {otpStep === 'role' && (
+                <>
+                  <div className="text-center mb-4">
+                    <p className="text-sm text-slate-500">Select your role to continue</p>
+                  </div>
+                  <div className="space-y-3">
+                    {userRoles.map((role) => (
+                      <button
+                        key={role.id}
+                        onClick={() => handleRoleSelect(role)}
+                        disabled={otpLoading}
+                        className="w-full p-4 border-2 border-slate-200 rounded-xl hover:border-blue-500 hover:bg-blue-50 transition-all flex items-center gap-4 text-left"
+                      >
+                        <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${
+                          role.role_type === 'parent' ? 'bg-blue-100 text-blue-600' :
+                          role.role_type === 'student' ? 'bg-green-100 text-green-600' :
+                          role.role_type === 'teacher' ? 'bg-purple-100 text-purple-600' :
+                          'bg-slate-100 text-slate-600'
+                        }`}>
+                          <User size={24} />
+                        </div>
+                        <div>
+                          <p className="font-semibold text-slate-800 capitalize">{role.role_type}</p>
+                          <p className="text-xs text-slate-500">{role.branch_name || school?.name}</p>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                </>
+              )}
+            </div>
+          )}
+
+          {/* ===== FACE SCAN LOGIN ===== */}
+          {loginMethod === 'face' && (
+            <div className="space-y-5">
+              {!faceScanning ? (
+                <div className="text-center">
+                  <div className="w-28 h-28 mx-auto mb-6 rounded-full bg-gradient-to-br from-purple-100 to-pink-100 flex items-center justify-center">
+                    <ScanFace size={56} className="text-purple-600" />
+                  </div>
+                  <h3 className="text-lg font-semibold text-slate-800 mb-2">Face Recognition Login</h3>
+                  <p className="text-sm text-slate-500 mb-6">Use your camera to scan your face and login instantly</p>
+                  <Button 
+                    onClick={startFaceScan} 
+                    className="w-full h-12 text-base font-semibold rounded-xl shadow-lg"
+                    style={{ background: `linear-gradient(135deg, ${accentColor} 0%, ${accentColor}dd 100%)` }}
+                  >
+                    Start Face Scan
+                  </Button>
+                </div>
+              ) : (
+                <div className="text-center">
+                  <div className="relative mb-4 rounded-2xl overflow-hidden">
+                    <video
+                      ref={videoRef}
+                      autoPlay
+                      playsInline
+                      muted
+                      className="w-full rounded-2xl"
+                    />
+                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                      <div className="w-44 h-56 border-4 border-white/70 rounded-full" />
+                    </div>
+                  </div>
+                  <p className="text-sm text-slate-500 mb-4">Position your face within the frame</p>
+                  <div className="flex gap-3">
+                    <Button onClick={stopCamera} variant="outline" className="flex-1 h-12 rounded-xl">
+                      Cancel
+                    </Button>
+                    <Button 
+                      onClick={captureFace} 
+                      className="flex-1 h-12 rounded-xl"
+                      disabled={otpLoading}
+                      style={{ background: `linear-gradient(135deg, ${accentColor} 0%, ${accentColor}dd 100%)` }}
+                    >
+                      {otpLoading ? <Loader2 className="animate-spin h-5 w-5" /> : 'Capture & Login'}
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* ===== PIN LOGIN ===== */}
+          {loginMethod === 'pin' && (
+            <div className="space-y-5">
+              <div className="space-y-2">
+                <Label className="text-sm font-medium text-slate-700">Mobile Number</Label>
+                <div className="relative flex gap-2">
+                  <div className="flex items-center px-4 rounded-xl text-sm font-medium border bg-slate-50" style={{ borderColor: '#e2e8f0', color: '#475569' }}>
+                    +91
+                  </div>
+                  <input
+                    type="tel"
+                    placeholder="9876543210"
+                    maxLength={10}
+                    value={mobileNumber}
+                    onChange={(e) => setMobileNumber(e.target.value.replace(/\D/g, ''))}
+                    disabled={otpLoading}
+                    className="flex-1 h-12 px-4 rounded-xl border focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 focus:outline-none transition-all shadow-sm text-sm"
+                    style={{ backgroundColor: '#ffffff', borderColor: '#e2e8f0', color: '#1e293b' }}
+                  />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label className="text-sm font-medium text-slate-700">Enter 6-digit PIN</Label>
+                <div className="flex gap-2 justify-center">
+                  {pin.map((digit, index) => (
+                    <input
+                      key={index}
+                      ref={(el) => (pinRefs.current[index] = el)}
+                      type="password"
+                      inputMode="numeric"
+                      maxLength={1}
+                      value={digit}
+                      onChange={(e) => handlePinChange(index, e.target.value)}
+                      onKeyDown={(e) => handleKeyDown(index, e, 'pin')}
+                      className="w-12 h-14 text-center text-xl font-bold rounded-xl border focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 focus:outline-none"
+                      style={{ backgroundColor: '#ffffff', borderColor: '#e2e8f0', color: '#1e293b' }}
+                      disabled={otpLoading}
+                    />
+                  ))}
+                </div>
+              </div>
+              <Button 
+                onClick={handlePinLogin} 
+                className="w-full h-12 text-base font-semibold rounded-xl shadow-lg"
+                disabled={otpLoading}
+                style={{ background: `linear-gradient(135deg, ${accentColor} 0%, ${accentColor}dd 100%)` }}
+              >
+                {otpLoading ? <Loader2 className="animate-spin h-5 w-5" /> : 'Login with PIN'}
+              </Button>
+            </div>
+          )}
 
           {/* Footer Links - TC-03: Contact Support Page Link */}
           <div className="mt-8 text-center">

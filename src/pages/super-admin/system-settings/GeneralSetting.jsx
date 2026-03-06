@@ -14,7 +14,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { Save, Loader2, Settings, CreditCard, UserCog, Hash, Building2, Receipt } from 'lucide-react';
+import { Save, Loader2, Settings, CreditCard, UserCog, Hash, Building2, Receipt, QrCode, Smartphone } from 'lucide-react';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
 
@@ -492,6 +492,111 @@ const FeesSettings = ({ settings, handleChange, handleQuillChange }) => (
                 </div>
             </CardContent>
         </Card>
+
+        {/* UPI QR Payment Configuration */}
+        <Card className="border-border/50 shadow-sm">
+            <CardHeader className="pb-4">
+                <div className="flex items-center gap-3">
+                    <div className="p-2 rounded-lg bg-green-500/10 dark:bg-green-500/20">
+                        <QrCode className="h-5 w-5 text-green-600 dark:text-green-400" />
+                    </div>
+                    <div>
+                        <CardTitle className="text-base">UPI QR Payment</CardTitle>
+                        <CardDescription>Configure UPI QR code for fee collection</CardDescription>
+                    </div>
+                </div>
+            </CardHeader>
+            <CardContent className="space-y-4">
+                {/* Enable/Disable UPI */}
+                <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
+                    <div>
+                        <Label className="font-medium">Enable UPI QR Payment</Label>
+                        <p className="text-sm text-muted-foreground">Show QR code option in fee collection</p>
+                    </div>
+                    <RadioGroup 
+                        value={String(settings.upi_enabled)} 
+                        onValueChange={(v) => handleChange('upi_enabled', v === 'true')} 
+                        className="flex gap-4"
+                    >
+                        <div className="flex items-center space-x-2">
+                            <RadioGroupItem value="false" id="upi-dis" />
+                            <Label htmlFor="upi-dis" className="font-normal cursor-pointer">Disabled</Label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                            <RadioGroupItem value="true" id="upi-en" />
+                            <Label htmlFor="upi-en" className="font-normal cursor-pointer">Enabled</Label>
+                        </div>
+                    </RadioGroup>
+                </div>
+
+                {/* UPI Settings (shown when enabled) */}
+                {settings.upi_enabled && (
+                    <div className="space-y-4 pt-2">
+                        {/* Info Banner */}
+                        <div className="p-4 rounded-lg bg-gradient-to-r from-green-500/10 to-blue-500/10 border border-green-500/20">
+                            <div className="flex items-start gap-3">
+                                <Smartphone className="h-5 w-5 text-green-600 mt-0.5" />
+                                <div className="text-sm">
+                                    <p className="font-medium text-green-700 dark:text-green-400">How UPI QR Works</p>
+                                    <p className="text-muted-foreground mt-1">
+                                        1. Staff shows QR code to parent<br />
+                                        2. Parent scans with any UPI app (GPay, PhonePe, Paytm)<br />
+                                        3. Parent pays and tells UTR number<br />
+                                        4. Staff enters UTR and completes payment
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <Label htmlFor="upi-id" className="flex items-center gap-2">
+                                    UPI ID <span className="text-red-500">*</span>
+                                </Label>
+                                <Input 
+                                    id="upi-id" 
+                                    placeholder="e.g., schoolname@ybl" 
+                                    value={settings.upi_id || ''} 
+                                    onChange={(e) => handleChange('upi_id', e.target.value.toLowerCase())}
+                                />
+                                <p className="text-xs text-muted-foreground">
+                                    Get UPI ID from your bank app (GPay, PhonePe, Paytm Business)
+                                </p>
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="upi-merchant">Merchant Name</Label>
+                                <Input 
+                                    id="upi-merchant" 
+                                    placeholder="e.g., SSVK High School" 
+                                    value={settings.upi_merchant_name || ''} 
+                                    onChange={(e) => handleChange('upi_merchant_name', e.target.value)}
+                                />
+                                <p className="text-xs text-muted-foreground">
+                                    Name shown in parent's UPI app when scanning
+                                </p>
+                            </div>
+                        </div>
+
+                        {/* Preview */}
+                        {settings.upi_id && (
+                            <div className="p-4 rounded-lg border border-dashed border-green-500/50 bg-green-500/5">
+                                <p className="text-sm font-medium mb-2">Preview:</p>
+                                <div className="flex items-center gap-3">
+                                    <div className="w-16 h-16 bg-white rounded-lg flex items-center justify-center border">
+                                        <QrCode className="h-10 w-10 text-gray-400" />
+                                    </div>
+                                    <div className="text-sm">
+                                        <p className="font-medium">{settings.upi_merchant_name || 'Your School'}</p>
+                                        <p className="text-muted-foreground">{settings.upi_id}</p>
+                                        <p className="text-green-600 text-xs mt-1">✓ Ready for fee collection</p>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                )}
+            </CardContent>
+        </Card>
     </div>
 );
 
@@ -600,6 +705,10 @@ const GeneralSetting = () => {
             carry_forward_fees_due_days: settings.carry_forward_fees_due_days ? parseInt(settings.carry_forward_fees_due_days) : null,
             student_panel_fees_discount: settings.student_panel_fees_discount,
             transport_hostel_receipt_format: settings.transport_hostel_receipt_format,
+            // UPI QR Payment Settings
+            upi_enabled: settings.upi_enabled,
+            upi_id: settings.upi_id,
+            upi_merchant_name: settings.upi_merchant_name,
             updated_at: new Date().toISOString()
         };
 

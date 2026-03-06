@@ -17,9 +17,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
     Loader2, User, Printer, RotateCcw, ShieldX, ExternalLink, FileText, CheckCircle, Clock, 
     Phone, Mail, Calendar, CreditCard, Banknote, AlertTriangle, GraduationCap, Users,
-    IndianRupee, Receipt, History, ArrowLeft, Building2, Bus, Undo2
+    IndianRupee, Receipt, History, ArrowLeft, Building2, Bus, Undo2, QrCode, X, Smartphone
 } from 'lucide-react';
 import { format, parseISO, addMonths, startOfMonth, isBefore, isAfter, isSameMonth } from 'date-fns';
+import QRCode from 'qrcode';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
 import DatePicker from '@/components/ui/DatePicker';
 import { generateTransactionId } from '@/lib/transactionUtils';
@@ -184,18 +186,19 @@ const StudentFees = () => {
         amount: '',
         discount: '0',
         fine: '0',
-        payment_date: new Date(),
+        payment_date: format(new Date(), 'yyyy-MM-dd'),
         payment_mode: 'Cash',
-        note: ''
+        note: '',
+        utr_number: ''
     });
     const [paymentToRevoke, setPaymentToRevoke] = useState(null);
     
     // Transport/Hostel payment state
     const [transportPaymentDetails, setTransportPaymentDetails] = useState({
-        amount: '', discount: '0', fine: '0', payment_date: new Date(), payment_mode: 'Cash', note: ''
+        amount: '', discount: '0', fine: '0', payment_date: format(new Date(), 'yyyy-MM-dd'), payment_mode: 'Cash', note: '', utr_number: ''
     });
     const [hostelPaymentDetails, setHostelPaymentDetails] = useState({
-        amount: '', discount: '0', fine: '0', payment_date: new Date(), payment_mode: 'Cash', note: ''
+        amount: '', discount: '0', fine: '0', payment_date: format(new Date(), 'yyyy-MM-dd'), payment_mode: 'Cash', note: '', utr_number: ''
     });
     
     // Monthly fee tracking
@@ -219,6 +222,12 @@ const StudentFees = () => {
     
     // Student assigned discounts
     const [studentDiscounts, setStudentDiscounts] = useState([]);
+    
+    // UPI QR Payment state
+    const [upiSettings, setUpiSettings] = useState({ enabled: false, upi_id: '', merchant_name: '' });
+    const [showQrModal, setShowQrModal] = useState(false);
+    const [qrCodeDataUrl, setQrCodeDataUrl] = useState('');
+    const [qrPaymentType, setQrPaymentType] = useState('academic'); // academic/transport/hostel
 
     const fetchStudentAndFees = useCallback(async () => {
         if (!studentId || !selectedBranch?.id) return;
@@ -396,7 +405,14 @@ const StudentFees = () => {
                     fine,
                     isOverdue,
                 };
-            }).filter(Boolean);
+            }).filter(Boolean)
+              .sort((a, b) => {
+                  // Sort by dueDate ascending (earliest due date first)
+                  if (!a.dueDate && !b.dueDate) return 0;
+                  if (!a.dueDate) return 1; // Items without dueDate go last
+                  if (!b.dueDate) return -1;
+                  return new Date(a.dueDate) - new Date(b.dueDate);
+              });
 
             setFees(processedFees);
 
@@ -607,6 +623,31 @@ const StudentFees = () => {
             fetchStudentAndFees();
         }
     }, [fetchStudentAndFees, studentId, selectedBranch?.id]);
+
+    // Fetch UPI settings from branch
+    useEffect(() => {
+        const fetchUpiSettings = async () => {
+            if (!selectedBranch?.id) return;
+            try {
+                const { data, error } = await supabase
+                    .from('branches')
+                    .select('upi_enabled, upi_id, upi_merchant_name')
+                    .eq('id', selectedBranch.id)
+                    .single();
+                
+                if (!error && data) {
+                    setUpiSettings({
+                        enabled: data.upi_enabled || false,
+                        upi_id: data.upi_id || '',
+                        merchant_name: data.upi_merchant_name || ''
+                    });
+                }
+            } catch (err) {
+                console.error('Failed to fetch UPI settings:', err);
+            }
+        };
+        fetchUpiSettings();
+    }, [selectedBranch?.id]);
     
     const handleFeeSelection = (feeId) => {
         const newSelection = selectedFees.includes(feeId)
@@ -621,6 +662,34 @@ const StudentFees = () => {
         setSelectedFees(unpaidIds);
     };
 
+    // Calculate total discount already used in previous payments
+    const totalDiscountAlreadyUsed = useMemo(() => {
+        return payments
+            .filter(p => !p.reverted_at)
+            .reduce((sum, p) => sum + (Number(p.discount_amount) || 0), 0);
+    }, [payments]);
+
+    // Calculate total assigned discount amount (one-time total)
+    const totalAssignedDiscount = useMemo(() => {
+        let total = 0;
+        const academicTotal = fees.reduce((sum, f) => sum + f.amount, 0);
+        
+        studentDiscounts.forEach(discount => {
+            if (discount.discount_type === 'percentage') {
+                // For percentage, calculate based on total academic fees
+                total += (academicTotal * (parseFloat(discount.amount) || 0)) / 100;
+            } else if (discount.discount_type === 'fix_amount') {
+                total += parseFloat(discount.amount) || 0;
+            }
+        });
+        return total;
+    }, [studentDiscounts, fees]);
+
+    // Remaining discount = Assigned - Already Used
+    const remainingDiscount = useMemo(() => {
+        return Math.max(0, totalAssignedDiscount - totalDiscountAlreadyUsed);
+    }, [totalAssignedDiscount, totalDiscountAlreadyUsed]);
+
     useEffect(() => {
         let totalBalance = 0;
         let totalFine = 0;
@@ -633,27 +702,17 @@ const StudentFees = () => {
             }
         });
         
-        // Calculate discount from assigned student discounts
-        let calculatedDiscount = 0;
-        if (studentDiscounts.length > 0 && totalBalance > 0) {
-            studentDiscounts.forEach(discount => {
-                if (discount.discount_type === 'percentage') {
-                    calculatedDiscount += (totalBalance * (parseFloat(discount.amount) || 0)) / 100;
-                } else if (discount.discount_type === 'fix_amount') {
-                    calculatedDiscount += parseFloat(discount.amount) || 0;
-                }
-            });
-            // Ensure discount doesn't exceed balance
-            calculatedDiscount = Math.min(calculatedDiscount, totalBalance);
-        }
+        // Apply only REMAINING discount (not full assigned discount)
+        // Once discount is fully used in previous payments, it won't apply again
+        let applicableDiscount = Math.min(remainingDiscount, totalBalance);
         
         setPaymentDetails(prev => ({
             ...prev,
             amount: totalBalance.toFixed(2),
             fine: totalFine.toFixed(2),
-            discount: calculatedDiscount.toFixed(2)
+            discount: applicableDiscount.toFixed(2)
         }));
-    }, [selectedFees, fees, studentDiscounts]);
+    }, [selectedFees, fees, remainingDiscount]);
 
     const feeSummary = useMemo(() => {
         // Academic fees
@@ -711,6 +770,103 @@ const StudentFees = () => {
         return Math.max(0, (hostelDetails.balance || 0) + hostelRefunds);
     }, [hostelDetails, studentRefunds]);
 
+    // Generate UPI QR Code
+    const generateUpiQr = async (amount, type = 'academic') => {
+        if (!upiSettings.enabled || !upiSettings.upi_id) {
+            toast({
+                variant: 'destructive',
+                title: 'UPI Not Configured',
+                description: 'Please configure UPI settings in School Settings → Fees tab first.'
+            });
+            return;
+        }
+
+        const parsedAmount = parseFloat(amount);
+        if (!parsedAmount || parsedAmount <= 0) {
+            toast({
+                variant: 'destructive',
+                title: 'Invalid Amount',
+                description: 'Please enter a valid amount first.'
+            });
+            return;
+        }
+
+        try {
+            const studentName = student?.first_name || 'Student';
+            const upiString = `upi://pay?pa=${encodeURIComponent(upiSettings.upi_id)}&pn=${encodeURIComponent(upiSettings.merchant_name || 'School Fees')}&am=${parsedAmount.toFixed(2)}&cu=INR&tn=${encodeURIComponent(`Fee payment for ${studentName}`)}`;
+            
+            const qrDataUrl = await QRCode.toDataURL(upiString, {
+                width: 280,
+                margin: 2,
+                color: { dark: '#000000', light: '#ffffff' }
+            });
+            
+            setQrCodeDataUrl(qrDataUrl);
+            setQrPaymentType(type);
+            setShowQrModal(true);
+        } catch (err) {
+            console.error('QR generation failed:', err);
+            toast({
+                variant: 'destructive',
+                title: 'QR Generation Failed',
+                description: 'Could not generate QR code. Please try again.'
+            });
+        }
+    };
+
+    // Validate UTR number - check for duplicates across all payment tables
+    const validateUtrNumber = async (utrNumber, excludeTable = null) => {
+        if (!utrNumber || utrNumber.trim() === '') return { valid: true };
+        
+        const trimmedUtr = utrNumber.trim();
+        
+        // UTR format validation (typically 12-22 alphanumeric characters)
+        if (trimmedUtr.length < 12 || trimmedUtr.length > 22) {
+            return { valid: false, message: 'UTR number should be 12-22 characters long' };
+        }
+        
+        // Check in fee_payments table
+        if (excludeTable !== 'fee_payments') {
+            const { data: feeCheck } = await supabase
+                .from('fee_payments')
+                .select('id')
+                .eq('utr_number', trimmedUtr)
+                .limit(1);
+            if (feeCheck && feeCheck.length > 0) {
+                return { valid: false, message: 'This UTR number already exists in Academic Fee payments' };
+            }
+        }
+        
+        // Check in transport_fee_payments table
+        if (excludeTable !== 'transport_fee_payments') {
+            const { data: transportCheck } = await supabase
+                .from('transport_fee_payments')
+                .select('id')
+                .eq('utr_number', trimmedUtr)
+                .limit(1);
+            if (transportCheck && transportCheck.length > 0) {
+                return { valid: false, message: 'This UTR number already exists in Transport Fee payments' };
+            }
+        }
+        
+        // Check in hostel_fee_payments table
+        if (excludeTable !== 'hostel_fee_payments') {
+            const { data: hostelCheck } = await supabase
+                .from('hostel_fee_payments')
+                .select('id')
+                .eq('utr_number', trimmedUtr)
+                .limit(1);
+            if (hostelCheck && hostelCheck.length > 0) {
+                return { valid: false, message: 'This UTR number already exists in Hostel Fee payments' };
+            }
+        }
+        
+        return { valid: true };
+    };
+
+    // Check if payment mode requires UTR
+    const isUpiPayment = (mode) => ['Online', 'UPI'].includes(mode);
+
     const collectFees = async () => {
         if (!selectedFees.length) {
             toast({ variant: 'destructive', title: 'No fees selected', description: "Please select at least one fee item to collect." });
@@ -723,8 +879,20 @@ const StudentFees = () => {
             return;
         }
 
+        // UTR validation for Online/UPI payments
+        if (isUpiPayment(paymentDetails.payment_mode)) {
+            if (!paymentDetails.utr_number || paymentDetails.utr_number.trim() === '') {
+                toast({ variant: 'destructive', title: 'UTR Required', description: 'Please enter UTR number for UPI/Online payment.' });
+                return;
+            }
+            const utrValidation = await validateUtrNumber(paymentDetails.utr_number);
+            if (!utrValidation.valid) {
+                toast({ variant: 'destructive', title: 'Invalid UTR', description: utrValidation.message });
+                return;
+            }
+        }
+
         // For non-cash payments, note field can be used for reference/cheque number
-        // (reference_number column doesn't exist in fee_payments table)
 
         setPaymentLoading(true);
 
@@ -755,13 +923,14 @@ const StudentFees = () => {
                         student_id: studentId,
                         fee_master_id: fee.masterId,
                         amount: amountForThisFee,
-                        payment_date: format(paymentDetails.payment_date, 'yyyy-MM-dd'),
+                        payment_date: paymentDetails.payment_date || format(new Date(), 'yyyy-MM-dd'),
                         payment_mode: paymentDetails.payment_mode,
                         fine_paid: fineForThisFee,
                         discount_amount: discountForThisFee,
                         note: paymentDetails.note,
                         transaction_id: newTransactionId,
                         created_by: user.id,
+                        utr_number: isUpiPayment(paymentDetails.payment_mode) ? paymentDetails.utr_number.trim() : null,
                     });
                     remainingAmountToDistribute -= amountForThisFee;
                     remainingDiscountToDistribute -= discountForThisFee;
@@ -785,7 +954,7 @@ const StudentFees = () => {
             toast({ title: '✅ Payment collected successfully!', description: `Transaction ID: ${newTransactionId}` });
             await fetchStudentAndFees();
             setSelectedFees([]);
-            setPaymentDetails(prev => ({ ...prev, note: '' }));
+            setPaymentDetails(prev => ({ ...prev, note: '', utr_number: '' }));
 
             // Navigate to the new receipt page (use first payment's ID)
             const firstPaymentId = insertedPayments?.[0]?.id;
@@ -838,10 +1007,25 @@ const StudentFees = () => {
             return;
         }
 
+        // UTR validation for Online/UPI payments
+        if (isUpiPayment(transportPaymentDetails.payment_mode)) {
+            if (!transportPaymentDetails.utr_number || transportPaymentDetails.utr_number.trim() === '') {
+                toast({ variant: 'destructive', title: 'UTR Required', description: 'Please enter UTR number for UPI/Online payment.' });
+                return;
+            }
+            const utrValidation = await validateUtrNumber(transportPaymentDetails.utr_number);
+            if (!utrValidation.valid) {
+                toast({ variant: 'destructive', title: 'Invalid UTR', description: utrValidation.message });
+                return;
+            }
+        }
+
         setPaymentLoading(true);
         try {
             const branchCode = selectedBranch?.branch_code || selectedBranch?.code || 'TRN';
             const newTransactionId = await generateTransactionId(supabase, selectedBranch.id, branchCode, 'transport');
+            
+            const utrValue = isUpiPayment(transportPaymentDetails.payment_mode) ? transportPaymentDetails.utr_number.trim() : null;
             
             let paymentsToInsert;
             if (isAnnualType) {
@@ -855,12 +1039,13 @@ const StudentFees = () => {
                     amount: totalAmount,
                     discount_amount: discount,
                     fine_paid: fine,
-                    payment_date: format(transportPaymentDetails.payment_date || new Date(), 'yyyy-MM-dd'),
+                    payment_date: transportPaymentDetails.payment_date || format(new Date(), 'yyyy-MM-dd'),
                     payment_mode: transportPaymentDetails.payment_mode,
                     payment_month: `${getBillingCycleLabel(transportDetails.billingCycle)} ${sessionName}`,
                     note: transportPaymentDetails.note || `${getBillingCycleLabel(transportDetails.billingCycle)} payment`,
                     transaction_id: newTransactionId,
                     collected_by: user.id,
+                    utr_number: utrValue,
                 }];
             } else {
                 // Monthly: Create one payment record per selected month
@@ -875,12 +1060,13 @@ const StudentFees = () => {
                         amount: monthlyFee,
                         discount_amount: index === 0 ? discount : 0,
                         fine_paid: index === 0 ? fine : 0,
-                        payment_date: format(transportPaymentDetails.payment_date || new Date(), 'yyyy-MM-dd'),
+                        payment_date: transportPaymentDetails.payment_date || format(new Date(), 'yyyy-MM-dd'),
                         payment_mode: transportPaymentDetails.payment_mode,
                         payment_month: monthLabel,
                         note: transportPaymentDetails.note || `Payment for ${selectedTransportMonths.length} month(s)`,
                         transaction_id: newTransactionId,
                         collected_by: user.id,
+                        utr_number: index === 0 ? utrValue : null, // Only first record gets the UTR
                     };
                 });
             }
@@ -899,7 +1085,7 @@ const StudentFees = () => {
                     : `${selectedTransportMonths.length} month(s) paid. Transaction ID: ${newTransactionId}` 
             });
             await fetchStudentAndFees();
-            setTransportPaymentDetails({ amount: '', discount: '0', fine: '0', payment_date: new Date(), payment_mode: 'Cash', note: '' });
+            setTransportPaymentDetails({ amount: '', discount: '0', fine: '0', payment_date: format(new Date(), 'yyyy-MM-dd'), payment_mode: 'Cash', note: '', utr_number: '' });
             setSelectedTransportMonths([]);
             
             // Print receipt (use first payment's ID)
@@ -946,10 +1132,25 @@ const StudentFees = () => {
             return;
         }
 
+        // UTR validation for Online/UPI payments
+        if (isUpiPayment(hostelPaymentDetails.payment_mode)) {
+            if (!hostelPaymentDetails.utr_number || hostelPaymentDetails.utr_number.trim() === '') {
+                toast({ variant: 'destructive', title: 'UTR Required', description: 'Please enter UTR number for UPI/Online payment.' });
+                return;
+            }
+            const utrValidation = await validateUtrNumber(hostelPaymentDetails.utr_number);
+            if (!utrValidation.valid) {
+                toast({ variant: 'destructive', title: 'Invalid UTR', description: utrValidation.message });
+                return;
+            }
+        }
+
         setPaymentLoading(true);
         try {
             const branchCode = selectedBranch?.branch_code || selectedBranch?.code || 'HST';
             const newTransactionId = await generateTransactionId(supabase, selectedBranch.id, branchCode, 'hostel');
+            
+            const utrValue = isUpiPayment(hostelPaymentDetails.payment_mode) ? hostelPaymentDetails.utr_number.trim() : null;
             
             let paymentsToInsert;
             if (isAnnualType) {
@@ -963,12 +1164,13 @@ const StudentFees = () => {
                     amount: totalAmount,
                     discount_amount: discount,
                     fine_paid: fine,
-                    payment_date: format(hostelPaymentDetails.payment_date || new Date(), 'yyyy-MM-dd'),
+                    payment_date: hostelPaymentDetails.payment_date || format(new Date(), 'yyyy-MM-dd'),
                     payment_mode: hostelPaymentDetails.payment_mode,
                     payment_month: `${getBillingCycleLabel(hostelDetails.billingCycle)} ${sessionName}`,
                     note: hostelPaymentDetails.note || `${getBillingCycleLabel(hostelDetails.billingCycle)} payment`,
                     transaction_id: newTransactionId,
                     collected_by: user.id,
+                    utr_number: utrValue,
                 }];
             } else {
                 // Monthly: Create one payment record per selected month
@@ -983,12 +1185,13 @@ const StudentFees = () => {
                         amount: monthlyFee,
                         discount_amount: index === 0 ? discount : 0,
                         fine_paid: index === 0 ? fine : 0,
-                        payment_date: format(hostelPaymentDetails.payment_date || new Date(), 'yyyy-MM-dd'),
+                        payment_date: hostelPaymentDetails.payment_date || format(new Date(), 'yyyy-MM-dd'),
                         payment_mode: hostelPaymentDetails.payment_mode,
                         payment_month: monthLabel,
                         note: hostelPaymentDetails.note || `Payment for ${selectedHostelMonths.length} month(s)`,
                         transaction_id: newTransactionId,
                         collected_by: user.id,
+                        utr_number: index === 0 ? utrValue : null, // Only first record gets the UTR
                     };
                 });
             }
@@ -1007,7 +1210,7 @@ const StudentFees = () => {
                     : `${selectedHostelMonths.length} month(s) paid. Transaction ID: ${newTransactionId}` 
             });
             await fetchStudentAndFees();
-            setHostelPaymentDetails({ amount: '', discount: '0', fine: '0', payment_date: new Date(), payment_mode: 'Cash', note: '' });
+            setHostelPaymentDetails({ amount: '', discount: '0', fine: '0', payment_date: format(new Date(), 'yyyy-MM-dd'), payment_mode: 'Cash', note: '', utr_number: '' });
             setSelectedHostelMonths([]);
             
             // Print receipt (use first payment's ID)
@@ -1366,7 +1569,7 @@ const StudentFees = () => {
                                 <div className="space-y-1">
                                     <Label className="text-xs">
                                         Discount ({currencySymbol})
-                                        {studentDiscounts.length > 0 && (
+                                        {remainingDiscount > 0 && (
                                             <span className="text-green-600 ml-1">(Auto-applied)</span>
                                         )}
                                     </Label>
@@ -1378,6 +1581,29 @@ const StudentFees = () => {
                                     />
                                 </div>
                             </div>
+
+                            {/* Discount Info - Show only if discount assigned */}
+                            {totalAssignedDiscount > 0 && (
+                                <div className="bg-blue-50 dark:bg-blue-950/30 rounded-lg p-3 text-xs space-y-1">
+                                    <div className="flex justify-between">
+                                        <span className="text-muted-foreground">Assigned Discount:</span>
+                                        <span className="font-medium">{currencySymbol}{totalAssignedDiscount.toLocaleString('en-IN')}</span>
+                                    </div>
+                                    <div className="flex justify-between">
+                                        <span className="text-muted-foreground">Already Used:</span>
+                                        <span className="font-medium text-green-600">-{currencySymbol}{totalDiscountAlreadyUsed.toLocaleString('en-IN')}</span>
+                                    </div>
+                                    <div className="flex justify-between border-t pt-1 mt-1">
+                                        <span className="font-semibold">Remaining:</span>
+                                        <span className={`font-bold ${remainingDiscount > 0 ? 'text-blue-600' : 'text-muted-foreground'}`}>
+                                            {currencySymbol}{remainingDiscount.toLocaleString('en-IN')}
+                                        </span>
+                                    </div>
+                                    {remainingDiscount === 0 && totalDiscountAlreadyUsed > 0 && (
+                                        <p className="text-amber-600 text-[10px] mt-1">✓ Discount fully utilized in previous payments</p>
+                                    )}
+                                </div>
+                            )}
                             
                             <div className="grid grid-cols-2 gap-3">
                                 <div className="space-y-1">
@@ -1392,8 +1618,8 @@ const StudentFees = () => {
                                 <div className="space-y-1">
                                     <Label className="text-xs">Date</Label>
                                     <DatePicker 
-                                        date={paymentDetails.payment_date} 
-                                        setDate={(date) => setPaymentDetails(p => ({...p, payment_date: date}))}
+                                        value={paymentDetails.payment_date} 
+                                        onChange={(date) => setPaymentDetails(p => ({...p, payment_date: date}))}
                                     />
                                 </div>
                             </div>
@@ -1413,6 +1639,37 @@ const StudentFees = () => {
                                     </SelectContent>
                                 </Select>
                             </div>
+
+                            {/* UPI QR Button - Show when Online/UPI selected and UPI is enabled */}
+                            {paymentDetails.payment_mode === 'Online' && upiSettings.enabled && (
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    className="w-full border-purple-300 text-purple-700 hover:bg-purple-50"
+                                    onClick={() => {
+                                        const total = parseFloat(paymentDetails.amount || 0) - parseFloat(paymentDetails.discount || 0) + parseFloat(paymentDetails.fine || 0);
+                                        generateUpiQr(total, 'academic');
+                                    }}
+                                >
+                                    <QrCode className="h-4 w-4 mr-2" />
+                                    Show UPI QR Code
+                                </Button>
+                            )}
+
+                            {/* UTR Number - Mandatory for Online/UPI payments */}
+                            {isUpiPayment(paymentDetails.payment_mode) && (
+                                <div className="space-y-1">
+                                    <Label className="text-xs">UPI UTR Number <span className="text-red-500">*</span></Label>
+                                    <Input 
+                                        value={paymentDetails.utr_number} 
+                                        onChange={(e) => setPaymentDetails(p => ({...p, utr_number: e.target.value.toUpperCase() }))}
+                                        placeholder="Enter 12-22 digit UTR number"
+                                        className="h-9 font-mono"
+                                        maxLength={22}
+                                    />
+                                    <p className="text-[10px] text-muted-foreground">UTR from bank statement (used for reconciliation)</p>
+                                </div>
+                            )}
 
                             <div className="space-y-1">
                                 <Label className="text-xs">Note (Optional)</Label>
@@ -1563,13 +1820,13 @@ const StudentFees = () => {
                                             </tbody>
                                             {fees.length > 0 && (
                                                 <tfoot>
-                                                    <tr className="bg-muted font-bold">
-                                                        <td colSpan="4" className="p-3 text-right">Grand Total</td>
-                                                        <td className="p-3 text-right font-mono">{currencySymbol}{feesStatementTotals.amount.toLocaleString('en-IN')}</td>
-                                                        <td className="p-3 text-right font-mono text-green-600">{currencySymbol}{feesStatementTotals.paid.toLocaleString('en-IN')}</td>
-                                                        <td className="p-3 text-right font-mono text-blue-600">{currencySymbol}{feesStatementTotals.discount.toLocaleString('en-IN')}</td>
-                                                        <td className="p-3 text-right font-mono text-amber-600">{currencySymbol}{feesStatementTotals.fine.toLocaleString('en-IN')}</td>
-                                                        <td className="p-3 text-right font-mono">{currencySymbol}{feesStatementTotals.balance.toLocaleString('en-IN')}</td>
+                                                    <tr className="bg-muted font-bold border-t-2 border-border">
+                                                        <td colSpan="4" className="p-3 text-right font-semibold">Grand Total</td>
+                                                        <td className="p-3 text-right"><span className="font-mono text-lg font-bold bg-slate-200 dark:bg-slate-700 px-2 py-1 rounded">{currencySymbol}{feesStatementTotals.amount.toLocaleString('en-IN')}</span></td>
+                                                        <td className="p-3 text-right"><span className="font-mono text-lg font-bold text-green-700 bg-green-100 dark:bg-green-900/50 dark:text-green-400 px-2 py-1 rounded">{currencySymbol}{feesStatementTotals.paid.toLocaleString('en-IN')}</span></td>
+                                                        <td className="p-3 text-right"><span className="font-mono text-lg font-bold text-blue-700 bg-blue-100 dark:bg-blue-900/50 dark:text-blue-400 px-2 py-1 rounded">{currencySymbol}{feesStatementTotals.discount.toLocaleString('en-IN')}</span></td>
+                                                        <td className="p-3 text-right"><span className="font-mono text-lg font-bold text-amber-700 bg-amber-100 dark:bg-amber-900/50 dark:text-amber-400 px-2 py-1 rounded">{currencySymbol}{feesStatementTotals.fine.toLocaleString('en-IN')}</span></td>
+                                                        <td className="p-3 text-right"><span className="font-mono text-lg font-bold text-red-700 bg-red-100 dark:bg-red-900/50 dark:text-red-400 px-2 py-1 rounded">{currencySymbol}{feesStatementTotals.balance.toLocaleString('en-IN')}</span></td>
                                                         <td></td>
                                                     </tr>
                                                 </tfoot>
@@ -1681,6 +1938,34 @@ const StudentFees = () => {
                                                                         </Select>
                                                                     </div>
                                                                 </div>
+                                                                {/* UPI QR Button for Transport */}
+                                                                {(transportPaymentDetails.payment_mode === 'Online' || transportPaymentDetails.payment_mode === 'UPI') && upiSettings.enabled && (
+                                                                    <Button
+                                                                        type="button"
+                                                                        variant="outline"
+                                                                        className="w-full mt-2 border-purple-300 text-purple-700 hover:bg-purple-50"
+                                                                        onClick={() => {
+                                                                            const total = parseFloat(transportPaymentDetails.amount || 0) - parseFloat(transportPaymentDetails.discount || 0) + parseFloat(transportPaymentDetails.fine || 0);
+                                                                            generateUpiQr(total, 'transport');
+                                                                        }}
+                                                                    >
+                                                                        <QrCode className="h-4 w-4 mr-2" />
+                                                                        Show UPI QR Code
+                                                                    </Button>
+                                                                )}
+                                                                {/* UTR Number for Transport */}
+                                                                {isUpiPayment(transportPaymentDetails.payment_mode) && (
+                                                                    <div className="mt-2">
+                                                                        <Label className="text-xs">UPI UTR Number <span className="text-red-500">*</span></Label>
+                                                                        <Input 
+                                                                            value={transportPaymentDetails.utr_number} 
+                                                                            onChange={(e) => setTransportPaymentDetails(p => ({...p, utr_number: e.target.value.toUpperCase() }))}
+                                                                            placeholder="Enter UTR number"
+                                                                            className="h-9 font-mono mt-1"
+                                                                            maxLength={22}
+                                                                        />
+                                                                    </div>
+                                                                )}
                                                                 <div className="mt-3">
                                                                     <Button 
                                                                         onClick={collectTransportFee} 
@@ -1811,6 +2096,34 @@ const StudentFees = () => {
                                                                 </Select>
                                                             </div>
                                                         </div>
+                                                        {/* UPI QR Button for Monthly Transport */}
+                                                        {(transportPaymentDetails.payment_mode === 'Online' || transportPaymentDetails.payment_mode === 'UPI') && upiSettings.enabled && (
+                                                            <Button
+                                                                type="button"
+                                                                variant="outline"
+                                                                className="w-full mt-2 border-purple-300 text-purple-700 hover:bg-purple-50"
+                                                                onClick={() => {
+                                                                    const total = parseFloat(transportPaymentDetails.amount || 0) - parseFloat(transportPaymentDetails.discount || 0) + parseFloat(transportPaymentDetails.fine || 0);
+                                                                    generateUpiQr(total, 'transport');
+                                                                }}
+                                                            >
+                                                                <QrCode className="h-4 w-4 mr-2" />
+                                                                Show UPI QR Code
+                                                            </Button>
+                                                        )}
+                                                        {/* UTR Number for Monthly Transport */}
+                                                        {isUpiPayment(transportPaymentDetails.payment_mode) && (
+                                                            <div className="mt-2">
+                                                                <Label className="text-xs">UPI UTR Number <span className="text-red-500">*</span></Label>
+                                                                <Input 
+                                                                    value={transportPaymentDetails.utr_number} 
+                                                                    onChange={(e) => setTransportPaymentDetails(p => ({...p, utr_number: e.target.value.toUpperCase() }))}
+                                                                    placeholder="Enter UTR number"
+                                                                    className="h-9 font-mono mt-1"
+                                                                    maxLength={22}
+                                                                />
+                                                            </div>
+                                                        )}
                                                         <div className="mt-3">
                                                             <Button 
                                                                 onClick={collectTransportFee} 
@@ -1933,6 +2246,34 @@ const StudentFees = () => {
                                                                         </Select>
                                                                     </div>
                                                                 </div>
+                                                                {/* UPI QR Button for Hostel */}
+                                                                {(hostelPaymentDetails.payment_mode === 'Online' || hostelPaymentDetails.payment_mode === 'UPI') && upiSettings.enabled && (
+                                                                    <Button
+                                                                        type="button"
+                                                                        variant="outline"
+                                                                        className="w-full mt-2 border-purple-300 text-purple-700 hover:bg-purple-50"
+                                                                        onClick={() => {
+                                                                            const total = parseFloat(hostelPaymentDetails.amount || 0) - parseFloat(hostelPaymentDetails.discount || 0) + parseFloat(hostelPaymentDetails.fine || 0);
+                                                                            generateUpiQr(total, 'hostel');
+                                                                        }}
+                                                                    >
+                                                                        <QrCode className="h-4 w-4 mr-2" />
+                                                                        Show UPI QR Code
+                                                                    </Button>
+                                                                )}
+                                                                {/* UTR Number for Hostel */}
+                                                                {isUpiPayment(hostelPaymentDetails.payment_mode) && (
+                                                                    <div className="mt-2">
+                                                                        <Label className="text-xs">UPI UTR Number <span className="text-red-500">*</span></Label>
+                                                                        <Input 
+                                                                            value={hostelPaymentDetails.utr_number} 
+                                                                            onChange={(e) => setHostelPaymentDetails(p => ({...p, utr_number: e.target.value.toUpperCase() }))}
+                                                                            placeholder="Enter UTR number"
+                                                                            className="h-9 font-mono mt-1"
+                                                                            maxLength={22}
+                                                                        />
+                                                                    </div>
+                                                                )}
                                                                 <div className="mt-3">
                                                                     <Button 
                                                                         onClick={collectHostelFee} 
@@ -2063,6 +2404,34 @@ const StudentFees = () => {
                                                                 </Select>
                                                             </div>
                                                         </div>
+                                                        {/* UPI QR Button for Monthly Hostel */}
+                                                        {(hostelPaymentDetails.payment_mode === 'Online' || hostelPaymentDetails.payment_mode === 'UPI') && upiSettings.enabled && (
+                                                            <Button
+                                                                type="button"
+                                                                variant="outline"
+                                                                className="w-full mt-2 border-purple-300 text-purple-700 hover:bg-purple-50"
+                                                                onClick={() => {
+                                                                    const total = parseFloat(hostelPaymentDetails.amount || 0) - parseFloat(hostelPaymentDetails.discount || 0) + parseFloat(hostelPaymentDetails.fine || 0);
+                                                                    generateUpiQr(total, 'hostel');
+                                                                }}
+                                                            >
+                                                                <QrCode className="h-4 w-4 mr-2" />
+                                                                Show UPI QR Code
+                                                            </Button>
+                                                        )}
+                                                        {/* UTR Number for Monthly Hostel */}
+                                                        {isUpiPayment(hostelPaymentDetails.payment_mode) && (
+                                                            <div className="mt-2">
+                                                                <Label className="text-xs">UPI UTR Number <span className="text-red-500">*</span></Label>
+                                                                <Input 
+                                                                    value={hostelPaymentDetails.utr_number} 
+                                                                    onChange={(e) => setHostelPaymentDetails(p => ({...p, utr_number: e.target.value.toUpperCase() }))}
+                                                                    placeholder="Enter UTR number"
+                                                                    className="h-9 font-mono mt-1"
+                                                                    maxLength={22}
+                                                                />
+                                                            </div>
+                                                        )}
                                                         <div className="mt-3">
                                                             <Button 
                                                                 onClick={collectHostelFee} 
@@ -2091,7 +2460,7 @@ const StudentFees = () => {
                                                     <th className="p-3 text-left font-medium">Type</th>
                                                     <th className="p-3 text-left font-medium">Transaction ID</th>
                                                     <th className="p-3 text-left font-medium">Mode</th>
-                                                    <th className="p-3 text-left font-medium">Reference</th>
+                                                    <th className="p-3 text-left font-medium">UTR/Reference</th>
                                                     <th className="p-3 text-right font-medium">Amount</th>
                                                     <th className="p-3 text-right font-medium">Discount</th>
                                                     <th className="p-3 text-right font-medium">Fine</th>
@@ -2114,7 +2483,13 @@ const StudentFees = () => {
                                                         <td className="p-3">
                                                             <Badge variant="outline">{p.payment_mode}</Badge>
                                                         </td>
-                                                        <td className="p-3 text-muted-foreground">{p.note || '-'}</td>
+                                                        <td className="p-3">
+                                                            {p.utr_number ? (
+                                                                <code className="text-xs bg-purple-100 text-purple-700 px-2 py-0.5 rounded font-mono">{p.utr_number}</code>
+                                                            ) : (
+                                                                <span className="text-muted-foreground">{p.note || '-'}</span>
+                                                            )}
+                                                        </td>
                                                         <td className="p-3 text-right font-mono">{currencySymbol}{Number(p.amount || 0).toLocaleString('en-IN')}</td>
                                                         <td className="p-3 text-right font-mono text-blue-600">{currencySymbol}{Number(p.discount_amount || 0).toLocaleString('en-IN')}</td>
                                                         <td className="p-3 text-right font-mono text-amber-600">{currencySymbol}{Number(p.fine_paid || 0).toLocaleString('en-IN')}</td>
@@ -2173,7 +2548,13 @@ const StudentFees = () => {
                                                                 <td className="p-3">
                                                                     <Badge variant="outline">{p.payment_mode}</Badge>
                                                                 </td>
-                                                                <td className="p-3 text-muted-foreground text-xs">{monthsText}</td>
+                                                                <td className="p-3">
+                                                                    {p.utr_number ? (
+                                                                        <code className="text-xs bg-purple-100 text-purple-700 px-2 py-0.5 rounded font-mono">{p.utr_number}</code>
+                                                                    ) : (
+                                                                        <span className="text-muted-foreground text-xs">{monthsText}</span>
+                                                                    )}
+                                                                </td>
                                                                 <td className="p-3 text-right font-mono">{currencySymbol}{group.totalAmount.toLocaleString('en-IN')}</td>
                                                                 <td className="p-3 text-right font-mono text-blue-600">{currencySymbol}{group.totalDiscount.toLocaleString('en-IN')}</td>
                                                                 <td className="p-3 text-right font-mono text-amber-600">{currencySymbol}{group.totalFine.toLocaleString('en-IN')}</td>
@@ -2231,7 +2612,13 @@ const StudentFees = () => {
                                                                 <td className="p-3">
                                                                     <Badge variant="outline">{p.payment_mode}</Badge>
                                                                 </td>
-                                                                <td className="p-3 text-muted-foreground text-xs">{monthsText}</td>
+                                                                <td className="p-3">
+                                                                    {p.utr_number ? (
+                                                                        <code className="text-xs bg-purple-100 text-purple-700 px-2 py-0.5 rounded font-mono">{p.utr_number}</code>
+                                                                    ) : (
+                                                                        <span className="text-muted-foreground text-xs">{monthsText}</span>
+                                                                    )}
+                                                                </td>
                                                                 <td className="p-3 text-right font-mono">{currencySymbol}{group.totalAmount.toLocaleString('en-IN')}</td>
                                                                 <td className="p-3 text-right font-mono text-blue-600">{currencySymbol}{group.totalDiscount.toLocaleString('en-IN')}</td>
                                                                 <td className="p-3 text-right font-mono text-amber-600">{currencySymbol}{group.totalFine.toLocaleString('en-IN')}</td>
@@ -2457,6 +2844,53 @@ const StudentFees = () => {
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
+
+            {/* UPI QR Code Modal */}
+            <Dialog open={showQrModal} onOpenChange={setShowQrModal}>
+                <DialogContent className="max-w-sm">
+                    <DialogHeader>
+                        <DialogTitle className="flex items-center gap-2 text-purple-700">
+                            <QrCode className="h-5 w-5" />
+                            UPI Payment QR Code
+                        </DialogTitle>
+                    </DialogHeader>
+                    <div className="flex flex-col items-center space-y-4 py-4">
+                        {qrCodeDataUrl && (
+                            <div className="bg-white p-4 rounded-xl shadow-lg border-2 border-purple-200">
+                                <img src={qrCodeDataUrl} alt="UPI QR Code" className="w-64 h-64" />
+                            </div>
+                        )}
+                        <div className="text-center space-y-2 w-full">
+                            <p className="text-sm text-muted-foreground">Scan with any UPI app</p>
+                            <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
+                                <Smartphone className="h-4 w-4" />
+                                Google Pay • PhonePe • Paytm • BHIM
+                            </div>
+                            <div className="bg-purple-50 rounded-lg p-3 mt-3">
+                                <p className="text-xs text-purple-600 font-medium">UPI ID</p>
+                                <p className="font-mono text-sm font-bold text-purple-800">{upiSettings.upi_id}</p>
+                            </div>
+                            <div className="bg-green-50 rounded-lg p-3">
+                                <p className="text-xs text-green-600 font-medium">Amount to Pay</p>
+                                <p className="text-2xl font-bold text-green-700">
+                                    {currencySymbol}
+                                    {qrPaymentType === 'academic' 
+                                        ? (parseFloat(paymentDetails.amount || 0) - parseFloat(paymentDetails.discount || 0) + parseFloat(paymentDetails.fine || 0)).toFixed(2)
+                                        : qrPaymentType === 'transport'
+                                        ? (parseFloat(transportPaymentDetails.amount || 0) - parseFloat(transportPaymentDetails.discount || 0) + parseFloat(transportPaymentDetails.fine || 0)).toFixed(2)
+                                        : (parseFloat(hostelPaymentDetails.amount || 0) - parseFloat(hostelPaymentDetails.discount || 0) + parseFloat(hostelPaymentDetails.fine || 0)).toFixed(2)
+                                    }
+                                </p>
+                            </div>
+                        </div>
+                        <div className="w-full pt-2 border-t">
+                            <p className="text-xs text-amber-600 text-center">
+                                ⚠️ After payment, enter UTR/Transaction ID in the Note field and click Collect
+                            </p>
+                        </div>
+                    </div>
+                </DialogContent>
+            </Dialog>
         </DashboardLayout>
     );
 };

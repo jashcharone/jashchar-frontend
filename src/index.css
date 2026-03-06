@@ -124,6 +124,18 @@ html:not(.dark) {
 }
 
 @layer components {
+  /* Login Form - Force Light Mode Inputs */
+  .login-form-light input,
+  .login-form-light input:focus,
+  .login-form-light input::placeholder {
+    background-color: #ffffff !important;
+    border-color: #e2e8f0 !important;
+    color: #1e293b !important;
+  }
+  .login-form-light input::placeholder {
+    color: #94a3b8 !important;
+  }
+
   .bg-sidebar {
     background-color: hsl(var(--sidebar-background));
     @apply backdrop-blur-lg;

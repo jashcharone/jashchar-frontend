@@ -433,6 +433,9 @@ export const BASE_SIDEBAR = {
       title: 'Reports',
       icon: FileText,
       submenu: [
+          { title: 'Dashboard', path: '/super-admin/reports/dashboard' },
+          { title: 'Scheduled Reports', path: '/super-admin/reports/schedules' },
+          { title: 'Report History', path: '/super-admin/reports/history' },
           { title: 'Student Information', path: '/super-admin/reports/student-information' },
           { title: 'Finance', path: '/super-admin/reports/finance' },
           { title: 'Attendance', path: '/super-admin/reports/attendance' },
@@ -445,6 +448,7 @@ export const BASE_SIDEBAR = {
           { title: 'Homework', path: '/super-admin/reports/homework' },
           { title: 'Homework Evaluation', path: '/super-admin/reports/homework-evaluation' },
           { title: 'Online Exam Reports', path: '/super-admin/reports/online-exam' },
+          { title: 'Custom Builder', path: '/super-admin/reports/custom-builder' },
       ]
     },
     {

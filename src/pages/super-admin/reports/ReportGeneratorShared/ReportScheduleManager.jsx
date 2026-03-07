@@ -5,6 +5,7 @@
  */
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { useBranch } from '@/contexts/BranchContext';
 import { supabase } from '@/lib/customSupabaseClient';
@@ -31,7 +32,8 @@ import {
   AlertCircle,
   Send,
   History,
-  Settings
+  Settings,
+  ArrowLeft
 } from 'lucide-react';
 import { REPORT_MODULES, SCHEDULE_FREQUENCIES, EXPORT_FORMATS } from './constants';
 import { formatDate, formatDateTime } from '@/utils/dateUtils';
@@ -131,6 +133,7 @@ const SAMPLE_SCHEDULES = [
 ];
 
 const ReportScheduleManager = () => {
+  const navigate = useNavigate();
   const { user, organizationId } = useAuth();
   const { selectedBranch } = useBranch();
   
@@ -144,13 +147,18 @@ const ReportScheduleManager = () => {
 
   // Fetch schedules directly from Supabase
   const fetchSchedules = useCallback(async () => {
+    // Guard: Don't fetch if organizationId or branchId is missing
+    if (!organizationId || !selectedBranch?.id) {
+      return;
+    }
+    
     setIsLoading(true);
     try {
       const { data, error } = await supabase
         .from('report_schedules')
         .select('*')
         .eq('organization_id', organizationId)
-        .eq('branch_id', selectedBranch?.id)
+        .eq('branch_id', selectedBranch.id)
         .order('created_at', { ascending: false });
       
       if (!error && data?.length > 0) {
@@ -239,11 +247,20 @@ const ReportScheduleManager = () => {
     <div className="p-6 space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-100">Scheduled Reports</h1>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-            Manage automated report delivery schedules
-          </p>
+        <div className="flex items-center gap-4">
+          <button
+            onClick={() => navigate('/super-admin/dashboard')}
+            className="p-2 rounded-lg bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition"
+            title="Back to Dashboard"
+          >
+            <ArrowLeft className="h-5 w-5 text-gray-600 dark:text-gray-300" />
+          </button>
+          <div>
+            <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-100">Scheduled Reports</h1>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+              Manage automated report delivery schedules
+            </p>
+          </div>
         </div>
         <Button className="bg-purple-600 hover:bg-purple-700">
           <Plus className="h-4 w-4 mr-2" />

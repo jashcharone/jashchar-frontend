@@ -5,6 +5,7 @@
  */
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { useBranch } from '@/contexts/BranchContext';
 import { supabase } from '@/lib/customSupabaseClient';
@@ -29,7 +30,8 @@ import {
   Filter,
   Trash2,
   MoreVertical,
-  ExternalLink
+  ExternalLink,
+  ArrowLeft
 } from 'lucide-react';
 import { REPORT_MODULES } from './constants';
 import { formatDate, formatDateTime, getRelativeDate } from '@/utils/dateUtils';
@@ -190,6 +192,7 @@ const SAMPLE_HISTORY = [
 ];
 
 const ReportHistory = () => {
+  const navigate = useNavigate();
   const { user, organizationId } = useAuth();
   const { selectedBranch } = useBranch();
   
@@ -202,13 +205,18 @@ const ReportHistory = () => {
 
   // Fetch history directly from Supabase
   const fetchHistory = useCallback(async () => {
+    // Guard: Don't fetch if organizationId or branchId is missing
+    if (!organizationId || !selectedBranch?.id) {
+      return;
+    }
+    
     setIsLoading(true);
     try {
       const { data, error } = await supabase
         .from('report_history')
         .select('*')
         .eq('organization_id', organizationId)
-        .eq('branch_id', selectedBranch?.id)
+        .eq('branch_id', selectedBranch.id)
         .order('generated_at', { ascending: false })
         .limit(100);
       
@@ -231,8 +239,16 @@ const ReportHistory = () => {
   // Download report
   const downloadReport = useCallback((report) => {
     if (report.download_url) {
-      // In production, download from actual URL
-      alert(`Downloading: ${report.report_name}.${report.format}`);
+      // Check if it's a real URL (starts with http) or sample data
+      if (report.download_url.startsWith('http')) {
+        // Real URL - open in new tab to download
+        window.open(report.download_url, '_blank');
+      } else {
+        // Demo/sample data - show informative message
+        alert(`ℹ️ Demo Mode\n\nThis is sample data for demonstration.\nReport: ${report.report_name}\nFormat: ${report.format.toUpperCase()}\n\nIn production, actual reports will be downloaded here.`);
+      }
+    } else {
+      alert('Download URL not available for this report.');
     }
   }, []);
 
@@ -306,11 +322,20 @@ const ReportHistory = () => {
     <div className="p-6 space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-100">Report History</h1>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-            View and download previously generated reports
-          </p>
+        <div className="flex items-center gap-4">
+          <button
+            onClick={() => navigate('/super-admin/dashboard')}
+            className="p-2 rounded-lg bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition"
+            title="Back to Dashboard"
+          >
+            <ArrowLeft className="h-5 w-5 text-gray-600 dark:text-gray-300" />
+          </button>
+          <div>
+            <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-100">Report History</h1>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+              View and download previously generated reports
+            </p>
+          </div>
         </div>
         <Button variant="outline" onClick={fetchHistory} disabled={isLoading}>
           <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />

@@ -30,7 +30,7 @@ import { STUDENT_COLUMNS, getColumns, COLUMN_SETS } from './columns';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Users, FileText, BarChart3, Download, Filter, RefreshCw } from 'lucide-react';
+import { Users, FileText, BarChart3, Download, Filter, RefreshCw, Search } from 'lucide-react';
 
 const StudentReportGenerator = () => {
   const { user, currentSessionId, organizationId } = useAuth();
@@ -876,7 +876,7 @@ const StudentReportGenerator = () => {
       <div className="flex h-full">
         {/* Template Sidebar */}
         {showSidebar && (
-          <div className="w-80 border-r dark:border-gray-700 bg-slate-50/50 dark:bg-gray-800/50 overflow-hidden flex-shrink-0">
+          <div className="w-56 border-r dark:border-gray-700 bg-slate-50/50 dark:bg-gray-800/50 overflow-hidden flex-shrink-0">
             <TemplateSidebar
               templates={allTemplates}
               selectedTemplate={selectedTemplate?.key}
@@ -926,86 +926,125 @@ const StudentReportGenerator = () => {
             </div>
           )}
 
-          {/* Configuration Panels */}
-          <div className="p-4 border-b dark:border-gray-700 bg-slate-50/50 dark:bg-gray-900/50">
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-              {/* Filters */}
-              <Card className="shadow-sm dark:bg-gray-800 dark:border-gray-700">
-                <CardHeader className="py-3 px-4">
-                  <div className="flex items-center gap-2">
-                    <Filter className="h-4 w-4 text-blue-500" />
-                    <CardTitle className="text-sm">Filters</CardTitle>
-                  </div>
-                </CardHeader>
-                <CardContent className="px-4 pb-4">
-                  <FilterPanel
-                    filters={filters}
-                    onFiltersChange={setFilters}
-                    onReset={handleResetFilters}
-                    onClassChange={fetchSectionsByClass}
-                    onSessionChange={(sessionId) => {
-                      setSelectedSessionId(sessionId);
-                      // Clear class/section when session changes
-                      setFilters(prev => ({ ...prev, class_id: '', section_id: '' }));
-                    }}
-                    classes={classes}
-                    sections={sections}
-                    sessions={sessions}
-                    selectedSessionId={selectedSessionId || currentSessionId}
-                    filterConfig={{
-                      session: true,
-                      class: true,
-                      section: true,
-                      status: true,
-                      gender: true,
-                      dateRange: selectedTemplate?.defaultFilterConfig?.dateRange,
-                      month: selectedTemplate?.defaultFilterConfig?.month
-                    }}
-                    color={moduleColor}
-                    compact
-                  />
-                </CardContent>
-              </Card>
+          {/* Compact Configuration Toolbar */}
+          <div className="px-4 py-2 border-b dark:border-gray-700 bg-slate-50/50 dark:bg-gray-900/50">
+            {/* Inline Filters Row */}
+            <div className="flex flex-wrap items-center gap-3">
+              {/* Session */}
+              <div className="flex items-center gap-1">
+                <label className="text-xs text-gray-500 dark:text-gray-400">Session</label>
+                <select
+                  value={selectedSessionId || filters.session_id || ''}
+                  onChange={(e) => {
+                    const newSessionId = e.target.value;
+                    setFilters(prev => ({ ...prev, session_id: newSessionId, class_id: '', section_id: '' }));
+                    setSelectedSessionId(newSessionId);
+                  }}
+                  className="px-2 py-1.5 text-sm border dark:border-gray-600 rounded bg-white dark:bg-gray-700 dark:text-gray-200"
+                >
+                  <option value="">Current</option>
+                  {sessions.map(s => (
+                    <option key={s.id} value={s.id}>{s.session_name || s.name}</option>
+                  ))}
+                </select>
+              </div>
 
-              {/* Columns */}
-              <Card className="shadow-sm dark:bg-gray-800 dark:border-gray-700">
-                <CardHeader className="py-3 px-4">
-                  <div className="flex items-center gap-2">
-                    <FileText className="h-4 w-4 text-green-500" />
-                    <CardTitle className="text-sm dark:text-gray-200">Columns ({selectedColumns.length})</CardTitle>
-                  </div>
-                </CardHeader>
-                <CardContent className="px-4 pb-4">
-                  <ColumnSelector
-                    availableColumns={STUDENT_COLUMNS}
-                    selectedColumns={selectedColumns}
-                    onColumnsChange={setSelectedColumns}
-                    moduleColor={moduleColor}
-                    compact
-                  />
-                </CardContent>
-              </Card>
+              {/* Class */}
+              <div className="flex items-center gap-1">
+                <label className="text-xs text-gray-500 dark:text-gray-400">Class</label>
+                <select
+                  value={filters.class_id || ''}
+                  onChange={(e) => {
+                    setFilters(prev => ({ ...prev, class_id: e.target.value, section_id: '' }));
+                    fetchSectionsByClass(e.target.value);
+                  }}
+                  className="px-2 py-1.5 text-sm border dark:border-gray-600 rounded bg-white dark:bg-gray-700 dark:text-gray-200"
+                >
+                  <option value="">All Classes</option>
+                  {classes.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                </select>
+              </div>
+
+              {/* Section */}
+              <div className="flex items-center gap-1">
+                <label className="text-xs text-gray-500 dark:text-gray-400">Section</label>
+                <select
+                  value={filters.section_id || ''}
+                  onChange={(e) => setFilters(prev => ({ ...prev, section_id: e.target.value }))}
+                  className="px-2 py-1.5 text-sm border dark:border-gray-600 rounded bg-white dark:bg-gray-700 dark:text-gray-200"
+                >
+                  <option value="">All Sections</option>
+                  {sections.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+                </select>
+              </div>
+
+              {/* Status */}
+              <div className="flex items-center gap-1">
+                <label className="text-xs text-gray-500 dark:text-gray-400">Status</label>
+                <select
+                  value={filters.status || ''}
+                  onChange={(e) => setFilters(prev => ({ ...prev, status: e.target.value }))}
+                  className="px-2 py-1.5 text-sm border dark:border-gray-600 rounded bg-white dark:bg-gray-700 dark:text-gray-200"
+                >
+                  <option value="">All Status</option>
+                  <option value="active">Active</option>
+                  <option value="inactive">Inactive</option>
+                  <option value="tc_issued">TC Issued</option>
+                </select>
+              </div>
+
+              {/* Gender */}
+              <div className="flex items-center gap-1">
+                <label className="text-xs text-gray-500 dark:text-gray-400">Gender</label>
+                <select
+                  value={filters.gender || ''}
+                  onChange={(e) => setFilters(prev => ({ ...prev, gender: e.target.value }))}
+                  className="px-2 py-1.5 text-sm border dark:border-gray-600 rounded bg-white dark:bg-gray-700 dark:text-gray-200"
+                >
+                  <option value="">All Genders</option>
+                  <option value="Male">Male</option>
+                  <option value="Female">Female</option>
+                  <option value="Other">Other</option>
+                </select>
+              </div>
+
+              {/* Search */}
+              <div className="flex items-center gap-1">
+                <Search className="w-4 h-4 text-gray-400" />
+                <input
+                  type="text"
+                  value={filters.search || ''}
+                  onChange={(e) => setFilters(prev => ({ ...prev, search: e.target.value }))}
+                  placeholder="Name, Phone, Admission No..."
+                  className="px-2 py-1.5 text-sm border dark:border-gray-600 rounded bg-white dark:bg-gray-700 dark:text-gray-200 w-48"
+                />
+              </div>
+
+              {/* Divider */}
+              <div className="h-6 w-px bg-gray-300 dark:bg-gray-600" />
+
+              {/* Columns Button */}
+              <ColumnSelector
+                availableColumns={STUDENT_COLUMNS}
+                selectedColumns={selectedColumns}
+                onColumnsChange={setSelectedColumns}
+                moduleColor={moduleColor}
+                compact
+              />
+
+              {/* Divider */}
+              <div className="h-6 w-px bg-gray-300 dark:bg-gray-600" />
 
               {/* Group & Sort */}
-              <Card className="shadow-sm dark:bg-gray-800 dark:border-gray-700">
-                <CardHeader className="py-3 px-4">
-                  <div className="flex items-center gap-2">
-                    <BarChart3 className="h-4 w-4 text-purple-500" />
-                    <CardTitle className="text-sm dark:text-gray-200">Group & Sort</CardTitle>
-                  </div>
-                </CardHeader>
-                <CardContent className="px-4 pb-4">
-                  <GroupSortPanel
-                    columns={selectedColumnsObjects}
-                    groupBy={groupBy}
-                    sortBy={sortBy}
-                    onGroupByChange={setGroupBy}
-                    onSortByChange={setSortBy}
-                    moduleColor={moduleColor}
-                    compact
-                  />
-                </CardContent>
-              </Card>
+              <GroupSortPanel
+                columns={selectedColumnsObjects}
+                groupBy={groupBy}
+                sortBy={sortBy}
+                onGroupByChange={setGroupBy}
+                onSortByChange={setSortBy}
+                moduleColor={moduleColor}
+                compact
+              />
             </div>
           </div>
 

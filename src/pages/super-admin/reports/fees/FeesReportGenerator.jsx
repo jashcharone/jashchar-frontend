@@ -350,7 +350,7 @@ const FeesReportGenerator = () => {
       <div className="flex h-full">
         {/* Template Sidebar */}
         {showSidebar && (
-          <div className="w-80 border-r dark:border-gray-700 bg-slate-50/50 dark:bg-gray-800/50 overflow-hidden flex-shrink-0">
+          <div className="w-56 border-r dark:border-gray-700 bg-slate-50/50 dark:bg-gray-800/50 overflow-hidden flex-shrink-0">
             <TemplateSidebar
               templates={allTemplates}
               categories={FEES_CATEGORIES}
@@ -426,8 +426,8 @@ const FeesReportGenerator = () => {
           )}
 
           {/* Configuration Panels */}
-          <div className="p-4 border-b dark:border-gray-700 bg-slate-50/50 dark:bg-gray-900/50">
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+          <div className="p-3 border-b dark:border-gray-700 bg-slate-50/50 dark:bg-gray-900/50">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
               {/* Filters */}
               <Card className="shadow-sm dark:bg-gray-800 dark:border-gray-700">
                 <CardHeader className="py-3 px-4">

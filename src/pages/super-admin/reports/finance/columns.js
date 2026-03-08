@@ -229,6 +229,61 @@ export const ANALYSIS_COLUMNS = [
   { key: 'total_gst', label: 'Total GST', type: 'currency', width: 100, aggregate: 'sum' },
 ];
 
+// 📋 FEE STRUCTURE COLUMNS
+export const FEE_STRUCTURE_COLUMNS = [
+  // Tuition Fee (Class-wise)
+  { key: 'class_name', label: 'Class', type: 'string', width: 100, groupable: true, sortable: true },
+  { key: 'fee_group_name', label: 'Fee Group', type: 'string', width: 150, groupable: true },
+  { key: 'fee_type_name', label: 'Fee Type', type: 'string', width: 150, groupable: true },
+  { key: 'fee_type_code', label: 'Code', type: 'string', width: 80 },
+  { key: 'amount', label: 'Amount', type: 'currency', width: 120, sortable: true, aggregate: 'sum' },
+  { key: 'due_date', label: 'Due Date', type: 'date', width: 100 },
+  { key: 'fine_type', label: 'Fine Type', type: 'badge', width: 100 },
+  { key: 'fine_value', label: 'Fine Value', type: 'currency', width: 100 },
+  { key: 'is_fine_per_day', label: 'Per Day', type: 'boolean', width: 80 },
+  { key: 'students_assigned', label: 'Students', type: 'number', width: 90, aggregate: 'sum' },
+  { key: 'total_expected_amount', label: 'Total Expected', type: 'currency', width: 130, aggregate: 'sum' },
+  
+  // Transport Fee Structure
+  { key: 'route_name', label: 'Route', type: 'string', width: 150, groupable: true },
+  { key: 'vehicle_no', label: 'Vehicle No', type: 'string', width: 100 },
+  { key: 'pickup_point', label: 'Pickup Point', type: 'string', width: 150, groupable: true },
+  { key: 'distance_km', label: 'Distance (KM)', type: 'number', width: 100, sortable: true },
+  { key: 'monthly_fee', label: 'Monthly Fee', type: 'currency', width: 120, aggregate: 'sum' },
+  { key: 'quarterly_fee', label: 'Quarterly Fee', type: 'currency', width: 120 },
+  { key: 'half_yearly_fee', label: 'Half Yearly Fee', type: 'currency', width: 130 },
+  { key: 'annual_fee', label: 'Annual Fee', type: 'currency', width: 120 },
+  { key: 'transport_students', label: 'Students', type: 'number', width: 90, aggregate: 'sum' },
+  { key: 'month', label: 'Month', type: 'string', width: 100, groupable: true },
+  { key: 'transport_due_date', label: 'Due Date', type: 'date', width: 100 },
+  { key: 'transport_fine_type', label: 'Fine Type', type: 'badge', width: 100 },
+  { key: 'transport_fine_value', label: 'Fine Value', type: 'currency', width: 100 },
+  
+  // Hostel Fee Structure
+  { key: 'hostel_name', label: 'Hostel', type: 'string', width: 150, groupable: true },
+  { key: 'room_type', label: 'Room Type', type: 'string', width: 120, groupable: true },
+  { key: 'room_number', label: 'Room No', type: 'string', width: 80 },
+  { key: 'capacity', label: 'Capacity', type: 'number', width: 80 },
+  { key: 'occupied', label: 'Occupied', type: 'number', width: 80 },
+  { key: 'hostel_monthly_fee', label: 'Monthly Fee', type: 'currency', width: 120, aggregate: 'sum' },
+  { key: 'hostel_quarterly_fee', label: 'Quarterly Fee', type: 'currency', width: 120 },
+  { key: 'hostel_half_yearly_fee', label: 'Half Yearly Fee', type: 'currency', width: 130 },
+  { key: 'hostel_yearly_fee', label: 'Annual Fee', type: 'currency', width: 120 },
+  { key: 'mess_fee', label: 'Mess Fee', type: 'currency', width: 100 },
+  { key: 'total_hostel_fee', label: 'Total Fee', type: 'currency', width: 120, aggregate: 'sum' },
+  { key: 'hostel_students', label: 'Students', type: 'number', width: 90, aggregate: 'sum' },
+  
+  // Exam Fee Structure
+  { key: 'exam_name', label: 'Exam Name', type: 'string', width: 180, groupable: true },
+  { key: 'exam_type', label: 'Exam Type', type: 'badge', width: 120, groupable: true },
+  { key: 'exam_fee', label: 'Exam Fee', type: 'currency', width: 120, aggregate: 'sum' },
+  { key: 'practical_fee', label: 'Practical Fee', type: 'currency', width: 120 },
+  { key: 'registration_fee', label: 'Registration Fee', type: 'currency', width: 130 },
+  { key: 'total_exam_fee', label: 'Total Fee', type: 'currency', width: 120, aggregate: 'sum' },
+  { key: 'applicable_classes', label: 'Applicable Classes', type: 'string', width: 150 },
+  { key: 'exam_due_date', label: 'Due Date', type: 'date', width: 100 },
+];
+
 // ═══════════════════════════════════════════════════════════════════════════════
 // COLUMN SETS (Pre-configured for specific reports)
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -281,6 +336,13 @@ export const COLUMN_SETS = {
   journal_entries: ['date', 'particulars', 'debit', 'credit', 'entry_type'],
   bank_reconciliation: ['date', 'book_balance', 'bank_balance', 'difference', 'reconciled'],
   gst_report: ['invoice_no', 'student_name', 'taxable_amount', 'cgst', 'sgst', 'total_gst'],
+  
+  // Fee Structure Reports (NEW)
+  tuition_fee_classwise: ['class_name', 'fee_group_name', 'fee_type_name', 'fee_type_code', 'amount', 'due_date', 'fine_type', 'fine_value', 'students_assigned', 'total_expected_amount'],
+  exam_fee_structure: ['class_name', 'exam_name', 'exam_type', 'exam_fee', 'practical_fee', 'registration_fee', 'total_exam_fee', 'exam_due_date'],
+  hostel_fee_structure: ['hostel_name', 'room_type', 'room_number', 'capacity', 'occupied', 'hostel_monthly_fee', 'mess_fee', 'total_hostel_fee', 'hostel_students'],
+  transport_fee_structure: ['route_name', 'pickup_point', 'distance_km', 'monthly_fee', 'quarterly_fee', 'annual_fee', 'transport_students'],
+  transport_fee_monthly: ['month', 'transport_due_date', 'transport_fine_type', 'transport_fine_value'],
 };
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -302,6 +364,12 @@ export const ALL_FINANCE_COLUMNS = [
     !OUTSTANDING_COLUMNS.find(c => c.key === col.key) &&
     !CONCESSION_COLUMNS.find(c => c.key === col.key)
   ),
+  ...FEE_STRUCTURE_COLUMNS.filter(col =>
+    !COLLECTION_COLUMNS.find(c => c.key === col.key) &&
+    !OUTSTANDING_COLUMNS.find(c => c.key === col.key) &&
+    !CONCESSION_COLUMNS.find(c => c.key === col.key) &&
+    !ANALYSIS_COLUMNS.find(c => c.key === col.key)
+  ),
 ];
 
 // Alias for convenience
@@ -320,6 +388,7 @@ export default {
   OUTSTANDING_COLUMNS,
   CONCESSION_COLUMNS,
   ANALYSIS_COLUMNS,
+  FEE_STRUCTURE_COLUMNS,
   COLUMN_SETS,
   ALL_FINANCE_COLUMNS,
   FINANCE_COLUMNS,

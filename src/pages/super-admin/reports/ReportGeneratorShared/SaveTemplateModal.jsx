@@ -1,10 +1,12 @@
 /**
  * SaveTemplateModal - Save Custom Report Template
  * Allows users to save their report configuration as a reusable template
+ * Persist to report_saved_templates table in Supabase
  */
 
 import React, { useState } from 'react';
 import { X, Save, Star, Loader2 } from 'lucide-react';
+import { supabase } from '@/lib/customSupabaseClient';
 
 const SaveTemplateModal = ({
   isOpen,
@@ -13,26 +15,84 @@ const SaveTemplateModal = ({
   initialName = '',
   initialDescription = '',
   templateConfig = {},
-  saving = false
+  saving: externalSaving = false,
+  // DB persistence props
+  module = '',
+  branchId = null,
+  organizationId = null,
+  sessionId = null,
+  userId = null,
+  persistToDb = true // Enable DB persistence by default
 }) => {
   const [name, setName] = useState(initialName);
   const [description, setDescription] = useState(initialDescription);
   const [isFavorite, setIsFavorite] = useState(false);
   const [error, setError] = useState('');
+  const [saving, setSaving] = useState(false);
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!name.trim()) {
       setError('Please enter a template name');
       return;
     }
 
     setError('');
-    onSave({
+    
+    const templateData = {
       name: name.trim(),
       description: description.trim(),
       is_favorite: isFavorite,
       config: templateConfig
-    });
+    };
+
+    // If DB persistence is enabled and context is available, save to DB
+    if (persistToDb && branchId && organizationId && userId && module) {
+      setSaving(true);
+      try {
+        const { data, error: dbError } = await supabase
+          .from('report_saved_templates')
+          .insert({
+            organization_id: organizationId,
+            branch_id: branchId,
+            session_id: sessionId,
+            module,
+            name: name.trim(),
+            description: description.trim(),
+            template_config: templateConfig,
+            is_favorite: isFavorite,
+            is_shared: false,
+            created_by: userId
+          })
+          .select()
+          .single();
+
+        if (dbError) {
+          console.error('Failed to save template to DB:', dbError);
+          setError('Failed to save template. Please try again.');
+          setSaving(false);
+          return;
+        }
+
+        console.log('✅ Template saved to DB:', data);
+        
+        // Call onSave with the saved template data
+        onSave({
+          ...templateData,
+          id: data.id,
+          key: `custom_${data.id}`
+        });
+        
+        setSaving(false);
+      } catch (err) {
+        console.error('Template save error:', err);
+        setError('An error occurred while saving the template.');
+        setSaving(false);
+        return;
+      }
+    } else {
+      // Fallback to parent callback only (no DB persistence)
+      onSave(templateData);
+    }
   };
 
   const handleClose = () => {
@@ -147,10 +207,10 @@ const SaveTemplateModal = ({
             </button>
             <button
               onClick={handleSave}
-              disabled={saving}
+              disabled={saving || externalSaving}
               className="flex items-center gap-2 px-4 py-2 text-sm bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition disabled:opacity-50"
             >
-              {saving ? (
+              {(saving || externalSaving) ? (
                 <>
                   <Loader2 className="w-4 h-4 animate-spin" />
                   Saving...

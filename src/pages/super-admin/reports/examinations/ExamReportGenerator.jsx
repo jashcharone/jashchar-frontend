@@ -23,6 +23,7 @@ import {
   useReportExport,
   useGroupedData,
   useFilterOptions,
+  useSavedTemplates,
   REPORT_MODULES
 } from '../ReportGeneratorShared';
 import { EXAMINATION_TEMPLATES, EXAMINATION_CATEGORIES, getPopularTemplates } from './templates';
@@ -77,6 +78,21 @@ const ExamReportGenerator = () => {
     defaultColumns: COLUMN_SETS.student_marksheet || []  // Store as keys (strings), not objects
   });
 
+  // Fetch saved templates from DB
+  const { 
+    savedTemplates: dbSavedTemplates, 
+    refetch: refetchSavedTemplates,
+    deleteTemplate,
+    toggleFavorite
+  } = useSavedTemplates('examinations');
+
+  // Merge DB saved templates into local state on load
+  useEffect(() => {
+    if (dbSavedTemplates.length > 0) {
+      setSavedTemplates(dbSavedTemplates);
+    }
+  }, [dbSavedTemplates, setSavedTemplates]);
+
   // Convert selected column keys to full column objects for table/export
   const selectedColumnsObjects = useMemo(() => {
     return selectedColumns
@@ -84,8 +100,15 @@ const ExamReportGenerator = () => {
       .filter(Boolean);
   }, [selectedColumns]);
 
-  // Templates for sidebar
-  const allTemplates = useMemo(() => EXAMINATION_TEMPLATES, []);
+  // Templates for sidebar - merge built-in templates with saved templates
+  const allTemplates = useMemo(() => {
+    const customTemplates = savedTemplates.map(t => ({
+      ...t,
+      category: 'Custom Templates',
+      isCustom: true
+    }));
+    return [...EXAMINATION_TEMPLATES, ...customTemplates];
+  }, [savedTemplates]);
 
   // Handle template selection - receives full template object from TemplateSidebar
   const handleTemplateSelect = useCallback((template) => {
@@ -473,6 +496,34 @@ const ExamReportGenerator = () => {
                 columns={selectedColumnsObjects}
                 title={selectedTemplate?.name || 'Examination Report'}
                 filename="examination_report"
+                // Enhanced props for school header & grand total
+                schoolInfo={selectedBranch ? {
+                  name: selectedBranch.name,
+                  address: selectedBranch.address,
+                  phone: selectedBranch.phone,
+                  email: selectedBranch.email,
+                  logo: selectedBranch.logo_url,
+                  district: selectedBranch.district,
+                  state: selectedBranch.state,
+                  affiliationNo: selectedBranch.affiliation_no
+                } : null}
+                showSchoolHeader={true}
+                showGrandTotal={true}
+                showFilterInfo={true}
+                filterInfo={{
+                  session: sessions?.find(s => s.id === currentSessionId)?.name || '',
+                  className: classes?.find(c => c.id === filters?.classId)?.name || '',
+                  examName: filters?.examId || ''
+                }}
+                preparedBy=""
+                authorizedBy=""
+                saveHistory={true}
+                module="examinations"
+                templateKey={selectedTemplate?.key || ''}
+                branchId={selectedBranch?.id}
+                organizationId={organizationId}
+                sessionId={currentSessionId}
+                userId={user?.id}
               />
             </div>
           </div>
@@ -494,15 +545,19 @@ const ExamReportGenerator = () => {
       
       {/* Modals */}
       <SaveTemplateModal
-        show={showSaveModal}
+        isOpen={showSaveModal}
         onClose={() => setShowSaveModal(false)}
-        templateData={{
-          columns: selectedColumnsObjects,
-          filters,
-          groupBy,
-          sortBy
+        onSave={(templateData) => {
+          // Refresh saved templates from DB to include the new template
+          refetchSavedTemplates();
+          setShowSaveModal(false);
         }}
-        moduleId="examinations"
+        templateConfig={{ columns: selectedColumnsObjects, filters, groupBy, sortBy }}
+        module="examinations"
+        branchId={selectedBranch?.id}
+        organizationId={organizationId}
+        sessionId={currentSessionId}
+        userId={user?.id}
       />
       
       <ScheduleReportModal

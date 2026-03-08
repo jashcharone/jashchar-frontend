@@ -22,6 +22,7 @@ import {
   useReportExport,
   useGroupedData,
   useFilterOptions,
+  useSavedTemplates,
   REPORT_MODULES
 } from '../ReportGeneratorShared';
 import { fetchStudentsFromSupabase } from '../ReportGeneratorShared/reportQueries';
@@ -71,6 +72,21 @@ const StudentReportGenerator = () => {
     defaultColumns: COLUMN_SETS.basic  // Store as keys (strings), not objects
   });
 
+  // Fetch saved templates from DB
+  const { 
+    savedTemplates: dbSavedTemplates, 
+    refetch: refetchSavedTemplates,
+    deleteTemplate,
+    toggleFavorite
+  } = useSavedTemplates('student-information');
+
+  // Merge DB saved templates into local state on load
+  useEffect(() => {
+    if (dbSavedTemplates.length > 0) {
+      setSavedTemplates(dbSavedTemplates);
+    }
+  }, [dbSavedTemplates, setSavedTemplates]);
+
   // Convert selected column keys to full column objects for table/export
   const selectedColumnsObjects = useMemo(() => {
     return selectedColumns
@@ -78,8 +94,16 @@ const StudentReportGenerator = () => {
       .filter(Boolean);
   }, [selectedColumns]);
 
-  // Templates for sidebar - direct array with category property
-  const allTemplates = useMemo(() => STUDENT_TEMPLATES, []);
+  // Templates for sidebar - merge built-in templates with saved templates
+  const allTemplates = useMemo(() => {
+    // Add saved custom templates to the templates list with 'Custom' category
+    const customTemplates = savedTemplates.map(t => ({
+      ...t,
+      category: 'Custom Templates',
+      isCustom: true
+    }));
+    return [...STUDENT_TEMPLATES, ...customTemplates];
+  }, [savedTemplates]);
 
   // Handle template selection - receives full template object from TemplateSidebar
   const handleTemplateSelect = useCallback((template) => {
@@ -864,6 +888,7 @@ const StudentReportGenerator = () => {
   }, [data]);
 
   return (
+    <>
     <ReportGeneratorLayout
       title="Student Information Reports"
       subtitle="Generate and export comprehensive student data reports"
@@ -1067,6 +1092,35 @@ const StudentReportGenerator = () => {
               title={selectedTemplate?.name || 'Student Report'}
               filename="student_report"
               color={moduleColor}
+              // Enhanced props for school header & grand total
+              schoolInfo={selectedBranch ? {
+                name: selectedBranch.name,
+                address: selectedBranch.address,
+                phone: selectedBranch.phone,
+                email: selectedBranch.email,
+                logo: selectedBranch.logo_url,
+                district: selectedBranch.district,
+                state: selectedBranch.state,
+                affiliationNo: selectedBranch.affiliation_no
+              } : null}
+              showSchoolHeader={true}
+              showGrandTotal={false}
+              showFilterInfo={true}
+              filterInfo={{
+                session: sessions?.find(s => s.id === effectiveSessionId)?.name || '',
+                className: classes?.find(c => c.id === filters?.classId)?.name || '',
+                sectionName: sections?.find(s => s.id === filters?.sectionId)?.name || ''
+              }}
+              preparedBy=""
+              authorizedBy=""
+              // History logging props
+              saveHistory={true}
+              module="student-information"
+              templateKey={selectedTemplate?.key || ''}
+              branchId={selectedBranch?.id}
+              organizationId={organizationId}
+              sessionId={effectiveSessionId}
+              userId={user?.id}
             />
           </div>
 
@@ -1083,41 +1137,36 @@ const StudentReportGenerator = () => {
           </div>
         </div>
       </div>
-
-      {/* Save Template Modal */}
-      <SaveTemplateModal
-        isOpen={showSaveModal}
-        onClose={() => setShowSaveModal(false)}
-        onSave={(templateData) => {
-          const newTemplate = {
-            key: `custom_${Date.now()}`,
-            name: templateData.name,
-            description: templateData.description,
-            columns: selectedColumnsObjects,  // Save as objects so template loading works
-            filters,
-            groupBy,
-            sortBy,
-            isFavorite: templateData.is_favorite,
-            createdAt: new Date().toISOString()
-          };
-          setSavedTemplates([...savedTemplates, newTemplate]);
-          setShowSaveModal(false);
-        }}
-        templateConfig={{ columns: selectedColumnsObjects, filters, groupBy, sortBy }}
-        moduleColor={moduleColor}
-      />
-
-      {/* Schedule Report Modal */}
-      <ScheduleReportModal
-        isOpen={showScheduleModal}
-        onClose={() => setShowScheduleModal(false)}
-        onSave={(schedule) => {
-          console.log('Schedule created:', schedule);
-          setShowScheduleModal(false);
-        }}
-        reportName={selectedTemplate?.name || 'Custom Report'}
-      />
     </ReportGeneratorLayout>
+
+    {/* Save Template Modal - Outside layout for proper z-index */}
+    <SaveTemplateModal
+      isOpen={showSaveModal}
+      onClose={() => setShowSaveModal(false)}
+      onSave={(templateData) => {
+        // Refresh saved templates from DB to include the new template
+        refetchSavedTemplates();
+        setShowSaveModal(false);
+      }}
+      templateConfig={{ columns: selectedColumnsObjects, filters, groupBy, sortBy }}
+      module="student-information"
+      branchId={selectedBranch?.id}
+      organizationId={organizationId}
+      sessionId={currentSessionId}
+      userId={user?.id}
+    />
+
+    {/* Schedule Report Modal */}
+    <ScheduleReportModal
+      isOpen={showScheduleModal}
+      onClose={() => setShowScheduleModal(false)}
+      onSave={(schedule) => {
+        console.log('Schedule created:', schedule);
+        setShowScheduleModal(false);
+      }}
+      reportName={selectedTemplate?.name || 'Custom Report'}
+    />
+  </>
   );
 };
 

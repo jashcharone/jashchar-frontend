@@ -1,7 +1,7 @@
 /**
  * Finance Report Generator
- * Module 2: 40 Finance Report Templates
- * Categories: Collection, Outstanding, Concession & Scholarship, Financial Analysis
+ * Module 2: 44 Finance Report Templates
+ * Categories: Collection, Outstanding, Concession & Scholarship, Fee Structure, Financial Analysis
  */
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
@@ -23,11 +23,18 @@ import {
   useReportExport,
   useGroupedData,
   useFilterOptions,
+  useSavedTemplates,
   REPORT_MODULES
 } from '../ReportGeneratorShared';
 import { FINANCE_TEMPLATES, FINANCE_CATEGORIES, getPopularTemplates } from './templates';
 import { FINANCE_COLUMNS, COLUMN_SETS, getColumnsForSet } from './columns';
-import { fetchFinanceDataFromSupabase } from '../ReportGeneratorShared/reportQueries';
+import { 
+  fetchFinanceDataFromSupabase,
+  fetchTuitionFeeStructure,
+  fetchExamFeeStructure,
+  fetchHostelFeeStructure,
+  fetchTransportFeeStructure
+} from '../ReportGeneratorShared/reportQueries';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -75,6 +82,21 @@ const FinanceReportGenerator = () => {
     defaultColumns: COLUMN_SETS.daily_collection  // Store as keys (strings), not objects
   });
 
+  // Fetch saved templates from DB
+  const { 
+    savedTemplates: dbSavedTemplates, 
+    refetch: refetchSavedTemplates,
+    deleteTemplate,
+    toggleFavorite
+  } = useSavedTemplates('finance');
+
+  // Merge DB saved templates into local state on load
+  useEffect(() => {
+    if (dbSavedTemplates.length > 0) {
+      setSavedTemplates(dbSavedTemplates);
+    }
+  }, [dbSavedTemplates, setSavedTemplates]);
+
   // Convert selected column keys to full column objects for table/export
   const selectedColumnsObjects = useMemo(() => {
     return selectedColumns
@@ -82,8 +104,15 @@ const FinanceReportGenerator = () => {
       .filter(Boolean);
   }, [selectedColumns]);
 
-  // Templates for sidebar
-  const allTemplates = useMemo(() => FINANCE_TEMPLATES, []);
+  // Templates for sidebar - merge built-in templates with saved templates
+  const allTemplates = useMemo(() => {
+    const customTemplates = savedTemplates.map(t => ({
+      ...t,
+      category: 'Custom Templates',
+      isCustom: true
+    }));
+    return [...FINANCE_TEMPLATES, ...customTemplates];
+  }, [savedTemplates]);
 
   // Handle template selection - receives full template object from TemplateSidebar
   const handleTemplateSelect = useCallback((template) => {
@@ -107,16 +136,57 @@ const FinanceReportGenerator = () => {
     setError(null);
 
     try {
-      const financeData = await fetchFinanceDataFromSupabase({
-        branchId: selectedBranch.id,
-        organizationId,
-        sessionId: selectedSessionId || currentSessionId,
-        dateFrom: filters.date_from,
-        dateTo: filters.date_to,
-        paymentMode: filters.payment_mode,
-        classId: filters.class_id,
-        sectionId: filters.section_id
-      });
+      const category = selectedTemplate?.category || 'collection';
+      const templateId = selectedTemplate?.id || '';
+      let financeData;
+
+      // Handle Fee Structure category with specific fetch functions
+      if (category === 'fee_structure') {
+        if (templateId === 'tuition_fee_classwise') {
+          financeData = await fetchTuitionFeeStructure({
+            branchId: selectedBranch.id,
+            organizationId,
+            sessionId: selectedSessionId || currentSessionId
+          });
+        } else if (templateId === 'exam_fee_structure') {
+          financeData = await fetchExamFeeStructure({
+            branchId: selectedBranch.id,
+            organizationId,
+            sessionId: selectedSessionId || currentSessionId
+          });
+        } else if (templateId === 'hostel_fee_structure') {
+          financeData = await fetchHostelFeeStructure({
+            branchId: selectedBranch.id,
+            organizationId,
+            sessionId: selectedSessionId || currentSessionId
+          });
+        } else if (templateId === 'transport_fee_structure') {
+          financeData = await fetchTransportFeeStructure({
+            branchId: selectedBranch.id,
+            organizationId,
+            sessionId: selectedSessionId || currentSessionId
+          });
+        } else {
+          // Default to tuition fee structure
+          financeData = await fetchTuitionFeeStructure({
+            branchId: selectedBranch.id,
+            organizationId,
+            sessionId: selectedSessionId || currentSessionId
+          });
+        }
+      } else {
+        // Use default finance data fetch for other categories
+        financeData = await fetchFinanceDataFromSupabase({
+          branchId: selectedBranch.id,
+          organizationId,
+          sessionId: selectedSessionId || currentSessionId,
+          dateFrom: filters.date_from,
+          dateTo: filters.date_to,
+          paymentMode: filters.payment_mode,
+          classId: filters.class_id,
+          sectionId: filters.section_id
+        });
+      }
 
       setData(financeData);
     } catch (err) {
@@ -126,7 +196,7 @@ const FinanceReportGenerator = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [selectedBranch, currentSessionId, selectedSessionId, organizationId, filters, setIsLoading, setError, setData]);
+  }, [selectedBranch, currentSessionId, selectedSessionId, organizationId, filters, selectedTemplate, setIsLoading, setError, setData]);
 
   // Generate sample data for demo/preview based on template category
   const generateSampleData = () => {
@@ -138,9 +208,84 @@ const FinanceReportGenerator = () => {
       return generateOutstandingData();
     } else if (category === 'concession') {
       return generateConcessionData();
+    } else if (category === 'fee_structure') {
+      return generateFeeStructureData();
     } else {
       return generateAnalysisData();
     }
+  };
+
+  // Fee Structure sample data (NEW)
+  const generateFeeStructureData = () => {
+    const classes = ['LKG', 'UKG', '1st', '2nd', '3rd', '4th', '5th', '6th', '7th', '8th', '9th', '10th'];
+    const feeGroups = ['LKG Fees', 'UKG Fees', 'Primary (1-5)', 'Middle (6-8)', 'High School (9-10)'];
+    const feeTypes = ['Tuition Fee', 'Exam Fee', 'Lab Fee', 'Library Fee', 'Sports Fee'];
+    const hostels = ['Boys Hostel A', 'Boys Hostel B', 'Girls Hostel A'];
+    const roomTypes = ['Single', 'Double', 'Triple', 'Dormitory'];
+    const routes = ['Route 1 - City Center', 'Route 2 - Industrial Area', 'Route 3 - Residential Colony', 'Route 4 - Highway'];
+    const pickupPoints = ['Main Gate', 'Bus Stand', 'Railway Station', 'Market Square', 'Hospital Road'];
+    
+    const templateId = selectedTemplate?.id || 'tuition_fee_classwise';
+    
+    if (templateId === 'tuition_fee_classwise') {
+      return Array.from({ length: 30 }, (_, i) => ({
+        id: i + 1,
+        class_name: classes[i % 12],
+        fee_group_name: feeGroups[Math.floor(i / 6) % 5],
+        fee_type_name: feeTypes[i % 5],
+        fee_type_code: `FT${String(i + 1).padStart(3, '0')}`,
+        amount: 5000 + Math.round(Math.random() * 20000),
+        due_date: `2024-${String((i % 12) + 1).padStart(2, '0')}-15`,
+        fine_type: ['none', 'fixed', 'percentage'][i % 3],
+        fine_value: i % 3 === 0 ? 0 : (i % 3 === 1 ? 100 : 5),
+        is_fine_per_day: i % 2 === 0,
+        students_assigned: 20 + Math.floor(Math.random() * 40),
+        total_expected_amount: (5000 + Math.round(Math.random() * 20000)) * (20 + Math.floor(Math.random() * 40))
+      }));
+    } else if (templateId === 'exam_fee_structure') {
+      return Array.from({ length: 20 }, (_, i) => ({
+        id: i + 1,
+        class_name: classes[i % 12],
+        exam_name: ['Unit Test 1', 'Mid Term', 'Unit Test 2', 'Final Exam'][i % 4],
+        exam_type: ['Internal', 'External', 'Board'][i % 3],
+        exam_fee: 500 + Math.round(Math.random() * 1500),
+        practical_fee: i % 3 === 2 ? 200 + Math.round(Math.random() * 300) : 0,
+        registration_fee: i % 3 === 2 ? 100 + Math.round(Math.random() * 200) : 0,
+        total_exam_fee: 500 + Math.round(Math.random() * 2000),
+        exam_due_date: `2024-${String((i % 12) + 1).padStart(2, '0')}-10`,
+        applicable_classes: classes[i % 12]
+      }));
+    } else if (templateId === 'hostel_fee_structure') {
+      return Array.from({ length: 20 }, (_, i) => ({
+        id: i + 1,
+        hostel_name: hostels[i % 3],
+        room_type: roomTypes[i % 4],
+        room_number: `R${String(i + 101).padStart(3, '0')}`,
+        capacity: [1, 2, 3, 6][i % 4],
+        occupied: Math.floor(Math.random() * [1, 2, 3, 6][i % 4]),
+        hostel_monthly_fee: 3000 + Math.round(Math.random() * 5000),
+        hostel_quarterly_fee: (3000 + Math.round(Math.random() * 5000)) * 3,
+        hostel_half_yearly_fee: (3000 + Math.round(Math.random() * 5000)) * 6,
+        hostel_yearly_fee: (3000 + Math.round(Math.random() * 5000)) * 12,
+        mess_fee: 2000 + Math.round(Math.random() * 2000),
+        total_hostel_fee: 5000 + Math.round(Math.random() * 7000),
+        hostel_students: Math.floor(Math.random() * [1, 2, 3, 6][i % 4])
+      }));
+    } else if (templateId === 'transport_fee_structure') {
+      return Array.from({ length: 20 }, (_, i) => ({
+        id: i + 1,
+        route_name: routes[i % 4],
+        pickup_point: pickupPoints[i % 5],
+        distance_km: 2 + Math.floor(Math.random() * 15),
+        monthly_fee: 500 + Math.round(Math.random() * 1500),
+        quarterly_fee: (500 + Math.round(Math.random() * 1500)) * 3,
+        half_yearly_fee: (500 + Math.round(Math.random() * 1500)) * 6,
+        annual_fee: (500 + Math.round(Math.random() * 1500)) * 12,
+        transport_students: 5 + Math.floor(Math.random() * 20)
+      }));
+    }
+    
+    return [];
   };
 
   // Collection sample data
@@ -519,6 +664,38 @@ const FinanceReportGenerator = () => {
               title={selectedTemplate?.name || 'Finance Report'}
               filename="finance_report"
               color={moduleColor}
+              // Enhanced props for school header & grand total
+              schoolInfo={selectedBranch ? {
+                name: selectedBranch.name,
+                address: selectedBranch.address,
+                phone: selectedBranch.phone,
+                email: selectedBranch.email,
+                logo: selectedBranch.logo_url,
+                district: selectedBranch.district,
+                state: selectedBranch.state,
+                affiliationNo: selectedBranch.affiliation_no
+              } : null}
+              showSchoolHeader={true}
+              showGrandTotal={true}
+              showFilterInfo={true}
+              filterInfo={{
+                session: sessions?.find(s => s.id === selectedSessionId)?.name || '',
+                className: classes?.find(c => c.id === filters?.classId)?.name || '',
+                sectionName: sections?.find(s => s.id === filters?.sectionId)?.name || '',
+                dateFrom: filters?.dateFrom || '',
+                dateTo: filters?.dateTo || '',
+                paymentMode: filters?.paymentMode || ''
+              }}
+              preparedBy=""
+              authorizedBy=""
+              // History logging props
+              saveHistory={true}
+              module="finance"
+              templateKey={selectedTemplate?.key || ''}
+              branchId={selectedBranch?.id}
+              organizationId={organizationId}
+              sessionId={selectedSessionId}
+              userId={user?.id}
             />
           </div>
 
@@ -542,22 +719,16 @@ const FinanceReportGenerator = () => {
         isOpen={showSaveModal}
         onClose={() => setShowSaveModal(false)}
         onSave={(templateData) => {
-          const newTemplate = {
-            id: `custom_${Date.now()}`,
-            name: templateData.name,
-            description: templateData.description,
-            columns: selectedColumnsObjects,
-            filters,
-            groupBy,
-            sortBy,
-            isFavorite: templateData.is_favorite,
-            createdAt: new Date().toISOString()
-          };
-          setSavedTemplates([...savedTemplates, newTemplate]);
+          // Refresh saved templates from DB to include the new template
+          refetchSavedTemplates();
           setShowSaveModal(false);
         }}
         templateConfig={{ columns: selectedColumnsObjects, filters, groupBy, sortBy }}
-        moduleColor={moduleColor}
+        module="finance"
+        branchId={selectedBranch?.id}
+        organizationId={organizationId}
+        sessionId={currentSessionId}
+        userId={user?.id}
       />
 
       {/* Schedule Report Modal */}

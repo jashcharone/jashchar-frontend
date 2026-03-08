@@ -145,14 +145,15 @@ const TemplateSidebar = ({
             {/* Template List */}
             {expandedCategories.has(category) && (
               <div className="ml-6 space-y-1">
-                {categoryTemplates.map((template) => {
-                  const isSelected = selectedTemplate === template.key;
-                  const isFavorite = favoriteTemplates.includes(template.key);
-                  const isRecent = recentTemplates.includes(template.key);
+                {categoryTemplates.map((template, index) => {
+                  const templateKey = template.key || template.id || `template_${index}`;
+                  const isSelected = selectedTemplate === templateKey;
+                  const isFavorite = favoriteTemplates.includes(templateKey);
+                  const isRecent = recentTemplates.includes(templateKey);
 
                   return (
                     <button
-                      key={template.key}
+                      key={templateKey}
                       onClick={() => onSelectTemplate(template)}
                       className={`
                         w-full flex items-center gap-2 px-3 py-2 text-sm rounded-lg border dark:border-gray-700 transition

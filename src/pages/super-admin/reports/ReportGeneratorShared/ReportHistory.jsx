@@ -196,37 +196,64 @@ const ReportHistory = () => {
   const { user, organizationId } = useAuth();
   const { selectedBranch } = useBranch();
   
-  const [history, setHistory] = useState(SAMPLE_HISTORY);
+  const [history, setHistory] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterModule, setFilterModule] = useState('all');
   const [filterStatus, setFilterStatus] = useState('all');
   const [filterDateRange, setFilterDateRange] = useState('all');
 
-  // Fetch history directly from Supabase
+  // Fetch history from report_logs table in Supabase
   const fetchHistory = useCallback(async () => {
     // Guard: Don't fetch if organizationId or branchId is missing
     if (!organizationId || !selectedBranch?.id) {
+      console.log('[ReportHistory] Waiting for context...', { organizationId, branchId: selectedBranch?.id });
       return;
     }
     
     setIsLoading(true);
     try {
+      console.log('[ReportHistory] Fetching from report_logs...');
       const { data, error } = await supabase
-        .from('report_history')
+        .from('report_logs')
         .select('*')
         .eq('organization_id', organizationId)
         .eq('branch_id', selectedBranch.id)
-        .order('generated_at', { ascending: false })
+        .order('created_at', { ascending: false })
         .limit(100);
       
-      if (!error && data?.length > 0) {
-        setHistory(data);
+      if (error) {
+        console.error('[ReportHistory] DB Error:', error);
+        return;
       }
-      // Keep sample data if no data from DB
+      
+      if (data?.length > 0) {
+        // Transform DB records to component format
+        const transformedData = data.map(record => ({
+          id: record.id,
+          report_name: record.report_name || record.module + ' Report',
+          module: record.module,
+          template_key: record.template_id,
+          generated_at: record.started_at || record.created_at,
+          generated_by: record.user_id || 'Unknown',
+          status: record.status === 'completed' ? 'success' : (record.status === 'failed' ? 'failed' : record.status),
+          format: record.export_format,
+          file_size: record.file_size_bytes ? `${(record.file_size_bytes / 1024).toFixed(0)} KB` : 'N/A',
+          records_count: record.record_count || 0,
+          filters_applied: {},
+          download_url: null,
+          execution_time: record.duration_ms ? `${(record.duration_ms / 1000).toFixed(1)}s` : null,
+          error_message: record.error_message
+        }));
+        
+        console.log(`✅ [ReportHistory] Loaded ${transformedData.length} records from DB`);
+        setHistory(transformedData);
+      } else {
+        console.log('[ReportHistory] No records found in DB');
+        setHistory([]);
+      }
     } catch (err) {
-      console.error('Error fetching history:', err);
-      // Keep sample data for demo
+      console.error('[ReportHistory] Error:', err);
     } finally {
       setIsLoading(false);
     }
@@ -252,10 +279,27 @@ const ReportHistory = () => {
     }
   }, []);
 
-  // Delete history entry
-  const deleteHistory = useCallback((historyId) => {
+  // Delete history entry from database
+  const deleteHistory = useCallback(async (historyId) => {
     if (window.confirm('Are you sure you want to delete this history entry?')) {
-      setHistory(prev => prev.filter(h => h.id !== historyId));
+      try {
+        const { error } = await supabase
+          .from('report_logs')
+          .delete()
+          .eq('id', historyId);
+        
+        if (error) {
+          console.error('Error deleting history:', error);
+          alert('Failed to delete history entry');
+          return;
+        }
+        
+        setHistory(prev => prev.filter(h => h.id !== historyId));
+        console.log('✅ History entry deleted:', historyId);
+      } catch (err) {
+        console.error('Delete error:', err);
+        alert('An error occurred while deleting');
+      }
     }
   }, []);
 

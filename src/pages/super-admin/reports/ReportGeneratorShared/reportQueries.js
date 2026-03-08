@@ -138,21 +138,18 @@ export const fetchTransportDataFromSupabase = async ({
   branchId, organizationId, sessionId,
   routeId, vehicleId, stopId
 }) => {
+  // Using correct table: student_transport_details
   let query = supabase
-    .from('transport_allocations')
+    .from('student_transport_details')
     .select(`
       *,
-      student:student_profiles(id, school_code, first_name, last_name, class_id),
-      route:transport_routes(id, name, description),
-      vehicle:vehicles(id, vehicle_number, driver_name),
-      stop:transport_stops(id, name, time)
+      student:student_profiles(id, school_code, first_name, last_name, class_id, class:classes(id, name)),
+      route:transport_routes(id, name, description)
     `)
     .eq('branch_id', branchId)
     .eq('session_id', sessionId);
 
-  if (routeId) query = query.eq('route_id', routeId);
-  if (vehicleId) query = query.eq('vehicle_id', vehicleId);
-  if (stopId) query = query.eq('stop_id', stopId);
+  if (routeId) query = query.eq('transport_route_id', routeId);
 
   const { data, error } = await query.order('created_at', { ascending: false });
   if (error) {
@@ -160,11 +157,20 @@ export const fetchTransportDataFromSupabase = async ({
     return [];
   }
   
+  // Enrich with vehicle info if needed
   return (data || []).map(row => ({
     ...row,
+    route_name: row.route?.name || '',
+    vehicle_number: row.vehicle_number || '',
+    driver_name: row.driver_name || '',
+    driver_contact: row.driver_contact || '',
+    pickup_time: row.pickup_time || '',
+    drop_time: row.drop_time || '',
+    transport_fee: row.transport_fee || 0,
     student: row.student ? {
       ...row.student,
-      admission_number: row.student.school_code
+      admission_number: row.student.school_code,
+      class_name: row.student?.class?.name || ''
     } : null
   }));
 };
@@ -177,11 +183,12 @@ export const fetchHostelDataFromSupabase = async ({
   branchId, organizationId, sessionId,
   hostelId, roomId
 }) => {
+  // Using correct table: student_hostel_details
   let query = supabase
-    .from('hostel_allocations')
+    .from('student_hostel_details')
     .select(`
       *,
-      student:student_profiles(id, school_code, first_name, last_name, class_id),
+      student:student_profiles(id, school_code, first_name, last_name, class_id, class:classes(id, name)),
       hostel:hostels(id, name, type),
       room:hostel_rooms(id, room_number, capacity, floor)
     `)
@@ -199,9 +206,16 @@ export const fetchHostelDataFromSupabase = async ({
   
   return (data || []).map(row => ({
     ...row,
+    hostel_name: row.hostel?.name || '',
+    room_number: row.room?.room_number || row.room_number || '',
+    bed_number: row.bed_number || '',
+    hostel_fee: row.hostel_fee || 0,
+    check_in_date: row.check_in_date || '',
+    check_out_date: row.check_out_date || '',
     student: row.student ? {
       ...row.student,
-      admission_number: row.student.school_code
+      admission_number: row.student.school_code,
+      class_name: row.student?.class?.name || ''
     } : null
   }));
 };
@@ -214,19 +228,20 @@ export const fetchLibraryDataFromSupabase = async ({
   branchId, organizationId, sessionId,
   dateFrom, dateTo, categoryId, status
 }) => {
+  // Using correct table: book_issues
   let query = supabase
-    .from('book_issuances')
+    .from('book_issues')
     .select(`
       *,
       member:library_members(id, member_name, member_type, member_code),
-      book:books(id, title, author, isbn, accession_number)
+      book:books(id, book_title, author, isbn_number, book_number)
     `)
-    .eq('branch_id', branchId)
-    .eq('session_id', sessionId);
+    .eq('branch_id', branchId);
 
   if (dateFrom) query = query.gte('issue_date', dateFrom);
   if (dateTo) query = query.lte('issue_date', dateTo);
-  if (status) query = query.eq('status', status);
+  if (status === 'returned') query = query.eq('is_returned', true);
+  if (status === 'issued') query = query.eq('is_returned', false);
 
   const { data, error } = await query.order('issue_date', { ascending: false });
   if (error) {
@@ -234,7 +249,17 @@ export const fetchLibraryDataFromSupabase = async ({
     return [];
   }
   
-  return data || [];
+  return (data || []).map(row => ({
+    ...row,
+    book_title: row.book?.book_title || '',
+    book_number: row.book?.book_number || '',
+    author: row.book?.author || '',
+    isbn: row.book?.isbn_number || '',
+    member_name: row.member?.member_name || '',
+    member_code: row.member?.member_code || '',
+    member_type: row.member?.member_type || '',
+    status: row.is_returned ? 'Returned' : 'Issued'
+  }));
 };
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -293,34 +318,80 @@ export const fetchExamDataFromSupabase = async ({
   branchId, organizationId, sessionId,
   examId, classId, subjectId
 }) => {
-  let query = supabase
-    .from('exam_results')
+  // Using correct table: exam_marks (joins via exam_subjects -> exams)
+  // First get exam_subjects for the branch/session
+  let examSubjectsQuery = supabase
+    .from('exam_subjects')
     .select(`
-      *,
-      student:student_profiles(id, school_code, first_name, last_name),
-      exam:exams(id, name, exam_type),
+      id,
+      exam_id,
+      subject_id,
+      max_marks,
+      min_marks,
+      date,
+      exam:exams(id, name, exam_type, branch_id, session_id, class_id),
       subject:subjects(id, name)
-    `)
-    .eq('branch_id', branchId)
-    .eq('session_id', sessionId);
+    `);
 
-  if (examId) query = query.eq('exam_id', examId);
-  if (classId) query = query.eq('class_id', classId);
-  if (subjectId) query = query.eq('subject_id', subjectId);
+  if (examId) examSubjectsQuery = examSubjectsQuery.eq('exam_id', examId);
+  if (subjectId) examSubjectsQuery = examSubjectsQuery.eq('subject_id', subjectId);
 
-  const { data, error } = await query.order('created_at', { ascending: false });
-  if (error) {
-    console.log('[fetchExamData] Error:', error.message);
+  const { data: examSubjects, error: esError } = await examSubjectsQuery;
+  if (esError) {
+    console.log('[fetchExamData] ExamSubjects Error:', esError.message);
     return [];
   }
-  
-  return (data || []).map(row => ({
-    ...row,
-    student: row.student ? {
-      ...row.student,
-      admission_number: row.student.school_code
-    } : null
-  }));
+
+  // Filter by branch/session/class
+  const filteredES = (examSubjects || []).filter(es => {
+    const exam = es.exam;
+    if (!exam) return false;
+    if (exam.branch_id !== branchId) return false;
+    if (exam.session_id !== sessionId) return false;
+    if (classId && exam.class_id !== classId) return false;
+    return true;
+  });
+
+  if (filteredES.length === 0) return [];
+
+  const esIds = filteredES.map(es => es.id);
+
+  // Get marks for these exam_subjects
+  const { data: marks, error: mError } = await supabase
+    .from('exam_marks')
+    .select(`
+      *,
+      student:student_profiles(id, school_code, first_name, last_name, class:classes(id, name))
+    `)
+    .in('exam_subject_id', esIds);
+
+  if (mError) {
+    console.log('[fetchExamData] Marks Error:', mError.message);
+    return [];
+  }
+
+  // Build lookup for exam_subjects
+  const esMap = Object.fromEntries(filteredES.map(es => [es.id, es]));
+
+  return (marks || []).map(row => {
+    const es = esMap[row.exam_subject_id] || {};
+    return {
+      ...row,
+      exam_name: es.exam?.name || '',
+      exam_type: es.exam?.exam_type || '',
+      subject_name: es.subject?.name || '',
+      max_marks: es.max_marks || 0,
+      min_marks: es.min_marks || 0,
+      obtained_marks: row.marks || 0,
+      is_absent: row.is_absent || false,
+      percentage: es.max_marks ? ((row.marks || 0) / es.max_marks * 100).toFixed(2) : 0,
+      student: row.student ? {
+        ...row.student,
+        admission_number: row.student.school_code,
+        class_name: row.student?.class?.name || ''
+      } : null
+    };
+  });
 };
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -462,6 +533,382 @@ export const fetchFinanceDataFromSupabase = async ({
 };
 
 // ═══════════════════════════════════════════════════════════════════════════════
+// 📋 FEE STRUCTURE DATA QUERIES
+// ═══════════════════════════════════════════════════════════════════════════════
+
+/**
+ * Fetch Tuition Fee Structure (Class-wise)
+ * Returns fee_masters grouped by class with fee_groups and fee_types
+ */
+export const fetchTuitionFeeStructure = async ({
+  branchId, organizationId, sessionId
+}) => {
+  // Get fee masters with groups and types
+  const { data: feeMasters, error } = await supabase
+    .from('fee_masters')
+    .select(`
+      *,
+      fee_groups(id, name, description),
+      fee_types(id, name, code)
+    `)
+    .eq('branch_id', branchId)
+    .eq('session_id', sessionId)
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    console.log('[fetchTuitionFeeStructure] Error:', error.message);
+    return [];
+  }
+
+  // Get class assignments for fee groups
+  const feeGroupIds = [...new Set((feeMasters || []).map(fm => fm.fee_group_id).filter(Boolean))];
+  
+  const { data: assignments } = await supabase
+    .from('fee_group_class_assignments')
+    .select(`
+      fee_group_id,
+      class_id,
+      section_id,
+      classes(id, name)
+    `)
+    .eq('branch_id', branchId)
+    .eq('session_id', sessionId)
+    .in('fee_group_id', feeGroupIds);
+
+  // Get student counts per class
+  const { data: studentCounts } = await supabase
+    .from('student_profiles')
+    .select('class_id')
+    .eq('branch_id', branchId)
+    .eq('session_id', sessionId)
+    .eq('status', 'active');
+
+  // Build class count map
+  const classCountMap = {};
+  (studentCounts || []).forEach(s => {
+    if (s.class_id) {
+      classCountMap[s.class_id] = (classCountMap[s.class_id] || 0) + 1;
+    }
+  });
+
+  // Build assignment map grouped by fee_group_id
+  const assignmentMap = {};
+  (assignments || []).forEach(a => {
+    if (!assignmentMap[a.fee_group_id]) {
+      assignmentMap[a.fee_group_id] = [];
+    }
+    assignmentMap[a.fee_group_id].push({
+      class_id: a.class_id,
+      class_name: a.classes?.name || '',
+      section_id: a.section_id
+    });
+  });
+
+  // Map fee masters to include class info
+  const result = [];
+  (feeMasters || []).forEach(fm => {
+    const classAssignments = assignmentMap[fm.fee_group_id] || [];
+    
+    if (classAssignments.length === 0) {
+      // No class assignment - show as "All Classes"
+      result.push({
+        id: fm.id,
+        class_name: 'All Classes',
+        fee_group_name: fm.fee_groups?.name || '',
+        fee_type_name: fm.fee_types?.name || '',
+        fee_type_code: fm.fee_types?.code || '',
+        amount: fm.amount || 0,
+        due_date: fm.due_date,
+        fine_type: fm.fine_type || 'none',
+        fine_value: fm.fine_value,
+        is_fine_per_day: fm.is_fine_per_day || false,
+        students_assigned: 0,
+        total_expected_amount: 0
+      });
+    } else {
+      // Create row for each class assignment
+      classAssignments.forEach(ca => {
+        const studentCount = classCountMap[ca.class_id] || 0;
+        result.push({
+          id: `${fm.id}_${ca.class_id}`,
+          class_name: ca.class_name,
+          fee_group_name: fm.fee_groups?.name || '',
+          fee_type_name: fm.fee_types?.name || '',
+          fee_type_code: fm.fee_types?.code || '',
+          amount: fm.amount || 0,
+          due_date: fm.due_date,
+          fine_type: fm.fine_type || 'none',
+          fine_value: fm.fine_value,
+          is_fine_per_day: fm.is_fine_per_day || false,
+          students_assigned: studentCount,
+          total_expected_amount: (fm.amount || 0) * studentCount
+        });
+      });
+    }
+  });
+
+  console.log('[fetchTuitionFeeStructure] Result count:', result.length);
+  return result;
+};
+
+/**
+ * Fetch Exam Fee Structure
+ * Returns exam fees by class and exam type from fee_masters where fee_type is exam-related
+ */
+export const fetchExamFeeStructure = async ({
+  branchId, organizationId, sessionId
+}) => {
+  // Get fee types that are exam-related
+  const { data: examFeeTypes } = await supabase
+    .from('fee_types')
+    .select('id, name, code')
+    .eq('branch_id', branchId)
+    .or('name.ilike.%exam%,code.ilike.%exam%');
+
+  if (!examFeeTypes || examFeeTypes.length === 0) {
+    console.log('[fetchExamFeeStructure] No exam fee types found');
+    return [];
+  }
+
+  const examTypeIds = examFeeTypes.map(ft => ft.id);
+
+  // Get fee masters for exam types
+  const { data: examFees, error } = await supabase
+    .from('fee_masters')
+    .select(`
+      *,
+      fee_groups(id, name),
+      fee_types(id, name, code)
+    `)
+    .eq('branch_id', branchId)
+    .eq('session_id', sessionId)
+    .in('fee_type_id', examTypeIds);
+
+  if (error) {
+    console.log('[fetchExamFeeStructure] Error:', error.message);
+    return [];
+  }
+
+  // Get class assignments
+  const feeGroupIds = [...new Set((examFees || []).map(fm => fm.fee_group_id).filter(Boolean))];
+  
+  const { data: assignments } = await supabase
+    .from('fee_group_class_assignments')
+    .select(`
+      fee_group_id,
+      class_id,
+      classes(id, name)
+    `)
+    .eq('branch_id', branchId)
+    .eq('session_id', sessionId)
+    .in('fee_group_id', feeGroupIds);
+
+  const assignmentMap = {};
+  (assignments || []).forEach(a => {
+    if (!assignmentMap[a.fee_group_id]) {
+      assignmentMap[a.fee_group_id] = [];
+    }
+    assignmentMap[a.fee_group_id].push({
+      class_name: a.classes?.name || 'All Classes'
+    });
+  });
+
+  // Map results
+  const result = [];
+  (examFees || []).forEach(ef => {
+    const classes = assignmentMap[ef.fee_group_id] || [{ class_name: 'All Classes' }];
+    
+    classes.forEach(c => {
+      result.push({
+        id: ef.id,
+        class_name: c.class_name,
+        exam_name: ef.fee_types?.name || 'Exam Fee',
+        exam_type: ef.fee_groups?.name || 'General',
+        exam_fee: ef.amount || 0,
+        practical_fee: 0,
+        registration_fee: 0,
+        total_exam_fee: ef.amount || 0,
+        exam_due_date: ef.due_date,
+        applicable_classes: c.class_name
+      });
+    });
+  });
+
+  console.log('[fetchExamFeeStructure] Result count:', result.length);
+  return result;
+};
+
+/**
+ * Fetch Hostel Fee Structure
+ * Returns hostel room-wise fee structure
+ */
+export const fetchHostelFeeStructure = async ({
+  branchId, organizationId, sessionId
+}) => {
+  // Get hostels
+  const { data: hostels, error: hostelError } = await supabase
+    .from('hostels')
+    .select('id, name, type')
+    .eq('branch_id', branchId);
+
+  if (hostelError) {
+    console.log('[fetchHostelFeeStructure] Hostel Error:', hostelError.message);
+    return [];
+  }
+
+  // Get room types
+  const { data: roomTypes } = await supabase
+    .from('hostel_room_types')
+    .select('id, name, monthly_fee, quarterly_fee, half_yearly_fee, yearly_fee, mess_fee')
+    .eq('branch_id', branchId);
+
+  // Get rooms with occupancy count
+  const { data: rooms } = await supabase
+    .from('hostel_rooms')
+    .select(`
+      id, 
+      hostel_id, 
+      room_number, 
+      room_type_id, 
+      capacity,
+      floor
+    `)
+    .eq('branch_id', branchId);
+
+  // Get student counts per room
+  const { data: studentDetails } = await supabase
+    .from('student_hostel_details')
+    .select('room_id')
+    .eq('branch_id', branchId);
+
+  const roomOccupancyMap = {};
+  (studentDetails || []).forEach(sd => {
+    if (sd.room_id) {
+      roomOccupancyMap[sd.room_id] = (roomOccupancyMap[sd.room_id] || 0) + 1;
+    }
+  });
+
+  // Build hostel and room type maps
+  const hostelMap = Object.fromEntries((hostels || []).map(h => [h.id, h]));
+  const roomTypeMap = Object.fromEntries((roomTypes || []).map(rt => [rt.id, rt]));
+
+  // Map rooms to fee structure
+  const result = (rooms || []).map(room => {
+    const hostel = hostelMap[room.hostel_id] || {};
+    const roomType = roomTypeMap[room.room_type_id] || {};
+    const occupied = roomOccupancyMap[room.id] || 0;
+
+    return {
+      id: room.id,
+      hostel_name: hostel.name || 'Unknown Hostel',
+      room_type: roomType.name || 'Standard',
+      room_number: room.room_number || '',
+      capacity: room.capacity || 1,
+      occupied: occupied,
+      hostel_monthly_fee: roomType.monthly_fee || 0,
+      hostel_quarterly_fee: roomType.quarterly_fee || 0,
+      hostel_half_yearly_fee: roomType.half_yearly_fee || 0,
+      hostel_yearly_fee: roomType.yearly_fee || 0,
+      mess_fee: roomType.mess_fee || 0,
+      total_hostel_fee: (roomType.monthly_fee || 0) + (roomType.mess_fee || 0),
+      hostel_students: occupied
+    };
+  });
+
+  console.log('[fetchHostelFeeStructure] Result count:', result.length);
+  return result;
+};
+
+/**
+ * Fetch Transport Fee Structure
+ * Returns route and pickup point-wise transport fee structure
+ */
+export const fetchTransportFeeStructure = async ({
+  branchId, organizationId, sessionId
+}) => {
+  // Get transport routes with pickup points
+  const { data: routes, error: routeError } = await supabase
+    .from('transport_routes')
+    .select(`
+      id, 
+      name, 
+      description,
+      transport_pickup_points(
+        id,
+        name,
+        distance_km,
+        monthly_fee,
+        quarterly_fee,
+        yearly_fee
+      )
+    `)
+    .eq('branch_id', branchId);
+
+  if (routeError) {
+    console.log('[fetchTransportFeeStructure] Route Error:', routeError.message);
+    return [];
+  }
+
+  // Get student counts per route/pickup
+  const { data: studentDetails } = await supabase
+    .from('student_transport_details')
+    .select('transport_route_id, pickup_point_id')
+    .eq('branch_id', branchId)
+    .eq('session_id', sessionId);
+
+  // Build student count maps
+  const routeStudentMap = {};
+  const pickupStudentMap = {};
+  (studentDetails || []).forEach(sd => {
+    if (sd.transport_route_id) {
+      routeStudentMap[sd.transport_route_id] = (routeStudentMap[sd.transport_route_id] || 0) + 1;
+    }
+    if (sd.pickup_point_id) {
+      pickupStudentMap[sd.pickup_point_id] = (pickupStudentMap[sd.pickup_point_id] || 0) + 1;
+    }
+  });
+
+  // Map routes and pickup points to fee structure
+  const result = [];
+  (routes || []).forEach(route => {
+    const pickupPoints = route.transport_pickup_points || [];
+    
+    if (pickupPoints.length === 0) {
+      // Route with no pickup points
+      result.push({
+        id: route.id,
+        route_name: route.name || '',
+        pickup_point: 'All Points',
+        distance_km: 0,
+        monthly_fee: 0,
+        quarterly_fee: 0,
+        half_yearly_fee: 0,
+        annual_fee: 0,
+        transport_students: routeStudentMap[route.id] || 0
+      });
+    } else {
+      // Create row for each pickup point
+      pickupPoints.forEach(pp => {
+        result.push({
+          id: `${route.id}_${pp.id}`,
+          route_name: route.name || '',
+          pickup_point: pp.name || '',
+          distance_km: pp.distance_km || 0,
+          monthly_fee: pp.monthly_fee || 0,
+          quarterly_fee: pp.quarterly_fee || 0,
+          half_yearly_fee: (pp.quarterly_fee || 0) * 2,
+          annual_fee: pp.yearly_fee || (pp.monthly_fee || 0) * 12,
+          transport_students: pickupStudentMap[pp.id] || 0
+        });
+      });
+    }
+  });
+
+  console.log('[fetchTransportFeeStructure] Result count:', result.length);
+  return result;
+};
+
+// ═══════════════════════════════════════════════════════════════════════════════
 // 📅 ATTENDANCE DATA QUERIES
 // ═══════════════════════════════════════════════════════════════════════════════
 
@@ -507,29 +954,37 @@ export const fetchHomeworkDataFromSupabase = async ({
   branchId, organizationId, sessionId,
   dateFrom, dateTo, classId, subjectId, status
 }) => {
+  // Using correct table: homeworks
   let query = supabase
-    .from('homework_assignments')
+    .from('homeworks')
     .select(`
       *,
       class:classes(id, name),
+      section:sections(id, name),
       subject:subjects(id, name)
     `)
-    .eq('branch_id', branchId)
-    .eq('session_id', sessionId);
+    .eq('branch_id', branchId);
 
-  if (dateFrom) query = query.gte('assigned_date', dateFrom);
-  if (dateTo) query = query.lte('assigned_date', dateTo);
+  if (dateFrom) query = query.gte('homework_date', dateFrom);
+  if (dateTo) query = query.lte('homework_date', dateTo);
   if (classId) query = query.eq('class_id', classId);
   if (subjectId) query = query.eq('subject_id', subjectId);
-  if (status) query = query.eq('status', status);
 
-  const { data, error } = await query.order('assigned_date', { ascending: false });
+  const { data, error } = await query.order('homework_date', { ascending: false });
   if (error) {
     console.log('[fetchHomeworkData] Error:', error.message);
     return [];
   }
   
-  return data || [];
+  return (data || []).map(row => ({
+    ...row,
+    class_name: row.class?.name || '',
+    section_name: row.section?.name || '',
+    subject_name: row.subject?.name || '',
+    assigned_date: row.homework_date,
+    due_date: row.submission_date,
+    title: row.description?.substring(0, 50) || 'Homework'
+  }));
 };
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -540,22 +995,21 @@ export const fetchHomeworkEvaluationDataFromSupabase = async ({
   branchId, organizationId, sessionId,
   dateFrom, dateTo, classId, studentId
 }) => {
+  // Using correct table: homework_evaluations
   let query = supabase
-    .from('homework_submissions')
+    .from('homework_evaluations')
     .select(`
       *,
-      student:student_profiles(id, school_code, first_name, last_name),
-      homework:homework_assignments(id, title, subject_id)
+      student:student_profiles(id, school_code, first_name, last_name, class:classes(id, name)),
+      homework:homeworks(id, description, subject_id, homework_date, submission_date, max_marks, subject:subjects(id, name))
     `)
-    .eq('branch_id', branchId)
-    .eq('session_id', sessionId);
+    .eq('branch_id', branchId);
 
-  if (dateFrom) query = query.gte('submitted_date', dateFrom);
-  if (dateTo) query = query.lte('submitted_date', dateTo);
-  if (classId) query = query.eq('class_id', classId);
+  if (dateFrom) query = query.gte('evaluation_date', dateFrom);
+  if (dateTo) query = query.lte('evaluation_date', dateTo);
   if (studentId) query = query.eq('student_id', studentId);
 
-  const { data, error } = await query.order('submitted_date', { ascending: false });
+  const { data, error } = await query.order('evaluation_date', { ascending: false });
   if (error) {
     console.log('[fetchHomeworkEvaluationData] Error:', error.message);
     return [];
@@ -563,9 +1017,18 @@ export const fetchHomeworkEvaluationDataFromSupabase = async ({
   
   return (data || []).map(row => ({
     ...row,
+    homework_title: row.homework?.description?.substring(0, 50) || 'Homework',
+    subject_name: row.homework?.subject?.name || '',
+    homework_date: row.homework?.homework_date || '',
+    submission_date: row.homework?.submission_date || '',
+    max_marks: row.homework?.max_marks || 0,
+    obtained_marks: row.marks || 0,
+    evaluation_date: row.evaluation_date || '',
+    status: row.status || 'Pending',
     student: row.student ? {
       ...row.student,
-      admission_number: row.student.school_code
+      admission_number: row.student.school_code,
+      class_name: row.student?.class?.name || ''
     } : null
   }));
 };
@@ -578,21 +1041,19 @@ export const fetchOnlineExamDataFromSupabase = async ({
   branchId, organizationId, sessionId,
   examId, classId, status
 }) => {
+  // Using correct table: student_quiz_attempts (online_exam_results doesn't exist)
   let query = supabase
-    .from('online_exam_results')
+    .from('student_quiz_attempts')
     .select(`
       *,
-      student:student_profiles(id, school_code, first_name, last_name),
-      exam:online_exams(id, title, total_marks)
+      student:student_profiles(id, school_code, first_name, last_name, class:classes(id, name)),
+      quiz:online_exams(id, title, total_marks, passing_marks, time_limit)
     `)
-    .eq('branch_id', branchId)
-    .eq('session_id', sessionId);
+    .eq('branch_id', branchId);
 
-  if (examId) query = query.eq('exam_id', examId);
-  if (classId) query = query.eq('class_id', classId);
-  if (status) query = query.eq('status', status);
+  if (examId) query = query.eq('quiz_id', examId);
 
-  const { data, error } = await query.order('completed_at', { ascending: false });
+  const { data, error } = await query.order('created_at', { ascending: false });
   if (error) {
     console.log('[fetchOnlineExamData] Error:', error.message);
     return [];
@@ -600,9 +1061,21 @@ export const fetchOnlineExamDataFromSupabase = async ({
   
   return (data || []).map(row => ({
     ...row,
+    exam_title: row.quiz?.title || '',
+    total_marks: row.quiz?.total_marks || row.total_questions || 0,
+    passing_marks: row.quiz?.passing_marks || 0,
+    time_limit: row.quiz?.time_limit || 0,
+    total_questions: row.total_questions || 0,
+    correct_answers: row.correct_answers || 0,
+    wrong_answers: row.wrong_answers || 0,
+    not_attempted: row.not_attempted || 0,
+    obtained_marks: row.correct_answers || 0,
+    percentage: row.total_questions ? ((row.correct_answers || 0) / row.total_questions * 100).toFixed(2) : 0,
+    result: row.correct_answers >= (row.quiz?.passing_marks || 0) ? 'Pass' : 'Fail',
     student: row.student ? {
       ...row.student,
-      admission_number: row.student.school_code
+      admission_number: row.student.school_code,
+      class_name: row.student?.class?.name || ''
     } : null
   }));
 };

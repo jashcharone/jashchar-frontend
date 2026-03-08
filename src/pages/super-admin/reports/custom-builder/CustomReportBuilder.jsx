@@ -818,7 +818,11 @@ const CustomReportBuilder = () => {
         onClose={() => setShowSaveModal(false)}
         onSave={handleSaveTemplate}
         templateConfig={{ columns: selectedColumns, filters, groupBy, sortBy, calculatedFields }}
-        moduleColor="violet"
+        module="custom-builder"
+        branchId={selectedBranch?.id}
+        organizationId={organizationId}
+        sessionId={currentSessionId}
+        userId={user?.id}
       />
 
       {/* Schedule Report Modal */}

@@ -437,7 +437,63 @@ export const FINANCE_TEMPLATES = [
   },
 
   // ─────────────────────────────────────────────────────────────────────────────
-  // CATEGORY 4: FINANCIAL ANALYSIS (7)
+  // CATEGORY 5: FEE STRUCTURE (4)
+  // ─────────────────────────────────────────────────────────────────────────────
+  {
+    id: 'tuition_fee_classwise',
+    name: 'Tuition Fee - Class-wise',
+    description: 'Class-wise tuition fee structure with fee groups and types',
+    category: 'fee_structure',
+    icon: '🏫',
+    columns: getColumnsForSet('tuition_fee_classwise'),
+    defaultFilters: {},
+    defaultGroupBy: ['class_name'],
+    defaultSortBy: [{ field: 'class_name', direction: 'asc' }],
+    aggregations: ['amount', 'total_expected_amount'],
+    popular: true,
+  },
+  {
+    id: 'exam_fee_structure',
+    name: 'Exam Fee Structure',
+    description: 'Examination fee structure by class and exam type',
+    category: 'fee_structure',
+    icon: '📝',
+    columns: getColumnsForSet('exam_fee_structure'),
+    defaultFilters: {},
+    defaultGroupBy: ['exam_type'],
+    defaultSortBy: [{ field: 'class_name', direction: 'asc' }],
+    aggregations: ['exam_fee', 'total_exam_fee'],
+    popular: true,
+  },
+  {
+    id: 'hostel_fee_structure',
+    name: 'Hostel Fee Structure',
+    description: 'Hostel and room-wise fee structure',
+    category: 'fee_structure',
+    icon: '🏠',
+    columns: getColumnsForSet('hostel_fee_structure'),
+    defaultFilters: {},
+    defaultGroupBy: ['hostel_name'],
+    defaultSortBy: [{ field: 'hostel_name', direction: 'asc' }],
+    aggregations: ['hostel_monthly_fee', 'total_hostel_fee'],
+    popular: true,
+  },
+  {
+    id: 'transport_fee_structure',
+    name: 'Transport Fee Structure',
+    description: 'Route and pickup point-wise transport fee structure',
+    category: 'fee_structure',
+    icon: '🚌',
+    columns: getColumnsForSet('transport_fee_structure'),
+    defaultFilters: {},
+    defaultGroupBy: ['route_name'],
+    defaultSortBy: [{ field: 'route_name', direction: 'asc' }],
+    aggregations: ['monthly_fee', 'annual_fee'],
+    popular: true,
+  },
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // CATEGORY 6: FINANCIAL ANALYSIS (7)
   // ─────────────────────────────────────────────────────────────────────────────
   {
     id: 'revenue_projection',
@@ -555,6 +611,14 @@ export const FINANCE_CATEGORIES = [
     description: 'Discounts, waivers, and scholarships',
     color: 'purple',
     count: 8,
+  },
+  {
+    id: 'fee_structure',
+    name: 'Fee Structure',
+    icon: '📋',
+    description: 'Tuition, Exam, Hostel, Transport fees structure',
+    color: 'indigo',
+    count: 4,
   },
   {
     id: 'analysis',

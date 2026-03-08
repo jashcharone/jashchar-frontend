@@ -23,6 +23,7 @@ import {
   useReportExport,
   useGroupedData,
   useFilterOptions,
+  useSavedTemplates,
   REPORT_MODULES
 } from '../ReportGeneratorShared';
 import { HR_TEMPLATES, HR_CATEGORIES, getPopularTemplates } from './templates';
@@ -77,6 +78,21 @@ const HRReportGenerator = () => {
     defaultColumns: COLUMN_SETS.employee_master_list  // Store as keys (strings), not objects
   });
 
+  // Fetch saved templates from DB
+  const { 
+    savedTemplates: dbSavedTemplates, 
+    refetch: refetchSavedTemplates,
+    deleteTemplate,
+    toggleFavorite
+  } = useSavedTemplates('human-resource');
+
+  // Merge DB saved templates into local state on load
+  useEffect(() => {
+    if (dbSavedTemplates.length > 0) {
+      setSavedTemplates(dbSavedTemplates);
+    }
+  }, [dbSavedTemplates, setSavedTemplates]);
+
   // Convert selected column keys to full column objects for table/export
   const selectedColumnsObjects = useMemo(() => {
     return selectedColumns
@@ -84,8 +100,15 @@ const HRReportGenerator = () => {
       .filter(Boolean);
   }, [selectedColumns]);
 
-  // Templates for sidebar
-  const allTemplates = useMemo(() => HR_TEMPLATES, []);
+  // Templates for sidebar - merge built-in templates with saved templates
+  const allTemplates = useMemo(() => {
+    const customTemplates = savedTemplates.map(t => ({
+      ...t,
+      category: 'Custom Templates',
+      isCustom: true
+    }));
+    return [...HR_TEMPLATES, ...customTemplates];
+  }, [savedTemplates]);
 
   // Handle template selection - receives full template object from TemplateSidebar
   const handleTemplateSelect = useCallback((template) => {
@@ -644,6 +667,34 @@ const HRReportGenerator = () => {
               title={selectedTemplate?.name || 'HR Report'}
               filename="hr_report"
               color={moduleColor}
+              // Enhanced props for school header & grand total
+              schoolInfo={selectedBranch ? {
+                name: selectedBranch.name,
+                address: selectedBranch.address,
+                phone: selectedBranch.phone,
+                email: selectedBranch.email,
+                logo: selectedBranch.logo_url,
+                district: selectedBranch.district,
+                state: selectedBranch.state,
+                affiliationNo: selectedBranch.affiliation_no
+              } : null}
+              showSchoolHeader={true}
+              showGrandTotal={true}
+              showFilterInfo={true}
+              filterInfo={{
+                department: filters?.departmentId || '',
+                designation: filters?.designationId || '',
+                status: filters?.status || ''
+              }}
+              preparedBy=""
+              authorizedBy=""
+              saveHistory={true}
+              module="human-resource"
+              templateKey={selectedTemplate?.key || ''}
+              branchId={selectedBranch?.id}
+              organizationId={organizationId}
+              sessionId={currentSessionId}
+              userId={user?.id}
             />
           </div>
 
@@ -667,22 +718,16 @@ const HRReportGenerator = () => {
         isOpen={showSaveModal}
         onClose={() => setShowSaveModal(false)}
         onSave={(templateData) => {
-          const newTemplate = {
-            id: `custom_${Date.now()}`,
-            name: templateData.name,
-            description: templateData.description,
-            columns: selectedColumnsObjects,
-            filters,
-            groupBy,
-            sortBy,
-            isFavorite: templateData.is_favorite,
-            createdAt: new Date().toISOString()
-          };
-          setSavedTemplates([...savedTemplates, newTemplate]);
+          // Refresh saved templates from DB to include the new template
+          refetchSavedTemplates();
           setShowSaveModal(false);
         }}
         templateConfig={{ columns: selectedColumnsObjects, filters, groupBy, sortBy }}
-        moduleColor={moduleColor}
+        module="human-resource"
+        branchId={selectedBranch?.id}
+        organizationId={organizationId}
+        sessionId={currentSessionId}
+        userId={user?.id}
       />
 
       {/* Schedule Report Modal */}

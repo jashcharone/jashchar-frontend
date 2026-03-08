@@ -4,6 +4,7 @@
 import { useState, useCallback, useMemo, useEffect } from 'react';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { useBranch } from '@/contexts/BranchContext';
+import { supabase } from '@/lib/customSupabaseClient';
 import apiClient from '@/lib/apiClient';
 import * as XLSX from 'xlsx';
 import { jsPDF } from 'jspdf';
@@ -536,10 +537,136 @@ const calculateTotals = (data, columns) => {
   return totals;
 };
 
+/**
+ * Hook for fetching saved report templates from DB
+ */
+export const useSavedTemplates = (module) => {
+  const { user, currentSessionId, organizationId } = useAuth();
+  const { selectedBranch } = useBranch();
+  const [savedTemplates, setSavedTemplates] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  const fetchSavedTemplates = useCallback(async () => {
+    if (!selectedBranch?.id || !organizationId || !module) {
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      const { data, error: dbError } = await supabase
+        .from('report_saved_templates')
+        .select('*')
+        .eq('organization_id', organizationId)
+        .eq('branch_id', selectedBranch.id)
+        .eq('module', module)
+        .order('created_at', { ascending: false });
+
+      if (dbError) {
+        console.error('Error fetching saved templates:', dbError);
+        setError(dbError.message);
+        return;
+      }
+
+      // Transform DB records to template format
+      const templates = (data || []).map(record => ({
+        key: `custom_${record.id}`,
+        id: record.id,
+        name: record.name,
+        description: record.description,
+        columns: record.template_config?.columns || [],
+        filters: record.template_config?.filters || {},
+        groupBy: record.template_config?.groupBy || [],
+        sortBy: record.template_config?.sortBy || [],
+        isFavorite: record.is_favorite,
+        isShared: record.is_shared,
+        isCustom: true,
+        createdAt: record.created_at,
+        createdBy: record.created_by
+      }));
+
+      console.log(`✅ Loaded ${templates.length} saved templates for module: ${module}`);
+      setSavedTemplates(templates);
+    } catch (err) {
+      console.error('Failed to fetch saved templates:', err);
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  }, [selectedBranch?.id, organizationId, module]);
+
+  // Delete a saved template
+  const deleteTemplate = useCallback(async (templateId) => {
+    if (!templateId) return false;
+
+    try {
+      const { error: dbError } = await supabase
+        .from('report_saved_templates')
+        .delete()
+        .eq('id', templateId);
+
+      if (dbError) {
+        console.error('Error deleting template:', dbError);
+        return false;
+      }
+
+      // Remove from local state
+      setSavedTemplates(prev => prev.filter(t => t.id !== templateId));
+      console.log('✅ Template deleted:', templateId);
+      return true;
+    } catch (err) {
+      console.error('Failed to delete template:', err);
+      return false;
+    }
+  }, []);
+
+  // Toggle favorite status
+  const toggleFavorite = useCallback(async (templateId, isFavorite) => {
+    try {
+      const { error: dbError } = await supabase
+        .from('report_saved_templates')
+        .update({ is_favorite: !isFavorite })
+        .eq('id', templateId);
+
+      if (dbError) {
+        console.error('Error toggling favorite:', dbError);
+        return false;
+      }
+
+      // Update local state
+      setSavedTemplates(prev => 
+        prev.map(t => t.id === templateId ? { ...t, isFavorite: !isFavorite } : t)
+      );
+      return true;
+    } catch (err) {
+      console.error('Failed to toggle favorite:', err);
+      return false;
+    }
+  }, []);
+
+  // Fetch on mount and when dependencies change
+  useEffect(() => {
+    fetchSavedTemplates();
+  }, [fetchSavedTemplates]);
+
+  return {
+    savedTemplates,
+    setSavedTemplates,
+    loading,
+    error,
+    refetch: fetchSavedTemplates,
+    deleteTemplate,
+    toggleFavorite
+  };
+};
+
 export default {
   useReportState,
   useFetchReport,
   useReportExport,
   useGroupedData,
-  useFilterOptions
+  useFilterOptions,
+  useSavedTemplates
 };

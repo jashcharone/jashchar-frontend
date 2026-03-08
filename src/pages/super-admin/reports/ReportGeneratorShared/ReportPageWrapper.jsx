@@ -5,6 +5,8 @@
  */
 
 import React, { useState, useCallback, useEffect } from 'react';
+import { useAuth } from '@/contexts/SupabaseAuthContext';
+import { useBranch } from '@/contexts/BranchContext';
 import ReportGeneratorLayout from './ReportGeneratorLayout';
 import TemplateSidebar from './TemplateSidebar';
 import FilterPanel from './FilterPanel';
@@ -27,6 +29,10 @@ const ReportPageWrapper = ({
   filterConfig = {},           // Filter configuration
   onError                      // Error callback
 }) => {
+  // Auth context for DB persistence
+  const { user, currentSessionId, organizationId } = useAuth();
+  const { selectedBranch } = useBranch();
+  
   // State
   const [selectedTemplate, setSelectedTemplate] = useState(null);
   const [selectedColumns, setSelectedColumns] = useState([]);
@@ -241,6 +247,11 @@ const ReportPageWrapper = ({
           sortBy
         }}
         saving={saving}
+        module={module}
+        branchId={selectedBranch?.id}
+        organizationId={organizationId}
+        sessionId={currentSessionId}
+        userId={user?.id}
       />
 
       {/* Schedule Report Modal */}

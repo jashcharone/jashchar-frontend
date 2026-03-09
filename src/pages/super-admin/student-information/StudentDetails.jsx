@@ -392,7 +392,7 @@ const StudentDetails = () => {
             // Get transport details for fee calculation
             const { data: transportDetails } = await supabase
                 .from('student_transport_details')
-                .select('student_id, monthly_fee')
+                .select('student_id, transport_fee')
                 .in('student_id', studentIds);
             
             // Get transport payments
@@ -523,7 +523,7 @@ const StudentDetails = () => {
         try {
             const { data: hostelData } = await supabase
                 .from('student_hostel_details')
-                .select('student_id, room_no, hostel:hostels(name)')
+                .select('student_id, room_id, room_number, hostel:hostels(name)')
                 .in('student_id', studentIds);
             
             const hostelMap = {};
@@ -531,7 +531,7 @@ const StudentDetails = () => {
                 hostelData.forEach(h => {
                     hostelMap[h.student_id] = {
                         hostel_name: h.hostel?.name || 'Hostel',
-                        room_no: h.room_no || '-'
+                        room_no: h.room_number || '-'
                     };
                 });
             }

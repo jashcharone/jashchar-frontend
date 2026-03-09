@@ -712,7 +712,8 @@ const StudentProfile = () => {
         const totalDiscount = (paymentsData || []).reduce((sum, p) => sum + (Number(p.discount_amount) || 0), 0);
         const totalRefunded = (refundsData || []).reduce((sum, r) => sum + (Number(r.refund_amount) || 0), 0);
         // Balance = Total - Paid - Discount + Refunded (refunds add back to balance)
-        const balance = totalFees - totalPaid - totalDiscount + totalRefunded;
+        // ✅ FIXED: Balance cannot be negative (cap at 0)
+        const balance = Math.max(0, totalFees - totalPaid - totalDiscount + totalRefunded);
         setFeesSummary({ total: totalFees, paid: totalPaid, discount: totalDiscount, refunded: totalRefunded, balance });
         
         // 6. Fetch Siblings

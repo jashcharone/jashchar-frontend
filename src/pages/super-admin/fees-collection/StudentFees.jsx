@@ -371,7 +371,8 @@ const StudentFees = () => {
                 const totalDiscount = validPayments.reduce((sum, p) => sum + (Number(p.discount_amount) || 0), 0);
                 const totalFine = validPayments.reduce((sum, p) => sum + (Number(p.fine_paid) || 0), 0);
                 const masterAmount = Number(master.amount) || 0;
-                const balance = masterAmount - totalPaid - totalDiscount;
+                // ✅ FIXED: Balance cannot be negative (cap at 0)
+                const balance = Math.max(0, masterAmount - totalPaid - totalDiscount);
 
                 let fine = 0;
                 let isOverdue = false;
@@ -690,6 +691,19 @@ const StudentFees = () => {
         return Math.max(0, totalAssignedDiscount - totalDiscountAlreadyUsed);
     }, [totalAssignedDiscount, totalDiscountAlreadyUsed]);
 
+    // ✅ Calculate MAXIMUM payable amount based on selected fees
+    // User cannot pay MORE than this amount
+    const selectedFeesMaxBalance = useMemo(() => {
+        let total = 0;
+        selectedFees.forEach(id => {
+            const fee = fees.find(f => f.id === id);
+            if (fee && fee.balance > 0) {
+                total += fee.balance;
+            }
+        });
+        return total;
+    }, [selectedFees, fees]);
+
     useEffect(() => {
         let totalBalance = 0;
         let totalFine = 0;
@@ -742,7 +756,8 @@ const StudentFees = () => {
         
         // Balance = Total Fees - Paid - Discount + Refunded
         // (Refund adds back to balance because money was returned to student)
-        const balance = totalFees - totalPaid - totalDiscount + totalRefunded;
+        // ✅ FIXED: Balance cannot be negative (cap at 0)
+        const balance = Math.max(0, totalFees - totalPaid - totalDiscount + totalRefunded);
 
         const overdueCount = fees.filter(f => f.isOverdue && f.balance > 0).length;
         const unpaidCount = fees.filter(f => f.balance > 0).length;
@@ -873,9 +888,32 @@ const StudentFees = () => {
             return;
         }
 
-        const totalToCollect = parseFloat(paymentDetails.amount) + parseFloat(paymentDetails.fine) - parseFloat(paymentDetails.discount);
+        const enteredAmount = parseFloat(paymentDetails.amount) || 0;
+        const enteredDiscount = parseFloat(paymentDetails.discount) || 0;
+        const totalToCollect = enteredAmount + parseFloat(paymentDetails.fine) - enteredDiscount;
+        
         if (totalToCollect <= 0) {
             toast({ variant: 'destructive', title: 'Invalid amount', description: 'Total payment must be greater than zero.' });
+            return;
+        }
+
+        // ✅ VALIDATION: Amount cannot exceed selected fees balance
+        if (enteredAmount > selectedFeesMaxBalance) {
+            toast({ 
+                variant: 'destructive', 
+                title: 'Amount exceeds balance', 
+                description: `ನೀವು enter ಮಾಡಿದ Amount (₹${enteredAmount.toLocaleString('en-IN')}) selected fees ನ balance (₹${selectedFeesMaxBalance.toLocaleString('en-IN')}) ಗಿಂತ ಹೆಚ್ಚು. ದಯವಿಟ್ಟು ಸರಿಯಾದ amount enter ಮಾಡಿ.` 
+            });
+            return;
+        }
+
+        // ✅ VALIDATION: Discount cannot exceed the amount being paid
+        if (enteredDiscount > enteredAmount) {
+            toast({ 
+                variant: 'destructive', 
+                title: 'Discount exceeds amount', 
+                description: 'Discount cannot be more than the payment amount.' 
+            });
             return;
         }
 
@@ -915,6 +953,47 @@ const StudentFees = () => {
                 const discountForThisFee = Math.min(remainingDiscountToDistribute, fee.balance - amountForThisFee);
                 const fineForThisFee = Math.min(remainingFineToDistribute, fee.fine);
                 
+                // ✅ FIX: Calculate balance AFTER this payment (for historical receipt display)
+                const balanceAfterThisPayment = Math.max(0, fee.balance - amountForThisFee - discountForThisFee);
+                
+                // ✅ BUILD COMPLETE RECEIPT SNAPSHOT - Saved at payment time for historical accuracy
+                const receiptSnapshot = {
+                    student: {
+                        id: studentId,
+                        name: student?.full_name || student?.name,
+                        admission_no: student?.admission_no,
+                        father_name: student?.father_name,
+                        class: student?.classes?.name || student?.class?.name,
+                        section: student?.sections?.name || student?.section?.name,
+                        session: student?.sessions?.name,
+                    },
+                    fee: {
+                        id: fee.masterId,
+                        name: fee.typeName || fee.feeTypeName,
+                        group: fee.groupName || fee.feeGroupName,
+                        total_amount: fee.totalFee || fee.amount,
+                        due_date: fee.dueDate,
+                    },
+                    payment: {
+                        amount: amountForThisFee,
+                        discount: discountForThisFee,
+                        fine: fineForThisFee,
+                        mode: paymentDetails.payment_mode,
+                        date: paymentDetails.payment_date || format(new Date(), 'yyyy-MM-dd'),
+                        utr: isUpiPayment(paymentDetails.payment_mode) ? paymentDetails.utr_number?.trim() : null,
+                        note: paymentDetails.note,
+                    },
+                    calculated: {
+                        total_paid_for_fee: (fee.totalPaid || 0) + amountForThisFee + discountForThisFee,
+                        balance_after: balanceAfterThisPayment,
+                        fee_balance_before: fee.balance,
+                    },
+                    transaction_id: newTransactionId,
+                    collected_by: user?.full_name || user?.email,
+                    branch_name: selectedBranch?.name,
+                    created_at: new Date().toISOString(),
+                };
+                
                 if (amountForThisFee > 0 || discountForThisFee > 0 || fineForThisFee > 0) {
                     paymentsToInsert.push({
                         branch_id: selectedBranch.id,
@@ -931,6 +1010,8 @@ const StudentFees = () => {
                         transaction_id: newTransactionId,
                         created_by: user.id,
                         utr_number: isUpiPayment(paymentDetails.payment_mode) ? paymentDetails.utr_number.trim() : null,
+                        balance_after_payment: balanceAfterThisPayment, // ✅ Quick access field
+                        receipt_snapshot: receiptSnapshot, // ✅ FULL RECEIPT DATA for reprint accuracy
                     });
                     remainingAmountToDistribute -= amountForThisFee;
                     remainingDiscountToDistribute -= discountForThisFee;
@@ -1031,6 +1112,47 @@ const StudentFees = () => {
             if (isAnnualType) {
                 // Annual/One-time: Single payment record with custom amount
                 const sessionName = student?.sessions?.name || 'Annual';
+                // ✅ FIX: Calculate balance after this payment
+                const balanceAfterPayment = Math.max(0, transportBalanceWithRefunds - totalAmount - discount);
+                
+                // ✅ BUILD COMPLETE RECEIPT SNAPSHOT for transport fee
+                const receiptSnapshot = {
+                    student: {
+                        id: studentId,
+                        name: student?.full_name || student?.name,
+                        admission_no: student?.admission_no,
+                        father_name: student?.father_name,
+                        class: student?.classes?.name || student?.class?.name,
+                        section: student?.sections?.name || student?.section?.name,
+                        session: sessionName,
+                    },
+                    transport: {
+                        route: transportDetails?.routeName,
+                        stop: transportDetails?.stopName,
+                        vehicle: transportDetails?.vehicleNumber,
+                        billing_cycle: getBillingCycleLabel(transportDetails?.billingCycle),
+                        total_fee: transportDetails?.totalFee || 0,
+                    },
+                    payment: {
+                        amount: totalAmount,
+                        discount: discount,
+                        fine: fine,
+                        mode: transportPaymentDetails.payment_mode,
+                        date: transportPaymentDetails.payment_date || format(new Date(), 'yyyy-MM-dd'),
+                        utr: utrValue,
+                        note: transportPaymentDetails.note,
+                        payment_month: `${getBillingCycleLabel(transportDetails.billingCycle)} ${sessionName}`,
+                    },
+                    calculated: {
+                        balance_before: transportBalanceWithRefunds,
+                        balance_after: balanceAfterPayment,
+                    },
+                    transaction_id: newTransactionId,
+                    collected_by: user?.full_name || user?.email,
+                    branch_name: selectedBranch?.name,
+                    created_at: new Date().toISOString(),
+                };
+                
                 paymentsToInsert = [{
                     branch_id: selectedBranch.id,
                     session_id: currentSessionId,
@@ -1046,20 +1168,68 @@ const StudentFees = () => {
                     transaction_id: newTransactionId,
                     collected_by: user.id,
                     utr_number: utrValue,
+                    balance_after_payment: balanceAfterPayment, // ✅ Quick access
+                    receipt_snapshot: receiptSnapshot, // ✅ FULL RECEIPT DATA
                 }];
             } else {
                 // Monthly: Create one payment record per selected month
                 const monthlyFee = transportDetails.monthlyFee || 0;
+                // ✅ FIX: Calculate running balance for each month payment
+                let runningBalance = transportBalanceWithRefunds;
                 paymentsToInsert = selectedTransportMonths.map((monthKey, index) => {
                     const monthLabel = sessionMonths.find(m => m.key === monthKey)?.label || monthKey;
+                    const thisDiscount = index === 0 ? discount : 0;
+                    const thisFine = index === 0 ? fine : 0;
+                    // Calculate balance after this specific payment
+                    runningBalance = Math.max(0, runningBalance - monthlyFee - thisDiscount);
+                    
+                    // ✅ BUILD RECEIPT SNAPSHOT for monthly payment
+                    const receiptSnapshot = {
+                        student: {
+                            id: studentId,
+                            name: student?.full_name || student?.name,
+                            admission_no: student?.admission_no,
+                            father_name: student?.father_name,
+                            class: student?.classes?.name || student?.class?.name,
+                            section: student?.sections?.name || student?.section?.name,
+                            session: student?.sessions?.name,
+                        },
+                        transport: {
+                            route: transportDetails?.routeName,
+                            stop: transportDetails?.stopName,
+                            vehicle: transportDetails?.vehicleNumber,
+                            billing_cycle: 'Monthly',
+                            monthly_fee: monthlyFee,
+                            total_fee: transportDetails?.totalFee || 0,
+                        },
+                        payment: {
+                            amount: monthlyFee,
+                            discount: thisDiscount,
+                            fine: thisFine,
+                            mode: transportPaymentDetails.payment_mode,
+                            date: transportPaymentDetails.payment_date || format(new Date(), 'yyyy-MM-dd'),
+                            utr: index === 0 ? utrValue : null,
+                            note: transportPaymentDetails.note,
+                            payment_month: monthLabel,
+                            months_paid: selectedTransportMonths.length,
+                        },
+                        calculated: {
+                            balance_after: runningBalance,
+                        },
+                        transaction_id: newTransactionId,
+                        collected_by: user?.full_name || user?.email,
+                        branch_name: selectedBranch?.name,
+                        created_at: new Date().toISOString(),
+                    };
+                    
                     return {
                         branch_id: selectedBranch.id,
                         session_id: currentSessionId,
                         organization_id: organizationId,
                         student_id: studentId,
                         amount: monthlyFee,
-                        discount_amount: index === 0 ? discount : 0,
-                        fine_paid: index === 0 ? fine : 0,
+                        discount_amount: thisDiscount,
+                        fine_paid: thisFine,
                         payment_date: transportPaymentDetails.payment_date || format(new Date(), 'yyyy-MM-dd'),
                         payment_mode: transportPaymentDetails.payment_mode,
                         payment_month: monthLabel,
@@ -1067,6 +1237,8 @@ const StudentFees = () => {
                         transaction_id: newTransactionId,
                         collected_by: user.id,
                         utr_number: index === 0 ? utrValue : null, // Only first record gets the UTR
+                        balance_after_payment: runningBalance, // ✅ Quick access
+                        receipt_snapshot: receiptSnapshot, // ✅ FULL RECEIPT DATA
                     };
                 });
             }
@@ -1156,6 +1328,47 @@ const StudentFees = () => {
             if (isAnnualType) {
                 // Annual/One-time: Single payment record with custom amount
                 const sessionName = student?.sessions?.name || 'Annual';
+                // ✅ FIX: Calculate balance after this payment
+                const balanceAfterPayment = Math.max(0, hostelBalanceWithRefunds - totalAmount - discount);
+                
+                // ✅ BUILD COMPLETE RECEIPT SNAPSHOT for hostel fee
+                const receiptSnapshot = {
+                    student: {
+                        id: studentId,
+                        name: student?.full_name || student?.name,
+                        admission_no: student?.admission_no,
+                        father_name: student?.father_name,
+                        class: student?.classes?.name || student?.class?.name,
+                        section: student?.sections?.name || student?.section?.name,
+                        session: sessionName,
+                    },
+                    hostel: {
+                        block: hostelDetails?.blockName,
+                        room: hostelDetails?.roomNumber,
+                        room_type: hostelDetails?.roomType,
+                        billing_cycle: getBillingCycleLabel(hostelDetails?.billingCycle),
+                        total_fee: hostelDetails?.totalFee || 0,
+                    },
+                    payment: {
+                        amount: totalAmount,
+                        discount: discount,
+                        fine: fine,
+                        mode: hostelPaymentDetails.payment_mode,
+                        date: hostelPaymentDetails.payment_date || format(new Date(), 'yyyy-MM-dd'),
+                        utr: utrValue,
+                        note: hostelPaymentDetails.note,
+                        payment_month: `${getBillingCycleLabel(hostelDetails.billingCycle)} ${sessionName}`,
+                    },
+                    calculated: {
+                        balance_before: hostelBalanceWithRefunds,
+                        balance_after: balanceAfterPayment,
+                    },
+                    transaction_id: newTransactionId,
+                    collected_by: user?.full_name || user?.email,
+                    branch_name: selectedBranch?.name,
+                    created_at: new Date().toISOString(),
+                };
+                
                 paymentsToInsert = [{
                     branch_id: selectedBranch.id,
                     session_id: currentSessionId,
@@ -1171,20 +1384,68 @@ const StudentFees = () => {
                     transaction_id: newTransactionId,
                     collected_by: user.id,
                     utr_number: utrValue,
+                    balance_after_payment: balanceAfterPayment, // ✅ Quick access
+                    receipt_snapshot: receiptSnapshot, // ✅ FULL RECEIPT DATA
                 }];
             } else {
                 // Monthly: Create one payment record per selected month
                 const monthlyFee = hostelDetails.monthlyFee || 0;
+                // ✅ FIX: Calculate running balance for each month payment
+                let runningBalance = hostelBalanceWithRefunds;
                 paymentsToInsert = selectedHostelMonths.map((monthKey, index) => {
                     const monthLabel = sessionMonths.find(m => m.key === monthKey)?.label || monthKey;
+                    const thisDiscount = index === 0 ? discount : 0;
+                    const thisFine = index === 0 ? fine : 0;
+                    // Calculate balance after this specific payment
+                    runningBalance = Math.max(0, runningBalance - monthlyFee - thisDiscount);
+                    
+                    // ✅ BUILD RECEIPT SNAPSHOT for monthly hostel payment
+                    const receiptSnapshot = {
+                        student: {
+                            id: studentId,
+                            name: student?.full_name || student?.name,
+                            admission_no: student?.admission_no,
+                            father_name: student?.father_name,
+                            class: student?.classes?.name || student?.class?.name,
+                            section: student?.sections?.name || student?.section?.name,
+                            session: student?.sessions?.name,
+                        },
+                        hostel: {
+                            block: hostelDetails?.blockName,
+                            room: hostelDetails?.roomNumber,
+                            room_type: hostelDetails?.roomType,
+                            billing_cycle: 'Monthly',
+                            monthly_fee: monthlyFee,
+                            total_fee: hostelDetails?.totalFee || 0,
+                        },
+                        payment: {
+                            amount: monthlyFee,
+                            discount: thisDiscount,
+                            fine: thisFine,
+                            mode: hostelPaymentDetails.payment_mode,
+                            date: hostelPaymentDetails.payment_date || format(new Date(), 'yyyy-MM-dd'),
+                            utr: index === 0 ? utrValue : null,
+                            note: hostelPaymentDetails.note,
+                            payment_month: monthLabel,
+                            months_paid: selectedHostelMonths.length,
+                        },
+                        calculated: {
+                            balance_after: runningBalance,
+                        },
+                        transaction_id: newTransactionId,
+                        collected_by: user?.full_name || user?.email,
+                        branch_name: selectedBranch?.name,
+                        created_at: new Date().toISOString(),
+                    };
+                    
                     return {
                         branch_id: selectedBranch.id,
                         session_id: currentSessionId,
                         organization_id: organizationId,
                         student_id: studentId,
                         amount: monthlyFee,
-                        discount_amount: index === 0 ? discount : 0,
-                        fine_paid: index === 0 ? fine : 0,
+                        discount_amount: thisDiscount,
+                        fine_paid: thisFine,
                         payment_date: hostelPaymentDetails.payment_date || format(new Date(), 'yyyy-MM-dd'),
                         payment_mode: hostelPaymentDetails.payment_mode,
                         payment_month: monthLabel,
@@ -1192,6 +1453,8 @@ const StudentFees = () => {
                         transaction_id: newTransactionId,
                         collected_by: user.id,
                         utr_number: index === 0 ? utrValue : null, // Only first record gets the UTR
+                        balance_after_payment: runningBalance, // ✅ Quick access
+                        receipt_snapshot: receiptSnapshot, // ✅ FULL RECEIPT DATA
                     };
                 });
             }
@@ -1562,9 +1825,21 @@ const StudentFees = () => {
                                     <Input 
                                         type="number" 
                                         value={paymentDetails.amount} 
-                                        onChange={(e) => setPaymentDetails(p => ({ ...p, amount: e.target.value }))}
+                                        onChange={(e) => {
+                                            const val = parseFloat(e.target.value) || 0;
+                                            // ✅ Prevent entering more than selected balance
+                                            if (val > selectedFeesMaxBalance) {
+                                                setPaymentDetails(p => ({ ...p, amount: selectedFeesMaxBalance.toFixed(2) }));
+                                            } else {
+                                                setPaymentDetails(p => ({ ...p, amount: e.target.value }));
+                                            }
+                                        }}
+                                        max={selectedFeesMaxBalance}
                                         className="h-9"
                                     />
+                                    {selectedFeesMaxBalance > 0 && (
+                                        <p className="text-[10px] text-muted-foreground">Max: {currencySymbol}{selectedFeesMaxBalance.toLocaleString('en-IN')}</p>
+                                    )}
                                 </div>
                                 <div className="space-y-1">
                                     <Label className="text-xs">
@@ -2452,30 +2727,80 @@ const StudentFees = () => {
                                 </TabsContent>
 
                                 <TabsContent value="history" className="m-0">
+                                    {/* Payment Summary Cards */}
+                                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4 p-3 bg-muted/30 rounded-lg">
+                                        <div className="text-center p-2 bg-background rounded border">
+                                            <p className="text-xs text-muted-foreground uppercase">Total Paid</p>
+                                            <p className="text-lg font-bold text-green-600">{currencySymbol}{(
+                                                payments.filter(p => !p.reverted_at).reduce((sum, p) => sum + Number(p.amount || 0), 0) +
+                                                (transportDetails?.payments?.filter(p => !p.reverted_at).reduce((sum, p) => sum + Number(p.amount || 0), 0) || 0) +
+                                                (hostelDetails?.payments?.filter(p => !p.reverted_at).reduce((sum, p) => sum + Number(p.amount || 0), 0) || 0)
+                                            ).toLocaleString('en-IN')}</p>
+                                        </div>
+                                        <div className="text-center p-2 bg-background rounded border">
+                                            <p className="text-xs text-muted-foreground uppercase">Total Discount</p>
+                                            <p className="text-lg font-bold text-blue-600">{currencySymbol}{(
+                                                payments.filter(p => !p.reverted_at).reduce((sum, p) => sum + Number(p.discount_amount || 0), 0) +
+                                                (transportDetails?.payments?.filter(p => !p.reverted_at).reduce((sum, p) => sum + Number(p.discount_amount || 0), 0) || 0) +
+                                                (hostelDetails?.payments?.filter(p => !p.reverted_at).reduce((sum, p) => sum + Number(p.discount_amount || 0), 0) || 0)
+                                            ).toLocaleString('en-IN')}</p>
+                                        </div>
+                                        <div className="text-center p-2 bg-background rounded border">
+                                            <p className="text-xs text-muted-foreground uppercase">Fine Collected</p>
+                                            <p className="text-lg font-bold text-amber-600">{currencySymbol}{(
+                                                payments.filter(p => !p.reverted_at).reduce((sum, p) => sum + Number(p.fine_paid || 0), 0) +
+                                                (transportDetails?.payments?.filter(p => !p.reverted_at).reduce((sum, p) => sum + Number(p.fine_paid || 0), 0) || 0) +
+                                                (hostelDetails?.payments?.filter(p => !p.reverted_at).reduce((sum, p) => sum + Number(p.fine_paid || 0), 0) || 0)
+                                            ).toLocaleString('en-IN')}</p>
+                                        </div>
+                                        <div className="text-center p-2 bg-background rounded border">
+                                            <p className="text-xs text-muted-foreground uppercase">Transactions</p>
+                                            <p className="text-lg font-bold text-purple-600">{
+                                                payments.filter(p => !p.reverted_at).length +
+                                                (transportDetails?.payments?.filter(p => !p.reverted_at).length || 0) +
+                                                (hostelDetails?.payments?.filter(p => !p.reverted_at).length || 0)
+                                            }</p>
+                                        </div>
+                                    </div>
+                                    
                                     <div className="overflow-x-auto">
                                         <table className="w-full text-sm">
                                             <thead>
                                                 <tr className="border-b bg-muted/50">
-                                                    <th className="p-3 text-left font-medium">Date</th>
-                                                    <th className="p-3 text-left font-medium">Type</th>
+                                                    <th className="p-3 text-left font-medium">Date / Time</th>
+                                                    <th className="p-3 text-left font-medium">Fee Type</th>
+                                                    <th className="p-3 text-left font-medium">Fee Details</th>
                                                     <th className="p-3 text-left font-medium">Transaction ID</th>
                                                     <th className="p-3 text-left font-medium">Mode</th>
-                                                    <th className="p-3 text-left font-medium">UTR/Reference</th>
                                                     <th className="p-3 text-right font-medium">Amount</th>
                                                     <th className="p-3 text-right font-medium">Discount</th>
                                                     <th className="p-3 text-right font-medium">Fine</th>
+                                                    <th className="p-3 text-right font-medium">Net Paid</th>
                                                     <th className="p-3 text-center font-medium">Action</th>
                                                 </tr>
                                             </thead>
                                             <tbody>
-                                                {/* Academic Fee Payments */}
-                                                {payments.map(p => (
-                                                    <tr key={`fee-${p.id}`} className={`border-b ${p.reverted_at ? 'bg-red-50 dark:bg-red-950/20 opacity-60' : 'hover:bg-muted/30'}`}>
-                                                        <td className="p-3">{format(parseISO(p.payment_date), 'dd MMM yyyy')}</td>
+                                                {/* Academic Fee Payments - Show Fee Name */}
+                                                {payments.map(p => {
+                                                    const feeInfo = fees.find(f => f.masterId === p.fee_master_id);
+                                                    const netPaid = Number(p.amount || 0) + Number(p.fine_paid || 0) - Number(p.discount_amount || 0);
+                                                    return (
+                                                    <tr key={`fee-${p.id}`} className={`border-b ${p.reverted_at ? 'bg-red-50 dark:bg-red-950/20 opacity-60 line-through' : 'hover:bg-muted/30'}`}>
+                                                        <td className="p-3">
+                                                            <div className="font-medium">{format(parseISO(p.payment_date), 'dd MMM yyyy')}</div>
+                                                            <div className="text-xs text-muted-foreground">{format(parseISO(p.created_at), 'hh:mm a')}</div>
+                                                        </td>
                                                         <td className="p-3">
                                                             <Badge variant="secondary" className="bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300">
-                                                                <FileText className="h-3 w-3 mr-1" />Fees
+                                                                <FileText className="h-3 w-3 mr-1" />Academic
                                                             </Badge>
+                                                        </td>
+                                                        <td className="p-3">
+                                                            <div className="font-medium text-sm">{feeInfo?.typeName || feeInfo?.feeTypeName || 'Fee'}</div>
+                                                            <div className="text-xs text-muted-foreground">{feeInfo?.groupName || feeInfo?.feeGroupName || ''}</div>
+                                                            {p.utr_number && (
+                                                                <code className="text-[10px] bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded font-mono mt-1 inline-block">UTR: {p.utr_number}</code>
+                                                            )}
                                                         </td>
                                                         <td className="p-3">
                                                             <code className="text-xs bg-muted px-2 py-0.5 rounded">{p.transaction_id || '-'}</code>
@@ -2483,39 +2808,35 @@ const StudentFees = () => {
                                                         <td className="p-3">
                                                             <Badge variant="outline">{p.payment_mode}</Badge>
                                                         </td>
-                                                        <td className="p-3">
-                                                            {p.utr_number ? (
-                                                                <code className="text-xs bg-purple-100 text-purple-700 px-2 py-0.5 rounded font-mono">{p.utr_number}</code>
-                                                            ) : (
-                                                                <span className="text-muted-foreground">{p.note || '-'}</span>
-                                                            )}
-                                                        </td>
-                                                        <td className="p-3 text-right font-mono">{currencySymbol}{Number(p.amount || 0).toLocaleString('en-IN')}</td>
-                                                        <td className="p-3 text-right font-mono text-blue-600">{currencySymbol}{Number(p.discount_amount || 0).toLocaleString('en-IN')}</td>
-                                                        <td className="p-3 text-right font-mono text-amber-600">{currencySymbol}{Number(p.fine_paid || 0).toLocaleString('en-IN')}</td>
+                                                        <td className="p-3 text-right font-mono font-semibold">{currencySymbol}{Number(p.amount || 0).toLocaleString('en-IN')}</td>
+                                                        <td className="p-3 text-right font-mono text-blue-600">{Number(p.discount_amount) > 0 ? `-${currencySymbol}${Number(p.discount_amount).toLocaleString('en-IN')}` : '-'}</td>
+                                                        <td className="p-3 text-right font-mono text-amber-600">{Number(p.fine_paid) > 0 ? `+${currencySymbol}${Number(p.fine_paid).toLocaleString('en-IN')}` : '-'}</td>
+                                                        <td className="p-3 text-right font-mono font-bold text-green-700">{currencySymbol}{netPaid.toLocaleString('en-IN')}</td>
                                                         <td className="p-3 text-center">
                                                             {!p.reverted_at ? (
                                                                 <div className="flex justify-center gap-1">
-                                                                    <Button variant="outline" size="sm" onClick={() => printReceipt(p)}>
+                                                                    <Button variant="outline" size="sm" onClick={() => printReceipt(p)} title="Print Receipt">
                                                                         <Printer className="h-3 w-3" />
                                                                     </Button>
-                                                                    <Button variant="destructive" size="sm" onClick={() => setPaymentToRevoke(p)}>
+                                                                    <Button variant="destructive" size="sm" onClick={() => setPaymentToRevoke(p)} title="Revoke Payment">
                                                                         <RotateCcw className="h-3 w-3" />
                                                                     </Button>
                                                                     {!hasExistingRefund(p.id, 'academic') && (
-                                                                        <Button variant="outline" size="sm" className="text-orange-600 border-orange-300 hover:bg-orange-50" onClick={() => openRefundDialog(p, 'academic')}>
+                                                                        <Button variant="outline" size="sm" className="text-orange-600 border-orange-300 hover:bg-orange-50" onClick={() => openRefundDialog(p, 'academic')} title="Request Refund">
                                                                             <Undo2 className="h-3 w-3" />
                                                                         </Button>
                                                                     )}
                                                                 </div>
                                                             ) : (
-                                                                <span className="text-xs text-red-600">
-                                                                    Reverted {format(parseISO(p.reverted_at), 'dd/MM/yy')}
-                                                                </span>
+                                                                <div className="text-xs text-red-600">
+                                                                    <div className="font-medium">REVERTED</div>
+                                                                    <div>{format(parseISO(p.reverted_at), 'dd/MM/yy')}</div>
+                                                                </div>
                                                             )}
                                                         </td>
                                                     </tr>
-                                                ))}
+                                                    );
+                                                })}
 
                                                 {/* Transport Fee Payments - Grouped by transaction_id */}
                                                 {(() => {
@@ -2534,13 +2855,24 @@ const StudentFees = () => {
                                                     return Object.entries(groups).map(([txId, group]) => {
                                                         const p = group.firstPayment;
                                                         const monthsText = group.months.length > 0 ? group.months.join(', ') : (p.note || '-');
+                                                        const netPaid = group.totalAmount + group.totalFine - group.totalDiscount;
                                                         return (
-                                                            <tr key={`transport-${txId}`} className={`border-b ${group.allReverted ? 'bg-red-50 dark:bg-red-950/20 opacity-60' : 'hover:bg-blue-50/30 dark:hover:bg-blue-950/20'}`}>
-                                                                <td className="p-3">{format(parseISO(p.payment_date), 'dd MMM yyyy')}</td>
+                                                            <tr key={`transport-${txId}`} className={`border-b ${group.allReverted ? 'bg-red-50 dark:bg-red-950/20 opacity-60 line-through' : 'hover:bg-blue-50/30 dark:hover:bg-blue-950/20'}`}>
+                                                                <td className="p-3">
+                                                                    <div className="font-medium">{format(parseISO(p.payment_date), 'dd MMM yyyy')}</div>
+                                                                    <div className="text-xs text-muted-foreground">{format(parseISO(p.created_at), 'hh:mm a')}</div>
+                                                                </td>
                                                                 <td className="p-3">
                                                                     <Badge variant="secondary" className="bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300">
                                                                         <Bus className="h-3 w-3 mr-1" />Transport
                                                                     </Badge>
+                                                                </td>
+                                                                <td className="p-3">
+                                                                    <div className="font-medium text-sm">{transportDetails?.routeName || 'Transport Fee'}</div>
+                                                                    <div className="text-xs text-muted-foreground">{monthsText}</div>
+                                                                    {p.utr_number && (
+                                                                        <code className="text-[10px] bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded font-mono mt-1 inline-block">UTR: {p.utr_number}</code>
+                                                                    )}
                                                                 </td>
                                                                 <td className="p-3">
                                                                     <code className="text-xs bg-muted px-2 py-0.5 rounded">{p.transaction_id || '-'}</code>
@@ -2548,32 +2880,27 @@ const StudentFees = () => {
                                                                 <td className="p-3">
                                                                     <Badge variant="outline">{p.payment_mode}</Badge>
                                                                 </td>
-                                                                <td className="p-3">
-                                                                    {p.utr_number ? (
-                                                                        <code className="text-xs bg-purple-100 text-purple-700 px-2 py-0.5 rounded font-mono">{p.utr_number}</code>
-                                                                    ) : (
-                                                                        <span className="text-muted-foreground text-xs">{monthsText}</span>
-                                                                    )}
-                                                                </td>
-                                                                <td className="p-3 text-right font-mono">{currencySymbol}{group.totalAmount.toLocaleString('en-IN')}</td>
-                                                                <td className="p-3 text-right font-mono text-blue-600">{currencySymbol}{group.totalDiscount.toLocaleString('en-IN')}</td>
-                                                                <td className="p-3 text-right font-mono text-amber-600">{currencySymbol}{group.totalFine.toLocaleString('en-IN')}</td>
+                                                                <td className="p-3 text-right font-mono font-semibold">{currencySymbol}{group.totalAmount.toLocaleString('en-IN')}</td>
+                                                                <td className="p-3 text-right font-mono text-blue-600">{group.totalDiscount > 0 ? `-${currencySymbol}${group.totalDiscount.toLocaleString('en-IN')}` : '-'}</td>
+                                                                <td className="p-3 text-right font-mono text-amber-600">{group.totalFine > 0 ? `+${currencySymbol}${group.totalFine.toLocaleString('en-IN')}` : '-'}</td>
+                                                                <td className="p-3 text-right font-mono font-bold text-green-700">{currencySymbol}{netPaid.toLocaleString('en-IN')}</td>
                                                                 <td className="p-3 text-center">
                                                                     {!group.allReverted ? (
                                                                         <div className="flex justify-center gap-1">
-                                                                            <Button variant="outline" size="sm" onClick={() => navigate(`/${basePath}/fees-collection/print-transport-receipt/${p.id}`)}>
+                                                                            <Button variant="outline" size="sm" onClick={() => navigate(`/${basePath}/fees-collection/print-transport-receipt/${p.id}`)} title="Print Receipt">
                                                                                 <Printer className="h-3 w-3" />
                                                                             </Button>
                                                                             {!hasExistingRefund(p.id, 'transport') && (
-                                                                                <Button variant="outline" size="sm" className="text-orange-600 border-orange-300 hover:bg-orange-50" onClick={() => openRefundDialog({ ...p, totalAmount: group.totalAmount, paymentIds: Object.values(groups).flatMap(g => [g.firstPayment.id]) }, 'transport')}>
+                                                                                <Button variant="outline" size="sm" className="text-orange-600 border-orange-300 hover:bg-orange-50" onClick={() => openRefundDialog({ ...p, totalAmount: group.totalAmount, paymentIds: Object.values(groups).flatMap(g => [g.firstPayment.id]) }, 'transport')} title="Request Refund">
                                                                                     <Undo2 className="h-3 w-3" />
                                                                                 </Button>
                                                                             )}
                                                                         </div>
                                                                     ) : (
-                                                                        <span className="text-xs text-red-600">
-                                                                            Reverted {format(parseISO(p.reverted_at), 'dd/MM/yy')}
-                                                                        </span>
+                                                                        <div className="text-xs text-red-600">
+                                                                            <div className="font-medium">REVERTED</div>
+                                                                            <div>{format(parseISO(p.reverted_at), 'dd/MM/yy')}</div>
+                                                                        </div>
                                                                     )}
                                                                 </td>
                                                             </tr>
@@ -2598,13 +2925,24 @@ const StudentFees = () => {
                                                     return Object.entries(groups).map(([txId, group]) => {
                                                         const p = group.firstPayment;
                                                         const monthsText = group.months.length > 0 ? group.months.join(', ') : (p.note || '-');
+                                                        const netPaid = group.totalAmount + group.totalFine - group.totalDiscount;
                                                         return (
-                                                            <tr key={`hostel-${txId}`} className={`border-b ${group.allReverted ? 'bg-red-50 dark:bg-red-950/20 opacity-60' : 'hover:bg-purple-50/30 dark:hover:bg-purple-950/20'}`}>
-                                                                <td className="p-3">{format(parseISO(p.payment_date), 'dd MMM yyyy')}</td>
+                                                            <tr key={`hostel-${txId}`} className={`border-b ${group.allReverted ? 'bg-red-50 dark:bg-red-950/20 opacity-60 line-through' : 'hover:bg-purple-50/30 dark:hover:bg-purple-950/20'}`}>
+                                                                <td className="p-3">
+                                                                    <div className="font-medium">{format(parseISO(p.payment_date), 'dd MMM yyyy')}</div>
+                                                                    <div className="text-xs text-muted-foreground">{format(parseISO(p.created_at), 'hh:mm a')}</div>
+                                                                </td>
                                                                 <td className="p-3">
                                                                     <Badge variant="secondary" className="bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300">
                                                                         <Building2 className="h-3 w-3 mr-1" />Hostel
                                                                     </Badge>
+                                                                </td>
+                                                                <td className="p-3">
+                                                                    <div className="font-medium text-sm">{hostelDetails?.blockName || 'Hostel Fee'}</div>
+                                                                    <div className="text-xs text-muted-foreground">{monthsText}</div>
+                                                                    {p.utr_number && (
+                                                                        <code className="text-[10px] bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded font-mono mt-1 inline-block">UTR: {p.utr_number}</code>
+                                                                    )}
                                                                 </td>
                                                                 <td className="p-3">
                                                                     <code className="text-xs bg-muted px-2 py-0.5 rounded">{p.transaction_id || '-'}</code>
@@ -2612,32 +2950,27 @@ const StudentFees = () => {
                                                                 <td className="p-3">
                                                                     <Badge variant="outline">{p.payment_mode}</Badge>
                                                                 </td>
-                                                                <td className="p-3">
-                                                                    {p.utr_number ? (
-                                                                        <code className="text-xs bg-purple-100 text-purple-700 px-2 py-0.5 rounded font-mono">{p.utr_number}</code>
-                                                                    ) : (
-                                                                        <span className="text-muted-foreground text-xs">{monthsText}</span>
-                                                                    )}
-                                                                </td>
-                                                                <td className="p-3 text-right font-mono">{currencySymbol}{group.totalAmount.toLocaleString('en-IN')}</td>
-                                                                <td className="p-3 text-right font-mono text-blue-600">{currencySymbol}{group.totalDiscount.toLocaleString('en-IN')}</td>
-                                                                <td className="p-3 text-right font-mono text-amber-600">{currencySymbol}{group.totalFine.toLocaleString('en-IN')}</td>
+                                                                <td className="p-3 text-right font-mono font-semibold">{currencySymbol}{group.totalAmount.toLocaleString('en-IN')}</td>
+                                                                <td className="p-3 text-right font-mono text-blue-600">{group.totalDiscount > 0 ? `-${currencySymbol}${group.totalDiscount.toLocaleString('en-IN')}` : '-'}</td>
+                                                                <td className="p-3 text-right font-mono text-amber-600">{group.totalFine > 0 ? `+${currencySymbol}${group.totalFine.toLocaleString('en-IN')}` : '-'}</td>
+                                                                <td className="p-3 text-right font-mono font-bold text-green-700">{currencySymbol}{netPaid.toLocaleString('en-IN')}</td>
                                                                 <td className="p-3 text-center">
                                                                     {!group.allReverted ? (
                                                                         <div className="flex justify-center gap-1">
-                                                                            <Button variant="outline" size="sm" onClick={() => navigate(`/${basePath}/fees-collection/print-hostel-receipt/${p.id}`)}>
+                                                                            <Button variant="outline" size="sm" onClick={() => navigate(`/${basePath}/fees-collection/print-hostel-receipt/${p.id}`)} title="Print Receipt">
                                                                                 <Printer className="h-3 w-3" />
                                                                             </Button>
                                                                             {!hasExistingRefund(p.id, 'hostel') && (
-                                                                                <Button variant="outline" size="sm" className="text-orange-600 border-orange-300 hover:bg-orange-50" onClick={() => openRefundDialog({ ...p, totalAmount: group.totalAmount, paymentIds: Object.values(groups).flatMap(g => [g.firstPayment.id]) }, 'hostel')}>
+                                                                                <Button variant="outline" size="sm" className="text-orange-600 border-orange-300 hover:bg-orange-50" onClick={() => openRefundDialog({ ...p, totalAmount: group.totalAmount, paymentIds: Object.values(groups).flatMap(g => [g.firstPayment.id]) }, 'hostel')} title="Request Refund">
                                                                                     <Undo2 className="h-3 w-3" />
                                                                                 </Button>
                                                                             )}
                                                                         </div>
                                                                     ) : (
-                                                                        <span className="text-xs text-red-600">
-                                                                            Reverted {format(parseISO(p.reverted_at), 'dd/MM/yy')}
-                                                                        </span>
+                                                                        <div className="text-xs text-red-600">
+                                                                            <div className="font-medium">REVERTED</div>
+                                                                            <div>{format(parseISO(p.reverted_at), 'dd/MM/yy')}</div>
+                                                                        </div>
                                                                     )}
                                                                 </td>
                                                             </tr>
@@ -2648,11 +2981,18 @@ const StudentFees = () => {
                                                 {/* Fee Refund Records */}
                                                 {studentRefunds.length > 0 && studentRefunds.map(refund => (
                                                     <tr key={`refund-${refund.id}`} className="border-b bg-orange-50 dark:bg-orange-950/20">
-                                                        <td className="p-3">{format(parseISO(refund.refund_date || refund.created_at), 'dd MMM yyyy')}</td>
+                                                        <td className="p-3">
+                                                            <div className="font-medium">{format(parseISO(refund.refund_date || refund.created_at), 'dd MMM yyyy')}</div>
+                                                            <div className="text-xs text-muted-foreground">{format(parseISO(refund.created_at), 'hh:mm a')}</div>
+                                                        </td>
                                                         <td className="p-3">
                                                             <Badge variant="secondary" className="bg-orange-100 text-orange-700 dark:bg-orange-900 dark:text-orange-300">
-                                                                <Undo2 className="h-3 w-3 mr-1" />Refund ({refund.refund_type})
+                                                                <Undo2 className="h-3 w-3 mr-1" />Refund
                                                             </Badge>
+                                                        </td>
+                                                        <td className="p-3">
+                                                            <div className="font-medium text-sm capitalize">{refund.refund_type || 'Fee'} Refund</div>
+                                                            <div className="text-xs text-muted-foreground">{refund.refund_reason}</div>
                                                         </td>
                                                         <td className="p-3">
                                                             <code className="text-xs bg-muted px-2 py-0.5 rounded">{refund.transaction_id || '-'}</code>
@@ -2660,10 +3000,10 @@ const StudentFees = () => {
                                                         <td className="p-3">
                                                             <Badge variant="outline">{refund.refund_mode}</Badge>
                                                         </td>
-                                                        <td className="p-3 text-muted-foreground text-xs">{refund.refund_reason}</td>
-                                                        <td className="p-3 text-right font-mono text-orange-600">-{currencySymbol}{Number(refund.refund_amount || 0).toLocaleString('en-IN')}</td>
+                                                        <td className="p-3 text-right font-mono font-semibold text-orange-600">-{currencySymbol}{Number(refund.refund_amount || 0).toLocaleString('en-IN')}</td>
                                                         <td className="p-3 text-right font-mono">-</td>
                                                         <td className="p-3 text-right font-mono">-</td>
+                                                        <td className="p-3 text-right font-mono font-bold text-orange-700">-{currencySymbol}{Number(refund.refund_amount || 0).toLocaleString('en-IN')}</td>
                                                         <td className="p-3 text-center">
                                                             <Badge variant={
                                                                 refund.status === 'completed' ? 'success' : 
@@ -2680,7 +3020,7 @@ const StudentFees = () => {
                                                 ))}
 
                                                 {payments.length === 0 && !transportDetails?.payments?.length && !hostelDetails?.payments?.length && studentRefunds.length === 0 && (
-                                                    <tr><td colSpan="9" className="p-8 text-center text-muted-foreground">No payment history found.</td></tr>
+                                                    <tr><td colSpan="10" className="p-8 text-center text-muted-foreground">No payment history found.</td></tr>
                                                 )}
                                             </tbody>
                                         </table>

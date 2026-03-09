@@ -18,7 +18,8 @@ const Receipt = React.forwardRef(({ data, settings, currentDate }, ref) => {
     const totalFees = 0; // Replace with actual total fees query
     const totalPaidPreviously = 0; // Replace with actual total paid query
     const totalDiscountPreviously = 0; // Replace with actual total discount query
-    const newBalance = totalFees - (totalPaidPreviously + totalAmountPaid) - (totalDiscountPreviously + totalDiscount);
+    // ✅ FIXED: Balance cannot be negative (cap at 0)
+    const newBalance = Math.max(0, totalFees - (totalPaidPreviously + totalAmountPaid) - (totalDiscountPreviously + totalDiscount));
 
 
     const numberToWords = (num) => {

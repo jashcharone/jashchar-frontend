@@ -4,6 +4,7 @@ import { getApiBaseUrl } from '@/utils/platform';
 /**
  * Centralized API Client with automatic authentication
  * All requests automatically include the Authorization header with the current user's token
+ * Also includes x-branch-id and x-session-id headers for multi-tenant context
  */
 
 // Platform-aware API URL (Capacitor uses full Railway URL, web uses relative /api)
@@ -22,6 +23,18 @@ const LONG_TIMEOUT_ENDPOINTS = [
   '/module-registry/sync',
 ];
 
+/**
+ * Get user context from localStorage for multi-tenant isolation
+ * @returns {Object} Context with organizationId, branchId, sessionId
+ */
+const getUserContext = () => {
+  return {
+    organizationId: localStorage.getItem('selectedOrganizationId'),
+    branchId: localStorage.getItem('selectedBranchId'),
+    sessionId: localStorage.getItem('selectedSessionId')
+  };
+};
+
 const apiClient = {
   /**
    * Generic request handler
@@ -34,6 +47,9 @@ const apiClient = {
       // Get the current session
       const { data: { session } } = await supabase.auth.getSession();
       
+      // Get user context for multi-tenant isolation
+      const context = getUserContext();
+      
       // Build headers
       const headers = {
         'Content-Type': 'application/json',
@@ -43,6 +59,18 @@ const apiClient = {
       // Add Authorization header if session exists
       if (session?.access_token) {
         headers['Authorization'] = `Bearer ${session.access_token}`;
+      }
+      
+      // Add context headers for multi-tenant backend filtering
+      // CRITICAL: These headers enable branch & session wise data isolation
+      if (context.organizationId) {
+        headers['x-organization-id'] = context.organizationId;
+      }
+      if (context.branchId) {
+        headers['x-branch-id'] = context.branchId;
+      }
+      if (context.sessionId) {
+        headers['x-session-id'] = context.sessionId;
       }
 
       // Build full URL - use API_BASE_URL for production

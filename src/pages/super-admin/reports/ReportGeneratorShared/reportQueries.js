@@ -759,7 +759,7 @@ export const fetchHostelFeeStructure = async ({
   // Get room types
   const { data: roomTypes } = await supabase
     .from('hostel_room_types')
-    .select('id, name, monthly_fee, quarterly_fee, half_yearly_fee, yearly_fee, mess_fee')
+    .select('id, name, cost, billing_cycle')
     .eq('branch_id', branchId);
 
   // Get rooms with occupancy count
@@ -768,10 +768,10 @@ export const fetchHostelFeeStructure = async ({
     .select(`
       id, 
       hostel_id, 
-      room_number, 
+      room_number_name, 
       room_type_id, 
-      capacity,
-      floor
+      num_of_beds,
+      cost_per_bed
     `)
     .eq('branch_id', branchId);
 
@@ -802,16 +802,17 @@ export const fetchHostelFeeStructure = async ({
       id: room.id,
       hostel_name: hostel.name || 'Unknown Hostel',
       room_type: roomType.name || 'Standard',
-      room_number: room.room_number || '',
-      capacity: room.capacity || 1,
+      room_number: room.room_number_name || '',
+      capacity: room.num_of_beds || 1,
       occupied: occupied,
-      hostel_monthly_fee: roomType.monthly_fee || 0,
-      hostel_quarterly_fee: roomType.quarterly_fee || 0,
-      hostel_half_yearly_fee: roomType.half_yearly_fee || 0,
-      hostel_yearly_fee: roomType.yearly_fee || 0,
-      mess_fee: roomType.mess_fee || 0,
-      total_hostel_fee: (roomType.monthly_fee || 0) + (roomType.mess_fee || 0),
-      hostel_students: occupied
+      hostel_monthly_fee: roomType.cost || room.cost_per_bed || 0,
+      hostel_quarterly_fee: (roomType.cost || 0) * 3,
+      hostel_half_yearly_fee: (roomType.cost || 0) * 6,
+      hostel_yearly_fee: (roomType.cost || 0) * 12,
+      mess_fee: 0,
+      total_hostel_fee: roomType.cost || room.cost_per_bed || 0,
+      hostel_students: occupied,
+      billing_cycle: roomType.billing_cycle || 'monthly'
     };
   });
 
@@ -822,32 +823,55 @@ export const fetchHostelFeeStructure = async ({
 /**
  * Fetch Transport Fee Structure
  * Returns route and pickup point-wise transport fee structure
+ * Uses route_pickup_point_mappings junction table for route-pickup relationships
  */
 export const fetchTransportFeeStructure = async ({
   branchId, organizationId, sessionId
 }) => {
-  // Get transport routes with pickup points
+  // Get transport routes
   const { data: routes, error: routeError } = await supabase
     .from('transport_routes')
-    .select(`
-      id, 
-      name, 
-      description,
-      transport_pickup_points(
-        id,
-        name,
-        distance_km,
-        monthly_fee,
-        quarterly_fee,
-        yearly_fee
-      )
-    `)
+    .select('id, route_title, fare')
     .eq('branch_id', branchId);
 
   if (routeError) {
     console.log('[fetchTransportFeeStructure] Route Error:', routeError.message);
     return [];
   }
+
+  // Get route-pickup mappings with pickup point details via junction table
+  const { data: mappings, error: mappingError } = await supabase
+    .from('route_pickup_point_mappings')
+    .select(`
+      id,
+      route_id,
+      pickup_point_id,
+      distance,
+      monthly_fees,
+      stop_order,
+      transport_pickup_points(id, name)
+    `)
+    .eq('branch_id', branchId);
+
+  if (mappingError) {
+    console.log('[fetchTransportFeeStructure] Mapping Error:', mappingError.message);
+  }
+
+  // Build a map of route_id -> pickup points
+  const routePickupMap = {};
+  (mappings || []).forEach(mapping => {
+    if (!routePickupMap[mapping.route_id]) {
+      routePickupMap[mapping.route_id] = [];
+    }
+    routePickupMap[mapping.route_id].push({
+      id: mapping.pickup_point_id,
+      mapping_id: mapping.id,
+      name: mapping.transport_pickup_points?.name || '',
+      distance: mapping.distance || '0',
+      monthly_fees: mapping.monthly_fees || 0,
+      stop_order: mapping.stop_order || 0
+    });
+  });
 
   // Get student counts per route/pickup
   const { data: studentDetails } = await supabase
@@ -871,33 +895,34 @@ export const fetchTransportFeeStructure = async ({
   // Map routes and pickup points to fee structure
   const result = [];
   (routes || []).forEach(route => {
-    const pickupPoints = route.transport_pickup_points || [];
+    const pickupPoints = routePickupMap[route.id] || [];
     
     if (pickupPoints.length === 0) {
-      // Route with no pickup points
+      // Route with no pickup points - use route's base fare
       result.push({
         id: route.id,
-        route_name: route.name || '',
+        route_name: route.route_title || '',
         pickup_point: 'All Points',
         distance_km: 0,
-        monthly_fee: 0,
-        quarterly_fee: 0,
-        half_yearly_fee: 0,
-        annual_fee: 0,
+        monthly_fee: route.fare || 0,
+        quarterly_fee: (route.fare || 0) * 3,
+        half_yearly_fee: (route.fare || 0) * 6,
+        annual_fee: (route.fare || 0) * 12,
         transport_students: routeStudentMap[route.id] || 0
       });
     } else {
-      // Create row for each pickup point
-      pickupPoints.forEach(pp => {
+      // Create row for each pickup point (sorted by stop_order)
+      pickupPoints.sort((a, b) => a.stop_order - b.stop_order).forEach(pp => {
+        const monthlyFee = parseFloat(pp.monthly_fees) || 0;
         result.push({
           id: `${route.id}_${pp.id}`,
-          route_name: route.name || '',
+          route_name: route.route_title || '',
           pickup_point: pp.name || '',
-          distance_km: pp.distance_km || 0,
-          monthly_fee: pp.monthly_fee || 0,
-          quarterly_fee: pp.quarterly_fee || 0,
-          half_yearly_fee: (pp.quarterly_fee || 0) * 2,
-          annual_fee: pp.yearly_fee || (pp.monthly_fee || 0) * 12,
+          distance_km: parseFloat(pp.distance) || 0,
+          monthly_fee: monthlyFee,
+          quarterly_fee: monthlyFee * 3,
+          half_yearly_fee: monthlyFee * 6,
+          annual_fee: monthlyFee * 12,
           transport_students: pickupStudentMap[pp.id] || 0
         });
       });

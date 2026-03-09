@@ -188,6 +188,12 @@ export const BASE_SIDEBAR = {
       title: 'Examinations',
       icon: FileText,
       submenu: [
+        { title: 'Board Configuration', path: ROUTES.SUPER_ADMIN.BOARD_CONFIGURATION },
+        { title: 'Term Management', path: ROUTES.SUPER_ADMIN.TERM_MANAGEMENT },
+        { title: 'Exam Type Master', path: ROUTES.SUPER_ADMIN.EXAM_TYPE_MASTER },
+        { title: 'Grade Scale Builder', path: ROUTES.SUPER_ADMIN.GRADE_SCALE_BUILDER },
+        { title: 'Exam Group Setup', path: ROUTES.SUPER_ADMIN.EXAM_GROUP_MANAGEMENT },
+        { title: '---', path: '#', divider: true },
         { title: 'Exam Group', path: ROUTES.SUPER_ADMIN.EXAM_GROUP },
         { title: 'Exam List', path: ROUTES.SUPER_ADMIN.EXAM_LIST },
         { title: 'Exam Schedule', path: ROUTES.SUPER_ADMIN.EXAM_SCHEDULE },

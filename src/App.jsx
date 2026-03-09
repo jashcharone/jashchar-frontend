@@ -384,6 +384,12 @@ const TeacherRemarks = lazy(() => import('@/pages/super-admin/examinations/Teach
 const AssignObservation = lazy(() => import('@/pages/super-admin/examinations/AssignObservation'));
 const CbseReports = lazy(() => import('@/pages/super-admin/examinations/CbseReports'));
 const ReportCard = lazy(() => import('@/pages/super-admin/examinations/ReportCard'));
+// Examination Setup (New Engine)
+const BoardConfiguration = lazy(() => import('@/pages/super-admin/examinations/BoardConfiguration'));
+const TermManagement = lazy(() => import('@/pages/super-admin/examinations/TermManagement'));
+const ExamTypeMaster = lazy(() => import('@/pages/super-admin/examinations/ExamTypeMaster'));
+const GradeScaleBuilder = lazy(() => import('@/pages/super-admin/examinations/GradeScaleBuilder'));
+const ExamGroupManagement = lazy(() => import('@/pages/super-admin/examinations/ExamGroupManagement'));
 
 // Library
 const LibraryBooks = lazy(() => import('@/pages/super-admin/library/LibraryBooks'));
@@ -1478,6 +1484,12 @@ function App() {
             <Route path={ROUTES.SUPER_ADMIN.ASSIGN_OBSERVATION} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="examinations"><AssignObservation /></ProtectedRoute>} />
             <Route path={ROUTES.SUPER_ADMIN.CBSE_REPORTS} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'principal']} requiredModule="examinations"><CbseReports /></ProtectedRoute>} />
             <Route path={ROUTES.SUPER_ADMIN.REPORT_CARD} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'principal']} requiredModule="examinations"><ReportCard /></ProtectedRoute>} />
+            {/* Examination Setup (New Engine) */}
+            <Route path={ROUTES.SUPER_ADMIN.BOARD_CONFIGURATION} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="examinations"><BoardConfiguration /></ProtectedRoute>} />
+            <Route path={ROUTES.SUPER_ADMIN.TERM_MANAGEMENT} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="examinations"><TermManagement /></ProtectedRoute>} />
+            <Route path={ROUTES.SUPER_ADMIN.EXAM_TYPE_MASTER} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="examinations"><ExamTypeMaster /></ProtectedRoute>} />
+            <Route path={ROUTES.SUPER_ADMIN.GRADE_SCALE_BUILDER} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="examinations"><GradeScaleBuilder /></ProtectedRoute>} />
+            <Route path={ROUTES.SUPER_ADMIN.EXAM_GROUP_MANAGEMENT} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="examinations"><ExamGroupManagement /></ProtectedRoute>} />
 
             {/* ? Library */}
             <Route path={ROUTES.SUPER_ADMIN.LIBRARY_BOOKS} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'librarian']} requiredModule="library"><LibraryBooks /></ProtectedRoute>} />

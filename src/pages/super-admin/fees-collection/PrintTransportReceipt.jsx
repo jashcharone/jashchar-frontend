@@ -54,31 +54,51 @@ const PrintTransportReceipt = () => {
             const payments = transactionPayments && transactionPayments.length > 0 ? transactionPayments : [initialPayment];
             const payment = payments[0]; // For backward compatibility
 
-            // Fetch student
-            const { data: student } = await supabase
-                .from('student_profiles')
-                .select('*, classes!student_profiles_class_id_fkey(name), sections!student_profiles_section_id_fkey(name)')
-                .eq('id', payment.student_id)
-                .single();
+            // ✅ CHECK: If receipt_snapshot exists, use SAVED data (historical accuracy)
+            // For payments with snapshot, we use the saved data from when payment was made
+            // For OLD payments without snapshot, fallback to dynamic fetch (current behavior)
+            const snapshot = payment.receipt_snapshot;
+            let student, transport, school;
 
-            // Fetch transport details
-            const { data: transport } = await supabase
-                .from('student_transport_details')
-                .select(`
-                    *,
-                    route:transport_route_id(route_title),
-                    pickup_point:transport_pickup_point_id(name)
-                `)
-                .eq('student_id', payment.student_id)
-                .eq('branch_id', branchId)
-                .maybeSingle();
+            if (snapshot && typeof snapshot === 'object' && snapshot.student) {
+                // ✅ USE SAVED SNAPSHOT DATA (Historical Receipt)
+                console.log('📋 Using SAVED receipt_snapshot for historical accuracy');
+                student = snapshot.student;
+                transport = snapshot.transport_details || snapshot.transport || null;
+                school = snapshot.school || null;
+            } else {
+                // ❌ OLD PAYMENT - No snapshot, fallback to dynamic fetch
+                console.log('⚠️ No receipt_snapshot found - fetching current data (old payment)');
+                
+                // Fetch student
+                const { data: studentData } = await supabase
+                    .from('student_profiles')
+                    .select('*, classes!student_profiles_class_id_fkey(name), sections!student_profiles_section_id_fkey(name)')
+                    .eq('id', payment.student_id)
+                    .single();
+                student = studentData;
 
-            // Fetch school info
-            const { data: school } = await supabase
-                .from('schools')
-                .select('*')
-                .eq('id', branchId)
-                .maybeSingle();
+                // Fetch transport details
+                const { data: transportData } = await supabase
+                    .from('student_transport_details')
+                    .select(`
+                        *,
+                        route:transport_route_id(route_title),
+                        pickup_point:transport_pickup_point_id(name)
+                    `)
+                    .eq('student_id', payment.student_id)
+                    .eq('branch_id', branchId)
+                    .maybeSingle();
+                transport = transportData;
+
+                // Fetch school info
+                const { data: schoolData } = await supabase
+                    .from('schools')
+                    .select('*')
+                    .eq('id', branchId)
+                    .maybeSingle();
+                school = schoolData;
+            }
 
             // Fetch print header image from print_settings
             const { data: printSettings } = await supabase
@@ -150,7 +170,11 @@ const PrintTransportReceipt = () => {
                     totalFee,
                     totalPaid,
                     totalDiscount,
-                    balance,
+                    // ✅ FIX: Use SAVED balance_after_payment if available (historical receipt)
+                    // Fall back to dynamic calculation only for OLD payments without saved balance
+                    balance: (payments[payments.length - 1]?.balance_after_payment !== null && payments[payments.length - 1]?.balance_after_payment !== undefined)
+                        ? Number(payments[payments.length - 1].balance_after_payment)
+                        : balance,
                     paidMonthsCount,
                     unpaidMonthsCount: totalMonths - paidMonthsCount,
                     paidMonths,

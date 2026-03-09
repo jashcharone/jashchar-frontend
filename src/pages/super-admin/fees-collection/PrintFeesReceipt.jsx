@@ -94,19 +94,23 @@ const PrintFeesReceipt = () => {
         .select('*, fee_types(id, name, code), fee_groups(id, name)')
         .in('id', feeMasterIds);
 
-      // 5. Fetch ALL payments for these fee masters to calculate balance
+      // 5. Fetch ALL payments for these fee masters to calculate balance (include discount_amount!)
+      // NOTE: This is used only as FALLBACK for old payments that don't have balance_after_payment
       const { data: allPaymentsForMasters } = await supabase
         .from('fee_payments')
-        .select('fee_master_id, amount, student_id')
+        .select('fee_master_id, amount, discount_amount, student_id')
         .in('fee_master_id', feeMasterIds)
         .eq('student_id', studentId)
         .is('reverted_at', null);
 
-      // Calculate total paid per fee_master
+      // Calculate total paid AND total discount per fee_master (for fallback/fee statement)
       const paidPerMaster = {};
+      const discountPerMaster = {};
       allPaymentsForMasters?.forEach(p => {
         if (!paidPerMaster[p.fee_master_id]) paidPerMaster[p.fee_master_id] = 0;
+        if (!discountPerMaster[p.fee_master_id]) discountPerMaster[p.fee_master_id] = 0;
         paidPerMaster[p.fee_master_id] += Number(p.amount || 0);
+        discountPerMaster[p.fee_master_id] += Number(p.discount_amount || 0);
       });
 
       const paymentsWithMaster = paymentData.map(p => {
@@ -114,8 +118,19 @@ const PrintFeesReceipt = () => {
         const feeTypeName = fm?.fee_types?.name || fm?.name || 'Fee';
         const feeGroupName = fm?.fee_groups?.name || '';
         const totalFeeAmount = Number(fm?.amount || 0);
-        const totalPaidForThisFee = paidPerMaster[p.fee_master_id] || 0;
-        const balance = Math.max(0, totalFeeAmount - totalPaidForThisFee);
+        
+        // ✅ FIX: Use SAVED balance_after_payment if available (historical receipt)
+        // Fall back to dynamic calculation only for OLD payments that don't have it saved
+        let balance;
+        if (p.balance_after_payment !== null && p.balance_after_payment !== undefined) {
+          // Use saved historical balance (correct for old receipts!)
+          balance = Number(p.balance_after_payment);
+        } else {
+          // Fallback: Calculate dynamically (only for old payments without saved balance)
+          const totalPaidForThisFee = paidPerMaster[p.fee_master_id] || 0;
+          const totalDiscountForThisFee = discountPerMaster[p.fee_master_id] || 0;
+          balance = Math.max(0, totalFeeAmount - totalPaidForThisFee - totalDiscountForThisFee);
+        }
         
         return {
           ...p,
@@ -123,7 +138,8 @@ const PrintFeesReceipt = () => {
           fee_name: feeTypeName,
           fee_group_name: feeGroupName,
           total_fee_amount: totalFeeAmount,
-          total_paid_for_fee: totalPaidForThisFee,
+          total_paid_for_fee: paidPerMaster[p.fee_master_id] || 0,
+          total_discount_for_fee: discountPerMaster[p.fee_master_id] || 0,
           balance: balance,
           due_date: fm?.due_date
         };

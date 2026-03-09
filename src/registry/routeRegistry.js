@@ -227,6 +227,12 @@ export const ROUTES = {
     ASSIGN_OBSERVATION: '/super-admin/examinations/assign-observation',
     CBSE_REPORTS: '/super-admin/examinations/cbse-reports',
     REPORT_CARD: '/super-admin/examinations/report-card',
+    // Examination Setup (New Engine)
+    BOARD_CONFIGURATION: '/super-admin/examinations/board-configuration',
+    TERM_MANAGEMENT: '/super-admin/examinations/term-management',
+    EXAM_TYPE_MASTER: '/super-admin/examinations/exam-type-master',
+    GRADE_SCALE_BUILDER: '/super-admin/examinations/grade-scale-builder',
+    EXAM_GROUP_MANAGEMENT: '/super-admin/examinations/exam-group-management',
     // Fees
     FEES_GROUP: '/super-admin/fees-collection/fees-group',
     FEES_TYPE: '/super-admin/fees-collection/fees-type',

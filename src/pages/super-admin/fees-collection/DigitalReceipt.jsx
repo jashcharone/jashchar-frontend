@@ -46,7 +46,7 @@ import {
   Copy,
   MessageSquare
 } from 'lucide-react';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/lib/customSupabaseClient';
 import { toast } from 'sonner';
 import { formatDate, formatDateTime } from '@/utils/dateUtils';
 import QRCode from 'qrcode';

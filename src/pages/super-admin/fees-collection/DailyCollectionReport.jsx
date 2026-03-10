@@ -58,7 +58,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { useBranch } from '@/contexts/BranchContext';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/lib/customSupabaseClient';
 import { toast } from 'sonner';
 import { formatDate, formatDateForInput } from '@/utils/dateUtils';
 import {

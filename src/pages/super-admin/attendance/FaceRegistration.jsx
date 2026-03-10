@@ -60,6 +60,10 @@ const CameraCapture = ({ onCapture, onClose, personName }) => {
     const [countdown, setCountdown] = useState(null);
     const [videoReady, setVideoReady] = useState(false);
     
+    // Mobile detection
+    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+    const [cameraReadyTime, setCameraReadyTime] = useState(null);
+    
     // AI Face Detection States
     const [modelsLoading, setModelsLoading] = useState(true);
     const [modelLoadProgress, setModelLoadProgress] = useState('');
@@ -144,24 +148,33 @@ const CameraCapture = ({ onCapture, onClose, personName }) => {
                 }
             } catch (error) {
                 console.error('Face detection error:', error);
+                // On mobile, if detection fails, don't block - just continue
+                if (isMobile) {
+                    setFaceDetected(false);
+                }
             }
             
             if (isRunning) {
                 animationId = requestAnimationFrame(() => {
-                    setTimeout(detectFace, 100);
+                    // Slower detection on mobile to reduce CPU usage
+                    setTimeout(detectFace, isMobile ? 500 : 100);
                 });
             }
         };
         
         if (!modelsLoading && stream && videoReady) {
             detectFace();
+            // Track when camera became ready for mobile fallback
+            if (!cameraReadyTime) {
+                setCameraReadyTime(Date.now());
+            }
         }
         
         return () => {
             isRunning = false;
             if (animationId) cancelAnimationFrame(animationId);
         };
-    }, [modelsLoading, stream, facingMode, videoReady]);
+    }, [modelsLoading, stream, facingMode, videoReady, isMobile, cameraReadyTime]);
     
     const startCamera = async () => {
         try {
@@ -266,7 +279,14 @@ const CameraCapture = ({ onCapture, onClose, personName }) => {
         setFacingMode(prev => prev === 'user' ? 'environment' : 'user');
     };
     
-    // Capture with human face validation - ONLY captures if face is detected
+    // Check if enough time has passed for mobile capture (3 seconds)
+    const canMobileCapture = () => {
+        if (!isMobile) return false;
+        if (!cameraReadyTime) return false;
+        return (Date.now() - cameraReadyTime) > 3000; // 3 seconds wait
+    };
+    
+    // Capture with human face validation - Mobile friendly
     const forceCapture = async () => {
         const video = videoRef.current;
         const canvas = canvasRef.current;
@@ -276,12 +296,17 @@ const CameraCapture = ({ onCapture, onClose, personName }) => {
             return false;
         }
         
-        // ❌ HUMAN FACE VALIDATION - Must detect face before capture
-        if (!faceDetected) {
+        // Mobile: Allow capture after 3 seconds even without AI detection
+        // Desktop: Require face detection
+        const mobileReady = canMobileCapture();
+        
+        if (!faceDetected && !mobileReady) {
             toast({
                 variant: 'destructive',
                 title: '❌ No Human Face Detected',
-                description: 'Please position your face clearly in the camera frame. Only human faces can be registered.',
+                description: isMobile 
+                    ? 'Please wait a moment and position your face clearly in the frame.'
+                    : 'Please position your face clearly in the camera frame.',
             });
             return false;
         }
@@ -326,8 +351,9 @@ const CameraCapture = ({ onCapture, onClose, personName }) => {
                 return false;
             }
             
-            // ✅ Must have AI descriptor for valid human face capture
-            if (!descriptor) {
+            // Desktop: Require AI descriptor
+            // Mobile: Allow without descriptor (AI is slow on mobile)
+            if (!descriptor && !isMobile) {
                 toast({
                     variant: 'destructive',
                     title: '❌ Face Not Recognized',
@@ -342,13 +368,13 @@ const CameraCapture = ({ onCapture, onClose, personName }) => {
                 data: imageData,
                 angle: ['Front', 'Left', 'Right', 'Up', 'Down', 'Extra'][capturedImages.length] || 'Extra',
                 descriptor: descriptor,
-                quality: faceQuality?.score || 0.6,
-                hasRealAI: true // Always true now since we validate
+                quality: faceQuality?.score || (isMobile ? 0.7 : 0.6),
+                hasRealAI: !!descriptor // True only if AI descriptor captured
             }]);
             
             toast({
-                title: '✅ Face Captured!',
-                description: `Photo ${capturedImages.length + 1}/6 - ${['Front', 'Left', 'Right', 'Up', 'Down', 'Extra'][capturedImages.length] || 'Extra'} angle`,
+                title: descriptor ? '✅ Face Captured!' : '📸 Photo Captured!',
+                description: `Photo ${capturedImages.length + 1}/6 - ${['Front', 'Left', 'Right', 'Up', 'Down', 'Extra'][capturedImages.length] || 'Extra'}`,
             });
             
             setIsProcessing(false);
@@ -419,23 +445,23 @@ const CameraCapture = ({ onCapture, onClose, personName }) => {
             // Skip if already have 6 photos
             if (capturedImages.length >= 6) break;
             
-            // Wait for face detection (up to 5 seconds)
+            // Wait for face detection OR mobile ready timeout
             let waitAttempts = 0;
-            const maxAttempts = 25;
+            const maxAttempts = isMobile ? 15 : 25; // Shorter wait on mobile
             
-            while (!faceDetected && waitAttempts < maxAttempts) {
+            while (!faceDetected && !canMobileCapture() && waitAttempts < maxAttempts) {
                 await new Promise(r => setTimeout(r, 200));
                 waitAttempts++;
             }
             
-            // If no face detected after waiting, show message and skip
-            if (!faceDetected) {
+            // If no face detected and not mobile ready, show message
+            if (!faceDetected && !canMobileCapture()) {
                 failCount++;
                 if (failCount >= 2) {
                     toast({
                         variant: 'destructive',
-                        title: '⚠️ No Face Detected',
-                        description: 'Please position your face clearly in front of the camera.',
+                        title: '⚠️ Please Wait',
+                        description: 'Position your face clearly and wait a moment for the camera to ready.',
                     });
                     break;
                 }
@@ -516,8 +542,8 @@ const CameraCapture = ({ onCapture, onClose, personName }) => {
                     <Badge variant={videoReady ? "default" : "secondary"} className={`text-[10px] sm:text-xs ${videoReady ? "bg-blue-500" : ""}`}>
                         {videoReady ? "📹 Ready" : "⏳ Loading..."}
                     </Badge>
-                    <Badge variant={faceDetected ? "default" : "secondary"} className={`text-[10px] sm:text-xs ${faceDetected ? "bg-green-500" : ""}`}>
-                        {faceDetected ? "✅ Face" : "👁️ Scanning"}
+                    <Badge variant={faceDetected ? "default" : canMobileCapture() ? "default" : "secondary"} className={`text-[10px] sm:text-xs ${faceDetected ? "bg-green-500" : canMobileCapture() ? "bg-yellow-500" : ""}`}>
+                        {faceDetected ? "✅ Face Detected" : canMobileCapture() ? "📸 Ready to Capture" : "👁️ Scanning..."}
                     </Badge>
                     {faceQuality && (
                         <Badge variant="outline" className={`text-[10px] sm:text-xs ${faceQuality.isGood ? "border-green-500 text-green-600" : "border-yellow-500 text-yellow-600"}`}>

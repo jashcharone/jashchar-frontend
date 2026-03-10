@@ -360,6 +360,17 @@ const ConcessionRequests = lazy(() => import('@/pages/super-admin/fees-collectio
 const InstallmentPlans = lazy(() => import('@/pages/super-admin/fees-collection/InstallmentPlans'));
 const PaymentSchedule = lazy(() => import('@/pages/super-admin/fees-collection/PaymentSchedule'));
 const FeeCalendar = lazy(() => import('@/pages/super-admin/fees-collection/FeeCalendar'));
+// Days 31-42: Analytics & Reports Engine (Phase 4)
+const FeeCollectionDashboard = lazy(() => import('@/pages/super-admin/fees-collection/FeeCollectionDashboard'));
+const DailyCollectionReport = lazy(() => import('@/pages/super-admin/fees-collection/DailyCollectionReport'));
+const OutstandingReports = lazy(() => import('@/pages/super-admin/fees-collection/OutstandingReports'));
+const ClassWiseReports = lazy(() => import('@/pages/super-admin/fees-collection/ClassWiseReports'));
+const FeeTypeAnalysis = lazy(() => import('@/pages/super-admin/fees-collection/FeeTypeAnalysis'));
+const PaymentAnalytics = lazy(() => import('@/pages/super-admin/fees-collection/PaymentAnalytics'));
+const DefaulterReports = lazy(() => import('@/pages/super-admin/fees-collection/DefaulterReports'));
+const TrendAnalysis = lazy(() => import('@/pages/super-admin/fees-collection/TrendAnalysis'));
+const ScheduledReports = lazy(() => import('@/pages/super-admin/fees-collection/ScheduledReports'));
+const CustomReportBuilder = lazy(() => import('@/pages/super-admin/fees-collection/CustomReportBuilder'));
 
 // Examinations
 const ExamGroup = lazy(() => import('@/pages/super-admin/examinations/ExamGroup'));
@@ -1470,6 +1481,17 @@ function App() {
             <Route path="/super-admin/fees-collection/installment-plans" element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'accountant']}><InstallmentPlans /></ProtectedRoute>} />
             <Route path="/super-admin/fees-collection/payment-schedule" element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'accountant', 'principal']}><PaymentSchedule /></ProtectedRoute>} />
             <Route path="/super-admin/fees-collection/fee-calendar" element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'accountant', 'principal']}><FeeCalendar /></ProtectedRoute>} />
+            {/* Days 31-42: Analytics & Reports Engine Routes (Phase 4) */}
+            <Route path="/super-admin/fees-collection/analytics-dashboard" element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'accountant', 'principal']}><FeeCollectionDashboard /></ProtectedRoute>} />
+            <Route path="/super-admin/fees-collection/daily-collection" element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'accountant', 'principal']}><DailyCollectionReport /></ProtectedRoute>} />
+            <Route path="/super-admin/fees-collection/outstanding-reports" element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'accountant', 'principal']}><OutstandingReports /></ProtectedRoute>} />
+            <Route path="/super-admin/fees-collection/class-wise-reports" element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'accountant', 'principal']}><ClassWiseReports /></ProtectedRoute>} />
+            <Route path="/super-admin/fees-collection/fee-type-analysis" element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'accountant', 'principal']}><FeeTypeAnalysis /></ProtectedRoute>} />
+            <Route path="/super-admin/fees-collection/payment-analytics" element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'accountant', 'principal']}><PaymentAnalytics /></ProtectedRoute>} />
+            <Route path="/super-admin/fees-collection/defaulter-reports" element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'accountant', 'principal']}><DefaulterReports /></ProtectedRoute>} />
+            <Route path="/super-admin/fees-collection/trend-analysis" element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'accountant', 'principal']}><TrendAnalysis /></ProtectedRoute>} />
+            <Route path="/super-admin/fees-collection/scheduled-reports" element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'accountant']}><ScheduledReports /></ProtectedRoute>} />
+            <Route path="/super-admin/fees-collection/custom-report-builder" element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'accountant']}><CustomReportBuilder /></ProtectedRoute>} />
 
             {/* ? Examinations */}
             <Route path={ROUTES.SUPER_ADMIN.EXAM_GROUP} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'teacher', 'principal']} requiredModule="examinations"><ExamGroup /></ProtectedRoute>} />
@@ -1696,6 +1718,17 @@ function App() {
             <Route path="/:roleSlug/fees-collection/installment-plans" element={<StaffModuleRoute requiredModule="fees_collection"><InstallmentPlans /></StaffModuleRoute>} />
             <Route path="/:roleSlug/fees-collection/payment-schedule" element={<StaffModuleRoute requiredModule="fees_collection"><PaymentSchedule /></StaffModuleRoute>} />
             <Route path="/:roleSlug/fees-collection/fee-calendar" element={<StaffModuleRoute requiredModule="fees_collection"><FeeCalendar /></StaffModuleRoute>} />
+            {/* 📊 Phase 4: Analytics & Reports Engine */}
+            <Route path="/:roleSlug/fees-collection/analytics-dashboard" element={<StaffModuleRoute requiredModule="fees_collection"><FeeCollectionDashboard /></StaffModuleRoute>} />
+            <Route path="/:roleSlug/fees-collection/daily-collection" element={<StaffModuleRoute requiredModule="fees_collection"><DailyCollectionReport /></StaffModuleRoute>} />
+            <Route path="/:roleSlug/fees-collection/outstanding-reports" element={<StaffModuleRoute requiredModule="fees_collection"><OutstandingReports /></StaffModuleRoute>} />
+            <Route path="/:roleSlug/fees-collection/class-wise-reports" element={<StaffModuleRoute requiredModule="fees_collection"><ClassWiseReports /></StaffModuleRoute>} />
+            <Route path="/:roleSlug/fees-collection/fee-type-analysis" element={<StaffModuleRoute requiredModule="fees_collection"><FeeTypeAnalysis /></StaffModuleRoute>} />
+            <Route path="/:roleSlug/fees-collection/payment-analytics" element={<StaffModuleRoute requiredModule="fees_collection"><PaymentAnalytics /></StaffModuleRoute>} />
+            <Route path="/:roleSlug/fees-collection/defaulter-reports" element={<StaffModuleRoute requiredModule="fees_collection"><DefaulterReports /></StaffModuleRoute>} />
+            <Route path="/:roleSlug/fees-collection/trend-analysis" element={<StaffModuleRoute requiredModule="fees_collection"><TrendAnalysis /></StaffModuleRoute>} />
+            <Route path="/:roleSlug/fees-collection/scheduled-reports" element={<StaffModuleRoute requiredModule="fees_collection"><ScheduledReports /></StaffModuleRoute>} />
+            <Route path="/:roleSlug/fees-collection/custom-report-builder" element={<StaffModuleRoute requiredModule="fees_collection"><CustomReportBuilder /></StaffModuleRoute>} />
             
             {/* Finance */}
             <Route path="/:roleSlug/finance/income" element={<StaffModuleRoute requiredModule="income"><Income /></StaffModuleRoute>} />

@@ -318,7 +318,7 @@ const CameraCapture = ({ onCapture, onClose, personName }) => {
             setCapturedImages(prev => [...prev, {
                 id: Date.now(),
                 data: imageData,
-                angle: ['Front', 'Left', 'Right'][capturedImages.length] || 'Extra',
+                angle: ['Front', 'Left', 'Right', 'Up', 'Down', 'Extra'][capturedImages.length] || 'Extra',
                 descriptor: descriptor,
                 quality: faceQuality?.score || 0.6,
                 hasRealAI: !!descriptor
@@ -372,7 +372,7 @@ const CameraCapture = ({ onCapture, onClose, personName }) => {
         setCapturedImages(prev => [...prev, {
             id: Date.now(),
             data: imageData,
-            angle: ['Front View', 'Left Turn', 'Right Turn'][capturedImages.length] || 'Extra',
+            angle: ['Front', 'Left', 'Right', 'Up', 'Down', 'Extra'][capturedImages.length] || 'Extra',
             descriptor: descriptor,
             quality: faceQuality?.score || 0.5,
             hasRealAI: !!descriptor
@@ -386,9 +386,9 @@ const CameraCapture = ({ onCapture, onClose, personName }) => {
         setIsCapturing(true);
         const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
         
-        for (let i = 0; i < 3; i++) {
-            // Skip if already have 3 photos
-            if (capturedImages.length >= 3) break;
+        for (let i = 0; i < 6; i++) {
+            // Skip if already have 6 photos
+            if (capturedImages.length >= 6) break;
             
             // Wait for face detection (shorter wait on mobile)
             let waitAttempts = 0;
@@ -425,7 +425,7 @@ const CameraCapture = ({ onCapture, onClose, personName }) => {
     // Manual capture handler - ALWAYS works on mobile
     const handleManualCapture = async () => {
         if (isProcessing || isCapturing) return;
-        if (capturedImages.length >= 3) return;
+        if (capturedImages.length >= 6) return;
         
         const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
         
@@ -572,7 +572,7 @@ const CameraCapture = ({ onCapture, onClose, personName }) => {
             {/* Captured Images */}
             {capturedImages.length > 0 && (
                 <div className="space-y-1.5 sm:space-y-2">
-                    <Label className="text-xs sm:text-sm">Captured ({capturedImages.length}/3)</Label>
+                    <Label className="text-xs sm:text-sm">Captured ({capturedImages.length}/6)</Label>
                     <div className="flex gap-1.5 sm:gap-2">
                         {capturedImages.map((img) => (
                             <div key={img.id} className="relative w-16 h-16 sm:w-24 sm:h-24 rounded-lg overflow-hidden border-2 border-primary/20">
@@ -598,7 +598,7 @@ const CameraCapture = ({ onCapture, onClose, personName }) => {
                     Cancel
                 </Button>
                 <div className="flex gap-1.5 sm:gap-2 order-1 sm:order-2">
-                    {capturedImages.length < 3 && (
+                    {capturedImages.length < 6 && (
                         <>
                             {/* Manual Capture - Less restrictive on mobile */}
                             <Button
@@ -613,7 +613,7 @@ const CameraCapture = ({ onCapture, onClose, personName }) => {
                                 ) : (
                                     <Camera className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
                                 )}
-                                <span>Capture ({capturedImages.length}/3)</span>
+                                <span>Capture ({capturedImages.length}/6)</span>
                             </Button>
                             {/* Auto Capture - Works even without AI on mobile */}
                             <Button
@@ -625,7 +625,7 @@ const CameraCapture = ({ onCapture, onClose, personName }) => {
                                 {isCapturing ? (
                                     <><Loader2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1 sm:mr-2 animate-spin" /> Capturing...</>
                                 ) : (
-                                    <><Aperture className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1 sm:mr-2" /> Auto (3)</>
+                                    <><Aperture className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1 sm:mr-2" /> Auto (6)</>
                                 )}
                             </Button>
                         </>
@@ -646,7 +646,7 @@ const CameraCapture = ({ onCapture, onClose, personName }) => {
 // REGISTRATION DIALOG - Direct capture for selected person
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════
 
-const QuickRegisterDialog = ({ open, onClose, person, personType, branchId, organizationId, onSaved }) => {
+const QuickRegisterDialog = ({ open, onClose, person, personType, branchId, organizationId, sessionId, onSaved }) => {
     const { toast } = useToast();
     const [capturedPhotos, setCapturedPhotos] = useState([]);
     const [loading, setLoading] = useState(false);
@@ -690,6 +690,7 @@ const QuickRegisterDialog = ({ open, onClose, person, personType, branchId, orga
             const payload = {
                 branch_id: branchId,
                 organization_id: organizationId,
+                session_id: sessionId,
                 user_id: person.id,
                 user_type: personType,
                 person_type: personType,
@@ -1736,6 +1737,7 @@ const FaceRegistration = () => {
                     personType={selectedPerson.personType}
                     branchId={branchId}
                     organizationId={organizationId}
+                    sessionId={currentSessionId}
                     onSaved={() => {
                         fetchFaceRegistrations();
                         setRegisterDialogOpen(false);

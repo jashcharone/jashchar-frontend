@@ -48,6 +48,7 @@ import {
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════
 
 const CameraCapture = ({ onCapture, onClose, personName }) => {
+    const { toast } = useToast();
     const videoRef = useRef(null);
     const canvasRef = useRef(null);
     const overlayCanvasRef = useRef(null);
@@ -265,13 +266,23 @@ const CameraCapture = ({ onCapture, onClose, personName }) => {
         setFacingMode(prev => prev === 'user' ? 'environment' : 'user');
     };
     
-    // Force capture - works without face detection
+    // Capture with human face validation - ONLY captures if face is detected
     const forceCapture = async () => {
         const video = videoRef.current;
         const canvas = canvasRef.current;
         
         if (!video || !canvas) {
             console.log('Video or canvas not ready');
+            return false;
+        }
+        
+        // ❌ HUMAN FACE VALIDATION - Must detect face before capture
+        if (!faceDetected) {
+            toast({
+                variant: 'destructive',
+                title: '❌ No Human Face Detected',
+                description: 'Please position your face clearly in the camera frame. Only human faces can be registered.',
+            });
             return false;
         }
         
@@ -287,7 +298,7 @@ const CameraCapture = ({ onCapture, onClose, personName }) => {
         
         if (video.videoWidth === 0 || video.videoHeight === 0) {
             console.log('Could not get valid video dimensions after waiting');
-            // Try to capture anyway with fallback dimensions
+            return false;
         }
         
         setIsProcessing(true);
@@ -315,14 +326,30 @@ const CameraCapture = ({ onCapture, onClose, personName }) => {
                 return false;
             }
             
+            // ✅ Must have AI descriptor for valid human face capture
+            if (!descriptor) {
+                toast({
+                    variant: 'destructive',
+                    title: '❌ Face Not Recognized',
+                    description: 'AI could not capture face features. Please try again with better lighting.',
+                });
+                setIsProcessing(false);
+                return false;
+            }
+            
             setCapturedImages(prev => [...prev, {
                 id: Date.now(),
                 data: imageData,
                 angle: ['Front', 'Left', 'Right', 'Up', 'Down', 'Extra'][capturedImages.length] || 'Extra',
                 descriptor: descriptor,
                 quality: faceQuality?.score || 0.6,
-                hasRealAI: !!descriptor
+                hasRealAI: true // Always true now since we validate
             }]);
+            
+            toast({
+                title: '✅ Face Captured!',
+                description: `Photo ${capturedImages.length + 1}/6 - ${['Front', 'Left', 'Right', 'Up', 'Down', 'Extra'][capturedImages.length] || 'Extra'} angle`,
+            });
             
             setIsProcessing(false);
             return true;
@@ -384,19 +411,35 @@ const CameraCapture = ({ onCapture, onClose, personName }) => {
     
     const handleAutoCapture = async () => {
         setIsCapturing(true);
-        const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+        
+        let successCount = 0;
+        let failCount = 0;
         
         for (let i = 0; i < 6; i++) {
             // Skip if already have 6 photos
             if (capturedImages.length >= 6) break;
             
-            // Wait for face detection (shorter wait on mobile)
+            // Wait for face detection (up to 5 seconds)
             let waitAttempts = 0;
-            const maxAttempts = isMobile ? 10 : 25;
+            const maxAttempts = 25;
             
             while (!faceDetected && waitAttempts < maxAttempts) {
                 await new Promise(r => setTimeout(r, 200));
                 waitAttempts++;
+            }
+            
+            // If no face detected after waiting, show message and skip
+            if (!faceDetected) {
+                failCount++;
+                if (failCount >= 2) {
+                    toast({
+                        variant: 'destructive',
+                        title: '⚠️ No Face Detected',
+                        description: 'Please position your face clearly in front of the camera.',
+                    });
+                    break;
+                }
+                continue;
             }
             
             // Countdown
@@ -406,46 +449,34 @@ const CameraCapture = ({ onCapture, onClose, personName }) => {
             }
             setCountdown(null);
             
-            // Use forceCapture on mobile (always works), regular captureImage on desktop
-            let captured = false;
-            if (isMobile) {
-                captured = await forceCapture();
-            } else {
-                captured = await captureImage();
-            }
+            // Capture with human face validation
+            const captured = await forceCapture();
             
             if (captured) {
+                successCount++;
                 await new Promise(r => setTimeout(r, 800)); // Wait before next capture
+            } else {
+                failCount++;
             }
         }
         
         setIsCapturing(false);
+        
+        if (successCount > 0) {
+            toast({
+                title: `✅ ${successCount} Photos Captured`,
+                description: 'Move to different angles for remaining captures.',
+            });
+        }
     };
     
-    // Manual capture handler - ALWAYS works on mobile
+    // Manual capture handler - requires human face detection
     const handleManualCapture = async () => {
         if (isProcessing || isCapturing) return;
         if (capturedImages.length >= 6) return;
         
-        const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-        
-        // On mobile, use forceCapture which always works
-        // On desktop, try captureImage first (needs face detection)
-        let captured = false;
-        
-        if (isMobile) {
-            captured = await forceCapture();
-        } else {
-            captured = await captureImage();
-            if (!captured) {
-                // Fallback to force capture on desktop too
-                captured = await forceCapture();
-            }
-        }
-        
-        if (!captured) {
-            console.log('Manual capture failed - video may not be ready');
-        }
+        // Always use forceCapture which validates human face
+        await forceCapture();
     };
     
     const removeImage = (id) => {
@@ -695,7 +726,7 @@ const QuickRegisterDialog = ({ open, onClose, person, personType, branchId, orga
                 person_type: personType,
                 person_id: person.id,
                 person_name: person.full_name,
-                encoding_vector: encodingVector,
+                encoding_vector: JSON.stringify(encodingVector),
                 photo_url: bestPhoto?.data || null,
                 photo_angle: bestPhoto?.angle || 'front',
                 confidence_score: Math.min(1.0, avgQuality),
@@ -704,6 +735,8 @@ const QuickRegisterDialog = ({ open, onClose, person, personType, branchId, orga
                 model_version: bestPhoto.hasRealAI ? '1.0' : '0.0',
                 is_active: true,
             };
+            
+            console.log('Saving face with payload:', { ...payload, photo_url: '[BASE64_IMAGE]', encoding_vector: '[VECTOR]' });
             
             const { error } = await supabase.from('face_encodings').insert(payload);
             

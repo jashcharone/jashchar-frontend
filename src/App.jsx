@@ -362,7 +362,7 @@ const PaymentSchedule = lazy(() => import('@/pages/super-admin/fees-collection/P
 const FeeCalendar = lazy(() => import('@/pages/super-admin/fees-collection/FeeCalendar'));
 // Days 31-42: Analytics & Reports Engine (Phase 4)
 const FeeCollectionDashboard = lazy(() => import('@/pages/super-admin/fees-collection/FeeCollectionDashboard'));
-const DailyCollectionReport = lazy(() => import('@/pages/super-admin/fees-collection/DailyCollectionReport'));
+const FeesDailyCollection = lazy(() => import('@/pages/super-admin/fees-collection/DailyCollectionReport'));
 const OutstandingReports = lazy(() => import('@/pages/super-admin/fees-collection/OutstandingReports'));
 const ClassWiseReports = lazy(() => import('@/pages/super-admin/fees-collection/ClassWiseReports'));
 const FeeTypeAnalysis = lazy(() => import('@/pages/super-admin/fees-collection/FeeTypeAnalysis'));
@@ -1483,7 +1483,7 @@ function App() {
             <Route path="/super-admin/fees-collection/fee-calendar" element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'accountant', 'principal']}><FeeCalendar /></ProtectedRoute>} />
             {/* Days 31-42: Analytics & Reports Engine Routes (Phase 4) */}
             <Route path="/super-admin/fees-collection/analytics-dashboard" element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'accountant', 'principal']}><FeeCollectionDashboard /></ProtectedRoute>} />
-            <Route path="/super-admin/fees-collection/daily-collection" element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'accountant', 'principal']}><DailyCollectionReport /></ProtectedRoute>} />
+            <Route path="/super-admin/fees-collection/daily-collection" element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'accountant', 'principal']}><FeesDailyCollection /></ProtectedRoute>} />
             <Route path="/super-admin/fees-collection/outstanding-reports" element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'accountant', 'principal']}><OutstandingReports /></ProtectedRoute>} />
             <Route path="/super-admin/fees-collection/class-wise-reports" element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'accountant', 'principal']}><ClassWiseReports /></ProtectedRoute>} />
             <Route path="/super-admin/fees-collection/fee-type-analysis" element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'accountant', 'principal']}><FeeTypeAnalysis /></ProtectedRoute>} />
@@ -1720,7 +1720,7 @@ function App() {
             <Route path="/:roleSlug/fees-collection/fee-calendar" element={<StaffModuleRoute requiredModule="fees_collection"><FeeCalendar /></StaffModuleRoute>} />
             {/* 📊 Phase 4: Analytics & Reports Engine */}
             <Route path="/:roleSlug/fees-collection/analytics-dashboard" element={<StaffModuleRoute requiredModule="fees_collection"><FeeCollectionDashboard /></StaffModuleRoute>} />
-            <Route path="/:roleSlug/fees-collection/daily-collection" element={<StaffModuleRoute requiredModule="fees_collection"><DailyCollectionReport /></StaffModuleRoute>} />
+            <Route path="/:roleSlug/fees-collection/daily-collection" element={<StaffModuleRoute requiredModule="fees_collection"><FeesDailyCollection /></StaffModuleRoute>} />
             <Route path="/:roleSlug/fees-collection/outstanding-reports" element={<StaffModuleRoute requiredModule="fees_collection"><OutstandingReports /></StaffModuleRoute>} />
             <Route path="/:roleSlug/fees-collection/class-wise-reports" element={<StaffModuleRoute requiredModule="fees_collection"><ClassWiseReports /></StaffModuleRoute>} />
             <Route path="/:roleSlug/fees-collection/fee-type-analysis" element={<StaffModuleRoute requiredModule="fees_collection"><FeeTypeAnalysis /></StaffModuleRoute>} />

@@ -646,7 +646,7 @@ const CameraCapture = ({ onCapture, onClose, personName }) => {
 // REGISTRATION DIALOG - Direct capture for selected person
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════
 
-const QuickRegisterDialog = ({ open, onClose, person, personType, branchId, organizationId, sessionId, onSaved }) => {
+const QuickRegisterDialog = ({ open, onClose, person, personType, branchId, organizationId, onSaved }) => {
     const { toast } = useToast();
     const [capturedPhotos, setCapturedPhotos] = useState([]);
     const [loading, setLoading] = useState(false);
@@ -690,7 +690,6 @@ const QuickRegisterDialog = ({ open, onClose, person, personType, branchId, orga
             const payload = {
                 branch_id: branchId,
                 organization_id: organizationId,
-                session_id: sessionId,
                 user_id: person.id,
                 user_type: personType,
                 person_type: personType,
@@ -1737,7 +1736,6 @@ const FaceRegistration = () => {
                     personType={selectedPerson.personType}
                     branchId={branchId}
                     organizationId={organizationId}
-                    sessionId={currentSessionId}
                     onSaved={() => {
                         fetchFaceRegistrations();
                         setRegisterDialogOpen(false);

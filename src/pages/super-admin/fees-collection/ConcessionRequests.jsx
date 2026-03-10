@@ -207,9 +207,8 @@ const ConcessionRequests = () => {
           *,
           student:student_id (
             id,
-            first_name,
-            last_name,
-            admission_number,
+            full_name,
+            school_code,
             class:class_id (name)
           )
         `)
@@ -221,8 +220,8 @@ const ConcessionRequests = () => {
       // Transform data
       const transformed = (data || []).map(req => ({
         ...req,
-        student_name: req.student ? `${req.student.first_name || ''} ${req.student.last_name || ''}`.trim() : 'Unknown',
-        admission_number: req.student?.admission_number,
+        student_name: req.student?.full_name || 'Unknown',
+        admission_number: req.student?.school_code,
         class_name: req.student?.class?.name,
       }));
       
@@ -238,10 +237,10 @@ const ConcessionRequests = () => {
     if (!branchId) return;
     const { data } = await supabase
       .from('student_profiles')
-      .select('id, first_name, last_name, admission_number, class_id')
+      .select('id, full_name, school_code, class_id')
       .eq('branch_id', branchId)
-      .eq('is_active', true)
-      .order('first_name');
+      .or('status.is.null,status.eq.active')
+      .order('full_name');
     setStudents(data || []);
   }, [branchId]);
 
@@ -563,7 +562,7 @@ const ConcessionRequests = () => {
                   <SelectContent>
                     {students.map((student) => (
                       <SelectItem key={student.id} value={student.id}>
-                        {student.first_name} {student.last_name} ({student.admission_number})
+                        {student.full_name} ({student.school_code})
                       </SelectItem>
                     ))}
                   </SelectContent>

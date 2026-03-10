@@ -198,31 +198,60 @@ const CameraCapture = ({ onCapture, onClose, personName }) => {
     
     useEffect(() => {
         if (stream && videoRef.current) {
-            videoRef.current.srcObject = stream;
+            const video = videoRef.current;
+            video.srcObject = stream;
+            video.muted = true;
+            video.playsInline = true;
             
-            // Handle video ready state
-            const handleLoadedMetadata = () => {
-                videoRef.current.play()
-                    .then(() => {
-                        setVideoReady(true);
-                        console.log('Video playing, dimensions:', videoRef.current.videoWidth, 'x', videoRef.current.videoHeight);
-                    })
-                    .catch(err => {
-                        console.error('Video play error:', err);
-                        setCameraError('Failed to start video. Please tap to retry.');
-                    });
+            // Handle video ready state - try multiple events for robustness
+            const tryPlay = async () => {
+                try {
+                    await video.play();
+                    // Wait a bit for dimensions to stabilize
+                    setTimeout(() => {
+                        if (video.videoWidth > 0 && video.videoHeight > 0) {
+                            setVideoReady(true);
+                            console.log('Video ready, dimensions:', video.videoWidth, 'x', video.videoHeight);
+                        }
+                    }, 200);
+                } catch (err) {
+                    console.error('Video play error:', err);
+                    // On mobile, video might need user interaction to play
+                    setCameraError('Tap the video to start camera');
+                }
             };
             
-            videoRef.current.addEventListener('loadedmetadata', handleLoadedMetadata);
+            const handleLoadedMetadata = () => {
+                console.log('loadedmetadata event');
+                tryPlay();
+            };
+            
+            const handleCanPlay = () => {
+                console.log('canplay event');
+                if (!videoReady) tryPlay();
+            };
+            
+            // Handle tap to play on mobile (autoplay policy)
+            const handleClick = () => {
+                if (!videoReady) {
+                    console.log('Video tapped, trying to play');
+                    tryPlay();
+                    setCameraError(null);
+                }
+            };
+            
+            video.addEventListener('loadedmetadata', handleLoadedMetadata);
+            video.addEventListener('canplay', handleCanPlay);
+            video.addEventListener('click', handleClick);
             
             // Cleanup
             return () => {
-                if (videoRef.current) {
-                    videoRef.current.removeEventListener('loadedmetadata', handleLoadedMetadata);
-                }
+                video.removeEventListener('loadedmetadata', handleLoadedMetadata);
+                video.removeEventListener('canplay', handleCanPlay);
+                video.removeEventListener('click', handleClick);
             };
         }
-    }, [stream]);
+    }, [stream, videoReady]);
     
     const stopCamera = () => {
         if (stream) {
@@ -234,6 +263,74 @@ const CameraCapture = ({ onCapture, onClose, personName }) => {
     // Switch camera (front/back) for mobile
     const switchCamera = () => {
         setFacingMode(prev => prev === 'user' ? 'environment' : 'user');
+    };
+    
+    // Force capture - works without face detection
+    const forceCapture = async () => {
+        const video = videoRef.current;
+        const canvas = canvasRef.current;
+        
+        if (!video || !canvas) {
+            console.log('Video or canvas not ready');
+            return false;
+        }
+        
+        // Wait for valid dimensions (up to 2 seconds)
+        let attempts = 0;
+        while ((video.videoWidth === 0 || video.videoHeight === 0) && attempts < 20) {
+            await new Promise(r => setTimeout(r, 100));
+            attempts++;
+        }
+        
+        const width = video.videoWidth || 640;
+        const height = video.videoHeight || 480;
+        
+        if (video.videoWidth === 0 || video.videoHeight === 0) {
+            console.log('Could not get valid video dimensions after waiting');
+            // Try to capture anyway with fallback dimensions
+        }
+        
+        setIsProcessing(true);
+        
+        try {
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext('2d');
+            
+            // Mirror for front camera
+            if (facingMode === 'user') {
+                ctx.translate(width, 0);
+                ctx.scale(-1, 1);
+            }
+            
+            ctx.drawImage(video, 0, 0, width, height);
+            
+            const descriptor = currentDescriptor ? descriptorToString(currentDescriptor) : null;
+            const imageData = canvas.toDataURL('image/jpeg', 0.85);
+            
+            // Verify we actually got image data (not blank)
+            if (imageData.length < 1000) {
+                console.log('Captured image seems blank');
+                setIsProcessing(false);
+                return false;
+            }
+            
+            setCapturedImages(prev => [...prev, {
+                id: Date.now(),
+                data: imageData,
+                angle: ['Front', 'Left', 'Right'][capturedImages.length] || 'Extra',
+                descriptor: descriptor,
+                quality: faceQuality?.score || 0.6,
+                hasRealAI: !!descriptor
+            }]);
+            
+            setIsProcessing(false);
+            return true;
+        } catch (err) {
+            console.error('Capture error:', err);
+            setIsProcessing(false);
+            return false;
+        }
     };
     
     const captureImage = async () => {
@@ -290,64 +387,64 @@ const CameraCapture = ({ onCapture, onClose, personName }) => {
         const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
         
         for (let i = 0; i < 3; i++) {
-            // Wait for face detection (or skip on mobile if taking too long)
+            // Skip if already have 3 photos
+            if (capturedImages.length >= 3) break;
+            
+            // Wait for face detection (shorter wait on mobile)
             let waitAttempts = 0;
-            const maxAttempts = isMobile ? 15 : 30; // Shorter wait on mobile
+            const maxAttempts = isMobile ? 10 : 25;
             
             while (!faceDetected && waitAttempts < maxAttempts) {
                 await new Promise(r => setTimeout(r, 200));
                 waitAttempts++;
             }
             
-            // On mobile, proceed even without face detection after timeout
-            if (!faceDetected && !isMobile) continue;
-            
+            // Countdown
             for (let c = 3; c > 0; c--) {
                 setCountdown(c);
                 await new Promise(r => setTimeout(r, 1000));
             }
             setCountdown(null);
             
-            // Await the capture and check if it succeeded
-            const captured = await captureImage();
+            // Use forceCapture on mobile (always works), regular captureImage on desktop
+            let captured = false;
+            if (isMobile) {
+                captured = await forceCapture();
+            } else {
+                captured = await captureImage();
+            }
+            
             if (captured) {
-                await new Promise(r => setTimeout(r, 500));
+                await new Promise(r => setTimeout(r, 800)); // Wait before next capture
             }
         }
         
         setIsCapturing(false);
     };
     
-    // Manual capture handler for touch
+    // Manual capture handler - ALWAYS works on mobile
     const handleManualCapture = async () => {
         if (isProcessing || isCapturing) return;
-        const captured = await captureImage();
-        if (!captured) {
-            // If normal capture fails, try force capture on mobile
-            const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-            if (isMobile && videoRef.current && canvasRef.current && videoReady) {
-                setIsProcessing(true);
-                const canvas = canvasRef.current;
-                const video = videoRef.current;
-                canvas.width = video.videoWidth || 640;
-                canvas.height = video.videoHeight || 480;
-                const ctx = canvas.getContext('2d');
-                if (facingMode === 'user') {
-                    ctx.translate(canvas.width, 0);
-                    ctx.scale(-1, 1);
-                }
-                ctx.drawImage(video, 0, 0);
-                const imageData = canvas.toDataURL('image/jpeg', 0.85);
-                setCapturedImages(prev => [...prev, {
-                    id: Date.now(),
-                    data: imageData,
-                    angle: ['Front View', 'Left Turn', 'Right Turn'][capturedImages.length] || 'Extra',
-                    descriptor: null,
-                    quality: 0.5,
-                    hasRealAI: false
-                }]);
-                setIsProcessing(false);
+        if (capturedImages.length >= 3) return;
+        
+        const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+        
+        // On mobile, use forceCapture which always works
+        // On desktop, try captureImage first (needs face detection)
+        let captured = false;
+        
+        if (isMobile) {
+            captured = await forceCapture();
+        } else {
+            captured = await captureImage();
+            if (!captured) {
+                // Fallback to force capture on desktop too
+                captured = await forceCapture();
             }
+        }
+        
+        if (!captured) {
+            console.log('Manual capture failed - video may not be ready');
         }
     };
     
@@ -503,26 +600,32 @@ const CameraCapture = ({ onCapture, onClose, personName }) => {
                 <div className="flex gap-1.5 sm:gap-2 order-1 sm:order-2">
                     {capturedImages.length < 3 && (
                         <>
+                            {/* Manual Capture - Less restrictive on mobile */}
                             <Button
                                 onClick={handleManualCapture}
-                                disabled={!videoReady || isProcessing || isCapturing}
+                                disabled={isProcessing || isCapturing || (!stream && !videoReady)}
                                 variant="outline"
                                 size="sm"
                                 className="flex-1 sm:flex-none text-xs sm:text-sm"
                             >
-                                <Camera className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
-                                <span className="hidden xs:inline">Capture</span> ({capturedImages.length}/3)
+                                {isProcessing ? (
+                                    <Loader2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1 animate-spin" />
+                                ) : (
+                                    <Camera className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+                                )}
+                                <span>Capture ({capturedImages.length}/3)</span>
                             </Button>
+                            {/* Auto Capture - Works even without AI on mobile */}
                             <Button
                                 onClick={handleAutoCapture}
-                                disabled={isCapturing || modelsLoading || !videoReady}
+                                disabled={isCapturing || (!stream && !videoReady)}
                                 size="sm"
-                                className="flex-1 sm:flex-none text-xs sm:text-sm"
+                                className="flex-1 sm:flex-none text-xs sm:text-sm bg-primary"
                             >
                                 {isCapturing ? (
-                                    <><Loader2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1 sm:mr-2 animate-spin" /> <span className="hidden sm:inline">Capturing</span>...</>
+                                    <><Loader2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1 sm:mr-2 animate-spin" /> Capturing...</>
                                 ) : (
-                                    <><Aperture className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1 sm:mr-2" /> Auto<span className="hidden sm:inline"> Capture</span></>
+                                    <><Aperture className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1 sm:mr-2" /> Auto (3)</>
                                 )}
                             </Button>
                         </>

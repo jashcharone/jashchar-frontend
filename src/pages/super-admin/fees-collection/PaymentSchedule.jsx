@@ -296,15 +296,14 @@ const PaymentSchedule = () => {
           *,
           student:student_id (
             id,
-            first_name,
-            last_name,
-            admission_number,
+            full_name,
+            school_code,
             class:class_id (id, name)
           ),
           plan:installment_plan_id (
             id,
             name,
-            frequency
+            installment_interval
           )
         `)
         .eq('branch_id', branchId)
@@ -315,15 +314,15 @@ const PaymentSchedule = () => {
       // Transform and check overdue status
       const today = new Date().toISOString().split('T')[0];
       const transformed = (data || []).map(inst => {
-        let status = inst.status;
+        let status = inst.is_paid ? 'paid' : 'pending';
         if (status === 'pending' && inst.due_date < today) {
           status = 'overdue';
         }
         return {
           ...inst,
           status,
-          student_name: inst.student ? `${inst.student.first_name || ''} ${inst.student.last_name || ''}`.trim() : 'Unknown',
-          admission_number: inst.student?.admission_number,
+          student_name: inst.student?.full_name || 'Unknown',
+          admission_number: inst.student?.school_code,
           class_name: inst.student?.class?.name,
           class_id: inst.student?.class?.id,
         };
@@ -443,9 +442,8 @@ const PaymentSchedule = () => {
       const { error } = await supabase
         .from('student_fee_installments')
         .update({ 
-          status: 'paid', 
-          paid_date: new Date().toISOString(),
-          paid_amount: installment.amount 
+          is_paid: true, 
+          paid_date: new Date().toISOString().split('T')[0]
         })
         .eq('id', installment.id);
         

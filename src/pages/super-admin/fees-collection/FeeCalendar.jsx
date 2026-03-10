@@ -376,43 +376,52 @@ const FeeCalendar = () => {
     
     try {
       // Fetch fee due dates from various sources
-      const [templatesRes, installmentsRes] = await Promise.all([
+      const [templatesRes, installmentsRes, feeMastersRes] = await Promise.all([
+        // Templates (basic info only - no due_date column exists)
         supabase
           .from('fee_templates')
-          .select('id, name, template_name, total_amount, due_date, applicable_classes')
-          .eq('branch_id', branchId),
+          .select('id, name, template_name, template_data, is_active')
+          .eq('branch_id', branchId)
+          .eq('is_active', true),
+        // Student installments (use is_paid instead of status)
         supabase
           .from('student_fee_installments')
           .select(`
-            id, amount, due_date, status,
-            student:student_id (class_id)
+            id, amount, due_date, is_paid,
+            student:student_id (id, full_name, class_id)
           `)
+          .eq('branch_id', branchId)
+          .eq('is_paid', false),
+        // Fee masters have actual due dates
+        supabase
+          .from('fee_masters')
+          .select('id, amount, due_date, fee_types(name)')
           .eq('branch_id', branchId)
       ]);
 
       const allEvents = [];
       const today = new Date().toISOString().split('T')[0];
       
-      // Templates with due dates
-      (templatesRes.data || []).forEach(t => {
-        if (t.due_date) {
+      // Fee Masters with due dates (primary source of calendar events)
+      (feeMastersRes.data || []).forEach(m => {
+        if (m.due_date) {
           allEvents.push({
-            id: `template-${t.id}`,
-            title: t.template_name || t.name || 'Fee Due',
-            description: 'Template due date',
+            id: `master-${m.id}`,
+            title: m.fee_types?.name || 'Fee Due',
+            description: 'Fee master due date',
             category: 'tuition',
-            amount: t.total_amount,
-            due_date: t.due_date,
-            class_ids: t.applicable_classes || [],
-            is_overdue: t.due_date < today,
-            type: 'template',
+            amount: m.amount,
+            due_date: m.due_date,
+            class_ids: [],
+            is_overdue: m.due_date < today,
+            type: 'fee_master',
           });
         }
       });
       
-      // Installments
+      // Installments (unpaid only - already filtered in query)
       (installmentsRes.data || []).forEach(i => {
-        if (i.due_date && i.status !== 'paid') {
+        if (i.due_date) {
           allEvents.push({
             id: `installment-${i.id}`,
             title: 'Installment Due',
@@ -423,7 +432,7 @@ const FeeCalendar = () => {
             class_ids: i.student?.class_id ? [i.student.class_id] : [],
             is_overdue: i.due_date < today,
             type: 'installment',
-            status: i.status,
+            is_paid: i.is_paid,
           });
         }
       });
@@ -731,14 +740,14 @@ const FeeCalendar = () => {
                 <div className="space-y-2">
                   <Label className="text-xs text-muted-foreground">Classes</Label>
                   <Select
-                    value={selectedClasses.length === 1 ? selectedClasses[0] : ""}
-                    onValueChange={(v) => setSelectedClasses(v ? [v] : [])}
+                    value={selectedClasses.length === 1 ? selectedClasses[0] : "all"}
+                    onValueChange={(v) => setSelectedClasses(v === "all" ? [] : [v])}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="All Classes" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">All Classes</SelectItem>
+                      <SelectItem value="all">All Classes</SelectItem>
                       {classes.map(c => (
                         <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
                       ))}

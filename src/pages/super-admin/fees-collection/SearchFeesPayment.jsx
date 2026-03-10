@@ -1,4 +1,4 @@
-﻿import React, { useState } from 'react';
+import React, { useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import DashboardLayout from '@/components/DashboardLayout';
 import { supabase } from '@/lib/customSupabaseClient';
@@ -82,7 +82,7 @@ const SearchFeesPayment = () => {
                              <div className="overflow-x-auto">
                                 <table className="w-full text-sm">
                                     <thead className="bg-muted">
-                                        <tr className="text-left"><th className="p-2">Transaction ID</th><th className="p-2">Date</th><th className="p-2">Name</th><th className="p-2">Class</th><th className="p-2">Fees Group</th><th className="p-2">Fees Type</th><th className="p-2">Mode</th><th className="p-2 text-right">Amount (₹)</th><th className="p-2 text-right">Discount (₹)</th><th className="p-2 text-right">Fine (₹)</th><th className="p-2 text-center">Action</th></tr>
+                                        <tr className="text-left"><th className="p-2">Transaction ID</th><th className="p-2">Date</th><th className="p-2">Name</th><th className="p-2">Class</th><th className="p-2">Fees Group</th><th className="p-2">Fees Type</th><th className="p-2">Mode</th><th className="p-2 text-right">Amount (?)</th><th className="p-2 text-right">Discount (?)</th><th className="p-2 text-right">Fine (?)</th><th className="p-2 text-center">Action</th></tr>
                                     </thead>
                                     <tbody>
                                         {payments.length > 0 ? payments.map(p => (

@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import DashboardLayout from '@/components/DashboardLayout';
 import { supabase } from '@/lib/customSupabaseClient';
@@ -23,7 +23,7 @@ const CollectFees = () => {
     
     // Dynamic base path for navigation
     const basePath = roleSlug || 'super-admin';
-    // ✅ FIX: Use selectedBranch.id OR fallback to user profile/metadata branch_id
+    // ? FIX: Use selectedBranch.id OR fallback to user profile/metadata branch_id
     const branchId = selectedBranch?.id || user?.profile?.branch_id || user?.user_metadata?.branch_id;
 
     const [classes, setClasses] = useState([]);
@@ -43,7 +43,7 @@ const CollectFees = () => {
     // DEBUG: Log branch resolution
     console.log('[CollectFees] branchId:', branchId, '| selectedBranch:', selectedBranch?.id, '| branchLoading:', branchLoading);
 
-    // ✅ FIX: Fetch classes when branchId changes - wait for branch loading to complete
+    // ? FIX: Fetch classes when branchId changes - wait for branch loading to complete
     useEffect(() => {
         const fetchClasses = async () => {
             console.log('[CollectFees] fetchClasses called, branchId:', branchId, 'branchLoading:', branchLoading);
@@ -142,7 +142,7 @@ const CollectFees = () => {
         setSearched(true);
         
         try {
-            // Use session from header dropdown (currentSessionId) — respects user's session selection
+            // Use session from header dropdown (currentSessionId) � respects user's session selection
             const activeSessionId = currentSessionId;
             
             // Use student_profiles directly - it's faster and more reliable
@@ -512,7 +512,7 @@ const CollectFees = () => {
         }
     };
 
-    // 🔍 Highlight search text in results
+    // ?? Highlight search text in results
     const highlightText = (text, searchTerm) => {
         if (!searchTerm || !text) return text;
         const regex = new RegExp(`(${searchTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
@@ -712,7 +712,7 @@ const CollectFees = () => {
                                     />
                                     {keyword && (
                                         <Button variant="ghost" size="sm" className="h-8 px-2" onClick={() => setKeyword('')}>
-                                            ✕
+                                            ?
                                         </Button>
                                     )}
                                 </div>

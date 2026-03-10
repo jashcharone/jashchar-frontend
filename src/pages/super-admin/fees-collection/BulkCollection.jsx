@@ -52,7 +52,7 @@ import {
   Pause,
   RefreshCw
 } from 'lucide-react';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { useBranch } from '@/contexts/BranchContext';
 import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';

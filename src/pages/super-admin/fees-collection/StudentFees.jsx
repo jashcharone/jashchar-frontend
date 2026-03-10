@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import DashboardLayout from '@/components/DashboardLayout';
 import { supabase } from '@/lib/customSupabaseClient';
@@ -81,11 +81,11 @@ const getPaidMonths = (payments) => {
 
 // Helper: Calculate annual fee based on billing cycle
 // billing_cycle determines how the fee amount is interpreted:
-// - monthly: fee × sessionMonths (e.g., ₹5000/month × 12 = ₹60,000/year)
-// - quarterly: fee × ceil(sessionMonths/3) (e.g., ₹15000/quarter × 4 = ₹60,000/year)
-// - half_yearly: fee × ceil(sessionMonths/6) (e.g., ₹30000/semester × 2 = ₹60,000/year)
-// - annual: fee × 1 (e.g., ₹60,000/year)
-// - one_time: fee × 1 (e.g., ₹10,000 one-time)
+// - monthly: fee � sessionMonths (e.g., ?5000/month � 12 = ?60,000/year)
+// - quarterly: fee � ceil(sessionMonths/3) (e.g., ?15000/quarter � 4 = ?60,000/year)
+// - half_yearly: fee � ceil(sessionMonths/6) (e.g., ?30000/semester � 2 = ?60,000/year)
+// - annual: fee � 1 (e.g., ?60,000/year)
+// - one_time: fee � 1 (e.g., ?10,000 one-time)
 const calculateFeeDetails = (fee, billingCycle = 'monthly', sessionMonths = 12) => {
     const periods = {
         monthly: sessionMonths,
@@ -121,7 +121,7 @@ const getBillingCycleLabel = (cycle) => {
 };
 
 // Summary Card Component with variants
-const SummaryCard = ({ title, amount, icon: Icon, variant = 'default', currencySymbol = '₹' }) => {
+const SummaryCard = ({ title, amount, icon: Icon, variant = 'default', currencySymbol = '?' }) => {
     const variants = {
         default: 'bg-card border',
         success: 'bg-green-50 dark:bg-green-950 border-green-200 dark:border-green-800',
@@ -170,7 +170,7 @@ const StudentFees = () => {
     const { selectedBranch } = useBranch();
     const { toast } = useToast();
     const branchId = user?.profile?.branch_id;
-    const currencySymbol = school?.currency_symbol || '₹';
+    const currencySymbol = school?.currency_symbol || '?';
 
     const [student, setStudent] = useState(null);
     const [classTeacher, setClassTeacher] = useState(null);
@@ -371,7 +371,7 @@ const StudentFees = () => {
                 const totalDiscount = validPayments.reduce((sum, p) => sum + (Number(p.discount_amount) || 0), 0);
                 const totalFine = validPayments.reduce((sum, p) => sum + (Number(p.fine_paid) || 0), 0);
                 const masterAmount = Number(master.amount) || 0;
-                // ✅ FIXED: Balance cannot be negative (cap at 0)
+                // ? FIXED: Balance cannot be negative (cap at 0)
                 const balance = Math.max(0, masterAmount - totalPaid - totalDiscount);
 
                 let fine = 0;
@@ -691,7 +691,7 @@ const StudentFees = () => {
         return Math.max(0, totalAssignedDiscount - totalDiscountAlreadyUsed);
     }, [totalAssignedDiscount, totalDiscountAlreadyUsed]);
 
-    // ✅ Calculate MAXIMUM payable amount based on selected fees
+    // ? Calculate MAXIMUM payable amount based on selected fees
     // User cannot pay MORE than this amount
     const selectedFeesMaxBalance = useMemo(() => {
         let total = 0;
@@ -756,7 +756,7 @@ const StudentFees = () => {
         
         // Balance = Total Fees - Paid - Discount + Refunded
         // (Refund adds back to balance because money was returned to student)
-        // ✅ FIXED: Balance cannot be negative (cap at 0)
+        // ? FIXED: Balance cannot be negative (cap at 0)
         const balance = Math.max(0, totalFees - totalPaid - totalDiscount + totalRefunded);
 
         const overdueCount = fees.filter(f => f.isOverdue && f.balance > 0).length;
@@ -791,7 +791,7 @@ const StudentFees = () => {
             toast({
                 variant: 'destructive',
                 title: 'UPI Not Configured',
-                description: 'Please configure UPI settings in School Settings → Fees tab first.'
+                description: 'Please configure UPI settings in School Settings ? Fees tab first.'
             });
             return;
         }
@@ -897,17 +897,17 @@ const StudentFees = () => {
             return;
         }
 
-        // ✅ VALIDATION: Amount cannot exceed selected fees balance
+        // ? VALIDATION: Amount cannot exceed selected fees balance
         if (enteredAmount > selectedFeesMaxBalance) {
             toast({ 
                 variant: 'destructive', 
                 title: 'Amount exceeds balance', 
-                description: `ನೀವು enter ಮಾಡಿದ Amount (₹${enteredAmount.toLocaleString('en-IN')}) selected fees ನ balance (₹${selectedFeesMaxBalance.toLocaleString('en-IN')}) ಗಿಂತ ಹೆಚ್ಚು. ದಯವಿಟ್ಟು ಸರಿಯಾದ amount enter ಮಾಡಿ.` 
+                description: `???? enter ????? Amount (?${enteredAmount.toLocaleString('en-IN')}) selected fees ? balance (?${selectedFeesMaxBalance.toLocaleString('en-IN')}) ???? ??????. ???????? ?????? amount enter ????.` 
             });
             return;
         }
 
-        // ✅ VALIDATION: Discount cannot exceed the amount being paid
+        // ? VALIDATION: Discount cannot exceed the amount being paid
         if (enteredDiscount > enteredAmount) {
             toast({ 
                 variant: 'destructive', 
@@ -953,10 +953,10 @@ const StudentFees = () => {
                 const discountForThisFee = Math.min(remainingDiscountToDistribute, fee.balance - amountForThisFee);
                 const fineForThisFee = Math.min(remainingFineToDistribute, fee.fine);
                 
-                // ✅ FIX: Calculate balance AFTER this payment (for historical receipt display)
+                // ? FIX: Calculate balance AFTER this payment (for historical receipt display)
                 const balanceAfterThisPayment = Math.max(0, fee.balance - amountForThisFee - discountForThisFee);
                 
-                // ✅ BUILD COMPLETE RECEIPT SNAPSHOT - Saved at payment time for historical accuracy
+                // ? BUILD COMPLETE RECEIPT SNAPSHOT - Saved at payment time for historical accuracy
                 const receiptSnapshot = {
                     student: {
                         id: studentId,
@@ -1010,8 +1010,8 @@ const StudentFees = () => {
                         transaction_id: newTransactionId,
                         created_by: user.id,
                         utr_number: isUpiPayment(paymentDetails.payment_mode) ? paymentDetails.utr_number.trim() : null,
-                        balance_after_payment: balanceAfterThisPayment, // ✅ Quick access field
-                        receipt_snapshot: receiptSnapshot, // ✅ FULL RECEIPT DATA for reprint accuracy
+                        balance_after_payment: balanceAfterThisPayment, // ? Quick access field
+                        receipt_snapshot: receiptSnapshot, // ? FULL RECEIPT DATA for reprint accuracy
                     });
                     remainingAmountToDistribute -= amountForThisFee;
                     remainingDiscountToDistribute -= discountForThisFee;
@@ -1032,7 +1032,7 @@ const StudentFees = () => {
 
             if (error) throw error;
             
-            toast({ title: '✅ Payment collected successfully!', description: `Transaction ID: ${newTransactionId}` });
+            toast({ title: '? Payment collected successfully!', description: `Transaction ID: ${newTransactionId}` });
             await fetchStudentAndFees();
             setSelectedFees([]);
             setPaymentDetails(prev => ({ ...prev, note: '', utr_number: '' }));
@@ -1112,10 +1112,10 @@ const StudentFees = () => {
             if (isAnnualType) {
                 // Annual/One-time: Single payment record with custom amount
                 const sessionName = student?.sessions?.name || 'Annual';
-                // ✅ FIX: Calculate balance after this payment
+                // ? FIX: Calculate balance after this payment
                 const balanceAfterPayment = Math.max(0, transportBalanceWithRefunds - totalAmount - discount);
                 
-                // ✅ BUILD COMPLETE RECEIPT SNAPSHOT for transport fee
+                // ? BUILD COMPLETE RECEIPT SNAPSHOT for transport fee
                 const receiptSnapshot = {
                     student: {
                         id: studentId,
@@ -1168,13 +1168,13 @@ const StudentFees = () => {
                     transaction_id: newTransactionId,
                     collected_by: user.id,
                     utr_number: utrValue,
-                    balance_after_payment: balanceAfterPayment, // ✅ Quick access
-                    receipt_snapshot: receiptSnapshot, // ✅ FULL RECEIPT DATA
+                    balance_after_payment: balanceAfterPayment, // ? Quick access
+                    receipt_snapshot: receiptSnapshot, // ? FULL RECEIPT DATA
                 }];
             } else {
                 // Monthly: Create one payment record per selected month
                 const monthlyFee = transportDetails.monthlyFee || 0;
-                // ✅ FIX: Calculate running balance for each month payment
+                // ? FIX: Calculate running balance for each month payment
                 let runningBalance = transportBalanceWithRefunds;
                 paymentsToInsert = selectedTransportMonths.map((monthKey, index) => {
                     const monthLabel = sessionMonths.find(m => m.key === monthKey)?.label || monthKey;
@@ -1183,7 +1183,7 @@ const StudentFees = () => {
                     // Calculate balance after this specific payment
                     runningBalance = Math.max(0, runningBalance - monthlyFee - thisDiscount);
                     
-                    // ✅ BUILD RECEIPT SNAPSHOT for monthly payment
+                    // ? BUILD RECEIPT SNAPSHOT for monthly payment
                     const receiptSnapshot = {
                         student: {
                             id: studentId,
@@ -1237,8 +1237,8 @@ const StudentFees = () => {
                         transaction_id: newTransactionId,
                         collected_by: user.id,
                         utr_number: index === 0 ? utrValue : null, // Only first record gets the UTR
-                        balance_after_payment: runningBalance, // ✅ Quick access
-                        receipt_snapshot: receiptSnapshot, // ✅ FULL RECEIPT DATA
+                        balance_after_payment: runningBalance, // ? Quick access
+                        receipt_snapshot: receiptSnapshot, // ? FULL RECEIPT DATA
                     };
                 });
             }
@@ -1251,7 +1251,7 @@ const StudentFees = () => {
             if (error) throw error;
             
             toast({ 
-                title: '✅ Transport fee collected!', 
+                title: '? Transport fee collected!', 
                 description: isAnnualType 
                     ? `${currencySymbol}${totalAmount.toLocaleString('en-IN')} paid. Transaction ID: ${newTransactionId}`
                     : `${selectedTransportMonths.length} month(s) paid. Transaction ID: ${newTransactionId}` 
@@ -1328,10 +1328,10 @@ const StudentFees = () => {
             if (isAnnualType) {
                 // Annual/One-time: Single payment record with custom amount
                 const sessionName = student?.sessions?.name || 'Annual';
-                // ✅ FIX: Calculate balance after this payment
+                // ? FIX: Calculate balance after this payment
                 const balanceAfterPayment = Math.max(0, hostelBalanceWithRefunds - totalAmount - discount);
                 
-                // ✅ BUILD COMPLETE RECEIPT SNAPSHOT for hostel fee
+                // ? BUILD COMPLETE RECEIPT SNAPSHOT for hostel fee
                 const receiptSnapshot = {
                     student: {
                         id: studentId,
@@ -1384,13 +1384,13 @@ const StudentFees = () => {
                     transaction_id: newTransactionId,
                     collected_by: user.id,
                     utr_number: utrValue,
-                    balance_after_payment: balanceAfterPayment, // ✅ Quick access
-                    receipt_snapshot: receiptSnapshot, // ✅ FULL RECEIPT DATA
+                    balance_after_payment: balanceAfterPayment, // ? Quick access
+                    receipt_snapshot: receiptSnapshot, // ? FULL RECEIPT DATA
                 }];
             } else {
                 // Monthly: Create one payment record per selected month
                 const monthlyFee = hostelDetails.monthlyFee || 0;
-                // ✅ FIX: Calculate running balance for each month payment
+                // ? FIX: Calculate running balance for each month payment
                 let runningBalance = hostelBalanceWithRefunds;
                 paymentsToInsert = selectedHostelMonths.map((monthKey, index) => {
                     const monthLabel = sessionMonths.find(m => m.key === monthKey)?.label || monthKey;
@@ -1399,7 +1399,7 @@ const StudentFees = () => {
                     // Calculate balance after this specific payment
                     runningBalance = Math.max(0, runningBalance - monthlyFee - thisDiscount);
                     
-                    // ✅ BUILD RECEIPT SNAPSHOT for monthly hostel payment
+                    // ? BUILD RECEIPT SNAPSHOT for monthly hostel payment
                     const receiptSnapshot = {
                         student: {
                             id: studentId,
@@ -1453,8 +1453,8 @@ const StudentFees = () => {
                         transaction_id: newTransactionId,
                         collected_by: user.id,
                         utr_number: index === 0 ? utrValue : null, // Only first record gets the UTR
-                        balance_after_payment: runningBalance, // ✅ Quick access
-                        receipt_snapshot: receiptSnapshot, // ✅ FULL RECEIPT DATA
+                        balance_after_payment: runningBalance, // ? Quick access
+                        receipt_snapshot: receiptSnapshot, // ? FULL RECEIPT DATA
                     };
                 });
             }
@@ -1467,7 +1467,7 @@ const StudentFees = () => {
             if (error) throw error;
             
             toast({ 
-                title: '✅ Hostel fee collected!', 
+                title: '? Hostel fee collected!', 
                 description: isAnnualType
                     ? `${currencySymbol}${totalAmount.toLocaleString('en-IN')} paid. Transaction ID: ${newTransactionId}`
                     : `${selectedHostelMonths.length} month(s) paid. Transaction ID: ${newTransactionId}` 
@@ -1614,7 +1614,7 @@ const StudentFees = () => {
             if (error) throw error;
             
             toast({ 
-                title: '✅ Refund request submitted!', 
+                title: '? Refund request submitted!', 
                 description: `${currencySymbol}${amount.toLocaleString('en-IN')} refund request sent for approval. Transaction: ${refundTransactionId}` 
             });
             
@@ -1827,7 +1827,7 @@ const StudentFees = () => {
                                         value={paymentDetails.amount} 
                                         onChange={(e) => {
                                             const val = parseFloat(e.target.value) || 0;
-                                            // ✅ Prevent entering more than selected balance
+                                            // ? Prevent entering more than selected balance
                                             if (val > selectedFeesMaxBalance) {
                                                 setPaymentDetails(p => ({ ...p, amount: selectedFeesMaxBalance.toFixed(2) }));
                                             } else {
@@ -1875,7 +1875,7 @@ const StudentFees = () => {
                                         </span>
                                     </div>
                                     {remainingDiscount === 0 && totalDiscountAlreadyUsed > 0 && (
-                                        <p className="text-amber-600 text-[10px] mt-1">✓ Discount fully utilized in previous payments</p>
+                                        <p className="text-amber-600 text-[10px] mt-1">? Discount fully utilized in previous payments</p>
                                     )}
                                 </div>
                             )}
@@ -2075,7 +2075,7 @@ const StudentFees = () => {
                                                             {fee.dueDate ? (
                                                                 <div className={fee.isOverdue ? 'text-red-600' : ''}>
                                                                     {format(parseISO(fee.dueDate), 'dd MMM yyyy')}
-                                                                    {fee.isOverdue && <p className="text-xs">⚠️ Overdue</p>}
+                                                                    {fee.isOverdue && <p className="text-xs">?? Overdue</p>}
                                                                 </div>
                                                             ) : 'N/A'}
                                                         </td>
@@ -2180,7 +2180,7 @@ const StudentFees = () => {
                                                                 <p className="text-sm font-medium mb-3">
                                                                     Enter Amount to Pay 
                                                                     <span className="text-xs text-muted-foreground ml-2">
-                                                                        (Balance: {currencySymbol}{transportBalanceWithRefunds.toLocaleString('en-IN')} — pay any amount)
+                                                                        (Balance: {currencySymbol}{transportBalanceWithRefunds.toLocaleString('en-IN')} � pay any amount)
                                                                     </span>
                                                                 </p>
                                                                 <div className="grid sm:grid-cols-3 gap-3">
@@ -2334,7 +2334,7 @@ const StudentFees = () => {
                                                             <div className="p-3 bg-blue-100 dark:bg-blue-900/30 rounded-md mb-4">
                                                                 <p className="text-sm">
                                                                     <span className="font-medium">{selectedTransportMonths.length} month(s) selected</span>
-                                                                    <span className="mx-2">•</span>
+                                                                    <span className="mx-2">�</span>
                                                                     Amount: <span className="font-bold">{currencySymbol}{(selectedTransportMonths.length * transportDetails.monthlyFee).toLocaleString('en-IN')}</span>
                                                                 </p>
                                                             </div>
@@ -2488,7 +2488,7 @@ const StudentFees = () => {
                                                                 <p className="text-sm font-medium mb-3">
                                                                     Enter Amount to Pay 
                                                                     <span className="text-xs text-muted-foreground ml-2">
-                                                                        (Balance: {currencySymbol}{hostelBalanceWithRefunds.toLocaleString('en-IN')} — pay any amount)
+                                                                        (Balance: {currencySymbol}{hostelBalanceWithRefunds.toLocaleString('en-IN')} � pay any amount)
                                                                     </span>
                                                                 </p>
                                                                 <div className="grid sm:grid-cols-3 gap-3">
@@ -2642,7 +2642,7 @@ const StudentFees = () => {
                                                             <div className="p-3 bg-purple-100 dark:bg-purple-900/30 rounded-md mb-4">
                                                                 <p className="text-sm">
                                                                     <span className="font-medium">{selectedHostelMonths.length} month(s) selected</span>
-                                                                    <span className="mx-2">•</span>
+                                                                    <span className="mx-2">�</span>
                                                                     Amount: <span className="font-bold">{currencySymbol}{(selectedHostelMonths.length * hostelDetails.monthlyFee).toLocaleString('en-IN')}</span>
                                                                 </p>
                                                             </div>
@@ -3013,10 +3013,10 @@ const StudentFees = () => {
                                                                 refund.status === 'approved' ? 'default' : 
                                                                 refund.status === 'rejected' ? 'destructive' : 'warning'
                                                             }>
-                                                                {refund.status === 'pending' ? '⏳ Pending' : 
-                                                                 refund.status === 'approved' ? '✅ Approved' :
-                                                                 refund.status === 'completed' ? '💰 Completed' :
-                                                                 '❌ Rejected'}
+                                                                {refund.status === 'pending' ? '? Pending' : 
+                                                                 refund.status === 'approved' ? '? Approved' :
+                                                                 refund.status === 'completed' ? '?? Completed' :
+                                                                 '? Rejected'}
                                                             </Badge>
                                                         </td>
                                                     </tr>
@@ -3168,7 +3168,7 @@ const StudentFees = () => {
                                         <span className="font-medium text-orange-700">Refund Amount</span>
                                         <span className="text-xl font-bold text-orange-700">{currencySymbol}{parseFloat(refundDetails.refund_amount).toLocaleString('en-IN')}</span>
                                     </div>
-                                    <p className="text-xs text-orange-600 mt-1">⏳ This will be sent for Super Admin approval</p>
+                                    <p className="text-xs text-orange-600 mt-1">? This will be sent for Super Admin approval</p>
                                 </div>
                             )}
                         </div>
@@ -3207,7 +3207,7 @@ const StudentFees = () => {
                             <p className="text-sm text-muted-foreground">Scan with any UPI app</p>
                             <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
                                 <Smartphone className="h-4 w-4" />
-                                Google Pay • PhonePe • Paytm • BHIM
+                                Google Pay � PhonePe � Paytm � BHIM
                             </div>
                             <div className="bg-purple-50 rounded-lg p-3 mt-3">
                                 <p className="text-xs text-purple-600 font-medium">UPI ID</p>
@@ -3228,7 +3228,7 @@ const StudentFees = () => {
                         </div>
                         <div className="w-full pt-2 border-t">
                             <p className="text-xs text-amber-600 text-center">
-                                ⚠️ After payment, enter UTR/Transaction ID in the Note field and click Collect
+                                ?? After payment, enter UTR/Transaction ID in the Note field and click Collect
                             </p>
                         </div>
                     </div>

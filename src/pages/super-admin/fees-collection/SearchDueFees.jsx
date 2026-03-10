@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import DashboardLayout from '@/components/DashboardLayout';
 import { supabase } from '@/lib/customSupabaseClient';
@@ -292,20 +292,20 @@ const SearchDueFees = () => {
         let feeDetailsEng = '';
         let feeDetailsKan = '';
         if (student.regular_due > 0) {
-            feeDetailsEng += `• Regular Fees: ₹${student.regular_due.toLocaleString('en-IN')}\n`;
-            feeDetailsKan += `• ಶುಲ್ಕ: ₹${student.regular_due.toLocaleString('en-IN')}\n`;
+            feeDetailsEng += `� Regular Fees: ?${student.regular_due.toLocaleString('en-IN')}\n`;
+            feeDetailsKan += `� ?????: ?${student.regular_due.toLocaleString('en-IN')}\n`;
         }
         if (includeTransport && student.transport_due > 0) {
-            feeDetailsEng += `• Transport: ₹${student.transport_due.toLocaleString('en-IN')}\n`;
-            feeDetailsKan += `• ವಾಹನ: ₹${student.transport_due.toLocaleString('en-IN')}\n`;
+            feeDetailsEng += `� Transport: ?${student.transport_due.toLocaleString('en-IN')}\n`;
+            feeDetailsKan += `� ????: ?${student.transport_due.toLocaleString('en-IN')}\n`;
         }
         if (includeHostel && student.hostel_due > 0) {
-            feeDetailsEng += `• Hostel: ₹${student.hostel_due.toLocaleString('en-IN')}\n`;
-            feeDetailsKan += `• ಹಾಸ್ಟೆಲ್: ₹${student.hostel_due.toLocaleString('en-IN')}\n`;
+            feeDetailsEng += `� Hostel: ?${student.hostel_due.toLocaleString('en-IN')}\n`;
+            feeDetailsKan += `� ????????: ?${student.hostel_due.toLocaleString('en-IN')}\n`;
         }
         const totalDue = student.total_due.toLocaleString('en-IN');
         
-        return `★ *FEE REMINDER*\n━━━━━━━━━━━━━━━━━━━━\n\n► *${schoolName}*\n\n● Student: *${studentName}*\n● Class: *${className}${sectionName}*\n\n▸ *Fee Details:*\n${feeDetailsEng}\n✦ *Total Due: ₹${totalDue}*\n\nPlease pay the fees at your earliest convenience.\n\nThank you.\n\n════════════════════\n\n★ *ಶುಲ್ಕ ಜ್ಞಾಪನೆ*\n━━━━━━━━━━━━━━━━━━━━\n\n► *${schoolName}*\n\n● ವಿದ್ಯಾರ್ಥಿ: *${studentName}*\n● ತರಗತಿ: *${className}${sectionName}*\n\n▸ *ಶುಲ್ಕ ವಿವರ:*\n${feeDetailsKan}\n✦ *ಒಟ್ಟು ಬಾಕಿ: ₹${totalDue}*\n\nದಯವಿಟ್ಟು ಶೀಘ್ರದಲ್ಲಿ ಪಾವತಿಸಿ.\n\nಧನ್ಯವಾದಗಳು.`;
+        return `? *FEE REMINDER*\n????????????????????\n\n? *${schoolName}*\n\n? Student: *${studentName}*\n? Class: *${className}${sectionName}*\n\n? *Fee Details:*\n${feeDetailsEng}\n? *Total Due: ?${totalDue}*\n\nPlease pay the fees at your earliest convenience.\n\nThank you.\n\n--------------------\n\n? *????? ???????*\n????????????????????\n\n? *${schoolName}*\n\n? ??????????: *${studentName}*\n? ?????: *${className}${sectionName}*\n\n? *????? ????:*\n${feeDetailsKan}\n? *????? ????: ?${totalDue}*\n\n???????? ?????????? ???????.\n\n??????????.`;
     };
 
     // Bulk WhatsApp send - opens one by one with delay
@@ -370,7 +370,7 @@ const SearchDueFees = () => {
     };
 
     const formatCurrency = (amount) => {
-        return `₹${Number(amount || 0).toLocaleString('en-IN')}`;
+        return `?${Number(amount || 0).toLocaleString('en-IN')}`;
     };
 
     return (
@@ -581,7 +581,7 @@ const SearchDueFees = () => {
                                                                 <p className="font-semibold text-sm truncate">{student.full_name}</p>
                                                                 <p className="text-xs text-muted-foreground">
                                                                     {student.admission_number || ''}
-                                                                    {student.admission_number && student.phone ? ' • ' : ''}
+                                                                    {student.admission_number && student.phone ? ' � ' : ''}
                                                                     {student.phone && <span className="text-green-500">{student.phone}</span>}
                                                                 </p>
                                                             </div>

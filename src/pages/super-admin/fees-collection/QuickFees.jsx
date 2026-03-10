@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { addMonths, setDate, format, parseISO } from 'date-fns';
 import DashboardLayout from '@/components/DashboardLayout';
 import { supabase } from '@/lib/customSupabaseClient';
@@ -53,7 +53,7 @@ const QuickFees = () => {
     const [loading, setLoading] = useState(false);
     const [fetching, setFetching] = useState(false);
     
-    // 🌟 NEW: Enhanced State for Auto-Installment Generator
+    // ?? NEW: Enhanced State for Auto-Installment Generator
     const [activeTab, setActiveTab] = useState('single');           // 'single' | 'bulk' | 'template'
     const [feeTemplates, setFeeTemplates] = useState([]);           // Available fee templates
     const [installmentPlans, setInstallmentPlans] = useState([]);   // Pre-defined installment plans
@@ -64,7 +64,7 @@ const QuickFees = () => {
     const [templateHeads, setTemplateHeads] = useState([]);         // Fee heads from selected template
     const [autoDetectedPlan, setAutoDetectedPlan] = useState(null); // AI auto-detected plan suggestion
     
-    // ✅ FIX: Use selectedBranch.id OR fallback to user profile branch_id
+    // ? FIX: Use selectedBranch.id OR fallback to user profile branch_id
     const branchId = selectedBranch?.id || user?.profile?.branch_id || user?.user_metadata?.branch_id;
 
     useEffect(() => {
@@ -75,7 +75,7 @@ const QuickFees = () => {
         };
         fetchClassesAndSections();
         
-        // 🌟 NEW: Fetch Fee Templates and Installment Plans
+        // ?? NEW: Fetch Fee Templates and Installment Plans
         const fetchTemplatesAndPlans = async () => {
             // Fetch fee templates
             const { data: templates } = await supabase
@@ -259,7 +259,7 @@ const QuickFees = () => {
         setInstallments(generated);
     };
 
-    // 🌟 NEW: Handle Template Selection
+    // ?? NEW: Handle Template Selection
     const handleSelectTemplate = async (templateId) => {
         setSelectedTemplate(templateId);
         if (!templateId) {
@@ -284,7 +284,7 @@ const QuickFees = () => {
         autoDetectInstallmentPlan(total);
     };
     
-    // 🌟 NEW: Handle Installment Plan Selection
+    // ?? NEW: Handle Installment Plan Selection
     const handleSelectPlan = (planId) => {
         setSelectedPlan(planId);
         if (!planId) return;
@@ -301,7 +301,7 @@ const QuickFees = () => {
         }
     };
     
-    // 🌟 NEW: Auto-detect best installment plan based on total fees
+    // ?? NEW: Auto-detect best installment plan based on total fees
     const autoDetectInstallmentPlan = useCallback((totalAmount) => {
         if (installmentPlans.length === 0) return;
         
@@ -328,7 +328,7 @@ const QuickFees = () => {
         });
     }, [installmentPlans]);
     
-    // 🌟 NEW: Toggle student selection for bulk assignment
+    // ?? NEW: Toggle student selection for bulk assignment
     const toggleStudentSelection = (studentId) => {
         setSelectedStudents(prev => 
             prev.includes(studentId) 
@@ -337,7 +337,7 @@ const QuickFees = () => {
         );
     };
     
-    // 🌟 NEW: Select/Deselect all students
+    // ?? NEW: Select/Deselect all students
     const toggleAllStudents = () => {
         if (selectedStudents.length === students.length) {
             setSelectedStudents([]);
@@ -346,7 +346,7 @@ const QuickFees = () => {
         }
     };
     
-    // 🌟 NEW: Bulk Assign Installments to Multiple Students
+    // ?? NEW: Bulk Assign Installments to Multiple Students
     const handleBulkAssign = async () => {
         if (selectedStudents.length === 0) {
             toast({ variant: 'destructive', title: 'No Students Selected', description: 'Please select students for bulk assignment.' });
@@ -392,7 +392,7 @@ const QuickFees = () => {
         setSelectedStudents([]);
     };
     
-    // 🌟 NEW: Assign fees to a single student (reusable for bulk)
+    // ?? NEW: Assign fees to a single student (reusable for bulk)
     const assignFeesToStudent = async (student) => {
         if (!student || !branchId) throw new Error('Invalid student or branch');
         
@@ -687,7 +687,7 @@ const QuickFees = () => {
                                 <SelectItem value="">Manual Entry</SelectItem>
                                 {feeTemplates.filter(t => !selectedClass || t.class_id === selectedClass).map(t => (
                                     <SelectItem key={t.id} value={t.id}>
-                                        {t.template_name} - ₹{Number(t.total_amount || 0).toLocaleString()}
+                                        {t.template_name} - ?{Number(t.total_amount || 0).toLocaleString()}
                                     </SelectItem>
                                 ))}
                             </SelectContent>
@@ -881,8 +881,8 @@ const QuickFees = () => {
                                                 <th className="p-3 font-medium text-muted-foreground">Fees Group</th>
                                                 <th className="p-3 font-medium text-muted-foreground">Fees Type</th>
                                                 <th className="p-3 font-medium text-muted-foreground">Due Date</th>
-                                                <th className="p-3 font-medium text-muted-foreground">Fine Amount (₹)</th>
-                                                <th className="p-3 font-medium text-muted-foreground text-right">Amount (₹)</th>
+                                                <th className="p-3 font-medium text-muted-foreground">Fine Amount (?)</th>
+                                                <th className="p-3 font-medium text-muted-foreground text-right">Amount (?)</th>
                                             </tr>
                                         </thead>
                                         <tbody>
@@ -894,7 +894,7 @@ const QuickFees = () => {
                                                     <td className="p-3 text-right pr-12">
                                                         {inst.fine_type === 'None' ? '0.00' : inst.fine_value}
                                                     </td>
-                                                    <td className="p-3 text-right font-medium">₹{Number(inst.amount).toLocaleString()}</td>
+                                                    <td className="p-3 text-right font-medium">?{Number(inst.amount).toLocaleString()}</td>
                                                 </tr>
                                             ))}
                                         </tbody>
@@ -902,7 +902,7 @@ const QuickFees = () => {
                                             <tr>
                                                 <td colSpan="4" className="p-3 text-right">Total Fees</td>
                                                 <td className="p-3 text-right text-green-600">
-                                                    ₹{installments.reduce((acc, curr) => acc + Number(curr.amount), 0).toLocaleString()}
+                                                    ?{installments.reduce((acc, curr) => acc + Number(curr.amount), 0).toLocaleString()}
                                                 </td>
                                             </tr>
                                         </tfoot>
@@ -1067,15 +1067,15 @@ const QuickFees = () => {
                                 <div className="space-y-2 text-sm">
                                     <div className="flex justify-between">
                                         <span className="text-muted-foreground">Total Fees:</span>
-                                        <span className="font-medium">₹{Number(feeData.totalFees || 0).toLocaleString()}</span>
+                                        <span className="font-medium">?{Number(feeData.totalFees || 0).toLocaleString()}</span>
                                     </div>
                                     <div className="flex justify-between">
                                         <span className="text-muted-foreground">1st Installment:</span>
-                                        <span className="font-medium">₹{Number(feeData.firstInstallment || 0).toLocaleString()}</span>
+                                        <span className="font-medium">?{Number(feeData.firstInstallment || 0).toLocaleString()}</span>
                                     </div>
                                     <div className="flex justify-between">
                                         <span className="text-muted-foreground">Balance:</span>
-                                        <span className="font-medium">₹{balanceFees.toLocaleString()}</span>
+                                        <span className="font-medium">?{balanceFees.toLocaleString()}</span>
                                     </div>
                                     <hr className="my-2" />
                                     <div className="flex justify-between">
@@ -1085,7 +1085,7 @@ const QuickFees = () => {
                                     <div className="flex justify-between">
                                         <span className="text-muted-foreground">Per EMI:</span>
                                         <span className="font-medium text-green-600">
-                                            ₹{(Number(feeData.numInstallments) > 0 ? balanceFees / Number(feeData.numInstallments) : 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                                            ?{(Number(feeData.numInstallments) > 0 ? balanceFees / Number(feeData.numInstallments) : 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}
                                         </span>
                                     </div>
                                 </div>
@@ -1112,7 +1112,7 @@ const QuickFees = () => {
                                                 {templateHeads.slice(0, 4).map((h, i) => (
                                                     <div key={i} className="flex justify-between text-xs">
                                                         <span>{h.fee_heads?.name || 'Head'}</span>
-                                                        <span>₹{Number(h.amount || 0).toLocaleString()}</span>
+                                                        <span>?{Number(h.amount || 0).toLocaleString()}</span>
                                                     </div>
                                                 ))}
                                                 {templateHeads.length > 4 && (
@@ -1150,7 +1150,7 @@ const QuickFees = () => {
                                                     {plan.late_fee_type && (
                                                         <div className="flex justify-between">
                                                             <span className="text-muted-foreground">Late Fee:</span>
-                                                            <span>{plan.late_fee_type === 'fixed' ? `₹${plan.late_fee_amount}` : `${plan.late_fee_amount}%`}</span>
+                                                            <span>{plan.late_fee_type === 'fixed' ? `?${plan.late_fee_amount}` : `${plan.late_fee_amount}%`}</span>
                                                         </div>
                                                     )}
                                                 </>
@@ -1171,7 +1171,7 @@ const QuickFees = () => {
                                         {feeData.fineType !== 'None' && (
                                             <div className="flex justify-between">
                                                 <span className="text-muted-foreground">Fine Value:</span>
-                                                <span>{feeData.fineType === 'Fixed' ? `₹${feeData.fineValue}` : `${feeData.fineValue}%`}</span>
+                                                <span>{feeData.fineType === 'Fixed' ? `?${feeData.fineValue}` : `${feeData.fineValue}%`}</span>
                                             </div>
                                         )}
                                     </div>

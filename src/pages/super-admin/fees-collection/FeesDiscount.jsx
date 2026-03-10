@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/lib/customSupabaseClient';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { useBranch } from '@/contexts/BranchContext';
@@ -613,7 +613,7 @@ const FeesDiscount = () => {
                                                             </span>
                                                         ) : (
                                                             <span className="text-muted-foreground">
-                                                                {d.used_count || 0} / ∞
+                                                                {d.used_count || 0} / 8
                                                             </span>
                                                         )}
                                                     </td>
@@ -699,7 +699,7 @@ const FeesDiscount = () => {
                     {/* Usage Warning */}
                     {selectedDiscount?.use_count && selectedStudents.size >= selectedDiscount.use_count && (
                         <div className="bg-red-100 dark:bg-red-900 border border-red-300 dark:border-red-700 rounded-lg p-3 text-red-700 dark:text-red-300 text-sm">
-                            ⚠️ Use count limit reached! Maximum {selectedDiscount.use_count} students allowed.
+                            ?? Use count limit reached! Maximum {selectedDiscount.use_count} students allowed.
                         </div>
                     )}
                     
@@ -783,7 +783,7 @@ const FeesDiscount = () => {
                                     <p className="font-medium">
                                         {selectedDiscount.discount_type === 'percentage' 
                                             ? `${selectedDiscount.amount}%` 
-                                            : `₹${selectedDiscount.amount}`}
+                                            : `?${selectedDiscount.amount}`}
                                     </p>
                                 </div>
                                 <div>

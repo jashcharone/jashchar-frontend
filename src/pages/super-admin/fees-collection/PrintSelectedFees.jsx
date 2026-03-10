@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { supabase } from '@/lib/customSupabaseClient';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
@@ -116,7 +116,7 @@ const PrintSelectedFees = () => {
 
   const { student, masters } = printData;
   const school = student.school;
-  const currencySymbol = school?.currency_symbol || '₹';
+  const currencySymbol = school?.currency_symbol || '?';
   const grandTotal = masters.reduce((sum, master) => sum + Number(master.amount), 0);
 
   return (

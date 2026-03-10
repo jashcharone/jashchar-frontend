@@ -2040,9 +2040,10 @@ const StudentFees = () => {
                                                     <th className="p-3 text-left font-medium">Fee Type</th>
                                                     <th className="p-3 text-left font-medium">Due Date</th>
                                                     <th className="p-3 text-right font-medium">Amount</th>
-                                                    <th className="p-3 text-right font-medium">Paid</th>
                                                     <th className="p-3 text-right font-medium">Discount</th>
+                                                    <th className="p-3 text-right font-medium text-emerald-600">Net Fee</th>
                                                     <th className="p-3 text-right font-medium">Fine</th>
+                                                    <th className="p-3 text-right font-medium">Paid</th>
                                                     <th className="p-3 text-right font-medium">Balance</th>
                                                     <th className="p-3 text-center font-medium">Status</th>
                                                 </tr>
@@ -2079,9 +2080,10 @@ const StudentFees = () => {
                                                             ) : 'N/A'}
                                                         </td>
                                                         <td className="p-3 text-right font-mono">{currencySymbol}{fee.amount.toLocaleString('en-IN')}</td>
-                                                        <td className="p-3 text-right font-mono text-green-600">{currencySymbol}{fee.totalPaid.toLocaleString('en-IN')}</td>
                                                         <td className="p-3 text-right font-mono text-blue-600">{currencySymbol}{fee.totalDiscount.toLocaleString('en-IN')}</td>
+                                                        <td className="p-3 text-right font-mono font-semibold text-emerald-600">{currencySymbol}{(fee.amount - fee.totalDiscount).toLocaleString('en-IN')}</td>
                                                         <td className="p-3 text-right font-mono text-amber-600">{currencySymbol}{fee.totalFine.toLocaleString('en-IN')}</td>
+                                                        <td className="p-3 text-right font-mono text-green-600">{currencySymbol}{fee.totalPaid.toLocaleString('en-IN')}</td>
                                                         <td className="p-3 text-right font-mono font-bold">{currencySymbol}{fee.balance.toLocaleString('en-IN')}</td>
                                                         <td className="p-3 text-center">
                                                             <Badge variant={fee.status === 'Paid' ? 'success' : fee.status === 'Partial' ? 'warning' : 'destructive'}>
@@ -2098,9 +2100,10 @@ const StudentFees = () => {
                                                     <tr className="bg-muted font-bold border-t-2 border-border">
                                                         <td colSpan="4" className="p-3 text-right font-semibold">Grand Total</td>
                                                         <td className="p-3 text-right"><span className="font-mono text-lg font-bold bg-slate-200 dark:bg-slate-700 px-2 py-1 rounded">{currencySymbol}{feesStatementTotals.amount.toLocaleString('en-IN')}</span></td>
-                                                        <td className="p-3 text-right"><span className="font-mono text-lg font-bold text-green-700 bg-green-100 dark:bg-green-900/50 dark:text-green-400 px-2 py-1 rounded">{currencySymbol}{feesStatementTotals.paid.toLocaleString('en-IN')}</span></td>
                                                         <td className="p-3 text-right"><span className="font-mono text-lg font-bold text-blue-700 bg-blue-100 dark:bg-blue-900/50 dark:text-blue-400 px-2 py-1 rounded">{currencySymbol}{feesStatementTotals.discount.toLocaleString('en-IN')}</span></td>
+                                                        <td className="p-3 text-right"><span className="font-mono text-lg font-bold text-emerald-700 bg-emerald-100 dark:bg-emerald-900/50 dark:text-emerald-400 px-2 py-1 rounded">{currencySymbol}{(feesStatementTotals.amount - feesStatementTotals.discount).toLocaleString('en-IN')}</span></td>
                                                         <td className="p-3 text-right"><span className="font-mono text-lg font-bold text-amber-700 bg-amber-100 dark:bg-amber-900/50 dark:text-amber-400 px-2 py-1 rounded">{currencySymbol}{feesStatementTotals.fine.toLocaleString('en-IN')}</span></td>
+                                                        <td className="p-3 text-right"><span className="font-mono text-lg font-bold text-green-700 bg-green-100 dark:bg-green-900/50 dark:text-green-400 px-2 py-1 rounded">{currencySymbol}{feesStatementTotals.paid.toLocaleString('en-IN')}</span></td>
                                                         <td className="p-3 text-right"><span className="font-mono text-lg font-bold text-red-700 bg-red-100 dark:bg-red-900/50 dark:text-red-400 px-2 py-1 rounded">{currencySymbol}{feesStatementTotals.balance.toLocaleString('en-IN')}</span></td>
                                                         <td></td>
                                                     </tr>

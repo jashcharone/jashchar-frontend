@@ -57,6 +57,7 @@ const CameraCapture = ({ onCapture, onClose, personName }) => {
     const [isCapturing, setIsCapturing] = useState(false);
     const [cameraError, setCameraError] = useState(null);
     const [countdown, setCountdown] = useState(null);
+    const [videoReady, setVideoReady] = useState(false);
     
     // AI Face Detection States
     const [modelsLoading, setModelsLoading] = useState(true);
@@ -95,7 +96,7 @@ const CameraCapture = ({ onCapture, onClose, personName }) => {
         let isRunning = true;
         
         const detectFace = async () => {
-            if (!isRunning || !videoRef.current || modelsLoading || !areModelsLoaded()) return;
+            if (!isRunning || !videoRef.current || modelsLoading || !areModelsLoaded() || !videoReady) return;
             
             try {
                 const detection = await detectSingleFace(videoRef.current);
@@ -151,7 +152,7 @@ const CameraCapture = ({ onCapture, onClose, personName }) => {
             }
         };
         
-        if (!modelsLoading && stream) {
+        if (!modelsLoading && stream && videoReady) {
             detectFace();
         }
         
@@ -159,26 +160,67 @@ const CameraCapture = ({ onCapture, onClose, personName }) => {
             isRunning = false;
             if (animationId) cancelAnimationFrame(animationId);
         };
-    }, [modelsLoading, stream, facingMode]);
+    }, [modelsLoading, stream, facingMode, videoReady]);
     
     const startCamera = async () => {
         try {
+            // Stop existing stream first
+            if (stream) {
+                stream.getTracks().forEach(track => track.stop());
+            }
+            setVideoReady(false);
+            setCameraError(null);
+            
+            // Mobile-friendly constraints - less strict
+            const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
             const constraints = {
-                video: { facingMode, width: { ideal: 1280 }, height: { ideal: 720 } },
+                video: {
+                    facingMode: isMobile ? { ideal: facingMode } : facingMode,
+                    width: { ideal: isMobile ? 640 : 1280, max: 1920 },
+                    height: { ideal: isMobile ? 480 : 720, max: 1080 }
+                },
+                audio: false
             };
+            
             const mediaStream = await navigator.mediaDevices.getUserMedia(constraints);
             setStream(mediaStream);
-            setCameraError(null);
         } catch (error) {
             console.error('Camera error:', error);
-            setCameraError('Unable to access camera. Please check permissions.');
+            // Try fallback with minimal constraints
+            try {
+                const fallbackStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+                setStream(fallbackStream);
+            } catch (fallbackError) {
+                setCameraError('Unable to access camera. Please check permissions and try again.');
+            }
         }
     };
     
     useEffect(() => {
         if (stream && videoRef.current) {
             videoRef.current.srcObject = stream;
-            videoRef.current.play().catch(console.error);
+            
+            // Handle video ready state
+            const handleLoadedMetadata = () => {
+                videoRef.current.play()
+                    .then(() => {
+                        setVideoReady(true);
+                        console.log('Video playing, dimensions:', videoRef.current.videoWidth, 'x', videoRef.current.videoHeight);
+                    })
+                    .catch(err => {
+                        console.error('Video play error:', err);
+                        setCameraError('Failed to start video. Please tap to retry.');
+                    });
+            };
+            
+            videoRef.current.addEventListener('loadedmetadata', handleLoadedMetadata);
+            
+            // Cleanup
+            return () => {
+                if (videoRef.current) {
+                    videoRef.current.removeEventListener('loadedmetadata', handleLoadedMetadata);
+                }
+            };
         }
     }, [stream]);
     
@@ -186,10 +228,32 @@ const CameraCapture = ({ onCapture, onClose, personName }) => {
         if (stream) {
             stream.getTracks().forEach(track => track.stop());
         }
+        setVideoReady(false);
+    };
+    
+    // Switch camera (front/back) for mobile
+    const switchCamera = () => {
+        setFacingMode(prev => prev === 'user' ? 'environment' : 'user');
     };
     
     const captureImage = async () => {
-        if (!videoRef.current || !canvasRef.current || !faceDetected) return;
+        if (!videoRef.current || !canvasRef.current) {
+            console.log('Video or canvas not ready');
+            return false;
+        }
+        
+        // Check if video is actually playing and has dimensions
+        if (!videoReady || videoRef.current.videoWidth === 0 || videoRef.current.videoHeight === 0) {
+            console.log('Video not ready for capture', { videoReady, width: videoRef.current?.videoWidth, height: videoRef.current?.videoHeight });
+            return false;
+        }
+        
+        // For mobile, allow capture even without face detection (AI models may be slow)
+        const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+        if (!faceDetected && !isMobile) {
+            console.log('No face detected');
+            return false;
+        }
         
         setIsProcessing(true);
         
@@ -213,24 +277,30 @@ const CameraCapture = ({ onCapture, onClose, personName }) => {
             data: imageData,
             angle: ['Front View', 'Left Turn', 'Right Turn'][capturedImages.length] || 'Extra',
             descriptor: descriptor,
-            quality: faceQuality?.score || 0,
+            quality: faceQuality?.score || 0.5,
             hasRealAI: !!descriptor
         }]);
         
         setIsProcessing(false);
+        return true;
     };
     
     const handleAutoCapture = async () => {
         setIsCapturing(true);
+        const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
         
         for (let i = 0; i < 3; i++) {
+            // Wait for face detection (or skip on mobile if taking too long)
             let waitAttempts = 0;
-            while (!faceDetected && waitAttempts < 30) {
+            const maxAttempts = isMobile ? 15 : 30; // Shorter wait on mobile
+            
+            while (!faceDetected && waitAttempts < maxAttempts) {
                 await new Promise(r => setTimeout(r, 200));
                 waitAttempts++;
             }
             
-            if (!faceDetected) continue;
+            // On mobile, proceed even without face detection after timeout
+            if (!faceDetected && !isMobile) continue;
             
             for (let c = 3; c > 0; c--) {
                 setCountdown(c);
@@ -238,11 +308,47 @@ const CameraCapture = ({ onCapture, onClose, personName }) => {
             }
             setCountdown(null);
             
-            captureImage();
-            await new Promise(r => setTimeout(r, 500));
+            // Await the capture and check if it succeeded
+            const captured = await captureImage();
+            if (captured) {
+                await new Promise(r => setTimeout(r, 500));
+            }
         }
         
         setIsCapturing(false);
+    };
+    
+    // Manual capture handler for touch
+    const handleManualCapture = async () => {
+        if (isProcessing || isCapturing) return;
+        const captured = await captureImage();
+        if (!captured) {
+            // If normal capture fails, try force capture on mobile
+            const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+            if (isMobile && videoRef.current && canvasRef.current && videoReady) {
+                setIsProcessing(true);
+                const canvas = canvasRef.current;
+                const video = videoRef.current;
+                canvas.width = video.videoWidth || 640;
+                canvas.height = video.videoHeight || 480;
+                const ctx = canvas.getContext('2d');
+                if (facingMode === 'user') {
+                    ctx.translate(canvas.width, 0);
+                    ctx.scale(-1, 1);
+                }
+                ctx.drawImage(video, 0, 0);
+                const imageData = canvas.toDataURL('image/jpeg', 0.85);
+                setCapturedImages(prev => [...prev, {
+                    id: Date.now(),
+                    data: imageData,
+                    angle: ['Front View', 'Left Turn', 'Right Turn'][capturedImages.length] || 'Extra',
+                    descriptor: null,
+                    quality: 0.5,
+                    hasRealAI: false
+                }]);
+                setIsProcessing(false);
+            }
+        }
     };
     
     const removeImage = (id) => {
@@ -255,62 +361,62 @@ const CameraCapture = ({ onCapture, onClose, personName }) => {
     };
     
     return (
-        <div className="space-y-4">
+        <div className="space-y-2 sm:space-y-4">
             {/* Person Name Banner */}
             {personName && (
-                <Alert className="border-primary/50 bg-primary/5">
-                    <User className="w-4 h-4" />
-                    <AlertDescription>
-                        Registering face for: <strong>{personName}</strong>
+                <Alert className="border-primary/50 bg-primary/5 py-2">
+                    <User className="w-3 h-3 sm:w-4 sm:h-4" />
+                    <AlertDescription className="text-xs sm:text-sm">
+                        Registering: <strong className="truncate">{personName}</strong>
                     </AlertDescription>
                 </Alert>
             )}
             
             {/* AI Model Loading State */}
             {modelsLoading && (
-                <Alert className="border-blue-500/50 bg-blue-500/5">
-                    <Loader2 className="w-4 h-4 animate-spin text-blue-500" />
-                    <AlertDescription className="text-blue-700">
-                        🤖 Loading AI Face Recognition Models... {modelLoadProgress}
+                <Alert className="border-blue-500/50 bg-blue-500/5 py-2">
+                    <Loader2 className="w-3 h-3 sm:w-4 sm:h-4 animate-spin text-blue-500" />
+                    <AlertDescription className="text-xs sm:text-sm text-blue-700">
+                        🤖 Loading AI... {modelLoadProgress}
                     </AlertDescription>
                 </Alert>
             )}
             
             {/* AI Status Badge */}
             {!modelsLoading && (
-                <div className="flex items-center gap-2 flex-wrap">
-                    <Badge variant={faceDetected ? "default" : "secondary"} className={faceDetected ? "bg-green-500" : ""}>
-                        {faceDetected ? "✅ Face Detected" : "👁️ Scanning..."}
+                <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
+                    <Badge variant={videoReady ? "default" : "secondary"} className={`text-[10px] sm:text-xs ${videoReady ? "bg-blue-500" : ""}`}>
+                        {videoReady ? "📹 Ready" : "⏳ Loading..."}
+                    </Badge>
+                    <Badge variant={faceDetected ? "default" : "secondary"} className={`text-[10px] sm:text-xs ${faceDetected ? "bg-green-500" : ""}`}>
+                        {faceDetected ? "✅ Face" : "👁️ Scanning"}
                     </Badge>
                     {faceQuality && (
-                        <Badge variant="outline" className={faceQuality.isGood ? "border-green-500 text-green-600" : "border-yellow-500 text-yellow-600"}>
-                            Quality: {Math.round(faceQuality.score * 100)}%
+                        <Badge variant="outline" className={`text-[10px] sm:text-xs ${faceQuality.isGood ? "border-green-500 text-green-600" : "border-yellow-500 text-yellow-600"}`}>
+                            {Math.round(faceQuality.score * 100)}%
                         </Badge>
                     )}
-                    <Badge variant="outline" className="border-purple-500 text-purple-600">
-                        🤖 Real AI Active
-                    </Badge>
                 </div>
             )}
             
-            {/* Camera View */}
-            <div className="relative aspect-video bg-black rounded-xl overflow-hidden">
+            {/* Camera View - Mobile optimized aspect ratio */}
+            <div className="relative aspect-[4/3] sm:aspect-video bg-black rounded-lg sm:rounded-xl overflow-hidden">
                 {cameraError ? (
                     <div className="absolute inset-0 flex items-center justify-center bg-muted">
-                        <div className="text-center">
-                            <VideoOff className="w-16 h-16 mx-auto text-muted-foreground mb-4" />
-                            <p className="text-destructive">{cameraError}</p>
-                            <Button variant="outline" className="mt-4" onClick={startCamera}>
-                                <RefreshCw className="w-4 h-4 mr-2" /> Retry
+                        <div className="text-center px-4">
+                            <VideoOff className="w-10 h-10 sm:w-16 sm:h-16 mx-auto text-muted-foreground mb-2 sm:mb-4" />
+                            <p className="text-destructive text-xs sm:text-base">{cameraError}</p>
+                            <Button variant="outline" size="sm" className="mt-3 sm:mt-4" onClick={startCamera}>
+                                <RefreshCw className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" /> Retry
                             </Button>
                         </div>
                     </div>
                 ) : modelsLoading ? (
                     <div className="absolute inset-0 flex items-center justify-center bg-muted">
-                        <div className="text-center">
-                            <Loader2 className="w-16 h-16 mx-auto text-primary mb-4 animate-spin" />
-                            <p className="text-primary font-medium">Loading AI Models...</p>
-                            <p className="text-sm text-muted-foreground mt-2">{modelLoadProgress}</p>
+                        <div className="text-center px-4">
+                            <Loader2 className="w-10 h-10 sm:w-16 sm:h-16 mx-auto text-primary mb-2 sm:mb-4 animate-spin" />
+                            <p className="text-primary font-medium text-sm sm:text-base">Loading AI...</p>
+                            <p className="text-xs sm:text-sm text-muted-foreground mt-1 sm:mt-2">{modelLoadProgress}</p>
                         </div>
                     </div>
                 ) : (
@@ -318,6 +424,7 @@ const CameraCapture = ({ onCapture, onClose, personName }) => {
                         <video
                             ref={videoRef}
                             autoPlay playsInline muted
+                            webkit-playsinline="true"
                             className="w-full h-full object-cover"
                             style={{ transform: facingMode === 'user' ? 'scaleX(-1)' : 'none' }}
                         />
@@ -327,10 +434,27 @@ const CameraCapture = ({ onCapture, onClose, personName }) => {
                             style={{ transform: facingMode === 'user' ? 'scaleX(-1)' : 'none' }}
                         />
                         
-                        {!faceDetected && (
+                        {/* Camera Switch Button - Mobile Only */}
+                        <Button
+                            variant="secondary"
+                            size="sm"
+                            className="absolute top-2 right-2 sm:hidden bg-black/50 hover:bg-black/70 text-white border-0"
+                            onClick={switchCamera}
+                        >
+                            <RotateCcw className="w-4 h-4" />
+                        </Button>
+                        
+                        {/* Video Ready Indicator */}
+                        {!videoReady && !cameraError && (
+                            <div className="absolute inset-0 flex items-center justify-center bg-black/30">
+                                <Loader2 className="w-8 h-8 text-white animate-spin" />
+                            </div>
+                        )}
+                        
+                        {!faceDetected && videoReady && (
                             <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                                <div className="w-48 h-64 border-2 border-dashed border-white/50 rounded-[50%] relative">
-                                    <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-black/50 px-3 py-1 rounded text-white text-sm">
+                                <div className="w-32 h-44 sm:w-48 sm:h-64 border-2 border-dashed border-white/50 rounded-[50%] relative">
+                                    <div className="absolute -top-6 sm:-top-8 left-1/2 -translate-x-1/2 bg-black/50 px-2 sm:px-3 py-0.5 sm:py-1 rounded text-white text-xs sm:text-sm whitespace-nowrap">
                                         Position face here
                                     </div>
                                 </div>
@@ -339,7 +463,7 @@ const CameraCapture = ({ onCapture, onClose, personName }) => {
                         
                         {countdown && (
                             <div className="absolute inset-0 flex items-center justify-center bg-black/50">
-                                <div className="text-8xl font-bold text-white animate-pulse">{countdown}</div>
+                                <div className="text-6xl sm:text-8xl font-bold text-white animate-pulse">{countdown}</div>
                             </div>
                         )}
                     </>
@@ -350,20 +474,20 @@ const CameraCapture = ({ onCapture, onClose, personName }) => {
             
             {/* Captured Images */}
             {capturedImages.length > 0 && (
-                <div className="space-y-2">
-                    <Label>Captured Photos ({capturedImages.length}/3)</Label>
-                    <div className="flex gap-2">
+                <div className="space-y-1.5 sm:space-y-2">
+                    <Label className="text-xs sm:text-sm">Captured ({capturedImages.length}/3)</Label>
+                    <div className="flex gap-1.5 sm:gap-2">
                         {capturedImages.map((img) => (
-                            <div key={img.id} className="relative w-24 h-24 rounded-lg overflow-hidden border-2 border-primary/20">
+                            <div key={img.id} className="relative w-16 h-16 sm:w-24 sm:h-24 rounded-lg overflow-hidden border-2 border-primary/20">
                                 <img src={img.data} alt={img.angle} className="w-full h-full object-cover" />
-                                <div className="absolute bottom-0 inset-x-0 bg-black/70 text-white text-xs p-1 text-center">
+                                <div className="absolute bottom-0 inset-x-0 bg-black/70 text-white text-[10px] sm:text-xs p-0.5 sm:p-1 text-center">
                                     {Math.round(img.quality * 100)}%
                                 </div>
                                 <button
                                     onClick={() => removeImage(img.id)}
-                                    className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-0.5"
+                                    className="absolute top-0.5 right-0.5 sm:top-1 sm:right-1 bg-red-500 text-white rounded-full p-0.5"
                                 >
-                                    <X className="w-3 h-3" />
+                                    <X className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
                                 </button>
                             </div>
                         ))}
@@ -371,36 +495,42 @@ const CameraCapture = ({ onCapture, onClose, personName }) => {
                 </div>
             )}
             
-            {/* Controls */}
-            <div className="flex gap-2 justify-between">
-                <Button variant="outline" onClick={onClose}>Cancel</Button>
-                <div className="flex gap-2">
+            {/* Controls - Mobile Optimized */}
+            <div className="flex flex-col sm:flex-row gap-2 sm:justify-between">
+                <Button variant="outline" size="sm" onClick={onClose} className="order-2 sm:order-1">
+                    Cancel
+                </Button>
+                <div className="flex gap-1.5 sm:gap-2 order-1 sm:order-2">
                     {capturedImages.length < 3 && (
                         <>
                             <Button
-                                onClick={captureImage}
-                                disabled={!faceDetected || isProcessing || isCapturing}
+                                onClick={handleManualCapture}
+                                disabled={!videoReady || isProcessing || isCapturing}
                                 variant="outline"
+                                size="sm"
+                                className="flex-1 sm:flex-none text-xs sm:text-sm"
                             >
-                                <Camera className="w-4 h-4 mr-2" />
-                                Capture ({capturedImages.length}/3)
+                                <Camera className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+                                <span className="hidden xs:inline">Capture</span> ({capturedImages.length}/3)
                             </Button>
                             <Button
                                 onClick={handleAutoCapture}
-                                disabled={isCapturing || modelsLoading}
+                                disabled={isCapturing || modelsLoading || !videoReady}
+                                size="sm"
+                                className="flex-1 sm:flex-none text-xs sm:text-sm"
                             >
                                 {isCapturing ? (
-                                    <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Capturing...</>
+                                    <><Loader2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1 sm:mr-2 animate-spin" /> <span className="hidden sm:inline">Capturing</span>...</>
                                 ) : (
-                                    <><Aperture className="w-4 h-4 mr-2" /> Auto Capture</>
+                                    <><Aperture className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1 sm:mr-2" /> Auto<span className="hidden sm:inline"> Capture</span></>
                                 )}
                             </Button>
                         </>
                     )}
                     {capturedImages.length > 0 && (
-                        <Button onClick={handleSave} className="bg-green-600 hover:bg-green-700">
-                            <CheckCircle2 className="w-4 h-4 mr-2" />
-                            Save Face Data
+                        <Button onClick={handleSave} size="sm" className="bg-green-600 hover:bg-green-700 flex-1 sm:flex-none text-xs sm:text-sm">
+                            <CheckCircle2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+                            Save<span className="hidden sm:inline"> Face</span>
                         </Button>
                     )}
                 </div>
@@ -493,13 +623,13 @@ const QuickRegisterDialog = ({ open, onClose, person, personType, branchId, orga
     
     return (
         <Dialog open={open} onOpenChange={onClose}>
-            <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
-                <DialogHeader>
-                    <DialogTitle className="flex items-center gap-2">
-                        <ScanFace className="w-5 h-5 text-primary" />
-                        Register Face - {person?.full_name}
+            <DialogContent className="w-[95vw] max-w-3xl max-h-[95vh] sm:max-h-[90vh] overflow-y-auto p-3 sm:p-6">
+                <DialogHeader className="pb-2 sm:pb-4">
+                    <DialogTitle className="flex items-center gap-2 text-base sm:text-lg">
+                        <ScanFace className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
+                        <span className="truncate">Register - {person?.full_name}</span>
                     </DialogTitle>
-                    <DialogDescription>
+                    <DialogDescription className="text-xs sm:text-sm">
                         {personType === 'student' ? 'Student' : 'Staff'} • {person?.admission_number || person?.phone || person?.department}
                     </DialogDescription>
                 </DialogHeader>
@@ -511,33 +641,33 @@ const QuickRegisterDialog = ({ open, onClose, person, personType, branchId, orga
                         personName={person?.full_name}
                     />
                 ) : (
-                    <div className="space-y-4">
-                        <Alert className="border-green-500/50 bg-green-500/5">
-                            <CheckCircle2 className="w-4 h-4 text-green-500" />
-                            <AlertDescription className="text-green-700">
-                                {capturedPhotos.length} photos captured successfully!
+                    <div className="space-y-3 sm:space-y-4">
+                        <Alert className="border-green-500/50 bg-green-500/5 py-2">
+                            <CheckCircle2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-green-500" />
+                            <AlertDescription className="text-green-700 text-xs sm:text-sm">
+                                {capturedPhotos.length} photos captured!
                             </AlertDescription>
                         </Alert>
                         
-                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                        <div className="grid grid-cols-3 gap-1.5 sm:gap-2">
                             {capturedPhotos.map((photo) => (
                                 <div key={photo.id} className="relative rounded-lg overflow-hidden">
                                     <img src={photo.data} alt={photo.angle} className="w-full aspect-square object-cover" />
-                                    <div className="absolute bottom-0 inset-x-0 bg-black/70 text-white text-xs p-1 text-center">
-                                        {photo.angle} • {Math.round(photo.quality * 100)}%
+                                    <div className="absolute bottom-0 inset-x-0 bg-black/70 text-white text-[10px] sm:text-xs p-0.5 sm:p-1 text-center">
+                                        {Math.round(photo.quality * 100)}%
                                     </div>
                                 </div>
                             ))}
                         </div>
                         
-                        <div className="flex justify-between">
-                            <Button variant="outline" onClick={() => { setCapturedPhotos([]); setShowCamera(true); }}>
-                                <RotateCcw className="w-4 h-4 mr-2" /> Retake
+                        <div className="flex flex-col-reverse sm:flex-row justify-between gap-2">
+                            <Button variant="outline" size="sm" onClick={() => { setCapturedPhotos([]); setShowCamera(true); }}>
+                                <RotateCcw className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1.5 sm:mr-2" /> Retake
                             </Button>
-                            <Button onClick={handleSaveFace} disabled={loading} className="bg-green-600 hover:bg-green-700">
-                                {loading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-                                <CheckCircle2 className="w-4 h-4 mr-2" />
-                                Complete Registration
+                            <Button onClick={handleSaveFace} disabled={loading} size="sm" className="bg-green-600 hover:bg-green-700">
+                                {loading && <Loader2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1.5 sm:mr-2 animate-spin" />}
+                                <CheckCircle2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1.5 sm:mr-2" />
+                                Complete<span className="hidden sm:inline"> Registration</span>
                             </Button>
                         </div>
                     </div>
@@ -626,11 +756,11 @@ const EditFaceDialog = ({ open, onClose, registration, branchId, organizationId,
     
     return (
         <Dialog open={open} onOpenChange={onClose}>
-            <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
-                <DialogHeader>
-                    <DialogTitle className="flex items-center gap-2">
-                        <Edit className="w-5 h-5 text-blue-500" />
-                        Edit Face - {registration?.person_name}
+            <DialogContent className="w-[95vw] max-w-3xl max-h-[95vh] sm:max-h-[90vh] overflow-y-auto p-3 sm:p-6">
+                <DialogHeader className="pb-2 sm:pb-4">
+                    <DialogTitle className="flex items-center gap-2 text-base sm:text-lg">
+                        <Edit className="w-4 h-4 sm:w-5 sm:h-5 text-blue-500" />
+                        <span className="truncate">Edit - {registration?.person_name}</span>
                     </DialogTitle>
                 </DialogHeader>
                 
@@ -641,33 +771,33 @@ const EditFaceDialog = ({ open, onClose, registration, branchId, organizationId,
                         personName={registration?.person_name}
                     />
                 ) : (
-                    <div className="space-y-4">
-                        <Alert className="border-green-500/50 bg-green-500/5">
-                            <CheckCircle2 className="w-4 h-4 text-green-500" />
-                            <AlertDescription className="text-green-700">
+                    <div className="space-y-3 sm:space-y-4">
+                        <Alert className="border-green-500/50 bg-green-500/5 py-2">
+                            <CheckCircle2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-green-500" />
+                            <AlertDescription className="text-green-700 text-xs sm:text-sm">
                                 {capturedPhotos.length} new photos captured!
                             </AlertDescription>
                         </Alert>
                         
-                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                        <div className="grid grid-cols-3 gap-1.5 sm:gap-2">
                             {capturedPhotos.map((photo) => (
                                 <div key={photo.id} className="relative rounded-lg overflow-hidden">
                                     <img src={photo.data} alt={photo.angle} className="w-full aspect-square object-cover" />
-                                    <div className="absolute bottom-0 inset-x-0 bg-black/70 text-white text-xs p-1 text-center">
+                                    <div className="absolute bottom-0 inset-x-0 bg-black/70 text-white text-[10px] sm:text-xs p-0.5 sm:p-1 text-center">
                                         {Math.round(photo.quality * 100)}%
                                     </div>
                                 </div>
                             ))}
                         </div>
                         
-                        <div className="flex justify-between">
-                            <Button variant="outline" onClick={() => { setCapturedPhotos([]); setShowCamera(true); }}>
-                                <RotateCcw className="w-4 h-4 mr-2" /> Retake
+                        <div className="flex flex-col-reverse sm:flex-row justify-between gap-2">
+                            <Button variant="outline" size="sm" onClick={() => { setCapturedPhotos([]); setShowCamera(true); }}>
+                                <RotateCcw className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1.5 sm:mr-2" /> Retake
                             </Button>
-                            <Button onClick={handleUpdateFace} disabled={loading} className="bg-blue-600 hover:bg-blue-700">
-                                {loading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-                                <CheckCircle2 className="w-4 h-4 mr-2" />
-                                Update Face Data
+                            <Button onClick={handleUpdateFace} disabled={loading} size="sm" className="bg-blue-600 hover:bg-blue-700">
+                                {loading && <Loader2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1.5 sm:mr-2 animate-spin" />}
+                                <CheckCircle2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1.5 sm:mr-2" />
+                                Update<span className="hidden sm:inline"> Face</span>
                             </Button>
                         </div>
                     </div>
@@ -1015,159 +1145,164 @@ const FaceRegistration = () => {
     
     return (
         <DashboardLayout>
-            {/* Header */}
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
-                <div>
-                    <h1 className="text-3xl font-bold flex items-center gap-3">
-                        <ScanFace className="h-8 w-8 text-primary" />
-                        Face Registration
-                    </h1>
-                    <p className="text-muted-foreground mt-1">
-                        Register faces for AI-powered attendance recognition
-                    </p>
-                </div>
-                <div className="flex items-center gap-2">
-                    <Button variant="outline" onClick={handleRefresh}>
-                        <RefreshCw className="w-4 h-4 mr-2" /> Refresh
+            {/* Header - Mobile Optimized */}
+            <div className="flex flex-col gap-3 mb-4 sm:mb-6">
+                <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2 sm:gap-3">
+                        <ScanFace className="h-6 w-6 sm:h-8 sm:w-8 text-primary flex-shrink-0" />
+                        <div>
+                            <h1 className="text-xl sm:text-2xl md:text-3xl font-bold">Face Registration</h1>
+                            <p className="text-xs sm:text-sm text-muted-foreground hidden sm:block">
+                                Register faces for AI-powered attendance
+                            </p>
+                        </div>
+                    </div>
+                    <Button variant="outline" size="sm" onClick={handleRefresh} className="flex-shrink-0">
+                        <RefreshCw className="w-4 h-4 sm:mr-2" />
+                        <span className="hidden sm:inline">Refresh</span>
                     </Button>
                 </div>
             </div>
             
-            {/* Stats Dashboard */}
-            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4 mb-6">
+            {/* Stats Dashboard - Mobile Optimized Grid */}
+            <div className="grid grid-cols-3 sm:grid-cols-3 md:grid-cols-6 gap-2 sm:gap-4 mb-4 sm:mb-6">
                 <Card>
-                    <CardContent className="pt-4 pb-4">
-                        <div className="flex items-center gap-3">
-                            <div className="p-2 rounded-lg bg-blue-500/10">
-                                <GraduationCap className="h-5 w-5 text-blue-500" />
+                    <CardContent className="p-2 sm:pt-4 sm:pb-4 sm:px-4">
+                        <div className="flex flex-col sm:flex-row items-center gap-1 sm:gap-3 text-center sm:text-left">
+                            <div className="p-1.5 sm:p-2 rounded-lg bg-blue-500/10">
+                                <GraduationCap className="h-4 w-4 sm:h-5 sm:w-5 text-blue-500" />
                             </div>
                             <div>
-                                <p className="text-2xl font-bold">{stats.totalStudents}</p>
-                                <p className="text-xs text-muted-foreground">Total Students</p>
+                                <p className="text-lg sm:text-2xl font-bold">{stats.totalStudents}</p>
+                                <p className="text-[10px] sm:text-xs text-muted-foreground">Students</p>
                             </div>
                         </div>
                     </CardContent>
                 </Card>
                 <Card className="bg-green-50/50 dark:bg-green-950/20">
-                    <CardContent className="pt-4 pb-4">
-                        <div className="flex items-center gap-3">
-                            <div className="p-2 rounded-lg bg-green-500/10">
-                                <UserCheck className="h-5 w-5 text-green-500" />
+                    <CardContent className="p-2 sm:pt-4 sm:pb-4 sm:px-4">
+                        <div className="flex flex-col sm:flex-row items-center gap-1 sm:gap-3 text-center sm:text-left">
+                            <div className="p-1.5 sm:p-2 rounded-lg bg-green-500/10">
+                                <UserCheck className="h-4 w-4 sm:h-5 sm:w-5 text-green-500" />
                             </div>
                             <div>
-                                <p className="text-2xl font-bold text-green-600">{stats.registeredStudents}</p>
-                                <p className="text-xs text-muted-foreground">Registered</p>
+                                <p className="text-lg sm:text-2xl font-bold text-green-600">{stats.registeredStudents}</p>
+                                <p className="text-[10px] sm:text-xs text-muted-foreground">Registered</p>
                             </div>
                         </div>
                     </CardContent>
                 </Card>
                 <Card className="bg-orange-50/50 dark:bg-orange-950/20">
-                    <CardContent className="pt-4 pb-4">
-                        <div className="flex items-center gap-3">
-                            <div className="p-2 rounded-lg bg-orange-500/10">
-                                <UserX className="h-5 w-5 text-orange-500" />
+                    <CardContent className="p-2 sm:pt-4 sm:pb-4 sm:px-4">
+                        <div className="flex flex-col sm:flex-row items-center gap-1 sm:gap-3 text-center sm:text-left">
+                            <div className="p-1.5 sm:p-2 rounded-lg bg-orange-500/10">
+                                <UserX className="h-4 w-4 sm:h-5 sm:w-5 text-orange-500" />
                             </div>
                             <div>
-                                <p className="text-2xl font-bold text-orange-600">{stats.pendingStudents}</p>
-                                <p className="text-xs text-muted-foreground">Pending</p>
+                                <p className="text-lg sm:text-2xl font-bold text-orange-600">{stats.pendingStudents}</p>
+                                <p className="text-[10px] sm:text-xs text-muted-foreground">Pending</p>
                             </div>
                         </div>
                     </CardContent>
                 </Card>
                 <Card>
-                    <CardContent className="pt-4 pb-4">
-                        <div className="flex items-center gap-3">
-                            <div className="p-2 rounded-lg bg-amber-500/10">
-                                <Briefcase className="h-5 w-5 text-amber-500" />
+                    <CardContent className="p-2 sm:pt-4 sm:pb-4 sm:px-4">
+                        <div className="flex flex-col sm:flex-row items-center gap-1 sm:gap-3 text-center sm:text-left">
+                            <div className="p-1.5 sm:p-2 rounded-lg bg-amber-500/10">
+                                <Briefcase className="h-4 w-4 sm:h-5 sm:w-5 text-amber-500" />
                             </div>
                             <div>
-                                <p className="text-2xl font-bold">{stats.totalStaff}</p>
-                                <p className="text-xs text-muted-foreground">Total Staff</p>
+                                <p className="text-lg sm:text-2xl font-bold">{stats.totalStaff}</p>
+                                <p className="text-[10px] sm:text-xs text-muted-foreground">Staff</p>
                             </div>
                         </div>
                     </CardContent>
                 </Card>
                 <Card className="bg-green-50/50 dark:bg-green-950/20">
-                    <CardContent className="pt-4 pb-4">
-                        <div className="flex items-center gap-3">
-                            <div className="p-2 rounded-lg bg-green-500/10">
-                                <UserCheck className="h-5 w-5 text-green-500" />
+                    <CardContent className="p-2 sm:pt-4 sm:pb-4 sm:px-4">
+                        <div className="flex flex-col sm:flex-row items-center gap-1 sm:gap-3 text-center sm:text-left">
+                            <div className="p-1.5 sm:p-2 rounded-lg bg-green-500/10">
+                                <UserCheck className="h-4 w-4 sm:h-5 sm:w-5 text-green-500" />
                             </div>
                             <div>
-                                <p className="text-2xl font-bold text-green-600">{stats.registeredStaff}</p>
-                                <p className="text-xs text-muted-foreground">Staff Reg.</p>
+                                <p className="text-lg sm:text-2xl font-bold text-green-600">{stats.registeredStaff}</p>
+                                <p className="text-[10px] sm:text-xs text-muted-foreground">Staff Reg.</p>
                             </div>
                         </div>
                     </CardContent>
                 </Card>
                 <Card>
-                    <CardContent className="pt-4 pb-4">
-                        <div className="flex items-center gap-3">
-                            <div className="p-2 rounded-lg bg-purple-500/10">
-                                <TrendingUp className="h-5 w-5 text-purple-500" />
+                    <CardContent className="p-2 sm:pt-4 sm:pb-4 sm:px-4">
+                        <div className="flex flex-col sm:flex-row items-center gap-1 sm:gap-3 text-center sm:text-left">
+                            <div className="p-1.5 sm:p-2 rounded-lg bg-purple-500/10">
+                                <TrendingUp className="h-4 w-4 sm:h-5 sm:w-5 text-purple-500" />
                             </div>
                             <div>
-                                <p className="text-2xl font-bold">{stats.studentPercent}%</p>
-                                <p className="text-xs text-muted-foreground">Students Done</p>
+                                <p className="text-lg sm:text-2xl font-bold">{stats.studentPercent}%</p>
+                                <p className="text-[10px] sm:text-xs text-muted-foreground">Done</p>
                             </div>
                         </div>
                     </CardContent>
                 </Card>
             </div>
             
-            {/* Progress Bars */}
-            <div className="grid md:grid-cols-2 gap-4 mb-6">
+            {/* Progress Bars - Mobile Optimized */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4 mb-4 sm:mb-6">
                 <Card>
-                    <CardContent className="pt-4">
+                    <CardContent className="p-3 sm:pt-4">
                         <div className="flex items-center justify-between mb-2">
-                            <span className="text-sm font-medium flex items-center gap-2">
-                                <GraduationCap className="w-4 h-4" /> Student Registration Progress
+                            <span className="text-xs sm:text-sm font-medium flex items-center gap-1.5 sm:gap-2">
+                                <GraduationCap className="w-3 h-3 sm:w-4 sm:h-4" /> 
+                                <span className="hidden xs:inline">Student</span> Registration
                             </span>
-                            <span className="text-sm text-muted-foreground">{stats.registeredStudents}/{stats.totalStudents}</span>
+                            <span className="text-xs sm:text-sm text-muted-foreground">{stats.registeredStudents}/{stats.totalStudents}</span>
                         </div>
-                        <Progress value={stats.studentPercent} className="h-2" />
+                        <Progress value={stats.studentPercent} className="h-1.5 sm:h-2" />
                     </CardContent>
                 </Card>
                 <Card>
-                    <CardContent className="pt-4">
+                    <CardContent className="p-3 sm:pt-4">
                         <div className="flex items-center justify-between mb-2">
-                            <span className="text-sm font-medium flex items-center gap-2">
-                                <Briefcase className="w-4 h-4" /> Staff Registration Progress
+                            <span className="text-xs sm:text-sm font-medium flex items-center gap-1.5 sm:gap-2">
+                                <Briefcase className="w-3 h-3 sm:w-4 sm:h-4" /> 
+                                <span className="hidden xs:inline">Staff</span> Registration
                             </span>
-                            <span className="text-sm text-muted-foreground">{stats.registeredStaff}/{stats.totalStaff}</span>
+                            <span className="text-xs sm:text-sm text-muted-foreground">{stats.registeredStaff}/{stats.totalStaff}</span>
                         </div>
-                        <Progress value={stats.staffPercent} className="h-2" />
+                        <Progress value={stats.staffPercent} className="h-1.5 sm:h-2" />
                     </CardContent>
                 </Card>
             </div>
             
             {/* Main Content */}
             <Card>
-                <CardHeader className="pb-4">
+                <CardHeader className="p-3 sm:p-6 pb-2 sm:pb-4">
                     <Tabs value={activeTab} onValueChange={setActiveTab}>
-                        <TabsList className="grid w-full max-w-md grid-cols-2">
-                            <TabsTrigger value="students" className="flex items-center gap-2">
-                                <GraduationCap className="w-4 h-4" /> Students
-                                <Badge variant="secondary" className="ml-1">{students.length}</Badge>
+                        <TabsList className="grid w-full grid-cols-2">
+                            <TabsTrigger value="students" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm">
+                                <GraduationCap className="w-3 h-3 sm:w-4 sm:h-4" /> 
+                                <span>Students</span>
+                                <Badge variant="secondary" className="ml-0.5 sm:ml-1 text-[10px] sm:text-xs px-1 sm:px-2">{students.length}</Badge>
                             </TabsTrigger>
-                            <TabsTrigger value="staff" className="flex items-center gap-2">
-                                <Briefcase className="w-4 h-4" /> Staff
-                                <Badge variant="secondary" className="ml-1">{staff.length}</Badge>
+                            <TabsTrigger value="staff" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm">
+                                <Briefcase className="w-3 h-3 sm:w-4 sm:h-4" /> 
+                                <span>Staff</span>
+                                <Badge variant="secondary" className="ml-0.5 sm:ml-1 text-[10px] sm:text-xs px-1 sm:px-2">{staff.length}</Badge>
                             </TabsTrigger>
                         </TabsList>
                     </Tabs>
                 </CardHeader>
                 
-                <CardContent>
-                    {/* Filters */}
-                    <div className="flex flex-wrap items-center gap-3 mb-4 p-4 bg-muted/30 rounded-lg">
+                <CardContent className="p-3 sm:p-6 pt-0">
+                    {/* Filters - Mobile Optimized */}
+                    <div className="grid grid-cols-2 sm:flex sm:flex-wrap items-end gap-2 sm:gap-3 mb-3 sm:mb-4 p-2 sm:p-4 bg-muted/30 rounded-lg">
                         {activeTab === 'students' ? (
                             <>
-                                <div className="flex-1 min-w-[150px] max-w-[200px]">
-                                    <Label className="text-xs mb-1 block">Class</Label>
+                                <div className="col-span-1 sm:flex-1 sm:min-w-[150px] sm:max-w-[200px]">
+                                    <Label className="text-[10px] sm:text-xs mb-1 block">Class</Label>
                                     <Select value={selectedClass} onValueChange={setSelectedClass}>
-                                        <SelectTrigger>
-                                            <SelectValue placeholder="Select Class" />
+                                        <SelectTrigger className="h-8 sm:h-10 text-xs sm:text-sm">
+                                            <SelectValue placeholder="Class" />
                                         </SelectTrigger>
                                         <SelectContent>
                                             <SelectItem value="all">All Classes</SelectItem>
@@ -1177,15 +1312,15 @@ const FaceRegistration = () => {
                                         </SelectContent>
                                     </Select>
                                 </div>
-                                <div className="flex-1 min-w-[150px] max-w-[200px]">
-                                    <Label className="text-xs mb-1 block">Section</Label>
+                                <div className="col-span-1 sm:flex-1 sm:min-w-[150px] sm:max-w-[200px]">
+                                    <Label className="text-[10px] sm:text-xs mb-1 block">Section</Label>
                                     <Select 
                                         value={selectedSection} 
                                         onValueChange={setSelectedSection}
                                         disabled={selectedClass === 'all'}
                                     >
-                                        <SelectTrigger>
-                                            <SelectValue placeholder="Select Section" />
+                                        <SelectTrigger className="h-8 sm:h-10 text-xs sm:text-sm">
+                                            <SelectValue placeholder="Section" />
                                         </SelectTrigger>
                                         <SelectContent>
                                             <SelectItem value="all">All Sections</SelectItem>
@@ -1197,14 +1332,14 @@ const FaceRegistration = () => {
                                 </div>
                             </>
                         ) : (
-                            <div className="flex-1 min-w-[150px] max-w-[200px]">
-                                <Label className="text-xs mb-1 block">Department</Label>
+                            <div className="col-span-1 sm:flex-1 sm:min-w-[150px] sm:max-w-[200px]">
+                                <Label className="text-[10px] sm:text-xs mb-1 block">Department</Label>
                                 <Select value={selectedDepartment} onValueChange={setSelectedDepartment}>
-                                    <SelectTrigger>
-                                        <SelectValue placeholder="Select Department" />
+                                    <SelectTrigger className="h-8 sm:h-10 text-xs sm:text-sm">
+                                        <SelectValue placeholder="Department" />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        <SelectItem value="all">All Departments</SelectItem>
+                                        <SelectItem value="all">All Depts</SelectItem>
                                         {departments.map(d => (
                                             <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>
                                         ))}
@@ -1213,175 +1348,268 @@ const FaceRegistration = () => {
                             </div>
                         )}
                         
-                        <div className="flex-1 min-w-[150px] max-w-[200px]">
-                            <Label className="text-xs mb-1 block">Status</Label>
+                        <div className="col-span-1 sm:flex-1 sm:min-w-[120px] sm:max-w-[180px]">
+                            <Label className="text-[10px] sm:text-xs mb-1 block">Status</Label>
                             <Select value={filterStatus} onValueChange={setFilterStatus}>
-                                <SelectTrigger>
-                                    <SelectValue placeholder="Filter Status" />
+                                <SelectTrigger className="h-8 sm:h-10 text-xs sm:text-sm">
+                                    <SelectValue placeholder="Status" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="all">All Status</SelectItem>
+                                    <SelectItem value="all">All</SelectItem>
                                     <SelectItem value="registered">✅ Registered</SelectItem>
                                     <SelectItem value="pending">⏳ Pending</SelectItem>
                                 </SelectContent>
                             </Select>
                         </div>
                         
-                        <div className="flex-1 min-w-[200px]">
-                            <Label className="text-xs mb-1 block">Search</Label>
+                        <div className="col-span-2 sm:col-span-1 sm:flex-1 sm:min-w-[180px]">
+                            <Label className="text-[10px] sm:text-xs mb-1 block">Search</Label>
                             <div className="relative">
                                 <Input
-                                    placeholder={`Search ${activeTab}...`}
+                                    placeholder={`Search...`}
                                     value={searchTerm}
                                     onChange={(e) => setSearchTerm(e.target.value)}
-                                    className="pl-9"
+                                    className="pl-8 sm:pl-9 h-8 sm:h-10 text-xs sm:text-sm"
                                 />
-                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                                <Search className="absolute left-2.5 sm:left-3 top-1/2 -translate-y-1/2 h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
                             </div>
                         </div>
                     </div>
                     
-                    {/* Data Table */}
+                    {/* Data List - Mobile Cards / Desktop Table */}
                     {loading ? (
-                        <div className="flex items-center justify-center py-20">
-                            <Loader2 className="w-8 h-8 animate-spin text-primary" />
+                        <div className="flex items-center justify-center py-10 sm:py-20">
+                            <Loader2 className="w-6 h-6 sm:w-8 sm:h-8 animate-spin text-primary" />
+                        </div>
+                    ) : (activeTab === 'students' ? filteredStudents : filteredStaff).length === 0 ? (
+                        <div className="text-center py-10">
+                            <div className="text-muted-foreground">
+                                {activeTab === 'students' ? (
+                                    <>
+                                        <GraduationCap className="w-10 h-10 sm:w-12 sm:h-12 mx-auto mb-2 opacity-30" />
+                                        <p className="text-sm sm:text-base">No students found. Select a class.</p>
+                                    </>
+                                ) : (
+                                    <>
+                                        <Briefcase className="w-10 h-10 sm:w-12 sm:h-12 mx-auto mb-2 opacity-30" />
+                                        <p className="text-sm sm:text-base">No staff found. Try changing filter.</p>
+                                    </>
+                                )}
+                            </div>
                         </div>
                     ) : (
-                        <div className="border rounded-lg overflow-hidden">
-                            <Table>
-                                <TableHeader>
-                                    <TableRow className="bg-muted/50">
-                                        <TableHead className="w-12">#</TableHead>
-                                        <TableHead>Photo</TableHead>
-                                        <TableHead>Name</TableHead>
-                                        <TableHead>{activeTab === 'students' ? 'Adm No' : 'Phone'}</TableHead>
-                                        {activeTab === 'students' && <TableHead>Class</TableHead>}
-                                        {activeTab === 'staff' && <TableHead>Dept</TableHead>}
-                                        <TableHead className="text-center">Status</TableHead>
-                                        <TableHead className="text-center">Quality</TableHead>
-                                        <TableHead className="text-right">Actions</TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {(activeTab === 'students' ? filteredStudents : filteredStaff).map((person, index) => {
-                                        const registration = faceRegistrations[person.id];
-                                        const isRegistered = !!registration;
-                                        const quality = registration?.confidence_score || 0;
-                                        
-                                        return (
-                                            <TableRow key={person.id} className={!isRegistered ? 'bg-orange-50/30 dark:bg-orange-950/10' : ''}>
-                                                <TableCell className="font-medium text-muted-foreground">{index + 1}</TableCell>
-                                                <TableCell>
-                                                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center overflow-hidden border">
-                                                        {registration?.photo_url ? (
-                                                            <img src={registration.photo_url} className="w-full h-full object-cover" alt="" />
-                                                        ) : person.photo_url ? (
-                                                            <img src={person.photo_url} className="w-full h-full object-cover" alt="" />
-                                                        ) : activeTab === 'students' ? (
-                                                            <GraduationCap className="w-5 h-5 text-primary/50" />
-                                                        ) : (
-                                                            <Briefcase className="w-5 h-5 text-primary/50" />
-                                                        )}
-                                                    </div>
-                                                </TableCell>
-                                                <TableCell className="font-medium">{person.full_name}</TableCell>
-                                                <TableCell className="text-muted-foreground">
-                                                    {activeTab === 'students' ? person.admission_number : person.phone}
-                                                </TableCell>
-                                                {activeTab === 'students' && (
-                                                    <TableCell>
-                                                        <span className="text-sm">
-                                                            {person.classes?.class_name || '-'} {person.sections?.section_name || ''}
-                                                        </span>
-                                                    </TableCell>
-                                                )}
-                                                {activeTab === 'staff' && (
-                                                    <TableCell>
-                                                        <span className="text-sm">{person.department || '-'}</span>
-                                                    </TableCell>
-                                                )}
-                                                <TableCell className="text-center">
-                                                    {isRegistered ? (
-                                                        <Badge className="bg-green-500">
-                                                            <CheckCircle2 className="w-3 h-3 mr-1" /> Registered
-                                                        </Badge>
+                        <>
+                            {/* Mobile Card View */}
+                            <div className="sm:hidden space-y-2">
+                                {(activeTab === 'students' ? filteredStudents : filteredStaff).map((person, index) => {
+                                    const registration = faceRegistrations[person.id];
+                                    const isRegistered = !!registration;
+                                    const quality = registration?.confidence_score || 0;
+                                    
+                                    return (
+                                        <div 
+                                            key={person.id} 
+                                            className={`p-3 rounded-lg border ${!isRegistered ? 'bg-orange-50/30 dark:bg-orange-950/10 border-orange-200' : 'bg-card'}`}
+                                        >
+                                            <div className="flex items-start gap-3">
+                                                {/* Photo */}
+                                                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center overflow-hidden border flex-shrink-0">
+                                                    {registration?.photo_url ? (
+                                                        <img src={registration.photo_url} className="w-full h-full object-cover" alt="" />
+                                                    ) : person.photo_url ? (
+                                                        <img src={person.photo_url} className="w-full h-full object-cover" alt="" />
+                                                    ) : activeTab === 'students' ? (
+                                                        <GraduationCap className="w-6 h-6 text-primary/50" />
                                                     ) : (
-                                                        <Badge variant="outline" className="text-orange-600 border-orange-300">
-                                                            <AlertCircle className="w-3 h-3 mr-1" /> Pending
-                                                        </Badge>
-                                                    )}
-                                                </TableCell>
-                                                <TableCell className="text-center">
-                                                    {isRegistered ? (
-                                                        <Badge variant="outline" className={getQualityColor(quality)}>
-                                                            {Math.round(quality * 100)}%
-                                                        </Badge>
-                                                    ) : (
-                                                        <span className="text-muted-foreground">-</span>
-                                                    )}
-                                                </TableCell>
-                                                <TableCell className="text-right">
-                                                    <div className="flex items-center justify-end gap-1">
-                                                        {!isRegistered && hasAddPermission && (
-                                                            <Button
-                                                                size="sm"
-                                                                onClick={() => handleRegisterClick(person, activeTab === 'students' ? 'student' : 'staff')}
-                                                                className="bg-green-600 hover:bg-green-700"
-                                                            >
-                                                                <Camera className="w-3 h-3 mr-1" /> Register
-                                                            </Button>
-                                                        )}
-                                                        {isRegistered && hasEditPermission && (
-                                                            <Button
-                                                                size="sm"
-                                                                variant="outline"
-                                                                onClick={() => handleEditClick(person, activeTab === 'students' ? 'student' : 'staff')}
-                                                            >
-                                                                <Edit className="w-3 h-3 mr-1" /> Edit
-                                                            </Button>
-                                                        )}
-                                                        {isRegistered && hasDeletePermission && (
-                                                            <Button
-                                                                size="sm"
-                                                                variant="ghost"
-                                                                className="text-red-500 hover:text-red-700 hover:bg-red-50"
-                                                                onClick={() => handleDeleteFace(person.id)}
-                                                            >
-                                                                <Trash2 className="w-3 h-3" />
-                                                            </Button>
-                                                        )}
-                                                    </div>
-                                                </TableCell>
-                                            </TableRow>
-                                        );
-                                    })}
-                                    {(activeTab === 'students' ? filteredStudents : filteredStaff).length === 0 && (
-                                        <TableRow>
-                                            <TableCell colSpan={8} className="text-center py-10">
-                                                <div className="text-muted-foreground">
-                                                    {activeTab === 'students' ? (
-                                                        <>
-                                                            <GraduationCap className="w-12 h-12 mx-auto mb-2 opacity-30" />
-                                                            <p>No students found. Select a class to view students.</p>
-                                                        </>
-                                                    ) : (
-                                                        <>
-                                                            <Briefcase className="w-12 h-12 mx-auto mb-2 opacity-30" />
-                                                            <p>No staff found. Try changing the filter.</p>
-                                                        </>
+                                                        <Briefcase className="w-6 h-6 text-primary/50" />
                                                     )}
                                                 </div>
-                                            </TableCell>
+                                                
+                                                {/* Info */}
+                                                <div className="flex-1 min-w-0">
+                                                    <div className="flex items-center justify-between gap-2">
+                                                        <h4 className="font-medium text-sm truncate">{person.full_name}</h4>
+                                                        {isRegistered ? (
+                                                            <Badge className="bg-green-500 text-[10px] px-1.5 py-0.5 flex-shrink-0">
+                                                                <CheckCircle2 className="w-2.5 h-2.5 mr-0.5" /> Done
+                                                            </Badge>
+                                                        ) : (
+                                                            <Badge variant="outline" className="text-orange-600 border-orange-300 text-[10px] px-1.5 py-0.5 flex-shrink-0">
+                                                                Pending
+                                                            </Badge>
+                                                        )}
+                                                    </div>
+                                                    <p className="text-xs text-muted-foreground mt-0.5">
+                                                        {activeTab === 'students' 
+                                                            ? `${person.admission_number || '-'} • ${person.classes?.class_name || ''} ${person.sections?.section_name || ''}`
+                                                            : `${person.phone || '-'} • ${person.department || '-'}`
+                                                        }
+                                                    </p>
+                                                    {isRegistered && (
+                                                        <div className="flex items-center gap-2 mt-1">
+                                                            <Badge variant="outline" className={`text-[10px] px-1.5 ${getQualityColor(quality)}`}>
+                                                                Quality: {Math.round(quality * 100)}%
+                                                            </Badge>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </div>
+                                            
+                                            {/* Actions */}
+                                            <div className="flex items-center justify-end gap-2 mt-2 pt-2 border-t">
+                                                {!isRegistered && hasAddPermission && (
+                                                    <Button
+                                                        size="sm"
+                                                        onClick={() => handleRegisterClick(person, activeTab === 'students' ? 'student' : 'staff')}
+                                                        className="bg-green-600 hover:bg-green-700 h-8 text-xs"
+                                                    >
+                                                        <Camera className="w-3.5 h-3.5 mr-1" /> Register Face
+                                                    </Button>
+                                                )}
+                                                {isRegistered && hasEditPermission && (
+                                                    <Button
+                                                        size="sm"
+                                                        variant="outline"
+                                                        onClick={() => handleEditClick(person, activeTab === 'students' ? 'student' : 'staff')}
+                                                        className="h-8 text-xs"
+                                                    >
+                                                        <Edit className="w-3.5 h-3.5 mr-1" /> Edit
+                                                    </Button>
+                                                )}
+                                                {isRegistered && hasDeletePermission && (
+                                                    <Button
+                                                        size="sm"
+                                                        variant="ghost"
+                                                        className="text-red-500 hover:text-red-700 hover:bg-red-50 h-8"
+                                                        onClick={() => handleDeleteFace(person.id)}
+                                                    >
+                                                        <Trash2 className="w-3.5 h-3.5" />
+                                                    </Button>
+                                                )}
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                            
+                            {/* Desktop Table View */}
+                            <div className="hidden sm:block border rounded-lg overflow-hidden">
+                                <Table>
+                                    <TableHeader>
+                                        <TableRow className="bg-muted/50">
+                                            <TableHead className="w-12">#</TableHead>
+                                            <TableHead>Photo</TableHead>
+                                            <TableHead>Name</TableHead>
+                                            <TableHead>{activeTab === 'students' ? 'Adm No' : 'Phone'}</TableHead>
+                                            {activeTab === 'students' && <TableHead>Class</TableHead>}
+                                            {activeTab === 'staff' && <TableHead>Dept</TableHead>}
+                                            <TableHead className="text-center">Status</TableHead>
+                                            <TableHead className="text-center">Quality</TableHead>
+                                            <TableHead className="text-right">Actions</TableHead>
                                         </TableRow>
-                                    )}
-                                </TableBody>
-                            </Table>
-                        </div>
+                                    </TableHeader>
+                                    <TableBody>
+                                        {(activeTab === 'students' ? filteredStudents : filteredStaff).map((person, index) => {
+                                            const registration = faceRegistrations[person.id];
+                                            const isRegistered = !!registration;
+                                            const quality = registration?.confidence_score || 0;
+                                            
+                                            return (
+                                                <TableRow key={person.id} className={!isRegistered ? 'bg-orange-50/30 dark:bg-orange-950/10' : ''}>
+                                                    <TableCell className="font-medium text-muted-foreground">{index + 1}</TableCell>
+                                                    <TableCell>
+                                                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center overflow-hidden border">
+                                                            {registration?.photo_url ? (
+                                                                <img src={registration.photo_url} className="w-full h-full object-cover" alt="" />
+                                                            ) : person.photo_url ? (
+                                                                <img src={person.photo_url} className="w-full h-full object-cover" alt="" />
+                                                            ) : activeTab === 'students' ? (
+                                                                <GraduationCap className="w-5 h-5 text-primary/50" />
+                                                            ) : (
+                                                                <Briefcase className="w-5 h-5 text-primary/50" />
+                                                            )}
+                                                        </div>
+                                                    </TableCell>
+                                                    <TableCell className="font-medium">{person.full_name}</TableCell>
+                                                    <TableCell className="text-muted-foreground">
+                                                        {activeTab === 'students' ? person.admission_number : person.phone}
+                                                    </TableCell>
+                                                    {activeTab === 'students' && (
+                                                        <TableCell>
+                                                            <span className="text-sm">
+                                                                {person.classes?.class_name || '-'} {person.sections?.section_name || ''}
+                                                            </span>
+                                                        </TableCell>
+                                                    )}
+                                                    {activeTab === 'staff' && (
+                                                        <TableCell>
+                                                            <span className="text-sm">{person.department || '-'}</span>
+                                                        </TableCell>
+                                                    )}
+                                                    <TableCell className="text-center">
+                                                        {isRegistered ? (
+                                                            <Badge className="bg-green-500">
+                                                                <CheckCircle2 className="w-3 h-3 mr-1" /> Registered
+                                                            </Badge>
+                                                        ) : (
+                                                            <Badge variant="outline" className="text-orange-600 border-orange-300">
+                                                                <AlertCircle className="w-3 h-3 mr-1" /> Pending
+                                                            </Badge>
+                                                        )}
+                                                    </TableCell>
+                                                    <TableCell className="text-center">
+                                                        {isRegistered ? (
+                                                            <Badge variant="outline" className={getQualityColor(quality)}>
+                                                                {Math.round(quality * 100)}%
+                                                            </Badge>
+                                                        ) : (
+                                                            <span className="text-muted-foreground">-</span>
+                                                        )}
+                                                    </TableCell>
+                                                    <TableCell className="text-right">
+                                                        <div className="flex items-center justify-end gap-1">
+                                                            {!isRegistered && hasAddPermission && (
+                                                                <Button
+                                                                    size="sm"
+                                                                    onClick={() => handleRegisterClick(person, activeTab === 'students' ? 'student' : 'staff')}
+                                                                    className="bg-green-600 hover:bg-green-700"
+                                                                >
+                                                                    <Camera className="w-3 h-3 mr-1" /> Register
+                                                                </Button>
+                                                            )}
+                                                            {isRegistered && hasEditPermission && (
+                                                                <Button
+                                                                    size="sm"
+                                                                    variant="outline"
+                                                                    onClick={() => handleEditClick(person, activeTab === 'students' ? 'student' : 'staff')}
+                                                                >
+                                                                    <Edit className="w-3 h-3 mr-1" /> Edit
+                                                                </Button>
+                                                            )}
+                                                            {isRegistered && hasDeletePermission && (
+                                                                <Button
+                                                                    size="sm"
+                                                                    variant="ghost"
+                                                                    className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                                                                    onClick={() => handleDeleteFace(person.id)}
+                                                                >
+                                                                    <Trash2 className="w-3 h-3" />
+                                                                </Button>
+                                                            )}
+                                                        </div>
+                                                    </TableCell>
+                                                </TableRow>
+                                            );
+                                        })}
+                                    </TableBody>
+                                </Table>
+                            </div>
+                        </>
                     )}
                     
-                    {/* Summary Footer */}
+                    {/* Summary Footer - Mobile Optimized */}
                     {(activeTab === 'students' ? filteredStudents : filteredStaff).length > 0 && (
-                        <div className="flex items-center justify-between mt-4 px-2 text-sm text-muted-foreground">
+                        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mt-3 sm:mt-4 px-1 sm:px-2 text-xs sm:text-sm text-muted-foreground gap-1 sm:gap-0">
                             <span>
                                 Showing {(activeTab === 'students' ? filteredStudents : filteredStaff).length} {activeTab}
                             </span>

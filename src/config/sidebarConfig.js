@@ -129,6 +129,7 @@ export const BASE_SIDEBAR = {
       icon: CreditCard,
       submenu: [
         { title: 'Collect Fees', path: ROUTES.SUPER_ADMIN.COLLECT_FEES },
+        { title: '📊 Fee Dashboard', path: '/super-admin/fees-collection/fee-dashboard', badge: 'NEW' },
         { title: 'Offline Bank Payments', path: ROUTES.SUPER_ADMIN.OFFLINE_PAYMENT },
         { title: 'Online Payment', path: ROUTES.SUPER_ADMIN.ONLINE_PAYMENT },
         { title: 'Search Fees Payment', path: ROUTES.SUPER_ADMIN.SEARCH_FEES_PAYMENT },
@@ -142,6 +143,15 @@ export const BASE_SIDEBAR = {
         { title: 'Fees Reminder', path: ROUTES.SUPER_ADMIN.FEES_REMINDER },
         { title: 'Fees Analysis', path: ROUTES.SUPER_ADMIN.FEES_ANALYSIS },
         { title: 'Refund Approvals', path: ROUTES.SUPER_ADMIN.REFUND_APPROVALS },
+        { title: '── Advanced Setup ──', path: '#', disabled: true },
+        { title: '📋 Fee Templates', path: '/super-admin/fees-collection/fee-templates', badge: 'NEW' },
+        { title: '👨‍👩‍👧 Sibling Groups', path: '/super-admin/fees-collection/sibling-groups', badge: 'NEW' },
+        { title: '⏰ Late Fee Slabs', path: '/super-admin/fees-collection/late-fee-slabs', badge: 'NEW' },
+        { title: '── Discount & EMI ──', path: '#', disabled: true },
+        { title: '🎫 Concession Requests', path: '/super-admin/fees-collection/concession-requests', badge: 'NEW' },
+        { title: '📅 Installment Plans', path: '/super-admin/fees-collection/installment-plans', badge: 'NEW' },
+        { title: '💳 Payment Schedule', path: '/super-admin/fees-collection/payment-schedule', badge: 'NEW' },
+        { title: '🗓️ Fee Calendar', path: '/super-admin/fees-collection/fee-calendar', badge: 'NEW' },
       ],
     },
     {
@@ -635,6 +645,7 @@ export const BASE_SIDEBAR = {
       icon: CreditCard,
       submenu: [
         { title: 'Collect Fees', path: ROUTES.ACCOUNTANT.COLLECT_FEES },
+        { title: '📊 Fee Dashboard', path: '/accountant/fees-collection/fee-dashboard', badge: 'NEW' },
         { title: 'Offline Bank Payments', path: ROUTES.ACCOUNTANT.OFFLINE_PAYMENT },
         { title: 'Online Payment', path: ROUTES.ACCOUNTANT.ONLINE_PAYMENT },
         { title: 'Search Fees Payment', path: ROUTES.ACCOUNTANT.SEARCH_FEES_PAYMENT },
@@ -644,6 +655,15 @@ export const BASE_SIDEBAR = {
         { title: 'Fees Type', path: ROUTES.ACCOUNTANT.FEES_TYPE },
         { title: 'Fees Discount', path: ROUTES.ACCOUNTANT.FEES_DISCOUNT },
         { title: 'Fees Reminder', path: ROUTES.ACCOUNTANT.FEES_REMINDER },
+        { title: '── Advanced Setup ──', path: '#', disabled: true },
+        { title: '📋 Fee Templates', path: '/accountant/fees-collection/fee-templates', badge: 'NEW' },
+        { title: '👨‍👩‍👧 Sibling Groups', path: '/accountant/fees-collection/sibling-groups', badge: 'NEW' },
+        { title: '⏰ Late Fee Slabs', path: '/accountant/fees-collection/late-fee-slabs', badge: 'NEW' },
+        { title: '── Discount & EMI ──', path: '#', disabled: true },
+        { title: '🎫 Concession Requests', path: '/accountant/fees-collection/concession-requests', badge: 'NEW' },
+        { title: '📅 Installment Plans', path: '/accountant/fees-collection/installment-plans', badge: 'NEW' },
+        { title: '💳 Payment Schedule', path: '/accountant/fees-collection/payment-schedule', badge: 'NEW' },
+        { title: '🗓️ Fee Calendar', path: '/accountant/fees-collection/fee-calendar', badge: 'NEW' },
       ]
     },
     {
@@ -1052,11 +1072,14 @@ export const BASE_SIDEBAR = {
       icon: CreditCard,
       submenu: [
         { title: 'Collect Fees', path: ROUTES.CASHIER.COLLECT_FEES },
+        { title: '📊 Fee Dashboard', path: '/cashier/fees-collection/fee-dashboard', badge: 'NEW' },
         { title: 'Search Fees Payment', path: ROUTES.CASHIER.SEARCH_FEES_PAYMENT },
         { title: 'Search Due Fees', path: ROUTES.CASHIER.SEARCH_DUE_FEES },
         { title: 'Offline Bank Payments', path: ROUTES.CASHIER.OFFLINE_PAYMENT },
         { title: 'Online Payment', path: ROUTES.CASHIER.ONLINE_PAYMENT },
         { title: 'Quick Fees', path: ROUTES.CASHIER.QUICK_FEES },
+        { title: '💳 Payment Schedule', path: '/cashier/fees-collection/payment-schedule', badge: 'NEW' },
+        { title: '🗓️ Fee Calendar', path: '/cashier/fees-collection/fee-calendar', badge: 'NEW' },
       ]
     },
     {

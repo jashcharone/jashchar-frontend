@@ -472,7 +472,8 @@ const PrintFeesReceipt = () => {
               <th className='border border-gray-400 p-1.5 text-left w-6'>S.No</th>
               <th className='border border-gray-400 p-1.5 text-left'>Fee Particulars</th>
               <th className='border border-gray-400 p-1.5 text-right w-16' style={{ whiteSpace: 'nowrap' }}>Total Fee&nbsp;(₹)</th>
-              {totalDiscount > 0 && <th className='border border-gray-400 p-1.5 text-right w-14' style={{ whiteSpace: 'nowrap' }}>Discount&nbsp;(₹)</th>}
+              <th className='border border-gray-400 p-1.5 text-right w-14' style={{ whiteSpace: 'nowrap' }}>Discount&nbsp;(₹)</th>
+              <th className='border border-gray-400 p-1.5 text-right w-14' style={{ whiteSpace: 'nowrap', backgroundColor: '#065f46' }}>Net Fee&nbsp;(₹)</th>
               {totalFine > 0 && <th className='border border-gray-400 p-1.5 text-right w-14' style={{ whiteSpace: 'nowrap' }}>Fine&nbsp;(₹)</th>}
               <th className='border border-gray-400 p-1.5 text-right w-14' style={{ whiteSpace: 'nowrap' }}>Paid&nbsp;(₹)</th>
               <th className='border border-gray-400 p-1.5 text-right w-16' style={{ whiteSpace: 'nowrap' }}>Balance&nbsp;(₹)</th>
@@ -486,7 +487,8 @@ const PrintFeesReceipt = () => {
                   {p.fee_name || 'Fee'}{p.fee_group_name ? <span className='text-[8px] text-gray-500 ml-1'>({p.fee_group_name})</span> : ''}
                 </td>
                 <td className='border border-gray-300 p-1.5 text-right font-mono'>{Number(p.total_fee_amount || p.fee_master?.amount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
-                {totalDiscount > 0 && <td className='border border-gray-300 p-1.5 text-right font-mono'>{Number(p.discount_amount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>}
+                <td className='border border-gray-300 p-1.5 text-right font-mono'>{Number(p.discount_amount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
+                <td className='border border-gray-300 p-1.5 text-right font-mono font-semibold text-green-700'>{Number((p.total_fee_amount || p.fee_master?.amount || 0) - (p.discount_amount || 0)).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
                 {totalFine > 0 && <td className='border border-gray-300 p-1.5 text-right font-mono'>{Number(p.fine_paid || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>}
                 <td className='border border-gray-300 p-1.5 text-right font-mono font-semibold'>{Number(p.amount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
                 <td className='border border-gray-300 p-1.5 text-right font-mono font-semibold text-red-600'>{Number(p.balance || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
@@ -497,7 +499,8 @@ const PrintFeesReceipt = () => {
             <tr className='bg-gray-100 font-bold'>
               <td colSpan='2' className='border border-gray-400 p-1.5 text-right'>TOTAL:</td>
               <td className='border border-gray-400 p-1.5 text-right font-mono'>{payments.reduce((sum, p) => sum + Number(p.total_fee_amount || p.fee_master?.amount || 0), 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
-              {totalDiscount > 0 && <td className='border border-gray-400 p-1.5 text-right font-mono text-blue-700'>{totalDiscount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>}
+              <td className='border border-gray-400 p-1.5 text-right font-mono text-blue-700'>{totalDiscount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
+              <td className='border border-gray-400 p-1.5 text-right font-mono font-bold text-green-700'>{(payments.reduce((sum, p) => sum + Number(p.total_fee_amount || p.fee_master?.amount || 0), 0) - totalDiscount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
               {totalFine > 0 && <td className='border border-gray-400 p-1.5 text-right font-mono'>{totalFine.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>}
               <td className='border border-gray-400 p-1.5 text-right font-mono text-green-700'>{totalPaid.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
               <td className='border border-gray-400 p-1.5 text-right font-mono text-red-700'>{payments.reduce((sum, p) => sum + Number(p.balance || 0), 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
@@ -512,12 +515,10 @@ const PrintFeesReceipt = () => {
             <div className='text-[7px] text-green-600 uppercase font-semibold'>Amount Paid</div>
             <div className='text-[11px] font-bold text-green-800'>₹{totalPaid.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</div>
           </div>
-          {totalDiscount > 0 && (
-            <div className='flex-1 bg-blue-50 border border-blue-300 rounded px-2 py-1 text-center'>
-              <div className='text-[7px] text-blue-600 uppercase font-semibold'>Discount</div>
-              <div className='text-[11px] font-bold text-blue-800'>₹{totalDiscount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</div>
-            </div>
-          )}
+          <div className='flex-1 bg-blue-50 border border-blue-300 rounded px-2 py-1 text-center'>
+            <div className='text-[7px] text-blue-600 uppercase font-semibold'>Discount</div>
+            <div className='text-[11px] font-bold text-blue-800'>₹{totalDiscount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</div>
+          </div>
           {payments.reduce((sum, p) => sum + Number(p.balance || 0), 0) > 0 && (
             <div className='flex-1 bg-red-50 border border-red-300 rounded px-2 py-1 text-center'>
               <div className='text-[7px] text-red-600 uppercase font-semibold'>Balance Due</div>
@@ -545,6 +546,8 @@ const PrintFeesReceipt = () => {
                 <tr className='bg-gray-50'>
                   <th className='text-left px-2 py-0.5 font-semibold text-gray-600 border-b border-gray-300'>Fee Name</th>
                   <th className='text-right px-2 py-0.5 font-semibold text-gray-600 border-b border-gray-300 w-14'>Amount</th>
+                  <th className='text-right px-2 py-0.5 font-semibold text-gray-600 border-b border-gray-300 w-10'>Discount</th>
+                  <th className='text-right px-2 py-0.5 font-semibold text-emerald-700 border-b border-gray-300 w-14'>Net Fee</th>
                   <th className='text-right px-2 py-0.5 font-semibold text-gray-600 border-b border-gray-300 w-14'>Paid</th>
                   <th className='text-right px-2 py-0.5 font-semibold text-gray-600 border-b border-gray-300 w-14'>Balance</th>
                   <th className='text-right px-2 py-0.5 font-semibold text-gray-600 border-b border-gray-300 w-10'>Status</th>
@@ -555,6 +558,8 @@ const PrintFeesReceipt = () => {
                   <tr key={fee.id || idx} className={idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
                     <td className='px-2 border-b border-gray-200 font-medium text-gray-700 truncate' style={{ lineHeight: '1.6' }}>{fee.typeName} <span className='text-gray-400'>({fee.group})</span></td>
                     <td className='px-2 border-b border-gray-200 font-mono text-right' style={{ lineHeight: '1.6' }}>₹{fee.amount.toLocaleString('en-IN')}</td>
+                    <td className='px-2 border-b border-gray-200 font-mono text-right text-blue-600' style={{ lineHeight: '1.6' }}>₹{(fee.totalDiscount || 0).toLocaleString('en-IN')}</td>
+                    <td className='px-2 border-b border-gray-200 font-mono text-right font-semibold text-emerald-600' style={{ lineHeight: '1.6' }}>₹{(fee.amount - (fee.totalDiscount || 0)).toLocaleString('en-IN')}</td>
                     <td className='px-2 border-b border-gray-200 font-mono text-right text-green-600' style={{ lineHeight: '1.6' }}>₹{fee.totalPaid.toLocaleString('en-IN')}</td>
                     <td className='px-2 border-b border-gray-200 font-mono text-right text-red-600' style={{ lineHeight: '1.6' }}>{fee.balance > 0 ? `-₹${fee.balance.toLocaleString('en-IN')}` : '₹0'}</td>
                     <td className='px-2 border-b border-gray-200 text-right' style={{ lineHeight: '1.6' }}>
@@ -571,6 +576,8 @@ const PrintFeesReceipt = () => {
                 <tr className='bg-gray-100 font-bold'>
                   <td className='px-2 py-0.5 border-t border-gray-400'>TOTAL:</td>
                   <td className='px-2 py-0.5 border-t border-gray-400 font-mono text-right'>₹{feeStatementTotals.totalFees.toLocaleString('en-IN')}</td>
+                  <td className='px-2 py-0.5 border-t border-gray-400 font-mono text-right text-blue-700'>₹{(feeStatementTotals.totalDiscount || 0).toLocaleString('en-IN')}</td>
+                  <td className='px-2 py-0.5 border-t border-gray-400 font-mono text-right font-bold text-emerald-700'>₹{(feeStatementTotals.totalFees - (feeStatementTotals.totalDiscount || 0)).toLocaleString('en-IN')}</td>
                   <td className='px-2 py-0.5 border-t border-gray-400 font-mono text-right text-green-700'>₹{feeStatementTotals.totalPaid.toLocaleString('en-IN')}</td>
                   <td className='px-2 py-0.5 border-t border-gray-400 font-mono text-right text-red-700'>{feeStatementTotals.totalBalance > 0 ? `-₹${feeStatementTotals.totalBalance.toLocaleString('en-IN')}` : '₹0'}</td>
                   <td className='px-2 py-0.5 border-t border-gray-400'></td>

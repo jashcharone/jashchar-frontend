@@ -350,6 +350,16 @@ const OnlinePayment = lazy(() => import('@/pages/super-admin/fees-collection/Onl
 const FeesAnalysis = lazy(() => import('@/pages/super-admin/fees-collection/FeesAnalysis'));
 const RefundApprovals = lazy(() => import('@/pages/super-admin/fees-collection/RefundApprovals'));
 const PrintRefundReceipt = lazy(() => import('@/pages/super-admin/fees-collection/PrintRefundReceipt'));
+// 🌟 World-Class Fee Management Engine (NEW)
+const FeeDashboard = lazy(() => import('@/pages/super-admin/fees-collection/FeeDashboard'));
+const FeeTemplates = lazy(() => import('@/pages/super-admin/fees-collection/FeeTemplates'));
+const SiblingGroups = lazy(() => import('@/pages/super-admin/fees-collection/SiblingGroups'));
+const LateFeeSlabs = lazy(() => import('@/pages/super-admin/fees-collection/LateFeeSlabs'));
+// Days 15-21: Discount & Installment Engine
+const ConcessionRequests = lazy(() => import('@/pages/super-admin/fees-collection/ConcessionRequests'));
+const InstallmentPlans = lazy(() => import('@/pages/super-admin/fees-collection/InstallmentPlans'));
+const PaymentSchedule = lazy(() => import('@/pages/super-admin/fees-collection/PaymentSchedule'));
+const FeeCalendar = lazy(() => import('@/pages/super-admin/fees-collection/FeeCalendar'));
 
 // Examinations
 const ExamGroup = lazy(() => import('@/pages/super-admin/examinations/ExamGroup'));
@@ -1450,6 +1460,16 @@ function App() {
             <Route path={ROUTES.SUPER_ADMIN.FEES_ANALYSIS} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'accountant', 'principal']}><FeesAnalysis /></ProtectedRoute>} />
             <Route path={ROUTES.SUPER_ADMIN.REFUND_APPROVALS} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']}><RefundApprovals /></ProtectedRoute>} />
             <Route path={ROUTES.SUPER_ADMIN.PRINT_REFUND_RECEIPT} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'accountant']}><PrintRefundReceipt /></ProtectedRoute>} />
+            {/* 🌟 World-Class Fee Management Engine Routes */}
+            <Route path="/super-admin/fees-collection/fee-dashboard" element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'accountant', 'principal']}><FeeDashboard /></ProtectedRoute>} />
+            <Route path="/super-admin/fees-collection/fee-templates" element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'accountant']}><FeeTemplates /></ProtectedRoute>} />
+            <Route path="/super-admin/fees-collection/sibling-groups" element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'accountant']}><SiblingGroups /></ProtectedRoute>} />
+            <Route path="/super-admin/fees-collection/late-fee-slabs" element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'accountant']}><LateFeeSlabs /></ProtectedRoute>} />
+            {/* Days 15-21: Discount & Installment Engine Routes */}
+            <Route path="/super-admin/fees-collection/concession-requests" element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'accountant', 'principal']}><ConcessionRequests /></ProtectedRoute>} />
+            <Route path="/super-admin/fees-collection/installment-plans" element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'accountant']}><InstallmentPlans /></ProtectedRoute>} />
+            <Route path="/super-admin/fees-collection/payment-schedule" element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'accountant', 'principal']}><PaymentSchedule /></ProtectedRoute>} />
+            <Route path="/super-admin/fees-collection/fee-calendar" element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'accountant', 'principal']}><FeeCalendar /></ProtectedRoute>} />
 
             {/* ? Examinations */}
             <Route path={ROUTES.SUPER_ADMIN.EXAM_GROUP} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'teacher', 'principal']} requiredModule="examinations"><ExamGroup /></ProtectedRoute>} />
@@ -1666,6 +1686,16 @@ function App() {
             <Route path="/:roleSlug/fees-collection/print-fees-receipt/:paymentId" element={<StaffModuleRoute><PrintFeesReceipt /></StaffModuleRoute>} />
             <Route path="/:roleSlug/fees-collection/print-transport-receipt/:paymentId" element={<StaffModuleRoute><PrintTransportReceipt /></StaffModuleRoute>} />
             <Route path="/:roleSlug/fees-collection/print-hostel-receipt/:paymentId" element={<StaffModuleRoute><PrintHostelReceipt /></StaffModuleRoute>} />
+            {/* 🌟 World-Class Fee Management Engine */}
+            <Route path="/:roleSlug/fees-collection/fee-dashboard" element={<StaffModuleRoute requiredModule="fees_collection"><FeeDashboard /></StaffModuleRoute>} />
+            <Route path="/:roleSlug/fees-collection/fee-templates" element={<StaffModuleRoute requiredModule="fees_collection"><FeeTemplates /></StaffModuleRoute>} />
+            <Route path="/:roleSlug/fees-collection/sibling-groups" element={<StaffModuleRoute requiredModule="fees_collection"><SiblingGroups /></StaffModuleRoute>} />
+            <Route path="/:roleSlug/fees-collection/late-fee-slabs" element={<StaffModuleRoute requiredModule="fees_collection"><LateFeeSlabs /></StaffModuleRoute>} />
+            {/* 🎯 Phase 2: Discount & Installment Engine */}
+            <Route path="/:roleSlug/fees-collection/concession-requests" element={<StaffModuleRoute requiredModule="fees_collection"><ConcessionRequests /></StaffModuleRoute>} />
+            <Route path="/:roleSlug/fees-collection/installment-plans" element={<StaffModuleRoute requiredModule="fees_collection"><InstallmentPlans /></StaffModuleRoute>} />
+            <Route path="/:roleSlug/fees-collection/payment-schedule" element={<StaffModuleRoute requiredModule="fees_collection"><PaymentSchedule /></StaffModuleRoute>} />
+            <Route path="/:roleSlug/fees-collection/fee-calendar" element={<StaffModuleRoute requiredModule="fees_collection"><FeeCalendar /></StaffModuleRoute>} />
             
             {/* Finance */}
             <Route path="/:roleSlug/finance/income" element={<StaffModuleRoute requiredModule="income"><Income /></StaffModuleRoute>} />

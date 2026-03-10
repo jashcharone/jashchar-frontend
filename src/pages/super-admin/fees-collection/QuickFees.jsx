@@ -1,5 +1,5 @@
-﻿import React, { useState, useEffect, useMemo } from 'react';
-import { addMonths, setDate } from 'date-fns';
+﻿import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import { addMonths, setDate, format, parseISO } from 'date-fns';
 import DashboardLayout from '@/components/DashboardLayout';
 import { supabase } from '@/lib/customSupabaseClient';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
-import { Save, Loader2, Plus, Trash2, Printer } from 'lucide-react';
+import { Save, Loader2, Plus, Trash2, Printer, Calculator, Users, FileText, Sparkles, RefreshCw, CheckCircle2, AlertCircle, Calendar } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
 import {
   AlertDialog,
@@ -23,6 +23,10 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Progress } from '@/components/ui/progress';
+import { formatDate, formatDateForInput } from '@/utils/dateUtils';
 
 const QuickFees = () => {
     const { user, currentSessionId, organizationId } = useAuth();
@@ -48,6 +52,18 @@ const QuickFees = () => {
     const [assignedGroupId, setAssignedGroupId] = useState(null);
     const [loading, setLoading] = useState(false);
     const [fetching, setFetching] = useState(false);
+    
+    // 🌟 NEW: Enhanced State for Auto-Installment Generator
+    const [activeTab, setActiveTab] = useState('single');           // 'single' | 'bulk' | 'template'
+    const [feeTemplates, setFeeTemplates] = useState([]);           // Available fee templates
+    const [installmentPlans, setInstallmentPlans] = useState([]);   // Pre-defined installment plans
+    const [selectedTemplate, setSelectedTemplate] = useState('');
+    const [selectedPlan, setSelectedPlan] = useState('');
+    const [selectedStudents, setSelectedStudents] = useState([]);   // For bulk assignment
+    const [bulkProgress, setBulkProgress] = useState({ current: 0, total: 0, status: 'idle' });
+    const [templateHeads, setTemplateHeads] = useState([]);         // Fee heads from selected template
+    const [autoDetectedPlan, setAutoDetectedPlan] = useState(null); // AI auto-detected plan suggestion
+    
     // ✅ FIX: Use selectedBranch.id OR fallback to user profile branch_id
     const branchId = selectedBranch?.id || user?.profile?.branch_id || user?.user_metadata?.branch_id;
 
@@ -58,7 +74,29 @@ const QuickFees = () => {
             setClasses(classesData || []);
         };
         fetchClassesAndSections();
-    }, [branchId]);
+        
+        // 🌟 NEW: Fetch Fee Templates and Installment Plans
+        const fetchTemplatesAndPlans = async () => {
+            // Fetch fee templates
+            const { data: templates } = await supabase
+                .from('fee_templates')
+                .select('id, template_name, template_code, total_amount, class_id')
+                .eq('branch_id', branchId)
+                .eq('session_id', currentSessionId)
+                .eq('is_active', true);
+            setFeeTemplates(templates || []);
+            
+            // Fetch installment plans
+            const { data: plans } = await supabase
+                .from('fee_installment_plans')
+                .select('*')
+                .eq('branch_id', branchId)
+                .eq('session_id', currentSessionId)
+                .eq('is_active', true);
+            setInstallmentPlans(plans || []);
+        };
+        fetchTemplatesAndPlans();
+    }, [branchId, currentSessionId]);
 
     useEffect(() => {
         if (selectedClass && branchId) {
@@ -220,6 +258,266 @@ const QuickFees = () => {
 
         setInstallments(generated);
     };
+
+    // 🌟 NEW: Handle Template Selection
+    const handleSelectTemplate = async (templateId) => {
+        setSelectedTemplate(templateId);
+        if (!templateId) {
+            setTemplateHeads([]);
+            setFeeData(prev => ({ ...prev, totalFees: '0' }));
+            return;
+        }
+        
+        // Fetch template heads/splits
+        const { data: splits } = await supabase
+            .from('fee_head_splits')
+            .select('*, fee_heads(name, code)')
+            .eq('template_id', templateId);
+            
+        setTemplateHeads(splits || []);
+        
+        // Calculate total from template splits
+        const total = (splits || []).reduce((sum, s) => sum + Number(s.amount || 0), 0);
+        setFeeData(prev => ({ ...prev, totalFees: String(total) }));
+        
+        // Auto-suggest installment plan based on template
+        autoDetectInstallmentPlan(total);
+    };
+    
+    // 🌟 NEW: Handle Installment Plan Selection
+    const handleSelectPlan = (planId) => {
+        setSelectedPlan(planId);
+        if (!planId) return;
+        
+        const plan = installmentPlans.find(p => p.id === planId);
+        if (plan) {
+            setFeeData(prev => ({
+                ...prev,
+                numInstallments: String(plan.installments || 0),
+                monthlyDueDate: String(plan.due_day || 10),
+                fineType: plan.late_fee_type || 'None',
+                fineValue: plan.late_fee_amount || ''
+            }));
+        }
+    };
+    
+    // 🌟 NEW: Auto-detect best installment plan based on total fees
+    const autoDetectInstallmentPlan = useCallback((totalAmount) => {
+        if (installmentPlans.length === 0) return;
+        
+        // Find plan that matches the pattern (e.g., quarterly for >50k, monthly for <20k)
+        let suggestedPlan = null;
+        
+        if (totalAmount >= 100000) {
+            suggestedPlan = installmentPlans.find(p => p.frequency === 'quarterly' || p.frequency === 'half_yearly');
+        } else if (totalAmount >= 50000) {
+            suggestedPlan = installmentPlans.find(p => p.frequency === 'quarterly');
+        } else {
+            suggestedPlan = installmentPlans.find(p => p.frequency === 'monthly');
+        }
+        
+        if (!suggestedPlan) suggestedPlan = installmentPlans[0];
+        
+        setAutoDetectedPlan({
+            plan: suggestedPlan,
+            reason: totalAmount >= 100000 
+                ? 'Higher total - Quarterly/Half-Yearly recommended'
+                : totalAmount >= 50000 
+                ? 'Medium total - Quarterly recommended'
+                : 'Lower total - Monthly suggested'
+        });
+    }, [installmentPlans]);
+    
+    // 🌟 NEW: Toggle student selection for bulk assignment
+    const toggleStudentSelection = (studentId) => {
+        setSelectedStudents(prev => 
+            prev.includes(studentId) 
+                ? prev.filter(id => id !== studentId)
+                : [...prev, studentId]
+        );
+    };
+    
+    // 🌟 NEW: Select/Deselect all students
+    const toggleAllStudents = () => {
+        if (selectedStudents.length === students.length) {
+            setSelectedStudents([]);
+        } else {
+            setSelectedStudents(students.map(s => s.id));
+        }
+    };
+    
+    // 🌟 NEW: Bulk Assign Installments to Multiple Students
+    const handleBulkAssign = async () => {
+        if (selectedStudents.length === 0) {
+            toast({ variant: 'destructive', title: 'No Students Selected', description: 'Please select students for bulk assignment.' });
+            return;
+        }
+        
+        if (!feeData.totalFees || !feeData.numInstallments) {
+            toast({ variant: 'destructive', title: 'Missing Configuration', description: 'Please configure fee amount and installments first.' });
+            return;
+        }
+        
+        setLoading(true);
+        setBulkProgress({ current: 0, total: selectedStudents.length, status: 'running' });
+        
+        let successCount = 0;
+        let errorCount = 0;
+        
+        for (let i = 0; i < selectedStudents.length; i++) {
+            const studentId = selectedStudents[i];
+            const student = students.find(s => s.id === studentId);
+            
+            try {
+                await assignFeesToStudent(student);
+                successCount++;
+            } catch (error) {
+                console.error(`Failed for ${student?.full_name}:`, error);
+                errorCount++;
+            }
+            
+            setBulkProgress({ current: i + 1, total: selectedStudents.length, status: 'running' });
+        }
+        
+        setBulkProgress(prev => ({ ...prev, status: 'completed' }));
+        setLoading(false);
+        
+        toast({
+            title: 'Bulk Assignment Complete',
+            description: `${successCount} successful, ${errorCount} failed`,
+            variant: errorCount > 0 ? 'warning' : 'default'
+        });
+        
+        // Refresh student list
+        setSelectedStudents([]);
+    };
+    
+    // 🌟 NEW: Assign fees to a single student (reusable for bulk)
+    const assignFeesToStudent = async (student) => {
+        if (!student || !branchId) throw new Error('Invalid student or branch');
+        
+        const installmentAmount = Number(feeData.numInstallments) > 0 
+            ? (Number(feeData.totalFees) - Number(feeData.firstInstallment || 0)) / Number(feeData.numInstallments) 
+            : 0;
+            
+        const groupName = `Quick Fees - ${student.school_code}`;
+        
+        // Check if already assigned
+        const { data: existingGroup } = await supabase
+            .from('fee_groups')
+            .select('id')
+            .eq('name', groupName)
+            .eq('branch_id', branchId)
+            .maybeSingle();
+            
+        if (existingGroup) {
+            throw new Error('Fees already assigned to this student');
+        }
+        
+        // Create Fee Group
+        const { data: feeGroup, error: groupError } = await supabase
+            .from('fee_groups')
+            .insert({ 
+                branch_id: branchId, 
+                session_id: currentSessionId, 
+                organization_id: organizationId, 
+                name: groupName, 
+                description: 'Auto-generated quick fees' 
+            })
+            .select()
+            .single();
+        if (groupError) throw groupError;
+        
+        // Generate installments
+        const installmentsToCreate = [];
+        let currentDate = new Date();
+        
+        if (Number(feeData.firstInstallment) > 0) {
+            installmentsToCreate.push({
+                fee_type: 'Installment-1',
+                fee_code: `QF-${student.school_code}-1`,
+                due_date: new Date().toISOString().split('T')[0],
+                amount: Number(feeData.firstInstallment)
+            });
+        }
+        
+        for (let i = 0; i < Number(feeData.numInstallments); i++) {
+            const nextMonth = addMonths(currentDate, i + (Number(feeData.firstInstallment) > 0 ? 1 : 0));
+            const dueDate = setDate(nextMonth, Number(feeData.monthlyDueDate));
+            
+            installmentsToCreate.push({
+                fee_type: `Installment-${i + (Number(feeData.firstInstallment) > 0 ? 2 : 1)}`,
+                fee_code: `QF-${student.school_code}-${i + (Number(feeData.firstInstallment) > 0 ? 2 : 1)}`,
+                due_date: dueDate.toISOString().split('T')[0],
+                amount: installmentAmount
+            });
+        }
+        
+        // Create fee types and masters
+        const feeMastersToInsert = [];
+        
+        for (const inst of installmentsToCreate) {
+            let { data: feeType } = await supabase
+                .from('fee_types')
+                .select('id')
+                .eq('branch_id', branchId)
+                .eq('code', inst.fee_code)
+                .maybeSingle();
+                
+            if (!feeType) {
+                const { data: newFeeType, error: newTypeError } = await supabase
+                    .from('fee_types')
+                    .insert({ 
+                        branch_id: branchId, 
+                        session_id: currentSessionId, 
+                        organization_id: organizationId, 
+                        name: inst.fee_type, 
+                        code: inst.fee_code, 
+                        description: 'Quick Fees Installment' 
+                    })
+                    .select()
+                    .single();
+                if (newTypeError) throw newTypeError;
+                feeType = newFeeType;
+            }
+            
+            feeMastersToInsert.push({
+                branch_id: branchId,
+                session_id: currentSessionId,
+                organization_id: organizationId,
+                fee_group_id: feeGroup.id,
+                fee_type_id: feeType.id,
+                due_date: inst.due_date,
+                amount: inst.amount,
+                fine_type: feeData.fineType !== 'None' ? feeData.fineType : null,
+                fine_value: feeData.fineValue || null
+            });
+        }
+        
+        const { data: feeMasters, error: masterError } = await supabase
+            .from('fee_masters')
+            .insert(feeMastersToInsert)
+            .select();
+        if (masterError) throw masterError;
+        
+        // Create allocations
+        const allocations = feeMasters.map(master => ({ 
+            branch_id: branchId, 
+            session_id: currentSessionId, 
+            organization_id: organizationId, 
+            student_id: student.id, 
+            fee_master_id: master.id, 
+            fee_group_id: feeGroup.id, 
+            id: uuidv4() 
+        }));
+        
+        const { error: allocError } = await supabase
+            .from('student_fee_allocations')
+            .insert(allocations);
+        if (allocError) throw allocError;
+        
+        return true;
+    };
     
     const handleSave = async () => {
         if (!branchId) return;
@@ -335,10 +633,31 @@ const QuickFees = () => {
     return (
         <DashboardLayout>
             <div className="flex justify-between items-center mb-6">
-                <h1 className="text-2xl font-bold">Quick Fees Master</h1>
+                <div>
+                    <h1 className="text-2xl font-bold flex items-center gap-2">
+                        <Sparkles className="h-6 w-6 text-yellow-500" />
+                        Quick Fees - Auto Installment Generator
+                    </h1>
+                    <p className="text-muted-foreground text-sm mt-1">Generate and assign installment plans in seconds</p>
+                </div>
+                <div className="flex gap-2">
+                    {feeTemplates.length > 0 && (
+                        <Badge variant="outline" className="px-3 py-1">
+                            <FileText className="h-3 w-3 mr-1" />
+                            {feeTemplates.length} Templates
+                        </Badge>
+                    )}
+                    {installmentPlans.length > 0 && (
+                        <Badge variant="outline" className="px-3 py-1">
+                            <Calendar className="h-3 w-3 mr-1" />
+                            {installmentPlans.length} Plans
+                        </Badge>
+                    )}
+                </div>
             </div>
 
             <div className="bg-card p-6 rounded-lg shadow space-y-6">
+                {/* Class & Section Selection */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <div className="space-y-2">
                         <Label>Class</Label>
@@ -359,16 +678,89 @@ const QuickFees = () => {
                             </SelectContent>
                         </Select>
                     </div>
+                    {/* Template Selection - Enhanced */}
                     <div className="space-y-2">
-                        <Label>Student</Label>
-                        <Select value={selectedStudentId} onValueChange={setSelectedStudentId} disabled={!selectedClass}>
-                            <SelectTrigger><SelectValue placeholder="Select Student" /></SelectTrigger>
+                        <Label>Fee Template (Optional)</Label>
+                        <Select value={selectedTemplate} onValueChange={handleSelectTemplate}>
+                            <SelectTrigger><SelectValue placeholder="Auto-fill from template" /></SelectTrigger>
                             <SelectContent>
-                                {students.map(s => <SelectItem key={s.id} value={s.id}>{s.full_name} ({s.school_code})</SelectItem>)}
+                                <SelectItem value="">Manual Entry</SelectItem>
+                                {feeTemplates.filter(t => !selectedClass || t.class_id === selectedClass).map(t => (
+                                    <SelectItem key={t.id} value={t.id}>
+                                        {t.template_name} - ₹{Number(t.total_amount || 0).toLocaleString()}
+                                    </SelectItem>
+                                ))}
                             </SelectContent>
                         </Select>
                     </div>
                 </div>
+                
+                {/* Mode Tabs - Single/Bulk/Template */}
+                <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+                    <TabsList className="grid w-full grid-cols-3">
+                        <TabsTrigger value="single" className="flex items-center gap-2">
+                            <Users className="h-4 w-4" />
+                            Single Student
+                        </TabsTrigger>
+                        <TabsTrigger value="bulk" className="flex items-center gap-2">
+                            <Calculator className="h-4 w-4" />
+                            Bulk Assign
+                        </TabsTrigger>
+                        <TabsTrigger value="preview" className="flex items-center gap-2">
+                            <FileText className="h-4 w-4" />
+                            Preview & Summary
+                        </TabsTrigger>
+                    </TabsList>
+                    
+                    {/* SINGLE STUDENT MODE */}
+                    <TabsContent value="single" className="space-y-6 pt-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div className="space-y-2">
+                                <Label>Student</Label>
+                                <Select value={selectedStudentId} onValueChange={setSelectedStudentId} disabled={!selectedClass}>
+                                    <SelectTrigger><SelectValue placeholder="Select Student" /></SelectTrigger>
+                                    <SelectContent>
+                                        {students.map(s => <SelectItem key={s.id} value={s.id}>{s.full_name} ({s.school_code})</SelectItem>)}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                            <div className="space-y-2">
+                                <Label>Installment Plan (Optional)</Label>
+                                <Select value={selectedPlan} onValueChange={handleSelectPlan}>
+                                    <SelectTrigger><SelectValue placeholder="Use pre-defined plan" /></SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="">Custom Configuration</SelectItem>
+                                        {installmentPlans.map(p => (
+                                            <SelectItem key={p.id} value={p.id}>
+                                                {p.plan_name} - {p.frequency}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                        </div>
+                        
+                        {/* Auto-detected Plan Suggestion */}
+                        {autoDetectedPlan && !selectedPlan && (
+                            <div className="bg-yellow-50 border-l-4 border-yellow-500 p-4 rounded-r-lg">
+                                <div className="flex items-center justify-between">
+                                    <div>
+                                        <p className="font-medium flex items-center gap-2">
+                                            <Sparkles className="h-4 w-4 text-yellow-600" />
+                                            AI Suggestion: {autoDetectedPlan.plan?.plan_name || 'Standard Plan'}
+                                        </p>
+                                        <p className="text-sm text-muted-foreground">{autoDetectedPlan.reason}</p>
+                                    </div>
+                                    <Button 
+                                        variant="outline" 
+                                        size="sm" 
+                                        onClick={() => handleSelectPlan(autoDetectedPlan.plan?.id)}
+                                    >
+                                        Apply Suggestion
+                                    </Button>
+                                </div>
+                            </div>
+                        )}
 
                 {fetching ? (
                     <div className="flex justify-center items-center h-20 border-t pt-4">
@@ -378,17 +770,14 @@ const QuickFees = () => {
                     <div className="pt-6 border-t space-y-6">
                         {/* Info Message if Assigned */}
                         {isAssigned && (
-                            <div className="bg-blue-50 border-l-4 border-blue-500 text-blue-700 p-4 flex justify-between items-center">
-                                <div>
-                                    <p className="font-bold">Fee assigned successfully</p>
+                            <div className="bg-blue-50 border-l-4 border-blue-500 text-blue-700 p-4 flex justify-between items-center rounded-r-lg">
+                                <div className="flex items-center gap-2">
+                                    <CheckCircle2 className="h-5 w-5" />
+                                    <p className="font-bold">Fee assigned successfully to {selectedStudent.full_name}</p>
                                 </div>
                             </div>
                         )}
 
-                        {/* Form Fields - Hide inputs if assigned (read-only view essentially, or just show list) 
-                            Actually prompt implies we might want to edit? But usually quick fees is a generator.
-                            Let's hide inputs if assigned to prevent confusion, or just disable.
-                        */}
                         {!isAssigned && (
                             <>
                                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -443,7 +832,10 @@ const QuickFees = () => {
                                         />
                                     </div>
                                     <div>
-                                        <Button onClick={handleViewInstallments} className="w-full bg-gray-600 hover:bg-gray-700">View Installment</Button>
+                                        <Button onClick={handleViewInstallments} className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700">
+                                            <Calculator className="mr-2 h-4 w-4" />
+                                            Generate Installments
+                                        </Button>
                                     </div>
                                 </div>
                             </>
@@ -452,12 +844,16 @@ const QuickFees = () => {
                         {installments.length > 0 && (
                             <div className="mt-8 space-y-4">
                                 <div className="flex justify-between items-center">
-                                    <h3 className="font-semibold text-lg">Fees List</h3>
+                                    <h3 className="font-semibold text-lg flex items-center gap-2">
+                                        <CheckCircle2 className="h-5 w-5 text-green-500" />
+                                        Generated Installment Schedule
+                                    </h3>
                                     <div className="space-x-2">
                                         {isAssigned && (
                                             <AlertDialog>
                                                 <AlertDialogTrigger asChild>
                                                     <Button variant="destructive" className="bg-black hover:bg-gray-800 text-white">
+                                                        <Trash2 className="mr-2 h-4 w-4" />
                                                         Unassign Fees
                                                     </Button>
                                                 </AlertDialogTrigger>
@@ -485,8 +881,8 @@ const QuickFees = () => {
                                                 <th className="p-3 font-medium text-muted-foreground">Fees Group</th>
                                                 <th className="p-3 font-medium text-muted-foreground">Fees Type</th>
                                                 <th className="p-3 font-medium text-muted-foreground">Due Date</th>
-                                                <th className="p-3 font-medium text-muted-foreground">Fine Amount ($)</th>
-                                                <th className="p-3 font-medium text-muted-foreground text-right">Amount ($)</th>
+                                                <th className="p-3 font-medium text-muted-foreground">Fine Amount (₹)</th>
+                                                <th className="p-3 font-medium text-muted-foreground text-right">Amount (₹)</th>
                                             </tr>
                                         </thead>
                                         <tbody>
@@ -494,19 +890,19 @@ const QuickFees = () => {
                                                 <tr key={idx} className="border-b last:border-0 hover:bg-muted/20">
                                                     <td className="p-3">{inst.fee_group}</td>
                                                     <td className="p-3">{inst.fee_type}</td>
-                                                    <td className="p-3">{inst.due_date}</td>
+                                                    <td className="p-3">{formatDate(inst.due_date)}</td>
                                                     <td className="p-3 text-right pr-12">
                                                         {inst.fine_type === 'None' ? '0.00' : inst.fine_value}
                                                     </td>
-                                                    <td className="p-3 text-right font-medium">{Number(inst.amount).toFixed(2)}</td>
+                                                    <td className="p-3 text-right font-medium">₹{Number(inst.amount).toLocaleString()}</td>
                                                 </tr>
                                             ))}
                                         </tbody>
-                                        <tfoot className="bg-muted/50 font-bold">
+                                        <tfoot className="bg-gradient-to-r from-green-50 to-emerald-50 font-bold">
                                             <tr>
                                                 <td colSpan="4" className="p-3 text-right">Total Fees</td>
-                                                <td className="p-3 text-right">
-                                                    {installments.reduce((acc, curr) => acc + Number(curr.amount), 0).toFixed(2)}
+                                                <td className="p-3 text-right text-green-600">
+                                                    ₹{installments.reduce((acc, curr) => acc + Number(curr.amount), 0).toLocaleString()}
                                                 </td>
                                             </tr>
                                         </tfoot>
@@ -515,9 +911,9 @@ const QuickFees = () => {
 
                                 {!isAssigned && (
                                     <div className="flex justify-end mt-6">
-                                        <Button onClick={handleSave} disabled={loading} className="bg-gray-600 hover:bg-gray-700">
+                                        <Button onClick={handleSave} disabled={loading} className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700">
                                             <Save className="mr-2 h-4 w-4"/>
-                                            {loading ? <Loader2 className="animate-spin h-4 w-4" /> : 'Save'}
+                                            {loading ? <Loader2 className="animate-spin h-4 w-4" /> : 'Save & Assign Fees'}
                                         </Button>
                                     </div>
                                 )}
@@ -525,6 +921,277 @@ const QuickFees = () => {
                         )}
                     </div>
                 )}
+                    </TabsContent>
+                    
+                    {/* BULK ASSIGN MODE */}
+                    <TabsContent value="bulk" className="space-y-6 pt-4">
+                        {/* Fee Configuration for Bulk */}
+                        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                            <div className="space-y-2">
+                                <Label>Total Fees <span className="text-red-500">*</span></Label>
+                                <Input type="number" value={feeData.totalFees} onChange={e => setFeeData({...feeData, totalFees: e.target.value})} />
+                            </div>
+                            <div className="space-y-2">
+                                <Label>No. of Installments <span className="text-red-500">*</span></Label>
+                                <Input type="number" min="1" value={feeData.numInstallments} onChange={e => setFeeData({...feeData, numInstallments: e.target.value})} />
+                            </div>
+                            <div className="space-y-2">
+                                <Label>Due Day (Monthly)</Label>
+                                <Select value={feeData.monthlyDueDate} onValueChange={v => setFeeData({...feeData, monthlyDueDate: v})}>
+                                    <SelectTrigger><SelectValue/></SelectTrigger>
+                                    <SelectContent>
+                                        {Array.from({length: 28}, (_, i) => i + 1).map(day => (
+                                            <SelectItem key={day} value={String(day)}>{day}</SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                            <div className="space-y-2">
+                                <Label>Installment Plan</Label>
+                                <Select value={selectedPlan} onValueChange={handleSelectPlan}>
+                                    <SelectTrigger><SelectValue placeholder="Optional" /></SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="">Custom</SelectItem>
+                                        {installmentPlans.map(p => (
+                                            <SelectItem key={p.id} value={p.id}>{p.plan_name}</SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                        </div>
+                        
+                        {/* Student Selection Table */}
+                        <div className="border rounded-lg overflow-hidden">
+                            <div className="bg-muted/50 p-3 flex justify-between items-center border-b">
+                                <div className="flex items-center gap-4">
+                                    <Checkbox 
+                                        checked={selectedStudents.length === students.length && students.length > 0}
+                                        onCheckedChange={toggleAllStudents}
+                                    />
+                                    <span className="font-medium">Select All Students</span>
+                                </div>
+                                <Badge variant="secondary">
+                                    {selectedStudents.length} of {students.length} selected
+                                </Badge>
+                            </div>
+                            
+                            <div className="max-h-[400px] overflow-y-auto">
+                                {students.length === 0 ? (
+                                    <div className="p-8 text-center text-muted-foreground">
+                                        <AlertCircle className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                                        <p>Select a class to load students</p>
+                                    </div>
+                                ) : (
+                                    <table className="w-full text-sm">
+                                        <thead className="bg-muted/30 sticky top-0">
+                                            <tr className="text-left border-b">
+                                                <th className="p-3 w-12"></th>
+                                                <th className="p-3">Code</th>
+                                                <th className="p-3">Student Name</th>
+                                                <th className="p-3">Status</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {students.map(student => (
+                                                <tr 
+                                                    key={student.id} 
+                                                    className={`border-b hover:bg-muted/20 cursor-pointer ${selectedStudents.includes(student.id) ? 'bg-blue-50' : ''}`}
+                                                    onClick={() => toggleStudentSelection(student.id)}
+                                                >
+                                                    <td className="p-3">
+                                                        <Checkbox 
+                                                            checked={selectedStudents.includes(student.id)}
+                                                            onCheckedChange={() => toggleStudentSelection(student.id)}
+                                                        />
+                                                    </td>
+                                                    <td className="p-3 font-mono text-xs">{student.school_code}</td>
+                                                    <td className="p-3 font-medium">{student.full_name}</td>
+                                                    <td className="p-3">
+                                                        <Badge variant="outline" className="text-xs">Active</Badge>
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                )}
+                            </div>
+                        </div>
+                        
+                        {/* Bulk Progress */}
+                        {bulkProgress.status !== 'idle' && (
+                            <div className="bg-muted/30 p-4 rounded-lg space-y-2">
+                                <div className="flex justify-between items-center">
+                                    <span className="text-sm font-medium">
+                                        {bulkProgress.status === 'running' ? 'Processing...' : 'Completed'}
+                                    </span>
+                                    <span className="text-sm">
+                                        {bulkProgress.current} / {bulkProgress.total}
+                                    </span>
+                                </div>
+                                <Progress value={(bulkProgress.current / bulkProgress.total) * 100} />
+                            </div>
+                        )}
+                        
+                        {/* Bulk Assign Button */}
+                        <div className="flex justify-end gap-2">
+                            <Button 
+                                variant="outline" 
+                                onClick={() => setSelectedStudents([])}
+                                disabled={selectedStudents.length === 0}
+                            >
+                                Clear Selection
+                            </Button>
+                            <Button 
+                                onClick={handleBulkAssign}
+                                disabled={loading || selectedStudents.length === 0}
+                                className="bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-700 hover:to-red-700"
+                            >
+                                {loading ? (
+                                    <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Processing...</>
+                                ) : (
+                                    <><Users className="mr-2 h-4 w-4" /> Bulk Assign to {selectedStudents.length} Students</>
+                                )}
+                            </Button>
+                        </div>
+                    </TabsContent>
+                    
+                    {/* PREVIEW & SUMMARY MODE */}
+                    <TabsContent value="preview" className="space-y-6 pt-4">
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            {/* Summary Card 1: Configuration */}
+                            <div className="bg-gradient-to-br from-blue-50 to-indigo-50 p-6 rounded-lg border border-blue-200">
+                                <h3 className="font-semibold mb-4 flex items-center gap-2">
+                                    <Calculator className="h-5 w-5 text-blue-600" />
+                                    Fee Configuration
+                                </h3>
+                                <div className="space-y-2 text-sm">
+                                    <div className="flex justify-between">
+                                        <span className="text-muted-foreground">Total Fees:</span>
+                                        <span className="font-medium">₹{Number(feeData.totalFees || 0).toLocaleString()}</span>
+                                    </div>
+                                    <div className="flex justify-between">
+                                        <span className="text-muted-foreground">1st Installment:</span>
+                                        <span className="font-medium">₹{Number(feeData.firstInstallment || 0).toLocaleString()}</span>
+                                    </div>
+                                    <div className="flex justify-between">
+                                        <span className="text-muted-foreground">Balance:</span>
+                                        <span className="font-medium">₹{balanceFees.toLocaleString()}</span>
+                                    </div>
+                                    <hr className="my-2" />
+                                    <div className="flex justify-between">
+                                        <span className="text-muted-foreground">No. of EMIs:</span>
+                                        <span className="font-medium">{feeData.numInstallments}</span>
+                                    </div>
+                                    <div className="flex justify-between">
+                                        <span className="text-muted-foreground">Per EMI:</span>
+                                        <span className="font-medium text-green-600">
+                                            ₹{(Number(feeData.numInstallments) > 0 ? balanceFees / Number(feeData.numInstallments) : 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            {/* Summary Card 2: Template Info */}
+                            <div className="bg-gradient-to-br from-purple-50 to-pink-50 p-6 rounded-lg border border-purple-200">
+                                <h3 className="font-semibold mb-4 flex items-center gap-2">
+                                    <FileText className="h-5 w-5 text-purple-600" />
+                                    Template Info
+                                </h3>
+                                {selectedTemplate ? (
+                                    <div className="space-y-2 text-sm">
+                                        <p className="font-medium">
+                                            {feeTemplates.find(t => t.id === selectedTemplate)?.template_name || 'N/A'}
+                                        </p>
+                                        <p className="text-muted-foreground">
+                                            Code: {feeTemplates.find(t => t.id === selectedTemplate)?.template_code || 'N/A'}
+                                        </p>
+                                        {templateHeads.length > 0 && (
+                                            <>
+                                                <hr className="my-2" />
+                                                <p className="font-medium text-xs uppercase text-muted-foreground">Fee Heads:</p>
+                                                {templateHeads.slice(0, 4).map((h, i) => (
+                                                    <div key={i} className="flex justify-between text-xs">
+                                                        <span>{h.fee_heads?.name || 'Head'}</span>
+                                                        <span>₹{Number(h.amount || 0).toLocaleString()}</span>
+                                                    </div>
+                                                ))}
+                                                {templateHeads.length > 4 && (
+                                                    <p className="text-xs text-muted-foreground">+{templateHeads.length - 4} more...</p>
+                                                )}
+                                            </>
+                                        )}
+                                    </div>
+                                ) : (
+                                    <p className="text-sm text-muted-foreground">No template selected (manual entry)</p>
+                                )}
+                            </div>
+                            
+                            {/* Summary Card 3: Plan Info */}
+                            <div className="bg-gradient-to-br from-green-50 to-emerald-50 p-6 rounded-lg border border-green-200">
+                                <h3 className="font-semibold mb-4 flex items-center gap-2">
+                                    <Calendar className="h-5 w-5 text-green-600" />
+                                    Installment Plan
+                                </h3>
+                                {selectedPlan ? (
+                                    <div className="space-y-2 text-sm">
+                                        {(() => {
+                                            const plan = installmentPlans.find(p => p.id === selectedPlan);
+                                            return plan ? (
+                                                <>
+                                                    <p className="font-medium">{plan.plan_name}</p>
+                                                    <div className="flex justify-between">
+                                                        <span className="text-muted-foreground">Frequency:</span>
+                                                        <Badge variant="outline">{plan.frequency}</Badge>
+                                                    </div>
+                                                    <div className="flex justify-between">
+                                                        <span className="text-muted-foreground">Due Day:</span>
+                                                        <span>{plan.due_day || feeData.monthlyDueDate}</span>
+                                                    </div>
+                                                    {plan.late_fee_type && (
+                                                        <div className="flex justify-between">
+                                                            <span className="text-muted-foreground">Late Fee:</span>
+                                                            <span>{plan.late_fee_type === 'fixed' ? `₹${plan.late_fee_amount}` : `${plan.late_fee_amount}%`}</span>
+                                                        </div>
+                                                    )}
+                                                </>
+                                            ) : null;
+                                        })()}
+                                    </div>
+                                ) : (
+                                    <div className="space-y-2 text-sm">
+                                        <p className="font-medium">Custom Configuration</p>
+                                        <div className="flex justify-between">
+                                            <span className="text-muted-foreground">Due Day:</span>
+                                            <span>{feeData.monthlyDueDate}</span>
+                                        </div>
+                                        <div className="flex justify-between">
+                                            <span className="text-muted-foreground">Fine Type:</span>
+                                            <span>{feeData.fineType}</span>
+                                        </div>
+                                        {feeData.fineType !== 'None' && (
+                                            <div className="flex justify-between">
+                                                <span className="text-muted-foreground">Fine Value:</span>
+                                                <span>{feeData.fineType === 'Fixed' ? `₹${feeData.fineValue}` : `${feeData.fineValue}%`}</span>
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                        
+                        {/* Actions */}
+                        <div className="flex justify-center gap-4 pt-4">
+                            <Button variant="outline" onClick={() => setActiveTab('single')}>
+                                <Users className="mr-2 h-4 w-4" />
+                                Assign to Single Student
+                            </Button>
+                            <Button variant="outline" onClick={() => setActiveTab('bulk')}>
+                                <Calculator className="mr-2 h-4 w-4" />
+                                Bulk Assign
+                            </Button>
+                        </div>
+                    </TabsContent>
+                </Tabs>
             </div>
         </DashboardLayout>
     );

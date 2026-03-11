@@ -291,8 +291,8 @@ const AllUsers = () => {
                                                     </div>
                                                     <div>
                                                         <div className="font-medium">{user.full_name || user.email}</div>
-                                                        {user.employee_id && (
-                                                            <div className="text-xs text-muted-foreground">{user.employee_id}</div>
+                                                        {user.staff_id && (
+                                                            <div className="text-xs text-muted-foreground">{user.staff_id}</div>
                                                         )}
                                                         {user.school_code && (
                                                             <div className="text-xs text-muted-foreground">{user.school_code}</div>

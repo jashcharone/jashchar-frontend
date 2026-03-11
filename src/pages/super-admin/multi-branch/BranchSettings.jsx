@@ -304,7 +304,7 @@ const BranchSettings = () => {
                     <SelectItem value="none">-- No Principal --</SelectItem>
                     {staffList.map(staff => (
                       <SelectItem key={staff.id} value={staff.user_id || staff.id}>
-                        {staff.first_name} {staff.last_name} ({staff.employee_id})
+                        {staff.first_name} {staff.last_name} ({staff.staff_id})
                       </SelectItem>
                     ))}
                   </SelectContent>

@@ -12,7 +12,7 @@ import { Search, Loader2, Eye } from 'lucide-react';
 import { format } from 'date-fns';
 
 const SearchFeesPayment = () => {
-    const { user } = useAuth();
+    const { user, currentSessionId } = useAuth();
     const { selectedBranch } = useBranch();
     const { toast } = useToast();
     const { roleSlug } = useParams();
@@ -42,6 +42,7 @@ const SearchFeesPayment = () => {
                 master:fee_masters(fee_group:fee_groups(name), fee_type:fee_types(name))
             `)
             .eq('branch_id', branchId)
+            .eq('session_id', currentSessionId)
             .ilike('transaction_id', `${transactionId.trim()}%`);
 
         if (error) {

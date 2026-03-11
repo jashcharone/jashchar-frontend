@@ -68,7 +68,7 @@ const QRCodeCard = ({ person, personType, branchName, showPhoto = true, size = 2
         const qrPayload = JSON.stringify({
             t: personType.charAt(0), // 's' for student, 'e' for staff
             id: person.id,
-            code: person.school_code || person.employee_id || person.roll_number,
+            code: person.school_code || person.staff_id || person.roll_number,
             name: person.full_name?.substring(0, 20),
             ts: Date.now()
         });
@@ -114,7 +114,7 @@ const QRCodeCard = ({ person, personType, branchName, showPhoto = true, size = 2
                         <span className="font-semibold capitalize">{personType}</span>
                     </div>
                     <Badge variant="secondary" className="bg-white/20 text-white">
-                        {person.school_code || person.employee_id || 'N/A'}
+                        {person.school_code || person.staff_id || 'N/A'}
                     </Badge>
                 </div>
             </div>
@@ -177,7 +177,7 @@ const PrintableQRSheet = React.forwardRef(({ persons, personType, branchName, se
             const qrPayload = JSON.stringify({
                 t: personType.charAt(0),
                 id: person.id,
-                code: person.school_code || person.employee_id || person.roll_number,
+                code: person.school_code || person.staff_id || person.roll_number,
                 name: person.full_name?.substring(0, 20),
                 ts: Date.now()
             });
@@ -226,7 +226,7 @@ const PrintableQRSheet = React.forwardRef(({ persons, personType, branchName, se
                         )}
                         <h4 className="font-bold text-sm truncate">{person.full_name}</h4>
                         <p className="text-xs text-gray-500">
-                            {person.school_code || person.employee_id}
+                            {person.school_code || person.staff_id}
                         </p>
                         {settings.showClass && person.class_name && (
                             <p className="text-xs text-gray-500">
@@ -390,7 +390,7 @@ const QRCodeGenerator = () => {
         let query = supabase
             .from('employee_profiles')
             .select(`
-                id, full_name, school_code, employee_id, photo_url,
+                id, full_name, school_code, staff_id, photo_url,
                 department:department_id(id, name),
                 designation:designation_id(id, name)
             `)
@@ -426,7 +426,7 @@ const QRCodeGenerator = () => {
         : staff.filter(s =>
             s.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
             s.school_code?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            s.employee_id?.toLowerCase().includes(searchTerm.toLowerCase())
+            s.staff_id?.toLowerCase().includes(searchTerm.toLowerCase())
           );
     
     // Selection handlers
@@ -461,7 +461,7 @@ const QRCodeGenerator = () => {
             const qrPayload = JSON.stringify({
                 t: activeTab === 'students' ? 's' : 'e',
                 id: person.id,
-                code: person.school_code || person.employee_id || person.roll_number,
+                code: person.school_code || person.staff_id || person.roll_number,
                 name: person.full_name?.substring(0, 20),
                 ts: Date.now()
             });
@@ -476,7 +476,7 @@ const QRCodeGenerator = () => {
                 // Convert data URL to blob
                 const response = await fetch(dataUrl);
                 const blob = await response.blob();
-                const filename = `QR_${person.school_code || person.employee_id || person.id}.png`;
+                const filename = `QR_${person.school_code || person.staff_id || person.id}.png`;
                 zip.file(filename, blob);
             } catch (error) {
                 console.error('Error generating QR for', person.id, error);
@@ -845,7 +845,7 @@ const QRCodeGenerator = () => {
                                                 <div className="flex-1">
                                                     <p className="font-medium">{person.full_name}</p>
                                                     <p className="text-sm text-muted-foreground">
-                                                        {person.school_code || person.employee_id} • {person.department_name} - {person.designation_name}
+                                                        {person.school_code || person.staff_id} • {person.department_name} - {person.designation_name}
                                                     </p>
                                                 </div>
                                                 <Button 

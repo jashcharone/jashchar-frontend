@@ -138,7 +138,10 @@ const AssignFeeGroup = () => {
             fee_master_id: activeMasterId
         }));
         
-        await supabase.from('student_fee_allocations').delete().eq('fee_master_id', activeMasterId);
+        await supabase.from('student_fee_allocations').delete()
+            .eq('fee_master_id', activeMasterId)
+            .eq('branch_id', selectedBranch.id)
+            .eq('session_id', currentSessionId);
 
         const { error } = await supabase.from('student_fee_allocations').insert(allocations);
 

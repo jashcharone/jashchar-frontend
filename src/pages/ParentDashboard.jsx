@@ -78,7 +78,7 @@ const ChildCard = ({ child, onViewDashboard, index }) => {
             </div>
             <div className="flex items-center gap-2">
               <FileText size={16} className="text-red-300" />
-              <span className="text-sm">{child.admission_number || child.student_id || 'N/A'}</span>
+              <span className="text-sm">{child.school_code || child.admission_number || child.student_id || 'N/A'}</span>
             </div>
             <div className="flex items-center gap-2">
               <Calendar size={16} className="text-red-300" />

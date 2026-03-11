@@ -129,7 +129,7 @@ const StaffDirectory = () => {
         const matchesDesig = filters.designation === 'all' || employee.designation_id === filters.designation;
         const matchesSearch = !filters.search || 
             employee.full_name?.toLowerCase().includes(filters.search.toLowerCase()) ||
-            employee.employee_id?.toLowerCase().includes(filters.search.toLowerCase());
+            employee.staff_id?.toLowerCase().includes(filters.search.toLowerCase());
         
         return matchesRole && matchesDept && matchesDesig && matchesSearch;
     });
@@ -234,7 +234,7 @@ const StaffDirectory = () => {
                                     <div className="pt-12 px-4 pb-4">
                                         <h3 className="font-bold text-lg truncate">{emp.full_name}</h3>
                                         <p className="text-sm text-muted-foreground mb-2">{emp.role?.name} • {emp.department?.name || 'No Dept'}</p>
-                                        <p className="text-xs text-muted-foreground mb-1 flex items-center gap-1"><span className="font-semibold">Employee ID:</span> {emp.employee_id || '-'}</p>
+                                        <p className="text-xs text-muted-foreground mb-1 flex items-center gap-1"><span className="font-semibold">Employee ID:</span> {emp.staff_id || '-'}</p>
                                         <p className="text-xs text-muted-foreground mb-1 flex items-center gap-1"><Phone className="h-3 w-3" /> {emp.mobile || emp.phone || 'N/A'}</p>
                                         <div className="flex gap-2 mt-4">
                                             <Button variant="outline" size="sm" className="flex-1" onClick={() => handleViewProfile(emp.id)}>
@@ -266,7 +266,7 @@ const StaffDirectory = () => {
                             <TableBody>
                                 {filteredEmployees.map(emp => (
                                     <TableRow key={emp.id}>
-                                        <TableCell className="font-medium font-mono text-primary">{emp.employee_id || '-'}</TableCell>
+                                        <TableCell className="font-medium font-mono text-primary">{emp.staff_id || '-'}</TableCell>
                                         <TableCell>
                                             <div className="flex items-center gap-2">
                                                 {emp.photo_url ? (

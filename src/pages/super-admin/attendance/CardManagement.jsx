@@ -149,9 +149,9 @@ const IssueCardDialog = ({ open, onClose, branchId, organizationId, onSaved }) =
         if (searchType === 'student') {
             query = supabase
                 .from(table)
-                .select('id, full_name, admission_number, class_id, section_id, photo_url')
+                .select('id, full_name, school_code, class_id, section_id, photo_url')
                 .eq('branch_id', branchId)
-                .or(`full_name.ilike.%${searchTerm}%,admission_number.ilike.%${searchTerm}%`)
+                .or(`full_name.ilike.%${searchTerm}%,school_code.ilike.%${searchTerm}%`)
                 .limit(20);
         } else {
             query = supabase
@@ -284,7 +284,7 @@ const IssueCardDialog = ({ open, onClose, branchId, organizationId, onSaved }) =
                                                     {user.full_name}
                                                 </p>
                                                 <p className="text-sm text-muted-foreground">
-                                                    {searchType === 'student' ? user.admission_no : user.employee_id}
+                                                    {searchType === 'student' ? user.admission_no : user.staff_id}
                                                     {user.class_name && ` • ${user.class_name}`}
                                                     {user.department && ` • ${user.department}`}
                                                 </p>
@@ -306,7 +306,7 @@ const IssueCardDialog = ({ open, onClose, branchId, organizationId, onSaved }) =
                             <AlertDescription className="flex items-center justify-between">
                                 <span>
                                     Selected: <strong>{selectedUser.full_name}</strong>
-                                    {' '}({searchType === 'student' ? selectedUser.admission_no : selectedUser.employee_id})
+                                    {' '}({searchType === 'student' ? selectedUser.admission_no : selectedUser.staff_id})
                                 </span>
                                 <Button variant="ghost" size="sm" onClick={() => setSelectedUser(null)}>
                                     <X className="w-4 h-4" />
@@ -453,12 +453,12 @@ const CardManagement = () => {
                     if (card.user_type === 'student') {
                         const { data: student } = await supabase
                             .from('student_profiles')
-                            .select('full_name, admission_number')
+                            .select('full_name, school_code')
                             .eq('id', card.user_id)
                             .single();
                         if (student) {
                             userName = student.full_name;
-                            userCode = student.admission_number || '';
+                            userCode = student.school_code || '';
                         }
                     } else {
                         const { data: staff } = await supabase

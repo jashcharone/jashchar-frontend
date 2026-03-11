@@ -168,7 +168,7 @@ const QuickFees = () => {
         if (!student) return;
         setFetching(true);
         const groupName = `Quick Fees - ${student.school_code}`;
-        const { data: feeGroups, error } = await supabase.from('fee_groups').select('id').eq('name', groupName).eq('branch_id', branchId);
+        const { data: feeGroups, error } = await supabase.from('fee_groups').select('id').eq('name', groupName).eq('branch_id', branchId).eq('session_id', currentSessionId);
 
         if (error) {
              toast({ variant: 'destructive', title: 'Error Checking Fees', description: error.message });
@@ -410,6 +410,7 @@ const QuickFees = () => {
             .select('id')
             .eq('name', groupName)
             .eq('branch_id', branchId)
+            .eq('session_id', currentSessionId)
             .maybeSingle();
             
         if (existingGroup) {

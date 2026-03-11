@@ -397,7 +397,7 @@ const StaffUsers = () => {
                                             </td>
                                             <td className="p-3">
                                                 <code className="bg-muted px-2 py-1 rounded text-sm">
-                                                    {member.employee_id || '-'}
+                                                    {member.staff_id || '-'}
                                                 </code>
                                             </td>
                                             <td className="p-3 text-sm text-muted-foreground">{member.department_name || '-'}</td>

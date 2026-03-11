@@ -60,6 +60,7 @@ const FeesGroup = () => {
             .from('fee_groups')
             .select('*')
             .eq('branch_id', selectedBranch.id)
+            .eq('session_id', currentSessionId)
             .order('name', { ascending: true });
         
         if (error) {

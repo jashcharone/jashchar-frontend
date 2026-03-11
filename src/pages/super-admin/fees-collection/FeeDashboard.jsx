@@ -283,7 +283,9 @@ const FeeDashboard = () => {
         const { data } = await supabase
           .from('student_fee_allocations')
           .select('id, student_id, amount, paid, balance, due_date')
-          .in('student_id', batch);
+          .in('student_id', batch)
+          .eq('branch_id', branchId)
+          .eq('session_id', selectedSessionId);
         if (data) allAllocations.push(...data);
       }
 
@@ -294,7 +296,9 @@ const FeeDashboard = () => {
         const { data } = await supabase
           .from('fee_payments')
           .select('id, student_id, amount, payment_date, payment_mode, created_at')
-          .in('student_id', batch);
+          .in('student_id', batch)
+          .eq('branch_id', branchId)
+          .eq('session_id', selectedSessionId);
         if (data) allPayments.push(...data);
       }
 

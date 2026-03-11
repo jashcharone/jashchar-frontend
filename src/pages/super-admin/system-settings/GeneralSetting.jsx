@@ -18,15 +18,15 @@ import { Save, Loader2, Settings, CreditCard, UserCog, Hash, Building2, Receipt,
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
 
-// Helper function to convert session name "2026-2027" to "2026/27" format
+// Helper function to convert session name "2026-2027" to "2026-27" format
 const getSessionYearFormat = (sessionName) => {
-    if (!sessionName) return `${new Date().getFullYear()}/${String(new Date().getFullYear() + 1).slice(-2)}`;
+    if (!sessionName) return `${new Date().getFullYear()}-${String(new Date().getFullYear() + 1).slice(-2)}`;
     // Session name format: "2026-2027"
     const match = sessionName.match(/(\d{4})-(\d{4})/);
     if (match) {
-        return `${match[1]}/${match[2].slice(-2)}`; // Returns "2026/27"
+        return `${match[1]}-${match[2].slice(-2)}`; // Returns "2026-27"
     }
-    return `${new Date().getFullYear()}/${String(new Date().getFullYear() + 1).slice(-2)}`;
+    return `${new Date().getFullYear()}-${String(new Date().getFullYear() + 1).slice(-2)}`;
 };
 
 // ID Auto Generation Settings Tab

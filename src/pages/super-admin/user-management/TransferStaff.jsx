@@ -371,7 +371,7 @@ const TransferStaff = () => {
                                                         </p>
                                                         <p className="text-xs text-muted-foreground">
                                                             {emp.departments?.name || ''}
-                                                            {emp.employee_id ? ` • ${emp.employee_id}` : ''}
+                                                            {emp.staff_id ? ` • ${emp.staff_id}` : ''}
                                                         </p>
                                                     </div>
                                                     {selectedEmployee?.id === emp.id && (
@@ -577,7 +577,7 @@ const TransferStaff = () => {
                                                                 </Avatar>
                                                                 <div>
                                                                     <p className="font-medium text-sm">{record.employee?.full_name || 'Unknown'}</p>
-                                                                    <p className="text-xs text-muted-foreground">{record.employee?.employee_id || ''}</p>
+                                                                    <p className="text-xs text-muted-foreground">{record.employee?.staff_id || ''}</p>
                                                                 </div>
                                                             </div>
                                                         </TableCell>
@@ -705,7 +705,7 @@ const TransferStaff = () => {
                             <div className="space-y-3 text-sm">
                                 <div className="grid grid-cols-2 gap-3">
                                     <div><span className="text-muted-foreground">Staff:</span> <strong>{detailRecord.employee?.full_name}</strong></div>
-                                    <div><span className="text-muted-foreground">ID:</span> {detailRecord.employee?.employee_id || '-'}</div>
+                                    <div><span className="text-muted-foreground">ID:</span> {detailRecord.employee?.staff_id || '-'}</div>
                                     <div><span className="text-muted-foreground">From:</span> {detailRecord.from_branch?.branch_name}</div>
                                     <div><span className="text-muted-foreground">To:</span> {detailRecord.to_branch?.branch_name}</div>
                                     <div><span className="text-muted-foreground">Type:</span> <span className="capitalize">{detailRecord.transfer_type}</span></div>

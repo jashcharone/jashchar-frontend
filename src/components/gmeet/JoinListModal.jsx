@@ -36,12 +36,12 @@ const JoinListModal = ({ isOpen, onClose, type, itemId, branchId }) => {
       } else {
         const res = await supabase
           .from('gmeet_live_meeting_joins')
-          .select('join_time, staff:employee_profiles(full_name, school_code, role:roles(name))')
+          .select('join_time, staff:employee_profiles(full_name, staff_id, role:roles(name))')
           .eq('live_meeting_id', itemId)
           .eq('branch_id', branchId);
         data = res.data?.map(j => ({
           name: j.staff?.full_name,
-          id_no: j.staff?.school_code || '-',
+          id_no: j.staff?.staff_id || '-',
           extra: j.staff?.role?.name,
           time: j.join_time
         })) || [];

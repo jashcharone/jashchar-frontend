@@ -20,7 +20,7 @@ const InvitedStaffModal = ({ isOpen, onClose, invitedIds, branchId }) => {
     setLoading(true);
     const { data } = await supabase
       .from('employee_profiles')
-      .select('id, full_name, role:roles(name), school_code')
+      .select('id, full_name, role:roles(name), staff_id')
       .in('id', invitedIds)
       .eq('branch_id', branchId);
     setStaff(data || []);
@@ -51,7 +51,7 @@ const InvitedStaffModal = ({ isOpen, onClose, invitedIds, branchId }) => {
                 {staff.map(s => (
                   <TableRow key={s.id}>
                     <TableCell className="font-medium">{s.full_name}</TableCell>
-                    <TableCell>{s.school_code || '-'}</TableCell>
+                    <TableCell>{s.staff_id || '-'}</TableCell>
                     <TableCell>{s.role?.name}</TableCell>
                   </TableRow>
                 ))}

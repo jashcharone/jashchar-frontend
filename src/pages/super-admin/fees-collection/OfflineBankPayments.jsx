@@ -89,6 +89,7 @@ const OfflineBankPayments = () => {
                     )
                 `)
                 .eq('branch_id', branchId)
+                .eq('session_id', currentSessionId)
                 .order('created_at', { ascending: false });
 
             if (error) throw error;
@@ -170,13 +171,16 @@ const OfflineBankPayments = () => {
                 .from('student_fee_allocations')
                 .select('id, fee_master_id, fee_master:fee_masters(amount)')
                 .eq('student_id', selectedPayment.student_id)
-                .eq('branch_id', branchId);
+                .eq('branch_id', branchId)
+                .eq('session_id', currentSessionId);
             
             // Get payments already made
             const { data: existingPayments } = await supabase
                 .from('fee_payments')
                 .select('fee_master_id, amount')
                 .eq('student_id', selectedPayment.student_id)
+                .eq('branch_id', branchId)
+                .eq('session_id', currentSessionId)
                 .is('reverted_at', null);
             
             // Find fee master with balance

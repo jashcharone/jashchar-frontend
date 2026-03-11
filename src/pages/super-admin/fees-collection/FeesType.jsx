@@ -60,6 +60,7 @@ const FeesType = () => {
             .from('fee_types')
             .select('*')
             .eq('branch_id', selectedBranch.id)
+            .eq('session_id', currentSessionId)
             .order('name', { ascending: true });
         
         if (error) {
@@ -127,6 +128,7 @@ const FeesType = () => {
 
         const upsertData = {
             branch_id: selectedBranch.id,
+            session_id: currentSessionId,
             organization_id: organizationId,
             name: formData.name.trim(),
             code: formData.code?.trim() || generateCode(formData.name),

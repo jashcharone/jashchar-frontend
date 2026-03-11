@@ -144,7 +144,9 @@ const FeesAnalysis = () => {
         const batch = studentIds.slice(i, i + batchSize);
         let allocQuery = supabase.from('student_fee_allocations')
           .select('id, student_id, fee_master_id, fee_master:fee_masters(id, amount, fee_type_id, fee_type:fee_types(id, name), fee_group:fee_groups(name))')
-          .in('student_id', batch);
+          .in('student_id', batch)
+          .eq('branch_id', branchId)
+          .eq('session_id', selectedSessionId);
         const { data } = await allocQuery;
         if (data) allAllocations.push(...data);
       }
@@ -161,6 +163,8 @@ const FeesAnalysis = () => {
         const { data } = await supabase.from('fee_payments')
           .select('id, student_id, amount, discount_amount, fine_paid, payment_mode, payment_date, created_at, fee_master_id')
           .in('student_id', batch)
+          .eq('branch_id', branchId)
+          .eq('session_id', selectedSessionId)
           .is('reverted_at', null);
         if (data) allPayments.push(...data);
       }

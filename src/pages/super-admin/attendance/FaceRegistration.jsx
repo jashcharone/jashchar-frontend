@@ -792,7 +792,7 @@ const QuickRegisterDialog = ({ open, onClose, person, personType, branchId, orga
                         <span className="truncate">Register - {person?.full_name}</span>
                     </DialogTitle>
                     <DialogDescription className="text-xs sm:text-sm">
-                        {personType === 'student' ? 'Student' : 'Staff'} • {person?.admission_number || person?.phone || person?.department}
+                        {personType === 'student' ? 'Student' : 'Staff'} • {person?.school_code || person?.phone || person?.department}
                     </DialogDescription>
                 </DialogHeader>
                 
@@ -1101,12 +1101,14 @@ const FaceRegistration = () => {
     const fetchStudents = async () => {
         setLoading(true);
         
+        // 🌟 JASHCHAR ERP: Filter by current session + branch + active only
         let query = supabase
             .from('student_profiles')
             .select(`
-                id, full_name, admission_number, photo_url, class_id, section_id
+                id, full_name, school_code, photo_url, class_id, section_id
             `)
             .eq('branch_id', branchId)
+            .eq('session_id', currentSessionId)  // ✅ Current session only
             .eq('is_disabled', false)
             .order('full_name');
         
@@ -1205,7 +1207,7 @@ const FaceRegistration = () => {
         return students.filter(s => {
             const matchesSearch = !searchTerm || 
                 s.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                s.admission_number?.toLowerCase().includes(searchTerm.toLowerCase());
+                s.school_code?.toLowerCase().includes(searchTerm.toLowerCase());
             
             const isRegistered = !!faceRegistrations[s.id];
             const matchesStatus = filterStatus === 'all' || 
@@ -1603,7 +1605,7 @@ const FaceRegistration = () => {
                                                     </div>
                                                     <p className="text-xs text-muted-foreground mt-0.5">
                                                         {activeTab === 'students' 
-                                                            ? `${person.admission_number || '-'} • ${person.classes?.class_name || ''} ${person.sections?.section_name || ''}`
+                                                            ? `${person.school_code || '-'} • ${person.classes?.class_name || ''} ${person.sections?.section_name || ''}`
                                                             : `${person.phone || '-'} • ${person.department || '-'}`
                                                         }
                                                     </p>
@@ -1694,7 +1696,7 @@ const FaceRegistration = () => {
                                                     </TableCell>
                                                     <TableCell className="font-medium">{person.full_name}</TableCell>
                                                     <TableCell className="text-muted-foreground">
-                                                        {activeTab === 'students' ? person.admission_number : person.phone}
+                                                        {activeTab === 'students' ? person.school_code : person.phone}
                                                     </TableCell>
                                                     {activeTab === 'students' && (
                                                         <TableCell>

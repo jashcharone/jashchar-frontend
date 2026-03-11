@@ -47,6 +47,7 @@ const RefundApprovals = () => {
                 .from('fee_refunds')
                 .select('*')
                 .eq('branch_id', selectedBranch.id)
+                .eq('session_id', currentSessionId)
                 .order('created_at', { ascending: false });
 
             if (error) throw error;

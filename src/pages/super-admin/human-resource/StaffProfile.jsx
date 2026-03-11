@@ -160,12 +160,12 @@ const StaffProfile = () => {
               </div>
               <CardContent className="pt-20 pb-6 px-4 text-center">
                 <h2 className="text-2xl font-bold text-foreground">{staff.full_name}</h2>
-                <p className="text-sm text-primary font-mono font-semibold mb-4">{staff.employee_id}</p>
+                <p className="text-sm text-primary font-mono font-semibold mb-4">{staff.staff_id}</p>
                 
                 <div className="space-y-3 text-sm text-left mt-6 bg-muted/10 p-4 rounded-lg border">
                     <div className="flex justify-between py-2 border-b border-dashed">
                         <span className="text-muted-foreground">Employee ID</span>
-                        <span className="font-medium font-mono text-primary">{staff.employee_id || '-'}</span>
+                        <span className="font-medium font-mono text-primary">{staff.staff_id || '-'}</span>
                     </div>
                     <div className="flex justify-between py-2 border-b border-dashed">
                         <span className="text-muted-foreground">Role</span>
@@ -301,7 +301,7 @@ const StaffProfile = () => {
                     <section>
                         <h3 className="text-lg font-semibold flex items-center gap-2 text-primary mb-4"><Briefcase className="w-5 h-5" /> Employment & Official Details</h3>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-y-4 gap-x-8 text-sm">
-                            <div className="grid grid-cols-3 border-b pb-2"><span className="text-muted-foreground">Employee ID</span><span className="col-span-2 font-medium font-mono text-primary">{staff.employee_id || '-'}</span></div>
+                            <div className="grid grid-cols-3 border-b pb-2"><span className="text-muted-foreground">Employee ID</span><span className="col-span-2 font-medium font-mono text-primary">{staff.staff_id || '-'}</span></div>
                             <div className="grid grid-cols-3 border-b pb-2"><span className="text-muted-foreground">Date of Joining</span><span className="col-span-2 font-medium">{staff.date_of_joining || '-'}</span></div>
                             <div className="grid grid-cols-3 border-b pb-2"><span className="text-muted-foreground">Designation</span><span className="col-span-2 font-medium">{staff.designation?.name || '-'}</span></div>
                             <div className="grid grid-cols-3 border-b pb-2"><span className="text-muted-foreground">Department</span><span className="col-span-2 font-medium">{staff.department?.name || '-'}</span></div>

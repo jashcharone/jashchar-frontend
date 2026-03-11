@@ -119,7 +119,7 @@ const StaffAttendance = () => {
         return {
           ...staff,
           display_name: staff.full_name || [staff.first_name, staff.last_name].filter(Boolean).join(' ') || 'Unknown',
-          emp_code: staff.employee_id || '-',
+          emp_code: staff.staff_id || '-',
           department_name: staff.departments?.name || '-',
           attendance_status: attendance?.status || 'present',
           attendance_note: attendance?.note || '',

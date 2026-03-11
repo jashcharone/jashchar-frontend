@@ -181,6 +181,7 @@ const StudentFees = () => {
     const [loading, setLoading] = useState(true);
     const [paymentLoading, setPaymentLoading] = useState(false);
     const [selectedFees, setSelectedFees] = useState([]);
+    const [feeAmounts, setFeeAmounts] = useState({}); // { feeId: amount } per-fee editable amounts
     const [activeTab, setActiveTab] = useState('fees');
     const [paymentDetails, setPaymentDetails] = useState({
         amount: '',
@@ -286,7 +287,8 @@ const StudentFees = () => {
                             .from('student_fee_allocations')
                             .select('fee_master_id')
                             .eq('student_id', studentId)
-                            .eq('branch_id', selectedBranch.id);
+                            .eq('branch_id', selectedBranch.id)
+                            .eq('session_id', currentSessionId);
                         
                         const existingMasterIds = new Set((existingAllocations || []).map(a => a.fee_master_id));
                         
@@ -347,12 +349,14 @@ const StudentFees = () => {
                         )
                     `)
                     .eq('student_id', studentId)
-                    .eq('branch_id', selectedBranch.id),
+                    .eq('branch_id', selectedBranch.id)
+                    .eq('session_id', currentSessionId),
                 supabase
                     .from('fee_payments')
                     .select(`*, fee_master:fee_masters(*, fee_group:fee_groups(name), fee_type:fee_types(name))`)
                     .eq('student_id', studentId)
                     .eq('branch_id', selectedBranch.id)
+                    .eq('session_id', currentSessionId)
                     .order('payment_date', { ascending: false }),
                 // Fee Engine 3.0: Fetch student_fee_ledger entries
                 supabase
@@ -710,12 +714,27 @@ const StudentFees = () => {
             ? selectedFees.filter(id => id !== feeId)
             : [...selectedFees, feeId];
         setSelectedFees(newSelection);
+        // Initialize per-fee amount for newly selected fees
+        setFeeAmounts(prev => {
+            const next = { ...prev };
+            if (!selectedFees.includes(feeId)) {
+                const fee = fees.find(f => f.id === feeId);
+                next[feeId] = fee?.balance > 0 ? fee.balance : 0;
+            } else {
+                delete next[feeId];
+            }
+            return next;
+        });
     };
 
     // Select all unpaid fees
     const selectAllUnpaid = () => {
-        const unpaidIds = fees.filter(f => f.balance > 0).map(f => f.id);
+        const unpaidFees = fees.filter(f => f.balance > 0);
+        const unpaidIds = unpaidFees.map(f => f.id);
         setSelectedFees(unpaidIds);
+        const amounts = {};
+        unpaidFees.forEach(f => { amounts[f.id] = f.balance; });
+        setFeeAmounts(amounts);
     };
 
     // Calculate total discount already used in previous payments
@@ -766,13 +785,12 @@ const StudentFees = () => {
         selectedFees.forEach(id => {
             const fee = fees.find(f => f.id === id);
             if (fee) {
-                totalBalance += fee.balance > 0 ? fee.balance : 0;
+                totalBalance += feeAmounts[id] !== undefined ? Number(feeAmounts[id]) : (fee.balance > 0 ? fee.balance : 0);
                 totalFine += fee.fine > 0 ? fee.fine : 0;
             }
         });
         
         // Apply only REMAINING discount (not full assigned discount)
-        // Once discount is fully used in previous payments, it won't apply again
         let applicableDiscount = Math.min(remainingDiscount, totalBalance);
         
         setPaymentDetails(prev => ({
@@ -781,7 +799,7 @@ const StudentFees = () => {
             fine: totalFine.toFixed(2),
             discount: applicableDiscount.toFixed(2)
         }));
-    }, [selectedFees, fees, remainingDiscount]);
+    }, [selectedFees, fees, feeAmounts, remainingDiscount]);
 
     const feeSummary = useMemo(() => {
         // Check if ledger entries include transport/hostel fees (to avoid double-counting with old system)
@@ -956,14 +974,19 @@ const StudentFees = () => {
             return;
         }
 
-        // ? VALIDATION: Amount cannot exceed selected fees balance
-        if (enteredAmount > selectedFeesMaxBalance) {
-            toast({ 
-                variant: 'destructive', 
-                title: 'Amount exceeds balance', 
-                description: `???? enter ????? Amount (?${enteredAmount.toLocaleString('en-IN')}) selected fees ? balance (?${selectedFeesMaxBalance.toLocaleString('en-IN')}) ???? ??????. ???????? ?????? amount enter ????.` 
-            });
-            return;
+        // Validate per-fee amounts don't exceed individual balances
+        for (const feeId of selectedFees) {
+            const fee = fees.find(f => f.id === feeId);
+            if (!fee) continue;
+            const amt = Number(feeAmounts[feeId] || 0);
+            if (amt > fee.balance) {
+                toast({ 
+                    variant: 'destructive', 
+                    title: 'Amount exceeds balance', 
+                    description: `${fee.typeName || fee.type} amount (₹${amt.toLocaleString('en-IN')}) exceeds balance (₹${fee.balance.toLocaleString('en-IN')}).` 
+                });
+                return;
+            }
         }
 
         // ? VALIDATION: Discount cannot exceed the amount being paid
@@ -994,7 +1017,6 @@ const StudentFees = () => {
         setPaymentLoading(true);
 
         try {
-            let remainingAmountToDistribute = parseFloat(paymentDetails.amount);
             let remainingDiscountToDistribute = parseFloat(paymentDetails.discount);
             let remainingFineToDistribute = parseFloat(paymentDetails.fine);
 
@@ -1008,7 +1030,7 @@ const StudentFees = () => {
                 const fee = fees.find(f => f.id === feeId);
                 if (!fee || fee.balance <= 0) continue;
 
-                const amountForThisFee = Math.min(remainingAmountToDistribute, fee.balance);
+                const amountForThisFee = Math.min(Number(feeAmounts[feeId] || 0), fee.balance);
                 const discountForThisFee = Math.min(remainingDiscountToDistribute, fee.balance - amountForThisFee);
                 const fineForThisFee = Math.min(remainingFineToDistribute, fee.fine);
                 
@@ -1120,7 +1142,6 @@ const StudentFees = () => {
                             receipt_snapshot: receiptSnapshot,
                         });
                     }
-                    remainingAmountToDistribute -= amountForThisFee;
                     remainingDiscountToDistribute -= discountForThisFee;
                     remainingFineToDistribute -= fineForThisFee;
                 }
@@ -1142,6 +1163,7 @@ const StudentFees = () => {
             toast({ title: '? Payment collected successfully!', description: `Transaction ID: ${newTransactionId}` });
             await fetchStudentAndFees();
             setSelectedFees([]);
+            setFeeAmounts({});
             setPaymentDetails(prev => ({ ...prev, note: '', utr_number: '' }));
 
             // Navigate to the new receipt page (use first payment's ID)
@@ -1747,6 +1769,10 @@ const StudentFees = () => {
         }, { amount: 0, paid: 0, discount: 0, fine: 0, balance: 0 });
     }, [fees]);
 
+    // Show Discount/Fine columns only when there are non-zero values
+    const hasAnyDiscount = useMemo(() => fees.some(f => f.totalDiscount > 0), [fees]);
+    const hasAnyFine = useMemo(() => fees.some(f => f.totalFine > 0), [fees]);
+
     // Get last payment info
     const lastPayment = payments.filter(p => !p.reverted_at)[0];
 
@@ -1926,28 +1952,62 @@ const StudentFees = () => {
                             )}
                         </CardHeader>
                         <CardContent className="space-y-3 pt-4">
-                            <div className="grid grid-cols-2 gap-3">
-                                <div className="space-y-1">
-                                    <Label className="text-xs">Amount ({currencySymbol})</Label>
-                                    <Input 
-                                        type="number" 
-                                        value={paymentDetails.amount} 
-                                        onChange={(e) => {
-                                            const val = parseFloat(e.target.value) || 0;
-                                            // ? Prevent entering more than selected balance
-                                            if (val > selectedFeesMaxBalance) {
-                                                setPaymentDetails(p => ({ ...p, amount: selectedFeesMaxBalance.toFixed(2) }));
-                                            } else {
-                                                setPaymentDetails(p => ({ ...p, amount: e.target.value }));
-                                            }
-                                        }}
-                                        max={selectedFeesMaxBalance}
-                                        className="h-9"
-                                    />
-                                    {selectedFeesMaxBalance > 0 && (
-                                        <p className="text-[10px] text-muted-foreground">Max: {currencySymbol}{selectedFeesMaxBalance.toLocaleString('en-IN')}</p>
-                                    )}
+                            {/* Per-fee amount breakdown */}
+                            {selectedFees.length > 0 && (
+                                <div className="space-y-2">
+                                    <Label className="text-xs font-semibold">Enter Amount per Fee</Label>
+                                    <div className="border rounded-lg overflow-hidden">
+                                        <table className="w-full text-xs">
+                                            <thead>
+                                                <tr className="bg-muted/50 border-b">
+                                                    <th className="p-2 text-left">Fee Type</th>
+                                                    <th className="p-2 text-right">Balance</th>
+                                                    <th className="p-2 text-right">Enter Amount ({currencySymbol})</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {selectedFees.map(feeId => {
+                                                    const fee = fees.find(f => f.id === feeId);
+                                                    if (!fee) return null;
+                                                    return (
+                                                        <tr key={feeId} className="border-b last:border-0">
+                                                            <td className="p-2">
+                                                                <div className="font-medium">{fee.typeName || fee.type}</div>
+                                                                <div className="text-[10px] text-muted-foreground">{fee.group}</div>
+                                                            </td>
+                                                            <td className="p-2 text-right font-mono text-muted-foreground">{currencySymbol}{fee.balance.toLocaleString('en-IN')}</td>
+                                                            <td className="p-2 text-right">
+                                                                <Input
+                                                                    type="number"
+                                                                    value={feeAmounts[feeId] ?? ''}
+                                                                    onChange={(e) => {
+                                                                        const val = parseFloat(e.target.value) || 0;
+                                                                        setFeeAmounts(prev => ({
+                                                                            ...prev,
+                                                                            [feeId]: val > fee.balance ? fee.balance : (e.target.value === '' ? '' : val)
+                                                                        }));
+                                                                    }}
+                                                                    max={fee.balance}
+                                                                    className="h-7 w-24 ml-auto text-right font-mono"
+                                                                />
+                                                            </td>
+                                                        </tr>
+                                                    );
+                                                })}
+                                            </tbody>
+                                            <tfoot>
+                                                <tr className="bg-muted/30 font-semibold">
+                                                    <td className="p-2">Total</td>
+                                                    <td className="p-2 text-right font-mono">{currencySymbol}{selectedFeesMaxBalance.toLocaleString('en-IN')}</td>
+                                                    <td className="p-2 text-right font-mono">{currencySymbol}{parseFloat(paymentDetails.amount || 0).toLocaleString('en-IN')}</td>
+                                                </tr>
+                                            </tfoot>
+                                        </table>
+                                    </div>
                                 </div>
+                            )}
+
+                            <div className="grid grid-cols-2 gap-3">
                                 <div className="space-y-1">
                                     <Label className="text-xs">
                                         Discount ({currencySymbol})
@@ -1959,6 +2019,15 @@ const StudentFees = () => {
                                         type="number" 
                                         value={paymentDetails.discount} 
                                         onChange={(e) => setPaymentDetails(p => ({ ...p, discount: e.target.value }))}
+                                        className="h-9"
+                                    />
+                                </div>
+                                <div className="space-y-1">
+                                    <Label className="text-xs">Fine ({currencySymbol})</Label>
+                                    <Input 
+                                        type="number" 
+                                        value={paymentDetails.fine} 
+                                        onChange={(e) => setPaymentDetails(p => ({ ...p, fine: e.target.value }))}
                                         className="h-9"
                                     />
                                 </div>
@@ -1981,29 +2050,15 @@ const StudentFees = () => {
                                             {currencySymbol}{remainingDiscount.toLocaleString('en-IN')}
                                         </span>
                                     </div>
-                                    {remainingDiscount === 0 && totalDiscountAlreadyUsed > 0 && (
-                                        <p className="text-amber-600 text-[10px] mt-1">? Discount fully utilized in previous payments</p>
-                                    )}
                                 </div>
                             )}
-                            
-                            <div className="grid grid-cols-2 gap-3">
-                                <div className="space-y-1">
-                                    <Label className="text-xs">Fine ({currencySymbol})</Label>
-                                    <Input 
-                                        type="number" 
-                                        value={paymentDetails.fine} 
-                                        onChange={(e) => setPaymentDetails(p => ({ ...p, fine: e.target.value }))}
-                                        className="h-9"
-                                    />
-                                </div>
-                                <div className="space-y-1">
-                                    <Label className="text-xs">Date</Label>
-                                    <DatePicker 
-                                        value={paymentDetails.payment_date} 
-                                        onChange={(date) => setPaymentDetails(p => ({...p, payment_date: date}))}
-                                    />
-                                </div>
+
+                            <div className="space-y-1">
+                                <Label className="text-xs">Date</Label>
+                                <DatePicker 
+                                    value={paymentDetails.payment_date} 
+                                    onChange={(date) => setPaymentDetails(p => ({...p, payment_date: date}))}
+                                />
                             </div>
 
                             <div className="space-y-1">
@@ -2126,7 +2181,7 @@ const StudentFees = () => {
                                         </TabsTrigger>
                                         <TabsTrigger value="history" className="gap-2">
                                             <History className="h-4 w-4" />Payment History
-                                            <Badge variant="secondary" className="ml-1">{payments.length + (transportDetails?.payments?.length || 0) + (hostelDetails?.payments?.length || 0)}</Badge>
+                                            <Badge variant="secondary" className="ml-1">{new Set(payments.map(p => p.transaction_id || p.id)).size + (transportDetails?.payments ? new Set(transportDetails.payments.map(p => p.transaction_id || p.id)).size : 0) + (hostelDetails?.payments ? new Set(hostelDetails.payments.map(p => p.transaction_id || p.id)).size : 0)}</Badge>
                                         </TabsTrigger>
                                     </TabsList>
                                     {activeTab === 'fees' && feeSummary.unpaidCount > 0 && (
@@ -2147,9 +2202,9 @@ const StudentFees = () => {
                                                     <th className="p-3 text-left font-medium">Fee Type</th>
                                                     <th className="p-3 text-left font-medium">Due Date</th>
                                                     <th className="p-3 text-right font-medium">Amount</th>
-                                                    <th className="p-3 text-right font-medium">Discount</th>
+                                                    {hasAnyDiscount && <th className="p-3 text-right font-medium">Discount</th>}
                                                     <th className="p-3 text-right font-medium text-emerald-600">Net Fee</th>
-                                                    <th className="p-3 text-right font-medium">Fine</th>
+                                                    {hasAnyFine && <th className="p-3 text-right font-medium">Fine</th>}
                                                     <th className="p-3 text-right font-medium">Paid</th>
                                                     <th className="p-3 text-right font-medium">Balance</th>
                                                     <th className="p-3 text-center font-medium">Status</th>
@@ -2187,9 +2242,9 @@ const StudentFees = () => {
                                                             ) : 'N/A'}
                                                         </td>
                                                         <td className="p-3 text-right font-mono">{currencySymbol}{fee.amount.toLocaleString('en-IN')}</td>
-                                                        <td className="p-3 text-right font-mono text-blue-600">{currencySymbol}{fee.totalDiscount.toLocaleString('en-IN')}</td>
+                                                        {hasAnyDiscount && <td className="p-3 text-right font-mono text-blue-600">{currencySymbol}{fee.totalDiscount.toLocaleString('en-IN')}</td>}
                                                         <td className="p-3 text-right font-mono font-semibold text-emerald-600">{currencySymbol}{(fee.amount - fee.totalDiscount).toLocaleString('en-IN')}</td>
-                                                        <td className="p-3 text-right font-mono text-amber-600">{currencySymbol}{fee.totalFine.toLocaleString('en-IN')}</td>
+                                                        {hasAnyFine && <td className="p-3 text-right font-mono text-amber-600">{currencySymbol}{fee.totalFine.toLocaleString('en-IN')}</td>}
                                                         <td className="p-3 text-right font-mono text-green-600">{currencySymbol}{fee.totalPaid.toLocaleString('en-IN')}</td>
                                                         <td className="p-3 text-right font-mono font-bold">{currencySymbol}{fee.balance.toLocaleString('en-IN')}</td>
                                                         <td className="p-3 text-center">
@@ -2207,9 +2262,9 @@ const StudentFees = () => {
                                                     <tr className="bg-muted font-bold border-t-2 border-border">
                                                         <td colSpan="4" className="p-3 text-right font-semibold">Grand Total</td>
                                                         <td className="p-3 text-right"><span className="font-mono text-lg font-bold bg-slate-200 dark:bg-slate-700 px-2 py-1 rounded">{currencySymbol}{feesStatementTotals.amount.toLocaleString('en-IN')}</span></td>
-                                                        <td className="p-3 text-right"><span className="font-mono text-lg font-bold text-blue-700 bg-blue-100 dark:bg-blue-900/50 dark:text-blue-400 px-2 py-1 rounded">{currencySymbol}{feesStatementTotals.discount.toLocaleString('en-IN')}</span></td>
+                                                        {hasAnyDiscount && <td className="p-3 text-right"><span className="font-mono text-lg font-bold text-blue-700 bg-blue-100 dark:bg-blue-900/50 dark:text-blue-400 px-2 py-1 rounded">{currencySymbol}{feesStatementTotals.discount.toLocaleString('en-IN')}</span></td>}
                                                         <td className="p-3 text-right"><span className="font-mono text-lg font-bold text-emerald-700 bg-emerald-100 dark:bg-emerald-900/50 dark:text-emerald-400 px-2 py-1 rounded">{currencySymbol}{(feesStatementTotals.amount - feesStatementTotals.discount).toLocaleString('en-IN')}</span></td>
-                                                        <td className="p-3 text-right"><span className="font-mono text-lg font-bold text-amber-700 bg-amber-100 dark:bg-amber-900/50 dark:text-amber-400 px-2 py-1 rounded">{currencySymbol}{feesStatementTotals.fine.toLocaleString('en-IN')}</span></td>
+                                                        {hasAnyFine && <td className="p-3 text-right"><span className="font-mono text-lg font-bold text-amber-700 bg-amber-100 dark:bg-amber-900/50 dark:text-amber-400 px-2 py-1 rounded">{currencySymbol}{feesStatementTotals.fine.toLocaleString('en-IN')}</span></td>}
                                                         <td className="p-3 text-right"><span className="font-mono text-lg font-bold text-green-700 bg-green-100 dark:bg-green-900/50 dark:text-green-400 px-2 py-1 rounded">{currencySymbol}{feesStatementTotals.paid.toLocaleString('en-IN')}</span></td>
                                                         <td className="p-3 text-right"><span className="font-mono text-lg font-bold text-red-700 bg-red-100 dark:bg-red-900/50 dark:text-red-400 px-2 py-1 rounded">{currencySymbol}{feesStatementTotals.balance.toLocaleString('en-IN')}</span></td>
                                                         <td></td>
@@ -2866,9 +2921,9 @@ const StudentFees = () => {
                                         <div className="text-center p-2 bg-background rounded border">
                                             <p className="text-xs text-muted-foreground uppercase">Transactions</p>
                                             <p className="text-lg font-bold text-purple-600">{
-                                                payments.filter(p => !p.reverted_at).length +
-                                                (transportDetails?.payments?.filter(p => !p.reverted_at).length || 0) +
-                                                (hostelDetails?.payments?.filter(p => !p.reverted_at).length || 0)
+                                                new Set(payments.filter(p => !p.reverted_at).map(p => p.transaction_id || p.id)).size +
+                                                (transportDetails?.payments ? new Set(transportDetails.payments.filter(p => !p.reverted_at).map(p => p.transaction_id || p.id)).size : 0) +
+                                                (hostelDetails?.payments ? new Set(hostelDetails.payments.filter(p => !p.reverted_at).map(p => p.transaction_id || p.id)).size : 0)
                                             }</p>
                                         </div>
                                     </div>
@@ -2890,14 +2945,33 @@ const StudentFees = () => {
                                                 </tr>
                                             </thead>
                                             <tbody>
-                                                {/* Academic Fee Payments - Show Fee Name */}
-                                                {payments.map(p => {
-                                                    const feeInfo = p.ledger_id
-                                                        ? fees.find(f => f.ledgerId === p.ledger_id)
-                                                        : fees.find(f => f.masterId === p.fee_master_id);
-                                                    const netPaid = Number(p.amount || 0) + Number(p.fine_paid || 0) - Number(p.discount_amount || 0);
-                                                    return (
-                                                    <tr key={`fee-${p.id}`} className={`border-b ${p.reverted_at ? 'bg-red-50 dark:bg-red-950/20 opacity-60 line-through' : 'hover:bg-muted/30'}`}>
+                                                {/* Academic Fee Payments - Grouped by transaction_id */}
+                                                {(() => {
+                                                    const groups = {};
+                                                    payments.forEach(p => {
+                                                        const txId = p.transaction_id || p.id;
+                                                        if (!groups[txId]) {
+                                                            groups[txId] = { firstPayment: p, payments: [], totalAmount: 0, totalDiscount: 0, totalFine: 0, feeNames: [], allReverted: true };
+                                                        }
+                                                        groups[txId].payments.push(p);
+                                                        groups[txId].totalAmount += Number(p.amount || 0);
+                                                        groups[txId].totalDiscount += Number(p.discount_amount || 0);
+                                                        groups[txId].totalFine += Number(p.fine_paid || 0);
+                                                        const feeInfo = p.ledger_id
+                                                            ? fees.find(f => f.ledgerId === p.ledger_id)
+                                                            : fees.find(f => f.masterId === p.fee_master_id);
+                                                        const name = feeInfo?.typeName || feeInfo?.feeTypeName || p.receipt_snapshot?.fee?.name || 'Fee';
+                                                        if (!groups[txId].feeNames.includes(name)) groups[txId].feeNames.push(name);
+                                                        if (!p.reverted_at) groups[txId].allReverted = false;
+                                                    });
+                                                    return Object.entries(groups).map(([txId, group]) => {
+                                                        const p = group.firstPayment;
+                                                        const feeInfo = p.ledger_id
+                                                            ? fees.find(f => f.ledgerId === p.ledger_id)
+                                                            : fees.find(f => f.masterId === p.fee_master_id);
+                                                        const netPaid = group.totalAmount + group.totalFine - group.totalDiscount;
+                                                        return (
+                                                    <tr key={`fee-${txId}`} className={`border-b ${group.allReverted ? 'bg-red-50 dark:bg-red-950/20 opacity-60 line-through' : 'hover:bg-muted/30'}`}>
                                                         <td className="p-3">
                                                             <div className="font-medium">{format(parseISO(p.payment_date), 'dd MMM yyyy')}</div>
                                                             <div className="text-xs text-muted-foreground">{format(parseISO(p.created_at), 'hh:mm a')}</div>
@@ -2908,7 +2982,7 @@ const StudentFees = () => {
                                                             </Badge>
                                                         </td>
                                                         <td className="p-3">
-                                                            <div className="font-medium text-sm">{feeInfo?.typeName || feeInfo?.feeTypeName || p.receipt_snapshot?.fee?.name || 'Fee'}</div>
+                                                            <div className="font-medium text-sm">{group.feeNames.join(', ')}</div>
                                                             <div className="text-xs text-muted-foreground">{feeInfo?.group || feeInfo?.groupName || feeInfo?.feeGroupName || p.receipt_snapshot?.fee?.group || ''}</div>
                                                             {p.utr_number && (
                                                                 <code className="text-[10px] bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded font-mono mt-1 inline-block">UTR: {p.utr_number}</code>
@@ -2920,12 +2994,12 @@ const StudentFees = () => {
                                                         <td className="p-3">
                                                             <Badge variant="outline">{p.payment_mode}</Badge>
                                                         </td>
-                                                        <td className="p-3 text-right font-mono font-semibold">{currencySymbol}{Number(p.amount || 0).toLocaleString('en-IN')}</td>
-                                                        <td className="p-3 text-right font-mono text-blue-600">{Number(p.discount_amount) > 0 ? `-${currencySymbol}${Number(p.discount_amount).toLocaleString('en-IN')}` : '-'}</td>
-                                                        <td className="p-3 text-right font-mono text-amber-600">{Number(p.fine_paid) > 0 ? `+${currencySymbol}${Number(p.fine_paid).toLocaleString('en-IN')}` : '-'}</td>
+                                                        <td className="p-3 text-right font-mono font-semibold">{currencySymbol}{group.totalAmount.toLocaleString('en-IN')}</td>
+                                                        <td className="p-3 text-right font-mono text-blue-600">{group.totalDiscount > 0 ? `-${currencySymbol}${group.totalDiscount.toLocaleString('en-IN')}` : '-'}</td>
+                                                        <td className="p-3 text-right font-mono text-amber-600">{group.totalFine > 0 ? `+${currencySymbol}${group.totalFine.toLocaleString('en-IN')}` : '-'}</td>
                                                         <td className="p-3 text-right font-mono font-bold text-green-700">{currencySymbol}{netPaid.toLocaleString('en-IN')}</td>
                                                         <td className="p-3 text-center">
-                                                            {!p.reverted_at ? (
+                                                            {!group.allReverted ? (
                                                                 <div className="flex justify-center gap-1">
                                                                     <Button variant="outline" size="sm" onClick={() => printReceipt(p)} title="Print Receipt">
                                                                         <Printer className="h-3 w-3" />
@@ -2947,8 +3021,9 @@ const StudentFees = () => {
                                                             )}
                                                         </td>
                                                     </tr>
-                                                    );
-                                                })}
+                                                        );
+                                                    });
+                                                })()}
 
                                                 {/* Transport Fee Payments - Grouped by transaction_id */}
                                                 {(() => {

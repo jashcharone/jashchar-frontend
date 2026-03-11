@@ -192,7 +192,7 @@ const AttendanceReport = () => {
         // First get active (non-disabled) students in current session
         let studentQuery = supabase
             .from('student_profiles')
-            .select('id, full_name, admission_number, roll_number, class_id, section_id, photo_url')
+            .select('id, full_name, school_code, roll_number, class_id, section_id, photo_url')
             .eq('branch_id', branchId)
             .eq('session_id', currentSessionId)  // Filter by current session
             .or('is_disabled.is.null,is_disabled.eq.false');  // Only active students (not disabled)
@@ -262,7 +262,7 @@ const AttendanceReport = () => {
             return {
                 id: student.id,
                 name: student.full_name,
-                code: student.admission_number || student.roll_number || '-',
+                code: student.school_code || student.roll_number || '-',
                 class: classMap.get(student.class_id) || '-',
                 section: sectionMap.get(student.section_id) || '-',
                 photo_url: student.photo_url,
@@ -297,7 +297,7 @@ const AttendanceReport = () => {
         // First get staff
         let staffQuery = supabase
             .from('employee_profiles')
-            .select('id, full_name, employee_id, phone, department_id, designation_id, photo_url')
+            .select('id, full_name, staff_id, phone, department_id, designation_id, photo_url')
             .eq('branch_id', branchId);
         
         if (selectedDepartment !== 'all') {
@@ -345,7 +345,7 @@ const AttendanceReport = () => {
             return {
                 id: employee.id,
                 name: employee.full_name,
-                code: employee.employee_id || employee.phone || '-',
+                code: employee.staff_id || employee.phone || '-',
                 department: deptMap.get(employee.department_id) || '-',
                 photo_url: employee.photo_url,
                 totalDays: recorded,

@@ -1791,7 +1791,7 @@ const StudentAdmission = () => {
           supabase.from('transport_routes').select('id, route_title, fare, billing_cycle').eq('branch_id', branchId),
           supabase.from('hostels').select('id, name').eq('branch_id', branchId),
           supabase.from('hostel_room_types').select('*').eq('branch_id', branchId),
-          supabase.from('fee_groups').select(`id, name, fee_masters (*, fee_types(name, code))`).eq('branch_id', branchId),
+          supabase.from('fee_groups').select(`id, name, fee_masters (*, fee_types(name, code))`).eq('branch_id', branchId).eq('session_id', currentSessionId),
           supabase.from('discounts').select('id, name').eq('branch_id', branchId),
           supabase.from('master_religions').select('name'),
           supabase.from('master_castes').select('name'),

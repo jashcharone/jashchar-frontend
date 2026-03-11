@@ -125,8 +125,8 @@ const FeesMaster = () => {
         if (!branchId || !selectedBranch) return;
         
         const [groupsRes, typesRes, classesRes, sectionsRes] = await Promise.all([
-            supabase.from('fee_groups').select('id, name, description').eq('branch_id', selectedBranch.id).order('name'),
-            supabase.from('fee_types').select('id, name, code, description').eq('branch_id', selectedBranch.id).order('name'),
+            supabase.from('fee_groups').select('id, name, description').eq('branch_id', selectedBranch.id).eq('session_id', currentSessionId).order('name'),
+            supabase.from('fee_types').select('id, name, code, description').eq('branch_id', selectedBranch.id).eq('session_id', currentSessionId).order('name'),
             supabase.from('classes').select('id, name').eq('branch_id', selectedBranch.id).order('name'),
             supabase.from('sections').select('id, name, class_id:classes(id)').eq('branch_id', selectedBranch.id).order('name')
         ]);

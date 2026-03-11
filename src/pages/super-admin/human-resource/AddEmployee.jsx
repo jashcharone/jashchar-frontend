@@ -109,7 +109,7 @@ const AddEmployee = () => {
 
         // Other Details
         date_of_joining: null,
-        employee_id: '', // Unique Employee ID
+        staff_id: '', // Unique Staff ID
         salary_pay_type: 'Scale',
         citizenship: 'Indian',
         govt_id_no: '', // Resident No
@@ -327,7 +327,7 @@ const AddEmployee = () => {
             
             if (result.success) {
                 const newId = result.employeeId;
-                setFormData(prev => ({ ...prev, employee_id: newId, biometric_code: newId }));
+                setFormData(prev => ({ ...prev, staff_id: newId, biometric_code: newId }));
             } else {
                 // Fallback to local generation if API fails
                 console.warn('[AddEmployee] Backend API failed, using local generation:', result.error);
@@ -362,15 +362,15 @@ const AddEmployee = () => {
             // 🌟 Query GLOBALLY across ALL branches
             const { data, error } = await supabase
                 .from('employee_profiles')
-                .select('employee_id')
-                .ilike('employee_id', `${prefix}%`)
-                .order('employee_id', { ascending: false })
+                .select('staff_id')
+                .ilike('staff_id', `${prefix}%`)
+                .order('staff_id', { ascending: false })
                 .limit(1);
 
             let nextNum = 1;
 
-            if (data && data.length > 0 && data[0].employee_id) {
-                const lastId = data[0].employee_id;
+            if (data && data.length > 0 && data[0].staff_id) {
+                const lastId = data[0].staff_id;
                 const match = lastId.match(/(\d+)$/);
                 if (match) {
                     const lastNum = parseInt(match[1], 10);
@@ -381,7 +381,7 @@ const AddEmployee = () => {
             }
 
             const nextId = `${prefix}${String(nextNum).padStart(5, '0')}`;
-            setFormData(prev => ({ ...prev, employee_id: nextId, biometric_code: nextId }));
+            setFormData(prev => ({ ...prev, staff_id: nextId, biometric_code: nextId }));
         } catch (err) {
             console.error("Failed to generate Employee ID locally", err);
         }
@@ -1731,14 +1731,14 @@ const AddEmployee = () => {
                             </div>
                              )}
                              <div className="space-y-2">
-                                <Label>Employee ID <span className="text-red-500">*</span></Label>
+                                <Label>Staff ID <span className="text-red-500">*</span></Label>
                                 <Input 
-                                    value={formData.employee_id} 
+                                    value={formData.staff_id} 
                                     onChange={e => {
-                                        handleChange('employee_id', e.target.value);
+                                        handleChange('staff_id', e.target.value);
                                         handleChange('biometric_code', e.target.value);
                                     }} 
-                                    placeholder="e.g. EMP-2026-00001" 
+                                    placeholder="e.g. SSVKEMP-2026-27-0001" 
                                     readOnly={true}
                                     className="bg-muted cursor-not-allowed font-mono text-primary font-semibold"
                                 />

@@ -31,6 +31,7 @@ const FeesReminder = () => {
             .from('fee_reminders')
             .select('*')
             .eq('branch_id', branchId)
+            .eq('session_id', currentSessionId)
             .order('reminder_type')
             .order('days');
 

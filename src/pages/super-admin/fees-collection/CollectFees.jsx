@@ -224,7 +224,8 @@ const CollectFees = () => {
                                 .from('student_fee_allocations')
                                 .select('student_id, fee_master_id')
                                 .in('student_id', studentIds)
-                                .eq('branch_id', branchId);
+                                .eq('branch_id', branchId)
+                                .eq('session_id', currentSessionId);
                             
                             // Create a set of existing student+fee combinations
                             const existingSet = new Set(
@@ -311,12 +312,16 @@ const CollectFees = () => {
                 supabase
                     .from('student_fee_allocations')
                     .select('student_id, fee_master:fee_masters(amount)')
-                    .in('student_id', studentIds),
+                    .in('student_id', studentIds)
+                    .eq('branch_id', branchId)
+                    .eq('session_id', currentSessionId),
                 // Academic fee payments (with discount and fine) - exclude ledger-linked payments
                 supabase
                     .from('fee_payments')
                     .select('student_id, amount, discount_amount, fine_paid')
                     .in('student_id', studentIds)
+                    .eq('branch_id', branchId)
+                    .eq('session_id', currentSessionId)
                     .is('reverted_at', null)
                     .is('ledger_id', null),
                 // Transport fee details

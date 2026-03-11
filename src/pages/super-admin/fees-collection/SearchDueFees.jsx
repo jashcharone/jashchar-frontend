@@ -76,7 +76,7 @@ const SearchDueFees = () => {
             // 1. Fetch all students in selected class/section
             let studentsQuery = supabase
                 .from('student_profiles')
-                .select('id, full_name, admission_number, photo_url, father_name, father_phone, mother_phone, guardian_phone, class_id, section_id, classes!student_profiles_class_id_fkey(name), sections!student_profiles_section_id_fkey(name)')
+                .select('id, full_name, school_code, photo_url, father_name, father_phone, mother_phone, guardian_phone, class_id, section_id, classes!student_profiles_class_id_fkey(name), sections!student_profiles_section_id_fkey(name)')
                 .eq('branch_id', branchId)
                 .eq('status', 'active');
             
@@ -292,16 +292,16 @@ const SearchDueFees = () => {
         let feeDetailsEng = '';
         let feeDetailsKan = '';
         if (student.regular_due > 0) {
-            feeDetailsEng += `• Regular Fees: ?${student.regular_due.toLocaleString('en-IN')}\n`;
-            feeDetailsKan += `• ?????: ?${student.regular_due.toLocaleString('en-IN')}\n`;
+            feeDetailsEng += `ï¿½ Regular Fees: ?${student.regular_due.toLocaleString('en-IN')}\n`;
+            feeDetailsKan += `ï¿½ ?????: ?${student.regular_due.toLocaleString('en-IN')}\n`;
         }
         if (includeTransport && student.transport_due > 0) {
-            feeDetailsEng += `• Transport: ?${student.transport_due.toLocaleString('en-IN')}\n`;
-            feeDetailsKan += `• ????: ?${student.transport_due.toLocaleString('en-IN')}\n`;
+            feeDetailsEng += `ï¿½ Transport: ?${student.transport_due.toLocaleString('en-IN')}\n`;
+            feeDetailsKan += `ï¿½ ????: ?${student.transport_due.toLocaleString('en-IN')}\n`;
         }
         if (includeHostel && student.hostel_due > 0) {
-            feeDetailsEng += `• Hostel: ?${student.hostel_due.toLocaleString('en-IN')}\n`;
-            feeDetailsKan += `• ????????: ?${student.hostel_due.toLocaleString('en-IN')}\n`;
+            feeDetailsEng += `ï¿½ Hostel: ?${student.hostel_due.toLocaleString('en-IN')}\n`;
+            feeDetailsKan += `ï¿½ ????????: ?${student.hostel_due.toLocaleString('en-IN')}\n`;
         }
         const totalDue = student.total_due.toLocaleString('en-IN');
         
@@ -580,8 +580,8 @@ const SearchDueFees = () => {
                                                             <div className="min-w-0">
                                                                 <p className="font-semibold text-sm truncate">{student.full_name}</p>
                                                                 <p className="text-xs text-muted-foreground">
-                                                                    {student.admission_number || ''}
-                                                                    {student.admission_number && student.phone ? ' • ' : ''}
+                                                                    {student.school_code || ''}
+                                                                    {student.school_code && student.phone ? ' â€¢ ' : ''}
                                                                     {student.phone && <span className="text-green-500">{student.phone}</span>}
                                                                 </p>
                                                             </div>

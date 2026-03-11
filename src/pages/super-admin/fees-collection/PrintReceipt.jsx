@@ -81,7 +81,6 @@ const PrintReceipt = () => {
   const [loading, setLoading] = useState(true);
   const [currentDateTime] = useState(new Date());
   const [isOriginal, setIsOriginal] = useState(true);
-  const [paperSize, setPaperSize] = useState('A5'); // A5 or A4
   
   const branchId = selectedBranch?.id || user?.profile?.branch_id || user?.user_metadata?.branch_id;
   const userOrgId = organizationId || user?.profile?.organization_id;
@@ -117,37 +116,10 @@ const PrintReceipt = () => {
     const { data: paymentData, error: paymentError } = await paymentQuery;
     if (paymentError) throw paymentError;
 
-    // 2b. Check for full receipt snapshot (saved on first print)
-    const snapshotPayment = paymentData.find(p => p.receipt_snapshot?.lineItems);
-    if (snapshotPayment) {
-      const snap = snapshotPayment.receipt_snapshot;
-      setIsOriginal(!paymentData.some(p => p.printed_at));
-      return {
-        student: snap.student ? {
-          full_name: snap.student.full_name,
-          father_name: snap.student.father_name,
-          school_code: snap.student.school_code,
-          admission_no: snap.student.admission_no,
-          class: { name: snap.student.class_name },
-          section: { name: snap.student.section_name }
-        } : null,
-        payments: paymentData,
-        lineItems: snap.lineItems,
-        totalPaid: snap.totalPaid,
-        totalDiscount: snap.totalDiscount,
-        totalFine: snap.totalFine,
-        grandTotal: snap.grandTotal,
-        overallTotalAmount: snap.overallTotalAmount,
-        overallBalance: snap.overallBalance,
-        transactionId: snap.transactionId,
-        receiptDate: snap.receiptDate,
-        paymentMode: snap.paymentMode,
-        remarks: snap.remarks,
-        extraInfo: snap.extraInfo,
-        _snapshotSchool: snap.school,
-        _snapshotPrintSettings: snap.printSettings,
-      };
-    }
+    // 2b. Always recompute from live data for accuracy.
+    //     Snapshot is still saved on first print for archival.
+    const anyPrintedAlready = paymentData.some(p => p.printed_at);
+    setIsOriginal(!anyPrintedAlready);
 
     // 3. Fetch Student
     const { data: studentData } = await supabase
@@ -197,12 +169,12 @@ const PrintReceipt = () => {
         masterToType[m.id] = m.fee_type_id;
       });
 
-      // Get student allocations for academic-level balance & discount
+      // Get student allocations for academic-level balance
       const allMasterIds = allClassMasters?.map(m => m.id) || [];
       if (allMasterIds.length > 0) {
         const { data: allAllocations } = await supabase
           .from('student_fee_allocations')
-          .select('fee_master_id, discount_amount, balance')
+          .select('fee_master_id, balance')
           .eq('student_id', studentId)
           .eq('branch_id', branchId)
           .in('fee_master_id', allMasterIds);
@@ -210,10 +182,11 @@ const PrintReceipt = () => {
         allAllocations?.forEach(a => {
           const ftId = masterToType[a.fee_master_id];
           if (ftId) {
-            academicDiscountByType[ftId] = (academicDiscountByType[ftId] || 0) + Number(a.discount_amount || 0);
             academicBalanceByType[ftId] = (academicBalanceByType[ftId] || 0) + Number(a.balance || 0);
           }
         });
+        // Note: Discount is now taken directly from THIS transaction's fee_payments.discount_amount
+        // Not from cumulative all-payments sum
       }
     }
 
@@ -248,19 +221,35 @@ const PrintReceipt = () => {
           fee_name: feeName,
           fee_group_name: snap.fee?.group || '',
           total_fee_amount: ld?.total || Number(snap.fee?.total_amount || 0),
-          academic_discount: ld?.discount || 0,
+          // Use THIS transaction's discount_amount, NOT cumulative
+          academic_discount: Number(p.discount_amount || 0),
           balance: ld?.balance ?? (p.balance_after_payment ?? snap.calculated?.balance_after ?? 0),
         };
       }
       // Old system: use fee_masters lookup + academic totals
       const fm = feeMasters?.find(fm => fm.id === p.fee_master_id);
       const feeTypeId = fm?.fee_types?.id || fm?.fee_type_id;
+      
+      // FALLBACK: If fee_master lookup fails, use receipt_snapshot
+      if (!fm && p.receipt_snapshot) {
+        const snap = p.receipt_snapshot;
+        return {
+          ...p,
+          fee_name: snap.fee?.name || 'Fee',
+          fee_group_name: snap.fee?.group || '',
+          total_fee_amount: Number(snap.fee?.total_amount || 0),
+          academic_discount: Number(p.discount_amount || 0),
+          balance: p.balance_after_payment ?? snap.calculated?.balance_after ?? 0
+        };
+      }
+      
       return {
         ...p,
         fee_name: fm?.fee_types?.name || fm?.name || 'Fee',
         fee_group_name: fm?.fee_groups?.name || '',
         total_fee_amount: academicTotalByType[feeTypeId] || Number(fm?.amount || 0),
-        academic_discount: academicDiscountByType[feeTypeId] || 0,
+        // Use THIS transaction's discount_amount, NOT cumulative
+        academic_discount: Number(p.discount_amount || 0),
         balance: academicBalanceByType[feeTypeId] ?? (p.balance_after_payment ?? 0)
       };
     });
@@ -269,7 +258,28 @@ const PrintReceipt = () => {
     const anyPrinted = paymentData.some(p => p.printed_at);
     setIsOriginal(!anyPrinted);
 
-    // 7. Calculate totals — group by fee_type to avoid duplicating academic totals
+    // 7. CHECK IF SNAPSHOT EXISTS WITH COMPLETE DATA - USE IT DIRECTLY
+    const firstPayment = paymentData[0];
+    if (firstPayment?.receipt_snapshot?.lineItems?.length > 0) {
+      const snap = firstPayment.receipt_snapshot;
+      return {
+        student,
+        payments: paymentData,
+        lineItems: snap.lineItems,
+        totalPaid: snap.totalPaid || snap.grandTotal,
+        totalDiscount: snap.totalDiscount || 0,
+        totalFine: snap.totalFine || 0,
+        grandTotal: snap.grandTotal,
+        overallTotalAmount: snap.overallTotalAmount,
+        overallBalance: snap.overallBalance,
+        transactionId,
+        receiptDate: snap.receiptDate || firstPayment.payment_date,
+        paymentMode: snap.paymentMode || firstPayment.payment_mode || 'Cash',
+        remarks: firstPayment.remarks
+      };
+    }
+
+    // 8. FALLBACK: Calculate totals — group by fee_type to avoid duplicating academic totals
     const totalPaid = paymentsWithMaster.reduce((sum, p) => sum + Number(p.amount || 0), 0);
     const totalFine = paymentsWithMaster.reduce((sum, p) => sum + Number(p.fine_paid || 0), 0);
 
@@ -298,11 +308,12 @@ const PrintReceipt = () => {
           amount: 0,
           totalAmount: Number(p.total_fee_amount || 0),
           balance: Number(p.balance || 0),
-          discount: Number(p.academic_discount || 0),
+          discount: 0,  // Start at 0, accumulate from THIS transaction
           fine: 0
         };
       }
       lineItemMap[key].amount += Number(p.amount || 0);
+      lineItemMap[key].discount += Number(p.academic_discount || 0);  // Sum THIS transaction's discounts
       lineItemMap[key].fine += Number(p.fine_paid || 0);
     });
     const lineItems = Object.values(lineItemMap);
@@ -774,6 +785,11 @@ const PrintReceipt = () => {
 
   // ===== A5 PAPER RECEIPT COMPONENT =====
   const showConcession = totalDiscount > 0;
+  // Show "All previous paid amount" column only if any fee has previous payments
+  const showPrevPaid = lineItems.some(item => {
+    const totalPaidToDate = Number(item.totalAmount || 0) - Number(item.discount || 0) - Number(item.balance || 0);
+    return Math.max(0, totalPaidToDate - Number(item.amount || 0)) > 0;
+  });
   const Receipt = ({ copyType }) => (
     <div style={{ 
       width: '100%', 
@@ -783,7 +799,9 @@ const PrintReceipt = () => {
       position: 'relative',
       backgroundColor: '#fff',
       color: '#000',
-      fontFamily: 'Arial, Helvetica, sans-serif'
+      fontFamily: 'Arial, Helvetica, sans-serif',
+      border: '2px solid #333',
+      borderRadius: '4px'
     }}>
 
       {/* ===== HEADER ===== */}
@@ -815,8 +833,16 @@ const PrintReceipt = () => {
               )}
             </div>
             {/* Copy Type Label */}
-            <div style={{ width: '80px', textAlign: 'right', flexShrink: 0 }}>
-              <span style={{ fontSize: '8px', fontWeight: 'bold', color: '#555', textTransform: 'lowercase', fontStyle: 'italic' }}>{copyType.toLowerCase()}</span>
+            <div style={{ width: '90px', textAlign: 'right', flexShrink: 0 }}>
+              <div style={{ 
+                fontSize: '9px', 
+                fontWeight: 'bold', 
+                color: '#fff', 
+                backgroundColor: '#333',
+                padding: '3px 6px',
+                borderRadius: '3px',
+                textTransform: 'uppercase'
+              }}>{copyType}</div>
             </div>
           </div>
         </div>
@@ -895,9 +921,10 @@ const PrintReceipt = () => {
             <tr style={{ backgroundColor: '#f0f0f0' }}>
               <th style={{ border: '1px solid #888', padding: '3px 4px', textAlign: 'center', width: '28px' }}>S.no</th>
               <th style={{ border: '1px solid #888', padding: '3px 4px', textAlign: 'left' }}>Particulars</th>
-              <th style={{ border: '1px solid #888', padding: '3px 4px', textAlign: 'right', width: '72px' }}>Academic Total Fee</th>
+              <th style={{ border: '1px solid #888', padding: '3px 4px', textAlign: 'right', width: '72px' }}>Academic Total Amount</th>
+              {showPrevPaid && <th style={{ border: '1px solid #888', padding: '3px 4px', textAlign: 'right', width: '68px' }}>All previous paid amount</th>}
+              <th style={{ border: '1px solid #888', padding: '3px 4px', textAlign: 'right', width: '62px' }}>Net Amount</th>
               {showConcession && <th style={{ border: '1px solid #888', padding: '3px 4px', textAlign: 'right', width: '62px' }}>Concession</th>}
-              {showConcession && <th style={{ border: '1px solid #888', padding: '3px 4px', textAlign: 'right', width: '62px' }}>Net Amount</th>}
               <th style={{ border: '1px solid #888', padding: '3px 4px', textAlign: 'right', width: '62px' }}>Paid Amount</th>
               <th style={{ border: '1px solid #888', padding: '3px 4px', textAlign: 'right', width: '55px' }}>Balance</th>
             </tr>
@@ -905,14 +932,17 @@ const PrintReceipt = () => {
           <tbody>
             {lineItems.map((item, idx) => {
               const concession = Number(item.discount || 0);
-              const netAmount = Number(item.totalAmount || 0) - concession;
+              const totalPaidToDate = Number(item.totalAmount || 0) - concession - Number(item.balance || 0);
+              const previousPaid = Math.max(0, totalPaidToDate - Number(item.amount || 0));
+              const netAmount = Number(item.totalAmount || 0) - previousPaid;
               return (
                 <tr key={idx}>
                   <td style={{ border: '1px solid #888', padding: '3px 4px', textAlign: 'center' }}>{idx + 1}</td>
                   <td style={{ border: '1px solid #888', padding: '3px 4px' }}>{item.description}</td>
                   <td style={{ border: '1px solid #888', padding: '3px 4px', textAlign: 'right' }}>{Number(item.totalAmount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                  {showPrevPaid && <td style={{ border: '1px solid #888', padding: '3px 4px', textAlign: 'right' }}>{previousPaid > 0 ? previousPaid.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : ''}</td>}
+                  <td style={{ border: '1px solid #888', padding: '3px 4px', textAlign: 'right' }}>{netAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                   {showConcession && <td style={{ border: '1px solid #888', padding: '3px 4px', textAlign: 'right' }}>{concession > 0 ? concession.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : ''}</td>}
-                  {showConcession && <td style={{ border: '1px solid #888', padding: '3px 4px', textAlign: 'right' }}>{netAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>}
                   <td style={{ border: '1px solid #888', padding: '3px 4px', textAlign: 'right' }}>{Number(item.amount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                   <td style={{ border: '1px solid #888', padding: '3px 4px', textAlign: 'right' }}>{Number(item.balance || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                 </tr>
@@ -923,7 +953,8 @@ const PrintReceipt = () => {
                 <td style={{ border: '1px solid #888', padding: '3px 4px' }}></td>
                 <td style={{ border: '1px solid #888', padding: '3px 4px', color: '#cc0000' }}>Late Fine</td>
                 <td style={{ border: '1px solid #888', padding: '3px 4px' }}></td>
-                {showConcession && <td style={{ border: '1px solid #888', padding: '3px 4px' }}></td>}
+                {showPrevPaid && <td style={{ border: '1px solid #888', padding: '3px 4px' }}></td>}
+                <td style={{ border: '1px solid #888', padding: '3px 4px' }}></td>
                 {showConcession && <td style={{ border: '1px solid #888', padding: '3px 4px' }}></td>}
                 <td style={{ border: '1px solid #888', padding: '3px 4px', textAlign: 'right', color: '#cc0000' }}>+{totalFine.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                 <td style={{ border: '1px solid #888', padding: '3px 4px' }}></td>
@@ -935,8 +966,23 @@ const PrintReceipt = () => {
               <td style={{ border: '1px solid #888', padding: '4px' }}></td>
               <td style={{ border: '1px solid #888', padding: '4px', textAlign: 'right' }}>{isRefund ? 'Total Refund' : 'Total'}</td>
               <td style={{ border: '1px solid #888', padding: '4px', textAlign: 'right' }}>{overallTotalAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+              {showPrevPaid && (() => {
+                const totalPrevPaid = lineItems.reduce((sum, item) => {
+                  const c = Number(item.discount || 0);
+                  const paidToDate = Number(item.totalAmount || 0) - c - Number(item.balance || 0);
+                  return sum + Math.max(0, paidToDate - Number(item.amount || 0));
+                }, 0);
+                return <td style={{ border: '1px solid #888', padding: '4px', textAlign: 'right' }}>{totalPrevPaid.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>;
+              })()}
+              <td style={{ border: '1px solid #888', padding: '4px', textAlign: 'right' }}>{(() => {
+                const totalPrevPaid = lineItems.reduce((sum, item) => {
+                  const c = Number(item.discount || 0);
+                  const paidToDate = Number(item.totalAmount || 0) - c - Number(item.balance || 0);
+                  return sum + Math.max(0, paidToDate - Number(item.amount || 0));
+                }, 0);
+                return (overallTotalAmount - totalPrevPaid).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+              })()}</td>
               {showConcession && <td style={{ border: '1px solid #888', padding: '4px', textAlign: 'right' }}>{totalDiscount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>}
-              {showConcession && <td style={{ border: '1px solid #888', padding: '4px', textAlign: 'right' }}>{(overallTotalAmount - totalDiscount).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>}
               <td style={{ border: '1px solid #888', padding: '4px', textAlign: 'right' }}>{grandTotal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
               <td style={{ border: '1px solid #888', padding: '4px', textAlign: 'right' }}>{overallBalance.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
             </tr>
@@ -1005,17 +1051,10 @@ const PrintReceipt = () => {
           <ArrowLeft className='mr-2 h-4 w-4' />Back
         </Button>
         <div className='flex items-center gap-2'>
-          {/* Paper Size Toggle */}
-          <div className='flex border rounded overflow-hidden'>
-            <button 
-              onClick={() => setPaperSize('A5')} 
-              className={`px-3 py-1 text-sm font-medium transition-colors ${paperSize === 'A5' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
-            >A5</button>
-            <button 
-              onClick={() => setPaperSize('A4')} 
-              className={`px-3 py-1 text-sm font-medium transition-colors ${paperSize === 'A4' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
-            >A4</button>
-          </div>
+          {/* Paper Info */}
+          <span className='px-3 py-1 rounded text-sm font-medium bg-blue-100 text-blue-800'>
+            A4 Portrait (2 A5 Copies)
+          </span>
           <span className={`px-3 py-1 rounded text-sm font-medium ${isOriginal ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}>
             {isOriginal ? '🆕 Original Receipt' : '🔄 Reprint'}
           </span>
@@ -1027,48 +1066,53 @@ const PrintReceipt = () => {
 
       {/* Receipt Preview */}
       <div className='p-4 print:p-0'>
-        <div style={{ maxWidth: paperSize === 'A4' ? '210mm' : '148mm', margin: '0 auto' }} className='bg-white shadow-lg print:shadow-none'>
-          {paperSize === 'A4' ? (
-            // A4 Layout: 2 receipts per page
-            (() => {
-              const pages = [];
-              for (let i = 0; i < copiesToPrint.length; i += 2) {
-                const pair = copiesToPrint.slice(i, i + 2);
-                pages.push(
-                  <div key={i} style={{ pageBreakAfter: i + 2 < copiesToPrint.length ? 'always' : 'auto' }}>
-                    {pair.map((copyType, pairIdx) => (
-                      <div key={copyType} style={{ 
-                        height: '50%', 
-                        boxSizing: 'border-box',
-                        borderBottom: pairIdx === 0 && pair.length > 1 ? '1px dashed #999' : 'none',
-                        overflow: 'hidden'
-                      }}>
-                        <Receipt copyType={copyType} />
-                      </div>
-                    ))}
-                  </div>
-                );
-              }
-              return pages;
-            })()
-          ) : (
-            // A5 Layout: 1 receipt per page
-            copiesToPrint.map((copyType, idx) => (
-              <div key={copyType} style={{ pageBreakAfter: idx < copiesToPrint.length - 1 ? 'always' : 'auto' }}>
-                <Receipt copyType={copyType} />
-                {idx < copiesToPrint.length - 1 && (
-                  <div className='border-t-2 border-dashed border-gray-400 my-2 print:hidden' />
-                )}
-              </div>
-            ))
-          )}
+        <div style={{ maxWidth: '210mm', margin: '0 auto' }} className='bg-white shadow-lg print:shadow-none'>
+          {/* A4 Portrait Layout: 2 A5 Landscape receipts stacked vertically */}
+          <div style={{ 
+            display: 'flex', 
+            flexDirection: 'column',
+            width: '100%',
+            minHeight: '290mm',
+            padding: '2mm'
+          }}>
+            {/* Top - Student Copy (A5 Landscape) */}
+            <div style={{ 
+              height: '142mm',
+              boxSizing: 'border-box',
+              overflow: 'hidden'
+            }}>
+              <Receipt copyType="STUDENT COPY" />
+            </div>
+            
+            {/* Scissors Cut Line */}
+            <div style={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              justifyContent: 'center',
+              height: '6mm',
+              margin: '1mm 0'
+            }}>
+              <div style={{ flex: 1, borderTop: '1px dashed #666' }}></div>
+              <span style={{ padding: '0 8px', fontSize: '14px', color: '#666' }}>✂</span>
+              <div style={{ flex: 1, borderTop: '1px dashed #666' }}></div>
+            </div>
+            
+            {/* Bottom - Office Copy (A5 Landscape) */}
+            <div style={{ 
+              height: '142mm',
+              boxSizing: 'border-box',
+              overflow: 'hidden'
+            }}>
+              <Receipt copyType="OFFICE COPY" />
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* Dynamic Print Styles */}
+      {/* Dynamic Print Styles - A4 Portrait */}
       <style>{`
         @media print {
-          @page { size: ${paperSize}; margin: ${paperSize === 'A4' ? '3mm' : '5mm'}; }
+          @page { size: A4 portrait; margin: 3mm; }
           body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
           .print\\:hidden { display: none !important; }
         }

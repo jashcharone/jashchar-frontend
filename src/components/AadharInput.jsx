@@ -38,7 +38,7 @@ const AadharInput = ({ value, onChange, label, required, checkDuplicates = false
           last_name,
           full_name,
           organizations:organization_id (name),
-          branches:branch_id (name)
+          branches:branch_id (branch_name)
         `)
         .eq('aadhar_no', aadharNumber);
       
@@ -55,7 +55,7 @@ const AadharInput = ({ value, onChange, label, required, checkDuplicates = false
 
       if (data) {
         const studentName = data.full_name || `${data.first_name || ''} ${data.last_name || ''}`.trim();
-        const branchName = data.branches?.name || '';
+        const branchName = data.branches?.branch_name || '';
         setError(`This Aadhar number is already registered to ${studentName || 'another student'} (${branchName}).`);
       } else {
         setError('');

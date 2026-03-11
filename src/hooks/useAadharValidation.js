@@ -31,7 +31,7 @@ export const useAadharValidation = (initialError = '') => {
             school_code,
             organization_id,
             organizations:organization_id (id, name, code),
-            branches:branch_id (id, name, code)
+            branches:branch_id (id, branch_name, branch_code)
           `)
           .eq('aadhar_no', aadharNumber);
         
@@ -56,7 +56,7 @@ export const useAadharValidation = (initialError = '') => {
           const student = data[0];
           const studentName = student.full_name || `${student.first_name || ''} ${student.last_name || ''}`.trim();
           const orgName = student.organizations?.name || 'Unknown';
-          const branchName = student.branches?.name || 'Unknown';
+          const branchName = student.branches?.branch_name || 'Unknown';
           
           // Store duplicate details for display
           setDuplicateDetails({

@@ -94,7 +94,7 @@ export default function ParentPaymentPortal() {
             session_id,
             classes(name),
             sections(name),
-            branches(name)
+            branches(branch_name)
           )
         `)
         .eq('parent_id', user.id)
@@ -272,7 +272,7 @@ export default function ParentPaymentPortal() {
         key: orderData.data.razorpay_key,
         amount: orderData.data.amount * 100,
         currency: 'INR',
-        name: selectedChild.branches?.name || 'School Fees',
+        name: selectedChild.branches?.branch_name || 'School Fees',
         description: `Fee payment for ${selectedChild.full_name}`,
         order_id: orderData.data.order_id,
         prefill: {
@@ -444,7 +444,7 @@ export default function ParentPaymentPortal() {
                       <span>{selectedChild.classes?.name} {selectedChild.sections?.name}</span>
                     </div>
                     <div className="text-sm text-muted-foreground">
-                      {selectedChild.branches?.name}
+                      {selectedChild.branches?.branch_name}
                     </div>
                   </div>
                 </div>

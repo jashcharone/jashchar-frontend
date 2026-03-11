@@ -1856,9 +1856,24 @@ const StudentAdmission = () => {
       setRollNumberError('');
       return false;
     }
+    // Need session_id for proper duplicate check within current session only
+    const sessionId = formData.session_id || currentSessionId;
+    if (!sessionId) {
+      setRollNumberError('');
+      return false;
+    }
     setIsCheckingRollNumber(true);
     setRollNumberError('');
-    const { data, error } = await supabase.from('student_profiles').select('id').eq('branch_id', selectedBranch.id).eq('class_id', classId).eq('section_id', sectionId).eq('roll_number', rollNumber).limit(1);
+    // 🔒 Check duplicates ONLY within same session, class, section
+    const { data, error } = await supabase
+      .from('student_profiles')
+      .select('id')
+      .eq('branch_id', selectedBranch.id)
+      .eq('session_id', sessionId)
+      .eq('class_id', classId)
+      .eq('section_id', sectionId)
+      .eq('roll_number', rollNumber)
+      .limit(1);
     setIsCheckingRollNumber(false);
     if (error) {
       toast({ variant: 'destructive', title: 'Error checking roll number.' });
@@ -1869,7 +1884,7 @@ const StudentAdmission = () => {
       return true;
     }
     return false;
-  }, [selectedBranch?.id, toast]);
+  }, [selectedBranch?.id, toast, formData.session_id, currentSessionId]);
 
   const getNextRollNumber = useCallback(async (classId, sectionId) => {
     if (!classId || !sectionId || rollNumberManuallyEdited || !selectedBranch?.id || !formData.session_id) return;

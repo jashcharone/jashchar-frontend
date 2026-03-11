@@ -141,6 +141,18 @@ const PrintReceipt = () => {
 
     // 5. Calculate payments with details
     const paymentsWithMaster = paymentData.map(p => {
+      // Fee Engine 3.0: Use receipt_snapshot for ledger-based payments
+      if (p.ledger_id && !p.fee_master_id && p.receipt_snapshot) {
+        const snap = p.receipt_snapshot;
+        return {
+          ...p,
+          fee_name: snap.fee?.name || 'Fee',
+          fee_group_name: snap.fee?.group || '',
+          total_fee_amount: Number(snap.fee?.total_amount || 0),
+          balance: p.balance_after_payment ?? snap.calculated?.balance_after ?? 0,
+        };
+      }
+      // Old system: use fee_masters lookup
       const fm = feeMasters?.find(fm => fm.id === p.fee_master_id);
       return {
         ...p,

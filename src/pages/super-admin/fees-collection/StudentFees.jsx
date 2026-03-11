@@ -335,7 +335,7 @@ const StudentFees = () => {
                 }
             }
 
-            const [allocationsRes, paymentsRes] = await Promise.all([
+            const [allocationsRes, paymentsRes, ledgerRes] = await Promise.all([
                 supabase
                     .from('student_fee_allocations')
                     .select(`
@@ -353,7 +353,18 @@ const StudentFees = () => {
                     .select(`*, fee_master:fee_masters(*, fee_group:fee_groups(name), fee_type:fee_types(name))`)
                     .eq('student_id', studentId)
                     .eq('branch_id', selectedBranch.id)
-                    .order('payment_date', { ascending: false })
+                    .order('payment_date', { ascending: false }),
+                // Fee Engine 3.0: Fetch student_fee_ledger entries
+                supabase
+                    .from('student_fee_ledger')
+                    .select(`
+                        *,
+                        fee_type:fee_types(name, code),
+                        fee_structure:fee_structures(name)
+                    `)
+                    .eq('student_id', studentId)
+                    .eq('branch_id', selectedBranch.id)
+                    .eq('session_id', currentSessionId)
             ]);
 
             if (allocationsRes.error) throw allocationsRes.error;
@@ -361,7 +372,8 @@ const StudentFees = () => {
             
             setPayments(paymentsRes.data || []);
 
-            const processedFees = (allocationsRes.data || []).map(item => {
+            // ── OLD SYSTEM: Process fee_allocations + fee_masters ──
+            const processedOldFees = (allocationsRes.data || []).map(item => {
                 const master = item.fee_master;
                 if (!master) return null;
 
@@ -371,7 +383,6 @@ const StudentFees = () => {
                 const totalDiscount = validPayments.reduce((sum, p) => sum + (Number(p.discount_amount) || 0), 0);
                 const totalFine = validPayments.reduce((sum, p) => sum + (Number(p.fine_paid) || 0), 0);
                 const masterAmount = Number(master.amount) || 0;
-                // ? FIXED: Balance cannot be negative (cap at 0)
                 const balance = Math.max(0, masterAmount - totalPaid - totalDiscount);
 
                 let fine = 0;
@@ -405,12 +416,56 @@ const StudentFees = () => {
                     balance,
                     fine,
                     isOverdue,
+                    source: 'old', // Mark as old system
                 };
-            }).filter(Boolean)
+            }).filter(Boolean);
+
+            // ── NEW SYSTEM (Fee Engine 3.0): Process student_fee_ledger ──
+            const ledgerEntries = (ledgerRes.data || []).map(entry => {
+                const netAmount = Number(entry.net_amount) || 0;
+                const paidAmount = Number(entry.paid_amount) || 0;
+                const discountAmount = Number(entry.discount_amount) || 0;
+                const fineAmount = Number(entry.fine_amount) || 0;
+                const balance = Math.max(0, netAmount - paidAmount - discountAmount);
+
+                let fine = 0;
+                let isOverdue = false;
+                if (balance > 0 && entry.due_date) {
+                    const dueDate = parseISO(entry.due_date);
+                    const today = new Date();
+                    today.setHours(0, 0, 0, 0);
+                    if (today > dueDate) {
+                        isOverdue = true;
+                    }
+                }
+
+                return {
+                    id: entry.id,
+                    ledgerId: entry.id,
+                    masterId: null,
+                    group: entry.fee_structure?.name || 'Fee Engine 3.0',
+                    type: entry.fee_type?.code || 'N/A',
+                    typeName: entry.fee_type?.name || 'N/A',
+                    dueDate: entry.due_date,
+                    amount: netAmount,
+                    status: entry.status === 'paid' ? 'Paid' : paidAmount > 0 ? 'Partial' : 'Unpaid',
+                    totalPaid: paidAmount,
+                    totalDiscount: discountAmount,
+                    totalFine: fineAmount,
+                    balance,
+                    fine,
+                    isOverdue,
+                    installment_number: entry.installment_number,
+                    source: 'ledger', // Mark as new system
+                    fee_structure_id: entry.fee_structure_id,
+                };
+            });
+
+            // Merge old + new fees, sort by due date
+            const processedFees = [...processedOldFees, ...ledgerEntries]
               .sort((a, b) => {
-                  // Sort by dueDate ascending (earliest due date first)
                   if (!a.dueDate && !b.dueDate) return 0;
-                  if (!a.dueDate) return 1; // Items without dueDate go last
+                  if (!a.dueDate) return 1;
                   if (!b.dueDate) return -1;
                   return new Date(a.dueDate) - new Date(b.dueDate);
               });
@@ -729,20 +784,24 @@ const StudentFees = () => {
     }, [selectedFees, fees, remainingDiscount]);
 
     const feeSummary = useMemo(() => {
-        // Academic fees
+        // Check if ledger entries include transport/hostel fees (to avoid double-counting with old system)
+        const hasLedgerTransport = fees.some(f => f.source === 'ledger' && f.group?.toLowerCase().includes('transport'));
+        const hasLedgerHostel = fees.some(f => f.source === 'ledger' && f.group?.toLowerCase().includes('hostel'));
+        
+        // All fees from fee statement (old + ledger combined)
         const academicTotal = fees.reduce((sum, f) => sum + f.amount, 0);
-        const academicPaid = payments.filter(p => !p.reverted_at).reduce((sum, p) => sum + Number(p.amount), 0);
-        const academicDiscount = payments.filter(p => !p.reverted_at).reduce((sum, p) => sum + Number(p.discount_amount), 0);
+        const academicPaid = fees.reduce((sum, f) => sum + (f.totalPaid || 0), 0);
+        const academicDiscount = fees.reduce((sum, f) => sum + (f.totalDiscount || 0), 0);
 
-        // Transport fees (only if assigned) - Use totalFee (annual) not transport_fee (monthly)
-        const transportTotal = transportDetails ? Number(transportDetails.totalFee || 0) : 0;
-        const transportPaid = transportDetails ? (transportDetails.totalPaid || 0) : 0;
-        const transportDiscount = transportDetails ? (transportDetails.totalDiscount || 0) : 0;
+        // Transport fees from OLD system (only if NOT already in ledger to avoid double-counting)
+        const transportTotal = (!hasLedgerTransport && transportDetails) ? Number(transportDetails.totalFee || 0) : 0;
+        const transportPaid = (!hasLedgerTransport && transportDetails) ? (transportDetails.totalPaid || 0) : 0;
+        const transportDiscount = (!hasLedgerTransport && transportDetails) ? (transportDetails.totalDiscount || 0) : 0;
 
-        // Hostel fees (only if assigned) - Use totalFee (annual) not hostel_fee (monthly)
-        const hostelTotal = hostelDetails ? Number(hostelDetails.totalFee || 0) : 0;
-        const hostelPaid = hostelDetails ? (hostelDetails.totalPaid || 0) : 0;
-        const hostelDiscount = hostelDetails ? (hostelDetails.totalDiscount || 0) : 0;
+        // Hostel fees from OLD system (only if NOT already in ledger to avoid double-counting)
+        const hostelTotal = (!hasLedgerHostel && hostelDetails) ? Number(hostelDetails.totalFee || 0) : 0;
+        const hostelPaid = (!hasLedgerHostel && hostelDetails) ? (hostelDetails.totalPaid || 0) : 0;
+        const hostelDiscount = (!hasLedgerHostel && hostelDetails) ? (hostelDetails.totalDiscount || 0) : 0;
 
         // Combined totals
         const totalFees = academicTotal + transportTotal + hostelTotal;
@@ -968,11 +1027,12 @@ const StudentFees = () => {
                         session: student?.sessions?.name,
                     },
                     fee: {
-                        id: fee.masterId,
+                        id: fee.source === 'ledger' ? fee.ledgerId : fee.masterId,
                         name: fee.typeName || fee.feeTypeName,
-                        group: fee.groupName || fee.feeGroupName,
+                        group: fee.group || fee.groupName || fee.feeGroupName,
                         total_amount: fee.totalFee || fee.amount,
                         due_date: fee.dueDate,
+                        source: fee.source || 'old',
                     },
                     payment: {
                         amount: amountForThisFee,
@@ -995,24 +1055,71 @@ const StudentFees = () => {
                 };
                 
                 if (amountForThisFee > 0 || discountForThisFee > 0 || fineForThisFee > 0) {
-                    paymentsToInsert.push({
-                        branch_id: selectedBranch.id,
-                        session_id: currentSessionId,
-                        organization_id: organizationId,
-                        student_id: studentId,
-                        fee_master_id: fee.masterId,
-                        amount: amountForThisFee,
-                        payment_date: paymentDetails.payment_date || format(new Date(), 'yyyy-MM-dd'),
-                        payment_mode: paymentDetails.payment_mode,
-                        fine_paid: fineForThisFee,
-                        discount_amount: discountForThisFee,
-                        note: paymentDetails.note,
-                        transaction_id: newTransactionId,
-                        created_by: user.id,
-                        utr_number: isUpiPayment(paymentDetails.payment_mode) ? paymentDetails.utr_number.trim() : null,
-                        balance_after_payment: balanceAfterThisPayment, // ? Quick access field
-                        receipt_snapshot: receiptSnapshot, // ? FULL RECEIPT DATA for reprint accuracy
-                    });
+                    // Fee Engine 3.0: If this fee is from student_fee_ledger, update ledger directly
+                    if (fee.source === 'ledger' && fee.ledgerId) {
+                        // Update the ledger entry
+                        const newPaidAmount = (fee.totalPaid || 0) + amountForThisFee;
+                        const newDiscountAmount = (fee.totalDiscount || 0) + discountForThisFee;
+                        const newFineAmount = (fee.totalFine || 0) + fineForThisFee;
+                        const newStatus = (newPaidAmount + newDiscountAmount) >= fee.amount ? 'paid' : 'partial';
+                        
+                        const { error: ledgerErr } = await supabase
+                            .from('student_fee_ledger')
+                            .update({
+                                paid_amount: newPaidAmount,
+                                discount_amount: newDiscountAmount,
+                                fine_amount: newFineAmount,
+                                status: newStatus,
+                                is_paid: newStatus === 'paid',
+                                paid_date: newStatus === 'paid' ? format(new Date(), 'yyyy-MM-dd') : null,
+                                updated_at: new Date().toISOString(),
+                            })
+                            .eq('id', fee.ledgerId);
+                        
+                        if (ledgerErr) {
+                            console.error('Ledger update error:', ledgerErr);
+                        }
+                        
+                        // Also insert into fee_payments for receipt/history
+                        paymentsToInsert.push({
+                            branch_id: selectedBranch.id,
+                            session_id: currentSessionId,
+                            organization_id: organizationId,
+                            student_id: studentId,
+                            ledger_id: fee.ledgerId, // Fee Engine 3.0 ledger reference
+                            amount: amountForThisFee,
+                            payment_date: paymentDetails.payment_date || format(new Date(), 'yyyy-MM-dd'),
+                            payment_mode: paymentDetails.payment_mode,
+                            fine_paid: fineForThisFee,
+                            discount_amount: discountForThisFee,
+                            note: paymentDetails.note,
+                            transaction_id: newTransactionId,
+                            created_by: user.id,
+                            utr_number: isUpiPayment(paymentDetails.payment_mode) ? paymentDetails.utr_number.trim() : null,
+                            balance_after_payment: balanceAfterThisPayment,
+                            receipt_snapshot: receiptSnapshot,
+                        });
+                    } else {
+                        // Old system: insert fee_payments with fee_master_id
+                        paymentsToInsert.push({
+                            branch_id: selectedBranch.id,
+                            session_id: currentSessionId,
+                            organization_id: organizationId,
+                            student_id: studentId,
+                            fee_master_id: fee.masterId,
+                            amount: amountForThisFee,
+                            payment_date: paymentDetails.payment_date || format(new Date(), 'yyyy-MM-dd'),
+                            payment_mode: paymentDetails.payment_mode,
+                            fine_paid: fineForThisFee,
+                            discount_amount: discountForThisFee,
+                            note: paymentDetails.note,
+                            transaction_id: newTransactionId,
+                            created_by: user.id,
+                            utr_number: isUpiPayment(paymentDetails.payment_mode) ? paymentDetails.utr_number.trim() : null,
+                            balance_after_payment: balanceAfterThisPayment,
+                            receipt_snapshot: receiptSnapshot,
+                        });
+                    }
                     remainingAmountToDistribute -= amountForThisFee;
                     remainingDiscountToDistribute -= discountForThisFee;
                     remainingFineToDistribute -= fineForThisFee;
@@ -2785,7 +2892,9 @@ const StudentFees = () => {
                                             <tbody>
                                                 {/* Academic Fee Payments - Show Fee Name */}
                                                 {payments.map(p => {
-                                                    const feeInfo = fees.find(f => f.masterId === p.fee_master_id);
+                                                    const feeInfo = p.ledger_id
+                                                        ? fees.find(f => f.ledgerId === p.ledger_id)
+                                                        : fees.find(f => f.masterId === p.fee_master_id);
                                                     const netPaid = Number(p.amount || 0) + Number(p.fine_paid || 0) - Number(p.discount_amount || 0);
                                                     return (
                                                     <tr key={`fee-${p.id}`} className={`border-b ${p.reverted_at ? 'bg-red-50 dark:bg-red-950/20 opacity-60 line-through' : 'hover:bg-muted/30'}`}>
@@ -2799,8 +2908,8 @@ const StudentFees = () => {
                                                             </Badge>
                                                         </td>
                                                         <td className="p-3">
-                                                            <div className="font-medium text-sm">{feeInfo?.typeName || feeInfo?.feeTypeName || 'Fee'}</div>
-                                                            <div className="text-xs text-muted-foreground">{feeInfo?.groupName || feeInfo?.feeGroupName || ''}</div>
+                                                            <div className="font-medium text-sm">{feeInfo?.typeName || feeInfo?.feeTypeName || p.receipt_snapshot?.fee?.name || 'Fee'}</div>
+                                                            <div className="text-xs text-muted-foreground">{feeInfo?.group || feeInfo?.groupName || feeInfo?.feeGroupName || p.receipt_snapshot?.fee?.group || ''}</div>
                                                             {p.utr_number && (
                                                                 <code className="text-[10px] bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded font-mono mt-1 inline-block">UTR: {p.utr_number}</code>
                                                             )}

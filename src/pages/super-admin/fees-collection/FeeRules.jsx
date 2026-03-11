@@ -50,7 +50,7 @@ const ACTION_TYPES = [
 
 const CONDITION_FIELDS = [
   { value: 'class_id', label: 'Class', type: 'multi_select' },
-  { value: 'category', label: 'Category', type: 'select', options: ['General', 'OBC', 'SC', 'ST', 'RTE', 'EWS'] },
+  { value: 'category_id', label: 'Category', type: 'select', options: ['General', 'OBC', 'SC', 'ST', 'RTE', 'EWS'] },
   { value: 'gender', label: 'Gender', type: 'select', options: ['male', 'female', 'other'] },
   { value: 'is_new_admission', label: 'New Admission', type: 'boolean' },
   { value: 'transport_assigned', label: 'Transport Assigned', type: 'boolean' },
@@ -394,10 +394,10 @@ const FeeRules = () => {
     setRunning(true);
     setRunPreview(null);
 
-    // Fetch all students in this branch/session
-    const { data: students, error } = await supabase
+    // Fetch all students in this branch/session (include hostel/transport IDs)
+    const { data: rawStudents, error } = await supabase
       .from('student_profiles')
-      .select('id, first_name, last_name, class_id, category, gender')
+      .select('id, first_name, last_name, class_id, category_id, gender, hostel_details_id, transport_details_id')
       .eq('branch_id', selectedBranch.id)
       .eq('session_id', currentSessionId);
 
@@ -407,10 +407,17 @@ const FeeRules = () => {
       return;
     }
 
+    // Derive hostel_assigned & transport_assigned from FK IDs
+    const students = (rawStudents || []).map(s => ({
+      ...s,
+      hostel_assigned: !!s.hostel_details_id,
+      transport_assigned: !!s.transport_details_id,
+    }));
+
     const activeRules = rules.filter(r => r.is_active);
     const preview = [];
 
-    for (const student of (students || [])) {
+    for (const student of students) {
       const matchedRules = [];
       for (const rule of activeRules) {
         const conditions = Array.isArray(rule.conditions) ? rule.conditions : [];

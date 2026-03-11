@@ -142,7 +142,7 @@ const CollectFees = () => {
         setSearched(true);
         
         try {
-            // Use session from header dropdown (currentSessionId) — respects user's session selection
+            // Use session from header dropdown (currentSessionId) ï¿½ respects user's session selection
             const activeSessionId = currentSessionId;
             
             // Use student_profiles directly - it's faster and more reliable
@@ -303,21 +303,22 @@ const CollectFees = () => {
         }
     }, [currentSessionId]);
 
-    // Fetch fee allocations and payments for fee progress display (including transport & hostel)
+    // Fetch fee allocations and payments for fee progress display (including transport & hostel & ledger)
     const fetchFeesProgress = async (studentIds) => {
         try {
-            const [allocRes, payRes, transportRes, transportPayRes, hostelRes, hostelPayRes, refundsRes] = await Promise.all([
+            const [allocRes, payRes, transportRes, transportPayRes, hostelRes, hostelPayRes, refundsRes, ledgerRes] = await Promise.all([
                 // Academic fee allocations
                 supabase
                     .from('student_fee_allocations')
                     .select('student_id, fee_master:fee_masters(amount)')
                     .in('student_id', studentIds),
-                // Academic fee payments (with discount and fine)
+                // Academic fee payments (with discount and fine) - exclude ledger-linked payments
                 supabase
                     .from('fee_payments')
                     .select('student_id, amount, discount_amount, fine_paid')
                     .in('student_id', studentIds)
-                    .is('reverted_at', null),
+                    .is('reverted_at', null)
+                    .is('ledger_id', null),
                 // Transport fee details
                 supabase
                     .from('student_transport_details')
@@ -350,7 +351,14 @@ const CollectFees = () => {
                     .select('student_id, refund_amount')
                     .in('student_id', studentIds)
                     .eq('branch_id', branchId)
-                    .eq('status', 'approved')
+                    .eq('status', 'approved'),
+                // Fee Engine 3.0: Student Fee Ledger
+                supabase
+                    .from('student_fee_ledger')
+                    .select('student_id, net_amount, paid_amount, discount_amount, fine_amount')
+                    .in('student_id', studentIds)
+                    .eq('branch_id', branchId)
+                    .eq('session_id', currentSessionId)
             ]);
 
             const progressMap = {};
@@ -448,6 +456,18 @@ const CollectFees = () => {
                 refundsRes.data.forEach(refund => {
                     if (progressMap[refund.student_id]) {
                         progressMap[refund.student_id].refunded += parseFloat(refund.refund_amount || 0);
+                    }
+                });
+            }
+
+            // Fee Engine 3.0: Add student_fee_ledger entries
+            if (ledgerRes.data) {
+                ledgerRes.data.forEach(entry => {
+                    if (progressMap[entry.student_id]) {
+                        progressMap[entry.student_id].total += parseFloat(entry.net_amount || 0);
+                        progressMap[entry.student_id].paid += parseFloat(entry.paid_amount || 0);
+                        progressMap[entry.student_id].discount += parseFloat(entry.discount_amount || 0);
+                        progressMap[entry.student_id].fine += parseFloat(entry.fine_amount || 0);
                     }
                 });
             }

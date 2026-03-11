@@ -1578,18 +1578,18 @@ const StudentAdmission = () => {
     const prefix = (settings?.student_admission_no_prefix ?? 'STU').trim();
     const digit = Number(settings?.student_admission_no_digit) || 5;
     
-    // 🌟 Use session year format (e.g., "2026-2027" → "2026/27")
+    // 🌟 Use session year format (e.g., "2026-2027" → "2026-27") - hyphen, not slash
     let sessionYear;
     const selectedSessionObj = sessions.find(s => s.id === formData.session_id);
     if (selectedSessionObj?.name) {
       const match = selectedSessionObj.name.match(/(\d{4})-(\d{4})/);
       if (match) {
-        sessionYear = `${match[1]}/${match[2].slice(-2)}`; // "2026/27"
+        sessionYear = `${match[1]}-${match[2].slice(-2)}`; // "2026-27"
       }
     }
     if (!sessionYear) {
       const currentYear = new Date().getFullYear();
-      sessionYear = `${currentYear}/${String(currentYear + 1).slice(-2)}`;
+      sessionYear = `${currentYear}-${String(currentYear + 1).slice(-2)}`;
     }
     const yearPrefix = `${prefix}-${sessionYear}-`;
 
@@ -1605,7 +1605,14 @@ const StudentAdmission = () => {
     if (data && data.length > 0 && data[0].school_code) {
       const latestCode = data[0].school_code;
       const parts = latestCode.split('-');
-      if (parts.length === 3) {
+      if (parts.length === 4) {
+        // New format: PREFIX-STARTYEAR-ENDYEAR-SEQUENCE
+        const sequenceNum = parseInt(parts[3], 10);
+        if (!isNaN(sequenceNum)) {
+          nextNumber = sequenceNum + 1;
+        }
+      } else if (parts.length === 3) {
+        // Old format fallback: PREFIX-YEAR-SEQUENCE
         const sequenceNum = parseInt(parts[2], 10);
         if (!isNaN(sequenceNum)) {
           nextNumber = sequenceNum + 1;
@@ -1695,6 +1702,20 @@ const StudentAdmission = () => {
   
   // Keep ref in sync so fetchSchoolSettings doesn't need generateNextId as a dependency
   generateNextIdRef.current = generateNextId;
+  
+  // 🌟 FIX: Regenerate admission number when session changes (for correct year format)
+  // Track previous session to detect actual changes (not initial load)
+  const prevSessionIdRef = useRef(formData.session_id);
+  useEffect(() => {
+    // Only regenerate if session actually changed (not initial load)
+    if (prevSessionIdRef.current && formData.session_id && prevSessionIdRef.current !== formData.session_id) {
+      if (schoolSettings?.student_admission_no_auto_generation) {
+        console.log('[SessionChange] Regenerating admission number for new session:', formData.session_id);
+        generateNextIdRef.current(schoolSettings, selectedBranch?.id);
+      }
+    }
+    prevSessionIdRef.current = formData.session_id;
+  }, [formData.session_id, schoolSettings, selectedBranch?.id]);
   
   const fetchSchoolSettings = useCallback(async () => {
     const branchId = selectedBranch?.id;

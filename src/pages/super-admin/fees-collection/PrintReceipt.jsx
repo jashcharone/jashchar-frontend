@@ -66,7 +66,7 @@ const PrintReceipt = () => {
   // Payment/Refund ID
   const paymentId = routePaymentId || routeRefundId || searchParams.get('id');
   
-  const { user, organizationId } = useAuth();
+  const { user, organizationId, currentSessionName } = useAuth();
   const { selectedBranch } = useBranch();
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -139,27 +139,96 @@ const PrintReceipt = () => {
       .select('*, fee_types(id, name, code), fee_groups(id, name)')
       .in('id', feeMasterIds);
 
-    // 5. Calculate payments with details
+    // 4b. Get ACADEMIC YEAR TOTALS per fee_type (sum ALL installments)
+    const feeTypeIds = [...new Set(feeMasters?.map(fm => fm.fee_types?.id || fm.fee_type_id).filter(Boolean))];
+    const sessionId = feeMasters?.[0]?.session_id;
+    const classId = student?.class_id;
+
+    let academicTotalByType = {};
+    let academicDiscountByType = {};
+    let academicBalanceByType = {};
+
+    if (feeTypeIds.length > 0 && sessionId && classId) {
+      // Get ALL fee_masters for this class/session (all installments)
+      const { data: allClassMasters } = await supabase
+        .from('fee_masters')
+        .select('id, fee_type_id, amount')
+        .eq('branch_id', branchId)
+        .eq('session_id', sessionId)
+        .eq('class_id', classId)
+        .in('fee_type_id', feeTypeIds);
+
+      const masterToType = {};
+      allClassMasters?.forEach(m => {
+        academicTotalByType[m.fee_type_id] = (academicTotalByType[m.fee_type_id] || 0) + Number(m.amount || 0);
+        masterToType[m.id] = m.fee_type_id;
+      });
+
+      // Get student allocations for academic-level balance & discount
+      const allMasterIds = allClassMasters?.map(m => m.id) || [];
+      if (allMasterIds.length > 0) {
+        const { data: allAllocations } = await supabase
+          .from('student_fee_allocations')
+          .select('fee_master_id, discount_amount, balance')
+          .eq('student_id', studentId)
+          .eq('branch_id', branchId)
+          .in('fee_master_id', allMasterIds);
+
+        allAllocations?.forEach(a => {
+          const ftId = masterToType[a.fee_master_id];
+          if (ftId) {
+            academicDiscountByType[ftId] = (academicDiscountByType[ftId] || 0) + Number(a.discount_amount || 0);
+            academicBalanceByType[ftId] = (academicBalanceByType[ftId] || 0) + Number(a.balance || 0);
+          }
+        });
+      }
+    }
+
+    // 4c. For LEDGER payments: get academic totals per fee_name
+    let ledgerAcademicData = {};
+    const hasLedgerPayments = paymentData.some(p => p.ledger_id && !p.fee_master_id);
+    if (hasLedgerPayments) {
+      const { data: allLedger } = await supabase
+        .from('student_fee_ledger')
+        .select('fee_type_id, net_amount, discount_amount, balance, fee_types:fee_type_id(name)')
+        .eq('student_id', studentId)
+        .eq('branch_id', branchId);
+
+      allLedger?.forEach(entry => {
+        const name = entry.fee_types?.name || 'Fee';
+        if (!ledgerAcademicData[name]) ledgerAcademicData[name] = { total: 0, discount: 0, balance: 0 };
+        ledgerAcademicData[name].total += Number(entry.net_amount || 0);
+        ledgerAcademicData[name].discount += Number(entry.discount_amount || 0);
+        ledgerAcademicData[name].balance += Number(entry.balance || 0);
+      });
+    }
+
+    // 5. Calculate payments with details (using academic totals)
     const paymentsWithMaster = paymentData.map(p => {
       // Fee Engine 3.0: Use receipt_snapshot for ledger-based payments
       if (p.ledger_id && !p.fee_master_id && p.receipt_snapshot) {
         const snap = p.receipt_snapshot;
+        const feeName = snap.fee?.name || 'Fee';
+        const ld = ledgerAcademicData[feeName];
         return {
           ...p,
-          fee_name: snap.fee?.name || 'Fee',
+          fee_name: feeName,
           fee_group_name: snap.fee?.group || '',
-          total_fee_amount: Number(snap.fee?.total_amount || 0),
-          balance: p.balance_after_payment ?? snap.calculated?.balance_after ?? 0,
+          total_fee_amount: ld?.total || Number(snap.fee?.total_amount || 0),
+          academic_discount: ld?.discount || 0,
+          balance: ld?.balance ?? (p.balance_after_payment ?? snap.calculated?.balance_after ?? 0),
         };
       }
-      // Old system: use fee_masters lookup
+      // Old system: use fee_masters lookup + academic totals
       const fm = feeMasters?.find(fm => fm.id === p.fee_master_id);
+      const feeTypeId = fm?.fee_types?.id || fm?.fee_type_id;
       return {
         ...p,
         fee_name: fm?.fee_types?.name || fm?.name || 'Fee',
         fee_group_name: fm?.fee_groups?.name || '',
-        total_fee_amount: Number(fm?.amount || 0),
-        balance: p.balance_after_payment ?? 0
+        total_fee_amount: academicTotalByType[feeTypeId] || Number(fm?.amount || 0),
+        academic_discount: academicDiscountByType[feeTypeId] || 0,
+        balance: academicBalanceByType[feeTypeId] ?? (p.balance_after_payment ?? 0)
       };
     });
 
@@ -167,24 +236,54 @@ const PrintReceipt = () => {
     const anyPrinted = paymentData.some(p => p.printed_at);
     setIsOriginal(!anyPrinted);
 
-    // 7. Calculate totals
+    // 7. Calculate totals — group by fee_type to avoid duplicating academic totals
     const totalPaid = paymentsWithMaster.reduce((sum, p) => sum + Number(p.amount || 0), 0);
-    const totalDiscount = paymentsWithMaster.reduce((sum, p) => sum + Number(p.discount_amount || 0), 0);
     const totalFine = paymentsWithMaster.reduce((sum, p) => sum + Number(p.fine_paid || 0), 0);
+
+    // Deduplicate academic totals per fee_type (multiple payments of same type in one transaction)
+    const seenFeeTypes = new Set();
+    let overallTotalAmount = 0;
+    let overallBalance = 0;
+    let totalDiscount = 0;
+    paymentsWithMaster.forEach(p => {
+      const key = p.fee_name;
+      if (!seenFeeTypes.has(key)) {
+        seenFeeTypes.add(key);
+        overallTotalAmount += Number(p.total_fee_amount || 0);
+        overallBalance += Number(p.balance || 0);
+        totalDiscount += Number(p.academic_discount || 0);
+      }
+    });
+
+    // Build lineItems — group by fee_name to show one row per fee type
+    const lineItemMap = {};
+    paymentsWithMaster.forEach(p => {
+      const key = p.fee_name;
+      if (!lineItemMap[key]) {
+        lineItemMap[key] = {
+          description: p.fee_name + (p.fee_group_name ? ` (${p.fee_group_name})` : ''),
+          amount: 0,
+          totalAmount: Number(p.total_fee_amount || 0),
+          balance: Number(p.balance || 0),
+          discount: Number(p.academic_discount || 0),
+          fine: 0
+        };
+      }
+      lineItemMap[key].amount += Number(p.amount || 0);
+      lineItemMap[key].fine += Number(p.fine_paid || 0);
+    });
+    const lineItems = Object.values(lineItemMap);
 
     return {
       student,
       payments: paymentsWithMaster,
-      lineItems: paymentsWithMaster.map(p => ({
-        description: p.fee_name + (p.fee_group_name ? ` (${p.fee_group_name})` : ''),
-        amount: Number(p.amount || 0),
-        discount: Number(p.discount_amount || 0),
-        fine: Number(p.fine_paid || 0)
-      })),
+      lineItems,
       totalPaid,
       totalDiscount,
       totalFine,
       grandTotal: totalPaid,
+      overallTotalAmount,
+      overallBalance,
       transactionId,
       receiptDate: paymentsWithMaster[0]?.payment_date || paymentsWithMaster[0]?.created_at,
       paymentMode: paymentsWithMaster[0]?.payment_mode || 'Cash',
@@ -247,12 +346,16 @@ const PrintReceipt = () => {
     const lineItems = payments.map(p => ({
       description: `Hostel Fee - ${p.month || 'Monthly'}`,
       amount: Number(p.amount || 0),
+      totalAmount: Number(p.total_amount || p.amount || 0),
+      balance: Number(p.balance_after_payment || 0),
       discount: 0,
       fine: Number(p.fine_paid || 0)
     }));
 
     const totalPaid = payments.reduce((sum, p) => sum + Number(p.amount || 0), 0);
     const totalFine = payments.reduce((sum, p) => sum + Number(p.fine_paid || 0), 0);
+    const overallTotalAmount = lineItems.reduce((sum, item) => sum + item.totalAmount, 0);
+    const overallBalance = lineItems.reduce((sum, item) => sum + item.balance, 0);
 
     return {
       student,
@@ -262,6 +365,8 @@ const PrintReceipt = () => {
       totalDiscount: 0,
       totalFine,
       grandTotal: totalPaid,
+      overallTotalAmount,
+      overallBalance,
       transactionId: payment.transaction_id,
       receiptDate: payment.payment_date || payment.created_at,
       paymentMode: payment.payment_mode || 'Cash',
@@ -329,12 +434,16 @@ const PrintReceipt = () => {
     const lineItems = payments.map(p => ({
       description: `Transport Fee - ${p.month || 'Monthly'}`,
       amount: Number(p.amount || 0),
+      totalAmount: Number(p.total_amount || p.amount || 0),
+      balance: Number(p.balance_after_payment || 0),
       discount: 0,
       fine: Number(p.fine_paid || 0)
     }));
 
     const totalPaid = payments.reduce((sum, p) => sum + Number(p.amount || 0), 0);
     const totalFine = payments.reduce((sum, p) => sum + Number(p.fine_paid || 0), 0);
+    const overallTotalAmount = lineItems.reduce((sum, item) => sum + item.totalAmount, 0);
+    const overallBalance = lineItems.reduce((sum, item) => sum + item.balance, 0);
 
     return {
       student,
@@ -344,6 +453,8 @@ const PrintReceipt = () => {
       totalDiscount: 0,
       totalFine,
       grandTotal: totalPaid,
+      overallTotalAmount,
+      overallBalance,
       transactionId: payment.transaction_id,
       receiptDate: payment.payment_date || payment.created_at,
       paymentMode: payment.payment_mode || 'Cash',
@@ -383,6 +494,8 @@ const PrintReceipt = () => {
       lineItems: [{
         description: `Refund: ${refund.reason || 'Fee Refund'}`,
         amount: Number(refund.amount || 0),
+        totalAmount: Number(refund.amount || 0),
+        balance: 0,
         discount: 0,
         fine: 0
       }],
@@ -390,6 +503,8 @@ const PrintReceipt = () => {
       totalDiscount: 0,
       totalFine: 0,
       grandTotal: Number(refund.amount || 0),
+      overallTotalAmount: Number(refund.amount || 0),
+      overallBalance: 0,
       transactionId: refund.id?.substring(0, 8),
       receiptDate: refund.processed_at || refund.created_at,
       paymentMode: refund.refund_mode || 'Cash',
@@ -536,13 +651,13 @@ const PrintReceipt = () => {
   // RENDER RECEIPT
   // =====================================
 
-  const { student, school, lineItems, totalPaid, totalDiscount, totalFine, grandTotal, transactionId, receiptDate, paymentMode, remarks, extraInfo, isRefund } = receiptData;
+  const { student, school, lineItems, totalPaid, totalDiscount, totalFine, grandTotal, overallTotalAmount = 0, overallBalance = 0, transactionId, receiptDate, paymentMode, remarks, extraInfo, isRefund } = receiptData;
   const Icon = config.icon;
 
   // Format receipt number
   const receiptNo = transactionId?.substring(0, 8).toUpperCase() || '-';
 
-  // Number to words converter
+  // Number to words converter (Indian format)
   const numberToWords = (num) => {
     const ones = ['', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine', 'Ten', 'Eleven', 'Twelve', 'Thirteen', 'Fourteen', 'Fifteen', 'Sixteen', 'Seventeen', 'Eighteen', 'Nineteen'];
     const tens = ['', '', 'Twenty', 'Thirty', 'Forty', 'Fifty', 'Sixty', 'Seventy', 'Eighty', 'Ninety'];
@@ -578,141 +693,218 @@ const PrintReceipt = () => {
 
   const amountInWords = numberToWords(Math.floor(grandTotal)) + ' Rupees Only';
 
-  // Single Receipt Component
+  // ===== A5 PAPER RECEIPT COMPONENT =====
   const Receipt = ({ copyType }) => (
-    <div className='receipt-box bg-white text-black border border-gray-400' style={{ 
+    <div style={{ 
       width: '100%', 
-      minHeight: '47vh',
       padding: '0',
       boxSizing: 'border-box',
-      pageBreakInside: 'avoid'
+      pageBreakInside: 'avoid',
+      position: 'relative',
+      backgroundColor: '#fff',
+      color: '#000',
+      fontFamily: 'Arial, Helvetica, sans-serif'
     }}>
-      {/* Header */}
+
+      {/* ===== HEADER ===== */}
       {printSettings?.header_image_url ? (
-        <div className='w-full'>
+        <div style={{ width: '100%' }}>
           <img src={printSettings.header_image_url} alt='Header' style={{ width: '100%', height: 'auto', display: 'block' }} />
         </div>
       ) : (
-        <div className='flex justify-between items-start p-3 border-b-2 border-gray-800 bg-gray-50'>
-          <div className='flex items-center gap-3'>
-            {school?.logo_url && <img src={school.logo_url} alt='Logo' className='h-12' />}
-            <div>
-              <h1 className='text-lg font-bold uppercase text-gray-900'>{school?.name || selectedBranch?.branch_name || '-'}</h1>
-              {school?.address && <p className='text-xs text-gray-600'>{school.address}</p>}
+        <div style={{ borderBottom: '2px solid #000', padding: '8px 12px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+            {/* Logo */}
+            <div style={{ width: '60px', flexShrink: 0 }}>
+              {school?.logo_url && <img src={school.logo_url} alt='Logo' style={{ height: '50px', width: 'auto' }} />}
             </div>
-          </div>
-          <div className='text-right text-[9px] text-gray-600'>
-            {school?.contact_number && <p>Phone: {school.contact_number}</p>}
-            {school?.contact_email && <p>Email: {school.contact_email}</p>}
+            {/* School Name + Address */}
+            <div style={{ flex: 1, textAlign: 'center', padding: '0 8px' }}>
+              <h1 style={{ fontSize: '15px', fontWeight: 'bold', textTransform: 'uppercase', margin: '0', letterSpacing: '1px', lineHeight: '1.2' }}>
+                {school?.name || selectedBranch?.branch_name || '-'}
+              </h1>
+              {school?.address && (
+                <p style={{ fontSize: '9px', color: '#333', margin: '3px 0 0', lineHeight: '1.3' }}>{school.address}</p>
+              )}
+              {(school?.contact_number || school?.contact_email) && (
+                <p style={{ fontSize: '8px', color: '#555', margin: '2px 0 0' }}>
+                  {school?.contact_number && `Ph: ${school.contact_number}`}
+                  {school?.contact_number && school?.contact_email && ' | '}
+                  {school?.contact_email && `Email: ${school.contact_email}`}
+                </p>
+              )}
+            </div>
+            {/* Copy Type Label */}
+            <div style={{ width: '80px', textAlign: 'right', flexShrink: 0 }}>
+              <span style={{ fontSize: '8px', fontWeight: 'bold', color: '#555', textTransform: 'lowercase', fontStyle: 'italic' }}>{copyType.toLowerCase()}</span>
+            </div>
           </div>
         </div>
       )}
 
-      {/* Title Bar */}
-      <div className={`${config.color} text-white py-1.5 px-3 flex justify-between items-center`}>
-        <span className='text-[10px] font-bold uppercase tracking-wide opacity-90'>{copyType}</span>
-        <div className='flex items-center gap-2'>
-          <Icon className='h-4 w-4' />
-          <span className='text-sm font-bold tracking-wide'>{config.title}</span>
-        </div>
-        <span className={`text-[10px] font-bold px-2 py-0.5 rounded ${isOriginal ? 'bg-green-500' : 'bg-yellow-500'}`}>
-          {isOriginal ? 'ORIGINAL' : 'REPRINT'}
-        </span>
+      {/* ===== FEE RECEIPT TITLE ===== */}
+      <div style={{ textAlign: 'center', padding: '5px 0', borderBottom: '1px solid #999' }}>
+        <span style={{ fontSize: '13px', fontWeight: 'bold', letterSpacing: '2px', textTransform: 'uppercase' }}>{config.title}</span>
+        {!isOriginal && <span style={{ fontSize: '8px', color: '#c00', marginLeft: '8px', fontWeight: 'bold' }}>(REPRINT)</span>}
       </div>
 
-      {/* Receipt Info + Student Info */}
-      <div className='grid grid-cols-2 gap-2 p-2 text-[10px] border-b border-gray-300'>
-        {/* Left - Receipt Info */}
-        <div className='space-y-0.5'>
-          <div className='flex'><span className='w-24 font-semibold text-gray-600'>Receipt No:</span><span className='font-bold'>{receiptNo}</span></div>
-          <div className='flex'><span className='w-24 font-semibold text-gray-600'>Date:</span><span>{receiptDate ? format(new Date(receiptDate), 'dd-MM-yyyy') : '-'}</span></div>
-          <div className='flex'><span className='w-24 font-semibold text-gray-600'>Payment Mode:</span><span className='uppercase'>{paymentMode}</span></div>
+      {/* ===== STUDENT INFO - 2 COLUMNS ===== */}
+      <div style={{ display: 'flex', padding: '5px 10px', borderBottom: '1px solid #ccc', fontSize: '9px', gap: '6px' }}>
+        {/* Left Column */}
+        <div style={{ flex: 1 }}>
+          <div style={{ display: 'flex', marginBottom: '2px' }}>
+            <span style={{ width: '85px', fontWeight: '600', color: '#444' }}>Transaction ID</span>
+            <span>: <strong>{transactionId || '-'}</strong></span>
+          </div>
+          <div style={{ display: 'flex', marginBottom: '2px' }}>
+            <span style={{ width: '85px', fontWeight: '600', color: '#444' }}>Name</span>
+            <span>: <strong style={{ textTransform: 'uppercase' }}>{student?.full_name || '-'}</strong></span>
+          </div>
+          <div style={{ display: 'flex', marginBottom: '2px' }}>
+            <span style={{ width: '85px', fontWeight: '600', color: '#444' }}>Father Name</span>
+            <span>: {student?.father_name || '-'}</span>
+          </div>
+          <div style={{ display: 'flex', marginBottom: '2px' }}>
+            <span style={{ width: '85px', fontWeight: '600', color: '#444' }}>Admission No</span>
+            <span>: {student?.school_code || student?.admission_no || '-'}</span>
+          </div>
+          <div style={{ display: 'flex', marginBottom: '2px' }}>
+            <span style={{ width: '85px', fontWeight: '600', color: '#444' }}>Academic Year</span>
+            <span>: {currentSessionName || '-'}</span>
+          </div>
           {extraInfo?.type === 'hostel' && (
-            <div className='flex'><span className='w-24 font-semibold text-gray-600'>Room/Bed:</span><span>{extraInfo.roomNo} / {extraInfo.bedNo}</span></div>
+            <div style={{ display: 'flex', marginBottom: '2px' }}>
+              <span style={{ width: '85px', fontWeight: '600', color: '#444' }}>Room/Bed</span>
+              <span>: {extraInfo.roomNo} / {extraInfo.bedNo}</span>
+            </div>
           )}
           {extraInfo?.type === 'transport' && (
             <>
-              <div className='flex'><span className='w-24 font-semibold text-gray-600'>Route:</span><span>{extraInfo.route}</span></div>
-              <div className='flex'><span className='w-24 font-semibold text-gray-600'>Pickup Point:</span><span>{extraInfo.pickupPoint}</span></div>
+              <div style={{ display: 'flex', marginBottom: '2px' }}>
+                <span style={{ width: '85px', fontWeight: '600', color: '#444' }}>Route</span>
+                <span>: {extraInfo.route}</span>
+              </div>
+              <div style={{ display: 'flex', marginBottom: '2px' }}>
+                <span style={{ width: '85px', fontWeight: '600', color: '#444' }}>Pickup Point</span>
+                <span>: {extraInfo.pickupPoint}</span>
+              </div>
             </>
           )}
         </div>
-        {/* Right - Student Info */}
-        <div className='space-y-0.5'>
-          <div className='flex'><span className='w-24 font-semibold text-gray-600'>Admission No:</span><span className='font-bold'>{student?.school_code || student?.admission_no || '-'}</span></div>
-          <div className='flex'><span className='w-24 font-semibold text-gray-600'>Student Name:</span><span className='font-bold uppercase'>{student?.full_name || '-'}</span></div>
-          <div className='flex'><span className='w-24 font-semibold text-gray-600'>Class/Section:</span><span>{student?.class?.name || '-'} / {student?.section?.name || '-'}</span></div>
-          <div className='flex'><span className='w-24 font-semibold text-gray-600'>Father's Name:</span><span>{student?.father_name || '-'}</span></div>
+        {/* Right Column */}
+        <div style={{ flex: 1 }}>
+          <div style={{ display: 'flex', marginBottom: '2px' }}>
+            <span style={{ width: '95px', fontWeight: '600', color: '#444' }}>Transaction Date</span>
+            <span>: {receiptDate ? format(new Date(receiptDate), 'dd MMM yyyy') : '-'}</span>
+          </div>
+          <div style={{ display: 'flex', marginBottom: '2px' }}>
+            <span style={{ width: '95px', fontWeight: '600', color: '#444' }}>Receipt No</span>
+            <span>: <strong>{receiptNo}</strong></span>
+          </div>
+          <div style={{ display: 'flex', marginBottom: '2px' }}>
+            <span style={{ width: '95px', fontWeight: '600', color: '#444' }}>Class</span>
+            <span>: {student?.class?.name || '-'}{student?.section?.name ? ` >> ${student.section.name}` : ''}</span>
+          </div>
         </div>
       </div>
 
-      {/* Line Items Table */}
-      <div className='px-2 py-1'>
-        <table className='w-full text-[10px] border-collapse'>
+      {/* ===== FEE TABLE - 7 COLUMNS ===== */}
+      <div style={{ padding: '4px 10px' }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '8.5px' }}>
           <thead>
-            <tr className='bg-gray-100'>
-              <th className='border border-gray-300 p-1 text-left'>Sl</th>
-              <th className='border border-gray-300 p-1 text-left'>Particulars</th>
-              <th className='border border-gray-300 p-1 text-right w-20'>Amount (₹)</th>
+            <tr style={{ backgroundColor: '#f0f0f0' }}>
+              <th style={{ border: '1px solid #888', padding: '3px 4px', textAlign: 'center', width: '28px' }}>S.no</th>
+              <th style={{ border: '1px solid #888', padding: '3px 4px', textAlign: 'left' }}>Particulars</th>
+              <th style={{ border: '1px solid #888', padding: '3px 4px', textAlign: 'right', width: '72px' }}>Academic Total Fee</th>
+              <th style={{ border: '1px solid #888', padding: '3px 4px', textAlign: 'right', width: '62px' }}>Concession</th>
+              <th style={{ border: '1px solid #888', padding: '3px 4px', textAlign: 'right', width: '62px' }}>Net Amount</th>
+              <th style={{ border: '1px solid #888', padding: '3px 4px', textAlign: 'right', width: '62px' }}>Paid Amount</th>
+              <th style={{ border: '1px solid #888', padding: '3px 4px', textAlign: 'right', width: '55px' }}>Balance</th>
             </tr>
           </thead>
           <tbody>
-            {lineItems.map((item, idx) => (
-              <tr key={idx}>
-                <td className='border border-gray-300 p-1'>{idx + 1}</td>
-                <td className='border border-gray-300 p-1'>{item.description}</td>
-                <td className='border border-gray-300 p-1 text-right font-medium'>{Number(item.amount).toLocaleString('en-IN')}</td>
-              </tr>
-            ))}
-            {totalDiscount > 0 && (
-              <tr className='bg-green-50'>
-                <td className='border border-gray-300 p-1'></td>
-                <td className='border border-gray-300 p-1 text-green-700'>Discount Applied</td>
-                <td className='border border-gray-300 p-1 text-right text-green-700'>-{totalDiscount.toLocaleString('en-IN')}</td>
-              </tr>
-            )}
+            {lineItems.map((item, idx) => {
+              const concession = Number(item.discount || 0);
+              const netAmount = Number(item.totalAmount || 0) - concession;
+              return (
+                <tr key={idx}>
+                  <td style={{ border: '1px solid #888', padding: '3px 4px', textAlign: 'center' }}>{idx + 1}</td>
+                  <td style={{ border: '1px solid #888', padding: '3px 4px' }}>{item.description}</td>
+                  <td style={{ border: '1px solid #888', padding: '3px 4px', textAlign: 'right' }}>{Number(item.totalAmount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                  <td style={{ border: '1px solid #888', padding: '3px 4px', textAlign: 'right' }}>{concession > 0 ? concession.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : ''}</td>
+                  <td style={{ border: '1px solid #888', padding: '3px 4px', textAlign: 'right' }}>{netAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                  <td style={{ border: '1px solid #888', padding: '3px 4px', textAlign: 'right' }}>{Number(item.amount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                  <td style={{ border: '1px solid #888', padding: '3px 4px', textAlign: 'right' }}>{Number(item.balance || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                </tr>
+              );
+            })}
             {totalFine > 0 && (
-              <tr className='bg-red-50'>
-                <td className='border border-gray-300 p-1'></td>
-                <td className='border border-gray-300 p-1 text-red-700'>Late Fine</td>
-                <td className='border border-gray-300 p-1 text-right text-red-700'>+{totalFine.toLocaleString('en-IN')}</td>
+              <tr>
+                <td style={{ border: '1px solid #888', padding: '3px 4px' }}></td>
+                <td style={{ border: '1px solid #888', padding: '3px 4px', color: '#cc0000' }}>Late Fine</td>
+                <td style={{ border: '1px solid #888', padding: '3px 4px' }}></td>
+                <td style={{ border: '1px solid #888', padding: '3px 4px' }}></td>
+                <td style={{ border: '1px solid #888', padding: '3px 4px' }}></td>
+                <td style={{ border: '1px solid #888', padding: '3px 4px', textAlign: 'right', color: '#cc0000' }}>+{totalFine.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                <td style={{ border: '1px solid #888', padding: '3px 4px' }}></td>
               </tr>
             )}
           </tbody>
           <tfoot>
-            <tr className='bg-gray-800 text-white font-bold'>
-              <td colSpan={2} className='border border-gray-300 p-1.5 text-right'>
-                {isRefund ? 'TOTAL REFUND:' : 'TOTAL PAID:'}
-              </td>
-              <td className='border border-gray-300 p-1.5 text-right text-sm'>₹{grandTotal.toLocaleString('en-IN')}</td>
+            <tr style={{ fontWeight: 'bold', backgroundColor: '#f0f0f0' }}>
+              <td style={{ border: '1px solid #888', padding: '4px' }}></td>
+              <td style={{ border: '1px solid #888', padding: '4px', textAlign: 'right' }}>{isRefund ? 'Total Refund' : 'Total'}</td>
+              <td style={{ border: '1px solid #888', padding: '4px', textAlign: 'right' }}>{overallTotalAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+              <td style={{ border: '1px solid #888', padding: '4px', textAlign: 'right' }}>{totalDiscount > 0 ? totalDiscount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : ''}</td>
+              <td style={{ border: '1px solid #888', padding: '4px', textAlign: 'right' }}>{(overallTotalAmount - totalDiscount).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+              <td style={{ border: '1px solid #888', padding: '4px', textAlign: 'right' }}>{grandTotal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+              <td style={{ border: '1px solid #888', padding: '4px', textAlign: 'right' }}>{overallBalance.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
             </tr>
           </tfoot>
         </table>
       </div>
 
-      {/* Amount in Words */}
-      <div className='px-2 py-1 text-[10px] border-b border-gray-300'>
-        <span className='font-semibold text-gray-600'>Amount in Words: </span>
-        <span className='font-bold italic'>{amountInWords}</span>
+      {/* ===== AMOUNT IN WORDS ===== */}
+      <div style={{ padding: '3px 10px', fontSize: '9px', borderTop: '1px solid #ccc' }}>
+        <span style={{ fontWeight: '600', color: '#444' }}>Amount in Words: </span>
+        <span style={{ fontWeight: 'bold', fontStyle: 'italic' }}>{amountInWords}</span>
       </div>
 
-      {/* Footer */}
-      <div className='flex justify-between items-end px-3 py-2'>
-        <div className='text-[8px] text-gray-500'>
-          <p>Printed: {format(currentDateTime, 'dd-MM-yyyy hh:mm a')}</p>
-          {remarks && <p className='text-gray-600'>Remarks: {remarks}</p>}
+      {/* ===== PAYMENT MODE FOOTER ===== */}
+      <div style={{ padding: '4px 10px', borderTop: '1px solid #ccc', fontSize: '9px' }}>
+        {paymentMode?.toLowerCase() === 'cash' ? (
+          <p style={{ fontWeight: 'bold', margin: '0' }}>Received by Cash</p>
+        ) : (
+          <div>
+            <p style={{ fontWeight: 'bold', margin: '0' }}>Received by {paymentMode?.toUpperCase()} Payments</p>
+            {remarks && <p style={{ fontSize: '8px', color: '#444', margin: '2px 0 0' }}>Remarks: {remarks}</p>}
+          </div>
+        )}
+      </div>
+
+      {/* ===== NOTE + SIGNATURE ===== */}
+      <div style={{ padding: '6px 10px', borderTop: '1px solid #ccc', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
+        <div style={{ fontSize: '7px', color: '#666', maxWidth: '55%' }}>
+          <p style={{ margin: '0' }}>Note: This is a computer generated receipt. Please preserve this receipt for future reference.</p>
+          <p style={{ margin: '2px 0 0', color: '#888' }}>Printed: {format(currentDateTime, 'dd-MM-yyyy hh:mm a')}</p>
         </div>
-        <div className='text-center'>
-          <div className='border-t border-gray-400 pt-1 px-4'>
-            <span className='text-[9px] text-gray-600'>Authorized Signatory</span>
+        <div style={{ textAlign: 'center' }}>
+          <div style={{ borderTop: '1px solid #333', paddingTop: '3px', minWidth: '90px' }}>
+            <span style={{ fontSize: '8px', color: '#444' }}>Cashier/Manager</span>
           </div>
         </div>
       </div>
 
-      {/* Watermark for Refund */}
+      {/* Custom footer content from print settings */}
+      {printSettings?.footer_content && (
+        <div style={{ padding: '4px 10px', borderTop: '1px solid #ccc', fontSize: '8px', color: '#555' }} 
+             dangerouslySetInnerHTML={{ __html: printSettings.footer_content }} />
+      )}
+
+      {/* REFUND WATERMARK */}
       {isRefund && (
-        <div className='absolute inset-0 flex items-center justify-center pointer-events-none opacity-10'>
-          <span className='text-6xl font-bold text-red-500 rotate-[-30deg]'>REFUND</span>
+        <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%) rotate(-30deg)', opacity: 0.08, pointerEvents: 'none' }}>
+          <span style={{ fontSize: '48px', fontWeight: 'bold', color: 'red' }}>REFUND</span>
         </div>
       )}
     </div>
@@ -742,24 +934,24 @@ const PrintReceipt = () => {
         </div>
       </div>
 
-      {/* Receipt Preview */}
+      {/* Receipt Preview - A5 Width */}
       <div className='p-4 print:p-0'>
-        <div className='max-w-[210mm] mx-auto bg-white shadow-lg print:shadow-none'>
+        <div style={{ maxWidth: '148mm', margin: '0 auto' }} className='bg-white shadow-lg print:shadow-none'>
           {copiesToPrint.map((copyType, idx) => (
-            <React.Fragment key={copyType}>
+            <div key={copyType} style={{ pageBreakAfter: idx < copiesToPrint.length - 1 ? 'always' : 'auto' }}>
               <Receipt copyType={copyType} />
               {idx < copiesToPrint.length - 1 && (
-                <div className='border-t-2 border-dashed border-gray-400 my-1 print:my-0' />
+                <div className='border-t-2 border-dashed border-gray-400 my-2 print:hidden' />
               )}
-            </React.Fragment>
+            </div>
           ))}
         </div>
       </div>
 
-      {/* Print Styles */}
+      {/* A5 Print Styles */}
       <style>{`
         @media print {
-          @page { size: A4; margin: 5mm; }
+          @page { size: A5; margin: 5mm; }
           body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
           .print\\:hidden { display: none !important; }
         }

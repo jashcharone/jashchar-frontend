@@ -80,7 +80,7 @@ const QuickFees = () => {
             // Fetch fee templates
             const { data: templates } = await supabase
                 .from('fee_templates')
-                .select('id, template_name, template_code, total_amount, class_id')
+                .select('id, template_name, template_code, total_amount')
                 .eq('branch_id', branchId)
                 .eq('session_id', currentSessionId)
                 .eq('is_active', true);
@@ -261,8 +261,9 @@ const QuickFees = () => {
 
     // ?? NEW: Handle Template Selection
     const handleSelectTemplate = async (templateId) => {
-        setSelectedTemplate(templateId);
-        if (!templateId) {
+        const actualId = templateId === '__manual__' ? '' : templateId;
+        setSelectedTemplate(actualId);
+        if (!actualId) {
             setTemplateHeads([]);
             setFeeData(prev => ({ ...prev, totalFees: '0' }));
             return;
@@ -286,8 +287,9 @@ const QuickFees = () => {
     
     // ?? NEW: Handle Installment Plan Selection
     const handleSelectPlan = (planId) => {
-        setSelectedPlan(planId);
-        if (!planId) return;
+        const actualId = planId === '__custom__' ? '' : planId;
+        setSelectedPlan(actualId);
+        if (!actualId) return;
         
         const plan = installmentPlans.find(p => p.id === planId);
         if (plan) {
@@ -681,11 +683,11 @@ const QuickFees = () => {
                     {/* Template Selection - Enhanced */}
                     <div className="space-y-2">
                         <Label>Fee Template (Optional)</Label>
-                        <Select value={selectedTemplate} onValueChange={handleSelectTemplate}>
+                        <Select value={selectedTemplate || '__manual__'} onValueChange={handleSelectTemplate}>
                             <SelectTrigger><SelectValue placeholder="Auto-fill from template" /></SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="">Manual Entry</SelectItem>
-                                {feeTemplates.filter(t => !selectedClass || t.class_id === selectedClass).map(t => (
+                                <SelectItem value="__manual__">Manual Entry</SelectItem>
+                                {feeTemplates.map(t => (
                                     <SelectItem key={t.id} value={t.id}>
                                         {t.template_name} - ?{Number(t.total_amount || 0).toLocaleString()}
                                     </SelectItem>
@@ -726,10 +728,10 @@ const QuickFees = () => {
                             </div>
                             <div className="space-y-2">
                                 <Label>Installment Plan (Optional)</Label>
-                                <Select value={selectedPlan} onValueChange={handleSelectPlan}>
+                                <Select value={selectedPlan || '__custom__'} onValueChange={handleSelectPlan}>
                                     <SelectTrigger><SelectValue placeholder="Use pre-defined plan" /></SelectTrigger>
                                     <SelectContent>
-                                        <SelectItem value="">Custom Configuration</SelectItem>
+                                        <SelectItem value="__custom__">Custom Configuration</SelectItem>
                                         {installmentPlans.map(p => (
                                             <SelectItem key={p.id} value={p.id}>
                                                 {p.plan_name} - {p.frequency}
@@ -948,10 +950,10 @@ const QuickFees = () => {
                             </div>
                             <div className="space-y-2">
                                 <Label>Installment Plan</Label>
-                                <Select value={selectedPlan} onValueChange={handleSelectPlan}>
+                                <Select value={selectedPlan || '__custom__'} onValueChange={handleSelectPlan}>
                                     <SelectTrigger><SelectValue placeholder="Optional" /></SelectTrigger>
                                     <SelectContent>
-                                        <SelectItem value="">Custom</SelectItem>
+                                        <SelectItem value="__custom__">Custom</SelectItem>
                                         {installmentPlans.map(p => (
                                             <SelectItem key={p.id} value={p.id}>{p.plan_name}</SelectItem>
                                         ))}

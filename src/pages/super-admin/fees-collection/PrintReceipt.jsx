@@ -81,6 +81,7 @@ const PrintReceipt = () => {
   const [loading, setLoading] = useState(true);
   const [currentDateTime] = useState(new Date());
   const [isOriginal, setIsOriginal] = useState(true);
+  const [paperSize, setPaperSize] = useState('A5'); // A5 or A4
   
   const branchId = selectedBranch?.id || user?.profile?.branch_id || user?.user_metadata?.branch_id;
   const userOrgId = organizationId || user?.profile?.organization_id;
@@ -115,6 +116,38 @@ const PrintReceipt = () => {
     }
     const { data: paymentData, error: paymentError } = await paymentQuery;
     if (paymentError) throw paymentError;
+
+    // 2b. Check for full receipt snapshot (saved on first print)
+    const snapshotPayment = paymentData.find(p => p.receipt_snapshot?.lineItems);
+    if (snapshotPayment) {
+      const snap = snapshotPayment.receipt_snapshot;
+      setIsOriginal(!paymentData.some(p => p.printed_at));
+      return {
+        student: snap.student ? {
+          full_name: snap.student.full_name,
+          father_name: snap.student.father_name,
+          school_code: snap.student.school_code,
+          admission_no: snap.student.admission_no,
+          class: { name: snap.student.class_name },
+          section: { name: snap.student.section_name }
+        } : null,
+        payments: paymentData,
+        lineItems: snap.lineItems,
+        totalPaid: snap.totalPaid,
+        totalDiscount: snap.totalDiscount,
+        totalFine: snap.totalFine,
+        grandTotal: snap.grandTotal,
+        overallTotalAmount: snap.overallTotalAmount,
+        overallBalance: snap.overallBalance,
+        transactionId: snap.transactionId,
+        receiptDate: snap.receiptDate,
+        paymentMode: snap.paymentMode,
+        remarks: snap.remarks,
+        extraInfo: snap.extraInfo,
+        _snapshotSchool: snap.school,
+        _snapshotPrintSettings: snap.printSettings,
+      };
+    }
 
     // 3. Fetch Student
     const { data: studentData } = await supabase
@@ -542,32 +575,38 @@ const PrintReceipt = () => {
           break;
       }
 
-      // Fetch school info
-      const { data: schoolData } = await supabase
-        .from('schools')
-        .select('*')
-        .eq('id', branchId)
-        .single();
+      // Fetch school info (use snapshot if available)
+      let schoolData = data._snapshotSchool || null;
+      if (!schoolData) {
+        const { data: freshSchool } = await supabase
+          .from('schools')
+          .select('*')
+          .eq('id', branchId)
+          .single();
+        schoolData = freshSchool;
+      }
 
-      // Fetch print settings
-      let settingsData = null;
-      const { data: branchSettings } = await supabase
-        .from('print_settings')
-        .select('*')
-        .eq('branch_id', branchId)
-        .eq('type', 'fees_receipt')
-        .maybeSingle();
-
-      if (branchSettings?.header_image_url) {
-        settingsData = branchSettings;
-      } else {
-        const { data: orgSettings } = await supabase
+      // Fetch print settings (use snapshot if available)
+      let settingsData = data._snapshotPrintSettings || null;
+      if (!settingsData) {
+        const { data: branchSettings } = await supabase
           .from('print_settings')
           .select('*')
-          .is('branch_id', null)
+          .eq('branch_id', branchId)
           .eq('type', 'fees_receipt')
           .maybeSingle();
-        settingsData = orgSettings;
+
+        if (branchSettings?.header_image_url) {
+          settingsData = branchSettings;
+        } else {
+          const { data: orgSettings } = await supabase
+            .from('print_settings')
+            .select('*')
+            .is('branch_id', null)
+            .eq('type', 'fees_receipt')
+            .maybeSingle();
+          settingsData = orgSettings;
+        }
       }
 
       // Fetch receipt copy settings
@@ -609,14 +648,54 @@ const PrintReceipt = () => {
   // =====================================
 
   const handlePrint = async () => {
-    // Mark as printed
+    // Mark as printed + save full receipt snapshot on first print
     if (isOriginal && receiptData?.payments?.length > 0 && receiptType !== 'refund') {
       const table = config.table;
       const paymentIds = receiptData.payments.map(p => p.id);
-      
+
+      // Build full receipt snapshot with ALL display information
+      const fullSnapshot = {
+        student: {
+          full_name: receiptData.student?.full_name,
+          father_name: receiptData.student?.father_name,
+          school_code: receiptData.student?.school_code,
+          admission_no: receiptData.student?.admission_no,
+          class_name: receiptData.student?.class?.name,
+          section_name: receiptData.student?.section?.name,
+        },
+        school: {
+          name: receiptData.school?.name,
+          address: receiptData.school?.address,
+          contact_number: receiptData.school?.contact_number,
+          contact_email: receiptData.school?.contact_email,
+          logo_url: receiptData.school?.logo_url,
+        },
+        lineItems: receiptData.lineItems,
+        totalPaid: receiptData.totalPaid,
+        totalDiscount: receiptData.totalDiscount,
+        totalFine: receiptData.totalFine,
+        grandTotal: receiptData.grandTotal,
+        overallTotalAmount: receiptData.overallTotalAmount,
+        overallBalance: receiptData.overallBalance,
+        transactionId: receiptData.transactionId,
+        receiptDate: receiptData.receiptDate,
+        paymentMode: receiptData.paymentMode,
+        remarks: receiptData.remarks,
+        extraInfo: receiptData.extraInfo,
+        sessionName: currentSessionName,
+        printedAt: new Date().toISOString(),
+        printSettings: printSettings ? {
+          header_image_url: printSettings.header_image_url,
+          footer_content: printSettings.footer_content,
+        } : null,
+      };
+
       await supabase
         .from(table)
-        .update({ printed_at: new Date().toISOString() })
+        .update({ 
+          printed_at: new Date().toISOString(),
+          receipt_snapshot: fullSnapshot
+        })
         .in('id', paymentIds)
         .is('printed_at', null);
       
@@ -694,6 +773,7 @@ const PrintReceipt = () => {
   const amountInWords = numberToWords(Math.floor(grandTotal)) + ' Rupees Only';
 
   // ===== A5 PAPER RECEIPT COMPONENT =====
+  const showConcession = totalDiscount > 0;
   const Receipt = ({ copyType }) => (
     <div style={{ 
       width: '100%', 
@@ -808,7 +888,7 @@ const PrintReceipt = () => {
         </div>
       </div>
 
-      {/* ===== FEE TABLE - 7 COLUMNS ===== */}
+      {/* ===== FEE TABLE ===== */}
       <div style={{ padding: '4px 10px' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '8.5px' }}>
           <thead>
@@ -816,8 +896,8 @@ const PrintReceipt = () => {
               <th style={{ border: '1px solid #888', padding: '3px 4px', textAlign: 'center', width: '28px' }}>S.no</th>
               <th style={{ border: '1px solid #888', padding: '3px 4px', textAlign: 'left' }}>Particulars</th>
               <th style={{ border: '1px solid #888', padding: '3px 4px', textAlign: 'right', width: '72px' }}>Academic Total Fee</th>
-              <th style={{ border: '1px solid #888', padding: '3px 4px', textAlign: 'right', width: '62px' }}>Concession</th>
-              <th style={{ border: '1px solid #888', padding: '3px 4px', textAlign: 'right', width: '62px' }}>Net Amount</th>
+              {showConcession && <th style={{ border: '1px solid #888', padding: '3px 4px', textAlign: 'right', width: '62px' }}>Concession</th>}
+              {showConcession && <th style={{ border: '1px solid #888', padding: '3px 4px', textAlign: 'right', width: '62px' }}>Net Amount</th>}
               <th style={{ border: '1px solid #888', padding: '3px 4px', textAlign: 'right', width: '62px' }}>Paid Amount</th>
               <th style={{ border: '1px solid #888', padding: '3px 4px', textAlign: 'right', width: '55px' }}>Balance</th>
             </tr>
@@ -831,8 +911,8 @@ const PrintReceipt = () => {
                   <td style={{ border: '1px solid #888', padding: '3px 4px', textAlign: 'center' }}>{idx + 1}</td>
                   <td style={{ border: '1px solid #888', padding: '3px 4px' }}>{item.description}</td>
                   <td style={{ border: '1px solid #888', padding: '3px 4px', textAlign: 'right' }}>{Number(item.totalAmount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-                  <td style={{ border: '1px solid #888', padding: '3px 4px', textAlign: 'right' }}>{concession > 0 ? concession.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : ''}</td>
-                  <td style={{ border: '1px solid #888', padding: '3px 4px', textAlign: 'right' }}>{netAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                  {showConcession && <td style={{ border: '1px solid #888', padding: '3px 4px', textAlign: 'right' }}>{concession > 0 ? concession.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : ''}</td>}
+                  {showConcession && <td style={{ border: '1px solid #888', padding: '3px 4px', textAlign: 'right' }}>{netAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>}
                   <td style={{ border: '1px solid #888', padding: '3px 4px', textAlign: 'right' }}>{Number(item.amount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                   <td style={{ border: '1px solid #888', padding: '3px 4px', textAlign: 'right' }}>{Number(item.balance || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                 </tr>
@@ -843,8 +923,8 @@ const PrintReceipt = () => {
                 <td style={{ border: '1px solid #888', padding: '3px 4px' }}></td>
                 <td style={{ border: '1px solid #888', padding: '3px 4px', color: '#cc0000' }}>Late Fine</td>
                 <td style={{ border: '1px solid #888', padding: '3px 4px' }}></td>
-                <td style={{ border: '1px solid #888', padding: '3px 4px' }}></td>
-                <td style={{ border: '1px solid #888', padding: '3px 4px' }}></td>
+                {showConcession && <td style={{ border: '1px solid #888', padding: '3px 4px' }}></td>}
+                {showConcession && <td style={{ border: '1px solid #888', padding: '3px 4px' }}></td>}
                 <td style={{ border: '1px solid #888', padding: '3px 4px', textAlign: 'right', color: '#cc0000' }}>+{totalFine.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                 <td style={{ border: '1px solid #888', padding: '3px 4px' }}></td>
               </tr>
@@ -855,8 +935,8 @@ const PrintReceipt = () => {
               <td style={{ border: '1px solid #888', padding: '4px' }}></td>
               <td style={{ border: '1px solid #888', padding: '4px', textAlign: 'right' }}>{isRefund ? 'Total Refund' : 'Total'}</td>
               <td style={{ border: '1px solid #888', padding: '4px', textAlign: 'right' }}>{overallTotalAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-              <td style={{ border: '1px solid #888', padding: '4px', textAlign: 'right' }}>{totalDiscount > 0 ? totalDiscount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : ''}</td>
-              <td style={{ border: '1px solid #888', padding: '4px', textAlign: 'right' }}>{(overallTotalAmount - totalDiscount).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+              {showConcession && <td style={{ border: '1px solid #888', padding: '4px', textAlign: 'right' }}>{totalDiscount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>}
+              {showConcession && <td style={{ border: '1px solid #888', padding: '4px', textAlign: 'right' }}>{(overallTotalAmount - totalDiscount).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>}
               <td style={{ border: '1px solid #888', padding: '4px', textAlign: 'right' }}>{grandTotal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
               <td style={{ border: '1px solid #888', padding: '4px', textAlign: 'right' }}>{overallBalance.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
             </tr>
@@ -925,6 +1005,17 @@ const PrintReceipt = () => {
           <ArrowLeft className='mr-2 h-4 w-4' />Back
         </Button>
         <div className='flex items-center gap-2'>
+          {/* Paper Size Toggle */}
+          <div className='flex border rounded overflow-hidden'>
+            <button 
+              onClick={() => setPaperSize('A5')} 
+              className={`px-3 py-1 text-sm font-medium transition-colors ${paperSize === 'A5' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
+            >A5</button>
+            <button 
+              onClick={() => setPaperSize('A4')} 
+              className={`px-3 py-1 text-sm font-medium transition-colors ${paperSize === 'A4' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
+            >A4</button>
+          </div>
           <span className={`px-3 py-1 rounded text-sm font-medium ${isOriginal ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}>
             {isOriginal ? '🆕 Original Receipt' : '🔄 Reprint'}
           </span>
@@ -934,24 +1025,50 @@ const PrintReceipt = () => {
         </div>
       </div>
 
-      {/* Receipt Preview - A5 Width */}
+      {/* Receipt Preview */}
       <div className='p-4 print:p-0'>
-        <div style={{ maxWidth: '148mm', margin: '0 auto' }} className='bg-white shadow-lg print:shadow-none'>
-          {copiesToPrint.map((copyType, idx) => (
-            <div key={copyType} style={{ pageBreakAfter: idx < copiesToPrint.length - 1 ? 'always' : 'auto' }}>
-              <Receipt copyType={copyType} />
-              {idx < copiesToPrint.length - 1 && (
-                <div className='border-t-2 border-dashed border-gray-400 my-2 print:hidden' />
-              )}
-            </div>
-          ))}
+        <div style={{ maxWidth: paperSize === 'A4' ? '210mm' : '148mm', margin: '0 auto' }} className='bg-white shadow-lg print:shadow-none'>
+          {paperSize === 'A4' ? (
+            // A4 Layout: 2 receipts per page
+            (() => {
+              const pages = [];
+              for (let i = 0; i < copiesToPrint.length; i += 2) {
+                const pair = copiesToPrint.slice(i, i + 2);
+                pages.push(
+                  <div key={i} style={{ pageBreakAfter: i + 2 < copiesToPrint.length ? 'always' : 'auto' }}>
+                    {pair.map((copyType, pairIdx) => (
+                      <div key={copyType} style={{ 
+                        height: '50%', 
+                        boxSizing: 'border-box',
+                        borderBottom: pairIdx === 0 && pair.length > 1 ? '1px dashed #999' : 'none',
+                        overflow: 'hidden'
+                      }}>
+                        <Receipt copyType={copyType} />
+                      </div>
+                    ))}
+                  </div>
+                );
+              }
+              return pages;
+            })()
+          ) : (
+            // A5 Layout: 1 receipt per page
+            copiesToPrint.map((copyType, idx) => (
+              <div key={copyType} style={{ pageBreakAfter: idx < copiesToPrint.length - 1 ? 'always' : 'auto' }}>
+                <Receipt copyType={copyType} />
+                {idx < copiesToPrint.length - 1 && (
+                  <div className='border-t-2 border-dashed border-gray-400 my-2 print:hidden' />
+                )}
+              </div>
+            ))
+          )}
         </div>
       </div>
 
-      {/* A5 Print Styles */}
+      {/* Dynamic Print Styles */}
       <style>{`
         @media print {
-          @page { size: A5; margin: 5mm; }
+          @page { size: ${paperSize}; margin: ${paperSize === 'A4' ? '3mm' : '5mm'}; }
           body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
           .print\\:hidden { display: none !important; }
         }

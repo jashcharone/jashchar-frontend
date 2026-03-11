@@ -81,11 +81,11 @@ const getPaidMonths = (payments) => {
 
 // Helper: Calculate annual fee based on billing cycle
 // billing_cycle determines how the fee amount is interpreted:
-// - monthly: fee × sessionMonths (e.g., ?5000/month × 12 = ?60,000/year)
-// - quarterly: fee × ceil(sessionMonths/3) (e.g., ?15000/quarter × 4 = ?60,000/year)
-// - half_yearly: fee × ceil(sessionMonths/6) (e.g., ?30000/semester × 2 = ?60,000/year)
-// - annual: fee × 1 (e.g., ?60,000/year)
-// - one_time: fee × 1 (e.g., ?10,000 one-time)
+// - monthly: fee ï¿½ sessionMonths (e.g., ?5000/month ï¿½ 12 = ?60,000/year)
+// - quarterly: fee ï¿½ ceil(sessionMonths/3) (e.g., ?15000/quarter ï¿½ 4 = ?60,000/year)
+// - half_yearly: fee ï¿½ ceil(sessionMonths/6) (e.g., ?30000/semester ï¿½ 2 = ?60,000/year)
+// - annual: fee ï¿½ 1 (e.g., ?60,000/year)
+// - one_time: fee ï¿½ 1 (e.g., ?10,000 one-time)
 const calculateFeeDetails = (fee, billingCycle = 'monthly', sessionMonths = 12) => {
     const periods = {
         monthly: sessionMonths,
@@ -1040,7 +1040,7 @@ const StudentFees = () => {
             // Navigate to the new receipt page (use first payment's ID)
             const firstPaymentId = insertedPayments?.[0]?.id;
             if (firstPaymentId) {
-                navigate(`/${basePath}/fees-collection/print-fees-receipt/${firstPaymentId}`);
+                navigate(`/${basePath}/fees-collection/print-receipt/fees/${firstPaymentId}`);
             }
 
         } catch (error) {
@@ -1052,7 +1052,7 @@ const StudentFees = () => {
     };
     
     const printReceipt = (payment) => {
-        navigate(`/${basePath}/fees-collection/print-fees-receipt/${payment.id}`);
+        navigate(`/${basePath}/fees-collection/print-receipt/fees/${payment.id}`);
     }
 
     // Collect Transport Fee
@@ -1262,7 +1262,7 @@ const StudentFees = () => {
             
             // Print receipt (use first payment's ID)
             if (data && data.length > 0) {
-                navigate(`/${basePath}/fees-collection/print-transport-receipt/${data[0].id}`);
+                navigate(`/${basePath}/fees-collection/print-receipt/transport/${data[0].id}`);
             }
         } catch (error) {
             toast({ variant: 'destructive', title: 'Payment failed', description: error.message });
@@ -1478,7 +1478,7 @@ const StudentFees = () => {
             
             // Print receipt (use first payment's ID)
             if (data && data.length > 0) {
-                navigate(`/${basePath}/fees-collection/print-hostel-receipt/${data[0].id}`);
+                navigate(`/${basePath}/fees-collection/print-receipt/hostel/${data[0].id}`);
             }
         } catch (error) {
             toast({ variant: 'destructive', title: 'Payment failed', description: error.message });
@@ -2180,7 +2180,7 @@ const StudentFees = () => {
                                                                 <p className="text-sm font-medium mb-3">
                                                                     Enter Amount to Pay 
                                                                     <span className="text-xs text-muted-foreground ml-2">
-                                                                        (Balance: {currencySymbol}{transportBalanceWithRefunds.toLocaleString('en-IN')} — pay any amount)
+                                                                        (Balance: {currencySymbol}{transportBalanceWithRefunds.toLocaleString('en-IN')} ï¿½ pay any amount)
                                                                     </span>
                                                                 </p>
                                                                 <div className="grid sm:grid-cols-3 gap-3">
@@ -2334,7 +2334,7 @@ const StudentFees = () => {
                                                             <div className="p-3 bg-blue-100 dark:bg-blue-900/30 rounded-md mb-4">
                                                                 <p className="text-sm">
                                                                     <span className="font-medium">{selectedTransportMonths.length} month(s) selected</span>
-                                                                    <span className="mx-2">•</span>
+                                                                    <span className="mx-2">ï¿½</span>
                                                                     Amount: <span className="font-bold">{currencySymbol}{(selectedTransportMonths.length * transportDetails.monthlyFee).toLocaleString('en-IN')}</span>
                                                                 </p>
                                                             </div>
@@ -2488,7 +2488,7 @@ const StudentFees = () => {
                                                                 <p className="text-sm font-medium mb-3">
                                                                     Enter Amount to Pay 
                                                                     <span className="text-xs text-muted-foreground ml-2">
-                                                                        (Balance: {currencySymbol}{hostelBalanceWithRefunds.toLocaleString('en-IN')} — pay any amount)
+                                                                        (Balance: {currencySymbol}{hostelBalanceWithRefunds.toLocaleString('en-IN')} ï¿½ pay any amount)
                                                                     </span>
                                                                 </p>
                                                                 <div className="grid sm:grid-cols-3 gap-3">
@@ -2642,7 +2642,7 @@ const StudentFees = () => {
                                                             <div className="p-3 bg-purple-100 dark:bg-purple-900/30 rounded-md mb-4">
                                                                 <p className="text-sm">
                                                                     <span className="font-medium">{selectedHostelMonths.length} month(s) selected</span>
-                                                                    <span className="mx-2">•</span>
+                                                                    <span className="mx-2">ï¿½</span>
                                                                     Amount: <span className="font-bold">{currencySymbol}{(selectedHostelMonths.length * hostelDetails.monthlyFee).toLocaleString('en-IN')}</span>
                                                                 </p>
                                                             </div>
@@ -2890,7 +2890,7 @@ const StudentFees = () => {
                                                                 <td className="p-3 text-center">
                                                                     {!group.allReverted ? (
                                                                         <div className="flex justify-center gap-1">
-                                                                            <Button variant="outline" size="sm" onClick={() => navigate(`/${basePath}/fees-collection/print-transport-receipt/${p.id}`)} title="Print Receipt">
+                                                                            <Button variant="outline" size="sm" onClick={() => navigate(`/${basePath}/fees-collection/print-receipt/transport/${p.id}`)} title="Print Receipt">
                                                                                 <Printer className="h-3 w-3" />
                                                                             </Button>
                                                                             {!hasExistingRefund(p.id, 'transport') && (
@@ -2960,7 +2960,7 @@ const StudentFees = () => {
                                                                 <td className="p-3 text-center">
                                                                     {!group.allReverted ? (
                                                                         <div className="flex justify-center gap-1">
-                                                                            <Button variant="outline" size="sm" onClick={() => navigate(`/${basePath}/fees-collection/print-hostel-receipt/${p.id}`)} title="Print Receipt">
+                                                                            <Button variant="outline" size="sm" onClick={() => navigate(`/${basePath}/fees-collection/print-receipt/hostel/${p.id}`)} title="Print Receipt">
                                                                                 <Printer className="h-3 w-3" />
                                                                             </Button>
                                                                             {!hasExistingRefund(p.id, 'hostel') && (
@@ -3207,7 +3207,7 @@ const StudentFees = () => {
                             <p className="text-sm text-muted-foreground">Scan with any UPI app</p>
                             <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
                                 <Smartphone className="h-4 w-4" />
-                                Google Pay • PhonePe • Paytm • BHIM
+                                Google Pay ï¿½ PhonePe ï¿½ Paytm ï¿½ BHIM
                             </div>
                             <div className="bg-purple-50 rounded-lg p-3 mt-3">
                                 <p className="text-xs text-purple-600 font-medium">UPI ID</p>

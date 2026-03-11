@@ -326,7 +326,7 @@ const RefundApprovals = () => {
                                                             <Button 
                                                                 variant="outline" 
                                                                 size="sm"
-                                                                onClick={() => navigate(`/${basePath}/fees-collection/print-refund-receipt/${refund.id}`)}
+                                                                onClick={() => navigate(`/${basePath}/fees-collection/print-receipt/refund/${refund.id}`)}
                                                             >
                                                                 <Printer className="h-3 w-3" />
                                                             </Button>

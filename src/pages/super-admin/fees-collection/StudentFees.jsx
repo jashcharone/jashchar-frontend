@@ -233,7 +233,9 @@ const StudentFees = () => {
     const [qrPaymentType, setQrPaymentType] = useState('academic'); // academic/transport/hostel
 
     const fetchStudentAndFees = useCallback(async () => {
-        if (!studentId || !selectedBranch?.id) return;
+        // Validate studentId is a proper UUID (not a route template like ':studentId')
+        const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+        if (!studentId || !uuidRegex.test(studentId) || !selectedBranch?.id) return;
         setLoading(true);
         try {
             // Fetch student with class, section, and session details

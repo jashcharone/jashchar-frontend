@@ -203,7 +203,10 @@ const StudentProfile = () => {
   const [newDocumentUrl, setNewDocumentUrl] = useState('');
   const [qrCodeDataUrl, setQrCodeDataUrl] = useState(''); // TC-60: QR Code data URL for display
 
-  const targetId = studentId || user?.id;
+  // Validate studentId is a proper UUID (not a route template like ':studentId')
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  const validStudentId = studentId && uuidRegex.test(studentId) ? studentId : null;
+  const targetId = validStudentId || user?.id;
   // Use selectedBranch.id consistently (same as Edit page)
   // For students viewing their own profile, branch_id comes from user_metadata
   const branchId = selectedBranch?.id || user?.profile?.branch_id || user?.user_metadata?.branch_id;

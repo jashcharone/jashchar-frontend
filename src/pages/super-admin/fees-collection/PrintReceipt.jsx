@@ -258,7 +258,33 @@ const PrintReceipt = () => {
     const anyPrinted = paymentData.some(p => p.printed_at);
     setIsOriginal(!anyPrinted);
 
-    // 7. CHECK IF SNAPSHOT EXISTS WITH COMPLETE DATA - USE IT DIRECTLY
+    // 7. FETCH ALL FEE LEDGER FOR FEE STATEMENT (student_fee_ledger has actual amounts)
+    let feeStatement = [];
+    if (studentId) {
+      // Get from student_fee_ledger which has net_amount, balance, etc.
+      const { data: ledgerEntries } = await supabase
+        .from('student_fee_ledger')
+        .select('id, fee_type_id, net_amount, discount_amount, balance, fee_types:fee_type_id(name)')
+        .eq('student_id', studentId)
+        .eq('branch_id', branchId);
+
+      if (ledgerEntries?.length > 0) {
+        feeStatement = ledgerEntries.map(entry => {
+          const amount = Number(entry.net_amount || 0);
+          const balance = Number(entry.balance || 0);
+          const paid = Math.max(0, amount - balance);
+          return {
+            name: entry.fee_types?.name || 'Fee',
+            amount,
+            paid,
+            balance,
+            status: balance <= 0 ? 'Paid' : (paid > 0 ? 'Partial' : 'Unpaid')
+          };
+        }).filter(f => f.amount > 0);
+      }
+    }
+
+    // 8. CHECK IF SNAPSHOT EXISTS WITH COMPLETE DATA - USE IT DIRECTLY
     const firstPayment = paymentData[0];
     if (firstPayment?.receipt_snapshot?.lineItems?.length > 0) {
       const snap = firstPayment.receipt_snapshot;
@@ -266,6 +292,7 @@ const PrintReceipt = () => {
         student,
         payments: paymentData,
         lineItems: snap.lineItems,
+        feeStatement: snap.feeStatement || feeStatement,
         totalPaid: snap.totalPaid || snap.grandTotal,
         totalDiscount: snap.totalDiscount || 0,
         totalFine: snap.totalFine || 0,
@@ -273,7 +300,7 @@ const PrintReceipt = () => {
         overallTotalAmount: snap.overallTotalAmount,
         overallBalance: snap.overallBalance,
         transactionId,
-        receiptDate: snap.receiptDate || firstPayment.payment_date,
+        receiptDate: snap.receiptDate || firstPayment.created_at || firstPayment.payment_date,
         paymentMode: snap.paymentMode || firstPayment.payment_mode || 'Cash',
         remarks: firstPayment.remarks
       };
@@ -322,6 +349,7 @@ const PrintReceipt = () => {
       student,
       payments: paymentsWithMaster,
       lineItems,
+      feeStatement,
       totalPaid,
       totalDiscount,
       totalFine,
@@ -329,7 +357,7 @@ const PrintReceipt = () => {
       overallTotalAmount,
       overallBalance,
       transactionId,
-      receiptDate: paymentsWithMaster[0]?.payment_date || paymentsWithMaster[0]?.created_at,
+      receiptDate: paymentsWithMaster[0]?.created_at || paymentsWithMaster[0]?.payment_date,
       paymentMode: paymentsWithMaster[0]?.payment_mode || 'Cash',
       remarks: paymentsWithMaster[0]?.remarks
     };
@@ -412,7 +440,7 @@ const PrintReceipt = () => {
       overallTotalAmount,
       overallBalance,
       transactionId: payment.transaction_id,
-      receiptDate: payment.payment_date || payment.created_at,
+      receiptDate: payment.created_at || payment.payment_date,
       paymentMode: payment.payment_mode || 'Cash',
       remarks: payment.remarks,
       extraInfo: {
@@ -500,7 +528,7 @@ const PrintReceipt = () => {
       overallTotalAmount,
       overallBalance,
       transactionId: payment.transaction_id,
-      receiptDate: payment.payment_date || payment.created_at,
+      receiptDate: payment.created_at || payment.payment_date,
       paymentMode: payment.payment_mode || 'Cash',
       remarks: payment.remarks,
       extraInfo: {
@@ -682,6 +710,7 @@ const PrintReceipt = () => {
           logo_url: receiptData.school?.logo_url,
         },
         lineItems: receiptData.lineItems,
+        feeStatement: receiptData.feeStatement,
         totalPaid: receiptData.totalPaid,
         totalDiscount: receiptData.totalDiscount,
         totalFine: receiptData.totalFine,
@@ -741,7 +770,7 @@ const PrintReceipt = () => {
   // RENDER RECEIPT
   // =====================================
 
-  const { student, school, lineItems, totalPaid, totalDiscount, totalFine, grandTotal, overallTotalAmount = 0, overallBalance = 0, transactionId, receiptDate, paymentMode, remarks, extraInfo, isRefund } = receiptData;
+  const { student, school, lineItems, feeStatement = [], totalPaid, totalDiscount, totalFine, grandTotal, overallTotalAmount = 0, overallBalance = 0, transactionId, receiptDate, paymentMode, remarks, extraInfo, isRefund } = receiptData;
   const Icon = config.icon;
 
   // Format receipt number
@@ -859,15 +888,11 @@ const PrintReceipt = () => {
         {/* Left Column */}
         <div style={{ flex: 1 }}>
           <div style={{ display: 'flex', marginBottom: '2px' }}>
-            <span style={{ width: '85px', fontWeight: '600', color: '#444' }}>Transaction ID</span>
-            <span>: <strong>{transactionId || '-'}</strong></span>
-          </div>
-          <div style={{ display: 'flex', marginBottom: '2px' }}>
-            <span style={{ width: '85px', fontWeight: '600', color: '#444' }}>Name</span>
+            <span style={{ width: '85px', fontWeight: '600', color: '#444' }}>Student Name</span>
             <span>: <strong style={{ textTransform: 'uppercase' }}>{student?.full_name || '-'}</strong></span>
           </div>
           <div style={{ display: 'flex', marginBottom: '2px' }}>
-            <span style={{ width: '85px', fontWeight: '600', color: '#444' }}>Father Name</span>
+            <span style={{ width: '85px', fontWeight: '600', color: '#444' }}>Father's Name</span>
             <span>: {student?.father_name || '-'}</span>
           </div>
           <div style={{ display: 'flex', marginBottom: '2px' }}>
@@ -877,6 +902,10 @@ const PrintReceipt = () => {
           <div style={{ display: 'flex', marginBottom: '2px' }}>
             <span style={{ width: '85px', fontWeight: '600', color: '#444' }}>Academic Year</span>
             <span>: {currentSessionName || '-'}</span>
+          </div>
+          <div style={{ display: 'flex', marginBottom: '2px' }}>
+            <span style={{ width: '85px', fontWeight: '600', color: '#444' }}>Class</span>
+            <span>: {student?.class?.name || '-'}{student?.section?.name ? ` (${student.section.name})` : ''}</span>
           </div>
           {extraInfo?.type === 'hostel' && (
             <div style={{ display: 'flex', marginBottom: '2px' }}>
@@ -900,16 +929,24 @@ const PrintReceipt = () => {
         {/* Right Column */}
         <div style={{ flex: 1 }}>
           <div style={{ display: 'flex', marginBottom: '2px' }}>
-            <span style={{ width: '95px', fontWeight: '600', color: '#444' }}>Transaction Date</span>
-            <span>: {receiptDate ? format(new Date(receiptDate), 'dd MMM yyyy') : '-'}</span>
+            <span style={{ width: '85px', fontWeight: '600', color: '#444' }}>Date & Time</span>
+            <span>: {receiptDate ? format(new Date(receiptDate), 'dd MMM yyyy hh:mm a') : '-'}</span>
           </div>
           <div style={{ display: 'flex', marginBottom: '2px' }}>
-            <span style={{ width: '95px', fontWeight: '600', color: '#444' }}>Receipt No</span>
+            <span style={{ width: '85px', fontWeight: '600', color: '#444' }}>Payment Mode</span>
+            <span>: <strong>{paymentMode || 'Cash'}</strong></span>
+          </div>
+          <div style={{ display: 'flex', marginBottom: '2px' }}>
+            <span style={{ width: '85px', fontWeight: '600', color: '#444' }}>Transaction ID</span>
+            <span>: <strong>{transactionId || '-'}</strong></span>
+          </div>
+          <div style={{ display: 'flex', marginBottom: '2px' }}>
+            <span style={{ width: '85px', fontWeight: '600', color: '#444' }}>Receipt No</span>
             <span>: <strong>{receiptNo}</strong></span>
           </div>
           <div style={{ display: 'flex', marginBottom: '2px' }}>
-            <span style={{ width: '95px', fontWeight: '600', color: '#444' }}>Class</span>
-            <span>: {student?.class?.name || '-'}{student?.section?.name ? ` >> ${student.section.name}` : ''}</span>
+            <span style={{ width: '85px', fontWeight: '600', color: '#444' }}>Branch</span>
+            <span>: {selectedBranch?.name || school?.name || '-'}</span>
           </div>
         </div>
       </div>
@@ -921,8 +958,8 @@ const PrintReceipt = () => {
             <tr style={{ backgroundColor: '#f0f0f0' }}>
               <th style={{ border: '1px solid #888', padding: '3px 4px', textAlign: 'center', width: '28px' }}>S.no</th>
               <th style={{ border: '1px solid #888', padding: '3px 4px', textAlign: 'left' }}>Particulars</th>
-              <th style={{ border: '1px solid #888', padding: '3px 4px', textAlign: 'right', width: '72px' }}>Academic Total Amount</th>
-              {showPrevPaid && <th style={{ border: '1px solid #888', padding: '3px 4px', textAlign: 'right', width: '68px' }}>All previous paid amount</th>}
+              <th style={{ border: '1px solid #888', padding: '3px 4px', textAlign: 'right', width: '72px' }}>Academic<br/>Total Amount</th>
+              {showPrevPaid && <th style={{ border: '1px solid #888', padding: '3px 4px', textAlign: 'right', width: '68px' }}>All Previous<br/>Paid Amount</th>}
               <th style={{ border: '1px solid #888', padding: '3px 4px', textAlign: 'right', width: '62px' }}>Net Amount</th>
               {showConcession && <th style={{ border: '1px solid #888', padding: '3px 4px', textAlign: 'right', width: '62px' }}>Concession</th>}
               <th style={{ border: '1px solid #888', padding: '3px 4px', textAlign: 'right', width: '62px' }}>Paid Amount</th>
@@ -990,42 +1027,71 @@ const PrintReceipt = () => {
         </table>
       </div>
 
-      {/* ===== AMOUNT IN WORDS ===== */}
-      <div style={{ padding: '3px 10px', fontSize: '9px', borderTop: '1px solid #ccc' }}>
-        <span style={{ fontWeight: '600', color: '#444' }}>Amount in Words: </span>
-        <span style={{ fontWeight: 'bold', fontStyle: 'italic' }}>{amountInWords}</span>
-      </div>
-
-      {/* ===== PAYMENT MODE FOOTER ===== */}
-      <div style={{ padding: '4px 10px', borderTop: '1px solid #ccc', fontSize: '9px' }}>
-        {paymentMode?.toLowerCase() === 'cash' ? (
-          <p style={{ fontWeight: 'bold', margin: '0' }}>Received by Cash</p>
-        ) : (
-          <div>
-            <p style={{ fontWeight: 'bold', margin: '0' }}>Received by {paymentMode?.toUpperCase()} Payments</p>
-            {remarks && <p style={{ fontSize: '8px', color: '#444', margin: '2px 0 0' }}>Remarks: {remarks}</p>}
-          </div>
-        )}
-      </div>
-
-      {/* ===== NOTE + SIGNATURE ===== */}
-      <div style={{ padding: '6px 10px', borderTop: '1px solid #ccc', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
-        <div style={{ fontSize: '7px', color: '#666', maxWidth: '55%' }}>
-          <p style={{ margin: '0' }}>Note: This is a computer generated receipt. Please preserve this receipt for future reference.</p>
-          <p style={{ margin: '2px 0 0', color: '#888' }}>Printed: {format(currentDateTime, 'dd-MM-yyyy hh:mm a')}</p>
+      {/* ===== FEE STATEMENT (ALL INSTALLMENTS SUMMARY) ===== */}
+      {feeStatement.length > 0 && (
+        <div style={{ padding: '4px 10px', borderTop: '1px solid #ccc' }}>
+          <div style={{ fontSize: '8px', fontWeight: 'bold', marginBottom: '3px', color: '#333' }}>📋 FEE STATEMENT ({feeStatement.length} Installments)</div>
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '8px' }}>
+            <thead>
+              <tr style={{ backgroundColor: '#f5f5f5' }}>
+                <th style={{ border: '1px solid #aaa', padding: '2px 4px', textAlign: 'left' }}>Fee Name</th>
+                <th style={{ border: '1px solid #aaa', padding: '2px 4px', textAlign: 'right', width: '70px' }}>Amount</th>
+                <th style={{ border: '1px solid #aaa', padding: '2px 4px', textAlign: 'right', width: '70px' }}>Paid</th>
+                <th style={{ border: '1px solid #aaa', padding: '2px 4px', textAlign: 'right', width: '70px' }}>Balance</th>
+                <th style={{ border: '1px solid #aaa', padding: '2px 4px', textAlign: 'center', width: '55px' }}>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {feeStatement.map((fee, idx) => (
+                <tr key={idx}>
+                  <td style={{ border: '1px solid #aaa', padding: '2px 4px' }}>{fee.name}</td>
+                  <td style={{ border: '1px solid #aaa', padding: '2px 4px', textAlign: 'right' }}>{fee.amount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
+                  <td style={{ border: '1px solid #aaa', padding: '2px 4px', textAlign: 'right' }}>{fee.paid.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
+                  <td style={{ border: '1px solid #aaa', padding: '2px 4px', textAlign: 'right' }}>{fee.balance.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
+                  <td style={{ border: '1px solid #aaa', padding: '2px 4px', textAlign: 'center', fontWeight: 'bold', fontSize: '7px', color: fee.status === 'PAID' ? '#080' : (fee.status === 'PARTIAL' ? '#c50' : '#c00') }}>{fee.status}</td>
+                </tr>
+              ))}
+            </tbody>
+            <tfoot>
+              <tr style={{ fontWeight: 'bold', backgroundColor: '#f5f5f5' }}>
+                <td style={{ border: '1px solid #aaa', padding: '2px 4px' }}>TOTAL:</td>
+                <td style={{ border: '1px solid #aaa', padding: '2px 4px', textAlign: 'right' }}>{feeStatement.reduce((s, f) => s + f.amount, 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
+                <td style={{ border: '1px solid #aaa', padding: '2px 4px', textAlign: 'right' }}>{feeStatement.reduce((s, f) => s + f.paid, 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
+                <td style={{ border: '1px solid #aaa', padding: '2px 4px', textAlign: 'right' }}>{feeStatement.reduce((s, f) => s + f.balance, 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
+                <td style={{ border: '1px solid #aaa', padding: '2px 4px' }}></td>
+              </tr>
+            </tfoot>
+          </table>
         </div>
-        <div style={{ textAlign: 'center' }}>
-          <div style={{ borderTop: '1px solid #333', paddingTop: '3px', minWidth: '90px' }}>
-            <span style={{ fontSize: '8px', color: '#444' }}>Cashier/Manager</span>
-          </div>
-        </div>
-      </div>
+      )}
 
       {/* Custom footer content from print settings */}
       {printSettings?.footer_content && (
-        <div style={{ padding: '4px 10px', borderTop: '1px solid #ccc', fontSize: '8px', color: '#555' }} 
-             dangerouslySetInnerHTML={{ __html: printSettings.footer_content }} />
+        <div 
+          style={{ 
+            padding: '8px 10px', 
+            borderTop: '1px solid #ccc', 
+            color: '#333',
+            lineHeight: '1.4'
+          }} 
+          className="receipt-footer-content"
+          dangerouslySetInnerHTML={{ __html: printSettings.footer_content }} 
+        />
       )}
+      <style>{`
+        .receipt-footer-content h1 { font-size: 14px; margin: 0; }
+        .receipt-footer-content h2 { font-size: 12px; margin: 0; }
+        .receipt-footer-content h3 { font-size: 11px; margin: 0; }
+        .receipt-footer-content p { font-size: 8px; margin: 2px 0; }
+        .receipt-footer-content { font-size: 8px; }
+        .receipt-footer-content * { box-sizing: border-box; }
+        /* Quill alignment classes */
+        .receipt-footer-content .ql-align-center { text-align: center; }
+        .receipt-footer-content .ql-align-right { text-align: right; }
+        .receipt-footer-content .ql-align-justify { text-align: justify; }
+        .receipt-footer-content .ql-indent-1 { padding-left: 3em; }
+        .receipt-footer-content .ql-indent-2 { padding-left: 6em; }
+      `}</style>
 
       {/* REFUND WATERMARK */}
       {isRefund && (

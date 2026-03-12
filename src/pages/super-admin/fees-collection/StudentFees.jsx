@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import DashboardLayout from '@/components/DashboardLayout';
 import { supabase } from '@/lib/customSupabaseClient';
@@ -138,14 +138,14 @@ const SummaryCard = ({ title, amount, icon: Icon, variant = 'default', currencyS
     };
     return (
         <Card className={variants[variant]}>
-            <CardContent className="p-4">
-                <div className="flex items-center justify-between">
-                    <div>
-                        <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">{title}</p>
-                        <p className="text-2xl font-bold mt-1">{currencySymbol}{amount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</p>
+            <CardContent className="p-3">
+                <div className="flex items-center justify-between gap-2">
+                    <div className="min-w-0">
+                        <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide truncate">{title}</p>
+                        <p className="text-lg xl:text-xl font-bold mt-0.5 truncate">{currencySymbol}{amount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</p>
                     </div>
-                    <div className={`p-3 rounded-full bg-background/50 ${iconColors[variant]}`}>
-                        <Icon className="h-5 w-5" />
+                    <div className={`p-2 rounded-full bg-background/50 flex-shrink-0 ${iconColors[variant]}`}>
+                        <Icon className="h-4 w-4" />
                     </div>
                 </div>
             </CardContent>
@@ -181,6 +181,7 @@ const StudentFees = () => {
     const [loading, setLoading] = useState(true);
     const [paymentLoading, setPaymentLoading] = useState(false);
     const [selectedFees, setSelectedFees] = useState([]);
+    const collectFeesRef = useRef(null);
     const [feeAmounts, setFeeAmounts] = useState({}); // { feeId: amount } per-fee editable amounts
     const [activeTab, setActiveTab] = useState('fees');
     const [paymentDetails, setPaymentDetails] = useState({
@@ -193,6 +194,7 @@ const StudentFees = () => {
         utr_number: ''
     });
     const [paymentToRevoke, setPaymentToRevoke] = useState(null);
+    const [revokeType, setRevokeType] = useState('academic'); // 'academic', 'transport', 'hostel'
     
     // Transport/Hostel payment state
     const [transportPaymentDetails, setTransportPaymentDetails] = useState({
@@ -720,6 +722,10 @@ const StudentFees = () => {
             if (!selectedFees.includes(feeId)) {
                 const fee = fees.find(f => f.id === feeId);
                 next[feeId] = fee?.balance > 0 ? fee.balance : 0;
+                // Auto-scroll to Collect Fees card when fee is selected
+                setTimeout(() => {
+                    collectFeesRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }, 100);
             } else {
                 delete next[feeId];
             }
@@ -1623,19 +1629,30 @@ const StudentFees = () => {
         }
         setPaymentLoading(true);
         try {
+            // Determine which table to update based on revokeType
+            const tableName = revokeType === 'transport' 
+                ? 'transport_fee_payments' 
+                : revokeType === 'hostel' 
+                    ? 'hostel_fee_payments' 
+                    : 'fee_payments';
+            
+            // Get all payment IDs to revoke (grouped by transaction_id)
+            const paymentIds = paymentToRevoke.paymentIds || [paymentToRevoke.id];
+            
             const { error } = await supabase
-                .from('fee_payments')
+                .from(tableName)
                 .update({
                     reverted_at: new Date().toISOString(),
                     revert_reason: revokeReason,
                 })
-                .eq('id', paymentToRevoke.id);
+                .in('id', paymentIds);
 
             if (error) throw error;
 
             toast({ title: 'Payment revoked successfully' });
             setPaymentToRevoke(null);
             setRevokeReason('');
+            setRevokeType('academic');
             await fetchStudentAndFees();
         } catch (error) {
             toast({ variant: 'destructive', title: 'Failed to revoke payment', description: error.message });
@@ -1829,362 +1846,116 @@ const StudentFees = () => {
                 </div>
             </div>
 
-            <div className="grid grid-cols-1 xl:grid-cols-4 gap-6">
-                {/* Left Column - Student Info & Payment Form */}
-                <div className="xl:col-span-1 space-y-4">
-                    {/* Student Profile Card */}
-                    <Card>
-                        <CardContent className="p-4">
-                            <div className="flex flex-col items-center text-center mb-4">
-                                <Avatar className="h-20 w-20 mb-3">
-                                    <AvatarImage src={student.photo_url} alt={student.full_name} />
-                                    <AvatarFallback className="text-xl bg-primary text-primary-foreground">
-                                        {getInitials(student.full_name)}
-                                    </AvatarFallback>
-                                </Avatar>
+            {/* Student Info Header - Horizontal Layout */}
+            <Card className="mb-4">
+                <CardContent className="p-4">
+                    <div className="flex flex-col lg:flex-row gap-4">
+                        {/* Student Photo & Basic Info */}
+                        <div className="flex items-center gap-4 lg:min-w-[280px]">
+                            <Avatar className="h-16 w-16 flex-shrink-0">
+                                <AvatarImage src={student.photo_url} alt={student.full_name} />
+                                <AvatarFallback className="text-lg bg-primary text-primary-foreground">
+                                    {getInitials(student.full_name)}
+                                </AvatarFallback>
+                            </Avatar>
+                            <div>
                                 <h2 className="text-lg font-bold">{student.full_name}</h2>
                                 <Badge variant="secondary" className="mt-1">
                                     {student.classes?.name} ({student.sections?.name})
                                 </Badge>
                                 {student.sessions?.name && (
-                                    <p className="text-xs text-muted-foreground mt-1">
-                                        Session: {student.sessions.name}
-                                    </p>
+                                    <p className="text-xs text-muted-foreground mt-1">Session: {student.sessions.name}</p>
                                 )}
                             </div>
+                        </div>
 
-                            <div className="space-y-2 text-sm border-t pt-3">
-                                <InfoRow icon={CreditCard} label="Admission No" value={student.school_code} />
-                                <InfoRow icon={User} label="Father" value={student.father_name} />
-                                <InfoRow icon={Users} label="Mother" value={student.mother_name} />
-                                <InfoRow icon={Calendar} label="DOB" value={student.date_of_birth ? format(parseISO(student.date_of_birth), 'dd MMM yyyy') : null} />
-                                <InfoRow icon={Phone} label="Phone" value={student.phone || student.father_phone} />
-                                <InfoRow icon={Mail} label="Email" value={student.email || student.father_email} />
+                        {/* Student Details Grid */}
+                        <div className="flex-1 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-6 gap-y-2 text-sm border-l pl-4">
+                            <InfoRow icon={CreditCard} label="Admission No" value={student.school_code} />
+                            <InfoRow icon={User} label="Father" value={student.father_name} />
+                            <InfoRow icon={Users} label="Mother" value={student.mother_name} />
+                            <InfoRow icon={Calendar} label="DOB" value={student.date_of_birth ? format(parseISO(student.date_of_birth), 'dd MMM yyyy') : null} />
+                            <InfoRow icon={Phone} label="Phone" value={student.phone || student.father_phone} />
+                            <InfoRow icon={Mail} label="Email" value={student.email || student.father_email} />
+                        </div>
+
+                        {/* Quick Stats */}
+                        <div className="flex items-center gap-4 lg:border-l lg:pl-4">
+                            <div className="text-center px-3">
+                                <p className="text-xs text-muted-foreground">Total Dues</p>
+                                <p className="text-lg font-bold">{feeSummary.unpaidCount} <span className="text-xs font-normal">items</span></p>
                             </div>
-
-                            <Link to={`/${basePath}/student-information/profile/${studentId}`} target="_blank">
-                                <Button variant="outline" className="w-full mt-3" size="sm">
-                                    <ExternalLink className="mr-2 h-4 w-4" />View Full Profile
-                                </Button>
-                            </Link>
-                        </CardContent>
-                    </Card>
-
-                    {/* Class Teacher Card */}
-                    {classTeacher && (
-                        <Card>
-                            <CardHeader className="pb-2">
-                                <CardTitle className="text-sm flex items-center gap-2">
-                                    <GraduationCap className="h-4 w-4" />Class Teacher
-                                </CardTitle>
-                            </CardHeader>
-                            <CardContent className="pt-0">
-                                <div className="flex items-center gap-3">
-                                    <Avatar className="h-10 w-10">
-                                        <AvatarFallback>{getInitials(classTeacher.full_name)}</AvatarFallback>
-                                    </Avatar>
-                                    <div className="text-sm">
-                                        <p className="font-medium">{classTeacher.full_name}</p>
-                                        {classTeacher.phone && <p className="text-xs text-muted-foreground">{classTeacher.phone}</p>}
-                                    </div>
-                                </div>
-                            </CardContent>
-                        </Card>
-                    )}
-
-                    {/* Quick Stats */}
-                    <Card>
-                        <CardHeader className="pb-2">
-                            <CardTitle className="text-sm">Quick Stats</CardTitle>
-                        </CardHeader>
-                        <CardContent className="space-y-2">
-                            <div className="flex justify-between items-center text-sm">
-                                <span className="text-muted-foreground">Total Dues</span>
-                                <Badge variant="outline">{feeSummary.unpaidCount} items</Badge>
-                            </div>
-                            <div className="flex justify-between items-center text-sm">
-                                <span className="text-muted-foreground">Overdue Fees</span>
-                                <Badge variant={feeSummary.overdueCount > 0 ? "destructive" : "outline"}>
-                                    {feeSummary.overdueCount} items
-                                </Badge>
+                            <div className="text-center px-3">
+                                <p className="text-xs text-muted-foreground">Overdue</p>
+                                <p className={`text-lg font-bold ${feeSummary.overdueCount > 0 ? 'text-red-600' : ''}`}>{feeSummary.overdueCount} <span className="text-xs font-normal">items</span></p>
                             </div>
                             {lastPayment && (
-                                <div className="flex justify-between items-center text-sm">
-                                    <span className="text-muted-foreground">Last Payment</span>
-                                    <span className="font-medium">{format(parseISO(lastPayment.payment_date), 'dd MMM')}</span>
+                                <div className="text-center px-3">
+                                    <p className="text-xs text-muted-foreground">Last Payment</p>
+                                    <p className="text-sm font-medium">{format(parseISO(lastPayment.payment_date), 'dd MMM')}</p>
                                 </div>
                             )}
-                        </CardContent>
-                    </Card>
-
-                    {/* Assigned Discounts */}
-                    {studentDiscounts.length > 0 && (
-                        <Card className="border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-950">
-                            <CardHeader className="pb-2">
-                                <CardTitle className="text-sm flex items-center gap-2 text-blue-700 dark:text-blue-300">
-                                    <CheckCircle className="h-4 w-4" />Assigned Discounts
-                                </CardTitle>
-                            </CardHeader>
-                            <CardContent className="pt-0 space-y-2">
-                                {studentDiscounts.map(d => (
-                                    <div key={d.id} className="flex justify-between items-center text-sm p-2 bg-white dark:bg-gray-800 rounded border">
-                                        <div>
-                                            <p className="font-medium">{d.name}</p>
-                                            <p className="text-xs text-muted-foreground">{d.discount_code}</p>
-                                        </div>
-                                        <Badge variant="secondary" className="bg-green-100 text-green-700">
-                                            {d.discount_type === 'percentage' ? `${d.amount}%` : `${currencySymbol}${d.amount}`}
-                                        </Badge>
-                                    </div>
-                                ))}
-                            </CardContent>
-                        </Card>
-                    )}
-
-                    {/* Payment Form */}
-                    <Card className="border-primary/50">
-                        <CardHeader className="pb-3 bg-primary/5">
-                            <CardTitle className="flex items-center gap-2">
-                                <Receipt className="h-5 w-5" />Collect Fees
-                            </CardTitle>
-                            {selectedFees.length > 0 && (
-                                <CardDescription>{selectedFees.length} fee(s) selected</CardDescription>
-                            )}
-                        </CardHeader>
-                        <CardContent className="space-y-3 pt-4">
-                            {/* Per-fee amount breakdown */}
-                            {selectedFees.length > 0 && (
-                                <div className="space-y-2">
-                                    <Label className="text-xs font-semibold">Enter Amount per Fee</Label>
-                                    <div className="border rounded-lg overflow-hidden">
-                                        <table className="w-full text-xs">
-                                            <thead>
-                                                <tr className="bg-muted/50 border-b">
-                                                    <th className="p-2 text-left">Fee Type</th>
-                                                    <th className="p-2 text-right">Balance</th>
-                                                    <th className="p-2 text-right">Enter Amount ({currencySymbol})</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                {selectedFees.map(feeId => {
-                                                    const fee = fees.find(f => f.id === feeId);
-                                                    if (!fee) return null;
-                                                    return (
-                                                        <tr key={feeId} className="border-b last:border-0">
-                                                            <td className="p-2">
-                                                                <div className="font-medium">{fee.typeName || fee.type}</div>
-                                                                <div className="text-[10px] text-muted-foreground">{fee.group}</div>
-                                                            </td>
-                                                            <td className="p-2 text-right font-mono text-muted-foreground">{currencySymbol}{fee.balance.toLocaleString('en-IN')}</td>
-                                                            <td className="p-2 text-right">
-                                                                <Input
-                                                                    type="number"
-                                                                    value={feeAmounts[feeId] ?? ''}
-                                                                    onChange={(e) => {
-                                                                        const val = parseFloat(e.target.value) || 0;
-                                                                        setFeeAmounts(prev => ({
-                                                                            ...prev,
-                                                                            [feeId]: val > fee.balance ? fee.balance : (e.target.value === '' ? '' : val)
-                                                                        }));
-                                                                    }}
-                                                                    max={fee.balance}
-                                                                    className="h-7 w-24 ml-auto text-right font-mono"
-                                                                />
-                                                            </td>
-                                                        </tr>
-                                                    );
-                                                })}
-                                            </tbody>
-                                            <tfoot>
-                                                <tr className="bg-muted/30 font-semibold">
-                                                    <td className="p-2">Total</td>
-                                                    <td className="p-2 text-right font-mono">{currencySymbol}{selectedFeesMaxBalance.toLocaleString('en-IN')}</td>
-                                                    <td className="p-2 text-right font-mono">{currencySymbol}{parseFloat(paymentDetails.amount || 0).toLocaleString('en-IN')}</td>
-                                                </tr>
-                                            </tfoot>
-                                        </table>
-                                    </div>
-                                </div>
-                            )}
-
-                            <div className="grid grid-cols-2 gap-3">
-                                <div className="space-y-1">
-                                    <Label className="text-xs">
-                                        Discount ({currencySymbol})
-                                        {remainingDiscount > 0 && (
-                                            <span className="text-green-600 ml-1">(Auto-applied)</span>
-                                        )}
-                                    </Label>
-                                    <Input 
-                                        type="number" 
-                                        value={paymentDetails.discount} 
-                                        onChange={(e) => setPaymentDetails(p => ({ ...p, discount: e.target.value }))}
-                                        className="h-9"
-                                    />
-                                </div>
-                                <div className="space-y-1">
-                                    <Label className="text-xs">Fine ({currencySymbol})</Label>
-                                    <Input 
-                                        type="number" 
-                                        value={paymentDetails.fine} 
-                                        onChange={(e) => setPaymentDetails(p => ({ ...p, fine: e.target.value }))}
-                                        className="h-9"
-                                    />
-                                </div>
-                            </div>
-
-                            {/* Discount Info - Show only if discount assigned */}
-                            {totalAssignedDiscount > 0 && (
-                                <div className="bg-blue-50 dark:bg-blue-950/30 rounded-lg p-3 text-xs space-y-1">
-                                    <div className="flex justify-between">
-                                        <span className="text-muted-foreground">Assigned Discount:</span>
-                                        <span className="font-medium">{currencySymbol}{totalAssignedDiscount.toLocaleString('en-IN')}</span>
-                                    </div>
-                                    <div className="flex justify-between">
-                                        <span className="text-muted-foreground">Already Used:</span>
-                                        <span className="font-medium text-green-600">-{currencySymbol}{totalDiscountAlreadyUsed.toLocaleString('en-IN')}</span>
-                                    </div>
-                                    <div className="flex justify-between border-t pt-1 mt-1">
-                                        <span className="font-semibold">Remaining:</span>
-                                        <span className={`font-bold ${remainingDiscount > 0 ? 'text-blue-600' : 'text-muted-foreground'}`}>
-                                            {currencySymbol}{remainingDiscount.toLocaleString('en-IN')}
-                                        </span>
-                                    </div>
-                                </div>
-                            )}
-
-                            <div className="space-y-1">
-                                <Label className="text-xs">Date</Label>
-                                <DatePicker 
-                                    value={paymentDetails.payment_date} 
-                                    onChange={(date) => setPaymentDetails(p => ({...p, payment_date: date}))}
-                                />
-                            </div>
-
-                            <div className="space-y-1">
-                                <Label className="text-xs">Payment Mode</Label>
-                                <Select value={paymentDetails.payment_mode} onValueChange={v => setPaymentDetails(p => ({ ...p, payment_mode: v }))}>
-                                    <SelectTrigger className="h-9">
-                                        <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="Cash"><div className="flex items-center gap-2"><Banknote className="h-4 w-4" />Cash</div></SelectItem>
-                                        <SelectItem value="Cheque"><div className="flex items-center gap-2"><FileText className="h-4 w-4" />Cheque</div></SelectItem>
-                                        <SelectItem value="Online"><div className="flex items-center gap-2"><CreditCard className="h-4 w-4" />Online/UPI</div></SelectItem>
-                                        <SelectItem value="Card"><div className="flex items-center gap-2"><CreditCard className="h-4 w-4" />Card</div></SelectItem>
-                                        <SelectItem value="Bank Transfer"><div className="flex items-center gap-2"><Building2 className="h-4 w-4" />Bank Transfer</div></SelectItem>
-                                    </SelectContent>
-                                </Select>
-                            </div>
-
-                            {/* UPI QR Button - Show when Online/UPI selected and UPI is enabled */}
-                            {paymentDetails.payment_mode === 'Online' && upiSettings.enabled && (
-                                <Button
-                                    type="button"
-                                    variant="outline"
-                                    className="w-full border-purple-300 text-purple-700 hover:bg-purple-50"
-                                    onClick={() => {
-                                        const total = parseFloat(paymentDetails.amount || 0) - parseFloat(paymentDetails.discount || 0) + parseFloat(paymentDetails.fine || 0);
-                                        generateUpiQr(total, 'academic');
-                                    }}
-                                >
-                                    <QrCode className="h-4 w-4 mr-2" />
-                                    Show UPI QR Code
+                            <Link to={`/${basePath}/student-information/profile/${studentId}`} target="_blank">
+                                <Button variant="outline" size="sm">
+                                    <ExternalLink className="mr-1 h-3 w-3" />Profile
                                 </Button>
-                            )}
-
-                            {/* UTR Number - Mandatory for Online/UPI payments */}
-                            {isUpiPayment(paymentDetails.payment_mode) && (
-                                <div className="space-y-1">
-                                    <Label className="text-xs">UPI UTR Number <span className="text-red-500">*</span></Label>
-                                    <Input 
-                                        value={paymentDetails.utr_number} 
-                                        onChange={(e) => setPaymentDetails(p => ({...p, utr_number: e.target.value.toUpperCase() }))}
-                                        placeholder="Enter 12-22 digit UTR number"
-                                        className="h-9 font-mono"
-                                        maxLength={22}
-                                    />
-                                    <p className="text-[10px] text-muted-foreground">UTR from bank statement (used for reconciliation)</p>
-                                </div>
-                            )}
-
-                            <div className="space-y-1">
-                                <Label className="text-xs">Note (Optional)</Label>
-                                <Textarea 
-                                    value={paymentDetails.note} 
-                                    onChange={(e) => setPaymentDetails(p => ({...p, note: e.target.value }))}
-                                    rows={2}
-                                    placeholder={paymentDetails.payment_mode !== 'Cash' ? 'Enter reference/cheque number and remarks...' : 'Payment remarks...'}
-                                />
-                            </div>
-
-                            {/* Payment Summary */}
-                            <div className="bg-muted/50 rounded-lg p-3 space-y-1">
-                                <div className="flex justify-between text-sm">
-                                    <span>Amount</span>
-                                    <span>{currencySymbol}{parseFloat(paymentDetails.amount || 0).toFixed(2)}</span>
-                                </div>
-                                <div className="flex justify-between text-sm text-blue-600">
-                                    <span>- Discount</span>
-                                    <span>{currencySymbol}{parseFloat(paymentDetails.discount || 0).toFixed(2)}</span>
-                                </div>
-                                <div className="flex justify-between text-sm text-amber-600">
-                                    <span>+ Fine</span>
-                                    <span>{currencySymbol}{parseFloat(paymentDetails.fine || 0).toFixed(2)}</span>
-                                </div>
-                                <div className="flex justify-between font-bold text-lg border-t pt-2 mt-2">
-                                    <span>Total</span>
-                                    <span className="text-green-600">
-                                        {currencySymbol}{(parseFloat(paymentDetails.amount || 0) - parseFloat(paymentDetails.discount || 0) + parseFloat(paymentDetails.fine || 0)).toFixed(2)}
-                                    </span>
-                                </div>
-                            </div>
-
-                            <Button 
-                                className="w-full" 
-                                onClick={collectFees} 
-                                disabled={paymentLoading || !selectedFees.length}
-                                size="lg"
-                            >
-                                {paymentLoading ? (
-                                    <Loader2 className="animate-spin mr-2" />
-                                ) : (
-                                    <Printer className="mr-2 h-4 w-4" />
-                                )}
-                                Collect & Print Receipt
-                            </Button>
-                        </CardContent>
-                    </Card>
-                </div>
-
-                {/* Right Column - Fees & Payment History */}
-                <div className="xl:col-span-3 space-y-4">
-                    {/* Summary Cards */}
-                    <div className="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-5 gap-4">
-                        <SummaryCard title="Total Fees" amount={feeSummary.totalFees} icon={FileText} variant="primary" currencySymbol={currencySymbol} />
-                        <SummaryCard title="Paid Amount" amount={feeSummary.totalPaid} icon={CheckCircle} variant="success" currencySymbol={currencySymbol} />
-                        <SummaryCard title="Discount Given" amount={feeSummary.totalDiscount} icon={Receipt} variant="default" currencySymbol={currencySymbol} />
-                        {feeSummary.totalRefunded > 0 && (
-                            <SummaryCard title="Total Refunded" amount={feeSummary.totalRefunded} icon={Undo2} variant="warning" currencySymbol={currencySymbol} />
-                        )}
-                        <SummaryCard title="Balance Due" amount={feeSummary.balance} icon={feeSummary.balance > 0 ? AlertTriangle : Clock} variant={feeSummary.balance > 0 ? 'danger' : 'success'} currencySymbol={currencySymbol} />
+                            </Link>
+                        </div>
                     </div>
+                </CardContent>
+            </Card>
 
-                    {/* Tabs for Fees & History */}
-                    <Card>
-                        <Tabs value={activeTab} onValueChange={setActiveTab}>
-                            <CardHeader className="pb-0">
-                                <div className="flex items-center justify-between">
-                                    <TabsList>
-                                        <TabsTrigger value="fees" className="gap-2">
-                                            <FileText className="h-4 w-4" />Fee Statement
-                                        </TabsTrigger>
-                                        <TabsTrigger value="history" className="gap-2">
-                                            <History className="h-4 w-4" />Payment History
-                                            <Badge variant="secondary" className="ml-1">{new Set(payments.map(p => p.transaction_id || p.id)).size + (transportDetails?.payments ? new Set(transportDetails.payments.map(p => p.transaction_id || p.id)).size : 0) + (hostelDetails?.payments ? new Set(hostelDetails.payments.map(p => p.transaction_id || p.id)).size : 0)}</Badge>
-                                        </TabsTrigger>
-                                    </TabsList>
-                                    {activeTab === 'fees' && feeSummary.unpaidCount > 0 && (
+            {/* Summary Cards */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+                <SummaryCard title="Total Fees" amount={feeSummary.totalFees} icon={FileText} variant="primary" currencySymbol={currencySymbol} />
+                <SummaryCard title="Paid Amount" amount={feeSummary.totalPaid} icon={CheckCircle} variant="success" currencySymbol={currencySymbol} />
+                <SummaryCard title="Discount Given" amount={feeSummary.totalDiscount} icon={Receipt} variant="default" currencySymbol={currencySymbol} />
+                {feeSummary.totalRefunded > 0 && (
+                    <SummaryCard title="Total Refunded" amount={feeSummary.totalRefunded} icon={Undo2} variant="warning" currencySymbol={currencySymbol} />
+                )}
+                <SummaryCard title="Balance Due" amount={feeSummary.balance} icon={feeSummary.balance > 0 ? AlertTriangle : Clock} variant={feeSummary.balance > 0 ? 'danger' : 'success'} currencySymbol={currencySymbol} />
+            </div>
+
+            {/* Class Teacher & Discounts - Inline */}
+            {(classTeacher || studentDiscounts.length > 0) && (
+                <div className="flex flex-wrap items-center gap-4 mb-4">
+                    {classTeacher && (
+                        <div className="flex items-center gap-2 bg-card border rounded-lg px-3 py-2">
+                            <GraduationCap className="h-4 w-4 text-muted-foreground" />
+                            <span className="text-sm text-muted-foreground">Class Teacher:</span>
+                            <span className="text-sm font-medium">{classTeacher.full_name}</span>
+                            {classTeacher.phone && <span className="text-xs text-muted-foreground">({classTeacher.phone})</span>}
+                        </div>
+                    )}
+                    {studentDiscounts.length > 0 && (
+                        <div className="flex items-center gap-2 bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg px-3 py-2">
+                            <CheckCircle className="h-4 w-4 text-blue-600" />
+                            <span className="text-sm text-blue-700 dark:text-blue-300">Discounts:</span>
+                            {studentDiscounts.map(d => (
+                                <Badge key={d.id} variant="secondary" className="bg-green-100 text-green-700">
+                                    {d.name}: {d.discount_type === 'percentage' ? `${d.amount}%` : `${currencySymbol}${d.amount}`}
+                                </Badge>
+                            ))}
+                        </div>
+                    )}
+                </div>
+            )}
+
+            {/* Fee Statement & Payment History - Full Width */}
+            <Card>
+                <Tabs value={activeTab} onValueChange={setActiveTab}>
+                    <CardHeader className="pb-0">
+                        <div className="flex items-center justify-between">
+                            <TabsList>
+                                <TabsTrigger value="fees" className="gap-2">
+                                    <FileText className="h-4 w-4" />Fee Statement
+                                </TabsTrigger>
+                                <TabsTrigger value="history" className="gap-2">
+                                    <History className="h-4 w-4" />Payment History
+                                    <Badge variant="secondary" className="ml-1">{new Set(payments.map(p => p.transaction_id || p.id)).size + (transportDetails?.payments ? new Set(transportDetails.payments.map(p => p.transaction_id || p.id)).size : 0) + (hostelDetails?.payments ? new Set(hostelDetails.payments.map(p => p.transaction_id || p.id)).size : 0)}</Badge>
+                                </TabsTrigger>
+                            </TabsList>
+                            {activeTab === 'fees' && feeSummary.unpaidCount > 0 && (
                                         <Button variant="outline" size="sm" onClick={selectAllUnpaid}>
                                             Select All Unpaid
                                         </Button>
@@ -2893,34 +2664,34 @@ const StudentFees = () => {
 
                                 <TabsContent value="history" className="m-0">
                                     {/* Payment Summary Cards */}
-                                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4 p-3 bg-muted/30 rounded-lg">
+                                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-3 p-2 bg-muted/30 rounded-lg">
                                         <div className="text-center p-2 bg-background rounded border">
-                                            <p className="text-xs text-muted-foreground uppercase">Total Paid</p>
-                                            <p className="text-lg font-bold text-green-600">{currencySymbol}{(
+                                            <p className="text-[10px] text-muted-foreground uppercase">Total Paid</p>
+                                            <p className="text-base font-bold text-green-600">{currencySymbol}{(
                                                 payments.filter(p => !p.reverted_at).reduce((sum, p) => sum + Number(p.amount || 0), 0) +
                                                 (transportDetails?.payments?.filter(p => !p.reverted_at).reduce((sum, p) => sum + Number(p.amount || 0), 0) || 0) +
                                                 (hostelDetails?.payments?.filter(p => !p.reverted_at).reduce((sum, p) => sum + Number(p.amount || 0), 0) || 0)
                                             ).toLocaleString('en-IN')}</p>
                                         </div>
                                         <div className="text-center p-2 bg-background rounded border">
-                                            <p className="text-xs text-muted-foreground uppercase">Total Discount</p>
-                                            <p className="text-lg font-bold text-blue-600">{currencySymbol}{(
+                                            <p className="text-[10px] text-muted-foreground uppercase">Total Discount</p>
+                                            <p className="text-base font-bold text-blue-600">{currencySymbol}{(
                                                 payments.filter(p => !p.reverted_at).reduce((sum, p) => sum + Number(p.discount_amount || 0), 0) +
                                                 (transportDetails?.payments?.filter(p => !p.reverted_at).reduce((sum, p) => sum + Number(p.discount_amount || 0), 0) || 0) +
                                                 (hostelDetails?.payments?.filter(p => !p.reverted_at).reduce((sum, p) => sum + Number(p.discount_amount || 0), 0) || 0)
                                             ).toLocaleString('en-IN')}</p>
                                         </div>
                                         <div className="text-center p-2 bg-background rounded border">
-                                            <p className="text-xs text-muted-foreground uppercase">Fine Collected</p>
-                                            <p className="text-lg font-bold text-amber-600">{currencySymbol}{(
+                                            <p className="text-[10px] text-muted-foreground uppercase">Fine Collected</p>
+                                            <p className="text-base font-bold text-amber-600">{currencySymbol}{(
                                                 payments.filter(p => !p.reverted_at).reduce((sum, p) => sum + Number(p.fine_paid || 0), 0) +
                                                 (transportDetails?.payments?.filter(p => !p.reverted_at).reduce((sum, p) => sum + Number(p.fine_paid || 0), 0) || 0) +
                                                 (hostelDetails?.payments?.filter(p => !p.reverted_at).reduce((sum, p) => sum + Number(p.fine_paid || 0), 0) || 0)
                                             ).toLocaleString('en-IN')}</p>
                                         </div>
                                         <div className="text-center p-2 bg-background rounded border">
-                                            <p className="text-xs text-muted-foreground uppercase">Transactions</p>
-                                            <p className="text-lg font-bold text-purple-600">{
+                                            <p className="text-[10px] text-muted-foreground uppercase">Transactions</p>
+                                            <p className="text-base font-bold text-purple-600">{
                                                 new Set(payments.filter(p => !p.reverted_at).map(p => p.transaction_id || p.id)).size +
                                                 (transportDetails?.payments ? new Set(transportDetails.payments.filter(p => !p.reverted_at).map(p => p.transaction_id || p.id)).size : 0) +
                                                 (hostelDetails?.payments ? new Set(hostelDetails.payments.filter(p => !p.reverted_at).map(p => p.transaction_id || p.id)).size : 0)
@@ -2929,19 +2700,19 @@ const StudentFees = () => {
                                     </div>
                                     
                                     <div className="overflow-x-auto">
-                                        <table className="w-full text-sm">
+                                        <table className="w-full text-xs">
                                             <thead>
                                                 <tr className="border-b bg-muted/50">
-                                                    <th className="p-3 text-left font-medium">Date / Time</th>
-                                                    <th className="p-3 text-left font-medium">Fee Type</th>
-                                                    <th className="p-3 text-left font-medium">Fee Details</th>
-                                                    <th className="p-3 text-left font-medium">Transaction ID</th>
-                                                    <th className="p-3 text-left font-medium">Mode</th>
-                                                    <th className="p-3 text-right font-medium">Amount</th>
-                                                    <th className="p-3 text-right font-medium">Discount</th>
-                                                    <th className="p-3 text-right font-medium">Fine</th>
-                                                    <th className="p-3 text-right font-medium">Net Paid</th>
-                                                    <th className="p-3 text-center font-medium">Action</th>
+                                                    <th className="p-2 text-left font-medium whitespace-nowrap">Date / Time</th>
+                                                    <th className="p-2 text-left font-medium">Fee Type</th>
+                                                    <th className="p-2 text-left font-medium">Fee Details</th>
+                                                    <th className="p-2 text-left font-medium">Transaction ID</th>
+                                                    <th className="p-2 text-left font-medium">Mode</th>
+                                                    <th className="p-2 text-right font-medium">Amount</th>
+                                                    <th className="p-2 text-right font-medium">Discount</th>
+                                                    <th className="p-2 text-right font-medium">Fine</th>
+                                                    <th className="p-2 text-right font-medium whitespace-nowrap">Net Paid</th>
+                                                    <th className="p-2 text-center font-medium">Action</th>
                                                 </tr>
                                             </thead>
                                             <tbody>
@@ -2972,49 +2743,49 @@ const StudentFees = () => {
                                                         const netPaid = group.totalAmount + group.totalFine - group.totalDiscount;
                                                         return (
                                                     <tr key={`fee-${txId}`} className={`border-b ${group.allReverted ? 'bg-red-50 dark:bg-red-950/20 opacity-60 line-through' : 'hover:bg-muted/30'}`}>
-                                                        <td className="p-3">
-                                                            <div className="font-medium">{format(parseISO(p.payment_date), 'dd MMM yyyy')}</div>
-                                                            <div className="text-xs text-muted-foreground">{format(parseISO(p.created_at), 'hh:mm a')}</div>
+                                                        <td className="p-2">
+                                                            <div className="font-medium text-xs">{format(parseISO(p.payment_date), 'dd MMM yyyy')}</div>
+                                                            <div className="text-[10px] text-muted-foreground">{format(parseISO(p.created_at), 'hh:mm a')}</div>
                                                         </td>
-                                                        <td className="p-3">
-                                                            <Badge variant="secondary" className="bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300">
+                                                        <td className="p-2">
+                                                            <Badge variant="secondary" className="bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300 text-[10px]">
                                                                 <FileText className="h-3 w-3 mr-1" />Academic
                                                             </Badge>
                                                         </td>
-                                                        <td className="p-3">
-                                                            <div className="font-medium text-sm">{group.feeNames.join(', ')}</div>
-                                                            <div className="text-xs text-muted-foreground">{feeInfo?.group || feeInfo?.groupName || feeInfo?.feeGroupName || p.receipt_snapshot?.fee?.group || ''}</div>
+                                                        <td className="p-2">
+                                                            <div className="font-medium text-xs max-w-[120px] truncate">{group.feeNames.join(', ')}</div>
+                                                            <div className="text-[10px] text-muted-foreground truncate">{feeInfo?.group || feeInfo?.groupName || feeInfo?.feeGroupName || p.receipt_snapshot?.fee?.group || ''}</div>
                                                             {p.utr_number && (
-                                                                <code className="text-[10px] bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded font-mono mt-1 inline-block">UTR: {p.utr_number}</code>
+                                                                <code className="text-[9px] bg-purple-100 text-purple-700 px-1 py-0.5 rounded font-mono mt-0.5 inline-block">UTR: {p.utr_number}</code>
                                                             )}
                                                         </td>
-                                                        <td className="p-3">
-                                                            <code className="text-xs bg-muted px-2 py-0.5 rounded">{p.transaction_id || '-'}</code>
+                                                        <td className="p-2">
+                                                            <code className="text-[10px] bg-muted px-1.5 py-0.5 rounded">{p.transaction_id || '-'}</code>
                                                         </td>
-                                                        <td className="p-3">
-                                                            <Badge variant="outline">{p.payment_mode}</Badge>
+                                                        <td className="p-2">
+                                                            <Badge variant="outline" className="text-[10px]">{p.payment_mode}</Badge>
                                                         </td>
-                                                        <td className="p-3 text-right font-mono font-semibold">{currencySymbol}{group.totalAmount.toLocaleString('en-IN')}</td>
-                                                        <td className="p-3 text-right font-mono text-blue-600">{group.totalDiscount > 0 ? `-${currencySymbol}${group.totalDiscount.toLocaleString('en-IN')}` : '-'}</td>
-                                                        <td className="p-3 text-right font-mono text-amber-600">{group.totalFine > 0 ? `+${currencySymbol}${group.totalFine.toLocaleString('en-IN')}` : '-'}</td>
-                                                        <td className="p-3 text-right font-mono font-bold text-green-700">{currencySymbol}{netPaid.toLocaleString('en-IN')}</td>
-                                                        <td className="p-3 text-center">
+                                                        <td className="p-2 text-right font-mono text-xs">{currencySymbol}{group.totalAmount.toLocaleString('en-IN')}</td>
+                                                        <td className="p-2 text-right font-mono text-xs text-blue-600">{group.totalDiscount > 0 ? `-${currencySymbol}${group.totalDiscount.toLocaleString('en-IN')}` : '-'}</td>
+                                                        <td className="p-2 text-right font-mono text-xs text-amber-600">{group.totalFine > 0 ? `+${currencySymbol}${group.totalFine.toLocaleString('en-IN')}` : '-'}</td>
+                                                        <td className="p-2 text-right font-mono text-xs font-bold text-green-700">{currencySymbol}{netPaid.toLocaleString('en-IN')}</td>
+                                                        <td className="p-2 text-center">
                                                             {!group.allReverted ? (
                                                                 <div className="flex justify-center gap-1">
-                                                                    <Button variant="outline" size="sm" onClick={() => printReceipt(p)} title="Print Receipt">
+                                                                    <Button variant="outline" size="sm" className="h-7 w-7 p-0" onClick={() => printReceipt(p)} title="Print Receipt">
                                                                         <Printer className="h-3 w-3" />
                                                                     </Button>
-                                                                    <Button variant="destructive" size="sm" onClick={() => setPaymentToRevoke(p)} title="Revoke Payment">
+                                                                    <Button variant="destructive" size="sm" className="h-7 w-7 p-0" onClick={() => { setPaymentToRevoke({ ...p, totalAmount: group.totalAmount, paymentIds: group.payments.map(pay => pay.id) }); setRevokeType('academic'); }} title="Revoke Payment">
                                                                         <RotateCcw className="h-3 w-3" />
                                                                     </Button>
                                                                     {!hasExistingRefund(p.id, 'academic') && (
-                                                                        <Button variant="outline" size="sm" className="text-orange-600 border-orange-300 hover:bg-orange-50" onClick={() => openRefundDialog(p, 'academic')} title="Request Refund">
+                                                                        <Button variant="outline" size="sm" className="h-7 w-7 p-0 text-orange-600 border-orange-300 hover:bg-orange-50" onClick={() => openRefundDialog({ ...p, totalAmount: group.totalAmount, paymentIds: group.payments.map(pay => pay.id) }, 'academic')} title="Request Refund">
                                                                             <Undo2 className="h-3 w-3" />
                                                                         </Button>
                                                                     )}
                                                                 </div>
                                                             ) : (
-                                                                <div className="text-xs text-red-600">
+                                                                <div className="text-[10px] text-red-600">
                                                                     <div className="font-medium">REVERTED</div>
                                                                     <div>{format(parseISO(p.reverted_at), 'dd/MM/yy')}</div>
                                                                 </div>
@@ -3031,8 +2802,9 @@ const StudentFees = () => {
                                                     (transportDetails?.payments || []).forEach(p => {
                                                         const txId = p.transaction_id || p.id;
                                                         if (!groups[txId]) {
-                                                            groups[txId] = { firstPayment: p, totalAmount: 0, totalDiscount: 0, totalFine: 0, months: [], allReverted: true };
+                                                            groups[txId] = { firstPayment: p, payments: [], totalAmount: 0, totalDiscount: 0, totalFine: 0, months: [], allReverted: true };
                                                         }
+                                                        groups[txId].payments.push(p);
                                                         groups[txId].totalAmount += Number(p.amount || 0);
                                                         groups[txId].totalDiscount += Number(p.discount_amount || 0);
                                                         groups[txId].totalFine += Number(p.fine_paid || 0);
@@ -3077,8 +2849,11 @@ const StudentFees = () => {
                                                                             <Button variant="outline" size="sm" onClick={() => navigate(`/${basePath}/fees-collection/print-receipt/transport/${p.id}`)} title="Print Receipt">
                                                                                 <Printer className="h-3 w-3" />
                                                                             </Button>
+                                                                            <Button variant="destructive" size="sm" onClick={() => { setPaymentToRevoke({ ...p, totalAmount: group.totalAmount, paymentIds: group.payments.map(pay => pay.id) }); setRevokeType('transport'); }} title="Revoke Payment">
+                                                                                <RotateCcw className="h-3 w-3" />
+                                                                            </Button>
                                                                             {!hasExistingRefund(p.id, 'transport') && (
-                                                                                <Button variant="outline" size="sm" className="text-orange-600 border-orange-300 hover:bg-orange-50" onClick={() => openRefundDialog({ ...p, totalAmount: group.totalAmount, paymentIds: Object.values(groups).flatMap(g => [g.firstPayment.id]) }, 'transport')} title="Request Refund">
+                                                                                <Button variant="outline" size="sm" className="text-orange-600 border-orange-300 hover:bg-orange-50" onClick={() => openRefundDialog({ ...p, totalAmount: group.totalAmount, paymentIds: group.payments.map(pay => pay.id) }, 'transport')} title="Request Refund">
                                                                                     <Undo2 className="h-3 w-3" />
                                                                                 </Button>
                                                                             )}
@@ -3101,8 +2876,9 @@ const StudentFees = () => {
                                                     (hostelDetails?.payments || []).forEach(p => {
                                                         const txId = p.transaction_id || p.id;
                                                         if (!groups[txId]) {
-                                                            groups[txId] = { firstPayment: p, totalAmount: 0, totalDiscount: 0, totalFine: 0, months: [], allReverted: true };
+                                                            groups[txId] = { firstPayment: p, payments: [], totalAmount: 0, totalDiscount: 0, totalFine: 0, months: [], allReverted: true };
                                                         }
+                                                        groups[txId].payments.push(p);
                                                         groups[txId].totalAmount += Number(p.amount || 0);
                                                         groups[txId].totalDiscount += Number(p.discount_amount || 0);
                                                         groups[txId].totalFine += Number(p.fine_paid || 0);
@@ -3147,8 +2923,11 @@ const StudentFees = () => {
                                                                             <Button variant="outline" size="sm" onClick={() => navigate(`/${basePath}/fees-collection/print-receipt/hostel/${p.id}`)} title="Print Receipt">
                                                                                 <Printer className="h-3 w-3" />
                                                                             </Button>
+                                                                            <Button variant="destructive" size="sm" onClick={() => { setPaymentToRevoke({ ...p, totalAmount: group.totalAmount, paymentIds: group.payments.map(pay => pay.id) }); setRevokeType('hostel'); }} title="Revoke Payment">
+                                                                                <RotateCcw className="h-3 w-3" />
+                                                                            </Button>
                                                                             {!hasExistingRefund(p.id, 'hostel') && (
-                                                                                <Button variant="outline" size="sm" className="text-orange-600 border-orange-300 hover:bg-orange-50" onClick={() => openRefundDialog({ ...p, totalAmount: group.totalAmount, paymentIds: Object.values(groups).flatMap(g => [g.firstPayment.id]) }, 'hostel')} title="Request Refund">
+                                                                                <Button variant="outline" size="sm" className="text-orange-600 border-orange-300 hover:bg-orange-50" onClick={() => openRefundDialog({ ...p, totalAmount: group.totalAmount, paymentIds: group.payments.map(pay => pay.id) }, 'hostel')} title="Request Refund">
                                                                                     <Undo2 className="h-3 w-3" />
                                                                                 </Button>
                                                                             )}
@@ -3216,18 +2995,232 @@ const StudentFees = () => {
                             </CardContent>
                         </Tabs>
                     </Card>
-                </div>
-            </div>
+
+                    {/* Collect Fees Card - Below Fee Statement */}
+                    {selectedFees.length > 0 && (
+                        <Card className="border-primary/50" ref={collectFeesRef}>
+                            <CardHeader className="pb-3 bg-primary/5">
+                                <CardTitle className="flex items-center gap-2">
+                                    <Receipt className="h-5 w-5" />Collect Fees
+                                </CardTitle>
+                                <CardDescription>{selectedFees.length} fee(s) selected</CardDescription>
+                            </CardHeader>
+                            <CardContent className="pt-4">
+                                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                                    {/* Left - Fee breakdown */}
+                                    <div className="space-y-3">
+                                        <Label className="text-xs font-semibold">Enter Amount per Fee</Label>
+                                        <div className="border rounded-lg overflow-hidden">
+                                            <table className="w-full text-xs">
+                                                <thead>
+                                                    <tr className="bg-muted/50 border-b">
+                                                        <th className="p-2 text-left">Fee Type</th>
+                                                        <th className="p-2 text-right">Balance</th>
+                                                        <th className="p-2 text-right">Enter Amount ({currencySymbol})</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {selectedFees.map(feeId => {
+                                                        const fee = fees.find(f => f.id === feeId);
+                                                        if (!fee) return null;
+                                                        return (
+                                                            <tr key={feeId} className="border-b last:border-0">
+                                                                <td className="p-2">
+                                                                    <div className="font-medium">{fee.typeName || fee.type}</div>
+                                                                    <div className="text-[10px] text-muted-foreground">{fee.group}</div>
+                                                                </td>
+                                                                <td className="p-2 text-right font-mono text-muted-foreground">{currencySymbol}{fee.balance.toLocaleString('en-IN')}</td>
+                                                                <td className="p-2 text-right">
+                                                                    <Input
+                                                                        type="number"
+                                                                        value={feeAmounts[feeId] ?? ''}
+                                                                        onChange={(e) => {
+                                                                            const val = parseFloat(e.target.value) || 0;
+                                                                            setFeeAmounts(prev => ({
+                                                                                ...prev,
+                                                                                [feeId]: val > fee.balance ? fee.balance : (e.target.value === '' ? '' : val)
+                                                                            }));
+                                                                        }}
+                                                                        max={fee.balance}
+                                                                        className="h-7 w-24 ml-auto text-right font-mono"
+                                                                    />
+                                                                </td>
+                                                            </tr>
+                                                        );
+                                                    })}
+                                                </tbody>
+                                                <tfoot>
+                                                    <tr className="bg-muted/30 font-semibold">
+                                                        <td className="p-2">Total</td>
+                                                        <td className="p-2 text-right font-mono">{currencySymbol}{selectedFeesMaxBalance.toLocaleString('en-IN')}</td>
+                                                        <td className="p-2 text-right font-mono">{currencySymbol}{parseFloat(paymentDetails.amount || 0).toLocaleString('en-IN')}</td>
+                                                    </tr>
+                                                </tfoot>
+                                            </table>
+                                        </div>
+
+                                        {/* Discount Info */}
+                                        {totalAssignedDiscount > 0 && (
+                                            <div className="bg-blue-50 dark:bg-blue-950/30 rounded-lg p-3 text-xs space-y-1">
+                                                <div className="flex justify-between">
+                                                    <span className="text-muted-foreground">Assigned Discount:</span>
+                                                    <span className="font-medium">{currencySymbol}{totalAssignedDiscount.toLocaleString('en-IN')}</span>
+                                                </div>
+                                                <div className="flex justify-between">
+                                                    <span className="text-muted-foreground">Already Used:</span>
+                                                    <span className="font-medium text-green-600">-{currencySymbol}{totalDiscountAlreadyUsed.toLocaleString('en-IN')}</span>
+                                                </div>
+                                                <div className="flex justify-between border-t pt-1 mt-1">
+                                                    <span className="font-semibold">Remaining:</span>
+                                                    <span className={`font-bold ${remainingDiscount > 0 ? 'text-blue-600' : 'text-muted-foreground'}`}>
+                                                        {currencySymbol}{remainingDiscount.toLocaleString('en-IN')}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    {/* Right - Payment details */}
+                                    <div className="space-y-3">
+                                        <div className="grid grid-cols-2 gap-3">
+                                            <div className="space-y-1">
+                                                <Label className="text-xs">
+                                                    Discount ({currencySymbol})
+                                                    {remainingDiscount > 0 && <span className="text-green-600 ml-1">(Auto)</span>}
+                                                </Label>
+                                                <Input 
+                                                    type="number" 
+                                                    value={paymentDetails.discount} 
+                                                    onChange={(e) => setPaymentDetails(p => ({ ...p, discount: e.target.value }))}
+                                                    className="h-9"
+                                                />
+                                            </div>
+                                            <div className="space-y-1">
+                                                <Label className="text-xs">Fine ({currencySymbol})</Label>
+                                                <Input 
+                                                    type="number" 
+                                                    value={paymentDetails.fine} 
+                                                    onChange={(e) => setPaymentDetails(p => ({ ...p, fine: e.target.value }))}
+                                                    className="h-9"
+                                                />
+                                            </div>
+                                        </div>
+
+                                        <div className="grid grid-cols-2 gap-3">
+                                            <div className="space-y-1">
+                                                <Label className="text-xs">Date</Label>
+                                                <DatePicker 
+                                                    value={paymentDetails.payment_date} 
+                                                    onChange={(date) => setPaymentDetails(p => ({...p, payment_date: date}))}
+                                                />
+                                            </div>
+                                            <div className="space-y-1">
+                                                <Label className="text-xs">Payment Mode</Label>
+                                                <Select value={paymentDetails.payment_mode} onValueChange={v => setPaymentDetails(p => ({ ...p, payment_mode: v }))}>
+                                                    <SelectTrigger className="h-9">
+                                                        <SelectValue />
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                        <SelectItem value="Cash"><div className="flex items-center gap-2"><Banknote className="h-4 w-4" />Cash</div></SelectItem>
+                                                        <SelectItem value="Cheque"><div className="flex items-center gap-2"><FileText className="h-4 w-4" />Cheque</div></SelectItem>
+                                                        <SelectItem value="Online"><div className="flex items-center gap-2"><CreditCard className="h-4 w-4" />Online/UPI</div></SelectItem>
+                                                        <SelectItem value="Card"><div className="flex items-center gap-2"><CreditCard className="h-4 w-4" />Card</div></SelectItem>
+                                                        <SelectItem value="Bank Transfer"><div className="flex items-center gap-2"><Building2 className="h-4 w-4" />Bank Transfer</div></SelectItem>
+                                                    </SelectContent>
+                                                </Select>
+                                            </div>
+                                        </div>
+
+                                        {/* UPI QR Button */}
+                                        {paymentDetails.payment_mode === 'Online' && upiSettings.enabled && (
+                                            <Button
+                                                type="button"
+                                                variant="outline"
+                                                className="w-full border-purple-300 text-purple-700 hover:bg-purple-50"
+                                                onClick={() => {
+                                                    const total = parseFloat(paymentDetails.amount || 0) - parseFloat(paymentDetails.discount || 0) + parseFloat(paymentDetails.fine || 0);
+                                                    generateUpiQr(total, 'academic');
+                                                }}
+                                            >
+                                                <QrCode className="h-4 w-4 mr-2" />
+                                                Show UPI QR Code
+                                            </Button>
+                                        )}
+
+                                        {/* UTR Number */}
+                                        {isUpiPayment(paymentDetails.payment_mode) && (
+                                            <div className="space-y-1">
+                                                <Label className="text-xs">UPI UTR Number <span className="text-red-500">*</span></Label>
+                                                <Input 
+                                                    value={paymentDetails.utr_number} 
+                                                    onChange={(e) => setPaymentDetails(p => ({...p, utr_number: e.target.value.toUpperCase() }))}
+                                                    placeholder="Enter 12-22 digit UTR number"
+                                                    className="h-9 font-mono"
+                                                    maxLength={22}
+                                                />
+                                            </div>
+                                        )}
+
+                                        <div className="space-y-1">
+                                            <Label className="text-xs">Note (Optional)</Label>
+                                            <Textarea 
+                                                value={paymentDetails.note} 
+                                                onChange={(e) => setPaymentDetails(p => ({...p, note: e.target.value }))}
+                                                rows={2}
+                                                placeholder={paymentDetails.payment_mode !== 'Cash' ? 'Enter reference/cheque number...' : 'Payment remarks...'}
+                                            />
+                                        </div>
+
+                                        {/* Payment Summary */}
+                                        <div className="bg-muted/50 rounded-lg p-3 space-y-1">
+                                            <div className="flex justify-between text-sm">
+                                                <span>Amount</span>
+                                                <span>{currencySymbol}{parseFloat(paymentDetails.amount || 0).toFixed(2)}</span>
+                                            </div>
+                                            <div className="flex justify-between text-sm text-blue-600">
+                                                <span>- Discount</span>
+                                                <span>{currencySymbol}{parseFloat(paymentDetails.discount || 0).toFixed(2)}</span>
+                                            </div>
+                                            <div className="flex justify-between text-sm text-amber-600">
+                                                <span>+ Fine</span>
+                                                <span>{currencySymbol}{parseFloat(paymentDetails.fine || 0).toFixed(2)}</span>
+                                            </div>
+                                            <div className="flex justify-between font-bold text-lg border-t pt-2 mt-2">
+                                                <span>Total</span>
+                                                <span className="text-green-600">
+                                                    {currencySymbol}{(parseFloat(paymentDetails.amount || 0) - parseFloat(paymentDetails.discount || 0) + parseFloat(paymentDetails.fine || 0)).toFixed(2)}
+                                                </span>
+                                            </div>
+                                        </div>
+
+                                        <Button 
+                                            className="w-full" 
+                                            onClick={collectFees} 
+                                            disabled={paymentLoading || !selectedFees.length}
+                                            size="lg"
+                                        >
+                                            {paymentLoading ? (
+                                                <Loader2 className="animate-spin mr-2" />
+                                            ) : (
+                                                <Printer className="mr-2 h-4 w-4" />
+                                            )}
+                                            Collect & Print Receipt
+                                        </Button>
+                                    </div>
+                                </div>
+                            </CardContent>
+                        </Card>
+                    )}
 
             {/* Revoke Payment Dialog */}
-            <AlertDialog open={!!paymentToRevoke} onOpenChange={() => setPaymentToRevoke(null)}>
+            <AlertDialog open={!!paymentToRevoke} onOpenChange={() => { setPaymentToRevoke(null); setRevokeType('academic'); }}>
                 <AlertDialogContent>
                     <AlertDialogHeader>
                         <AlertDialogTitle className="flex items-center gap-2 text-destructive">
                             <ShieldX className="h-5 w-5" />Revoke Payment
                         </AlertDialogTitle>
                         <AlertDialogDescription>
-                            Are you sure you want to revoke this payment of <strong>{currencySymbol}{paymentToRevoke?.amount}</strong>? 
+                            Are you sure you want to revoke this {revokeType} payment of <strong>{currencySymbol}{(paymentToRevoke?.totalAmount || paymentToRevoke?.amount || 0).toLocaleString('en-IN')}</strong>? 
                             This action cannot be undone.
                         </AlertDialogDescription>
                     </AlertDialogHeader>

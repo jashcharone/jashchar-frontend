@@ -173,10 +173,17 @@ const quillModules = {
     [{ 'size': ['small', false, 'large'] }],
     ['blockquote'],
     [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+    [{ 'align': '' }, { 'align': 'center' }, { 'align': 'right' }],  // Explicit alignment buttons
     [{ 'indent': '-1'}, { 'indent': '+1' }],
     ['link', 'image'],
   ],
 };
+
+const quillFormats = [
+  'header', 'bold', 'italic', 'underline', 'size',
+  'blockquote', 'list', 'bullet', 'indent',
+  'link', 'image', 'align'
+];
 
 const PrintSettingsForm = ({ type, settings, onSave, loading, branchId, school }) => {
   const [headerImage, setHeaderImage] = useState(settings?.header_image_url || '');
@@ -310,6 +317,7 @@ const PrintSettingsForm = ({ type, settings, onSave, loading, branchId, school }
             value={footerContent}
             onChange={setFooterContent}
             modules={quillModules}
+            formats={quillFormats}
           />
         </div>
       </div>

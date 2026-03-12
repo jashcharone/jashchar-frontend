@@ -146,7 +146,6 @@ export const BASE_SIDEBAR = {
         { title: '── Fee Management ──', path: '#fees-management', disabled: true },
         { title: '🔍 Search Fees Payment', path: ROUTES.SUPER_ADMIN.SEARCH_FEES_PAYMENT },
         { title: '⚠️ Search Due Fees', path: ROUTES.SUPER_ADMIN.SEARCH_DUE_FEES },
-        { title: '👨‍🎓 Student Fees', path: ROUTES.SUPER_ADMIN.STUDENT_FEES },
         { title: '🏷️ Fees Discount', path: ROUTES.SUPER_ADMIN.FEES_DISCOUNT },
         // ── Reports & Utilities ──
         { title: '── Reports & Utilities ──', path: '#fees-reports', disabled: true },

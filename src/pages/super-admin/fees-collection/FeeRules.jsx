@@ -198,6 +198,109 @@ const FeeRules = () => {
     return `${fieldLabel} ${cond.operator} ${cond.value}`;
   };
 
+  // ─── Bulk Reassign Fees (Fix Missing Allocations) ─────────
+  const [bulkReassigning, setBulkReassigning] = useState(false);
+  
+  const handleBulkReassign = async () => {
+    if (!selectedBranch?.id || !currentSessionId) return;
+    setBulkReassigning(true);
+    
+    try {
+      let totalAllocations = 0;
+      let totalStudents = 0;
+      
+      for (const cls of classes) {
+        // Step 1: Get fee_group_class_assignments for this class
+        const { data: assignments } = await supabase
+          .from('fee_group_class_assignments')
+          .select('fee_group_id, section_id')
+          .eq('class_id', cls.id)
+          .eq('branch_id', selectedBranch.id)
+          .eq('session_id', currentSessionId)
+          .eq('is_active', true);
+        
+        if (!assignments || assignments.length === 0) continue;
+        
+        const feeGroupIds = [...new Set(assignments.map(a => a.fee_group_id))];
+        
+        // Step 2: Get all fee_masters for these fee groups
+        const { data: feeMasters } = await supabase
+          .from('fee_masters')
+          .select('id')
+          .in('fee_group_id', feeGroupIds)
+          .eq('branch_id', selectedBranch.id)
+          .eq('session_id', currentSessionId);
+        
+        if (!feeMasters || feeMasters.length === 0) continue;
+        
+        // Step 3: Get all students in this class
+        const { data: students } = await supabase
+          .from('student_profiles')
+          .select('id')
+          .eq('class_id', cls.id)
+          .eq('branch_id', selectedBranch.id)
+          .eq('session_id', currentSessionId)
+          .eq('status', 'active')
+          .or('is_disabled.is.null,is_disabled.eq.false');
+        
+        if (!students || students.length === 0) continue;
+        
+        totalStudents += students.length;
+        
+        // Step 4: Get existing allocations
+        const studentIds = students.map(s => s.id);
+        const { data: existingAllocations } = await supabase
+          .from('student_fee_allocations')
+          .select('student_id, fee_master_id')
+          .in('student_id', studentIds)
+          .eq('branch_id', selectedBranch.id)
+          .eq('session_id', currentSessionId);
+        
+        const existingSet = new Set(
+          (existingAllocations || []).map(a => `${a.student_id}_${a.fee_master_id}`)
+        );
+        
+        // Step 5: Create missing allocations
+        const missingAllocations = [];
+        for (const student of students) {
+          for (const feeMaster of feeMasters) {
+            const key = `${student.id}_${feeMaster.id}`;
+            if (!existingSet.has(key)) {
+              missingAllocations.push({
+                student_id: student.id,
+                fee_master_id: feeMaster.id,
+                branch_id: selectedBranch.id,
+                session_id: currentSessionId,
+                organization_id: organizationId,
+              });
+            }
+          }
+        }
+        
+        // Step 6: Batch insert
+        if (missingAllocations.length > 0) {
+          const batchSize = 100;
+          for (let i = 0; i < missingAllocations.length; i += batchSize) {
+            const batch = missingAllocations.slice(i, i + batchSize);
+            await supabase
+              .from('student_fee_allocations')
+              .upsert(batch, { onConflict: 'student_id,fee_master_id', ignoreDuplicates: true });
+          }
+          totalAllocations += missingAllocations.length;
+        }
+      }
+      
+      toast({
+        title: 'Fees Reassigned Successfully',
+        description: `Processed ${totalStudents} students across ${classes.length} classes. Created ${totalAllocations} new allocations.`,
+      });
+    } catch (err) {
+      toast({ variant: 'destructive', title: 'Error reassigning fees', description: err.message });
+    }
+    
+    setBulkReassigning(false);
+  };
+
   // ─── Form ───────────────────────────────────────────────
   const resetForm = () => {
     setFormData({
@@ -607,6 +710,19 @@ const FeeRules = () => {
               </p>
             </div>
             <div className="flex gap-2">
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button variant="outline" onClick={handleBulkReassign} disabled={bulkReassigning || classes.length === 0}>
+                      {bulkReassigning ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Users className="h-4 w-4 mr-2" />}
+                      Fix Missing Fees
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Reassign fees to all students based on Fee Group Class Assignments</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
               <Button variant="outline" onClick={handleRunPreview} disabled={running || rules.filter(r => r.is_active).length === 0}>
                 {running ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Play className="h-4 w-4 mr-2" />}
                 Run All Rules

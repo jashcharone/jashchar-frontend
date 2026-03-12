@@ -1,11 +1,11 @@
 /**
  * ═══════════════════════════════════════════════════════════════════════════════
- * REVIEW PAPER
- * Detailed view to review and modify AI-evaluated paper
+ * REVIEW PAPER - Enhanced Day 6 Version
+ * Detailed view to review and modify AI-evaluated paper with side-by-side view
  * ═══════════════════════════════════════════════════════════════════════════════
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import {
   Eye,
@@ -22,15 +22,23 @@ import {
   Loader2,
   ZoomIn,
   ZoomOut,
-  RotateCw
+  RotateCw,
+  Split,
+  Maximize2,
+  History,
+  AlertCircle,
+  TrendingUp
 } from 'lucide-react';
 import api from '@/services/api';
-import toast from 'react-hot-toast';
+import { useToast } from '@/components/ui/use-toast';
 import { formatDate } from '@/utils/dateUtils';
+import ReviewQuestionCard from './components/ReviewQuestionCard';
+import MarksOverrideModal from './components/MarksOverrideModal';
 
 const ReviewPaper = () => {
   const { paperId } = useParams();
   const navigate = useNavigate();
+  const { toast } = useToast();
   
   const [paper, setPaper] = useState(null);
   const [results, setResults] = useState([]);
@@ -39,6 +47,14 @@ const ReviewPaper = () => {
   const [imageZoom, setImageZoom] = useState(100);
   const [editingResult, setEditingResult] = useState(null);
   const [comment, setComment] = useState('');
+  
+  // Enhanced state
+  const [viewMode, setViewMode] = useState('split'); // 'split', 'image', 'results'
+  const [selectedQuestion, setSelectedQuestion] = useState(null);
+  const [showOverrideModal, setShowOverrideModal] = useState(false);
+  const [papersList, setPapersList] = useState([]);
+  const [currentPaperIndex, setCurrentPaperIndex] = useState(0);
+  const [imageRotation, setImageRotation] = useState(0);
 
   // Fetch paper details
   useEffect(() => {
@@ -60,7 +76,7 @@ const ReviewPaper = () => {
         }
       } catch (error) {
         console.error('Error fetching paper:', error);
-        toast.error('Failed to load paper details');
+        toast({ variant: 'destructive', title: 'Failed to load paper details' });
         navigate('/super-admin/ai-evaluation/review');
       } finally {
         setLoading(false);
@@ -69,6 +85,26 @@ const ReviewPaper = () => {
     
     fetchPaper();
   }, [paperId, navigate]);
+
+  // Fetch papers list for navigation
+  useEffect(() => {
+    const fetchPapersList = async () => {
+      try {
+        const params = new URLSearchParams({ status: 'pending', limit: '100' });
+        const response = await api.get(`/ai-evaluation/review/papers?${params.toString()}`);
+        if (response.data?.success) {
+          const list = response.data.data || [];
+          setPapersList(list);
+          const currentIdx = list.findIndex(p => p.id === paperId);
+          if (currentIdx >= 0) setCurrentPaperIndex(currentIdx);
+        }
+      } catch (error) {
+        console.error('Error fetching papers list:', error);
+      }
+    };
+    
+    fetchPapersList();
+  }, [paperId]);
 
   // Update marks for a question
   const updateMarks = (resultId, newMarks) => {
@@ -94,23 +130,69 @@ const ReviewPaper = () => {
       });
       
       if (response.data?.success) {
-        toast.success(`Paper ${status === 'approved' ? 'approved' : 'marks updated'}!`);
+        toast({ title: `Paper ${status === 'approved' ? 'approved' : 'marks updated'}!` });
         navigate('/super-admin/ai-evaluation/review');
       } else {
         throw new Error(response.data?.error || 'Failed to save');
       }
     } catch (error) {
       console.error('Error saving review:', error);
-      toast.error('Failed to save review');
+      toast({ variant: 'destructive', title: 'Failed to save review' });
     } finally {
       setSaving(false);
     }
+  };
+
+  // Navigation between papers
+  const navigateToPaper = (direction) => {
+    const newIndex = direction === 'next' 
+      ? Math.min(currentPaperIndex + 1, papersList.length - 1)
+      : Math.max(currentPaperIndex - 1, 0);
+    
+    if (newIndex !== currentPaperIndex && papersList[newIndex]) {
+      navigate(`/super-admin/ai-evaluation/review/${papersList[newIndex].id}`);
+    }
+  };
+
+  // Handle marks override from ReviewQuestionCard
+  const handleQuestionUpdate = (questionId, updatedData) => {
+    setResults(prev => prev.map(r =>
+      r.id === questionId
+        ? { ...r, ...updatedData, modified: true }
+        : r
+    ));
+  };
+
+  // Open override modal
+  const openOverrideModal = (question) => {
+    setSelectedQuestion(question);
+    setShowOverrideModal(true);
+  };
+
+  // Handle override save
+  const handleOverrideSave = (updatedQuestion) => {
+    handleQuestionUpdate(updatedQuestion.id, updatedQuestion);
+  };
+
+  // Rotate image
+  const rotateImage = () => {
+    setImageRotation(prev => (prev + 90) % 360);
   };
 
   // Calculate totals
   const aiTotal = results.reduce((sum, r) => sum + (r.ai_marks || 0), 0);
   const teacherTotal = results.reduce((sum, r) => sum + (r.teacher_marks ?? r.ai_marks ?? 0), 0);
   const hasModifications = results.some(r => r.modified);
+
+  // Calculate stats
+  const reviewStats = useMemo(() => {
+    const requiresReview = results.filter(r => r.requires_review).length;
+    const lowConfidence = results.filter(r => (r.confidence || 0) < 70).length;
+    const maxTotal = results.reduce((sum, r) => sum + (r.max_marks || 0), 0);
+    const percentage = maxTotal > 0 ? Math.round((teacherTotal / maxTotal) * 100) : 0;
+    
+    return { requiresReview, lowConfidence, maxTotal, percentage };
+  }, [results, teacherTotal]);
 
   // Get confidence color
   const getConfidenceColor = (confidence) => {
@@ -164,19 +246,55 @@ const ReviewPaper = () => {
         </div>
         
         <div className="flex items-center gap-3">
+          {/* View Mode Toggle */}
+          <div className="flex items-center gap-1 bg-gray-800 rounded-lg p-1">
+            <button
+              onClick={() => setViewMode('split')}
+              className={`p-1.5 rounded ${viewMode === 'split' ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-white'}`}
+              title="Split View"
+            >
+              <Split className="w-4 h-4" />
+            </button>
+            <button
+              onClick={() => setViewMode('image')}
+              className={`p-1.5 rounded ${viewMode === 'image' ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-white'}`}
+              title="Image Only"
+            >
+              <FileText className="w-4 h-4" />
+            </button>
+            <button
+              onClick={() => setViewMode('results')}
+              className={`p-1.5 rounded ${viewMode === 'results' ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-white'}`}
+              title="Results Only"
+            >
+              <Brain className="w-4 h-4" />
+            </button>
+          </div>
+
           {/* Navigation buttons for next/prev paper */}
-          <button disabled className="p-2 text-gray-600 rounded-lg cursor-not-allowed">
+          <button
+            onClick={() => navigateToPaper('prev')}
+            disabled={currentPaperIndex === 0}
+            className="p-2 text-gray-400 hover:text-white disabled:text-gray-600 disabled:cursor-not-allowed rounded-lg hover:bg-gray-700"
+          >
             <ArrowLeft className="w-5 h-5" />
           </button>
-          <span className="text-gray-400 text-sm">1 of 1</span>
-          <button disabled className="p-2 text-gray-600 rounded-lg cursor-not-allowed">
+          <span className="text-gray-400 text-sm min-w-[60px] text-center">
+            {papersList.length > 0 ? `${currentPaperIndex + 1} of ${papersList.length}` : '1 of 1'}
+          </span>
+          <button
+            onClick={() => navigateToPaper('next')}
+            disabled={currentPaperIndex >= papersList.length - 1}
+            className="p-2 text-gray-400 hover:text-white disabled:text-gray-600 disabled:cursor-not-allowed rounded-lg hover:bg-gray-700"
+          >
             <ArrowRight className="w-5 h-5" />
           </button>
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-6">
+      <div className={`grid gap-6 ${viewMode === 'split' ? 'grid-cols-2' : 'grid-cols-1'}`}>
         {/* Left - Paper Image */}
+        {(viewMode === 'split' || viewMode === 'image') && (
         <div className="bg-gray-800/50 border border-gray-700 rounded-xl p-4">
           <div className="flex items-center justify-between mb-4">
             <h2 className="font-semibold text-white">Answer Sheet</h2>
@@ -194,7 +312,7 @@ const ReviewPaper = () => {
               >
                 <ZoomIn className="w-4 h-4" />
               </button>
-              <button className="p-1.5 text-gray-400 hover:text-white hover:bg-gray-700 rounded">
+              <button className="p-1.5 text-gray-400 hover:text-white hover:bg-gray-700 rounded" onClick={rotateImage}>
                 <RotateCw className="w-4 h-4" />
               </button>
             </div>
@@ -206,7 +324,10 @@ const ReviewPaper = () => {
                 src={paper.file_url}
                 alt="Answer Sheet"
                 className="mx-auto transition-transform"
-                style={{ transform: `scale(${imageZoom / 100})`, transformOrigin: 'top center' }}
+                style={{ 
+                  transform: `scale(${imageZoom / 100}) rotate(${imageRotation}deg)`, 
+                  transformOrigin: 'center center' 
+                }}
               />
             ) : (
               <div className="flex items-center justify-center py-20 text-gray-500">
@@ -216,8 +337,10 @@ const ReviewPaper = () => {
             )}
           </div>
         </div>
+        )}
 
         {/* Right - AI Results */}
+        {(viewMode === 'split' || viewMode === 'results') && (
         <div className="space-y-4">
           {/* Summary Card */}
           <div className="bg-gradient-to-r from-blue-500/10 to-purple-500/10 border border-blue-500/30 rounded-xl p-4">
@@ -373,7 +496,20 @@ const ReviewPaper = () => {
             </div>
           </div>
         </div>
+        )}
       </div>
+
+      {/* Marks Override Modal */}
+      <MarksOverrideModal
+        isOpen={showOverrideModal}
+        onClose={() => {
+          setShowOverrideModal(false);
+          setSelectedQuestion(null);
+        }}
+        question={selectedQuestion}
+        paperId={paperId}
+        onSave={handleOverrideSave}
+      />
     </div>
   );
 };

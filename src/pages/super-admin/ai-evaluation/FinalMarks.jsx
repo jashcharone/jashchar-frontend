@@ -22,11 +22,14 @@ import {
   Printer
 } from 'lucide-react';
 import api from '@/services/api';
-import toast from 'react-hot-toast';
+import { useToast } from '@/components/ui/use-toast';
+import { useBranch } from '@/contexts/BranchContext';
 import { formatDate } from '@/utils/dateUtils';
 
 const FinalMarks = () => {
   const [searchParams] = useSearchParams();
+  const { toast } = useToast();
+  const { selectedBranch } = useBranch();
   
   const [marks, setMarks] = useState([]);
   const [sessions, setSessions] = useState([]);
@@ -39,10 +42,10 @@ const FinalMarks = () => {
   // Fetch sessions
   useEffect(() => {
     const fetchSessions = async () => {
+      if (!selectedBranch?.id) return;
       try {
-        const response = await api.get('/ai-evaluation/sessions', {
-          params: { status: 'completed' }
-        });
+        const params = new URLSearchParams({ status: 'completed', branch_id: selectedBranch.id });
+        const response = await api.get(`/ai-evaluation/sessions?${params.toString()}`);
         if (response.data?.success) {
           setSessions(response.data.data || []);
           
@@ -57,7 +60,7 @@ const FinalMarks = () => {
     };
     
     fetchSessions();
-  }, []);
+  }, [selectedBranch?.id]);
 
   // Fetch final marks
   useEffect(() => {
@@ -76,7 +79,7 @@ const FinalMarks = () => {
         }
       } catch (error) {
         console.error('Error fetching marks:', error);
-        toast.error('Failed to load final marks');
+        toast({ variant: 'destructive', title: 'Failed to load final marks' });
       } finally {
         setLoading(false);
       }
@@ -101,10 +104,10 @@ const FinalMarks = () => {
       link.click();
       link.remove();
       
-      toast.success('Marks exported successfully!');
+      toast({ title: 'Marks exported successfully!' });
     } catch (error) {
       console.error('Export error:', error);
-      toast.error('Failed to export marks');
+      toast({ variant: 'destructive', title: 'Failed to export marks' });
     } finally {
       setExporting(false);
     }
@@ -117,13 +120,13 @@ const FinalMarks = () => {
       const response = await api.post(`/ai-evaluation/sessions/${selectedSession}/sync-to-exam`);
       
       if (response.data?.success) {
-        toast.success(`${response.data.data.synced} marks synced to exam module!`);
+        toast({ title: `${response.data.data.synced} marks synced to exam module!` });
       } else {
         throw new Error(response.data?.error || 'Sync failed');
       }
     } catch (error) {
       console.error('Sync error:', error);
-      toast.error('Failed to sync marks to exam module');
+      toast({ variant: 'destructive', title: 'Failed to sync marks to exam module' });
     } finally {
       setSyncing(false);
     }

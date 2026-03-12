@@ -23,11 +23,12 @@ import {
   GripVertical
 } from 'lucide-react';
 import api from '@/services/api';
-import toast from 'react-hot-toast';
+import { useToast } from '@/components/ui/use-toast';
 
 const QuestionMapping = () => {
   const { sessionId } = useParams();
   const navigate = useNavigate();
+  const { toast } = useToast();
   
   const [session, setSession] = useState(null);
   const [questions, setQuestions] = useState([]);
@@ -55,7 +56,7 @@ const QuestionMapping = () => {
         }
       } catch (error) {
         console.error('Error fetching data:', error);
-        toast.error('Failed to load questions');
+        toast({ variant: 'destructive', title: 'Failed to load questions' });
       } finally {
         setLoading(false);
       }
@@ -114,7 +115,7 @@ const QuestionMapping = () => {
       });
       
       if (response.data?.success) {
-        toast.success('Questions saved successfully!');
+        toast({ title: 'Questions saved successfully!' });
         // Refresh questions from server
         const refreshRes = await api.get(`/ai-evaluation/sessions/${sessionId}/questions`);
         if (refreshRes.data?.success) {
@@ -125,7 +126,7 @@ const QuestionMapping = () => {
       }
     } catch (error) {
       console.error('Error saving questions:', error);
-      toast.error('Failed to save questions');
+      toast({ variant: 'destructive', title: 'Failed to save questions' });
     } finally {
       setSaving(false);
     }

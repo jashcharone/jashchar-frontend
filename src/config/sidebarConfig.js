@@ -1,5 +1,5 @@
 import { 
-  LayoutDashboard, School, Users, CreditCard, Settings, BookOpen, GraduationCap, Calendar, FileText, Bus, Building, MessageSquare, Briefcase, LogOut, X, ChevronDown, ChevronRight, Package, CheckSquare, Library, Layout, Video, MonitorPlay, AlertTriangle, Award, Newspaper, Activity, IndianRupee, UserPlus, GitBranch, BarChart3, Bot, Box, Download, QrCode, KeyRound, Wallet
+  LayoutDashboard, School, Users, CreditCard, Settings, BookOpen, GraduationCap, Calendar, FileText, Bus, Building, MessageSquare, Briefcase, LogOut, X, ChevronDown, ChevronRight, Package, CheckSquare, Library, Layout, Video, MonitorPlay, AlertTriangle, Award, Newspaper, Activity, IndianRupee, UserPlus, GitBranch, BarChart3, Bot, Box, Download, QrCode, KeyRound, Wallet, Brain
 } from 'lucide-react';
 import { ROUTES } from '@/registry/routeRegistry';
 
@@ -82,6 +82,24 @@ export const BASE_SIDEBAR = {
     // Cortex AI - Add-on subscription based access (NOT module permission)
     // Always visible in sidebar, access controlled within the module
     { title: '⚡ Cortex AI', icon: Bot, path: '/super-admin/cortex-ai', badge: 'AI', badgeColor: 'purple' },
+    // AI Paper Valuation - Cortex Evaluate™
+    {
+      title: '🧠 AI Evaluation',
+      icon: Brain,
+      badge: 'NEW',
+      badgeColor: 'purple',
+      submenu: [
+        { title: 'Dashboard', path: '/super-admin/ai-evaluation' },
+        { title: 'Evaluation Sessions', path: '/super-admin/ai-evaluation/sessions' },
+        { title: 'Create Session', path: '/super-admin/ai-evaluation/create-session' },
+        { title: 'Upload Papers', path: '/super-admin/ai-evaluation/upload' },
+        { title: 'Question Mapping', path: '/super-admin/ai-evaluation/question-mapping' },
+        { title: 'Teacher Review', path: '/super-admin/ai-evaluation/review' },
+        { title: 'Final Marks', path: '/super-admin/ai-evaluation/final-marks' },
+        { title: 'Analytics', path: '/super-admin/ai-evaluation/analytics' },
+        { title: 'Settings', path: '/super-admin/ai-evaluation/settings' },
+      ]
+    },
     // JashSync - Brain-Connected Messenger (Separate Module)
     { title: '💬 JashSync', icon: MessageSquare, path: ROUTES.SUPER_ADMIN.JASHSYNC, badge: 'NEW', badgeColor: 'green' },
     {

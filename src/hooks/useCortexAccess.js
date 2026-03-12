@@ -40,6 +40,7 @@ export const useCortexAccess = () => {
             setError(null);
 
             // Query the subscription with plan details
+            // Using .maybeSingle() to avoid PGRST116 error when no subscription exists
             const { data: subscription, error: subError } = await supabase
                 .from('cortex_addon_subscriptions')
                 .select(`
@@ -54,10 +55,9 @@ export const useCortexAccess = () => {
                 `)
                 .eq('organization_id', organizationId)
                 .in('status', ['active', 'trial'])
-                .single();
+                .maybeSingle();
 
-            if (subError && subError.code !== 'PGRST116') {
-                // PGRST116 = no rows found, which is expected if not subscribed
+            if (subError) {
                 throw subError;
             }
 

@@ -22,11 +22,12 @@ import {
   Eye
 } from 'lucide-react';
 import api from '@/services/api';
-import toast from 'react-hot-toast';
+import { useToast } from '@/components/ui/use-toast';
 
 const AIEvaluationProcess = () => {
   const { sessionId } = useParams();
   const navigate = useNavigate();
+  const { toast } = useToast();
   
   const [session, setSession] = useState(null);
   const [papers, setPapers] = useState([]);
@@ -62,7 +63,7 @@ const AIEvaluationProcess = () => {
         }
       } catch (error) {
         console.error('Error fetching data:', error);
-        toast.error('Failed to load session data');
+        toast({ variant: 'destructive', title: 'Failed to load session data' });
       } finally {
         setLoading(false);
       }
@@ -108,10 +109,10 @@ const AIEvaluationProcess = () => {
         await new Promise(resolve => setTimeout(resolve, 500));
       }
       
-      toast.success('AI Evaluation completed!');
+      toast({ title: 'AI Evaluation completed!' });
     } catch (error) {
       console.error('Evaluation error:', error);
-      toast.error('Evaluation failed');
+      toast({ variant: 'destructive', title: 'Evaluation failed' });
     } finally {
       setEvaluating(false);
       setCurrentPaper(null);

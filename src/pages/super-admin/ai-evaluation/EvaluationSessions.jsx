@@ -46,14 +46,13 @@ const EvaluationSessions = () => {
     
     try {
       setIsLoading(true);
-      const response = await api.get('/ai-evaluation/sessions', {
-        params: {
-          session_id: currentSessionId,
-          status: statusFilter || undefined,
-          page: pagination.page,
-          limit: pagination.limit
-        }
-      });
+      const params = new URLSearchParams();
+      params.append('session_id', currentSessionId);
+      params.append('branch_id', selectedBranch.id);
+      if (statusFilter) params.append('status', statusFilter);
+      params.append('page', pagination.page.toString());
+      params.append('limit', pagination.limit.toString());
+      const response = await api.get(`/ai-evaluation/sessions?${params.toString()}`);
       
       if (response.data?.success) {
         setSessions(response.data.data || []);

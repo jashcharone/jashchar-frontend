@@ -1,11 +1,11 @@
 /**
  * ═══════════════════════════════════════════════════════════════════════════════
- * TEACHER REVIEW
- * Review and approve AI-evaluated papers
+ * TEACHER REVIEW - Enhanced Day 6 Version
+ * Review and approve AI-evaluated papers with bulk operations
  * ═══════════════════════════════════════════════════════════════════════════════
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import {
   Eye,
@@ -20,15 +20,26 @@ import {
   Users,
   AlertTriangle,
   Loader2,
-  ChevronRight
+  ChevronRight,
+  CheckSquare,
+  Square,
+  RefreshCw,
+  Download,
+  Zap,
+  TrendingUp,
+  BarChart3
 } from 'lucide-react';
 import api from '@/services/api';
-import toast from 'react-hot-toast';
+import { useToast } from '@/components/ui/use-toast';
+import { useBranch } from '@/contexts/BranchContext';
 import { formatDate } from '@/utils/dateUtils';
+import BulkApprovalModal from './components/BulkApprovalModal';
 
 const TeacherReview = () => {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
+  const { toast } = useToast();
+  const { selectedBranch } = useBranch();
   
   const [papers, setPapers] = useState([]);
   const [sessions, setSessions] = useState([]);
@@ -39,13 +50,18 @@ const TeacherReview = () => {
     search: ''
   });
 
+  // Enhanced state for bulk operations
+  const [selectedPapers, setSelectedPapers] = useState([]);
+  const [showBulkModal, setShowBulkModal] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+
   // Fetch sessions for filter
   useEffect(() => {
     const fetchSessions = async () => {
+      if (!selectedBranch?.id) return;
       try {
-        const response = await api.get('/ai-evaluation/sessions', {
-          params: { status: 'review,processing' }
-        });
+        const params = new URLSearchParams({ status: 'review,processing', branch_id: selectedBranch.id });
+        const response = await api.get(`/ai-evaluation/sessions?${params.toString()}`);
         if (response.data?.success) {
           setSessions(response.data.data || []);
         }
@@ -55,29 +71,29 @@ const TeacherReview = () => {
     };
     
     fetchSessions();
-  }, []);
+  }, [selectedBranch?.id]);
 
   // Fetch papers for review
   useEffect(() => {
     const fetchPapers = async () => {
+      if (!selectedBranch?.id) return;
       try {
         setLoading(true);
-        const response = await api.get('/ai-evaluation/review/papers', {
-          params: filters
-        });
+        const params = new URLSearchParams({ ...filters, branch_id: selectedBranch.id });
+        const response = await api.get(`/ai-evaluation/review/papers?${params.toString()}`);
         if (response.data?.success) {
           setPapers(response.data.data || []);
         }
       } catch (error) {
         console.error('Error fetching papers:', error);
-        toast.error('Failed to load papers for review');
+        toast({ variant: 'destructive', title: 'Failed to load papers for review' });
       } finally {
         setLoading(false);
       }
     };
     
     fetchPapers();
-  }, [filters]);
+  }, [filters, selectedBranch?.id]);
 
   // Get status badge
   const getStatusBadge = (status) => {
@@ -105,6 +121,78 @@ const TeacherReview = () => {
     modified: papers.filter(p => p.review_status === 'modified').length
   };
 
+  // Advanced stats with confidence breakdown
+  const advancedStats = useMemo(() => {
+    const highConfidence = papers.filter(p => (p.ai_confidence || 0) >= 85);
+    const mediumConfidence = papers.filter(p => (p.ai_confidence || 0) >= 60 && (p.ai_confidence || 0) < 85);
+    const lowConfidence = papers.filter(p => (p.ai_confidence || 0) < 60);
+    const avgConfidence = papers.length > 0
+      ? Math.round(papers.reduce((sum, p) => sum + (p.ai_confidence || 0), 0) / papers.length)
+      : 0;
+    
+    return { highConfidence, mediumConfidence, lowConfidence, avgConfidence };
+  }, [papers]);
+
+  // Bulk selection handlers
+  const toggleSelectAll = () => {
+    if (selectedPapers.length === papers.length) {
+      setSelectedPapers([]);
+    } else {
+      setSelectedPapers(papers.map(p => p.id));
+    }
+  };
+
+  const toggleSelectPaper = (paperId) => {
+    setSelectedPapers(prev =>
+      prev.includes(paperId)
+        ? prev.filter(id => id !== paperId)
+        : [...prev, paperId]
+    );
+  };
+
+  // Refresh papers
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    try {
+      const params = new URLSearchParams(filters);
+      const response = await api.get(`/ai-evaluation/review/papers?${params.toString()}`);
+      if (response.data?.success) {
+        setPapers(response.data.data || []);
+        setSelectedPapers([]);
+        toast({ title: 'Papers refreshed' });
+      }
+    } catch (error) {
+      toast({ variant: 'destructive', title: 'Failed to refresh' });
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
+  // Export selected papers
+  const handleExportSelected = () => {
+    const selectedData = papers.filter(p => selectedPapers.includes(p.id));
+    const csvContent = [
+      ['Student Name', 'Roll Number', 'AI Score', 'Max Marks', 'Confidence', 'Status'].join(','),
+      ...selectedData.map(p => [
+        p.student_name || 'Unknown',
+        p.roll_number || '-',
+        p.ai_total_marks || 0,
+        p.max_marks || 100,
+        `${p.ai_confidence || 0}%`,
+        p.review_status || 'pending'
+      ].join(','))
+    ].join('\n');
+    
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `review_papers_${new Date().toISOString().split('T')[0]}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast({ title: 'Exported to CSV' });
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -115,6 +203,38 @@ const TeacherReview = () => {
             Teacher Review
           </h1>
           <p className="text-gray-400 mt-1">Review and approve AI-evaluated answer papers</p>
+        </div>
+        
+        {/* Action Buttons */}
+        <div className="flex items-center gap-3">
+          <button
+            onClick={handleRefresh}
+            disabled={refreshing}
+            className="flex items-center gap-2 px-3 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg text-white text-sm"
+          >
+            <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
+            Refresh
+          </button>
+          
+          {selectedPapers.length > 0 && (
+            <>
+              <button
+                onClick={handleExportSelected}
+                className="flex items-center gap-2 px-3 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg text-white text-sm"
+              >
+                <Download className="w-4 h-4" />
+                Export ({selectedPapers.length})
+              </button>
+              
+              <button
+                onClick={() => setShowBulkModal(true)}
+                className="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 rounded-lg text-white text-sm font-medium"
+              >
+                <Zap className="w-4 h-4" />
+                Bulk Approve ({selectedPapers.length})
+              </button>
+            </>
+          )}
         </div>
       </div>
 
@@ -160,6 +280,54 @@ const TeacherReview = () => {
           </div>
         </div>
       </div>
+
+      {/* Confidence Distribution */}
+      {papers.length > 0 && (
+        <div className="bg-gray-800/50 border border-gray-700 rounded-xl p-4">
+          <h3 className="text-sm font-semibold text-gray-300 mb-3 flex items-center gap-2">
+            <BarChart3 className="w-4 h-4 text-purple-400" />
+            AI Confidence Distribution
+          </h3>
+          <div className="flex items-center gap-4">
+            <div className="flex-1">
+              <div className="flex h-4 rounded-full overflow-hidden bg-gray-700">
+                <div
+                  className="bg-green-500 transition-all"
+                  style={{ width: `${(advancedStats.highConfidence.length / papers.length) * 100}%` }}
+                  title={`High (≥85%): ${advancedStats.highConfidence.length}`}
+                />
+                <div
+                  className="bg-yellow-500 transition-all"
+                  style={{ width: `${(advancedStats.mediumConfidence.length / papers.length) * 100}%` }}
+                  title={`Medium (60-84%): ${advancedStats.mediumConfidence.length}`}
+                />
+                <div
+                  className="bg-red-500 transition-all"
+                  style={{ width: `${(advancedStats.lowConfidence.length / papers.length) * 100}%` }}
+                  title={`Low (<60%): ${advancedStats.lowConfidence.length}`}
+                />
+              </div>
+            </div>
+            <div className="flex items-center gap-4 text-sm">
+              <span className="flex items-center gap-1">
+                <span className="w-3 h-3 rounded-full bg-green-500"></span>
+                <span className="text-gray-400">High: {advancedStats.highConfidence.length}</span>
+              </span>
+              <span className="flex items-center gap-1">
+                <span className="w-3 h-3 rounded-full bg-yellow-500"></span>
+                <span className="text-gray-400">Medium: {advancedStats.mediumConfidence.length}</span>
+              </span>
+              <span className="flex items-center gap-1">
+                <span className="w-3 h-3 rounded-full bg-red-500"></span>
+                <span className="text-gray-400">Low: {advancedStats.lowConfidence.length}</span>
+              </span>
+              <span className="text-purple-400 font-medium">
+                Avg: {advancedStats.avgConfidence}%
+              </span>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Filters */}
       <div className="bg-gray-800/50 border border-gray-700 rounded-xl p-4">
@@ -218,6 +386,18 @@ const TeacherReview = () => {
           <table className="w-full">
             <thead>
               <tr className="bg-gray-700/50">
+                <th className="text-left px-4 py-3">
+                  <button
+                    onClick={toggleSelectAll}
+                    className="text-gray-400 hover:text-white"
+                  >
+                    {selectedPapers.length === papers.length && papers.length > 0 ? (
+                      <CheckSquare className="w-5 h-5 text-blue-400" />
+                    ) : (
+                      <Square className="w-5 h-5" />
+                    )}
+                  </button>
+                </th>
                 <th className="text-left px-6 py-3 text-xs font-medium text-gray-400 uppercase tracking-wider">Student</th>
                 <th className="text-left px-6 py-3 text-xs font-medium text-gray-400 uppercase tracking-wider">Session</th>
                 <th className="text-center px-6 py-3 text-xs font-medium text-gray-400 uppercase tracking-wider">AI Score</th>
@@ -228,7 +408,19 @@ const TeacherReview = () => {
             </thead>
             <tbody className="divide-y divide-gray-700">
               {papers.map(paper => (
-                <tr key={paper.id} className="hover:bg-gray-700/30 transition-colors">
+                <tr key={paper.id} className={`hover:bg-gray-700/30 transition-colors ${selectedPapers.includes(paper.id) ? 'bg-blue-500/10' : ''}`}>
+                  <td className="px-4 py-4">
+                    <button
+                      onClick={() => toggleSelectPaper(paper.id)}
+                      className="text-gray-400 hover:text-white"
+                    >
+                      {selectedPapers.includes(paper.id) ? (
+                        <CheckSquare className="w-5 h-5 text-blue-400" />
+                      ) : (
+                        <Square className="w-5 h-5" />
+                      )}
+                    </button>
+                  </td>
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 rounded-full bg-purple-500/20 flex items-center justify-center text-purple-400">
@@ -282,6 +474,18 @@ const TeacherReview = () => {
           </table>
         )}
       </div>
+
+      {/* Bulk Approval Modal */}
+      <BulkApprovalModal
+        isOpen={showBulkModal}
+        onClose={() => setShowBulkModal(false)}
+        papers={papers.filter(p => selectedPapers.includes(p.id))}
+        sessionId={filters.session_id}
+        onSuccess={() => {
+          handleRefresh();
+          setSelectedPapers([]);
+        }}
+      />
     </div>
   );
 };

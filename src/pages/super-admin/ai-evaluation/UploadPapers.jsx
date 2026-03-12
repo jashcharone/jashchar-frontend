@@ -21,11 +21,12 @@ import {
   Eye
 } from 'lucide-react';
 import api from '@/services/api';
-import toast from 'react-hot-toast';
+import { useToast } from '@/components/ui/use-toast';
 
 const UploadPapers = () => {
   const { sessionId } = useParams();
   const navigate = useNavigate();
+  const { toast } = useToast();
   const fileInputRef = useRef(null);
   
   const [files, setFiles] = useState([]);
@@ -38,7 +39,7 @@ const UploadPapers = () => {
     const validFiles = Array.from(selectedFiles).filter(file => {
       const isValid = file.type.startsWith('image/') || file.type === 'application/pdf';
       if (!isValid) {
-        toast.error(`Invalid file type: ${file.name}`);
+        toast({ variant: 'destructive', title: `Invalid file type: ${file.name}` });
       }
       return isValid;
     });
@@ -81,7 +82,7 @@ const UploadPapers = () => {
   // Upload all files
   const handleUpload = async () => {
     if (files.length === 0) {
-      toast.error('Please select files to upload');
+      toast({ variant: 'destructive', title: 'Please select files to upload' });
       return;
     }
     
@@ -122,10 +123,10 @@ const UploadPapers = () => {
         }
       }
       
-      toast.success('Files uploaded successfully!');
+      toast({ title: 'Files uploaded successfully!' });
     } catch (error) {
       console.error('Upload error:', error);
-      toast.error('Some files failed to upload');
+      toast({ variant: 'destructive', title: 'Some files failed to upload' });
     } finally {
       setUploading(false);
     }

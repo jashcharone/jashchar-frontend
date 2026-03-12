@@ -31,13 +31,14 @@ import {
 } from 'lucide-react';
 import api from '@/services/api';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
-import toast from 'react-hot-toast';
+import { useToast } from '@/components/ui/use-toast';
 import { formatDate } from '@/utils/dateUtils';
 
 const SessionDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { toast } = useToast();
   
   const [session, setSession] = useState(null);
   const [papers, setPapers] = useState([]);
@@ -59,7 +60,7 @@ const SessionDetails = () => {
         }
       } catch (error) {
         console.error('Error fetching session:', error);
-        toast.error('Failed to load session details');
+        toast({ variant: 'destructive', title: 'Failed to load session details' });
         navigate('/super-admin/ai-evaluation/sessions');
       } finally {
         setLoading(false);

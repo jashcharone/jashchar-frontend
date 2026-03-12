@@ -26,11 +26,12 @@ import {
 import api from '@/services/api';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { useBranch } from '@/contexts/BranchContext';
-import toast from 'react-hot-toast';
+import { useToast } from '@/components/ui/use-toast';
 
 const AIEvaluationSettings = () => {
   const { organizationId } = useAuth();
   const { selectedBranch } = useBranch();
+  const { toast } = useToast();
   
   const [settings, setSettings] = useState({
     // OCR Settings
@@ -71,7 +72,8 @@ const AIEvaluationSettings = () => {
       
       try {
         setLoading(true);
-        const response = await api.get('/ai-evaluation/settings');
+        const params = new URLSearchParams({ branch_id: selectedBranch.id });
+        const response = await api.get(`/ai-evaluation/settings?${params.toString()}`);
         
         if (response.data?.success && response.data.data) {
           setSettings(prev => ({ ...prev, ...response.data.data }));
@@ -91,16 +93,19 @@ const AIEvaluationSettings = () => {
   const handleSave = async () => {
     try {
       setSaving(true);
-      const response = await api.put('/ai-evaluation/settings', settings);
+      const response = await api.put('/ai-evaluation/settings', {
+        ...settings,
+        branch_id: selectedBranch?.id
+      });
       
       if (response.data?.success) {
-        toast.success('Settings saved successfully!');
+        toast({ title: 'Settings saved successfully!' });
       } else {
         throw new Error(response.data?.error || 'Failed to save');
       }
     } catch (error) {
       console.error('Error saving settings:', error);
-      toast.error('Failed to save settings');
+      toast({ variant: 'destructive', title: 'Failed to save settings' });
     } finally {
       setSaving(false);
     }

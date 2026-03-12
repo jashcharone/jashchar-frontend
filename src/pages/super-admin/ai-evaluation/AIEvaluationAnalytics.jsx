@@ -25,12 +25,13 @@ import {
 import api from '@/services/api';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { useBranch } from '@/contexts/BranchContext';
-import toast from 'react-hot-toast';
+import { useToast } from '@/components/ui/use-toast';
 
 const AIEvaluationAnalytics = () => {
   const [searchParams] = useSearchParams();
   const { currentSessionId } = useAuth();
   const { selectedBranch } = useBranch();
+  const { toast } = useToast();
   
   const [analytics, setAnalytics] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -43,9 +44,8 @@ const AIEvaluationAnalytics = () => {
       
       try {
         setLoading(true);
-        const response = await api.get('/ai-evaluation/analytics/overview', {
-          params: { time_range: timeRange }
-        });
+        const params = new URLSearchParams({ time_range: timeRange, branch_id: selectedBranch.id });
+        const response = await api.get(`/ai-evaluation/analytics/dashboard?${params.toString()}`);
         
         if (response.data?.success) {
           setAnalytics(response.data.data);

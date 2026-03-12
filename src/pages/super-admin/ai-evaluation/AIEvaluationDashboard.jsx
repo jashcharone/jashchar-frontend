@@ -18,6 +18,7 @@ import {
   FileSearch,
   FolderOpen,
   FileText,
+  FileQuestion,
   ClipboardCheck,
   Award,
   Clock,
@@ -64,18 +65,23 @@ const AIEvaluationDashboard = () => {
       setIsLoading(true);
       
       // Fetch analytics dashboard
-      const analyticsResponse = await api.get('/ai-evaluation/analytics/dashboard', {
-        params: { session_id: currentSessionId }
+      const analyticsParams = new URLSearchParams({ 
+        session_id: currentSessionId,
+        branch_id: selectedBranch.id
       });
+      const analyticsResponse = await api.get(`/ai-evaluation/analytics/dashboard?${analyticsParams.toString()}`);
       
       if (analyticsResponse.data?.success) {
         setStats(analyticsResponse.data.data);
       }
       
       // Fetch recent sessions
-      const sessionsResponse = await api.get('/ai-evaluation/sessions', {
-        params: { limit: 5, session_id: currentSessionId }
+      const sessionsParams = new URLSearchParams({ 
+        limit: '5', 
+        session_id: currentSessionId,
+        branch_id: selectedBranch.id
       });
+      const sessionsResponse = await api.get(`/ai-evaluation/sessions?${sessionsParams.toString()}`);
       
       if (sessionsResponse.data?.success) {
         setRecentSessions(sessionsResponse.data.data || []);

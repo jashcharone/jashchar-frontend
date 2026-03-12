@@ -24,10 +24,11 @@ import api from '@/services/api';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { useBranch } from '@/contexts/BranchContext';
 import { supabase } from '@/lib/customSupabaseClient';
-import toast from 'react-hot-toast';
+import { useToast } from '@/components/ui/use-toast';
 
 const CreateSession = () => {
   const navigate = useNavigate();
+  const { toast } = useToast();
   const { user, currentSessionId, organizationId } = useAuth();
   const { selectedBranch } = useBranch();
   
@@ -60,7 +61,6 @@ const CreateSession = () => {
           .from('classes')
           .select('id, name')
           .eq('branch_id', selectedBranch.id)
-          .eq('is_active', true)
           .order('name');
         
         if (error) throw error;
@@ -86,7 +86,6 @@ const CreateSession = () => {
           .from('sections')
           .select('id, name')
           .eq('class_id', formData.class_id)
-          .eq('is_active', true)
           .order('name');
         
         if (error) throw error;
@@ -112,7 +111,6 @@ const CreateSession = () => {
           .from('subjects')
           .select('id, name')
           .eq('class_id', formData.class_id)
-          .eq('is_active', true)
           .order('name');
         
         if (error) throw error;
@@ -186,12 +184,12 @@ const CreateSession = () => {
     e.preventDefault();
     
     if (!selectedBranch?.id || !currentSessionId) {
-      toast.error('Please select a branch and session');
+      toast({ variant: 'destructive', title: 'Please select a branch and session' });
       return;
     }
     
     if (!formData.class_id || !formData.total_marks) {
-      toast.error('Please fill in required fields');
+      toast({ variant: 'destructive', title: 'Please fill in required fields' });
       return;
     }
     
@@ -209,14 +207,14 @@ const CreateSession = () => {
       });
       
       if (response.data?.success) {
-        toast.success('Evaluation session created successfully!');
+        toast({ title: 'Evaluation session created successfully!' });
         navigate(`/super-admin/ai-evaluation/sessions/${response.data.data.id}`);
       } else {
         throw new Error(response.data?.error || 'Failed to create session');
       }
     } catch (error) {
       console.error('Error creating session:', error);
-      toast.error(error.message || 'Failed to create session');
+      toast({ variant: 'destructive', title: error.message || 'Failed to create session' });
     } finally {
       setIsSubmitting(false);
     }

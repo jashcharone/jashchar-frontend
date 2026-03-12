@@ -491,6 +491,9 @@ const MasterAdminAnalytics = lazy(() => import('@/pages/master-admin/MasterAdmin
 // ? Cortex AI - India's First Thinking ERP
 const CortexAI = lazy(() => import('@/pages/super-admin/cortex-ai'));
 
+// ? AI Evaluation (Cortex Evaluate™) - AI Paper Valuation
+const AIEvaluation = lazy(() => import('@/pages/super-admin/ai-evaluation'));
+
 // AIChatbot moved to DashboardLayout for header control
 
 function App() {
@@ -1427,6 +1430,9 @@ function App() {
 
             {/* ⚡ Cortex AI - India's First Thinking ERP (Add-on billing - NOT module permission) */}
             <Route path="/super-admin/cortex-ai/*" element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'principal']}><CortexAI /></ProtectedRoute>} />
+
+            {/* 🧠 AI Evaluation (Cortex Evaluate™) - AI Paper Valuation System */}
+            <Route path="/super-admin/ai-evaluation/*" element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'principal', 'teacher', 'class_teacher', 'subject_teacher']}><AIEvaluation /></ProtectedRoute>} />
 
             {/* ? Fees (Remaining) */}
             <Route path={ROUTES.SUPER_ADMIN.COLLECT_FEES} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'accountant']}><CollectFees /></ProtectedRoute>} />

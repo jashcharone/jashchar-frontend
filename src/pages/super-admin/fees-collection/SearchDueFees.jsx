@@ -101,15 +101,29 @@ const SearchDueFees = () => {
 
             // 2. Class and section names are now fetched with student data
 
-            // 3. Fetch Regular Fee Allocations (Current Session Only)
-            const { data: feeAllocations } = await supabase
-                .from('student_fee_allocations')
-                .select('student_id, fee_master_id, fee_masters(amount, fee_group_id)')
+            // 3. HYBRID: Check for NEW architecture first (student_fee_ledger)
+            const { data: ledgerData } = await supabase
+                .from('student_fee_ledger')
+                .select('student_id, net_amount, paid_amount, discount_amount, fine_amount')
                 .in('student_id', studentIds)
                 .eq('branch_id', branchId)
                 .eq('session_id', currentSessionId);
+            
+            const usesNewArchitecture = ledgerData && ledgerData.length > 0;
 
-            // 4. Fetch Regular Fee Payments (Current Session Only)
+            // OLD Architecture: Fetch student_fee_allocations + fee_masters
+            let feeAllocations = [];
+            if (!usesNewArchitecture) {
+                const { data } = await supabase
+                    .from('student_fee_allocations')
+                    .select('student_id, fee_master_id, fee_masters(amount, fee_group_id)')
+                    .in('student_id', studentIds)
+                    .eq('branch_id', branchId)
+                    .eq('session_id', currentSessionId);
+                feeAllocations = data || [];
+            }
+
+            // 4. Fetch Regular Fee Payments (Current Session Only) - Used by both architectures
             const { data: feePayments } = await supabase
                 .from('fee_payments')
                 .select('student_id, amount, discount_amount, fine_paid')
@@ -152,16 +166,31 @@ const SearchDueFees = () => {
                 .eq('session_id', currentSessionId)
                 .is('reverted_at', null);
 
-            // 9. Calculate fees for each student
+            // 9. Calculate fees for each student (HYBRID: NEW or OLD architecture)
             const enrichedStudents = studentsData.map(student => {
-                // Regular Fees
-                const studentAllocations = feeAllocations?.filter(a => a.student_id === student.id) || [];
-                const regularTotal = studentAllocations.reduce((sum, a) => sum + Number(a.fee_masters?.amount || 0), 0);
+                // Regular Fees - HYBRID
+                let regularTotal = 0;
+                let regularPaid = 0;
+                let regularDiscount = 0;
+                let regularFine = 0;
                 
-                const studentFeePayments = feePayments?.filter(p => p.student_id === student.id) || [];
-                const regularPaid = studentFeePayments.reduce((sum, p) => sum + Number(p.amount || 0), 0);
-                const regularDiscount = studentFeePayments.reduce((sum, p) => sum + Number(p.discount_amount || 0), 0);
-                const regularFine = studentFeePayments.reduce((sum, p) => sum + Number(p.fine_paid || 0), 0);
+                if (usesNewArchitecture) {
+                    // NEW ARCHITECTURE: Use student_fee_ledger
+                    const studentLedger = ledgerData?.filter(l => l.student_id === student.id) || [];
+                    regularTotal = studentLedger.reduce((sum, l) => sum + Number(l.net_amount || 0), 0);
+                    regularPaid = studentLedger.reduce((sum, l) => sum + Number(l.paid_amount || 0), 0);
+                    regularDiscount = studentLedger.reduce((sum, l) => sum + Number(l.discount_amount || 0), 0);
+                    regularFine = studentLedger.reduce((sum, l) => sum + Number(l.fine_amount || 0), 0);
+                } else {
+                    // OLD ARCHITECTURE: Use student_fee_allocations + fee_payments
+                    const studentAllocations = feeAllocations?.filter(a => a.student_id === student.id) || [];
+                    regularTotal = studentAllocations.reduce((sum, a) => sum + Number(a.fee_masters?.amount || 0), 0);
+                    
+                    const studentFeePayments = feePayments?.filter(p => p.student_id === student.id) || [];
+                    regularPaid = studentFeePayments.reduce((sum, p) => sum + Number(p.amount || 0), 0);
+                    regularDiscount = studentFeePayments.reduce((sum, p) => sum + Number(p.discount_amount || 0), 0);
+                    regularFine = studentFeePayments.reduce((sum, p) => sum + Number(p.fine_paid || 0), 0);
+                }
                 const regularDue = Math.max(0, regularTotal - regularPaid - regularDiscount + regularFine);
 
                 // Transport Fees

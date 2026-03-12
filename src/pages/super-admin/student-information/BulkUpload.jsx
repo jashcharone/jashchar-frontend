@@ -1507,41 +1507,99 @@ const BulkUpload = () => {
             console.log(`[BulkUpload] ✅ Generated roll numbers: ${generatedRollNos[0]} to ${generatedRollNos[total-1]}`);
         }
         
-        // 🌟 PRE-FETCH FEE MASTERS for fee import (if enabled)
+        // 🌟 PRE-FETCH FEE DATA - HYBRID: Check NEW architecture first, fallback to OLD
         let feeImportData = null;
+        let usesNewArchitecture = false;
+        
         if (importFees) {
             const className = classes.find(c => c.id === selectedClass)?.name;
             if (className) {
-                console.log(`[Fee Import] 🔍 Looking for fee group matching class: "${className}" in session ${selectedSession}`);
-                const { data: feeGroups } = await supabase
-                    .from('fee_groups')
-                    .select('id, name')
+                console.log(`[Fee Import] 🔍 Checking architecture for class: "${className}" in session ${selectedSession}`);
+                
+                // FIRST: Check for NEW architecture (fee_rules with assign_structure action for this class)
+                const { data: feeRules } = await supabase
+                    .from('fee_rules')
+                    .select(`
+                        id, action_type, action_config, priority,
+                        fee_structure:fee_structures(id, name, total_annual_amount)
+                    `)
                     .eq('branch_id', branchId)
                     .eq('session_id', selectedSession)
-                    .ilike('name', className);
+                    .eq('action_type', 'assign_structure')
+                    .eq('is_active', true)
+                    .order('priority', { ascending: true });
                 
-                const feeGroup = feeGroups?.[0];
-                if (feeGroup) {
-                    const { data: feeMasters } = await supabase
-                        .from('fee_masters')
-                        .select('id, fee_type_id, amount, due_date')
-                        .eq('fee_group_id', feeGroup.id)
-                        .eq('branch_id', branchId)
-                        .eq('session_id', selectedSession)
+                // Find a rule that matches this class (check conditions)
+                const matchingRule = feeRules?.find(rule => {
+                    const conditions = rule.action_config?.conditions || [];
+                    // Check if any condition includes this class
+                    return conditions.some(cond => 
+                        cond.type === 'class' && 
+                        (cond.value === selectedClass || cond.values?.includes(selectedClass))
+                    );
+                }) || feeRules?.[0]; // Fallback to first rule if no specific class match
+                
+                if (matchingRule && matchingRule.fee_structure) {
+                    usesNewArchitecture = true;
+                    const structureId = matchingRule.action_config?.fee_structure_id;
+                    
+                    // Fetch fee_structure_components for this structure
+                    const { data: structureItems } = await supabase
+                        .from('fee_structure_components')
+                        .select(`
+                            id, fee_type_id, amount, due_date, installment_number,
+                            fee_type:fee_types(name, code)
+                        `)
+                        .eq('fee_structure_id', structureId)
+                        .order('installment_number', { ascending: true })
                         .order('due_date', { ascending: true });
                     
-                    if (feeMasters?.length > 0) {
-                        feeImportData = { feeGroup, feeMasters };
-                        const totalFeeAmount = feeMasters.reduce((sum, fm) => sum + parseFloat(fm.amount), 0);
-                        console.log(`[Fee Import] ✅ Found ${feeMasters.length} fee masters for "${className}" (Total: ₹${totalFeeAmount})`);
-                        toast({ title: '💰 Fee Import Ready', description: `${feeMasters.length} fee items found for ${className} (₹${totalFeeAmount})` });
-                    } else {
-                        console.warn(`[Fee Import] ⚠️ No fee masters found for class: ${className}`);
-                        toast({ variant: 'destructive', title: 'Fee Import Warning', description: `No fee masters found for "${className}". Fees will NOT be imported.` });
+                    if (structureItems?.length > 0) {
+                        feeImportData = { 
+                            useNewArchitecture: true,
+                            feeStructure: matchingRule.fee_structure,
+                            structureId: structureId,
+                            structureItems: structureItems 
+                        };
+                        const totalFeeAmount = structureItems.reduce((sum, si) => sum + parseFloat(si.amount), 0);
+                        console.log(`[Fee Import] ✅ NEW ARCHITECTURE: Found ${structureItems.length} fee items from "${matchingRule.fee_structure.name}" (Total: ₹${totalFeeAmount})`);
+                        toast({ title: '💰 Fee Import Ready (NEW Architecture)', description: `${structureItems.length} fee items from "${matchingRule.fee_structure.name}" (₹${totalFeeAmount})` });
                     }
-                } else {
-                    console.warn(`[Fee Import] ⚠️ No fee group found matching: ${className}`);
-                    toast({ variant: 'destructive', title: 'Fee Import Warning', description: `No fee group found for "${className}". Create fee group first.` });
+                }
+                
+                // FALLBACK: OLD architecture (fee_groups → fee_masters)
+                if (!usesNewArchitecture) {
+                    console.log(`[Fee Import] 📋 Using OLD architecture for "${className}"`);
+                    const { data: feeGroups } = await supabase
+                        .from('fee_groups')
+                        .select('id, name')
+                        .eq('branch_id', branchId)
+                        .eq('session_id', selectedSession)
+                        .ilike('name', className);
+                    
+                    const feeGroup = feeGroups?.[0];
+                    if (feeGroup) {
+                        const { data: feeMasters } = await supabase
+                            .from('fee_masters')
+                            .select('id, fee_type_id, amount, due_date')
+                            .eq('fee_group_id', feeGroup.id)
+                            .eq('branch_id', branchId)
+                            .eq('session_id', selectedSession)
+                            .order('due_date', { ascending: true });
+                        
+                        if (feeMasters?.length > 0) {
+                            feeImportData = { useNewArchitecture: false, feeGroup, feeMasters };
+                            const totalFeeAmount = feeMasters.reduce((sum, fm) => sum + parseFloat(fm.amount), 0);
+                            console.log(`[Fee Import] ✅ OLD ARCHITECTURE: Found ${feeMasters.length} fee masters for "${className}" (Total: ₹${totalFeeAmount})`);
+                            toast({ title: '💰 Fee Import Ready', description: `${feeMasters.length} fee items found for ${className} (₹${totalFeeAmount})` });
+                        } else {
+                            console.warn(`[Fee Import] ⚠️ No fee masters found for class: ${className}`);
+                            toast({ variant: 'destructive', title: 'Fee Import Warning', description: `No fee masters found for "${className}". Fees will NOT be imported.` });
+                        }
+                    } else {
+                        console.warn(`[Fee Import] ⚠️ No fee group found matching: ${className}`);
+                        toast({ variant: 'destructive', title: 'Fee Import Warning', description: `No fee group found for "${className}". Create fee group first.` });
+                    }
                 }
             }
         }
@@ -1688,74 +1746,158 @@ const BulkUpload = () => {
                     studentId = newStudent.id;
                 }
                 
-                // FEE MIGRATION INSERT
+                // FEE MIGRATION INSERT - HYBRID: NEW architecture or OLD architecture
                 if (importFees && studentId && feeImportData) {
-                    const { feeMasters } = feeImportData;
-                    
                     try {
-                        // 1. Create student_fee_allocations for ALL fee_masters of this class
-                        const allocations = feeMasters.map(fm => ({
-                            student_id: studentId,
-                            fee_master_id: fm.id,
-                            branch_id: branchId,
-                            session_id: selectedSession,
-                            organization_id: organizationId,
-                        }));
-                        
-                        const { error: allocError } = await supabase
-                            .from('student_fee_allocations')
-                            .insert(allocations);
-                        
-                        if (allocError) {
-                            console.error(`[Fee Import] Allocation error for student ${studentId}:`, allocError.message);
-                        } else {
-                            console.log(`[Fee Import] ✅ Allocated ${allocations.length} fee masters to student ${studentId} (all shown as DUE)`);
-                        }
-                        
-                        // 2. Record fee payments if fee_paid_amount > 0 OR fee_discount > 0 (from old ERP migration data)
-                        // This ensures: Total Due - Paid - Discount = Balance
                         const paidAmount = parseFloat(record.fee_paid_amount) || 0;
                         const discountAmount = parseFloat(record.fee_discount) || 0;
-                        if (paidAmount > 0 || discountAmount > 0) {
+                        
+                        if (feeImportData.useNewArchitecture) {
+                            // ═══════════════════════════════════════════════════════════════
+                            // NEW ARCHITECTURE: Create student_fee_ledger entries
+                            // ═══════════════════════════════════════════════════════════════
+                            const { structureId, structureItems } = feeImportData;
+                            
+                            // Create ledger entries
                             let remainingPaid = paidAmount;
                             let remainingDiscount = discountAmount;
+                            const ledgerEntries = [];
                             const payments = [];
                             
-                            // Distribute paid amount + discount across fee_masters in due_date order
-                            for (const fm of feeMasters) {
-                                if (remainingPaid <= 0 && remainingDiscount <= 0) break;
-                                const fmAmount = parseFloat(fm.amount);
-                                const payAmount = Math.min(remainingPaid, fmAmount);
-                                const discForThisFee = Math.min(remainingDiscount, fmAmount - payAmount);
+                            for (const item of structureItems) {
+                                const itemAmount = parseFloat(item.amount);
+                                const payForThis = Math.min(remainingPaid, itemAmount);
+                                const discForThis = Math.min(remainingDiscount, itemAmount - payForThis);
+                                const isPaid = (payForThis + discForThis) >= itemAmount;
                                 
-                                if (payAmount > 0 || discForThisFee > 0) {
-                                    payments.push({
-                                        student_id: studentId,
-                                        fee_master_id: fm.id,
-                                        amount: payAmount,
-                                        discount_amount: discForThisFee,
-                                        payment_date: new Date().toISOString().split('T')[0],
-                                        payment_mode: 'Migration Import',
-                                        note: discForThisFee > 0 ? `Imported from previous ERP (MCB) - includes ₹${discForThisFee} concession/discount` : 'Imported from previous ERP (MCB)',
-                                        branch_id: branchId,
-                                        session_id: selectedSession,
-                                        organization_id: organizationId,
-                                    });
-                                    remainingPaid -= payAmount;
-                                    remainingDiscount -= discForThisFee;
-                                }
+                                const ledgerEntry = {
+                                    student_id: studentId,
+                                    fee_structure_id: structureId,
+                                    fee_type_id: item.fee_type_id,
+                                    installment_number: item.installment_number || 1,
+                                    due_date: item.due_date,
+                                    original_amount: itemAmount,
+                                    discount_amount: discForThis,
+                                    concession_amount: 0,
+                                    fine_amount: 0,
+                                    net_amount: itemAmount - discForThis,
+                                    paid_amount: payForThis,
+                                    status: isPaid ? 'paid' : (payForThis > 0 ? 'partial' : 'pending'),
+                                    is_paid: isPaid,
+                                    paid_date: isPaid ? new Date().toISOString().split('T')[0] : null,
+                                    assigned_by: 'bulk_import',
+                                    branch_id: branchId,
+                                    session_id: selectedSession,
+                                    organization_id: organizationId,
+                                };
+                                ledgerEntries.push(ledgerEntry);
+                                
+                                remainingPaid -= payForThis;
+                                remainingDiscount -= discForThis;
                             }
                             
-                            if (payments.length > 0) {
-                                const { error: payError } = await supabase
-                                    .from('fee_payments')
-                                    .insert(payments);
+                            // Insert ledger entries
+                            const { data: insertedLedger, error: ledgerErr } = await supabase
+                                .from('student_fee_ledger')
+                                .insert(ledgerEntries)
+                                .select('id, fee_type_id, paid_amount, discount_amount');
+                            
+                            if (ledgerErr) {
+                                console.error(`[Fee Import] NEW ARCH Ledger error for student ${studentId}:`, ledgerErr.message);
+                            } else {
+                                console.log(`[Fee Import] ✅ NEW ARCH: Created ${ledgerEntries.length} ledger entries for student ${studentId}`);
                                 
-                                if (payError) {
-                                    console.error(`[Fee Import] Payment error for student ${studentId}:`, payError.message);
-                                } else {
-                                    const totalDue = parseFloat(record.fee_total_due) || 0;
-                                    console.log(`[Fee Import] ✅ Paid ₹${paidAmount}, Discount ₹${discountAmount}, Balance ₹${totalDue - paidAmount - discountAmount} for student ${studentId}`);
+                                // Create fee_payments for any paid amounts (for receipt tracking)
+                                if (paidAmount > 0 || discountAmount > 0) {
+                                    for (const ledger of insertedLedger) {
+                                        if (ledger.paid_amount > 0 || ledger.discount_amount > 0) {
+                                            payments.push({
+                                                student_id: studentId,
+                                                ledger_id: ledger.id,
+                                                amount: ledger.paid_amount,
+                                                discount_amount: ledger.discount_amount,
+                                                payment_date: new Date().toISOString().split('T')[0],
+                                                payment_mode: 'Migration Import',
+                                                note: 'Imported from previous ERP (MCB)',
+                                                branch_id: branchId,
+                                                session_id: selectedSession,
+                                                organization_id: organizationId,
+                                            });
+                                        }
+                                    }
+                                    
+                                    if (payments.length > 0) {
+                                        await supabase.from('fee_payments').insert(payments);
+                                    }
+                                }
+                            }
+                        } else {
+                            // ═══════════════════════════════════════════════════════════════
+                            // OLD ARCHITECTURE: Use fee_masters + student_fee_allocations
+                            // ═══════════════════════════════════════════════════════════════
+                            const { feeMasters } = feeImportData;
+                            
+                            // 1. Create student_fee_allocations for ALL fee_masters of this class
+                            const allocations = feeMasters.map(fm => ({
+                                student_id: studentId,
+                                fee_master_id: fm.id,
+                                branch_id: branchId,
+                                session_id: selectedSession,
+                                organization_id: organizationId,
+                            }));
+                            
+                            const { error: allocError } = await supabase
+                                .from('student_fee_allocations')
+                                .insert(allocations);
+                            
+                            if (allocError) {
+                                console.error(`[Fee Import] OLD ARCH Allocation error for student ${studentId}:`, allocError.message);
+                            } else {
+                                console.log(`[Fee Import] ✅ OLD ARCH: Allocated ${allocations.length} fee masters to student ${studentId}`);
+                            }
+                            
+                            // 2. Record fee payments if fee_paid_amount > 0 OR fee_discount > 0
+                            if (paidAmount > 0 || discountAmount > 0) {
+                                let remainingPaid = paidAmount;
+                                let remainingDiscount = discountAmount;
+                                const payments = [];
+                                
+                                // Distribute paid amount + discount across fee_masters in due_date order
+                                for (const fm of feeMasters) {
+                                    if (remainingPaid <= 0 && remainingDiscount <= 0) break;
+                                    const fmAmount = parseFloat(fm.amount);
+                                    const payAmount = Math.min(remainingPaid, fmAmount);
+                                    const discForThisFee = Math.min(remainingDiscount, fmAmount - payAmount);
+                                    
+                                    if (payAmount > 0 || discForThisFee > 0) {
+                                        payments.push({
+                                            student_id: studentId,
+                                            fee_master_id: fm.id,
+                                            amount: payAmount,
+                                            discount_amount: discForThisFee,
+                                            payment_date: new Date().toISOString().split('T')[0],
+                                            payment_mode: 'Migration Import',
+                                            note: discForThisFee > 0 ? `Imported from previous ERP (MCB) - includes ₹${discForThisFee} concession/discount` : 'Imported from previous ERP (MCB)',
+                                            branch_id: branchId,
+                                            session_id: selectedSession,
+                                            organization_id: organizationId,
+                                        });
+                                        remainingPaid -= payAmount;
+                                        remainingDiscount -= discForThisFee;
+                                    }
+                                }
+                                
+                                if (payments.length > 0) {
+                                    const { error: payError } = await supabase
+                                        .from('fee_payments')
+                                        .insert(payments);
+                                    
+                                    if (payError) {
+                                        console.error(`[Fee Import] OLD ARCH Payment error for student ${studentId}:`, payError.message);
+                                    } else {
+                                        const totalDue = parseFloat(record.fee_total_due) || 0;
+                                        console.log(`[Fee Import] ✅ OLD ARCH Paid ₹${paidAmount}, Discount ₹${discountAmount}, Balance ₹${totalDue - paidAmount - discountAmount} for student ${studentId}`);
+                                    }
                                 }
                             }
                         }

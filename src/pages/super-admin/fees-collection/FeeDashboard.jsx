@@ -275,55 +275,113 @@ const FeeDashboard = () => {
         return;
       }
 
-      // 2. Get allocations in batches
-      let allAllocations = [];
-      const batchSize = 100;
-      for (let i = 0; i < studentIds.length; i += batchSize) {
-        const batch = studentIds.slice(i, i + batchSize);
-        const { data } = await supabase
-          .from('student_fee_allocations')
-          .select('id, student_id, amount, paid, balance, due_date')
-          .in('student_id', batch)
-          .eq('branch_id', branchId)
-          .eq('session_id', selectedSessionId);
-        if (data) allAllocations.push(...data);
-      }
+      // HYBRID: Check for NEW architecture first (student_fee_ledger)
+      const { data: ledgerCheck } = await supabase
+        .from('student_fee_ledger')
+        .select('id')
+        .eq('branch_id', branchId)
+        .eq('session_id', selectedSessionId)
+        .limit(1);
+      
+      const usesNewArchitecture = ledgerCheck && ledgerCheck.length > 0;
 
-      // 3. Get all payments
-      let allPayments = [];
-      for (let i = 0; i < studentIds.length; i += batchSize) {
-        const batch = studentIds.slice(i, i + batchSize);
-        const { data } = await supabase
-          .from('fee_payments')
-          .select('id, student_id, amount, payment_date, payment_mode, created_at')
-          .in('student_id', batch)
-          .eq('branch_id', branchId)
-          .eq('session_id', selectedSessionId);
-        if (data) allPayments.push(...data);
-      }
-
-      // 4. Calculate overview
-      const totalAllocated = allAllocations.reduce((sum, a) => sum + (a.amount || 0), 0);
-      const totalPaid = allAllocations.reduce((sum, a) => sum + (a.paid || 0), 0);
-      const totalDue = allAllocations.reduce((sum, a) => sum + (a.balance || 0), 0);
-      const collectionRate = totalAllocated > 0 ? (totalPaid / totalAllocated) * 100 : 0;
-
-      // Count payment status
-      const studentPaymentStatus = {};
-      allAllocations.forEach(a => {
-        if (!studentPaymentStatus[a.student_id]) {
-          studentPaymentStatus[a.student_id] = { allocated: 0, paid: 0 };
-        }
-        studentPaymentStatus[a.student_id].allocated += a.amount || 0;
-        studentPaymentStatus[a.student_id].paid += a.paid || 0;
-      });
-
+      let totalAllocated = 0, totalPaid = 0, totalDue = 0;
       let fullyPaid = 0, partialPaid = 0, unpaid = 0;
-      Object.values(studentPaymentStatus).forEach(s => {
-        if (s.paid >= s.allocated && s.allocated > 0) fullyPaid++;
-        else if (s.paid > 0) partialPaid++;
-        else if (s.allocated > 0) unpaid++;
-      });
+      let allPayments = [];
+      
+      if (usesNewArchitecture) {
+        // NEW ARCHITECTURE: Use student_fee_ledger
+        const batchSize = 100;
+        let allLedgerEntries = [];
+        for (let i = 0; i < studentIds.length; i += batchSize) {
+          const batch = studentIds.slice(i, i + batchSize);
+          const { data } = await supabase
+            .from('student_fee_ledger')
+            .select('student_id, net_amount, paid_amount, discount_amount')
+            .in('student_id', batch)
+            .eq('branch_id', branchId)
+            .eq('session_id', selectedSessionId);
+          if (data) allLedgerEntries.push(...data);
+        }
+        
+        // Get payments for count
+        for (let i = 0; i < studentIds.length; i += batchSize) {
+          const batch = studentIds.slice(i, i + batchSize);
+          const { data } = await supabase
+            .from('fee_payments')
+            .select('id, student_id, amount, payment_date, payment_mode, created_at')
+            .in('student_id', batch)
+            .eq('branch_id', branchId)
+            .eq('session_id', selectedSessionId);
+          if (data) allPayments.push(...data);
+        }
+        
+        totalAllocated = allLedgerEntries.reduce((sum, l) => sum + Number(l.net_amount || 0), 0);
+        totalPaid = allLedgerEntries.reduce((sum, l) => sum + Number(l.paid_amount || 0) + Number(l.discount_amount || 0), 0);
+        totalDue = Math.max(0, totalAllocated - totalPaid);
+        
+        // Count payment status per student
+        const studentPaymentStatus = {};
+        allLedgerEntries.forEach(l => {
+          if (!studentPaymentStatus[l.student_id]) {
+            studentPaymentStatus[l.student_id] = { allocated: 0, paid: 0 };
+          }
+          studentPaymentStatus[l.student_id].allocated += Number(l.net_amount || 0);
+          studentPaymentStatus[l.student_id].paid += Number(l.paid_amount || 0) + Number(l.discount_amount || 0);
+        });
+        
+        Object.values(studentPaymentStatus).forEach(s => {
+          if (s.paid >= s.allocated && s.allocated > 0) fullyPaid++;
+          else if (s.paid > 0) partialPaid++;
+          else if (s.allocated > 0) unpaid++;
+        });
+      } else {
+        // OLD ARCHITECTURE: Use student_fee_allocations
+        let allAllocations = [];
+        const batchSize = 100;
+        for (let i = 0; i < studentIds.length; i += batchSize) {
+          const batch = studentIds.slice(i, i + batchSize);
+          const { data } = await supabase
+            .from('student_fee_allocations')
+            .select('id, student_id, amount, paid, balance, due_date')
+            .in('student_id', batch)
+            .eq('branch_id', branchId)
+            .eq('session_id', selectedSessionId);
+          if (data) allAllocations.push(...data);
+        }
+
+        for (let i = 0; i < studentIds.length; i += batchSize) {
+          const batch = studentIds.slice(i, i + batchSize);
+          const { data } = await supabase
+            .from('fee_payments')
+            .select('id, student_id, amount, payment_date, payment_mode, created_at')
+            .in('student_id', batch)
+            .eq('branch_id', branchId)
+            .eq('session_id', selectedSessionId);
+          if (data) allPayments.push(...data);
+        }
+
+        totalAllocated = allAllocations.reduce((sum, a) => sum + (a.amount || 0), 0);
+        totalPaid = allAllocations.reduce((sum, a) => sum + (a.paid || 0), 0);
+        totalDue = allAllocations.reduce((sum, a) => sum + (a.balance || 0), 0);
+
+        const studentPaymentStatus = {};
+        allAllocations.forEach(a => {
+          if (!studentPaymentStatus[a.student_id]) {
+            studentPaymentStatus[a.student_id] = { allocated: 0, paid: 0 };
+          }
+          studentPaymentStatus[a.student_id].allocated += a.amount || 0;
+          studentPaymentStatus[a.student_id].paid += a.paid || 0;
+        });
+
+        Object.values(studentPaymentStatus).forEach(s => {
+          if (s.paid >= s.allocated && s.allocated > 0) fullyPaid++;
+          else if (s.paid > 0) partialPaid++;
+          else if (s.allocated > 0) unpaid++;
+        });
+      }
+
+      const collectionRate = totalAllocated > 0 ? (totalPaid / totalAllocated) * 100 : 0;
 
       setOverview({
         totalAllocated,

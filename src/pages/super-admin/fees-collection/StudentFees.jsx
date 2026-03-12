@@ -260,10 +260,23 @@ const StudentFees = () => {
             setStudent(studentRes.data);
 
             // ====================================================================
-            // AUTO-ALLOCATE FEES: If fee group is assigned to student's class,
-            // automatically create student_fee_allocations for this student
+            // CHECK IF BRANCH USES NEW FEE ARCHITECTURE (fee_structures + fee_rules)
+            // If YES → Skip OLD auto-allocation (fee_group_class_assignments is not used)
             // ====================================================================
-            if (studentRes.data.class_id) {
+            const { data: newArchCheck } = await supabase
+                .from('fee_structures')
+                .select('id')
+                .eq('branch_id', selectedBranch.id)
+                .eq('session_id', currentSessionId)
+                .limit(1);
+            
+            const usesNewArchitecture = newArchCheck && newArchCheck.length > 0;
+            
+            // ====================================================================
+            // AUTO-ALLOCATE FEES (OLD ARCHITECTURE ONLY):
+            // Skip if branch uses NEW architecture (fee_structures)
+            // ====================================================================
+            if (studentRes.data.class_id && !usesNewArchitecture) {
                 // Step 1: Get fee_group_class_assignments for this student's class
                 const { data: classAssignments } = await supabase
                     .from('fee_group_class_assignments')

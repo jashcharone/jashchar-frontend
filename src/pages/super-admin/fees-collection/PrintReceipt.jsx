@@ -822,6 +822,8 @@ const PrintReceipt = () => {
   const Receipt = ({ copyType }) => (
     <div style={{ 
       width: '100%', 
+      height: '100%',
+      maxHeight: '144mm',
       padding: '0',
       boxSizing: 'border-box',
       pageBreakInside: 'avoid',
@@ -830,7 +832,8 @@ const PrintReceipt = () => {
       color: '#000',
       fontFamily: 'Arial, Helvetica, sans-serif',
       border: '2px solid #333',
-      borderRadius: '4px'
+      borderRadius: '4px',
+      overflow: 'hidden'
     }}>
 
       {/* ===== HEADER ===== */}
@@ -878,18 +881,23 @@ const PrintReceipt = () => {
       )}
 
       {/* ===== FEE RECEIPT TITLE ===== */}
-      <div style={{ textAlign: 'center', padding: '5px 0', borderBottom: '1px solid #999' }}>
-        <span style={{ fontSize: '13px', fontWeight: 'bold', letterSpacing: '2px', textTransform: 'uppercase' }}>{config.title}</span>
-        {!isOriginal && <span style={{ fontSize: '8px', color: '#c00', marginLeft: '8px', fontWeight: 'bold' }}>(REPRINT)</span>}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 10px', borderBottom: '1px solid #999', backgroundColor: '#1a237e', color: '#fff' }}>
+        <span style={{ fontSize: '9px', fontWeight: 'bold', color: '#fff', backgroundColor: '#4caf50', padding: '3px 10px', borderRadius: '3px' }}>Receipt No: {transactionId?.split('/').pop() || receiptNo}</span>
+        <div style={{ textAlign: 'center' }}>
+          <span style={{ fontSize: '18px', fontWeight: 'bold', letterSpacing: '4px', textTransform: 'uppercase', color: '#fff' }}>{config.title}</span>
+          {!isOriginal && <span style={{ fontSize: '9px', color: '#ffeb3b', marginLeft: '10px', fontWeight: 'bold', backgroundColor: '#c62828', padding: '3px 8px', borderRadius: '3px' }}>REPRINT</span>}
+          {isOriginal && <span style={{ fontSize: '9px', color: '#1a237e', marginLeft: '10px', fontWeight: 'bold', backgroundColor: '#4caf50', padding: '3px 8px', borderRadius: '3px' }}>ORIGINAL</span>}
+        </div>
+        <span style={{ fontSize: '9px', fontWeight: 'bold', color: '#1a237e', backgroundColor: '#ffeb3b', padding: '3px 10px', borderRadius: '3px' }}>Transaction ID: {transactionId || '-'}</span>
       </div>
 
       {/* ===== STUDENT INFO - 2 COLUMNS ===== */}
       <div style={{ display: 'flex', padding: '5px 10px', borderBottom: '1px solid #ccc', fontSize: '9px', gap: '6px' }}>
         {/* Left Column */}
         <div style={{ flex: 1 }}>
-          <div style={{ display: 'flex', marginBottom: '2px' }}>
-            <span style={{ width: '85px', fontWeight: '600', color: '#444' }}>Student Name</span>
-            <span>: <strong style={{ textTransform: 'uppercase' }}>{student?.full_name || '-'}</strong></span>
+          <div style={{ display: 'flex', marginBottom: '2px', backgroundColor: '#fffde7', padding: '3px 4px', borderRadius: '3px', alignItems: 'center' }}>
+            <span style={{ width: '85px', fontWeight: 'bold', color: '#444', fontSize: '12px' }}>Student Name</span>
+            <span style={{ fontSize: '12px', fontWeight: 'bold' }}>: <strong style={{ textTransform: 'uppercase', fontSize: '12px', color: '#1a237e', backgroundColor: '#e3f2fd', padding: '3px 10px', borderRadius: '3px' }}>{student?.full_name || '-'}</strong></span>
           </div>
           <div style={{ display: 'flex', marginBottom: '2px' }}>
             <span style={{ width: '85px', fontWeight: '600', color: '#444' }}>Father's Name</span>
@@ -898,10 +906,6 @@ const PrintReceipt = () => {
           <div style={{ display: 'flex', marginBottom: '2px' }}>
             <span style={{ width: '85px', fontWeight: '600', color: '#444' }}>Admission No</span>
             <span>: {student?.school_code || student?.admission_no || '-'}</span>
-          </div>
-          <div style={{ display: 'flex', marginBottom: '2px' }}>
-            <span style={{ width: '85px', fontWeight: '600', color: '#444' }}>Academic Year</span>
-            <span>: {currentSessionName || '-'}</span>
           </div>
           <div style={{ display: 'flex', marginBottom: '2px' }}>
             <span style={{ width: '85px', fontWeight: '600', color: '#444' }}>Class</span>
@@ -937,16 +941,8 @@ const PrintReceipt = () => {
             <span>: <strong>{paymentMode || 'Cash'}</strong></span>
           </div>
           <div style={{ display: 'flex', marginBottom: '2px' }}>
-            <span style={{ width: '85px', fontWeight: '600', color: '#444' }}>Transaction ID</span>
-            <span>: <strong>{transactionId || '-'}</strong></span>
-          </div>
-          <div style={{ display: 'flex', marginBottom: '2px' }}>
-            <span style={{ width: '85px', fontWeight: '600', color: '#444' }}>Receipt No</span>
-            <span>: <strong>{receiptNo}</strong></span>
-          </div>
-          <div style={{ display: 'flex', marginBottom: '2px' }}>
-            <span style={{ width: '85px', fontWeight: '600', color: '#444' }}>Branch</span>
-            <span>: {selectedBranch?.name || school?.name || '-'}</span>
+            <span style={{ width: '85px', fontWeight: '600', color: '#444' }}>Academic Year</span>
+            <span>: {currentSessionName || '-'}</span>
           </div>
         </div>
       </div>
@@ -973,9 +969,9 @@ const PrintReceipt = () => {
               const previousPaid = Math.max(0, totalPaidToDate - Number(item.amount || 0));
               const netAmount = Number(item.totalAmount || 0) - previousPaid;
               return (
-                <tr key={idx}>
-                  <td style={{ border: '1px solid #888', padding: '3px 4px', textAlign: 'center' }}>{idx + 1}</td>
-                  <td style={{ border: '1px solid #888', padding: '3px 4px' }}>{item.description}</td>
+                <tr key={idx} style={{ backgroundColor: '#fef9e7' }}>
+                  <td style={{ border: '1px solid #888', padding: '3px 4px', textAlign: 'center', fontWeight: 'bold' }}>{idx + 1}</td>
+                  <td style={{ border: '1px solid #888', padding: '3px 4px', fontWeight: '600', color: '#1565c0' }}>{item.description}</td>
                   <td style={{ border: '1px solid #888', padding: '3px 4px', textAlign: 'right' }}>{Number(item.totalAmount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                   {showPrevPaid && <td style={{ border: '1px solid #888', padding: '3px 4px', textAlign: 'right' }}>{previousPaid > 0 ? previousPaid.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : ''}</td>}
                   <td style={{ border: '1px solid #888', padding: '3px 4px', textAlign: 'right' }}>{netAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
@@ -1119,7 +1115,7 @@ const PrintReceipt = () => {
         <div className='flex items-center gap-2'>
           {/* Paper Info */}
           <span className='px-3 py-1 rounded text-sm font-medium bg-blue-100 text-blue-800'>
-            A4 Portrait (2 A5 Copies)
+            A5 Landscape
           </span>
           <span className={`px-3 py-1 rounded text-sm font-medium ${isOriginal ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}>
             {isOriginal ? '🆕 Original Receipt' : '🔄 Reprint'}
@@ -1130,57 +1126,62 @@ const PrintReceipt = () => {
         </div>
       </div>
 
-      {/* Receipt Preview */}
+      {/* Receipt Preview - A5 Landscape */}
       <div className='p-4 print:p-0'>
-        <div style={{ maxWidth: '210mm', margin: '0 auto' }} className='bg-white shadow-lg print:shadow-none'>
-          {/* A4 Portrait Layout: 2 A5 Landscape receipts stacked vertically */}
-          <div style={{ 
-            display: 'flex', 
-            flexDirection: 'column',
-            width: '100%',
-            minHeight: '290mm',
-            padding: '2mm'
+        <div style={{ width: '210mm', height: '148mm', margin: '0 auto', overflow: 'hidden' }} className='bg-white shadow-lg print:shadow-none print-container'>
+          {/* A5 Landscape Layout: Single Receipt */}
+          <div className="receipt-inner" style={{ 
+            width: '210mm',
+            height: '148mm',
+            padding: '2mm',
+            boxSizing: 'border-box',
+            overflow: 'hidden'
           }}>
-            {/* Top - Student Copy (A5 Landscape) */}
-            <div style={{ 
-              height: '142mm',
-              boxSizing: 'border-box',
-              overflow: 'hidden'
-            }}>
-              <Receipt copyType="STUDENT COPY" />
-            </div>
-            
-            {/* Scissors Cut Line */}
-            <div style={{ 
-              display: 'flex', 
-              alignItems: 'center', 
-              justifyContent: 'center',
-              height: '6mm',
-              margin: '1mm 0'
-            }}>
-              <div style={{ flex: 1, borderTop: '1px dashed #666' }}></div>
-              <span style={{ padding: '0 8px', fontSize: '14px', color: '#666' }}>✂</span>
-              <div style={{ flex: 1, borderTop: '1px dashed #666' }}></div>
-            </div>
-            
-            {/* Bottom - Office Copy (A5 Landscape) */}
-            <div style={{ 
-              height: '142mm',
-              boxSizing: 'border-box',
-              overflow: 'hidden'
-            }}>
-              <Receipt copyType="OFFICE COPY" />
-            </div>
+            <Receipt copyType="RECEIPT" />
           </div>
         </div>
       </div>
 
-      {/* Dynamic Print Styles - A4 Portrait */}
+      {/* Dynamic Print Styles - A5 Landscape */}
       <style>{`
         @media print {
-          @page { size: A4 portrait; margin: 3mm; }
-          body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+          @page { 
+            size: 210mm 148mm; 
+            margin: 0; 
+          }
+          html, body { 
+            width: 210mm !important;
+            height: 148mm !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            overflow: hidden !important;
+            -webkit-print-color-adjust: exact !important; 
+            print-color-adjust: exact !important; 
+          }
           .print\\:hidden { display: none !important; }
+          .min-h-screen { min-height: unset !important; }
+          .p-4 { padding: 0 !important; }
+          .print-container {
+            width: 210mm !important;
+            height: 148mm !important;
+            max-width: 210mm !important;
+            max-height: 148mm !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            box-shadow: none !important;
+            overflow: hidden !important;
+          }
+          .receipt-inner {
+            transform: scale(0.88);
+            transform-origin: top left;
+            width: 238mm !important;
+            height: 168mm !important;
+          }
+        }
+        @media screen {
+          .receipt-inner {
+            transform: scale(1);
+          }
         }
       `}</style>
     </div>

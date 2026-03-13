@@ -92,7 +92,7 @@ const EvaluationSessions = () => {
 
   // Filter sessions by search
   const filteredSessions = sessions.filter(session =>
-    session.session_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    session.evaluation_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
     session.exam_name?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
@@ -188,7 +188,7 @@ const EvaluationSessions = () => {
                   onClick={() => navigate(`/super-admin/ai-evaluation/sessions/${session.id}`)}
                 >
                   <td className="px-4 py-3">
-                    <p className="text-white font-medium">{session.session_name}</p>
+                    <p className="text-white font-medium">{session.evaluation_name}</p>
                   </td>
                   <td className="px-4 py-3 text-gray-400">{session.exam_name || '-'}</td>
                   <td className="px-4 py-3 text-gray-400">{session.classes?.name || '-'}</td>

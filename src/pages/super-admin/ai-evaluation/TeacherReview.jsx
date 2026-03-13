@@ -352,7 +352,7 @@ const TeacherReview = () => {
           >
             <option value="">All Sessions</option>
             {sessions.map(session => (
-              <option key={session.id} value={session.id}>{session.session_name}</option>
+              <option key={session.id} value={session.id}>{session.evaluation_name}</option>
             ))}
           </select>
           
@@ -433,7 +433,7 @@ const TeacherReview = () => {
                     </div>
                   </td>
                   <td className="px-6 py-4">
-                    <p className="text-white text-sm">{paper.session_name || '-'}</p>
+                    <p className="text-white text-sm">{paper.evaluation_name || '-'}</p>
                     <p className="text-gray-400 text-xs">{formatDate(paper.evaluated_at)}</p>
                   </td>
                   <td className="px-6 py-4 text-center">

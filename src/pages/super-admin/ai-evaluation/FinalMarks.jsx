@@ -207,7 +207,7 @@ const FinalMarks = () => {
               <option value="">-- Select Evaluation Session --</option>
               {sessions.map(session => (
                 <option key={session.id} value={session.id}>
-                  {session.session_name} ({formatDate(session.created_at)})
+                  {session.evaluation_name} ({formatDate(session.created_at)})
                 </option>
               ))}
             </select>

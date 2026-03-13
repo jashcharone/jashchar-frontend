@@ -59,6 +59,7 @@ const apiCall = async (endpoint, method = 'GET', body = null) => {
     }
     if (context.branchId) {
       options.headers['x-branch-id'] = context.branchId;
+      options.headers['x-school-id'] = context.branchId;
     }
     if (context.sessionId) {
       options.headers['x-session-id'] = context.sessionId;

@@ -18,7 +18,7 @@ import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { useBranch } from '@/contexts/BranchContext';
 import { useToast } from '@/components/ui/use-toast';
 import { Button } from '@/components/ui/button';
-import { Printer, Loader2, ArrowLeft, Building2, Bus, CreditCard, RotateCcw } from 'lucide-react';
+import { Printer, Loader2, ArrowLeft, Building2, Bus, CreditCard, RotateCcw, Receipt } from 'lucide-react';
 import { format } from 'date-fns';
 
 // Receipt type configurations
@@ -50,6 +50,13 @@ const RECEIPT_CONFIG = {
     icon: RotateCcw,
     color: 'bg-orange-600',
     idField: 'refundId'
+  },
+  combined: {
+    title: 'FEE RECEIPT',
+    table: 'combined',
+    icon: Receipt,
+    color: 'bg-indigo-600',
+    idField: 'paymentId'
   }
 };
 
@@ -586,11 +593,263 @@ const PrintReceipt = () => {
   }, [paymentId, branchId]);
 
   // =====================================
+  // COMBINED RECEIPT (Academic + Transport + Hostel)
+  // =====================================
+
+  const fetchCombinedReceipt = useCallback(async () => {
+    // Get IDs from query params: ?fees=id1&transport=id2&hostel=id3
+    const feesId = searchParams.get('fees');
+    const transportId = searchParams.get('transport');
+    const hostelId = searchParams.get('hostel');
+
+    let student = null;
+    let allLineItems = [];
+    let totalPaid = 0;
+    let totalDiscount = 0;
+    let totalFine = 0;
+    let overallTotalAmount = 0;
+    let overallBalance = 0;
+    let transactionId = null;
+    let receiptDate = null;
+    let paymentMode = 'Cash';
+    let allPayments = [];
+    let extraInfo = { type: 'combined', sections: [] };
+    let feeStatement = [];
+
+    // 1. FETCH ACADEMIC FEE PAYMENT
+    if (feesId) {
+      const { data: feePayment, error: feeError } = await supabase
+        .from('fee_payments')
+        .select('*')
+        .eq('id', feesId)
+        .eq('branch_id', branchId)
+        .single();
+
+      if (!feeError && feePayment) {
+        allPayments.push(feePayment);
+        transactionId = feePayment.transaction_id;
+        receiptDate = feePayment.created_at || feePayment.payment_date;
+        paymentMode = feePayment.payment_mode || 'Cash';
+
+        // Fetch student if not yet fetched
+        if (!student) {
+          const { data: studentData } = await supabase
+            .from('student_profiles')
+            .select('*, classes!student_profiles_class_id_fkey(name), sections!student_profiles_section_id_fkey(name)')
+            .eq('id', feePayment.student_id)
+            .eq('branch_id', branchId)
+            .maybeSingle();
+          student = studentData ? { ...studentData, class: studentData.classes, section: studentData.sections } : null;
+        }
+
+        // Use snapshot if available
+        if (feePayment.receipt_snapshot?.lineItems) {
+          const snap = feePayment.receipt_snapshot;
+          snap.lineItems.forEach(item => {
+            allLineItems.push({
+              ...item,
+              category: 'Academic Fee'
+            });
+          });
+          totalPaid += snap.totalPaid || snap.grandTotal || 0;
+          totalDiscount += snap.totalDiscount || 0;
+          totalFine += snap.totalFine || 0;
+          overallTotalAmount += snap.overallTotalAmount || 0;
+          overallBalance += snap.overallBalance || 0;
+          if (snap.feeStatement) feeStatement = snap.feeStatement;
+        } else {
+          // Fetch ledger for academic totals
+          const { data: ledgerEntries } = await supabase
+            .from('student_fee_ledger')
+            .select('id, fee_type_id, net_amount, discount_amount, balance, fee_types:fee_type_id(name)')
+            .eq('student_id', feePayment.student_id)
+            .eq('branch_id', branchId);
+
+          if (ledgerEntries?.length > 0) {
+            // Build fee statement
+            feeStatement = ledgerEntries.map(entry => {
+              const amount = Number(entry.net_amount || 0);
+              const balance = Number(entry.balance || 0);
+              const paid = Math.max(0, amount - balance);
+              return {
+                name: entry.fee_types?.name || 'Fee',
+                amount,
+                paid,
+                balance,
+                status: balance <= 0 ? 'Paid' : (paid > 0 ? 'Partial' : 'Unpaid')
+              };
+            }).filter(f => f.amount > 0);
+
+            // Find matching ledger entry for this payment
+            const matchingLedger = ledgerEntries.find(l => l.id === feePayment.ledger_id);
+            const feeName = matchingLedger?.fee_types?.name || 'Academic Fee';
+            
+            allLineItems.push({
+              description: feeName,
+              amount: Number(feePayment.amount || 0),
+              totalAmount: Number(matchingLedger?.net_amount || feePayment.amount || 0),
+              balance: Number(feePayment.balance_after_payment || matchingLedger?.balance || 0),
+              discount: Number(feePayment.discount_amount || 0),
+              fine: Number(feePayment.fine_paid || 0),
+              category: 'Academic Fee'
+            });
+
+            totalPaid += Number(feePayment.amount || 0);
+            totalDiscount += Number(feePayment.discount_amount || 0);
+            totalFine += Number(feePayment.fine_paid || 0);
+            overallTotalAmount += Number(matchingLedger?.net_amount || feePayment.amount || 0);
+            overallBalance += Number(feePayment.balance_after_payment || matchingLedger?.balance || 0);
+          }
+        }
+        extraInfo.sections.push('Academic');
+      }
+    }
+
+    // 2. FETCH TRANSPORT FEE PAYMENT
+    if (transportId) {
+      const { data: transportPayment, error: transportError } = await supabase
+        .from('transport_fee_payments')
+        .select('*')
+        .eq('id', transportId)
+        .eq('branch_id', branchId)
+        .single();
+
+      if (!transportError && transportPayment) {
+        allPayments.push(transportPayment);
+        if (!transactionId) transactionId = transportPayment.transaction_id;
+        if (!receiptDate) receiptDate = transportPayment.created_at || transportPayment.payment_date;
+        if (paymentMode === 'Cash') paymentMode = transportPayment.payment_mode || 'Cash';
+
+        // Fetch student if not yet fetched
+        if (!student) {
+          const { data: studentData } = await supabase
+            .from('student_profiles')
+            .select('*, classes!student_profiles_class_id_fkey(name), sections!student_profiles_section_id_fkey(name)')
+            .eq('id', transportPayment.student_id)
+            .eq('branch_id', branchId)
+            .maybeSingle();
+          student = studentData ? { ...studentData, class: studentData.classes, section: studentData.sections } : null;
+        }
+
+        // Fetch transport details
+        const { data: transportDetails } = await supabase
+          .from('student_transport_details')
+          .select('*, route:transport_route_id(route_title, fare), pickup_point:transport_pickup_point_id(name)')
+          .eq('student_id', transportPayment.student_id)
+          .eq('branch_id', branchId)
+          .maybeSingle();
+
+        const routeName = transportDetails?.route?.route_title || 'Transport';
+        const routeFare = Number(transportDetails?.route?.fare || transportPayment.total_amount || transportPayment.amount || 0);
+
+        allLineItems.push({
+          description: `Transport - ${routeName}${transportPayment.month ? ` (${transportPayment.month})` : ''}`,
+          amount: Number(transportPayment.amount || 0),
+          totalAmount: routeFare,
+          balance: Number(transportPayment.balance_after_payment || 0),
+          discount: 0,
+          fine: Number(transportPayment.fine_paid || 0),
+          category: 'Transport Fee'
+        });
+
+        totalPaid += Number(transportPayment.amount || 0);
+        totalFine += Number(transportPayment.fine_paid || 0);
+        overallTotalAmount += routeFare;
+        overallBalance += Number(transportPayment.balance_after_payment || 0);
+
+        extraInfo.route = routeName;
+        extraInfo.pickupPoint = transportDetails?.pickup_point?.name || '-';
+        extraInfo.sections.push('Transport');
+      }
+    }
+
+    // 3. FETCH HOSTEL FEE PAYMENT
+    if (hostelId) {
+      const { data: hostelPayment, error: hostelError } = await supabase
+        .from('hostel_fee_payments')
+        .select('*')
+        .eq('id', hostelId)
+        .eq('branch_id', branchId)
+        .single();
+
+      if (!hostelError && hostelPayment) {
+        allPayments.push(hostelPayment);
+        if (!transactionId) transactionId = hostelPayment.transaction_id;
+        if (!receiptDate) receiptDate = hostelPayment.created_at || hostelPayment.payment_date;
+        if (paymentMode === 'Cash') paymentMode = hostelPayment.payment_mode || 'Cash';
+
+        // Fetch student if not yet fetched
+        if (!student) {
+          const { data: studentData } = await supabase
+            .from('student_profiles')
+            .select('*, classes!student_profiles_class_id_fkey(name), sections!student_profiles_section_id_fkey(name)')
+            .eq('id', hostelPayment.student_id)
+            .eq('branch_id', branchId)
+            .maybeSingle();
+          student = studentData ? { ...studentData, class: studentData.classes, section: studentData.sections } : null;
+        }
+
+        // Fetch hostel details
+        const { data: hostelDetails } = await supabase
+          .from('student_hostel_details')
+          .select('*, room:room_id(room_number_name)')
+          .eq('student_id', hostelPayment.student_id)
+          .eq('branch_id', branchId)
+          .maybeSingle();
+
+        allLineItems.push({
+          description: `Hostel Fee${hostelPayment.month ? ` - ${hostelPayment.month}` : ''}`,
+          amount: Number(hostelPayment.amount || 0),
+          totalAmount: Number(hostelPayment.total_amount || hostelPayment.amount || 0),
+          balance: Number(hostelPayment.balance_after_payment || 0),
+          discount: 0,
+          fine: Number(hostelPayment.fine_paid || 0),
+          category: 'Hostel Fee'
+        });
+
+        totalPaid += Number(hostelPayment.amount || 0);
+        totalFine += Number(hostelPayment.fine_paid || 0);
+        overallTotalAmount += Number(hostelPayment.total_amount || hostelPayment.amount || 0);
+        overallBalance += Number(hostelPayment.balance_after_payment || 0);
+
+        extraInfo.roomNo = hostelDetails?.room?.room_number_name || hostelDetails?.room_number || '-';
+        extraInfo.bedNo = hostelDetails?.bed_number || '-';
+        extraInfo.sections.push('Hostel');
+      }
+    }
+
+    if (!student) throw new Error('No valid payments found');
+
+    // Check printed status
+    const anyPrinted = allPayments.some(p => p.printed_at);
+    setIsOriginal(!anyPrinted);
+
+    return {
+      student,
+      payments: allPayments,
+      lineItems: allLineItems,
+      feeStatement,
+      totalPaid,
+      totalDiscount,
+      totalFine,
+      grandTotal: totalPaid,
+      overallTotalAmount,
+      overallBalance,
+      transactionId,
+      receiptDate,
+      paymentMode,
+      remarks: allPayments[0]?.remarks || '',
+      extraInfo,
+      isCombined: true
+    };
+  }, [branchId, searchParams]);
+
+  // =====================================
   // MAIN FETCH
   // =====================================
 
   const fetchAllDetails = useCallback(async () => {
-    if (!paymentId || !branchId) {
+    if ((!paymentId && receiptType !== 'combined') || !branchId) {
       setLoading(false);
       return;
     }
@@ -607,6 +866,9 @@ const PrintReceipt = () => {
           break;
         case 'refund':
           data = await fetchRefundReceipt();
+          break;
+        case 'combined':
+          data = await fetchCombinedReceipt();
           break;
         case 'fees':
         default:
@@ -676,7 +938,7 @@ const PrintReceipt = () => {
     } finally {
       setLoading(false);
     }
-  }, [paymentId, branchId, receiptType, selectedBranch, fetchFeesReceipt, fetchHostelReceipt, fetchTransportReceipt, fetchRefundReceipt, toast]);
+  }, [paymentId, branchId, receiptType, selectedBranch, fetchFeesReceipt, fetchHostelReceipt, fetchTransportReceipt, fetchRefundReceipt, fetchCombinedReceipt, toast]);
 
   useEffect(() => {
     if (selectedBranch) fetchAllDetails();
@@ -821,9 +1083,8 @@ const PrintReceipt = () => {
   });
   const Receipt = ({ copyType }) => (
     <div style={{ 
-      width: '100%', 
-      height: '100%',
-      maxHeight: '144mm',
+      width: '200mm', 
+      height: '140mm',
       padding: '0',
       boxSizing: 'border-box',
       pageBreakInside: 'avoid',
@@ -831,8 +1092,8 @@ const PrintReceipt = () => {
       backgroundColor: '#fff',
       color: '#000',
       fontFamily: 'Arial, Helvetica, sans-serif',
-      border: '2px solid #333',
-      borderRadius: '4px',
+      border: '1px solid #333',
+      borderRadius: '3px',
       overflow: 'hidden'
     }}>
 
@@ -864,17 +1125,8 @@ const PrintReceipt = () => {
                 </p>
               )}
             </div>
-            {/* Copy Type Label */}
-            <div style={{ width: '90px', textAlign: 'right', flexShrink: 0 }}>
-              <div style={{ 
-                fontSize: '9px', 
-                fontWeight: 'bold', 
-                color: '#fff', 
-                backgroundColor: '#333',
-                padding: '3px 6px',
-                borderRadius: '3px',
-                textTransform: 'uppercase'
-              }}>{copyType}</div>
+            {/* Address Info */}
+            <div style={{ width: '140px', textAlign: 'right', flexShrink: 0, fontSize: '8px', color: '#333' }}>
             </div>
           </div>
         </div>
@@ -883,10 +1135,19 @@ const PrintReceipt = () => {
       {/* ===== FEE RECEIPT TITLE ===== */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 10px', borderBottom: '1px solid #999', backgroundColor: '#1a237e', color: '#fff' }}>
         <span style={{ fontSize: '9px', fontWeight: 'bold', color: '#fff', backgroundColor: '#4caf50', padding: '3px 10px', borderRadius: '3px' }}>Receipt No: {transactionId?.split('/').pop() || receiptNo}</span>
-        <div style={{ textAlign: 'center' }}>
+        <div style={{ textAlign: 'center', display: 'flex', alignItems: 'center', gap: '10px' }}>
           <span style={{ fontSize: '18px', fontWeight: 'bold', letterSpacing: '4px', textTransform: 'uppercase', color: '#fff' }}>{config.title}</span>
-          {!isOriginal && <span style={{ fontSize: '9px', color: '#ffeb3b', marginLeft: '10px', fontWeight: 'bold', backgroundColor: '#c62828', padding: '3px 8px', borderRadius: '3px' }}>REPRINT</span>}
-          {isOriginal && <span style={{ fontSize: '9px', color: '#1a237e', marginLeft: '10px', fontWeight: 'bold', backgroundColor: '#4caf50', padding: '3px 8px', borderRadius: '3px' }}>ORIGINAL</span>}
+          {!isOriginal && <span style={{ fontSize: '9px', color: '#ffeb3b', fontWeight: 'bold', backgroundColor: '#c62828', padding: '3px 8px', borderRadius: '3px' }}>REPRINT</span>}
+          {/* Copy Type Label */}
+          <span style={{ 
+            fontSize: '9px', 
+            fontWeight: 'bold', 
+            color: '#fff', 
+            backgroundColor: copyType === 'OFFICE COPY' ? '#d32f2f' : copyType === 'STUDENT COPY' ? '#2196f3' : '#388e3c',
+            padding: '3px 8px',
+            borderRadius: '3px',
+            textTransform: 'uppercase'
+          }}>{copyType}</span>
         </div>
         <span style={{ fontSize: '9px', fontWeight: 'bold', color: '#1a237e', backgroundColor: '#ffeb3b', padding: '3px 10px', borderRadius: '3px' }}>Transaction ID: {transactionId || '-'}</span>
       </div>
@@ -906,10 +1167,6 @@ const PrintReceipt = () => {
           <div style={{ display: 'flex', marginBottom: '2px' }}>
             <span style={{ width: '85px', fontWeight: '600', color: '#444' }}>Admission No</span>
             <span>: {student?.school_code || student?.admission_no || '-'}</span>
-          </div>
-          <div style={{ display: 'flex', marginBottom: '2px' }}>
-            <span style={{ width: '85px', fontWeight: '600', color: '#444' }}>Class</span>
-            <span>: {student?.class?.name || '-'}{student?.section?.name ? ` (${student.section.name})` : ''}</span>
           </div>
           {extraInfo?.type === 'hostel' && (
             <div style={{ display: 'flex', marginBottom: '2px' }}>
@@ -943,6 +1200,10 @@ const PrintReceipt = () => {
           <div style={{ display: 'flex', marginBottom: '2px' }}>
             <span style={{ width: '85px', fontWeight: '600', color: '#444' }}>Academic Year</span>
             <span>: {currentSessionName || '-'}</span>
+          </div>
+          <div style={{ display: 'flex', marginBottom: '2px' }}>
+            <span style={{ width: '85px', fontWeight: '600', color: '#444' }}>Class</span>
+            <span>: {student?.class?.name || '-'}{student?.section?.name ? ` (${student.section.name})` : ''}</span>
           </div>
         </div>
       </div>
@@ -1105,6 +1366,12 @@ const PrintReceipt = () => {
   if (receiptCopySettings.bank_copy) copiesToPrint.push('BANK COPY');
   if (copiesToPrint.length === 0) copiesToPrint.push('RECEIPT');
 
+  // Group copies into pairs for A4 pages (2 receipts per page)
+  const receiptPages = [];
+  for (let i = 0; i < copiesToPrint.length; i += 2) {
+    receiptPages.push(copiesToPrint.slice(i, i + 2));
+  }
+
   return (
     <div className='min-h-screen bg-gray-100'>
       {/* Print Button - Hidden when printing */}
@@ -1115,7 +1382,7 @@ const PrintReceipt = () => {
         <div className='flex items-center gap-2'>
           {/* Paper Info */}
           <span className='px-3 py-1 rounded text-sm font-medium bg-blue-100 text-blue-800'>
-            A5 Landscape
+            A4 Portrait (2 Receipts)
           </span>
           <span className={`px-3 py-1 rounded text-sm font-medium ${isOriginal ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}>
             {isOriginal ? '🆕 Original Receipt' : '🔄 Reprint'}
@@ -1126,61 +1393,85 @@ const PrintReceipt = () => {
         </div>
       </div>
 
-      {/* Receipt Preview - A5 Landscape */}
+      {/* Receipt Preview - A4 Portrait with 2 A5 Landscape receipts */}
       <div className='p-4 print:p-0'>
-        <div style={{ width: '210mm', height: '148mm', margin: '0 auto', overflow: 'hidden' }} className='bg-white shadow-lg print:shadow-none print-container'>
-          {/* A5 Landscape Layout: Single Receipt */}
-          <div className="receipt-inner" style={{ 
-            width: '210mm',
-            height: '148mm',
-            padding: '2mm',
-            boxSizing: 'border-box',
-            overflow: 'hidden'
-          }}>
-            <Receipt copyType="RECEIPT" />
+        {receiptPages.map((pageCopies, pageIndex) => (
+          <div 
+            key={pageIndex}
+            className='a4-page bg-white shadow-lg print:shadow-none'
+            style={{ 
+              width: '210mm', 
+              height: '297mm', 
+              margin: pageIndex === 0 ? '0 auto' : '20px auto 0',
+              padding: '0',
+              boxSizing: 'border-box',
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'flex-start',
+              pageBreakAfter: pageIndex < receiptPages.length - 1 ? 'always' : 'auto'
+            }}
+          >
+            {pageCopies.map((copyType, copyIndex) => (
+              <div 
+                key={copyType}
+                className='receipt-half'
+                style={{ 
+                  width: '210mm', 
+                  height: '145mm',
+                  borderBottom: copyIndex === 0 && pageCopies.length > 1 ? '1px dashed #aaa' : 'none',
+                  boxSizing: 'border-box',
+                  overflow: 'hidden',
+                  display: 'flex',
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  padding: '2mm 4mm'
+                }}
+              >
+                <Receipt copyType={copyType} />
+              </div>
+            ))}
+            {/* Fill empty space if only 1 receipt on this page */}
+            {pageCopies.length === 1 && (
+              <div style={{ width: '210mm', height: '145mm', boxSizing: 'border-box' }}></div>
+            )}
           </div>
-        </div>
+        ))}
       </div>
 
-      {/* Dynamic Print Styles - A5 Landscape */}
+      {/* Dynamic Print Styles - A4 Portrait with 2 A5 Landscape receipts */}
       <style>{`
         @media print {
           @page { 
-            size: 210mm 148mm; 
-            margin: 0; 
+            size: A4 portrait; 
+            margin: 3mm 5mm; 
           }
           html, body { 
             width: 210mm !important;
-            height: 148mm !important;
+            height: 297mm !important;
             margin: 0 !important;
             padding: 0 !important;
-            overflow: hidden !important;
             -webkit-print-color-adjust: exact !important; 
             print-color-adjust: exact !important; 
           }
           .print\\:hidden { display: none !important; }
           .min-h-screen { min-height: unset !important; }
           .p-4 { padding: 0 !important; }
-          .print-container {
-            width: 210mm !important;
-            height: 148mm !important;
-            max-width: 210mm !important;
-            max-height: 148mm !important;
-            margin: 0 !important;
+          .a4-page {
+            width: 200mm !important;
+            height: 291mm !important;
+            margin: 0 auto !important;
             padding: 0 !important;
             box-shadow: none !important;
-            overflow: hidden !important;
+            page-break-after: always;
+            page-break-inside: avoid !important;
           }
-          .receipt-inner {
-            transform: scale(0.88);
-            transform-origin: top left;
-            width: 238mm !important;
-            height: 168mm !important;
+          .a4-page:last-child {
+            page-break-after: auto;
           }
-        }
-        @media screen {
-          .receipt-inner {
-            transform: scale(1);
+          .receipt-half {
+            width: 200mm !important;
+            height: 145mm !important;
+            page-break-inside: avoid !important;
           }
         }
       `}</style>

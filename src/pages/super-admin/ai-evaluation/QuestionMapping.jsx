@@ -163,7 +163,7 @@ const QuestionMapping = () => {
               Question Mapping
             </h1>
             <p className="text-gray-400 mt-1">
-              {session?.session_name || 'Define questions and expected answers'}
+              {session?.evaluation_name || 'Define questions and expected answers'}
             </p>
           </div>
         </div>

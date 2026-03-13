@@ -9,9 +9,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent } from "@/components/ui/card";
-import { Edit, Trash2, Save, Loader2, Bed, IndianRupee, ArrowLeft } from 'lucide-react';
+import { Edit, Trash2, Save, Loader2, Bed, ArrowLeft } from 'lucide-react';
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger
@@ -31,24 +30,8 @@ const RoomTypes = () => {
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [formData, setFormData] = useState({
     name: '',
-    cost: '',
-    billing_cycle: 'monthly',
     description: ''
   });
-
-  // Billing Cycle Options for dropdown
-  const BILLING_CYCLE_OPTIONS = [
-    { value: 'monthly', label: 'Monthly', hint: 'Fee per month' },
-    { value: 'quarterly', label: 'Quarterly', hint: 'Fee per 3 months' },
-    { value: 'half_yearly', label: 'Half-Yearly', hint: 'Fee per 6 months' },
-    { value: 'annual', label: 'Annual', hint: 'Fee per year' },
-    { value: 'one_time', label: 'One-Time', hint: 'Single payment' }
-  ];
-
-  // Helper to get billing cycle label
-  const getBillingCycleLabel = (value) => {
-    return BILLING_CYCLE_OPTIONS.find(opt => opt.value === value)?.label || value;
-  };
 
   const branchId = selectedBranch?.id || user?.profile?.branch_id;
 
@@ -78,18 +61,16 @@ const RoomTypes = () => {
     setEditingRoomType(roomType);
     setFormData(roomType ? {
       name: roomType.name || '',
-      cost: roomType.cost || '',
-      billing_cycle: roomType.billing_cycle || 'monthly',
       description: roomType.description || ''
     } : {
-      name: '', cost: '', billing_cycle: 'monthly', description: ''
+      name: '', description: ''
     });
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleCancelEdit = () => {
     setEditingRoomType(null);
-    setFormData({ name: '', cost: '', billing_cycle: 'monthly', description: '' });
+    setFormData({ name: '', description: '' });
   };
 
   const handleSubmit = async (e) => {
@@ -108,8 +89,6 @@ const RoomTypes = () => {
 
     const payload = {
       name: formData.name.trim(),
-      cost: formData.cost ? parseFloat(formData.cost) : null,
-      billing_cycle: formData.billing_cycle || 'monthly',
       description: formData.description?.trim() || null,
       branch_id: branchId
     };
@@ -130,7 +109,7 @@ const RoomTypes = () => {
       toast({ title: 'Success!', description: `Room type successfully ${editingRoomType ? 'updated' : 'created'}.` });
       await fetchRoomTypes();
       setEditingRoomType(null);
-      setFormData({ name: '', cost: '', billing_cycle: 'monthly', description: '' });
+      setFormData({ name: '', description: '' });
     }
     setIsSubmitting(false);
   };
@@ -143,10 +122,6 @@ const RoomTypes = () => {
       toast({ title: 'Success!', description: 'Room type deleted successfully.' });
       await fetchRoomTypes();
     }
-  };
-
-  const formatCurrency = (amount) => {
-    return amount ? `₹${parseFloat(amount).toLocaleString('en-IN')}` : '-';
   };
 
   // Pagination
@@ -164,44 +139,20 @@ const RoomTypes = () => {
           </Button>
           <div>
             <h1 className="text-2xl font-bold">Room Types</h1>
-            <p className="text-sm text-muted-foreground">Manage hostel room types and pricing</p>
+            <p className="text-sm text-muted-foreground">Manage hostel room types (fees are configured in Fee Structures)</p>
           </div>
         </div>
 
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Card className="bg-gradient-to-r from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 border-blue-200 dark:border-blue-800">
-            <CardContent className="flex items-center p-4">
-              <Bed className="h-10 w-10 text-blue-600 mr-4" />
-              <div>
-                <p className="text-2xl font-bold text-blue-700">{roomTypes.length}</p>
-                <p className="text-sm text-blue-600">Total Room Types</p>
-              </div>
-            </CardContent>
-          </Card>
-          <Card className="bg-gradient-to-r from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20 border-green-200 dark:border-green-800">
-            <CardContent className="flex items-center p-4">
-              <IndianRupee className="h-10 w-10 text-green-600 mr-4" />
-              <div>
-                <p className="text-2xl font-bold text-green-700">
-                  {roomTypes.length > 0 ? formatCurrency(Math.min(...roomTypes.filter(r => r.cost).map(r => r.cost))) : '₹0'}
-                </p>
-                <p className="text-sm text-green-600">Lowest Cost</p>
-              </div>
-            </CardContent>
-          </Card>
-          <Card className="bg-gradient-to-r from-purple-50 to-purple-100 dark:from-purple-900/20 dark:to-purple-800/20 border-purple-200 dark:border-purple-800">
-            <CardContent className="flex items-center p-4">
-              <IndianRupee className="h-10 w-10 text-purple-600 mr-4" />
-              <div>
-                <p className="text-2xl font-bold text-purple-700">
-                  {roomTypes.length > 0 ? formatCurrency(Math.max(...roomTypes.filter(r => r.cost).map(r => r.cost))) : '₹0'}
-                </p>
-                <p className="text-sm text-purple-600">Highest Cost</p>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+        {/* Stats Card */}
+        <Card className="bg-gradient-to-r from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 border-blue-200 dark:border-blue-800 max-w-xs">
+          <CardContent className="flex items-center p-4">
+            <Bed className="h-10 w-10 text-blue-600 mr-4" />
+            <div>
+              <p className="text-2xl font-bold text-blue-700">{roomTypes.length}</p>
+              <p className="text-sm text-blue-600">Total Room Types</p>
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Main Content: Left Form + Right List */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -215,35 +166,6 @@ const RoomTypes = () => {
                 <div className="space-y-2">
                   <Label htmlFor="name">Room Type Name *</Label>
                   <Input id="name" value={formData.name} onChange={(e) => setFormData({...formData, name: e.target.value.replace(/[^a-zA-Z\s\-']/g, '')})} placeholder="e.g. Single Occupancy AC" />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="cost">Cost (₹) *</Label>
-                  <Input id="cost" type="number" min="0" step="0.01" value={formData.cost} onChange={(e) => setFormData({...formData, cost: e.target.value})} placeholder="e.g. 5000" />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="billing_cycle">Billing Cycle *</Label>
-                  <Select value={formData.billing_cycle} onValueChange={(v) => setFormData({...formData, billing_cycle: v})}>
-                    <SelectTrigger id="billing_cycle">
-                      <SelectValue placeholder="Select billing cycle" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {BILLING_CYCLE_OPTIONS.map(opt => (
-                        <SelectItem key={opt.value} value={opt.value}>
-                          <span className="font-medium">{opt.label}</span>
-                          <span className="text-xs text-muted-foreground ml-2">({opt.hint})</span>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <p className="text-xs text-muted-foreground">
-                    {formData.billing_cycle === 'monthly' && 'Cost will be charged every month'}
-                    {formData.billing_cycle === 'quarterly' && 'Cost will be charged every 3 months'}
-                    {formData.billing_cycle === 'half_yearly' && 'Cost will be charged every 6 months'}
-                    {formData.billing_cycle === 'annual' && 'Cost will be charged once per year'}
-                    {formData.billing_cycle === 'one_time' && 'One-time payment only'}
-                  </p>
                 </div>
 
                 <div className="space-y-2">
@@ -289,8 +211,6 @@ const RoomTypes = () => {
                       <TableRow className="bg-muted/50">
                         <TableHead className="w-[50px]">#</TableHead>
                         <TableHead>Room Type</TableHead>
-                        <TableHead className="text-right">Cost (₹)</TableHead>
-                        <TableHead>Billing Cycle</TableHead>
                         <TableHead>Description</TableHead>
                         <TableHead className="text-center">Action</TableHead>
                       </TableRow>
@@ -300,15 +220,7 @@ const RoomTypes = () => {
                         <TableRow key={roomType.id}>
                           <TableCell>{startIndex + index + 1}</TableCell>
                           <TableCell className="font-medium">{roomType.name}</TableCell>
-                          <TableCell className="text-right font-semibold text-green-600">
-                            {formatCurrency(roomType.cost)}
-                          </TableCell>
-                          <TableCell>
-                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
-                              {getBillingCycleLabel(roomType.billing_cycle)}
-                            </span>
-                          </TableCell>
-                          <TableCell className="max-w-[200px] truncate">{roomType.description || '-'}</TableCell>
+                          <TableCell className="max-w-[300px] truncate">{roomType.description || '-'}</TableCell>
                           <TableCell className="text-center space-x-2">
                             <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => handleOpenDialog(roomType)}>
                               <Edit className="h-4 w-4 text-blue-600" />

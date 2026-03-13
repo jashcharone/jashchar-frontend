@@ -240,7 +240,7 @@ const ReviewPaper = () => {
               Review: {paper.student_name || 'Unknown Student'}
             </h1>
             <p className="text-gray-400 text-sm">
-              Roll: {paper.roll_number || '-'} | Session: {paper.session_name}
+              Roll: {paper.roll_number || '-'} | Session: {paper.evaluation_name}
             </p>
           </div>
         </div>

@@ -155,7 +155,7 @@ const AIEvaluationProcess = () => {
             <Brain className="w-7 h-7 text-blue-400" />
             AI Evaluation
           </h1>
-          <p className="text-gray-400 mt-1">{session?.session_name || 'Processing answer papers'}</p>
+          <p className="text-gray-400 mt-1">{session?.evaluation_name || 'Processing answer papers'}</p>
         </div>
       </div>
 

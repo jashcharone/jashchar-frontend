@@ -204,17 +204,12 @@ const HostelFee = () => {
       const assigned = await fetchAssignedBeds(roomId, selectedStudent?.id);
       setAssignedBeds({ [roomId]: assigned });
       
-      // Get fee from room type (NOT from room.cost_per_bed)
-      // Room Type cost is the actual hostel fee shown to users
-      const roomTypeForFee = roomTypes.find(rt => rt.id === room.room_type_id);
-      const feeFromRoomType = roomTypeForFee?.cost || room.cost_per_bed || '';
-      
+      // Note: Hostel fee now comes from Fee Structures, not from room type
       setFormData(prev => ({
         ...prev,
         room_id: roomId,
         room_type_id: room.room_type_id || '',
-        bed_number: '',
-        hostel_fee: feeFromRoomType
+        bed_number: ''
       }));
     }
   };
@@ -224,9 +219,8 @@ const HostelFee = () => {
     if (roomType) {
       setFormData(prev => ({
         ...prev,
-        room_type_id: roomTypeId,
-        hostel_fee: roomType.cost || prev.hostel_fee,
-        billing_cycle: roomType.billing_cycle || 'monthly'
+        room_type_id: roomTypeId
+        // Note: Hostel fee now comes from Fee Structures, not from room type cost
       }));
     }
   };
@@ -457,7 +451,7 @@ const HostelFee = () => {
                       <SelectTrigger><SelectValue placeholder={formData.hostel_id ? "Select Room Type" : "First select hostel"} /></SelectTrigger>
                       <SelectContent>
                         {filteredRoomTypes.map(rt => (
-                          <SelectItem key={rt.id} value={rt.id}>{rt.name} - ₹{rt.cost || 0}</SelectItem>
+                          <SelectItem key={rt.id} value={rt.id}>{rt.name}</SelectItem>
                         ))}
                       </SelectContent>
                     </Select>

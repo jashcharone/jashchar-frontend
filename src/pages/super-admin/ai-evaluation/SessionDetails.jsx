@@ -202,7 +202,7 @@ const SessionDetails = () => {
           <div>
             <h1 className="text-2xl font-bold text-white flex items-center gap-3">
               <FileSearch className="w-7 h-7 text-blue-400" />
-              {session.session_name}
+              {session.evaluation_name}
             </h1>
             <div className="flex items-center gap-3 mt-2">
               {getStatusBadge(session.status)}

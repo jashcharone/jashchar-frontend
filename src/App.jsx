@@ -1450,6 +1450,7 @@ function App() {
             <Route path={ROUTES.SUPER_ADMIN.FEES_CARRY_FORWARD} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'accountant']}><FeesCarryForward /></ProtectedRoute>} />
             <Route path={ROUTES.SUPER_ADMIN.FEES_REMINDER} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'accountant', 'principal']}><FeesReminder /></ProtectedRoute>} />
             {/* 🧾 Unified Print Receipt - All types (fees, hostel, transport, refund) */}
+            <Route path="/super-admin/fees-collection/print-receipt/combined" element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'accountant']}><PrintReceipt /></ProtectedRoute>} />
             <Route path="/super-admin/fees-collection/print-receipt/:type/:paymentId" element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'accountant']}><PrintReceipt /></ProtectedRoute>} />
             <Route path={ROUTES.SUPER_ADMIN.QUICK_FEES} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'accountant']}><QuickFees /></ProtectedRoute>} />
             <Route path={ROUTES.SUPER_ADMIN.ONLINE_PAYMENT} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'accountant']}><OnlinePayment /></ProtectedRoute>} />
@@ -1674,6 +1675,7 @@ function App() {
             <Route path="/:roleSlug/fees-collection/online-payment" element={<StaffModuleRoute requiredModule="fees_collection"><OnlinePayment /></StaffModuleRoute>} />
             <Route path="/:roleSlug/fees-collection/student-fees/:studentId" element={<StaffModuleRoute requiredModule="fees_collection"><StudentFees /></StaffModuleRoute>} />
             {/* 🧾 Unified Print Receipt - Staff routes */}
+            <Route path="/:roleSlug/fees-collection/print-receipt/combined" element={<StaffModuleRoute><PrintReceipt /></StaffModuleRoute>} />
             <Route path="/:roleSlug/fees-collection/print-receipt/:type/:paymentId" element={<StaffModuleRoute><PrintReceipt /></StaffModuleRoute>} />
             {/* 🌟 Fee Dashboard (Simplified) */}
             <Route path="/:roleSlug/fees-collection/fee-dashboard" element={<StaffModuleRoute requiredModule="fees_collection"><FeeDashboard /></StaffModuleRoute>} />

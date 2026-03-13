@@ -302,11 +302,11 @@ const StudentTransportFees = () => {
       return;
     }
     
-    // If route is selected, pickup point is recommended
-    if (formData.transport_route_id && !formData.transport_pickup_point_id) {
-      toast({ variant: 'destructive', title: 'Pickup Point is required', description: 'Please select a pickup point for the selected route' });
-      return;
-    }
+    // Pickup point is optional - warn but don't block
+    // if (formData.transport_route_id && !formData.transport_pickup_point_id) {
+    //   toast({ variant: 'destructive', title: 'Pickup Point is required', description: 'Please select a pickup point for the selected route' });
+    //   return;
+    // }
 
     setIsSubmitting(true);
 

@@ -82,14 +82,16 @@ const CreateSession = () => {
       }
       
       try {
+        // Sections are linked via class_sections junction table
         const { data, error } = await supabase
-          .from('sections')
-          .select('id, name')
-          .eq('class_id', formData.class_id)
-          .order('name');
+          .from('class_sections')
+          .select('sections(id, name)')
+          .eq('class_id', formData.class_id);
         
         if (error) throw error;
-        setSections(data || []);
+        // Extract sections from nested response
+        const sectionsList = data?.map(cs => cs.sections).filter(Boolean) || [];
+        setSections(sectionsList);
       } catch (error) {
         console.error('Error fetching sections:', error);
       }
@@ -98,19 +100,20 @@ const CreateSession = () => {
     fetchSections();
   }, [formData.class_id]);
 
-  // Fetch subjects when class changes
+  // Fetch subjects (branch-level, not class-specific)
   useEffect(() => {
     const fetchSubjects = async () => {
-      if (!formData.class_id) {
+      if (!selectedBranch?.id) {
         setSubjects([]);
         return;
       }
       
       try {
+        // Subjects are at branch level
         const { data, error } = await supabase
           .from('subjects')
           .select('id, name')
-          .eq('class_id', formData.class_id)
+          .eq('branch_id', selectedBranch.id)
           .order('name');
         
         if (error) throw error;
@@ -121,7 +124,7 @@ const CreateSession = () => {
     };
     
     fetchSubjects();
-  }, [formData.class_id]);
+  }, [selectedBranch?.id]);
 
   // Fetch exams
   useEffect(() => {
@@ -198,19 +201,25 @@ const CreateSession = () => {
       
       const sessionName = formData.session_name || generateSessionName();
       
+      // Map frontend field names to backend expected names
       const response = await api.post('/ai-evaluation/sessions', {
-        ...formData,
-        session_name: sessionName,
-        session_id: currentSessionId,
+        evaluation_name: sessionName,
+        evaluation_code: formData.exam_name,
+        class_id: formData.class_id,
+        section_id: formData.section_id,
+        subject_id: formData.subject_id,
+        exam_date: formData.exam_date,
         total_marks: parseInt(formData.total_marks),
-        passing_marks: parseInt(formData.passing_marks)
+        passing_marks: parseInt(formData.passing_marks),
+        ocr_engine: formData.ocr_engine,
+        session_id: currentSessionId
       });
       
-      if (response.data?.success) {
+      if (response.success) {
         toast({ title: 'Evaluation session created successfully!' });
-        navigate(`/super-admin/ai-evaluation/sessions/${response.data.data.id}`);
+        navigate(`/super-admin/ai-evaluation/sessions/${response.data.id}`);
       } else {
-        throw new Error(response.data?.error || 'Failed to create session');
+        throw new Error(response.error || 'Failed to create session');
       }
     } catch (error) {
       console.error('Error creating session:', error);

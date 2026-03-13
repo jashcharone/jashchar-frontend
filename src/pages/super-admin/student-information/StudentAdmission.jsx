@@ -2072,25 +2072,15 @@ const StudentAdmission = () => {
     const selectedPoint = pickupPoints.find(p => p.pickup_point?.id === formData.transport_pickup_point_id);
     if (selectedPoint) {
       setFormData(prev => {
-        if (prev.transport_fee !== selectedPoint.monthly_fees || prev.pickup_time !== selectedPoint.pickup_time) {
-          return { ...prev, transport_fee: selectedPoint.monthly_fees, pickup_time: selectedPoint.pickup_time };
+        if (prev.pickup_time !== selectedPoint.pickup_time) {
+          return { ...prev, pickup_time: selectedPoint.pickup_time };
         }
         return prev;
       });
     }
   }, [formData.transport_pickup_point_id, pickupPoints]);
   
-  useEffect(() => {
-    const selectedRoomType = hostelRoomTypes.find(rt => rt.id === formData.hostel_room_type);
-    if (selectedRoomType) {
-      setFormData(prev => {
-        if (prev.hostel_fee !== selectedRoomType.cost) {
-          return { ...prev, hostel_fee: selectedRoomType.cost };
-        }
-        return prev;
-      });
-    }
-  }, [formData.hostel_room_type, hostelRoomTypes]);
+  // Note: Hostel fee now comes from Fee Structures, not from room type cost
 
   // Track previous hostel and room type values to prevent unnecessary resets
   const prevHostelIdRef = useRef(formData.hostel_id);
@@ -2952,7 +2942,7 @@ const StudentAdmission = () => {
                             </SelectTrigger>
                             <SelectContent>
                               {(filteredRoomTypes.length > 0 ? filteredRoomTypes : hostelRoomTypes).map(rt => (
-                                <SelectItem key={rt.id} value={rt.id}>{rt.name} - ₹{rt.cost}/month</SelectItem>
+                                <SelectItem key={rt.id} value={rt.id}>{rt.name}</SelectItem>
                               ))}
                             </SelectContent>
                           </Select>

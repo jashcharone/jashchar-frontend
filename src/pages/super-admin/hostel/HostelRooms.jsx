@@ -109,11 +109,10 @@ const HostelRooms = () => {
   };
 
   const handleRoomTypeSelect = (roomTypeId) => {
-    const roomType = roomTypes.find(rt => rt.id === roomTypeId);
+    // Note: Hostel fees now come from Fee Structures, not from room type cost
     setFormData({
       ...formData,
-      room_type_id: roomTypeId,
-      cost_per_bed: roomType?.cost || formData.cost_per_bed
+      room_type_id: roomTypeId
     });
   };
 
@@ -274,7 +273,7 @@ const HostelRooms = () => {
                     <SelectContent>
                       {roomTypes.map(rt => (
                         <SelectItem key={rt.id} value={rt.id}>
-                          {rt.name} (₹{rt.cost || 0})
+                          {rt.name}
                         </SelectItem>
                       ))}
                     </SelectContent>

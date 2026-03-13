@@ -74,44 +74,53 @@ const Template12_NeoBrutalist = ({ receiptData, copyType }) => {
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '8.5px', fontWeight: '700' }}>
           <thead>
             <tr style={{ backgroundColor: '#000', color: '#ffe066' }}>
-              <th style={{ padding: '4px 5px', textAlign: 'center', width: '28px', borderRight: '2px solid #ffe066' }}>#</th>
-              <th style={{ padding: '4px 5px', textAlign: 'left', borderRight: '2px solid #ffe066', textTransform: 'uppercase' }}>Particulars</th>
-              <th style={{ padding: '4px 5px', textAlign: 'right', width: '70px', borderRight: '2px solid #ffe066' }}>TOTAL</th>
-              {showConcession && <th style={{ padding: '4px 5px', textAlign: 'right', width: '62px', borderRight: '2px solid #ffe066' }}>DISC.</th>}
-              <th style={{ padding: '4px 5px', textAlign: 'right', width: '62px', borderRight: '2px solid #ffe066' }}>PAID</th>
-              <th style={{ padding: '4px 5px', textAlign: 'right', width: '55px' }}>BAL.</th>
+              <th style={{ padding: '4px 5px', textAlign: 'left', borderRight: '2px solid #ffe066', textTransform: 'uppercase' }}>WHAT</th>
+              <th style={{ padding: '4px 5px', textAlign: 'right', width: '120px' }}>HOW MUCH</th>
             </tr>
           </thead>
           <tbody>
             {lineItems.map((item, idx) => (
               <tr key={idx} style={{ borderBottom: '2px solid #000', backgroundColor: idx % 2 === 0 ? '#fff' : '#ffe066' }}>
-                <td style={{ padding: '3px 5px', textAlign: 'center', borderRight: '2px solid #000' }}>{idx + 1}</td>
-                <td style={{ padding: '3px 5px', borderRight: '2px solid #000', textTransform: 'uppercase' }}>{item.description}</td>
-                <td style={{ padding: '3px 5px', textAlign: 'right', borderRight: '2px solid #000' }}>{fmt(item.totalAmount)}</td>
-                {showConcession && <td style={{ padding: '3px 5px', textAlign: 'right', borderRight: '2px solid #000' }}>{Number(item.discount || 0) > 0 ? fmt(item.discount) : ''}</td>}
-                <td style={{ padding: '3px 5px', textAlign: 'right', borderRight: '2px solid #000' }}>{fmt(item.amount)}</td>
-                <td style={{ padding: '3px 5px', textAlign: 'right' }}>{fmt(item.balance)}</td>
+                <td style={{ padding: '3px 5px', borderRight: '2px solid #000', textTransform: 'uppercase', fontWeight: '700' }}>{item.description}</td>
+                <td style={{ padding: '3px 5px', textAlign: 'right', fontWeight: '900' }}>{`\u20b9`}{fmt(item.amount)}</td>
               </tr>
             ))}
+            {totalDiscount > 0 && (
+              <tr style={{ borderBottom: '2px solid #000', backgroundColor: '#dff0d8' }}>
+                <td style={{ padding: '3px 5px', borderRight: '2px solid #000', textTransform: 'uppercase', fontWeight: '700' }}>CONCESSION</td>
+                <td style={{ padding: '3px 5px', textAlign: 'right', fontWeight: '900', color: '#27ae60' }}>-{`\u20b9`}{fmt(totalDiscount)}</td>
+              </tr>
+            )}
+            {totalFine > 0 && (
+              <tr style={{ borderBottom: '2px solid #000', backgroundColor: '#fcecec' }}>
+                <td style={{ padding: '3px 5px', borderRight: '2px solid #000', textTransform: 'uppercase', fontWeight: '700' }}>LATE FINE</td>
+                <td style={{ padding: '3px 5px', textAlign: 'right', fontWeight: '900', color: '#cc0000' }}>+{`\u20b9`}{fmt(totalFine)}</td>
+              </tr>
+            )}
           </tbody>
         </table>
       </div>
 
-      {/* TOTAL - BIG YELLOW */}
+      {/* FEE CHECKLIST + TOTAL */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
         <div>
           {feeStatement.length > 0 && (
             <div style={{ fontSize: '7.5px', fontWeight: '700' }}>
               {feeStatement.map((fee, i) => (
-                <span key={i} style={{ marginRight: '8px' }}>{fee.name}: ₹{fmt(fee.paid)} [{fee.status}]</span>
+                <div key={i} style={{ marginBottom: '1px' }}>
+                  <span style={{ color: fee.status?.toLowerCase() === 'paid' ? '#27ae60' : '#cc0000', fontSize: '9px' }}>
+                    {fee.status?.toLowerCase() === 'paid' ? '\u2713' : '\u2717'}
+                  </span>{' '}
+                  {fee.name.toUpperCase()}
+                </div>
               ))}
             </div>
           )}
         </div>
         <div style={{ ...yellowBox, padding: '6px 18px' }}>
           <span style={{ fontSize: '10px', fontWeight: '900', textTransform: 'uppercase' }}>{isRefund ? 'REFUND' : 'TOTAL PAID'}: </span>
-          <span style={{ fontSize: '16px', fontWeight: '900' }}>₹{fmt(grandTotal)}</span>
-          {overallBalance > 0 && <span style={{ fontSize: '9px', fontWeight: '900', color: '#cc0000', marginLeft: '8px' }}>BAL: ₹{fmt(overallBalance)}</span>}
+          <span style={{ fontSize: '16px', fontWeight: '900' }}>{`\u20b9`}{fmt(grandTotal)}</span>
+          {overallBalance > 0 && <span style={{ fontSize: '9px', fontWeight: '900', color: '#cc0000', marginLeft: '8px' }}>BAL: {`\u20b9`}{fmt(overallBalance)}</span>}
         </div>
       </div>
 

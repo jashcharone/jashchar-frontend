@@ -76,34 +76,46 @@ const Template08_GradientSunset = ({ receiptData, copyType }) => {
         <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: '0', fontSize: '8.5px', borderRadius: '8px', overflow: 'hidden' }}>
           <thead>
             <tr style={{ backgroundColor: '#ff9800', color: '#fff' }}>
-              <th style={{ padding: '4px 5px', textAlign: 'center', width: '28px' }}>S.No</th>
-              <th style={{ padding: '4px 5px', textAlign: 'left' }}>Particulars</th>
-              <th style={{ padding: '4px 5px', textAlign: 'right', width: '72px' }}>Total</th>
-              {showConcession && <th style={{ padding: '4px 5px', textAlign: 'right', width: '62px' }}>Concession</th>}
-              <th style={{ padding: '4px 5px', textAlign: 'right', width: '62px' }}>Paid</th>
-              <th style={{ padding: '4px 5px', textAlign: 'right', width: '55px' }}>Balance</th>
+              <th style={{ padding: '4px 5px', textAlign: 'left' }}>Fee</th>
+              <th style={{ padding: '4px 5px', textAlign: 'right', width: '80px' }}>Total ({`\u20b9`})</th>
+              <th style={{ padding: '4px 5px', textAlign: 'center', width: '160px' }}>Payment Progress</th>
             </tr>
           </thead>
           <tbody>
-            {lineItems.map((item, idx) => (
-              <tr key={idx} style={{ backgroundColor: '#fff' }}>
-                <td style={{ padding: '4px 5px', textAlign: 'center', borderBottom: '1px solid #fce4b8', borderLeft: '3px solid #ff9800' }}>{idx + 1}</td>
-                <td style={{ padding: '4px 5px', borderBottom: '1px solid #fce4b8', fontWeight: '500' }}>{item.description}</td>
-                <td style={{ padding: '4px 5px', textAlign: 'right', borderBottom: '1px solid #fce4b8' }}>{fmt(item.totalAmount)}</td>
-                {showConcession && <td style={{ padding: '4px 5px', textAlign: 'right', borderBottom: '1px solid #fce4b8' }}>{Number(item.discount || 0) > 0 ? fmt(item.discount) : ''}</td>}
-                <td style={{ padding: '4px 5px', textAlign: 'right', borderBottom: '1px solid #fce4b8' }}>{fmt(item.amount)}</td>
-                <td style={{ padding: '4px 5px', textAlign: 'right', borderBottom: '1px solid #fce4b8' }}>{fmt(item.balance)}</td>
+            {lineItems.map((item, idx) => {
+              const pct = Number(item.totalAmount || 0) > 0 ? Math.round(((Number(item.totalAmount || 0) - Number(item.balance || 0)) / Number(item.totalAmount || 0)) * 100) : 0;
+              return (
+                <tr key={idx} style={{ backgroundColor: '#fff' }}>
+                  <td style={{ padding: '4px 5px', borderBottom: '1px solid #fce4b8', fontWeight: '500', borderLeft: '3px solid #ff9800' }}>
+                    {item.description}
+                    {Number(item.discount || 0) > 0 && <span style={{ fontSize: '7px', color: '#e65100', marginLeft: '4px' }}>(Conc: {`\u20b9`}{fmt(item.discount)})</span>}
+                  </td>
+                  <td style={{ padding: '4px 5px', textAlign: 'right', borderBottom: '1px solid #fce4b8' }}>{fmt(item.totalAmount)}</td>
+                  <td style={{ padding: '4px 5px', borderBottom: '1px solid #fce4b8' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      <div style={{ flex: 1, height: '8px', backgroundColor: '#fff3e0', borderRadius: '4px', overflow: 'hidden' }}>
+                        <div style={{ height: '100%', width: `${pct}%`, background: 'linear-gradient(90deg, #ff6b6b, #ffa726)', borderRadius: '4px' }}></div>
+                      </div>
+                      <span style={{ fontSize: '7px', fontWeight: 'bold', color: '#e65100', minWidth: '28px', textAlign: 'right' }}>{pct}%</span>
+                    </div>
+                    <div style={{ fontSize: '7px', color: '#999', textAlign: 'center' }}>{`\u20b9`}{fmt(item.amount)} paid</div>
+                  </td>
+                </tr>
+              );
+            })}
+            {totalFine > 0 && (
+              <tr style={{ backgroundColor: '#fff5f5' }}>
+                <td style={{ padding: '4px 5px', borderBottom: '1px solid #fce4b8', color: '#c00', fontWeight: '500' }}>Late Fine</td>
+                <td style={{ padding: '4px 5px', textAlign: 'right', borderBottom: '1px solid #fce4b8', color: '#c00' }}>+{`\u20b9`}{fmt(totalFine)}</td>
+                <td style={{ padding: '4px 5px', borderBottom: '1px solid #fce4b8' }}></td>
               </tr>
-            ))}
+            )}
           </tbody>
           <tfoot>
             <tr style={{ background: 'linear-gradient(135deg, #ff6b6b, #ffa726)', color: '#fff', fontWeight: 'bold' }}>
-              <td style={{ padding: '5px' }}></td>
-              <td style={{ padding: '5px', textAlign: 'right' }}>{isRefund ? 'Total Refund' : 'Total'}</td>
+              <td style={{ padding: '5px' }}>{isRefund ? 'Total Refund' : 'Total Paid'}</td>
               <td style={{ padding: '5px', textAlign: 'right' }}>{fmt(overallTotalAmount)}</td>
-              {showConcession && <td style={{ padding: '5px', textAlign: 'right' }}>{fmt(totalDiscount)}</td>}
-              <td style={{ padding: '5px', textAlign: 'right', fontSize: '10px' }}>₹{fmt(grandTotal)}</td>
-              <td style={{ padding: '5px', textAlign: 'right' }}>{fmt(overallBalance)}</td>
+              <td style={{ padding: '5px', textAlign: 'center', fontSize: '11px' }}>{`\u20b9`}{fmt(grandTotal)} / {`\u20b9`}{fmt(overallTotalAmount)}</td>
             </tr>
           </tfoot>
         </table>

@@ -28,7 +28,7 @@ const Template24_SchoolCrest = ({ receiptData, copyType }) => {
   const {
     student, school, lineItems = [], feeStatement = [],
     totalPaid, totalDiscount, totalFine, grandTotal,
-    overallBalance = 0,
+    overallTotalAmount = 0, overallBalance = 0,
     transactionId, receiptDate, paymentMode,
     isRefund, isOriginal, printSettings, sessionName, title = 'FEE RECEIPT'
   } = receiptData;
@@ -85,29 +85,34 @@ const Template24_SchoolCrest = ({ receiptData, copyType }) => {
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '8.5px', marginBottom: '4px' }}>
           <thead>
             <tr style={{ backgroundColor: navy, color: gold }}>
-              <th style={{ padding: '3px 5px', textAlign: 'center', width: '26px' }}>S.No</th>
-              <th style={{ padding: '3px 5px', textAlign: 'left' }}>Particulars</th>
-              <th style={{ padding: '3px 5px', textAlign: 'right', width: '68px' }}>Amount</th>
-              {showConcession && <th style={{ padding: '3px 5px', textAlign: 'right', width: '55px' }}>Conc.</th>}
-              <th style={{ padding: '3px 5px', textAlign: 'right', width: '58px' }}>Paid</th>
-              <th style={{ padding: '3px 5px', textAlign: 'right', width: '52px' }}>Balance</th>
+              <th style={{ padding: '3px 5px', textAlign: 'left' }}>Description</th>
+              <th style={{ padding: '3px 5px', textAlign: 'right', width: '80px' }}>Fees Charged</th>
+              <th style={{ padding: '3px 5px', textAlign: 'right', width: '75px' }}>Scholarship</th>
+              <th style={{ padding: '3px 5px', textAlign: 'right', width: '80px' }}>Net Received</th>
             </tr>
           </thead>
           <tbody>
             {lineItems.map((item, idx) => (
               <tr key={idx} style={{ borderBottom: '1px solid #e8e8e8' }}>
-                <td style={{ padding: '2.5px 5px', textAlign: 'center' }}>{idx + 1}</td>
                 <td style={{ padding: '2.5px 5px' }}>{item.description}</td>
                 <td style={{ padding: '2.5px 5px', textAlign: 'right' }}>{fmt(item.totalAmount)}</td>
-                {showConcession && <td style={{ padding: '2.5px 5px', textAlign: 'right' }}>{Number(item.discount || 0) > 0 ? fmt(item.discount) : ''}</td>}
+                <td style={{ padding: '2.5px 5px', textAlign: 'right', color: gold }}>{Number(item.discount || 0) > 0 ? fmt(item.discount) : '—'}</td>
                 <td style={{ padding: '2.5px 5px', textAlign: 'right' }}>{fmt(item.amount)}</td>
-                <td style={{ padding: '2.5px 5px', textAlign: 'right' }}>{fmt(item.balance)}</td>
               </tr>
             ))}
+            {totalFine > 0 && (
+              <tr style={{ borderBottom: '1px solid #e8e8e8' }}>
+                <td style={{ padding: '2.5px 5px', color: '#c00' }}>Late Fine / Penalty</td>
+                <td style={{ padding: '2.5px 5px' }}></td>
+                <td style={{ padding: '2.5px 5px' }}></td>
+                <td style={{ padding: '2.5px 5px', textAlign: 'right', color: '#c00' }}>+₹{fmt(totalFine)}</td>
+              </tr>
+            )}
             <tr style={{ fontWeight: 'bold', borderTop: `2px solid ${navy}` }}>
-              <td colSpan={showConcession ? 4 : 3} style={{ padding: '3px 5px', textAlign: 'right' }}>{isRefund ? 'Total Refund' : 'Grand Total'}:</td>
+              <td style={{ padding: '3px 5px', textAlign: 'right' }}>{isRefund ? 'Total Refund' : 'Grand Total'}:</td>
+              <td style={{ padding: '3px 5px', textAlign: 'right' }}>₹{fmt(overallTotalAmount)}</td>
+              <td style={{ padding: '3px 5px', textAlign: 'right', color: gold }}>{totalDiscount > 0 ? `₹${fmt(totalDiscount)}` : '—'}</td>
               <td style={{ padding: '3px 5px', textAlign: 'right', color: navy, fontSize: '10px' }}>₹{fmt(grandTotal)}</td>
-              <td style={{ padding: '3px 5px', textAlign: 'right', color: overallBalance > 0 ? '#c00' : '#1a1a1a' }}>₹{fmt(overallBalance)}</td>
             </tr>
           </tbody>
         </table>
@@ -115,16 +120,8 @@ const Template24_SchoolCrest = ({ receiptData, copyType }) => {
         {/* AMOUNT IN WORDS */}
         <div style={{ fontSize: '8px', fontStyle: 'italic', marginBottom: '3px' }}>
           <strong>In Words:</strong> {numberToWords(grandTotal)}
+          {overallBalance > 0 && <span style={{ color: '#c00', marginLeft: '10px' }}>[Balance Outstanding: ₹{fmt(overallBalance)}]</span>}
         </div>
-
-        {/* FEE STATEMENT */}
-        {feeStatement.length > 0 && (
-          <div style={{ fontSize: '7.5px', borderTop: `1px solid ${gold}`, paddingTop: '2px', marginBottom: '3px' }}>
-            {feeStatement.map((fee, i) => (
-              <span key={i} style={{ marginRight: '8px' }}>{fee.name}: ₹{fmt(fee.paid)}/{fmt(fee.amount)} [{fee.status}]</span>
-            ))}
-          </div>
-        )}
 
         {/* FOOTER */}
         {printSettings?.footer_content ? (

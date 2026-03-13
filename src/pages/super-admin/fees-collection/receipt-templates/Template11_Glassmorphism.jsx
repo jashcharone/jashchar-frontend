@@ -72,25 +72,40 @@ const Template11_Glassmorphism = ({ receiptData, copyType }) => {
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '8.5px' }}>
             <thead>
               <tr style={{ background: 'linear-gradient(90deg, #667eea, #764ba2)', color: '#fff' }}>
-                <th style={{ padding: '4px 5px', textAlign: 'center', width: '28px' }}>#</th>
-                <th style={{ padding: '4px 5px', textAlign: 'left' }}>Particulars</th>
-                <th style={{ padding: '4px 5px', textAlign: 'right', width: '70px' }}>Total</th>
-                {showConcession && <th style={{ padding: '4px 5px', textAlign: 'right', width: '60px' }}>Concession</th>}
-                <th style={{ padding: '4px 5px', textAlign: 'right', width: '60px' }}>Paid</th>
-                <th style={{ padding: '4px 5px', textAlign: 'right', width: '55px' }}>Balance</th>
+                <th style={{ padding: '4px 5px', textAlign: 'left' }}>Description</th>
+                <th style={{ padding: '4px 5px', textAlign: 'right', width: '80px' }}>Full Amount</th>
+                <th style={{ padding: '4px 5px', textAlign: 'right', width: '80px' }}>This Payment</th>
+                <th style={{ padding: '4px 5px', textAlign: 'center', width: '50px' }}>Status</th>
               </tr>
             </thead>
             <tbody>
-              {lineItems.map((item, idx) => (
-                <tr key={idx} style={{ backgroundColor: idx % 2 === 0 ? 'rgba(255,255,255,0.4)' : 'rgba(255,255,255,0.2)' }}>
-                  <td style={{ padding: '3px 5px', textAlign: 'center' }}>{idx + 1}</td>
-                  <td style={{ padding: '3px 5px', fontWeight: '500' }}>{item.description}</td>
-                  <td style={{ padding: '3px 5px', textAlign: 'right' }}>{fmt(item.totalAmount)}</td>
-                  {showConcession && <td style={{ padding: '3px 5px', textAlign: 'right' }}>{Number(item.discount || 0) > 0 ? fmt(item.discount) : ''}</td>}
-                  <td style={{ padding: '3px 5px', textAlign: 'right' }}>{fmt(item.amount)}</td>
-                  <td style={{ padding: '3px 5px', textAlign: 'right' }}>{fmt(item.balance)}</td>
+              {lineItems.map((item, idx) => {
+                const isPaid = Number(item.balance || 0) === 0 && Number(item.amount || 0) > 0;
+                const isPartial = Number(item.amount || 0) > 0 && Number(item.balance || 0) > 0;
+                return (
+                  <tr key={idx} style={{ backgroundColor: idx % 2 === 0 ? 'rgba(255,255,255,0.4)' : 'rgba(255,255,255,0.2)' }}>
+                    <td style={{ padding: '3px 5px', fontWeight: '500' }}>
+                      {item.description}
+                      {Number(item.discount || 0) > 0 && <span style={{ fontSize: '7px', opacity: 0.7, marginLeft: '4px' }}>(Disc: {`\u20b9`}{fmt(item.discount)})</span>}
+                    </td>
+                    <td style={{ padding: '3px 5px', textAlign: 'right' }}>{fmt(item.totalAmount)}</td>
+                    <td style={{ padding: '3px 5px', textAlign: 'right', fontWeight: 'bold' }}>{fmt(item.amount)}</td>
+                    <td style={{ padding: '3px 5px', textAlign: 'center' }}>
+                      <span style={{ fontSize: '7px', padding: '2px 6px', borderRadius: '8px', fontWeight: 'bold', background: isPaid ? 'rgba(56,142,60,0.2)' : isPartial ? 'rgba(245,124,0,0.2)' : 'rgba(229,57,53,0.2)', color: isPaid ? '#388e3c' : isPartial ? '#f57c00' : '#e53935' }}>
+                        {isPaid ? '\u2713' : isPartial ? '\u25D0' : '\u2717'}
+                      </span>
+                    </td>
+                  </tr>
+                );
+              })}
+              {totalFine > 0 && (
+                <tr style={{ backgroundColor: 'rgba(229,57,53,0.1)' }}>
+                  <td style={{ padding: '3px 5px', fontWeight: '500', color: '#e53935' }}>Late Fine</td>
+                  <td style={{ padding: '3px 5px' }}></td>
+                  <td style={{ padding: '3px 5px', textAlign: 'right', color: '#e53935' }}>+{`\u20b9`}{fmt(totalFine)}</td>
+                  <td style={{ padding: '3px 5px' }}></td>
                 </tr>
-              ))}
+              )}
             </tbody>
           </table>
         </div>
@@ -103,23 +118,10 @@ const Template11_Glassmorphism = ({ receiptData, copyType }) => {
           </div>
         </div>
 
-        {/* FEE STATEMENT */}
-        {feeStatement.length > 0 && (
-          <div className="glass-card" style={{ ...glassCard, marginBottom: '3px', padding: '4px 8px' }}>
-            <div style={{ fontSize: '8px', fontWeight: '600', color: '#4a148c', marginBottom: '2px' }}>Fee Statement</div>
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '7.5px' }}>
-              <tbody>
-                {feeStatement.map((fee, i) => (
-                  <tr key={i}>
-                    <td style={{ padding: '1px 3px', borderBottom: '1px solid rgba(0,0,0,0.06)' }}>{fee.name}</td>
-                    <td style={{ padding: '1px', textAlign: 'right', width: '55px', borderBottom: '1px solid rgba(0,0,0,0.06)' }}>{fmt(fee.amount)}</td>
-                    <td style={{ padding: '1px', textAlign: 'right', width: '55px', borderBottom: '1px solid rgba(0,0,0,0.06)' }}>{fmt(fee.paid)}</td>
-                    <td style={{ padding: '1px', textAlign: 'right', width: '55px', borderBottom: '1px solid rgba(0,0,0,0.06)' }}>{fmt(fee.balance)}</td>
-                    <td style={{ padding: '1px', textAlign: 'center', width: '42px', borderBottom: '1px solid rgba(0,0,0,0.06)', fontSize: '7px', fontWeight: 'bold', color: fee.status?.toLowerCase() === 'paid' ? '#388e3c' : fee.status?.toLowerCase() === 'partial' ? '#f57c00' : '#e53935' }}>{fee.status}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+        {/* BALANCE NOTE */}
+        {overallBalance > 0 && (
+          <div style={{ padding: '3px 15px', textAlign: 'center', fontSize: '8px', color: '#e53935', fontWeight: '600' }}>
+            Outstanding Balance: {`\u20b9`}{fmt(overallBalance)}
           </div>
         )}
 

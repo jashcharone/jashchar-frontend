@@ -12,7 +12,7 @@ const Template15_LedgerBook = ({ receiptData, copyType }) => {
   const {
     student, school, lineItems = [], feeStatement = [],
     totalPaid, totalDiscount, totalFine, grandTotal,
-    overallBalance = 0,
+    overallTotalAmount = 0, overallBalance = 0,
     transactionId, receiptDate, paymentMode,
     isRefund, isOriginal, printSettings, sessionName, title = 'FEE RECEIPT'
   } = receiptData;
@@ -65,44 +65,54 @@ const Template15_LedgerBook = ({ receiptData, copyType }) => {
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '8.5px', marginBottom: '5px' }}>
           <thead>
             <tr style={{ borderTop: '2px solid #333', borderBottom: '2px solid #333' }}>
-              <th style={{ padding: '3px 5px', textAlign: 'center', width: '26px', borderRight: '1px solid #999' }}>SL</th>
               <th style={{ padding: '3px 5px', textAlign: 'left', borderRight: '1px solid #999' }}>PARTICULARS</th>
-              <th style={{ padding: '3px 5px', textAlign: 'right', width: '68px', borderRight: '1px solid #999', backgroundColor: '#e8f5e9', color: '#2e7d32' }}>DR (₹)</th>
-              {showConcession && <th style={{ padding: '3px 5px', textAlign: 'right', width: '58px', borderRight: '1px solid #999' }}>CONC.(₹)</th>}
-              <th style={{ padding: '3px 5px', textAlign: 'right', width: '68px', borderRight: '1px solid #999', backgroundColor: '#e8f5e9', color: '#2e7d32' }}>CR (₹)</th>
-              <th style={{ padding: '3px 5px', textAlign: 'right', width: '58px', backgroundColor: overallBalance > 0 ? '#ffebee' : '#e8f5e9', color: overallBalance > 0 ? '#c62828' : '#2e7d32' }}>BAL (₹)</th>
+              <th style={{ padding: '3px 5px', textAlign: 'right', width: '80px', borderRight: '1px solid #999', backgroundColor: '#ffebee', color: '#c62828' }}>DEBIT ({`\u20b9`})</th>
+              <th style={{ padding: '3px 5px', textAlign: 'right', width: '80px', backgroundColor: '#e8f5e9', color: '#2e7d32' }}>CREDIT ({`\u20b9`})</th>
             </tr>
           </thead>
           <tbody>
             {lineItems.map((item, idx) => (
               <tr key={idx} style={{ borderBottom: '1px solid #ccc' }}>
-                <td style={{ padding: '2.5px 5px', textAlign: 'center', borderRight: '1px solid #ddd' }}>{idx + 1}</td>
-                <td style={{ padding: '2.5px 5px', borderRight: '1px solid #ddd' }}>{item.description}</td>
-                <td style={{ padding: '2.5px 5px', textAlign: 'right', borderRight: '1px solid #ddd', backgroundColor: '#f1f8e9' }}>{fmt(item.totalAmount)}</td>
-                {showConcession && <td style={{ padding: '2.5px 5px', textAlign: 'right', borderRight: '1px solid #ddd' }}>{Number(item.discount || 0) > 0 ? fmt(item.discount) : '-'}</td>}
-                <td style={{ padding: '2.5px 5px', textAlign: 'right', borderRight: '1px solid #ddd', backgroundColor: '#f1f8e9' }}>{fmt(item.amount)}</td>
-                <td style={{ padding: '2.5px 5px', textAlign: 'right' }}>{fmt(item.balance)}</td>
+                <td style={{ padding: '2.5px 5px', borderRight: '1px solid #ddd' }}>{item.description} (Fee Assessment)</td>
+                <td style={{ padding: '2.5px 5px', textAlign: 'right', borderRight: '1px solid #ddd', backgroundColor: '#fce4ec' }}>{fmt(item.totalAmount)}</td>
+                <td style={{ padding: '2.5px 5px', backgroundColor: '#f1f8e9' }}></td>
               </tr>
             ))}
+            {totalDiscount > 0 && (
+              <tr style={{ borderBottom: '1px solid #ccc' }}>
+                <td style={{ padding: '2.5px 5px', borderRight: '1px solid #ddd', color: '#2e7d32' }}>Concession / Scholarship</td>
+                <td style={{ padding: '2.5px 5px', borderRight: '1px solid #ddd', backgroundColor: '#fce4ec' }}></td>
+                <td style={{ padding: '2.5px 5px', textAlign: 'right', backgroundColor: '#f1f8e9', color: '#2e7d32' }}>{fmt(totalDiscount)}</td>
+              </tr>
+            )}
+            {totalFine > 0 && (
+              <tr style={{ borderBottom: '1px solid #ccc' }}>
+                <td style={{ padding: '2.5px 5px', borderRight: '1px solid #ddd', color: '#c62828' }}>Late Fee / Penalty</td>
+                <td style={{ padding: '2.5px 5px', textAlign: 'right', borderRight: '1px solid #ddd', backgroundColor: '#fce4ec', color: '#c62828' }}>{fmt(totalFine)}</td>
+                <td style={{ padding: '2.5px 5px', backgroundColor: '#f1f8e9' }}></td>
+              </tr>
+            )}
+            <tr style={{ borderBottom: '1px solid #ccc', backgroundColor: '#f5f5f5' }}>
+              <td style={{ padding: '2.5px 5px', borderRight: '1px solid #ddd', fontWeight: 'bold' }}>Payment Received ({paymentMode || 'Cash'})</td>
+              <td style={{ padding: '2.5px 5px', borderRight: '1px solid #ddd', backgroundColor: '#fce4ec' }}></td>
+              <td style={{ padding: '2.5px 5px', textAlign: 'right', backgroundColor: '#f1f8e9', fontWeight: 'bold', color: '#2e7d32' }}>{fmt(grandTotal)}</td>
+            </tr>
           </tbody>
           <tfoot>
             <tr style={{ borderTop: '2px solid #333', fontWeight: 'bold', fontSize: '9px' }}>
-              <td colSpan={showConcession ? 4 : 3} style={{ padding: '3px 5px', textAlign: 'right', borderRight: '1px solid #ddd' }}>{isRefund ? 'TOTAL REFUND:' : 'TOTAL PAID:'}</td>
-              <td style={{ padding: '3px 5px', textAlign: 'right', borderRight: '1px solid #ddd', backgroundColor: '#e8f5e9', color: '#2e7d32', fontSize: '10px' }}>₹{fmt(grandTotal)}</td>
-              <td style={{ padding: '3px 5px', textAlign: 'right', color: overallBalance > 0 ? '#c62828' : '#2e7d32' }}>₹{fmt(overallBalance)}</td>
+              <td style={{ padding: '3px 5px', textAlign: 'right', borderRight: '1px solid #ddd' }}>TOTALS:</td>
+              <td style={{ padding: '3px 5px', textAlign: 'right', borderRight: '1px solid #ddd', backgroundColor: '#ffebee', color: '#c62828' }}>{fmt(overallTotalAmount + (totalFine || 0))}</td>
+              <td style={{ padding: '3px 5px', textAlign: 'right', backgroundColor: '#e8f5e9', color: '#2e7d32' }}>{fmt(grandTotal + (totalDiscount || 0))}</td>
             </tr>
           </tfoot>
         </table>
 
-        {/* FEE STATEMENT */}
-        {feeStatement.length > 0 && (
-          <div style={{ marginBottom: '4px', borderTop: '1px dashed #999', paddingTop: '3px' }}>
-            <span style={{ fontSize: '8px', fontWeight: 'bold' }}>LEDGER SUMMARY: </span>
-            <span style={{ fontSize: '7.5px' }}>
-              {feeStatement.map((fee, i) => `${fee.name}=${fmt(fee.paid)}/${fmt(fee.amount)}[${fee.status}]`).join(' | ')}
-            </span>
-          </div>
-        )}
+        {/* TRIAL BALANCE */}
+        <div style={{ marginBottom: '4px', borderTop: '1px dashed #999', paddingTop: '3px', display: 'flex', justifyContent: 'space-between', fontSize: '8px' }}>
+          <span><strong>Total Debits:</strong> {`\u20b9`}{fmt(overallTotalAmount + (totalFine || 0))}</span>
+          <span><strong>Total Credits:</strong> {`\u20b9`}{fmt(grandTotal + (totalDiscount || 0))}</span>
+          <span style={{ fontWeight: 'bold', color: overallBalance > 0 ? '#c62828' : '#2e7d32' }}>Net Balance: {`\u20b9`}{fmt(overallBalance)}</span>
+        </div>
 
         {/* FOOTER */}
         {printSettings?.footer_content ? (

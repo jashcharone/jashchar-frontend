@@ -51,43 +51,51 @@ const Template20_ReceiptSlip = ({ receiptData, copyType }) => {
 
       <div style={{ fontSize: '8px', letterSpacing: '1px' }}>{dashes}</div>
 
-      {/* ITEMS */}
+      {/* ITEMS - Cash Register */}
       {lineItems.map((item, idx) => (
-        <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', padding: '1px 0' }}>
-          <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{idx + 1}. {item.description}</span>
-          <span style={{ marginLeft: '4px', fontWeight: 'bold' }}>{fmt(item.amount)}</span>
+        <div key={idx} style={{ padding: '1px 0' }}>
+          <div style={{ fontSize: '8px', textTransform: 'uppercase' }}>{item.description}</div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '9px' }}>
+            <span style={{ color: '#666' }}>  1 x {fmt(item.totalAmount)}</span>
+            <span style={{ fontWeight: 'bold' }}>{fmt(item.amount)}</span>
+          </div>
         </div>
       ))}
+      {totalDiscount > 0 && (
+        <div style={{ display: 'flex', justifyContent: 'space-between', padding: '1px 0', fontSize: '8px' }}>
+          <span>DISCOUNT</span>
+          <span>-{fmt(totalDiscount)}</span>
+        </div>
+      )}
+      {totalFine > 0 && (
+        <div style={{ display: 'flex', justifyContent: 'space-between', padding: '1px 0', fontSize: '8px' }}>
+          <span>LATE FEE</span>
+          <span>+{fmt(totalFine)}</span>
+        </div>
+      )}
 
       <div style={{ fontSize: '8px', letterSpacing: '1px' }}>{dashes}</div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '8px', margin: '1px 0' }}>
+        <span>ITEMS: {lineItems.length}</span>
+        <span>{paymentMode || 'CASH'}</span>
+      </div>
 
       {/* TOTAL */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 'bold', fontSize: '11px', margin: '2px 0' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 'bold', fontSize: '12px', margin: '2px 0', borderTop: '1px dashed #000', borderBottom: '1px dashed #000', padding: '3px 0' }}>
         <span>{isRefund ? 'REFUND' : 'TOTAL'}</span>
         <span>Rs.{fmt(grandTotal)}</span>
       </div>
       {overallBalance > 0 && (
         <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '9px', color: '#666' }}>
-          <span>BALANCE</span>
+          <span>DUE</span>
           <span>Rs.{fmt(overallBalance)}</span>
         </div>
       )}
 
       <div style={{ fontSize: '8px', letterSpacing: '1px' }}>{dashes}</div>
-
-      {/* FEE STATEMENT */}
-      {feeStatement.length > 0 && (
-        <div style={{ marginBottom: '3px' }}>
-          <div style={{ fontSize: '8px', fontWeight: 'bold', marginBottom: '1px' }}>FEE SUMMARY:</div>
-          {feeStatement.map((fee, i) => (
-            <div key={i} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '8px' }}>
-              <span>{fee.name}</span>
-              <span>{fmt(fee.paid)}/{fmt(fee.amount)}</span>
-            </div>
-          ))}
-          <div style={{ fontSize: '8px', letterSpacing: '1px' }}>{dashes}</div>
-        </div>
-      )}
+      <div style={{ textAlign: 'center', fontSize: '7px', margin: '2px 0' }}>
+        ** THANK YOU **
+      </div>
 
       {/* FOOTER */}
       {printSettings?.footer_content ? (

@@ -76,28 +76,32 @@ const ChallanCopy = ({ copyLabel, student, school, lineItems, totalPaid, totalDi
       <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '3px' }}>
         <thead>
           <tr>
-            <th style={hdrCell}>Fee Head</th>
-            <th style={{ ...hdrCell, width: '60px' }}>Amount</th>
-            <th style={{ ...hdrCell, width: '55px' }}>Discount</th>
-            <th style={{ ...hdrCell, width: '40px' }}>Fine</th>
-            <th style={{ ...hdrCell, width: '60px' }}>Paid</th>
+            <th style={hdrCell}>Particulars of Fee</th>
+            <th style={{ ...hdrCell, width: '75px' }}>Demand (₹)</th>
+            <th style={{ ...hdrCell, width: '75px' }}>Deposited (₹)</th>
           </tr>
         </thead>
         <tbody>
           {lineItems.map((item, i) => (
             <tr key={i}>
-              <td style={cell}>{item.description}</td>
+              <td style={cell}>
+                {item.description}
+                {Number(item.discount || 0) > 0 && <span style={{ fontSize: '7px', color: '#555' }}> (Exemption: ₹{fmt(item.discount)})</span>}
+              </td>
               <td style={{ ...cell, textAlign: 'right' }}>{fmt(item.totalAmount)}</td>
-              <td style={{ ...cell, textAlign: 'right' }}>{fmt(item.discount)}</td>
-              <td style={{ ...cell, textAlign: 'right' }}>{fmt(item.fine)}</td>
               <td style={{ ...cell, textAlign: 'right', fontWeight: 'bold' }}>{fmt(item.amount)}</td>
             </tr>
           ))}
+          {totalFine > 0 && (
+            <tr>
+              <td style={{ ...cell, fontStyle: 'italic' }}>Late Fee Surcharge</td>
+              <td style={cell}></td>
+              <td style={{ ...cell, textAlign: 'right', color: '#c00' }}>+{fmt(totalFine)}</td>
+            </tr>
+          )}
           <tr style={{ backgroundColor: '#e0e0e0' }}>
-            <td style={{ ...cell, textAlign: 'right', fontWeight: 'bold' }}>TOTAL</td>
-            <td style={{ ...cell, textAlign: 'right', fontWeight: 'bold' }}></td>
-            <td style={{ ...cell, textAlign: 'right', fontWeight: 'bold' }}>{fmt(totalDiscount)}</td>
-            <td style={{ ...cell, textAlign: 'right', fontWeight: 'bold' }}>{fmt(totalFine)}</td>
+            <td style={{ ...cell, textAlign: 'right', fontWeight: 'bold' }}>TOTAL DEPOSITED</td>
+            <td style={cell}></td>
             <td style={{ ...cell, textAlign: 'right', fontWeight: 'bold', fontSize: '9px' }}>{fmt(grandTotal || totalPaid)}</td>
           </tr>
         </tbody>

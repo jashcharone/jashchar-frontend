@@ -57,9 +57,10 @@ const Template01_ClassicBlue = ({ receiptData, copyType }) => {
 
   const amountInWords = numberToWords(Math.floor(grandTotal)) + ' Rupees Only';
   const showConcession = totalDiscount > 0;
-  const showPrevPaid = lineItems.some(item => {
-    const totalPaidToDate = Number(item.totalAmount || 0) - Number(item.discount || 0) - Number(item.balance || 0);
-    return Math.max(0, totalPaidToDate - Number(item.amount || 0)) > 0;
+  const showPaidTillDate = lineItems.some(item => {
+    const c = Number(item.discount || 0);
+    const net = Number(item.totalAmount || 0) - c;
+    return Math.max(0, net - Number(item.amount || 0) - Number(item.balance || 0)) > 0;
   });
   const receiptNo = transactionId?.substring(0, 8).toUpperCase() || '-';
 
@@ -194,10 +195,10 @@ const Template01_ClassicBlue = ({ receiptData, copyType }) => {
             <tr style={{ backgroundColor: '#f0f0f0' }}>
               <th style={{ border: '1px solid #888', padding: '3px 4px', textAlign: 'center', width: '28px' }}>S.no</th>
               <th style={{ border: '1px solid #888', padding: '3px 4px', textAlign: 'left' }}>Particulars</th>
-              <th style={{ border: '1px solid #888', padding: '3px 4px', textAlign: 'right', width: '72px' }}>Academic<br/>Total Amount</th>
-              {showPrevPaid && <th style={{ border: '1px solid #888', padding: '3px 4px', textAlign: 'right', width: '68px' }}>All Previous<br/>Paid Amount</th>}
-              <th style={{ border: '1px solid #888', padding: '3px 4px', textAlign: 'right', width: '62px' }}>Net Amount</th>
-              {showConcession && <th style={{ border: '1px solid #888', padding: '3px 4px', textAlign: 'right', width: '62px' }}>Concession</th>}
+              <th style={{ border: '1px solid #888', padding: '3px 4px', textAlign: 'right', width: '72px' }}>Total Amount</th>
+              {showConcession && <th style={{ border: '1px solid #888', padding: '3px 4px', textAlign: 'right', width: '72px' }}>Concession<br/>Amount</th>}
+              <th style={{ border: '1px solid #888', padding: '3px 4px', textAlign: 'right', width: '72px' }}>Net Payable<br/>Amount</th>
+              {showPaidTillDate && <th style={{ border: '1px solid #888', padding: '3px 4px', textAlign: 'right', width: '62px' }}>Paid till<br/>Date</th>}
               <th style={{ border: '1px solid #888', padding: '3px 4px', textAlign: 'right', width: '62px' }}>Paid Amount</th>
               <th style={{ border: '1px solid #888', padding: '3px 4px', textAlign: 'right', width: '55px' }}>Balance</th>
             </tr>
@@ -205,18 +206,17 @@ const Template01_ClassicBlue = ({ receiptData, copyType }) => {
           <tbody>
             {lineItems.map((item, idx) => {
               const concession = Number(item.discount || 0);
-              const totalPaidToDate = Number(item.totalAmount || 0) - concession - Number(item.balance || 0);
-              const previousPaid = Math.max(0, totalPaidToDate - Number(item.amount || 0));
-              const netAmount = Number(item.totalAmount || 0) - previousPaid;
+              const netPayable = Number(item.totalAmount || 0) - concession;
+              const paidTillDate = Math.max(0, netPayable - Number(item.amount || 0) - Number(item.balance || 0));
               return (
-                <tr key={idx} style={{ backgroundColor: '#fef9e7' }}>
+                <tr key={idx}>
                   <td style={{ border: '1px solid #888', padding: '3px 4px', textAlign: 'center', fontWeight: 'bold' }}>{idx + 1}</td>
-                  <td style={{ border: '1px solid #888', padding: '3px 4px', fontWeight: '600', color: '#1565c0' }}>{item.description}</td>
+                  <td style={{ border: '1px solid #888', padding: '3px 4px' }}>{item.description}</td>
                   <td style={{ border: '1px solid #888', padding: '3px 4px', textAlign: 'right' }}>{Number(item.totalAmount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-                  {showPrevPaid && <td style={{ border: '1px solid #888', padding: '3px 4px', textAlign: 'right' }}>{previousPaid > 0 ? previousPaid.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : ''}</td>}
-                  <td style={{ border: '1px solid #888', padding: '3px 4px', textAlign: 'right' }}>{netAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-                  {showConcession && <td style={{ border: '1px solid #888', padding: '3px 4px', textAlign: 'right' }}>{concession > 0 ? concession.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : ''}</td>}
-                  <td style={{ border: '1px solid #888', padding: '3px 4px', textAlign: 'right' }}>{Number(item.amount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                  {showConcession && <td style={{ border: '1px solid #888', padding: '3px 4px', textAlign: 'right' }}>{concession > 0 ? concession.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '-'}</td>}
+                  <td style={{ border: '1px solid #888', padding: '3px 4px', textAlign: 'right' }}>{netPayable.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                  {showPaidTillDate && <td style={{ border: '1px solid #888', padding: '3px 4px', textAlign: 'right' }}>{paidTillDate > 0 ? paidTillDate.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '-'}</td>}
+                  <td style={{ border: '1px solid #888', padding: '3px 4px', textAlign: 'right', fontWeight: 'bold' }}>{Number(item.amount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                   <td style={{ border: '1px solid #888', padding: '3px 4px', textAlign: 'right' }}>{Number(item.balance || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                 </tr>
               );
@@ -225,10 +225,7 @@ const Template01_ClassicBlue = ({ receiptData, copyType }) => {
               <tr>
                 <td style={{ border: '1px solid #888', padding: '3px 4px' }}></td>
                 <td style={{ border: '1px solid #888', padding: '3px 4px', color: '#cc0000' }}>Late Fine</td>
-                <td style={{ border: '1px solid #888', padding: '3px 4px' }}></td>
-                {showPrevPaid && <td style={{ border: '1px solid #888', padding: '3px 4px' }}></td>}
-                <td style={{ border: '1px solid #888', padding: '3px 4px' }}></td>
-                {showConcession && <td style={{ border: '1px solid #888', padding: '3px 4px' }}></td>}
+                <td colSpan={1 + (showConcession ? 1 : 0) + (showPaidTillDate ? 1 : 0)} style={{ border: '1px solid #888', padding: '3px 4px' }}></td>
                 <td style={{ border: '1px solid #888', padding: '3px 4px', textAlign: 'right', color: '#cc0000' }}>+{totalFine.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                 <td style={{ border: '1px solid #888', padding: '3px 4px' }}></td>
               </tr>
@@ -236,70 +233,24 @@ const Template01_ClassicBlue = ({ receiptData, copyType }) => {
           </tbody>
           <tfoot>
             <tr style={{ fontWeight: 'bold', backgroundColor: '#f0f0f0' }}>
-              <td style={{ border: '1px solid #888', padding: '4px' }}></td>
-              <td style={{ border: '1px solid #888', padding: '4px', textAlign: 'right' }}>{isRefund ? 'Total Refund' : 'Total'}</td>
+              <td colSpan={2} style={{ border: '1px solid #888', padding: '4px', textAlign: 'right' }}>{isRefund ? 'Total Refund' : 'Total'}</td>
               <td style={{ border: '1px solid #888', padding: '4px', textAlign: 'right' }}>{overallTotalAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-              {showPrevPaid && (() => {
-                const totalPrevPaid = lineItems.reduce((sum, item) => {
-                  const c = Number(item.discount || 0);
-                  const paidToDate = Number(item.totalAmount || 0) - c - Number(item.balance || 0);
-                  return sum + Math.max(0, paidToDate - Number(item.amount || 0));
-                }, 0);
-                return <td style={{ border: '1px solid #888', padding: '4px', textAlign: 'right' }}>{totalPrevPaid.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>;
-              })()}
-              <td style={{ border: '1px solid #888', padding: '4px', textAlign: 'right' }}>{(() => {
-                const totalPrevPaid = lineItems.reduce((sum, item) => {
-                  const c = Number(item.discount || 0);
-                  const paidToDate = Number(item.totalAmount || 0) - c - Number(item.balance || 0);
-                  return sum + Math.max(0, paidToDate - Number(item.amount || 0));
-                }, 0);
-                return (overallTotalAmount - totalPrevPaid).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-              })()}</td>
               {showConcession && <td style={{ border: '1px solid #888', padding: '4px', textAlign: 'right' }}>{totalDiscount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>}
+              <td style={{ border: '1px solid #888', padding: '4px', textAlign: 'right' }}>{(overallTotalAmount - totalDiscount).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+              {showPaidTillDate && <td style={{ border: '1px solid #888', padding: '4px', textAlign: 'right' }}>{(() => {
+                const totalPaidTillDate = lineItems.reduce((sum, item) => {
+                  const c = Number(item.discount || 0);
+                  const net = Number(item.totalAmount || 0) - c;
+                  return sum + Math.max(0, net - Number(item.amount || 0) - Number(item.balance || 0));
+                }, 0);
+                return totalPaidTillDate > 0 ? totalPaidTillDate.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '-';
+              })()}</td>}
               <td style={{ border: '1px solid #888', padding: '4px', textAlign: 'right' }}>{grandTotal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
               <td style={{ border: '1px solid #888', padding: '4px', textAlign: 'right' }}>{overallBalance.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
             </tr>
           </tfoot>
         </table>
       </div>
-
-      {/* ===== FEE STATEMENT ===== */}
-      {feeStatement.length > 0 && (
-        <div style={{ padding: '4px 10px', borderTop: '1px solid #ccc' }}>
-          <div style={{ fontSize: '8px', fontWeight: 'bold', marginBottom: '3px', color: '#333' }}>📋 FEE STATEMENT ({feeStatement.length} Items)</div>
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '8px' }}>
-            <thead>
-              <tr style={{ backgroundColor: '#f5f5f5' }}>
-                <th style={{ border: '1px solid #aaa', padding: '2px 4px', textAlign: 'left' }}>Fee Name</th>
-                <th style={{ border: '1px solid #aaa', padding: '2px 4px', textAlign: 'right', width: '70px' }}>Amount</th>
-                <th style={{ border: '1px solid #aaa', padding: '2px 4px', textAlign: 'right', width: '70px' }}>Paid</th>
-                <th style={{ border: '1px solid #aaa', padding: '2px 4px', textAlign: 'right', width: '70px' }}>Balance</th>
-                <th style={{ border: '1px solid #aaa', padding: '2px 4px', textAlign: 'center', width: '55px' }}>Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {feeStatement.map((fee, idx) => (
-                <tr key={idx}>
-                  <td style={{ border: '1px solid #aaa', padding: '2px 4px' }}>{fee.name}</td>
-                  <td style={{ border: '1px solid #aaa', padding: '2px 4px', textAlign: 'right' }}>{fee.amount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
-                  <td style={{ border: '1px solid #aaa', padding: '2px 4px', textAlign: 'right' }}>{fee.paid.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
-                  <td style={{ border: '1px solid #aaa', padding: '2px 4px', textAlign: 'right' }}>{fee.balance.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
-                  <td style={{ border: '1px solid #aaa', padding: '2px 4px', textAlign: 'center', fontWeight: 'bold', fontSize: '7px', color: fee.status?.toLowerCase() === 'paid' ? '#080' : (fee.status?.toLowerCase() === 'partial' ? '#c50' : '#c00') }}>{fee.status}</td>
-                </tr>
-              ))}
-            </tbody>
-            <tfoot>
-              <tr style={{ fontWeight: 'bold', backgroundColor: '#f5f5f5' }}>
-                <td style={{ border: '1px solid #aaa', padding: '2px 4px' }}>TOTAL:</td>
-                <td style={{ border: '1px solid #aaa', padding: '2px 4px', textAlign: 'right' }}>{feeStatement.reduce((s, f) => s + f.amount, 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
-                <td style={{ border: '1px solid #aaa', padding: '2px 4px', textAlign: 'right' }}>{feeStatement.reduce((s, f) => s + f.paid, 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
-                <td style={{ border: '1px solid #aaa', padding: '2px 4px', textAlign: 'right' }}>{feeStatement.reduce((s, f) => s + f.balance, 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
-                <td style={{ border: '1px solid #aaa', padding: '2px 4px' }}></td>
-              </tr>
-            </tfoot>
-          </table>
-        </div>
-      )}
 
       {/* Custom footer */}
       {printSettings?.footer_content && (

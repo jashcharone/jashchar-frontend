@@ -117,35 +117,48 @@ const Template28_GovernmentOfficial = ({ receiptData, copyType }) => {
       <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '10px', position: 'relative', zIndex: 2 }}>
         <thead>
           <tr>
-            <th style={{ ...headerCell, width: '30px' }}>Sl.</th>
-            <th style={headerCell}>Fee Description</th>
-            <th style={{ ...headerCell, width: '80px' }}>Total Amt</th>
-            <th style={{ ...headerCell, width: '70px' }}>Discount</th>
-            <th style={{ ...headerCell, width: '50px' }}>Fine</th>
-            <th style={{ ...headerCell, width: '80px' }}>Paid Amt</th>
-            <th style={{ ...headerCell, width: '80px' }}>Balance</th>
+            <th style={{ ...headerCell, width: '30px' }}>S.No.</th>
+            <th style={headerCell}>Head of Account / Particulars</th>
+            <th style={{ ...headerCell, width: '100px' }}>Demand Raised (₹)</th>
+            <th style={{ ...headerCell, width: '100px' }}>Amount Deposited (₹)</th>
+            <th style={{ ...headerCell, width: '100px' }}>Balance Outstanding (₹)</th>
           </tr>
         </thead>
         <tbody>
           {lineItems.map((item, i) => (
-            <tr key={i}>
-              <td style={{ ...cellStyle, textAlign: 'center' }}>{i + 1}</td>
-              <td style={cellStyle}>{item.description}</td>
-              <td style={{ ...cellStyle, textAlign: 'right' }}>{fmt(item.totalAmount)}</td>
-              <td style={{ ...cellStyle, textAlign: 'right' }}>{fmt(item.discount)}</td>
-              <td style={{ ...cellStyle, textAlign: 'right' }}>{fmt(item.fine)}</td>
-              <td style={{ ...cellStyle, textAlign: 'right', fontWeight: 'bold' }}>{fmt(item.amount)}</td>
-              <td style={{ ...cellStyle, textAlign: 'right' }}>{fmt(item.balance)}</td>
-            </tr>
+            <React.Fragment key={i}>
+              <tr>
+                <td style={{ ...cellStyle, textAlign: 'center' }}>{i + 1}</td>
+                <td style={cellStyle}>{item.description}</td>
+                <td style={{ ...cellStyle, textAlign: 'right' }}>{fmt(item.totalAmount)}</td>
+                <td style={{ ...cellStyle, textAlign: 'right', fontWeight: 'bold' }}>{fmt(item.amount)}</td>
+                <td style={{ ...cellStyle, textAlign: 'right' }}>{fmt(item.balance)}</td>
+              </tr>
+              {Number(item.discount || 0) > 0 && (
+                <tr>
+                  <td style={cellStyle}></td>
+                  <td style={{ ...cellStyle, fontStyle: 'italic', color: '#555', paddingLeft: '24px' }}>Less: Scholarship / Concession</td>
+                  <td style={{ ...cellStyle, textAlign: 'right', color: '#2e7d32' }}>(-) {fmt(item.discount)}</td>
+                  <td style={cellStyle}></td>
+                  <td style={cellStyle}></td>
+                </tr>
+              )}
+            </React.Fragment>
           ))}
-          {/* Totals */}
+          {totalFine > 0 && (
+            <tr>
+              <td style={cellStyle}></td>
+              <td style={{ ...cellStyle, fontStyle: 'italic', color: '#c62828' }}>Add: Late Fee / Penalty Charges</td>
+              <td style={{ ...cellStyle, textAlign: 'right', color: '#c62828' }}>(+) {fmt(totalFine)}</td>
+              <td style={cellStyle}></td>
+              <td style={cellStyle}></td>
+            </tr>
+          )}
           <tr style={{ backgroundColor: '#e8e8e8' }}>
-            <td colSpan={2} style={{ ...cellStyle, textAlign: 'right', fontWeight: 'bold' }}>TOTAL</td>
+            <td colSpan={2} style={{ ...cellStyle, textAlign: 'right', fontWeight: 'bold', fontSize: '11px' }}>GRAND TOTAL</td>
             <td style={{ ...cellStyle, textAlign: 'right', fontWeight: 'bold' }}>{fmt(overallTotalAmount)}</td>
-            <td style={{ ...cellStyle, textAlign: 'right', fontWeight: 'bold' }}>{fmt(totalDiscount)}</td>
-            <td style={{ ...cellStyle, textAlign: 'right', fontWeight: 'bold' }}>{fmt(totalFine)}</td>
             <td style={{ ...cellStyle, textAlign: 'right', fontWeight: 'bold', fontSize: '11px' }}>{fmt(grandTotal || totalPaid)}</td>
-            <td style={{ ...cellStyle, textAlign: 'right', fontWeight: 'bold' }}>{fmt(overallBalance)}</td>
+            <td style={{ ...cellStyle, textAlign: 'right', fontWeight: 'bold', color: overallBalance > 0 ? '#c62828' : '#2e7d32' }}>{fmt(overallBalance)}</td>
           </tr>
         </tbody>
       </table>
@@ -155,32 +168,35 @@ const Template28_GovernmentOfficial = ({ receiptData, copyType }) => {
         <strong>Amount in Words:</strong> Rupees {numberToWords(Math.round(grandTotal || totalPaid))} Only
       </div>
 
-      {/* Fee Statement */}
+      {/* Budget Statement */}
       {showFeeStatement && (
         <div style={{ marginBottom: '10px', position: 'relative', zIndex: 2 }}>
           <div style={{ fontSize: '11px', fontWeight: 'bold', marginBottom: '4px', padding: '3px 8px', backgroundColor: '#2e3b4e', color: '#fff' }}>
-            FEE STATEMENT — {sessionName || 'Academic Year'}
+            BUDGET STATEMENT — {sessionName || 'Academic Year'}
           </div>
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
               <tr>
-                <th style={{ ...headerCell, backgroundColor: '#4a5568' }}>Fee Head</th>
-                <th style={{ ...headerCell, backgroundColor: '#4a5568', width: '80px' }}>Total</th>
-                <th style={{ ...headerCell, backgroundColor: '#4a5568', width: '80px' }}>Paid</th>
-                <th style={{ ...headerCell, backgroundColor: '#4a5568', width: '80px' }}>Balance</th>
-                <th style={{ ...headerCell, backgroundColor: '#4a5568', width: '60px' }}>Status</th>
+                <th style={{ ...headerCell, backgroundColor: '#4a5568' }}>Head of Account</th>
+                <th style={{ ...headerCell, backgroundColor: '#4a5568', width: '85px' }}>Annual Assessment</th>
+                <th style={{ ...headerCell, backgroundColor: '#4a5568', width: '85px' }}>Collected to Date</th>
+                <th style={{ ...headerCell, backgroundColor: '#4a5568', width: '85px' }}>This Receipt</th>
+                <th style={{ ...headerCell, backgroundColor: '#4a5568', width: '85px' }}>Remaining</th>
               </tr>
             </thead>
             <tbody>
-              {feeStatement.map((f, i) => (
-                <tr key={i}>
-                  <td style={cellStyle}>{f.name}</td>
-                  <td style={{ ...cellStyle, textAlign: 'right' }}>{fmt(f.amount)}</td>
-                  <td style={{ ...cellStyle, textAlign: 'right' }}>{fmt(f.paid)}</td>
-                  <td style={{ ...cellStyle, textAlign: 'right' }}>{fmt(f.balance)}</td>
-                  <td style={{ ...cellStyle, textAlign: 'center', fontWeight: 'bold', color: f.status === 'Paid' ? '#2e7d32' : f.status === 'Partial' ? '#e65100' : '#c62828' }}>{f.status}</td>
-                </tr>
-              ))}
+              {feeStatement.map((f, i) => {
+                const thisReceipt = lineItems.find(l => l.description === f.name);
+                return (
+                  <tr key={i}>
+                    <td style={cellStyle}>{f.name}</td>
+                    <td style={{ ...cellStyle, textAlign: 'right' }}>{fmt(f.amount)}</td>
+                    <td style={{ ...cellStyle, textAlign: 'right' }}>{fmt(f.paid)}</td>
+                    <td style={{ ...cellStyle, textAlign: 'right', fontWeight: 'bold', color: '#2e3b4e' }}>{thisReceipt ? fmt(thisReceipt.amount) : '—'}</td>
+                    <td style={{ ...cellStyle, textAlign: 'right', color: Number(f.balance || 0) > 0 ? '#c62828' : '#2e7d32', fontWeight: 'bold' }}>{fmt(f.balance)}</td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>

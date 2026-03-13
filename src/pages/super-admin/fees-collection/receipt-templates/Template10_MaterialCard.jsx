@@ -70,25 +70,41 @@ const Template10_MaterialCard = ({ receiptData, copyType }) => {
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '8.5px' }}>
             <thead>
               <tr style={{ backgroundColor: '#1976d2', color: '#fff' }}>
-                <th style={{ padding: '4px 5px', textAlign: 'center', width: '28px' }}>S.No</th>
-                <th style={{ padding: '4px 5px', textAlign: 'left' }}>Particulars</th>
-                <th style={{ padding: '4px 5px', textAlign: 'right', width: '72px' }}>Total</th>
-                {showConcession && <th style={{ padding: '4px 5px', textAlign: 'right', width: '62px' }}>Concession</th>}
-                <th style={{ padding: '4px 5px', textAlign: 'right', width: '62px' }}>Paid</th>
-                <th style={{ padding: '4px 5px', textAlign: 'right', width: '55px' }}>Balance</th>
+                <th style={{ padding: '4px 5px', textAlign: 'left' }}>Fee Details</th>
+                <th style={{ padding: '4px 5px', textAlign: 'right', width: '90px' }}>Payment</th>
+                <th style={{ padding: '4px 5px', textAlign: 'center', width: '80px' }}>Status</th>
               </tr>
             </thead>
             <tbody>
-              {lineItems.map((item, idx) => (
-                <tr key={idx} style={{ backgroundColor: idx % 2 === 0 ? '#fff' : '#f5f5f5' }}>
-                  <td style={{ padding: '4px 5px', textAlign: 'center' }}>{idx + 1}</td>
-                  <td style={{ padding: '4px 5px', fontWeight: '500' }}>{item.description}</td>
-                  <td style={{ padding: '4px 5px', textAlign: 'right' }}>{fmt(item.totalAmount)}</td>
-                  {showConcession && <td style={{ padding: '4px 5px', textAlign: 'right' }}>{Number(item.discount || 0) > 0 ? fmt(item.discount) : ''}</td>}
-                  <td style={{ padding: '4px 5px', textAlign: 'right' }}>{fmt(item.amount)}</td>
-                  <td style={{ padding: '4px 5px', textAlign: 'right' }}>{fmt(item.balance)}</td>
+              {lineItems.map((item, idx) => {
+                const isPaid = Number(item.balance || 0) === 0 && Number(item.amount || 0) > 0;
+                const isPartial = Number(item.amount || 0) > 0 && Number(item.balance || 0) > 0;
+                return (
+                  <tr key={idx} style={{ backgroundColor: idx % 2 === 0 ? '#fff' : '#f5f5f5' }}>
+                    <td style={{ padding: '4px 5px' }}>
+                      <div style={{ fontWeight: '500' }}>{item.description}</div>
+                      <div style={{ fontSize: '7px', color: '#757575' }}>
+                        Assessed: {`\u20b9`}{fmt(item.totalAmount)}
+                        {Number(item.discount || 0) > 0 && ` | Conc: \u20b9${fmt(item.discount)}`}
+                        {Number(item.balance || 0) > 0 && ` | Due: \u20b9${fmt(item.balance)}`}
+                      </div>
+                    </td>
+                    <td style={{ padding: '4px 5px', textAlign: 'right', fontWeight: 'bold', color: '#1976d2' }}>{fmt(item.amount)}</td>
+                    <td style={{ padding: '4px 5px', textAlign: 'center' }}>
+                      <span style={{ fontSize: '7px', padding: '2px 6px', borderRadius: '12px', fontWeight: 'bold', color: '#fff', backgroundColor: isPaid ? '#388e3c' : isPartial ? '#f57c00' : '#e53935' }}>
+                        {isPaid ? 'PAID' : isPartial ? 'PARTIAL' : 'UNPAID'}
+                      </span>
+                    </td>
+                  </tr>
+                );
+              })}
+              {totalFine > 0 && (
+                <tr style={{ backgroundColor: '#ffebee' }}>
+                  <td style={{ padding: '4px 5px', fontWeight: '500', color: '#e53935' }}>Late Fine</td>
+                  <td style={{ padding: '4px 5px', textAlign: 'right', color: '#e53935' }}>+{`\u20b9`}{fmt(totalFine)}</td>
+                  <td style={{ padding: '4px 5px' }}></td>
                 </tr>
-              ))}
+              )}
             </tbody>
           </table>
         </div>
@@ -103,19 +119,14 @@ const Template10_MaterialCard = ({ receiptData, copyType }) => {
         </div>
       </div>
 
-      {/* FEE STATEMENT - Material expandable */}
+      {/* FEE STATUS CHIPS */}
       {feeStatement.length > 0 && (
-        <div style={{ padding: '3px 15px' }}>
-          <div style={{ backgroundColor: '#fff', borderRadius: '6px', padding: '4px 8px', boxShadow: '0 1px 2px rgba(0,0,0,0.08)' }}>
-            <div style={{ fontSize: '8px', fontWeight: '500', color: '#1976d2', marginBottom: '2px' }}>Fee Statement</div>
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '7.5px' }}>
-              <tbody>
-                {feeStatement.map((fee, i) => (
-                  <tr key={i}><td style={{ padding: '1px 4px', borderBottom: '1px solid #f5f5f5' }}>{fee.name}</td><td style={{ padding: '1px 4px', textAlign: 'right', borderBottom: '1px solid #f5f5f5', width: '60px' }}>{fmt(fee.amount)}</td><td style={{ padding: '1px 4px', textAlign: 'right', borderBottom: '1px solid #f5f5f5', width: '60px' }}>{fmt(fee.paid)}</td><td style={{ padding: '1px 4px', textAlign: 'right', borderBottom: '1px solid #f5f5f5', width: '60px' }}>{fmt(fee.balance)}</td><td style={{ padding: '1px 4px', textAlign: 'center', borderBottom: '1px solid #f5f5f5', width: '45px', fontSize: '7px', fontWeight: 'bold', color: fee.status?.toLowerCase() === 'paid' ? '#388e3c' : fee.status?.toLowerCase() === 'partial' ? '#f57c00' : '#e53935' }}>{fee.status}</td></tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+        <div style={{ padding: '3px 15px', display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
+          {feeStatement.map((fee, i) => (
+            <span key={i} style={{ fontSize: '7px', padding: '2px 8px', borderRadius: '12px', backgroundColor: fee.status?.toLowerCase() === 'paid' ? '#e8f5e9' : fee.status?.toLowerCase() === 'partial' ? '#fff3e0' : '#ffebee', color: fee.status?.toLowerCase() === 'paid' ? '#388e3c' : fee.status?.toLowerCase() === 'partial' ? '#f57c00' : '#e53935', fontWeight: 'bold' }}>
+              {fee.name}: {fee.status}
+            </span>
+          ))}
         </div>
       )}
 

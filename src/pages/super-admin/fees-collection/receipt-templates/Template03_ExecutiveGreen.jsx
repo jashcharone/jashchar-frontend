@@ -79,56 +79,80 @@ const Template03_ExecutiveGreen = ({ receiptData, copyType }) => {
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '8.5px' }}>
           <thead>
             <tr style={{ backgroundColor: '#c8a415', color: '#1b5e20' }}>
-              <th style={{ border: '1px solid #999', padding: '3px 4px', textAlign: 'center', width: '28px' }}>S.No</th>
-              <th style={{ border: '1px solid #999', padding: '3px 4px', textAlign: 'left' }}>Particulars</th>
-              <th style={{ border: '1px solid #999', padding: '3px 4px', textAlign: 'right', width: '72px' }}>Total</th>
-              {showConcession && <th style={{ border: '1px solid #999', padding: '3px 4px', textAlign: 'right', width: '62px' }}>Concession</th>}
-              <th style={{ border: '1px solid #999', padding: '3px 4px', textAlign: 'right', width: '62px' }}>Paid</th>
-              <th style={{ border: '1px solid #999', padding: '3px 4px', textAlign: 'right', width: '55px' }}>Balance</th>
+              <th style={{ border: '1px solid #999', padding: '3px 4px', textAlign: 'center', width: '28px' }}>#</th>
+              <th style={{ border: '1px solid #999', padding: '3px 4px', textAlign: 'left' }}>Fee Description</th>
+              <th style={{ border: '1px solid #999', padding: '3px 4px', textAlign: 'right', width: '80px' }}>Assessed (₹)</th>
+              <th style={{ border: '1px solid #999', padding: '3px 4px', textAlign: 'right', width: '80px' }}>Received (₹)</th>
+              <th style={{ border: '1px solid #999', padding: '3px 4px', textAlign: 'right', width: '80px' }}>Outstanding</th>
             </tr>
           </thead>
           <tbody>
-            {lineItems.map((item, idx) => (
-              <tr key={idx} style={{ backgroundColor: '#fff' }}>
-                <td style={{ border: '1px solid #ccc', padding: '3px 4px', textAlign: 'center' }}>{idx + 1}</td>
-                <td style={{ border: '1px solid #ccc', padding: '3px 4px', fontWeight: '600', color: '#1b5e20', borderLeft: '3px solid #1b5e20' }}>{item.description}</td>
-                <td style={{ border: '1px solid #ccc', padding: '3px 4px', textAlign: 'right' }}>{fmt(item.totalAmount)}</td>
-                {showConcession && <td style={{ border: '1px solid #ccc', padding: '3px 4px', textAlign: 'right' }}>{Number(item.discount || 0) > 0 ? fmt(item.discount) : ''}</td>}
-                <td style={{ border: '1px solid #ccc', padding: '3px 4px', textAlign: 'right' }}>{fmt(item.amount)}</td>
-                <td style={{ border: '1px solid #ccc', padding: '3px 4px', textAlign: 'right' }}>{fmt(item.balance)}</td>
+            {(() => {
+              const groups = {};
+              lineItems.forEach(item => { const cat = item.category || 'General'; if (!groups[cat]) groups[cat] = []; groups[cat].push(item); });
+              let counter = 0;
+              return Object.entries(groups).map(([cat, items]) => (
+                <React.Fragment key={cat}>
+                  <tr style={{ backgroundColor: '#1b5e20' }}>
+                    <td colSpan={5} style={{ border: '1px solid #999', padding: '3px 6px', fontWeight: 'bold', fontSize: '8px', color: '#c8a415', letterSpacing: '1px' }}>{`\u25B8 ${cat.toUpperCase()}`}</td>
+                  </tr>
+                  {items.map(item => { counter++; return (
+                    <tr key={counter} style={{ backgroundColor: '#fff' }}>
+                      <td style={{ border: '1px solid #ccc', padding: '3px 4px', textAlign: 'center' }}>{counter}</td>
+                      <td style={{ border: '1px solid #ccc', padding: '3px 4px', fontWeight: '600', color: '#1b5e20', borderLeft: '3px solid #1b5e20' }}>
+                        {item.description}
+                        {Number(item.discount || 0) > 0 && <span style={{ fontSize: '7px', color: '#c8a415', marginLeft: '4px' }}>[Conc: ₹{fmt(item.discount)}]</span>}
+                      </td>
+                      <td style={{ border: '1px solid #ccc', padding: '3px 4px', textAlign: 'right' }}>{fmt(item.totalAmount)}</td>
+                      <td style={{ border: '1px solid #ccc', padding: '3px 4px', textAlign: 'right' }}>{fmt(item.amount)}</td>
+                      <td style={{ border: '1px solid #ccc', padding: '3px 4px', textAlign: 'right' }}>{fmt(item.balance)}</td>
+                    </tr>
+                  ); })}
+                  <tr style={{ backgroundColor: '#e8f5e9', fontWeight: 'bold', fontSize: '8px' }}>
+                    <td colSpan={2} style={{ border: '1px solid #ccc', padding: '3px 6px', textAlign: 'right', color: '#1b5e20' }}>{cat} Subtotal</td>
+                    <td style={{ border: '1px solid #ccc', padding: '3px 4px', textAlign: 'right' }}>{fmt(items.reduce((s, i) => s + Number(i.totalAmount || 0), 0))}</td>
+                    <td style={{ border: '1px solid #ccc', padding: '3px 4px', textAlign: 'right' }}>{fmt(items.reduce((s, i) => s + Number(i.amount || 0), 0))}</td>
+                    <td style={{ border: '1px solid #ccc', padding: '3px 4px', textAlign: 'right' }}>{fmt(items.reduce((s, i) => s + Number(i.balance || 0), 0))}</td>
+                  </tr>
+                </React.Fragment>
+              ));
+            })()}
+            {totalFine > 0 && (
+              <tr style={{ backgroundColor: '#fff5f5' }}>
+                <td colSpan={2} style={{ border: '1px solid #ccc', padding: '3px 6px', color: '#c00', fontWeight: '600' }}>Late Fine</td>
+                <td style={{ border: '1px solid #ccc', padding: '3px 4px' }}></td>
+                <td style={{ border: '1px solid #ccc', padding: '3px 4px', textAlign: 'right', color: '#c00' }}>+₹{fmt(totalFine)}</td>
+                <td style={{ border: '1px solid #ccc', padding: '3px 4px' }}></td>
               </tr>
-            ))}
+            )}
           </tbody>
-          <tfoot>
-            <tr style={{ fontWeight: 'bold', backgroundColor: '#1b5e20', color: '#fff' }}>
-              <td style={{ border: '1px solid #999', padding: '4px' }}></td>
-              <td style={{ border: '1px solid #999', padding: '4px', textAlign: 'right' }}>{isRefund ? 'Total Refund' : 'Total'}</td>
-              <td style={{ border: '1px solid #999', padding: '4px', textAlign: 'right' }}>{fmt(overallTotalAmount)}</td>
-              {showConcession && <td style={{ border: '1px solid #999', padding: '4px', textAlign: 'right' }}>{fmt(totalDiscount)}</td>}
-              <td style={{ border: '1px solid #999', padding: '4px', textAlign: 'right' }}>{fmt(grandTotal)}</td>
-              <td style={{ border: '1px solid #999', padding: '4px', textAlign: 'right' }}>{fmt(overallBalance)}</td>
-            </tr>
-          </tfoot>
         </table>
       </div>
 
-      {/* AMOUNT IN WORDS */}
+      {/* FEE SUMMARY - 3 Highlight Boxes */}
+      <div style={{ display: 'flex', gap: '8px', padding: '5px 15px' }}>
+        <div style={{ flex: 1, textAlign: 'center', padding: '5px', border: '2px solid #1b5e20', backgroundColor: '#e8f5e9', fontSize: '8px' }}>
+          <div style={{ color: '#666', fontWeight: 'bold' }}>TOTAL FEES</div>
+          <div style={{ fontWeight: 'bold', fontSize: '11px', color: '#1b5e20' }}>₹{fmt(overallTotalAmount)}</div>
+        </div>
+        <div style={{ flex: 1, textAlign: 'center', padding: '5px', border: '2px solid #c8a415', backgroundColor: '#fffde7', fontSize: '8px' }}>
+          <div style={{ color: '#666', fontWeight: 'bold' }}>{isRefund ? 'REFUNDED' : 'TOTAL PAID'}</div>
+          <div style={{ fontWeight: 'bold', fontSize: '11px', color: '#c8a415' }}>₹{fmt(grandTotal)}</div>
+        </div>
+        <div style={{ flex: 1, textAlign: 'center', padding: '5px', border: `2px solid ${overallBalance > 0 ? '#c62828' : '#1b5e20'}`, backgroundColor: overallBalance > 0 ? '#ffebee' : '#e8f5e9', fontSize: '8px' }}>
+          <div style={{ color: '#666', fontWeight: 'bold' }}>BALANCE DUE</div>
+          <div style={{ fontWeight: 'bold', fontSize: '11px', color: overallBalance > 0 ? '#c62828' : '#1b5e20' }}>₹{fmt(overallBalance)}</div>
+        </div>
+      </div>
+
+      {/* AMOUNT IN WORDS + EXTRA INFO */}
       <div style={{ padding: '3px 15px', fontSize: '8.5px' }}>
         <strong>Amount in Words:</strong> <em>{amountInWords}</em>
       </div>
-
-      {/* FEE STATEMENT */}
-      {feeStatement.length > 0 && (
-        <div style={{ padding: '3px 15px', borderTop: '1px solid #e0e0e0' }}>
-          <div style={{ fontSize: '8px', fontWeight: 'bold', marginBottom: '2px', color: '#1b5e20' }}>FEE STATEMENT</div>
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '7.5px' }}>
-            <thead><tr style={{ backgroundColor: '#e8f5e9' }}><th style={{ border: '1px solid #ccc', padding: '2px 4px', textAlign: 'left' }}>Fee</th><th style={{ border: '1px solid #ccc', padding: '2px 4px', textAlign: 'right', width: '65px' }}>Amount</th><th style={{ border: '1px solid #ccc', padding: '2px 4px', textAlign: 'right', width: '65px' }}>Paid</th><th style={{ border: '1px solid #ccc', padding: '2px 4px', textAlign: 'right', width: '65px' }}>Balance</th><th style={{ border: '1px solid #ccc', padding: '2px 4px', textAlign: 'center', width: '50px' }}>Status</th></tr></thead>
-            <tbody>
-              {feeStatement.map((fee, i) => (
-                <tr key={i}><td style={{ border: '1px solid #ccc', padding: '2px 4px' }}>{fee.name}</td><td style={{ border: '1px solid #ccc', padding: '2px 4px', textAlign: 'right' }}>{fmt(fee.amount)}</td><td style={{ border: '1px solid #ccc', padding: '2px 4px', textAlign: 'right' }}>{fmt(fee.paid)}</td><td style={{ border: '1px solid #ccc', padding: '2px 4px', textAlign: 'right' }}>{fmt(fee.balance)}</td><td style={{ border: '1px solid #ccc', padding: '2px 4px', textAlign: 'center', fontSize: '7px', fontWeight: 'bold', color: fee.status?.toLowerCase() === 'paid' ? '#080' : fee.status?.toLowerCase() === 'partial' ? '#c50' : '#c00' }}>{fee.status}</td></tr>
-              ))}
-            </tbody>
-          </table>
+      {(extraInfo?.hostelRoom || extraInfo?.transportRoute || extraInfo?.route) && (
+        <div style={{ padding: '3px 15px', fontSize: '8px', display: 'flex', gap: '15px', borderTop: '1px solid #e0e0e0' }}>
+          {extraInfo?.hostelRoom && <span><strong style={{ color: '#1b5e20' }}>Hostel:</strong> Room {extraInfo.hostelRoom}{extraInfo?.hostelBed ? `, Bed ${extraInfo.hostelBed}` : ''}</span>}
+          {(extraInfo?.transportRoute || extraInfo?.route) && <span><strong style={{ color: '#1b5e20' }}>Transport:</strong> {extraInfo.transportRoute || extraInfo.route}{extraInfo?.pickupPoint ? ` (Pickup: ${extraInfo.pickupPoint})` : ''}</span>}
         </div>
       )}
 

@@ -28,7 +28,7 @@ const Template26_BilingualHindi = ({ receiptData, copyType }) => {
   const {
     student, school, lineItems = [], feeStatement = [],
     totalPaid, totalDiscount, totalFine, grandTotal,
-    overallBalance = 0,
+    overallTotalAmount = 0, overallBalance = 0,
     transactionId, receiptDate, paymentMode,
     isRefund, isOriginal, printSettings, sessionName, title = 'FEE RECEIPT'
   } = receiptData;
@@ -88,29 +88,45 @@ const Template26_BilingualHindi = ({ receiptData, copyType }) => {
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '8.5px', marginBottom: '4px', border: '1px solid #ddd' }}>
           <thead>
             <tr style={{ backgroundColor: '#1a237e', color: '#fff' }}>
-              <th style={{ padding: '3px 5px', textAlign: 'center', width: '26px' }}>क्र.सं.</th>
-              <th style={{ padding: '3px 5px', textAlign: 'left' }}>विवरण / Particulars</th>
-              <th style={{ padding: '3px 5px', textAlign: 'right', width: '68px' }}>राशि / Amt</th>
-              {showConcession && <th style={{ padding: '3px 5px', textAlign: 'right', width: '55px' }}>छूट / Conc.</th>}
-              <th style={{ padding: '3px 5px', textAlign: 'right', width: '60px' }}>भुगतान / Paid</th>
-              <th style={{ padding: '3px 5px', textAlign: 'right', width: '52px' }}>शेष / Bal.</th>
+              <th style={{ padding: '3px 5px', textAlign: 'left' }}>विवरण / Description</th>
+              <th style={{ padding: '3px 5px', textAlign: 'right', width: '80px' }}>शुल्क / Fees</th>
+              <th style={{ padding: '3px 5px', textAlign: 'right', width: '80px' }}>भुगतान / Payment</th>
+              <th style={{ padding: '3px 5px', textAlign: 'center', width: '80px' }}>स्थिति / Status</th>
             </tr>
           </thead>
           <tbody>
-            {lineItems.map((item, idx) => (
-              <tr key={idx} style={{ borderBottom: '1px solid #eee' }}>
-                <td style={{ padding: '2.5px 5px', textAlign: 'center' }}>{idx + 1}</td>
-                <td style={{ padding: '2.5px 5px' }}>{item.description}</td>
-                <td style={{ padding: '2.5px 5px', textAlign: 'right' }}>{fmt(item.totalAmount)}</td>
-                {showConcession && <td style={{ padding: '2.5px 5px', textAlign: 'right' }}>{Number(item.discount || 0) > 0 ? fmt(item.discount) : ''}</td>}
-                <td style={{ padding: '2.5px 5px', textAlign: 'right' }}>{fmt(item.amount)}</td>
-                <td style={{ padding: '2.5px 5px', textAlign: 'right' }}>{fmt(item.balance)}</td>
+            {lineItems.map((item, idx) => {
+              const isPaid = Number(item.balance || 0) === 0 && Number(item.amount || 0) > 0;
+              const isPartial = Number(item.amount || 0) > 0 && Number(item.balance || 0) > 0;
+              return (
+                <tr key={idx} style={{ borderBottom: '1px solid #eee' }}>
+                  <td style={{ padding: '2.5px 5px' }}>
+                    {item.description}
+                    {Number(item.discount || 0) > 0 && <span style={{ fontSize: '7px', color: saffron }}> (छूट: ₹{fmt(item.discount)})</span>}
+                  </td>
+                  <td style={{ padding: '2.5px 5px', textAlign: 'right' }}>{fmt(item.totalAmount)}</td>
+                  <td style={{ padding: '2.5px 5px', textAlign: 'right' }}>{fmt(item.amount)}</td>
+                  <td style={{ padding: '2.5px 5px', textAlign: 'center', fontSize: '7.5px', color: isPaid ? '#388e3c' : isPartial ? '#e65100' : '#c00' }}>
+                    {isPaid ? '✓ पूर्ण / Paid' : isPartial ? '◐ आंशिक / Partial' : '✗ अदत्त / Unpaid'}
+                  </td>
+                </tr>
+              );
+            })}
+            {totalFine > 0 && (
+              <tr style={{ borderBottom: '1px solid #eee' }}>
+                <td style={{ padding: '2.5px 5px', color: '#c00' }}>विलंब शुल्क / Late Fine</td>
+                <td style={{ padding: '2.5px 5px' }}></td>
+                <td style={{ padding: '2.5px 5px', textAlign: 'right', color: '#c00' }}>+₹{fmt(totalFine)}</td>
+                <td style={{ padding: '2.5px 5px' }}></td>
               </tr>
-            ))}
+            )}
             <tr style={{ fontWeight: 'bold', backgroundColor: '#f5f5f5', borderTop: '2px solid #1a237e' }}>
-              <td colSpan={showConcession ? 4 : 3} style={{ padding: '3px 5px', textAlign: 'right' }}>{isRefund ? 'कुल वापसी / Total Refund' : 'कुल भुगतान / Total Paid'}:</td>
+              <td style={{ padding: '3px 5px', textAlign: 'right' }}>{isRefund ? 'कुल वापसी / Total Refund' : 'कुल भुगतान / Total Paid'}:</td>
+              <td style={{ padding: '3px 5px', textAlign: 'right' }}>₹{fmt(overallTotalAmount)}</td>
               <td style={{ padding: '3px 5px', textAlign: 'right', color: '#1a237e', fontSize: '10px' }}>₹{fmt(grandTotal)}</td>
-              <td style={{ padding: '3px 5px', textAlign: 'right', color: overallBalance > 0 ? '#c00' : '#333' }}>₹{fmt(overallBalance)}</td>
+              <td style={{ padding: '3px 5px', textAlign: 'center', fontSize: '7.5px', color: overallBalance > 0 ? '#c00' : '#388e3c' }}>
+                {overallBalance > 0 ? `शेष: ₹${fmt(overallBalance)}` : '✓ पूर्ण / Settled'}
+              </td>
             </tr>
           </tbody>
         </table>
@@ -118,14 +134,8 @@ const Template26_BilingualHindi = ({ receiptData, copyType }) => {
         {/* AMOUNT IN WORDS */}
         <div style={{ fontSize: '8px', marginBottom: '3px', fontStyle: 'italic' }}>
           <strong>शब्दों में / In Words:</strong> {numberToWords(grandTotal)}
+          {overallBalance > 0 && <span style={{ color: '#c00', marginLeft: '8px' }}>(शेष / Balance: ₹{fmt(overallBalance)})</span>}
         </div>
-
-        {/* FEE STATEMENT */}
-        {feeStatement.length > 0 && (
-          <div style={{ fontSize: '7.5px', borderTop: '1px solid #ddd', paddingTop: '2px', marginBottom: '2px' }}>
-            <strong>शुल्क विवरण / Fee Statement:</strong> {feeStatement.map((fee, i) => `${fee.name}: ₹${fmt(fee.paid)}/${fmt(fee.amount)} [${fee.status}]`).join(' | ')}
-          </div>
-        )}
 
         {/* FOOTER */}
         {printSettings?.footer_content ? (

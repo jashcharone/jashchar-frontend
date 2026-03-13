@@ -215,12 +215,47 @@ export const BASE_SIDEBAR = {
       title: 'Examinations',
       icon: FileText,
       submenu: [
+        // Foundation (Phase 1)
         { title: 'Board Configuration', path: ROUTES.SUPER_ADMIN.BOARD_CONFIGURATION },
         { title: 'Term Management', path: ROUTES.SUPER_ADMIN.TERM_MANAGEMENT },
         { title: 'Exam Type Master', path: ROUTES.SUPER_ADMIN.EXAM_TYPE_MASTER },
         { title: 'Grade Scale Builder', path: ROUTES.SUPER_ADMIN.GRADE_SCALE_BUILDER },
         { title: 'Exam Group Setup', path: ROUTES.SUPER_ADMIN.EXAM_GROUP_MANAGEMENT },
-        { title: '---', path: '#hostel-divider', divider: true },
+        { title: '---', path: '#phase2-divider', divider: true },
+        // Exam Planning (Phase 2)
+        { title: '📋 Exam Management', path: ROUTES.SUPER_ADMIN.EXAM_MANAGEMENT },
+        { title: '👥 Student Assignment', path: ROUTES.SUPER_ADMIN.STUDENT_ASSIGNMENT },
+        { title: '---', path: '#phase3-divider', divider: true },
+        // Scheduling Engine (Phase 3)
+        { title: '🏛️ Room Management', path: ROUTES.SUPER_ADMIN.ROOM_MANAGEMENT },
+        { title: '👨‍🏫 Invigilator Duty', path: ROUTES.SUPER_ADMIN.INVIGILATOR_DUTY },
+        { title: '💺 Seating Arrangement', path: ROUTES.SUPER_ADMIN.SEATING_ARRANGEMENT },
+        { title: '📅 Exam Calendar', path: ROUTES.SUPER_ADMIN.EXAM_CALENDAR },
+        { title: '---', path: '#phase4-divider', divider: true },
+        // Evaluation Engine (Phase 4)
+        { title: '✍️ Marks Entry (New)', path: ROUTES.SUPER_ADMIN.MARKS_ENTRY_NEW },
+        { title: '📊 Internal Assessment', path: ROUTES.SUPER_ADMIN.INTERNAL_ASSESSMENT },
+        { title: '🧪 Practical Marks', path: ROUTES.SUPER_ADMIN.PRACTICAL_MARKS },
+        { title: '📤 Bulk Upload', path: ROUTES.SUPER_ADMIN.BULK_UPLOAD_MARKS },
+        { title: '---', path: '#phase5-divider', divider: true },
+        // Moderation & Results (Phase 5)
+        { title: '🎁 Grace Marks', path: ROUTES.SUPER_ADMIN.GRACE_MARKS },
+        { title: '⚖️ Moderation Engine', path: ROUTES.SUPER_ADMIN.MODERATION_ENGINE },
+        { title: '📋 Result Calculation', path: ROUTES.SUPER_ADMIN.RESULT_CALCULATION },
+        { title: '🏆 Rank Generation', path: ROUTES.SUPER_ADMIN.RANK_GENERATION },
+        { title: '---', path: '#phase6-divider', divider: true },
+        // Documents (Phase 6)
+        { title: '🪪 Admit Card Designer', path: ROUTES.SUPER_ADMIN.ADMIT_CARD_DESIGNER },
+        { title: '📜 Marksheet Designer', path: ROUTES.SUPER_ADMIN.MARKSHEET_DESIGNER },
+        { title: '📁 Report Card Designer', path: ROUTES.SUPER_ADMIN.REPORT_CARD_DESIGNER },
+        { title: '🖨️ Bulk Document Generator', path: ROUTES.SUPER_ADMIN.BULK_DOCUMENT_GENERATOR },
+        { title: '---', path: '#phase7-divider', divider: true },
+        // Analytics & Online Exam (Phase 7)
+        { title: '📊 Performance Dashboard', path: ROUTES.SUPER_ADMIN.PERFORMANCE_DASHBOARD },
+        { title: '📚 Question Bank', path: ROUTES.SUPER_ADMIN.QUESTION_BANK },
+        { title: '💻 Online Exam', path: ROUTES.SUPER_ADMIN.ONLINE_EXAM },
+        { title: '---', path: '#legacy-divider', divider: true },
+        // Legacy
         { title: 'Exam Group', path: ROUTES.SUPER_ADMIN.EXAM_GROUP },
         { title: 'Exam List', path: ROUTES.SUPER_ADMIN.EXAM_LIST },
         { title: 'Exam Schedule', path: ROUTES.SUPER_ADMIN.EXAM_SCHEDULE },

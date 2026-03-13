@@ -233,6 +233,33 @@ export const ROUTES = {
     EXAM_TYPE_MASTER: '/super-admin/examinations/exam-type-master',
     GRADE_SCALE_BUILDER: '/super-admin/examinations/grade-scale-builder',
     EXAM_GROUP_MANAGEMENT: '/super-admin/examinations/exam-group-management',
+    // Exam Planning (Phase 2)
+    EXAM_MANAGEMENT: '/super-admin/examinations/exam-management',
+    STUDENT_ASSIGNMENT: '/super-admin/examinations/student-assignment',
+    // Scheduling Engine (Phase 3)
+    ROOM_MANAGEMENT: '/super-admin/examinations/room-management',
+    INVIGILATOR_DUTY: '/super-admin/examinations/invigilator-duty',
+    SEATING_ARRANGEMENT: '/super-admin/examinations/seating-arrangement',
+    EXAM_CALENDAR: '/super-admin/examinations/exam-calendar',
+    // Evaluation Engine (Phase 4)
+    MARKS_ENTRY_NEW: '/super-admin/examinations/marks-entry-new',
+    INTERNAL_ASSESSMENT: '/super-admin/examinations/internal-assessment',
+    PRACTICAL_MARKS: '/super-admin/examinations/practical-marks',
+    BULK_UPLOAD_MARKS: '/super-admin/examinations/bulk-upload-marks',
+    // Moderation & Results (Phase 5)
+    GRACE_MARKS: '/super-admin/examinations/grace-marks',
+    MODERATION_ENGINE: '/super-admin/examinations/moderation-engine',
+    RESULT_CALCULATION: '/super-admin/examinations/result-calculation',
+    RANK_GENERATION: '/super-admin/examinations/rank-generation',
+    // Documents (Phase 6)
+    ADMIT_CARD_DESIGNER: '/super-admin/examinations/admit-card-designer',
+    MARKSHEET_DESIGNER: '/super-admin/examinations/marksheet-designer',
+    REPORT_CARD_DESIGNER: '/super-admin/examinations/report-card-designer',
+    BULK_DOCUMENT_GENERATOR: '/super-admin/examinations/bulk-document-generator',
+    // Analytics & Online Exam (Phase 7)
+    PERFORMANCE_DASHBOARD: '/super-admin/examinations/performance-dashboard',
+    QUESTION_BANK: '/super-admin/examinations/question-bank',
+    ONLINE_EXAM: '/super-admin/examinations/online-exam',
     // Fees
     FEES_GROUP: '/super-admin/fees-collection/fees-group',
     FEES_TYPE: '/super-admin/fees-collection/fees-type',

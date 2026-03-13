@@ -101,47 +101,54 @@ const Template30_DigitalModern = ({ receiptData, copyType }) => {
             <div><span style={{ fontSize: '7px', color: '#94a3b8' }}>ADM NO</span><br /><span style={{ fontWeight: '600', color: accent }}>{student?.school_code || student?.admission_no || ''}</span></div>
           </div>
 
-          {/* Fee Table */}
-          <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: '0', marginBottom: '6px', borderRadius: '8px', overflow: 'hidden', border: '1px solid #e2e8f0' }}>
-            <thead>
-              <tr>
-                <th style={{ padding: '5px 8px', backgroundColor: dark, color: '#fff', fontSize: '8px', textAlign: 'left', fontWeight: '600' }}>Description</th>
-                <th style={{ padding: '5px 8px', backgroundColor: dark, color: '#fff', fontSize: '8px', textAlign: 'right', fontWeight: '600', width: '65px' }}>Amount</th>
-                <th style={{ padding: '5px 8px', backgroundColor: dark, color: '#fff', fontSize: '8px', textAlign: 'right', fontWeight: '600', width: '60px' }}>Discount</th>
-                <th style={{ padding: '5px 8px', backgroundColor: dark, color: '#fff', fontSize: '8px', textAlign: 'right', fontWeight: '600', width: '65px' }}>Paid</th>
-              </tr>
-            </thead>
-            <tbody>
-              {lineItems.map((item, i) => (
-                <tr key={i} style={{ backgroundColor: i % 2 === 0 ? '#fff' : '#f8fafc' }}>
-                  <td style={{ padding: '4px 8px', fontSize: '8.5px', borderBottom: '1px solid #f1f5f9' }}>{item.description}</td>
-                  <td style={{ padding: '4px 8px', fontSize: '8.5px', textAlign: 'right', borderBottom: '1px solid #f1f5f9' }}>{fmt(item.totalAmount)}</td>
-                  <td style={{ padding: '4px 8px', fontSize: '8.5px', textAlign: 'right', borderBottom: '1px solid #f1f5f9', color: item.discount ? '#f59e0b' : '#cbd5e1' }}>{fmt(item.discount)}</td>
-                  <td style={{ padding: '4px 8px', fontSize: '8.5px', textAlign: 'right', fontWeight: '600', borderBottom: '1px solid #f1f5f9' }}>{fmt(item.amount)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-
-          {/* Total Bar */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '6px 10px', backgroundColor: accent, color: '#fff', borderRadius: '8px', marginBottom: '6px' }}>
-            <div style={{ fontSize: '8px' }}>Rs. {numberToWords(Math.round(grandTotal || totalPaid))} Only</div>
-            <div style={{ fontSize: '14px', fontWeight: '700' }}>₹ {fmt(grandTotal || totalPaid)}</div>
+          {/* Fee Items - Card Layout */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', marginBottom: '6px' }}>
+            {lineItems.map((item, i) => {
+              const paidPct = Number(item.totalAmount) > 0 ? Math.round((Number(item.amount || 0) / Number(item.totalAmount)) * 100) : 0;
+              const statusColor = paidPct >= 100 ? '#22c55e' : paidPct > 0 ? '#f59e0b' : '#ef4444';
+              return (
+                <div key={i} style={{ display: 'flex', alignItems: 'center', padding: '4px 8px', backgroundColor: '#fff', borderRadius: '6px', border: '1px solid #e2e8f0', borderLeft: `3px solid ${statusColor}` }}>
+                  <div style={{ flex: 1, fontSize: '8.5px' }}>
+                    <span style={{ fontWeight: '500' }}>{item.description}</span>
+                    {Number(item.discount || 0) > 0 && <span style={{ marginLeft: '6px', fontSize: '7px', padding: '1px 4px', backgroundColor: '#fef3c7', borderRadius: '3px', color: '#92400e' }}>-₹{fmt(item.discount)}</span>}
+                    {Number(item.fine || 0) > 0 && <span style={{ marginLeft: '4px', fontSize: '7px', padding: '1px 4px', backgroundColor: '#fee2e2', borderRadius: '3px', color: '#991b1b' }}>+₹{fmt(item.fine)}</span>}
+                  </div>
+                  <div style={{ fontSize: '8px', color: '#94a3b8', marginRight: '8px' }}>₹{fmt(item.totalAmount)}</div>
+                  <div style={{ fontSize: '9px', fontWeight: '600', minWidth: '50px', textAlign: 'right' }}>₹{fmt(item.amount)}</div>
+                  <div style={{ marginLeft: '6px', fontSize: '7px', padding: '1px 5px', borderRadius: '8px', backgroundColor: statusColor + '18', color: statusColor, fontWeight: '600' }}>{paidPct}%</div>
+                </div>
+              );
+            })}
           </div>
 
-          {/* Fee Statement */}
-          {showFeeStatement && (
-            <div style={{ marginTop: '4px' }}>
-              <div style={{ fontSize: '8px', fontWeight: '600', color: '#64748b', marginBottom: '3px' }}>Fee Summary — {sessionName || ''}</div>
-              <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
-                {feeStatement.map((f, i) => (
-                  <div key={i} style={{ flex: '1 1 45%', padding: '4px 8px', backgroundColor: '#fff', borderRadius: '6px', border: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '7.5px' }}>
-                    <span>{f.name}</span>
-                    <span style={{ fontWeight: '600', color: f.status === 'Paid' ? '#22c55e' : f.status === 'Partial' ? '#f59e0b' : '#ef4444' }}>
-                      {f.status === 'Paid' ? '✓' : f.status === 'Partial' ? '◐' : '✗'} ₹{fmt(f.paid)}/{fmt(f.amount)}
-                    </span>
-                  </div>
-                ))}
+          {/* Summary Stats */}
+          <div style={{ display: 'flex', gap: '6px', marginBottom: '6px' }}>
+            <div style={{ flex: 1, padding: '6px', backgroundColor: '#fff', borderRadius: '8px', border: '1px solid #e2e8f0', textAlign: 'center' }}>
+              <div style={{ fontSize: '7px', color: '#94a3b8', textTransform: 'uppercase' }}>Total Assessed</div>
+              <div style={{ fontSize: '11px', fontWeight: '700', color: dark }}>₹{fmt(overallTotalAmount)}</div>
+            </div>
+            <div style={{ flex: 1, padding: '6px', backgroundColor: accent, borderRadius: '8px', textAlign: 'center' }}>
+              <div style={{ fontSize: '7px', color: 'rgba(255,255,255,0.8)', textTransform: 'uppercase' }}>This Payment</div>
+              <div style={{ fontSize: '13px', fontWeight: '700', color: '#fff' }}>₹{fmt(grandTotal || totalPaid)}</div>
+            </div>
+            <div style={{ flex: 1, padding: '6px', backgroundColor: '#fff', borderRadius: '8px', border: '1px solid #e2e8f0', textAlign: 'center' }}>
+              <div style={{ fontSize: '7px', color: '#94a3b8', textTransform: 'uppercase' }}>Outstanding</div>
+              <div style={{ fontSize: '11px', fontWeight: '700', color: overallBalance > 0 ? '#ef4444' : '#22c55e' }}>{overallBalance > 0 ? `₹${fmt(overallBalance)}` : '✓ NIL'}</div>
+            </div>
+          </div>
+          {/* Amount in Words */}
+          <div style={{ fontSize: '7.5px', color: '#64748b', marginBottom: '4px', textAlign: 'center' }}>
+            Rs. {numberToWords(Math.round(grandTotal || totalPaid))} Only
+          </div>
+          {/* Payment Progress */}
+          {overallTotalAmount > 0 && (
+            <div style={{ padding: '4px 8px', backgroundColor: '#fff', borderRadius: '6px', border: '1px solid #e2e8f0' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '7px', color: '#64748b', marginBottom: '2px' }}>
+                <span>Payment Progress — {sessionName || ''}</span>
+                <span>{Math.round(((overallTotalAmount - overallBalance) / overallTotalAmount) * 100)}% Complete</span>
+              </div>
+              <div style={{ height: '4px', backgroundColor: '#e2e8f0', borderRadius: '2px', overflow: 'hidden' }}>
+                <div style={{ width: `${Math.min(100, Math.round(((overallTotalAmount - overallBalance) / overallTotalAmount) * 100))}%`, height: '100%', backgroundColor: accent, borderRadius: '2px' }}></div>
               </div>
             </div>
           )}

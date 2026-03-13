@@ -65,40 +65,58 @@ const Template06_SlateProfessional = ({ receiptData, copyType }) => {
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '9px' }}>
           <thead>
             <tr style={{ backgroundColor: '#00b894', color: '#fff' }}>
-              <th style={{ border: '1px solid #00a884', padding: '4px 5px', textAlign: 'center', width: '30px' }}>S.No</th>
-              <th style={{ border: '1px solid #00a884', padding: '4px 5px', textAlign: 'left' }}>Particulars</th>
-              <th style={{ border: '1px solid #00a884', padding: '4px 5px', textAlign: 'right', width: '75px' }}>Total</th>
-              {showConcession && <th style={{ border: '1px solid #00a884', padding: '4px 5px', textAlign: 'right', width: '65px' }}>Concession</th>}
-              <th style={{ border: '1px solid #00a884', padding: '4px 5px', textAlign: 'right', width: '65px' }}>Paid</th>
-              <th style={{ border: '1px solid #00a884', padding: '4px 5px', textAlign: 'right', width: '60px' }}>Balance</th>
+              <th style={{ border: '1px solid #00a884', padding: '4px 5px', textAlign: 'left' }}>Description</th>
+              <th style={{ border: '1px solid #00a884', padding: '4px 5px', textAlign: 'right', width: '100px' }}>Debit (\u20b9)</th>
+              <th style={{ border: '1px solid #00a884', padding: '4px 5px', textAlign: 'right', width: '100px' }}>Credit (\u20b9)</th>
             </tr>
           </thead>
           <tbody>
             {lineItems.map((item, idx) => (
               <tr key={idx}>
-                <td style={{ border: '1px solid #dfe6e9', padding: '4px 5px', textAlign: 'center' }}>{idx + 1}</td>
-                <td style={{ border: '1px solid #dfe6e9', padding: '4px 5px', fontWeight: '500' }}>{item.description}</td>
+                <td style={{ border: '1px solid #dfe6e9', padding: '4px 5px', fontWeight: '500' }}>{item.description} (Assessment)</td>
                 <td style={{ border: '1px solid #dfe6e9', padding: '4px 5px', textAlign: 'right' }}>{fmt(item.totalAmount)}</td>
-                {showConcession && <td style={{ border: '1px solid #dfe6e9', padding: '4px 5px', textAlign: 'right' }}>{Number(item.discount || 0) > 0 ? fmt(item.discount) : ''}</td>}
-                <td style={{ border: '1px solid #dfe6e9', padding: '4px 5px', textAlign: 'right' }}>{fmt(item.amount)}</td>
-                <td style={{ border: '1px solid #dfe6e9', padding: '4px 5px', textAlign: 'right' }}>{fmt(item.balance)}</td>
+                <td style={{ border: '1px solid #dfe6e9', padding: '4px 5px', textAlign: 'right' }}></td>
               </tr>
             ))}
+            {totalDiscount > 0 && (
+              <tr style={{ color: '#27ae60' }}>
+                <td style={{ border: '1px solid #dfe6e9', padding: '4px 5px', fontWeight: '500' }}>Concession / Scholarship</td>
+                <td style={{ border: '1px solid #dfe6e9', padding: '4px 5px' }}></td>
+                <td style={{ border: '1px solid #dfe6e9', padding: '4px 5px', textAlign: 'right' }}>{fmt(totalDiscount)}</td>
+              </tr>
+            )}
+            {totalFine > 0 && (
+              <tr style={{ color: '#c0392b' }}>
+                <td style={{ border: '1px solid #dfe6e9', padding: '4px 5px', fontWeight: '500' }}>Late Fee / Penalty</td>
+                <td style={{ border: '1px solid #dfe6e9', padding: '4px 5px', textAlign: 'right' }}>{fmt(totalFine)}</td>
+                <td style={{ border: '1px solid #dfe6e9', padding: '4px 5px' }}></td>
+              </tr>
+            )}
+            <tr style={{ backgroundColor: '#f8f9fa' }}>
+              <td style={{ border: '1px solid #dfe6e9', padding: '4px 5px', fontWeight: 'bold' }}>Payment Received ({paymentMode || 'Cash'})</td>
+              <td style={{ border: '1px solid #dfe6e9', padding: '4px 5px' }}></td>
+              <td style={{ border: '1px solid #dfe6e9', padding: '4px 5px', textAlign: 'right', fontWeight: 'bold', color: '#00b894' }}>{fmt(grandTotal)}</td>
+            </tr>
           </tbody>
           <tfoot>
             <tr style={{ fontWeight: 'bold', backgroundColor: '#2d3436', color: '#00b894' }}>
-              <td style={{ border: '1px solid #636e72', padding: '5px' }}></td>
-              <td style={{ border: '1px solid #636e72', padding: '5px', textAlign: 'right' }}>{isRefund ? 'Total Refund' : 'Total'}</td>
-              <td style={{ border: '1px solid #636e72', padding: '5px', textAlign: 'right' }}>{fmt(overallTotalAmount)}</td>
-              {showConcession && <td style={{ border: '1px solid #636e72', padding: '5px', textAlign: 'right' }}>{fmt(totalDiscount)}</td>}
-              <td style={{ border: '1px solid #636e72', padding: '5px', textAlign: 'right', color: '#fff', fontSize: '10px' }}>₹{fmt(grandTotal)}</td>
-              <td style={{ border: '1px solid #636e72', padding: '5px', textAlign: 'right' }}>{fmt(overallBalance)}</td>
+              <td style={{ border: '1px solid #636e72', padding: '5px', textAlign: 'right' }}>Net Balance</td>
+              <td style={{ border: '1px solid #636e72', padding: '5px', textAlign: 'right' }}>{fmt(overallTotalAmount + (totalFine || 0))}</td>
+              <td style={{ border: '1px solid #636e72', padding: '5px', textAlign: 'right' }}>{fmt(grandTotal + (totalDiscount || 0))}</td>
             </tr>
           </tfoot>
         </table>
       </div>
 
-      {/* NO FEE STATEMENT - keeps ultra clean */}
+      {/* BALANCE + CONTACT */}
+      <div style={{ padding: '4px 15px', display: 'flex', justifyContent: 'space-between', fontSize: '8px', borderTop: '1px solid #dfe6e9' }}>
+        <div style={{ color: '#636e72' }}>
+          For enquiries: {school?.contact_number || ''}{school?.contact_email ? ` | ${school.contact_email}` : ''}
+        </div>
+        <div style={{ fontWeight: 'bold', color: overallBalance > 0 ? '#d63031' : '#00b894' }}>
+          {overallBalance > 0 ? `Balance Due: \u20b9${fmt(overallBalance)}` : 'Account Settled'}
+        </div>
+      </div>
 
       {/* FOOTER */}
       {printSettings?.footer_content ? (

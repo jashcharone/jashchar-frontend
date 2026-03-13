@@ -51,46 +51,46 @@ const Template16_VintageTypewriter = ({ receiptData, copyType }) => {
           <div>Receipt No ..... : {transactionId?.split('/').pop() || '-'}    Mode ........... : {paymentMode || 'Cash'}    Session : {sessionName || '-'}</div>
         </div>
 
-        <div style={{ borderTop: '1px solid #999', borderBottom: '1px solid #999', marginBottom: '4px' }}>
-          {/* TABLE HEADER */}
-          <div style={{ display: 'flex', fontSize: '8.5px', fontWeight: 'bold', borderBottom: '1px dashed #aaa', padding: '3px 0' }}>
-            <span style={{ width: '26px', textAlign: 'center' }}>No.</span>
-            <span style={{ flex: 1 }}>PARTICULARS</span>
-            <span style={{ width: '70px', textAlign: 'right' }}>AMOUNT</span>
-            {showConcession && <span style={{ width: '60px', textAlign: 'right' }}>CONC.</span>}
-            <span style={{ width: '70px', textAlign: 'right' }}>PAID</span>
-            <span style={{ width: '60px', textAlign: 'right' }}>BALANCE</span>
-          </div>
-
-          {/* TABLE ROWS */}
+        <div style={{ borderTop: '1px solid #999', borderBottom: '1px solid #999', marginBottom: '4px', fontFamily: "'Courier New', monospace" }}>
           {lineItems.map((item, idx) => (
-            <div key={idx} style={{ display: 'flex', fontSize: '8.5px', padding: '2px 0', borderBottom: '1px dotted #ccc' }}>
-              <span style={{ width: '26px', textAlign: 'center' }}>{String(idx + 1).padStart(2, '0')}.</span>
-              <span style={{ flex: 1 }}>{item.description}</span>
-              <span style={{ width: '70px', textAlign: 'right' }}>{fmt(item.totalAmount)}</span>
-              {showConcession && <span style={{ width: '60px', textAlign: 'right' }}>{Number(item.discount || 0) > 0 ? fmt(item.discount) : '—'}</span>}
-              <span style={{ width: '70px', textAlign: 'right' }}>{fmt(item.amount)}</span>
-              <span style={{ width: '60px', textAlign: 'right' }}>{fmt(item.balance)}</span>
+            <div key={idx} style={{ fontSize: '9px', padding: '2px 0', display: 'flex' }}>
+              <span style={{ whiteSpace: 'nowrap' }}>{String(idx + 1).padStart(2, '0')}. {item.description}</span>
+              <span style={{ flex: 1, borderBottom: '1px dotted #aaa', margin: '0 4px 3px' }}></span>
+              <span style={{ whiteSpace: 'nowrap', fontWeight: 'bold' }}>Rs.{fmt(item.amount)}</span>
             </div>
           ))}
-
-          {/* TOTAL */}
-          <div style={{ display: 'flex', fontSize: '9px', fontWeight: 'bold', borderTop: '1px dashed #aaa', padding: '3px 0' }}>
-            <span style={{ flex: 1, textAlign: 'right', paddingRight: '10px' }}>{isRefund ? 'TOTAL REFUND ==>' : 'TOTAL PAID ==>'}</span>
-            <span style={{ width: '70px', textAlign: 'right', fontSize: '10px' }}>Rs.{fmt(grandTotal)}</span>
-            <span style={{ width: '60px', textAlign: 'right', color: overallBalance > 0 ? '#b00' : '#2c2c2c' }}>Rs.{fmt(overallBalance)}</span>
+          {totalDiscount > 0 && (
+            <div style={{ fontSize: '8px', padding: '2px 0', display: 'flex', color: '#2e7d32' }}>
+              <span style={{ whiteSpace: 'nowrap' }}>    Less: Concession</span>
+              <span style={{ flex: 1, borderBottom: '1px dotted #aaa', margin: '0 4px 3px' }}></span>
+              <span style={{ whiteSpace: 'nowrap' }}>(-){fmt(totalDiscount)}</span>
+            </div>
+          )}
+          {totalFine > 0 && (
+            <div style={{ fontSize: '8px', padding: '2px 0', display: 'flex', color: '#b00' }}>
+              <span style={{ whiteSpace: 'nowrap' }}>    Add: Late Fine</span>
+              <span style={{ flex: 1, borderBottom: '1px dotted #aaa', margin: '0 4px 3px' }}></span>
+              <span style={{ whiteSpace: 'nowrap' }}>(+){fmt(totalFine)}</span>
+            </div>
+          )}
+          <div style={{ borderTop: '1px dashed #aaa', fontSize: '9px', fontWeight: 'bold', padding: '3px 0', display: 'flex' }}>
+            <span style={{ whiteSpace: 'nowrap' }}>{isRefund ? 'TOTAL REFUND' : 'TOTAL RECEIVED'}</span>
+            <span style={{ flex: 1, borderBottom: '1px dotted #aaa', margin: '0 4px 3px' }}></span>
+            <span style={{ whiteSpace: 'nowrap', fontSize: '10px' }}>Rs.{fmt(grandTotal)}</span>
           </div>
+          {overallBalance > 0 && (
+            <div style={{ fontSize: '8px', padding: '2px 0', display: 'flex', color: '#b00' }}>
+              <span style={{ whiteSpace: 'nowrap' }}>    Balance Remaining</span>
+              <span style={{ flex: 1, borderBottom: '1px dotted #aaa', margin: '0 4px 3px' }}></span>
+              <span style={{ whiteSpace: 'nowrap' }}>Rs.{fmt(overallBalance)}</span>
+            </div>
+          )}
         </div>
 
-        {/* FEE STATEMENT */}
-        {feeStatement.length > 0 && (
-          <div style={{ fontSize: '7.5px', marginBottom: '4px' }}>
-            <span style={{ fontWeight: 'bold' }}>FEE SUMMARY:</span>
-            {feeStatement.map((fee, i) => (
-              <span key={i} style={{ marginLeft: '6px' }}>{fee.name}={fmt(fee.paid)}/{fmt(fee.amount)}({fee.status})</span>
-            ))}
-          </div>
-        )}
+        {/* TYPEWRITER NOTE */}
+        <div style={{ fontSize: '8px', marginBottom: '4px', fontFamily: "'Courier New', monospace", fontStyle: 'italic' }}>
+          ** This receipt is valid for Rs.{fmt(grandTotal)} only **
+        </div>
 
         {/* FOOTER */}
         {printSettings?.footer_content ? (

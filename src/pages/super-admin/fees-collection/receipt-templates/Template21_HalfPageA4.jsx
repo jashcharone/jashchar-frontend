@@ -28,7 +28,7 @@ const Template21_HalfPageA4 = ({ receiptData, copyType }) => {
   const {
     student, school, lineItems = [], feeStatement = [],
     totalPaid, totalDiscount, totalFine, grandTotal,
-    overallBalance = 0,
+    overallTotalAmount = 0, overallBalance = 0,
     transactionId, receiptDate, paymentMode,
     isRefund, isOriginal, printSettings, sessionName, title = 'FEE RECEIPT'
   } = receiptData;
@@ -74,46 +74,57 @@ const Template21_HalfPageA4 = ({ receiptData, copyType }) => {
         <thead>
           <tr style={{ backgroundColor: '#f5f5f5', borderBottom: '2px solid #333' }}>
             <th style={{ padding: '4px 6px', textAlign: 'center', width: '30px', borderRight: '1px solid #ddd' }}>#</th>
-            <th style={{ padding: '4px 6px', textAlign: 'left', borderRight: '1px solid #ddd' }}>Particulars</th>
-            <th style={{ padding: '4px 6px', textAlign: 'right', width: '80px', borderRight: '1px solid #ddd' }}>Amount (₹)</th>
-            {showConcession && <th style={{ padding: '4px 6px', textAlign: 'right', width: '70px', borderRight: '1px solid #ddd' }}>Concession</th>}
-            <th style={{ padding: '4px 6px', textAlign: 'right', width: '70px', borderRight: '1px solid #ddd' }}>Paid (₹)</th>
-            <th style={{ padding: '4px 6px', textAlign: 'right', width: '60px' }}>Balance</th>
+            <th style={{ padding: '4px 6px', textAlign: 'left', borderRight: '1px solid #ddd' }}>Description</th>
+            <th style={{ padding: '4px 6px', textAlign: 'right', width: '90px', borderRight: '1px solid #ddd' }}>Charged (₹)</th>
+            <th style={{ padding: '4px 6px', textAlign: 'right', width: '90px' }}>This Payment (₹)</th>
           </tr>
         </thead>
         <tbody>
           {lineItems.map((item, idx) => (
             <tr key={idx} style={{ borderBottom: '1px solid #eee' }}>
               <td style={{ padding: '3px 6px', textAlign: 'center', borderRight: '1px solid #eee' }}>{idx + 1}</td>
-              <td style={{ padding: '3px 6px', borderRight: '1px solid #eee' }}>{item.description}</td>
+              <td style={{ padding: '3px 6px', borderRight: '1px solid #eee' }}>
+                {item.description}
+                {Number(item.discount || 0) > 0 && <span style={{ fontSize: '7.5px', color: '#388e3c' }}> (Conc: ₹{fmt(item.discount)})</span>}
+              </td>
               <td style={{ padding: '3px 6px', textAlign: 'right', borderRight: '1px solid #eee' }}>{fmt(item.totalAmount)}</td>
-              {showConcession && <td style={{ padding: '3px 6px', textAlign: 'right', borderRight: '1px solid #eee' }}>{Number(item.discount || 0) > 0 ? fmt(item.discount) : ''}</td>}
-              <td style={{ padding: '3px 6px', textAlign: 'right', borderRight: '1px solid #eee' }}>{fmt(item.amount)}</td>
-              <td style={{ padding: '3px 6px', textAlign: 'right' }}>{fmt(item.balance)}</td>
+              <td style={{ padding: '3px 6px', textAlign: 'right' }}>{fmt(item.amount)}</td>
             </tr>
           ))}
+          {totalFine > 0 && (
+            <tr style={{ borderBottom: '1px solid #eee' }}>
+              <td style={{ padding: '3px 6px', borderRight: '1px solid #eee' }}></td>
+              <td style={{ padding: '3px 6px', borderRight: '1px solid #eee', color: '#c00' }}>Late Fine / Penalty</td>
+              <td style={{ padding: '3px 6px', borderRight: '1px solid #eee' }}></td>
+              <td style={{ padding: '3px 6px', textAlign: 'right', color: '#c00' }}>+₹{fmt(totalFine)}</td>
+            </tr>
+          )}
           <tr style={{ fontWeight: '700', borderTop: '2px solid #333', backgroundColor: '#f9f9f9' }}>
-            <td colSpan={showConcession ? 4 : 3} style={{ padding: '4px 6px', textAlign: 'right', borderRight: '1px solid #ddd' }}>{isRefund ? 'Total Refund' : 'Total Paid'}:</td>
-            <td style={{ padding: '4px 6px', textAlign: 'right', borderRight: '1px solid #ddd', fontSize: '11px' }}>₹{fmt(grandTotal)}</td>
-            <td style={{ padding: '4px 6px', textAlign: 'right', color: overallBalance > 0 ? '#c00' : '#222' }}>₹{fmt(overallBalance)}</td>
+            <td colSpan={2} style={{ padding: '4px 6px', textAlign: 'right', borderRight: '1px solid #ddd' }}>{isRefund ? 'Total Refund' : 'Total Paid'}:</td>
+            <td style={{ padding: '4px 6px', textAlign: 'right', borderRight: '1px solid #ddd' }}>₹{fmt(overallTotalAmount)}</td>
+            <td style={{ padding: '4px 6px', textAlign: 'right', fontSize: '11px' }}>₹{fmt(grandTotal)}</td>
           </tr>
         </tbody>
       </table>
 
-      {/* AMOUNT IN WORDS */}
+      {/* AMOUNT IN WORDS + SUMMARY */}
       <div style={{ fontSize: '8.5px', marginBottom: '4px' }}>
         <span style={{ color: '#666' }}>In Words:</span> <strong>{numberToWords(grandTotal)}</strong>
       </div>
-
-      {/* FEE STATEMENT */}
-      {feeStatement.length > 0 && (
-        <div style={{ fontSize: '8px', marginBottom: '4px', borderTop: '1px solid #eee', paddingTop: '3px' }}>
-          <strong>Fee Statement: </strong>
-          {feeStatement.map((fee, i) => (
-            <span key={i} style={{ marginRight: '10px' }}>{fee.name}: ₹{fmt(fee.paid)}/{fmt(fee.amount)} [{fee.status}]</span>
-          ))}
+      <div style={{ display: 'flex', gap: '8px', marginBottom: '4px', fontSize: '8px' }}>
+        <div style={{ flex: 1, textAlign: 'center', padding: '3px', backgroundColor: '#f0f0f0', borderRadius: '2px' }}>
+          <div style={{ color: '#666', fontSize: '7px' }}>TOTAL FEES</div>
+          <div style={{ fontWeight: '700' }}>₹{fmt(overallTotalAmount)}</div>
         </div>
-      )}
+        <div style={{ flex: 1, textAlign: 'center', padding: '3px', backgroundColor: '#e8f5e9', borderRadius: '2px' }}>
+          <div style={{ color: '#666', fontSize: '7px' }}>PAID</div>
+          <div style={{ fontWeight: '700', color: '#2e7d32' }}>₹{fmt(grandTotal)}</div>
+        </div>
+        <div style={{ flex: 1, textAlign: 'center', padding: '3px', backgroundColor: overallBalance > 0 ? '#ffebee' : '#e8f5e9', borderRadius: '2px' }}>
+          <div style={{ color: '#666', fontSize: '7px' }}>BALANCE</div>
+          <div style={{ fontWeight: '700', color: overallBalance > 0 ? '#c00' : '#2e7d32' }}>₹{fmt(overallBalance)}</div>
+        </div>
+      </div>
 
       {/* FOOTER */}
       {printSettings?.footer_content ? (

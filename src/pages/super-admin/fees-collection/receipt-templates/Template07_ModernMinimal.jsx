@@ -57,32 +57,41 @@ const Template07_ModernMinimal = ({ receiptData, copyType }) => {
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '9px' }}>
           <thead>
             <tr>
-              <th style={{ padding: '5px 4px', textAlign: 'left', fontWeight: '600', borderBottom: '2px solid #000', fontSize: '8px', textTransform: 'uppercase', color: '#888', letterSpacing: '0.5px' }}>Particulars</th>
-              <th style={{ padding: '5px 4px', textAlign: 'right', fontWeight: '600', borderBottom: '2px solid #000', width: '75px', fontSize: '8px', textTransform: 'uppercase', color: '#888', letterSpacing: '0.5px' }}>Total</th>
-              {showConcession && <th style={{ padding: '5px 4px', textAlign: 'right', fontWeight: '600', borderBottom: '2px solid #000', width: '65px', fontSize: '8px', textTransform: 'uppercase', color: '#888' }}>Discount</th>}
-              <th style={{ padding: '5px 4px', textAlign: 'right', fontWeight: '600', borderBottom: '2px solid #000', width: '65px', fontSize: '8px', textTransform: 'uppercase', color: '#888', letterSpacing: '0.5px' }}>Paid</th>
-              <th style={{ padding: '5px 4px', textAlign: 'right', fontWeight: '600', borderBottom: '2px solid #000', width: '60px', fontSize: '8px', textTransform: 'uppercase', color: '#888', letterSpacing: '0.5px' }}>Balance</th>
+              <th style={{ padding: '5px 4px', textAlign: 'left', fontWeight: '600', borderBottom: '2px solid #000', fontSize: '8px', textTransform: 'uppercase', color: '#888', letterSpacing: '0.5px' }}>Description</th>
+              <th style={{ padding: '5px 4px', textAlign: 'right', fontWeight: '600', borderBottom: '2px solid #000', width: '100px', fontSize: '8px', textTransform: 'uppercase', color: '#888', letterSpacing: '0.5px' }}>Amount</th>
             </tr>
           </thead>
           <tbody>
             {lineItems.map((item, idx) => (
               <tr key={idx}>
                 <td style={{ padding: '5px 4px', borderBottom: '1px solid #eee' }}>{item.description}</td>
-                <td style={{ padding: '5px 4px', textAlign: 'right', borderBottom: '1px solid #eee' }}>{fmt(item.totalAmount)}</td>
-                {showConcession && <td style={{ padding: '5px 4px', textAlign: 'right', borderBottom: '1px solid #eee' }}>{Number(item.discount || 0) > 0 ? fmt(item.discount) : ''}</td>}
                 <td style={{ padding: '5px 4px', textAlign: 'right', borderBottom: '1px solid #eee' }}>{fmt(item.amount)}</td>
-                <td style={{ padding: '5px 4px', textAlign: 'right', borderBottom: '1px solid #eee' }}>{fmt(item.balance)}</td>
               </tr>
             ))}
+            {totalDiscount > 0 && (
+              <tr>
+                <td style={{ padding: '4px', textAlign: 'right', color: '#27ae60', fontSize: '8px' }}>Concession/Discount</td>
+                <td style={{ padding: '4px', textAlign: 'right', color: '#27ae60', fontSize: '8px' }}>-{fmt(totalDiscount)}</td>
+              </tr>
+            )}
+            {totalFine > 0 && (
+              <tr>
+                <td style={{ padding: '4px', textAlign: 'right', color: '#e74c3c', fontSize: '8px' }}>Late Fine</td>
+                <td style={{ padding: '4px', textAlign: 'right', color: '#e74c3c', fontSize: '8px' }}>+{fmt(totalFine)}</td>
+              </tr>
+            )}
           </tbody>
           <tfoot>
             <tr>
-              <td style={{ padding: '6px 4px', borderTop: '2px solid #000', fontWeight: 'bold', textAlign: 'right' }}>{isRefund ? 'Total Refund' : 'Total'}</td>
-              <td style={{ padding: '6px 4px', borderTop: '2px solid #000', textAlign: 'right', fontWeight: 'bold' }}>{fmt(overallTotalAmount)}</td>
-              {showConcession && <td style={{ padding: '6px 4px', borderTop: '2px solid #000', textAlign: 'right', fontWeight: 'bold' }}>{fmt(totalDiscount)}</td>}
-              <td style={{ padding: '6px 4px', borderTop: '2px solid #000', textAlign: 'right', fontWeight: 'bold', fontSize: '11px' }}>₹{fmt(grandTotal)}</td>
-              <td style={{ padding: '6px 4px', borderTop: '2px solid #000', textAlign: 'right', fontWeight: 'bold' }}>{fmt(overallBalance)}</td>
+              <td style={{ padding: '6px 4px', borderTop: '2px solid #000', fontWeight: 'bold', textAlign: 'right' }}>{isRefund ? 'Total Refund' : 'Amount Paid'}</td>
+              <td style={{ padding: '6px 4px', borderTop: '2px solid #000', textAlign: 'right', fontWeight: 'bold', fontSize: '13px' }}>{`\u20b9`}{fmt(grandTotal)}</td>
             </tr>
+            {overallBalance > 0 && (
+              <tr>
+                <td style={{ padding: '3px 4px', textAlign: 'right', fontSize: '8px', color: '#888' }}>Balance Remaining</td>
+                <td style={{ padding: '3px 4px', textAlign: 'right', fontSize: '9px', color: '#c0392b' }}>{`\u20b9`}{fmt(overallBalance)}</td>
+              </tr>
+            )}
           </tfoot>
         </table>
       </div>

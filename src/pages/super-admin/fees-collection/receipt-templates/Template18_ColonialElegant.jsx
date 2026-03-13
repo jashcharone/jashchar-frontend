@@ -28,7 +28,7 @@ const Template18_ColonialElegant = ({ receiptData, copyType }) => {
   const {
     student, school, lineItems = [], feeStatement = [],
     totalPaid, totalDiscount, totalFine, grandTotal,
-    overallBalance = 0,
+    overallTotalAmount = 0, overallBalance = 0,
     transactionId, receiptDate, paymentMode,
     isRefund, isOriginal, printSettings, sessionName, title = 'FEE RECEIPT'
   } = receiptData;
@@ -99,11 +99,10 @@ const Template18_ColonialElegant = ({ receiptData, copyType }) => {
           <thead>
             <tr style={{ backgroundColor: burg, color: gold }}>
               <th style={{ padding: '3px 5px', textAlign: 'center', width: '26px' }}>S.No</th>
-              <th style={{ padding: '3px 5px', textAlign: 'left', fontVariant: 'small-caps', letterSpacing: '1px' }}>Particulars</th>
-              <th style={{ padding: '3px 5px', textAlign: 'right', width: '68px' }}>Amount</th>
-              {showConcession && <th style={{ padding: '3px 5px', textAlign: 'right', width: '55px' }}>Concession</th>}
-              <th style={{ padding: '3px 5px', textAlign: 'right', width: '60px' }}>Paid</th>
-              <th style={{ padding: '3px 5px', textAlign: 'right', width: '52px' }}>Balance</th>
+              <th style={{ padding: '3px 5px', textAlign: 'left', fontVariant: 'small-caps', letterSpacing: '1px' }}>Description of Fees</th>
+              <th style={{ padding: '3px 5px', textAlign: 'right', width: '75px' }}>Assessed (₹)</th>
+              <th style={{ padding: '3px 5px', textAlign: 'right', width: '70px' }}>Concession</th>
+              <th style={{ padding: '3px 5px', textAlign: 'right', width: '75px' }}>Received (₹)</th>
             </tr>
           </thead>
           <tbody>
@@ -112,15 +111,24 @@ const Template18_ColonialElegant = ({ receiptData, copyType }) => {
                 <td style={{ padding: '2.5px 5px', textAlign: 'center' }}>{idx + 1}</td>
                 <td style={{ padding: '2.5px 5px', fontStyle: 'italic' }}>{item.description}</td>
                 <td style={{ padding: '2.5px 5px', textAlign: 'right' }}>{fmt(item.totalAmount)}</td>
-                {showConcession && <td style={{ padding: '2.5px 5px', textAlign: 'right' }}>{Number(item.discount || 0) > 0 ? fmt(item.discount) : ''}</td>}
+                <td style={{ padding: '2.5px 5px', textAlign: 'right', color: gold }}>{Number(item.discount || 0) > 0 ? fmt(item.discount) : '—'}</td>
                 <td style={{ padding: '2.5px 5px', textAlign: 'right' }}>{fmt(item.amount)}</td>
-                <td style={{ padding: '2.5px 5px', textAlign: 'right' }}>{fmt(item.balance)}</td>
               </tr>
             ))}
+            {totalFine > 0 && (
+              <tr style={{ borderBottom: `1px solid #e8d8c8`, backgroundColor: '#faf5ef' }}>
+                <td style={{ padding: '2.5px 5px' }}></td>
+                <td style={{ padding: '2.5px 5px', fontStyle: 'italic', color: '#8b0000' }}>Late Fine</td>
+                <td style={{ padding: '2.5px 5px' }}></td>
+                <td style={{ padding: '2.5px 5px' }}></td>
+                <td style={{ padding: '2.5px 5px', textAlign: 'right', color: '#8b0000' }}>+₹{fmt(totalFine)}</td>
+              </tr>
+            )}
             <tr style={{ fontWeight: 'bold', backgroundColor: '#efe0cc', borderTop: `2px solid ${burg}` }}>
-              <td colSpan={showConcession ? 4 : 3} style={{ padding: '3px 5px', textAlign: 'right', fontVariant: 'small-caps' }}>{isRefund ? 'Total Refund' : 'Grand Total'}:</td>
+              <td colSpan={2} style={{ padding: '3px 5px', textAlign: 'right', fontVariant: 'small-caps' }}>{isRefund ? 'Total Refund' : 'Grand Total'}:</td>
+              <td style={{ padding: '3px 5px', textAlign: 'right' }}>₹{fmt(overallTotalAmount)}</td>
+              <td style={{ padding: '3px 5px', textAlign: 'right', color: gold }}>{totalDiscount > 0 ? `₹${fmt(totalDiscount)}` : '—'}</td>
               <td style={{ padding: '3px 5px', textAlign: 'right', color: burg, fontSize: '10px' }}>₹{fmt(grandTotal)}</td>
-              <td style={{ padding: '3px 5px', textAlign: 'right', color: overallBalance > 0 ? '#8b0000' : '#2a1a0e' }}>₹{fmt(overallBalance)}</td>
             </tr>
           </tbody>
         </table>
@@ -128,12 +136,18 @@ const Template18_ColonialElegant = ({ receiptData, copyType }) => {
         {/* AMOUNT IN WORDS */}
         <div style={{ fontSize: '8px', fontStyle: 'italic', color: burg, marginBottom: '3px' }}>
           <strong>In Words:</strong> {numberToWords(grandTotal)}
+          {overallBalance > 0 && <span style={{ color: '#8b0000', marginLeft: '10px' }}>[Balance: ₹{fmt(overallBalance)}]</span>}
         </div>
 
-        {/* FEE STATEMENT */}
+        {/* SCHEDULE OF FEES */}
         {feeStatement.length > 0 && (
           <div style={{ fontSize: '7.5px', borderTop: `1px solid ${gold}`, paddingTop: '2px', marginBottom: '3px' }}>
-            <strong style={{ color: burg }}>Ledger:</strong> {feeStatement.map((fee, i) => `${fee.name}: ₹${fmt(fee.paid)}/${fmt(fee.amount)} [${fee.status}]`).join(' • ')}
+            <strong style={{ color: burg, fontVariant: 'small-caps' }}>Schedule of Fees:</strong>
+            {feeStatement.map((fee, i) => (
+              <span key={i} style={{ marginLeft: '6px', borderBottom: `1px dotted ${gold}`, padding: '0 2px' }}>
+                {fee.name}: {fee.status?.toLowerCase() === 'paid' ? '✓' : '✗'} (₹{fmt(fee.paid)}/{fmt(fee.amount)})
+              </span>
+            ))}
           </div>
         )}
 

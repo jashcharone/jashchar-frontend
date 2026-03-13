@@ -68,43 +68,35 @@ const Template23_ColorfulBands = ({ receiptData, copyType }) => {
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '8.5px', marginBottom: '5px' }}>
           <thead>
             <tr>
-              <th style={{ padding: '4px 5px', textAlign: 'center', width: '28px', backgroundColor: '#e53935', color: '#fff', borderRadius: '4px 0 0 0' }}>#</th>
-              <th style={{ padding: '4px 5px', textAlign: 'left', backgroundColor: '#fb8c00', color: '#fff' }}>Particulars</th>
-              <th style={{ padding: '4px 5px', textAlign: 'right', width: '70px', backgroundColor: '#fdd835', color: '#333' }}>Total</th>
-              {showConcession && <th style={{ padding: '4px 5px', textAlign: 'right', width: '60px', backgroundColor: '#43a047', color: '#fff' }}>Conc.</th>}
-              <th style={{ padding: '4px 5px', textAlign: 'right', width: '60px', backgroundColor: '#1e88e5', color: '#fff' }}>Paid</th>
-              <th style={{ padding: '4px 5px', textAlign: 'right', width: '55px', backgroundColor: '#8e24aa', color: '#fff', borderRadius: '0 4px 0 0' }}>Balance</th>
+              <th style={{ padding: '4px 5px', textAlign: 'left', backgroundColor: '#1e88e5', color: '#fff', borderRadius: '4px 0 0 0' }}>Fee Description</th>
+              <th style={{ padding: '4px 5px', textAlign: 'right', width: '90px', backgroundColor: '#fb8c00', color: '#fff' }}>Charged (₹)</th>
+              <th style={{ padding: '4px 5px', textAlign: 'right', width: '90px', backgroundColor: '#43a047', color: '#fff', borderRadius: '0 4px 0 0' }}>Paid (₹)</th>
             </tr>
           </thead>
           <tbody>
             {lineItems.map((item, idx) => (
-              <tr key={idx} style={{ borderBottom: '1px solid #f0f0f0' }}>
-                <td style={{ padding: '3px 5px', textAlign: 'center' }}>{idx + 1}</td>
-                <td style={{ padding: '3px 5px' }}>{item.description}</td>
+              <tr key={idx} style={{ borderBottom: '1px solid #f0f0f0', borderLeft: `3px solid ${bandColors[idx % bandColors.length]}` }}>
+                <td style={{ padding: '3px 5px' }}>
+                  {item.description}
+                  {Number(item.discount || 0) > 0 && <span style={{ fontSize: '7px', color: '#43a047' }}> (Conc: ₹{fmt(item.discount)})</span>}
+                </td>
                 <td style={{ padding: '3px 5px', textAlign: 'right' }}>{fmt(item.totalAmount)}</td>
-                {showConcession && <td style={{ padding: '3px 5px', textAlign: 'right' }}>{Number(item.discount || 0) > 0 ? fmt(item.discount) : ''}</td>}
                 <td style={{ padding: '3px 5px', textAlign: 'right' }}>{fmt(item.amount)}</td>
-                <td style={{ padding: '3px 5px', textAlign: 'right' }}>{fmt(item.balance)}</td>
               </tr>
             ))}
           </tbody>
         </table>
 
-        {/* TOTAL */}
-        <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '4px' }}>
+        {/* TOTALS */}
+        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '6px', marginBottom: '4px', alignItems: 'center' }}>
+          {totalDiscount > 0 && <span style={{ fontSize: '8px', padding: '2px 8px', borderRadius: '12px', backgroundColor: '#43a04720', color: '#43a047' }}>Concession: -₹{fmt(totalDiscount)}</span>}
+          {totalFine > 0 && <span style={{ fontSize: '8px', padding: '2px 8px', borderRadius: '12px', backgroundColor: '#e5393520', color: '#e53935' }}>Fine: +₹{fmt(totalFine)}</span>}
           <div style={{ background: 'linear-gradient(90deg, #e53935, #fb8c00, #1e88e5)', color: '#fff', padding: '5px 16px', borderRadius: '20px', fontSize: '11px', fontWeight: '700' }}>
             {isRefund ? 'Refund' : 'Paid'}: ₹{fmt(grandTotal)}
-            {overallBalance > 0 && <span style={{ fontSize: '8px', marginLeft: '8px', opacity: 0.8 }}>Bal: ₹{fmt(overallBalance)}</span>}
           </div>
         </div>
-
-        {/* FEE STATEMENT */}
-        {feeStatement.length > 0 && (
-          <div style={{ fontSize: '7.5px', marginBottom: '3px' }}>
-            {feeStatement.map((fee, i) => (
-              <span key={i} style={{ marginRight: '8px', padding: '1px 5px', borderRadius: '8px', backgroundColor: bandColors[i % bandColors.length] + '20', color: bandColors[i % bandColors.length] }}>{fee.name}: ₹{fmt(fee.paid)} [{fee.status}]</span>
-            ))}
-          </div>
+        {overallBalance > 0 && (
+          <div style={{ textAlign: 'right', fontSize: '8px', color: '#e53935', marginBottom: '3px' }}>Balance Due: ₹{fmt(overallBalance)}</div>
         )}
 
         {/* FOOTER */}

@@ -68,80 +68,55 @@ const Template04_MaroonHeritage = ({ receiptData, copyType }) => {
         <span style={{ fontSize: '8px', fontWeight: 'bold', color: '#fff', backgroundColor: copyType === 'OFFICE COPY' ? '#800000' : copyType === 'STUDENT COPY' ? '#1565c0' : '#2e7d32', padding: '2px 8px', borderRadius: '3px', marginLeft: '6px' }}>{copyType}</span>
       </div>
 
-      {/* STUDENT INFO - Table style */}
-      <div style={{ padding: '5px 20px', fontSize: '9px', borderBottom: '1px solid #ddd' }}>
-        <table style={{ width: '100%', fontSize: '9px' }}>
-          <tbody>
-            <tr>
-              <td style={{ padding: '2px 4px', fontWeight: 'bold', color: '#800000', width: '90px' }}>Student Name</td>
-              <td style={{ padding: '2px 4px', backgroundColor: '#fff' }}>: <strong>{student?.full_name || '-'}</strong></td>
-              <td style={{ padding: '2px 4px', fontWeight: 'bold', color: '#800000', width: '80px' }}>Receipt No</td>
-              <td style={{ padding: '2px 4px', backgroundColor: '#fff' }}>: {transactionId || '-'}</td>
-            </tr>
-            <tr>
-              <td style={{ padding: '2px 4px', fontWeight: 'bold', color: '#800000' }}>Father's Name</td>
-              <td style={{ padding: '2px 4px', backgroundColor: '#fff' }}>: {student?.father_name || '-'}</td>
-              <td style={{ padding: '2px 4px', fontWeight: 'bold', color: '#800000' }}>Date</td>
-              <td style={{ padding: '2px 4px', backgroundColor: '#fff' }}>: {receiptDate ? format(new Date(receiptDate), 'dd MMM yyyy') : '-'}</td>
-            </tr>
-            <tr>
-              <td style={{ padding: '2px 4px', fontWeight: 'bold', color: '#800000' }}>Adm. No</td>
-              <td style={{ padding: '2px 4px', backgroundColor: '#fff' }}>: {student?.school_code || student?.admission_no || '-'}</td>
-              <td style={{ padding: '2px 4px', fontWeight: 'bold', color: '#800000' }}>Mode</td>
-              <td style={{ padding: '2px 4px', backgroundColor: '#fff' }}>: {paymentMode || 'Cash'}</td>
-            </tr>
-            <tr>
-              <td style={{ padding: '2px 4px', fontWeight: 'bold', color: '#800000' }}>Class</td>
-              <td style={{ padding: '2px 4px', backgroundColor: '#fff' }}>: {student?.class?.name || '-'}{student?.section?.name ? ` (${student.section.name})` : ''}</td>
-              <td style={{ padding: '2px 4px', fontWeight: 'bold', color: '#800000' }}>Session</td>
-              <td style={{ padding: '2px 4px', backgroundColor: '#fff' }}>: {sessionName || '-'}</td>
-            </tr>
-          </tbody>
-        </table>
+      {/* RECEIPT ACKNOWLEDGMENT - Prose Format */}
+      <div style={{ padding: '8px 20px', fontSize: '9px', borderBottom: '1px solid #ddd', lineHeight: '1.6' }}>
+        <p style={{ margin: '0 0 4px', fontSize: '8px', color: '#666' }}>
+          <strong style={{ color: '#800000' }}>Receipt No:</strong> {transactionId || '-'} &nbsp;|&nbsp;
+          <strong style={{ color: '#800000' }}>Date:</strong> {receiptDate ? format(new Date(receiptDate), 'dd MMM yyyy') : '-'} &nbsp;|&nbsp;
+          <strong style={{ color: '#800000' }}>Session:</strong> {sessionName || '-'}
+        </p>
+        <p style={{ margin: 0, textIndent: '20px' }}>
+          Received with thanks from <strong>Shri/Smt. {student?.father_name || '______'}</strong>,{' '}
+          parent/guardian of <strong style={{ color: '#800000' }}>{student?.full_name || '______'}</strong>,{' '}
+          Admission No. <strong>{student?.school_code || student?.admission_no || '______'}</strong>,{' '}
+          studying in Class <strong>{student?.class?.name || '______'}{student?.section?.name ? ` (${student.section.name})` : ''}</strong>,{' '}
+          the sum as detailed below via <strong>{paymentMode || 'Cash'}</strong>:
+        </p>
       </div>
 
-      {/* FEE TABLE */}
-      <div style={{ padding: '4px 20px' }}>
-        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '8.5px' }}>
-          <thead>
-            <tr style={{ backgroundColor: '#800000', color: '#fffdd0' }}>
-              <th style={{ border: '1px solid #800000', padding: '3px 4px', textAlign: 'center', width: '28px' }}>S.No</th>
-              <th style={{ border: '1px solid #800000', padding: '3px 4px', textAlign: 'left' }}>Particulars</th>
-              <th style={{ border: '1px solid #800000', padding: '3px 4px', textAlign: 'right', width: '72px' }}>Total</th>
-              {showConcession && <th style={{ border: '1px solid #800000', padding: '3px 4px', textAlign: 'right', width: '62px' }}>Concession</th>}
-              <th style={{ border: '1px solid #800000', padding: '3px 4px', textAlign: 'right', width: '62px' }}>Paid</th>
-              <th style={{ border: '1px solid #800000', padding: '3px 4px', textAlign: 'right', width: '55px' }}>Balance</th>
-            </tr>
-          </thead>
-          <tbody>
-            {lineItems.map((item, idx) => (
-              <tr key={idx} style={{ backgroundColor: idx % 2 === 0 ? '#fffdd0' : '#fff' }}>
-                <td style={{ border: '1px solid #ccc', padding: '3px 4px', textAlign: 'center' }}>{idx + 1}</td>
-                <td style={{ border: '1px solid #ccc', padding: '3px 4px', fontWeight: '600' }}>{item.description}</td>
-                <td style={{ border: '1px solid #ccc', padding: '3px 4px', textAlign: 'right' }}>{fmt(item.totalAmount)}</td>
-                {showConcession && <td style={{ border: '1px solid #ccc', padding: '3px 4px', textAlign: 'right' }}>{Number(item.discount || 0) > 0 ? fmt(item.discount) : ''}</td>}
-                <td style={{ border: '1px solid #ccc', padding: '3px 4px', textAlign: 'right' }}>{fmt(item.amount)}</td>
-                <td style={{ border: '1px solid #ccc', padding: '3px 4px', textAlign: 'right' }}>{fmt(item.balance)}</td>
-              </tr>
-            ))}
-          </tbody>
-          <tfoot>
-            <tr style={{ fontWeight: 'bold', backgroundColor: '#800000', color: '#fffdd0' }}>
-              <td style={{ border: '1px solid #800000', padding: '4px' }}></td>
-              <td style={{ border: '1px solid #800000', padding: '4px', textAlign: 'right' }}>{isRefund ? 'Total Refund' : 'Total'}</td>
-              <td style={{ border: '1px solid #800000', padding: '4px', textAlign: 'right' }}>{fmt(overallTotalAmount)}</td>
-              {showConcession && <td style={{ border: '1px solid #800000', padding: '4px', textAlign: 'right' }}>{fmt(totalDiscount)}</td>}
-              <td style={{ border: '1px solid #800000', padding: '4px', textAlign: 'right' }}>{fmt(grandTotal)}</td>
-              <td style={{ border: '1px solid #800000', padding: '4px', textAlign: 'right' }}>{fmt(overallBalance)}</td>
-            </tr>
-          </tfoot>
-        </table>
+      {/* FEE DETAILS - Numbered List Format */}
+      <div style={{ padding: '6px 20px', fontSize: '9px' }}>
+        {lineItems.map((item, idx) => (
+          <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', padding: '3px 0', borderBottom: '1px dotted #ccc' }}>
+            <span>
+              <strong style={{ color: '#800000' }}>({idx + 1})</strong>{' '}
+              Towards <em>{item.description}</em>
+              {Number(item.discount || 0) > 0 && <span style={{ fontSize: '8px', color: '#666' }}> (less concession \u20b9{fmt(item.discount)})</span>}
+            </span>
+            <span style={{ fontWeight: 'bold', whiteSpace: 'nowrap' }}>\u20b9 {fmt(item.amount)}</span>
+          </div>
+        ))}
+        {totalFine > 0 && (
+          <div style={{ display: 'flex', justifyContent: 'space-between', padding: '3px 0', borderBottom: '1px dotted #ccc', color: '#c00' }}>
+            <span><strong>({lineItems.length + 1})</strong> Late Fine</span>
+            <span style={{ fontWeight: 'bold' }}>+ \u20b9 {fmt(totalFine)}</span>
+          </div>
+        )}
+        <div style={{ display: 'flex', justifyContent: 'space-between', padding: '5px 0', borderTop: '2px solid #800000', marginTop: '4px' }}>
+          <span style={{ fontWeight: 'bold', color: '#800000', fontSize: '10px' }}>{isRefund ? 'Total Refund' : 'Total Amount Received'}</span>
+          <span style={{ fontWeight: 'bold', color: '#800000', fontSize: '10px' }}>\u20b9 {fmt(grandTotal)}</span>
+        </div>
       </div>
 
-      {/* AMOUNT IN WORDS - Bordered box */}
-      <div style={{ margin: '3px 20px', padding: '3px 8px', border: '1px solid #800000', fontSize: '8.5px', backgroundColor: '#fff' }}>
-        <strong>Amount in Words:</strong> <em>{amountInWords}</em>
+      {/* AMOUNT IN WORDS - Ornamental Box */}
+      <div style={{ margin: '4px 20px', padding: '5px 12px', border: '2px solid #800000', borderRadius: '3px', fontSize: '9px', backgroundColor: '#fff', textAlign: 'center' }}>
+        {`\u2766`} <strong>In Words:</strong> <em>{amountInWords}</em> {`\u2766`}
       </div>
+      {overallBalance > 0 && (
+        <div style={{ padding: '3px 20px', fontSize: '8px', textAlign: 'right', color: '#c00', fontStyle: 'italic' }}>
+          Balance Remaining: \u20b9{fmt(overallBalance)}
+        </div>
+      )}
 
       {/* FOOTER */}
       {printSettings?.footer_content ? (

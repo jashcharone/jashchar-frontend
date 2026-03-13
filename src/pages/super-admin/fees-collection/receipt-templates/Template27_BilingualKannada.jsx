@@ -28,7 +28,7 @@ const Template27_BilingualKannada = ({ receiptData, copyType }) => {
   const {
     student, school, lineItems = [], feeStatement = [],
     totalPaid, totalDiscount, totalFine, grandTotal,
-    overallBalance = 0,
+    overallTotalAmount = 0, overallBalance = 0,
     transactionId, receiptDate, paymentMode,
     isRefund, isOriginal, printSettings, sessionName, title = 'FEE RECEIPT'
   } = receiptData;
@@ -85,29 +85,33 @@ const Template27_BilingualKannada = ({ receiptData, copyType }) => {
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '8.5px', marginBottom: '4px', border: '1px solid #ddd' }}>
           <thead>
             <tr style={{ backgroundColor: crimson, color: '#fff' }}>
-              <th style={{ padding: '3px 5px', textAlign: 'center', width: '26px' }}>ಕ್ರ.ಸಂ.</th>
-              <th style={{ padding: '3px 5px', textAlign: 'left' }}>ವಿವರ / Particulars</th>
-              <th style={{ padding: '3px 5px', textAlign: 'right', width: '68px' }}>ಮೊತ್ತ / Amt</th>
-              {showConcession && <th style={{ padding: '3px 5px', textAlign: 'right', width: '55px' }}>ರಿಯಾಯಿತಿ / Conc.</th>}
-              <th style={{ padding: '3px 5px', textAlign: 'right', width: '60px' }}>ಪಾವತಿ / Paid</th>
-              <th style={{ padding: '3px 5px', textAlign: 'right', width: '52px' }}>ಬಾಕಿ / Bal.</th>
+              <th style={{ padding: '3px 5px', textAlign: 'left' }}>ವಿವರ / Description</th>
+              <th style={{ padding: '3px 5px', textAlign: 'right', width: '95px' }}>ಶುಲ್ಕ / Assessed (₹)</th>
+              <th style={{ padding: '3px 5px', textAlign: 'right', width: '95px' }}>ಪಡೆದ ಮೊತ್ತ / Received (₹)</th>
             </tr>
           </thead>
           <tbody>
             {lineItems.map((item, idx) => (
               <tr key={idx} style={{ borderBottom: '1px solid #eee', backgroundColor: idx % 2 === 0 ? '#fffef8' : '#faf5e8' }}>
-                <td style={{ padding: '2.5px 5px', textAlign: 'center' }}>{idx + 1}</td>
-                <td style={{ padding: '2.5px 5px' }}>{item.description}</td>
+                <td style={{ padding: '2.5px 5px' }}>
+                  {item.description}
+                  {Number(item.discount || 0) > 0 && <span style={{ fontSize: '7px', color: darkGold }}> (ರಿಯಾಯಿತಿ: ₹{fmt(item.discount)})</span>}
+                </td>
                 <td style={{ padding: '2.5px 5px', textAlign: 'right' }}>{fmt(item.totalAmount)}</td>
-                {showConcession && <td style={{ padding: '2.5px 5px', textAlign: 'right' }}>{Number(item.discount || 0) > 0 ? fmt(item.discount) : ''}</td>}
                 <td style={{ padding: '2.5px 5px', textAlign: 'right' }}>{fmt(item.amount)}</td>
-                <td style={{ padding: '2.5px 5px', textAlign: 'right' }}>{fmt(item.balance)}</td>
               </tr>
             ))}
+            {totalFine > 0 && (
+              <tr style={{ borderBottom: '1px solid #eee' }}>
+                <td style={{ padding: '2.5px 5px', color: '#c00' }}>ವಿಳಂಬ ದಂಡ / Late Fine</td>
+                <td style={{ padding: '2.5px 5px' }}></td>
+                <td style={{ padding: '2.5px 5px', textAlign: 'right', color: '#c00' }}>+₹{fmt(totalFine)}</td>
+              </tr>
+            )}
             <tr style={{ fontWeight: 'bold', backgroundColor: '#f0e0c0', borderTop: `2px solid ${crimson}` }}>
-              <td colSpan={showConcession ? 4 : 3} style={{ padding: '3px 5px', textAlign: 'right' }}>{isRefund ? 'ಒಟ್ಟು ಮರುಪಾವತಿ / Total Refund' : 'ಒಟ್ಟು ಪಾವತಿ / Total Paid'}:</td>
+              <td style={{ padding: '3px 5px', textAlign: 'right' }}>{isRefund ? 'ಒಟ್ಟು ಮರುಪಾವತಿ / Total Refund' : 'ಒಟ್ಟು ಪಾವತಿ / Total Paid'}:</td>
+              <td style={{ padding: '3px 5px', textAlign: 'right' }}>₹{fmt(overallTotalAmount)}</td>
               <td style={{ padding: '3px 5px', textAlign: 'right', color: crimson, fontSize: '10px' }}>₹{fmt(grandTotal)}</td>
-              <td style={{ padding: '3px 5px', textAlign: 'right', color: overallBalance > 0 ? '#c00' : '#333' }}>₹{fmt(overallBalance)}</td>
             </tr>
           </tbody>
         </table>
@@ -115,14 +119,8 @@ const Template27_BilingualKannada = ({ receiptData, copyType }) => {
         {/* AMOUNT IN WORDS */}
         <div style={{ fontSize: '8px', marginBottom: '3px', fontStyle: 'italic' }}>
           <strong>ಅಕ್ಷರಗಳಲ್ಲಿ / In Words:</strong> {numberToWords(grandTotal)}
+          {overallBalance > 0 && <span style={{ color: '#c00', marginLeft: '8px' }}>(ಬಾಕಿ / Balance: ₹{fmt(overallBalance)})</span>}
         </div>
-
-        {/* FEE STATEMENT */}
-        {feeStatement.length > 0 && (
-          <div style={{ fontSize: '7.5px', borderTop: '1px solid #ddd', paddingTop: '2px', marginBottom: '2px' }}>
-            <strong>ಶುಲ್ಕ ವಿವರ / Fee Statement:</strong> {feeStatement.map((fee, i) => `${fee.name}: ₹${fmt(fee.paid)}/${fmt(fee.amount)} [${fee.status}]`).join(' | ')}
-          </div>
-        )}
 
         {/* FOOTER */}
         {printSettings?.footer_content ? (

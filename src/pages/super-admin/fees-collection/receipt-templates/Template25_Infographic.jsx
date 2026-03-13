@@ -76,29 +76,31 @@ const Template25_Infographic = ({ receiptData, copyType }) => {
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '8.5px' }}>
           <thead>
             <tr style={{ backgroundColor: '#2196f3', color: '#fff' }}>
-              <th style={{ padding: '3px 5px', textAlign: 'center', width: '26px' }}>#</th>
               <th style={{ padding: '3px 5px', textAlign: 'left' }}>Fee Type</th>
-              <th style={{ padding: '3px 5px', textAlign: 'right', width: '65px' }}>Total</th>
-              {showConcession && <th style={{ padding: '3px 5px', textAlign: 'right', width: '55px' }}>Conc.</th>}
-              <th style={{ padding: '3px 5px', textAlign: 'right', width: '55px' }}>Paid</th>
-              <th style={{ padding: '3px 5px', textAlign: 'right', width: '50px' }}>Bal.</th>
-              <th style={{ padding: '3px 5px', textAlign: 'center', width: '50px' }}>Status</th>
+              <th style={{ padding: '3px 5px', textAlign: 'right', width: '70px' }}>Amount</th>
+              <th style={{ padding: '3px 5px', textAlign: 'center', width: '120px' }}>Payment Progress</th>
+              <th style={{ padding: '3px 5px', textAlign: 'right', width: '70px' }}>This Payment</th>
             </tr>
           </thead>
           <tbody>
             {lineItems.map((item, idx) => {
-              const itemBal = Number(item.balance || 0);
+              const pct = Number(item.totalAmount) > 0 ? Math.round(((Number(item.totalAmount) - Number(item.balance || 0)) / Number(item.totalAmount)) * 100) : 100;
               return (
                 <tr key={idx} style={{ borderBottom: '1px solid #f0f0f0' }}>
-                  <td style={{ padding: '2.5px 5px', textAlign: 'center' }}>{idx + 1}</td>
-                  <td style={{ padding: '2.5px 5px' }}>{item.description}</td>
-                  <td style={{ padding: '2.5px 5px', textAlign: 'right' }}>{fmt(item.totalAmount)}</td>
-                  {showConcession && <td style={{ padding: '2.5px 5px', textAlign: 'right' }}>{Number(item.discount || 0) > 0 ? fmt(item.discount) : ''}</td>}
-                  <td style={{ padding: '2.5px 5px', textAlign: 'right' }}>{fmt(item.amount)}</td>
-                  <td style={{ padding: '2.5px 5px', textAlign: 'right' }}>{fmt(item.balance)}</td>
-                  <td style={{ padding: '2.5px 5px', textAlign: 'center' }}>
-                    <span style={{ fontSize: '7px', padding: '1px 5px', borderRadius: '8px', backgroundColor: itemBal <= 0 ? '#e8f5e9' : '#fff3e0', color: itemBal <= 0 ? '#388e3c' : '#e65100', fontWeight: '600' }}>{itemBal <= 0 ? '✓ Paid' : 'Due'}</span>
+                  <td style={{ padding: '2.5px 5px' }}>
+                    {item.description}
+                    {Number(item.discount || 0) > 0 && <span style={{ fontSize: '7px', color: '#4caf50' }}> (-{fmt(item.discount)})</span>}
                   </td>
+                  <td style={{ padding: '2.5px 5px', textAlign: 'right' }}>{fmt(item.totalAmount)}</td>
+                  <td style={{ padding: '2.5px 5px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      <div style={{ flex: 1, height: '6px', backgroundColor: '#e0e0e0', borderRadius: '3px', overflow: 'hidden' }}>
+                        <div style={{ height: '100%', width: `${Math.min(pct, 100)}%`, backgroundColor: pct >= 100 ? '#4caf50' : pct > 50 ? '#ff9800' : '#f44336', borderRadius: '3px' }} />
+                      </div>
+                      <span style={{ fontSize: '7px', fontWeight: '600', color: pct >= 100 ? '#4caf50' : '#ff9800', minWidth: '24px', textAlign: 'right' }}>{pct}%</span>
+                    </div>
+                  </td>
+                  <td style={{ padding: '2.5px 5px', textAlign: 'right', fontWeight: '600' }}>{fmt(item.amount)}</td>
                 </tr>
               );
             })}
@@ -111,15 +113,10 @@ const Template25_Infographic = ({ receiptData, copyType }) => {
         <div style={{ fontSize: '7.5px', color: '#888' }}>
           Receipt #{transactionId?.split('/').pop() || '-'} | {paymentMode || 'Cash'} | Session: {sessionName || '-'}
         </div>
-
-        {/* FEE STATEMENT inline */}
-        {feeStatement.length > 0 && (
-          <div style={{ fontSize: '7px', color: '#666' }}>
-            {feeStatement.map((fee, i) => (
-              <span key={i} style={{ marginLeft: '6px' }}>{fee.name}: {fmt(fee.paid)}/{fmt(fee.amount)}</span>
-            ))}
-          </div>
-        )}
+        <div style={{ fontSize: '8px', fontWeight: '700', color: '#2196f3' }}>
+          {isRefund ? 'Refund' : 'Paid'}: ₹{fmt(grandTotal)}
+          {overallBalance > 0 && <span style={{ color: '#f44336', marginLeft: '8px' }}>Due: ₹{fmt(overallBalance)}</span>}
+        </div>
       </div>
 
       {/* FOOTER */}

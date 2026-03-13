@@ -12,7 +12,7 @@ const Template22_PostcardMini = ({ receiptData, copyType }) => {
   const {
     student, school, lineItems = [], feeStatement = [],
     totalPaid, totalDiscount, totalFine, grandTotal,
-    overallBalance = 0,
+    overallTotalAmount = 0, overallBalance = 0,
     transactionId, receiptDate, paymentMode,
     isRefund, isOriginal, printSettings, sessionName, title = 'FEE RECEIPT'
   } = receiptData;
@@ -47,32 +47,26 @@ const Template22_PostcardMini = ({ receiptData, copyType }) => {
         <span>{paymentMode || 'Cash'}</span>
       </div>
 
-      {/* ITEMS - Compact */}
-      <div style={{ marginBottom: '4px', borderTop: '1px solid #eee', borderBottom: '1px solid #eee', padding: '2px 0' }}>
-        {lineItems.map((item, idx) => (
-          <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '8px', padding: '1.5px 0', borderBottom: idx < lineItems.length - 1 ? '1px dotted #eee' : 'none' }}>
-            <span>{item.description}</span>
-            <span style={{ fontWeight: '600' }}>{fmt(item.amount)}</span>
-          </div>
-        ))}
-      </div>
-
-      {/* TOTAL */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px', fontWeight: '700', marginBottom: '4px', padding: '3px 0', borderBottom: '2px solid #333' }}>
-        <span>{isRefund ? 'REFUND' : 'TOTAL'}</span>
-        <span>₹{fmt(grandTotal)}</span>
-      </div>
-
-      {overallBalance > 0 && (
-        <div style={{ textAlign: 'right', fontSize: '7.5px', color: '#c00', marginBottom: '2px' }}>Balance: ₹{fmt(overallBalance)}</div>
-      )}
-
-      {/* FEE STATEMENT - Ultra compact */}
-      {feeStatement.length > 0 && (
-        <div style={{ fontSize: '7px', color: '#888', marginBottom: '3px' }}>
-          {feeStatement.map((fee, i) => `${fee.name}:${fmt(fee.paid)}`).join(' | ')}
+      {/* 3 BIG NUMBERS */}
+      <div style={{ display: 'flex', gap: '4px', marginBottom: '4px' }}>
+        <div style={{ flex: 1, textAlign: 'center', padding: '4px 2px', backgroundColor: '#f5f5f5', borderRadius: '3px' }}>
+          <div style={{ fontSize: '6.5px', color: '#999', textTransform: 'uppercase' }}>Total Fees</div>
+          <div style={{ fontSize: '11px', fontWeight: '700' }}>₹{fmt(overallTotalAmount)}</div>
         </div>
-      )}
+        <div style={{ flex: 1, textAlign: 'center', padding: '4px 2px', backgroundColor: '#e8f5e9', borderRadius: '3px' }}>
+          <div style={{ fontSize: '6.5px', color: '#999', textTransform: 'uppercase' }}>Paid Now</div>
+          <div style={{ fontSize: '11px', fontWeight: '700', color: '#2e7d32' }}>₹{fmt(grandTotal)}</div>
+        </div>
+        <div style={{ flex: 1, textAlign: 'center', padding: '4px 2px', backgroundColor: overallBalance > 0 ? '#ffebee' : '#e8f5e9', borderRadius: '3px' }}>
+          <div style={{ fontSize: '6.5px', color: '#999', textTransform: 'uppercase' }}>Balance</div>
+          <div style={{ fontSize: '11px', fontWeight: '700', color: overallBalance > 0 ? '#c00' : '#2e7d32' }}>₹{fmt(overallBalance)}</div>
+        </div>
+      </div>
+
+      {/* ITEMS - Tiny text */}
+      <div style={{ fontSize: '6.5px', color: '#888', marginBottom: '3px' }}>
+        {lineItems.map((item, idx) => `${item.description}: ₹${fmt(item.amount)}`).join(' | ')}
+      </div>
 
       {/* FOOTER */}
       {printSettings?.footer_content ? (

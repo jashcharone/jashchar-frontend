@@ -28,7 +28,7 @@ const Template13_TraditionalSerif = ({ receiptData, copyType }) => {
   const {
     student, school, lineItems = [], feeStatement = [],
     totalPaid, totalDiscount, totalFine, grandTotal,
-    overallBalance = 0,
+    overallTotalAmount = 0, overallBalance = 0,
     transactionId, receiptDate, paymentMode,
     isRefund, isOriginal, printSettings, sessionName, title = 'FEE RECEIPT'
   } = receiptData;
@@ -91,29 +91,45 @@ const Template13_TraditionalSerif = ({ receiptData, copyType }) => {
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '8.5px', marginBottom: '5px', border: '1px solid #c9a96e' }}>
           <thead>
             <tr style={{ backgroundColor: '#5c2d0e', color: '#fdf6e3' }}>
-              <th style={{ padding: '4px 5px', textAlign: 'center', width: '28px', borderRight: '1px solid #c9a96e' }}>S.No</th>
               <th style={{ padding: '4px 5px', textAlign: 'left', borderRight: '1px solid #c9a96e', fontVariant: 'small-caps' }}>Particulars</th>
-              <th style={{ padding: '4px 5px', textAlign: 'right', width: '70px', borderRight: '1px solid #c9a96e' }}>Amount</th>
-              {showConcession && <th style={{ padding: '4px 5px', textAlign: 'right', width: '60px', borderRight: '1px solid #c9a96e' }}>Concession</th>}
-              <th style={{ padding: '4px 5px', textAlign: 'right', width: '60px', borderRight: '1px solid #c9a96e' }}>Paid</th>
-              <th style={{ padding: '4px 5px', textAlign: 'right', width: '55px' }}>Balance</th>
+              <th style={{ padding: '4px 5px', textAlign: 'right', width: '80px', borderRight: '1px solid #c9a96e' }}>Assessed ({`\u20b9`})</th>
+              <th style={{ padding: '4px 5px', textAlign: 'right', width: '80px', borderRight: '1px solid #c9a96e' }}>Received ({`\u20b9`})</th>
+              <th style={{ padding: '4px 5px', textAlign: 'center', width: '90px' }}>Remarks</th>
             </tr>
           </thead>
           <tbody>
-            {lineItems.map((item, idx) => (
-              <tr key={idx} style={{ borderBottom: '1px solid #e8d5b5' }}>
-                <td style={{ padding: '3px 5px', textAlign: 'center', borderRight: '1px solid #e8d5b5' }}>{idx + 1}</td>
-                <td style={{ padding: '3px 5px', fontStyle: 'italic', borderRight: '1px solid #e8d5b5' }}>{item.description}</td>
-                <td style={{ padding: '3px 5px', textAlign: 'right', borderRight: '1px solid #e8d5b5' }}>{fmt(item.totalAmount)}</td>
-                {showConcession && <td style={{ padding: '3px 5px', textAlign: 'right', borderRight: '1px solid #e8d5b5' }}>{Number(item.discount || 0) > 0 ? fmt(item.discount) : ''}</td>}
-                <td style={{ padding: '3px 5px', textAlign: 'right', borderRight: '1px solid #e8d5b5' }}>{fmt(item.amount)}</td>
-                <td style={{ padding: '3px 5px', textAlign: 'right' }}>{fmt(item.balance)}</td>
+            {lineItems.map((item, idx) => {
+              const isPaid = Number(item.balance || 0) === 0 && Number(item.amount || 0) > 0;
+              const isPartial = Number(item.amount || 0) > 0 && Number(item.balance || 0) > 0;
+              return (
+                <tr key={idx} style={{ borderBottom: '1px solid #e8d5b5' }}>
+                  <td style={{ padding: '3px 5px', fontStyle: 'italic', borderRight: '1px solid #e8d5b5' }}>
+                    {item.description}
+                    {Number(item.discount || 0) > 0 && <span style={{ fontSize: '7px', color: '#c9a96e' }}> (Conc: {`\u20b9`}{fmt(item.discount)})</span>}
+                  </td>
+                  <td style={{ padding: '3px 5px', textAlign: 'right', borderRight: '1px solid #e8d5b5' }}>{fmt(item.totalAmount)}</td>
+                  <td style={{ padding: '3px 5px', textAlign: 'right', borderRight: '1px solid #e8d5b5' }}>{fmt(item.amount)}</td>
+                  <td style={{ padding: '3px 5px', textAlign: 'center', fontSize: '7.5px', fontStyle: 'italic', color: isPaid ? '#2e7d32' : isPartial ? '#e65100' : '#c62828' }}>
+                    {isPaid ? 'Paid in Full' : isPartial ? 'Partial Payment' : 'Not Paid'}
+                  </td>
+                </tr>
+              );
+            })}
+            {totalFine > 0 && (
+              <tr style={{ borderBottom: '1px solid #e8d5b5' }}>
+                <td style={{ padding: '3px 5px', fontStyle: 'italic', borderRight: '1px solid #e8d5b5', color: '#c00' }}>Late Fine</td>
+                <td style={{ padding: '3px 5px', borderRight: '1px solid #e8d5b5' }}></td>
+                <td style={{ padding: '3px 5px', textAlign: 'right', borderRight: '1px solid #e8d5b5', color: '#c00' }}>+{`\u20b9`}{fmt(totalFine)}</td>
+                <td style={{ padding: '3px 5px' }}></td>
               </tr>
-            ))}
+            )}
             <tr style={{ backgroundColor: '#f5e6cc', fontWeight: 'bold' }}>
-              <td colSpan={showConcession ? 4 : 3} style={{ padding: '4px 5px', textAlign: 'right', borderRight: '1px solid #e8d5b5', fontVariant: 'small-caps' }}>{isRefund ? 'Total Refund' : 'Total Paid'}:</td>
-              <td style={{ padding: '4px 5px', textAlign: 'right', borderRight: '1px solid #e8d5b5' }}>₹{fmt(grandTotal)}</td>
-              <td style={{ padding: '4px 5px', textAlign: 'right', color: overallBalance > 0 ? '#cc0000' : '#2c1810' }}>₹{fmt(overallBalance)}</td>
+              <td style={{ padding: '4px 5px', textAlign: 'right', borderRight: '1px solid #e8d5b5', fontVariant: 'small-caps' }}>{isRefund ? 'Total Refund' : 'Total Received'}:</td>
+              <td style={{ padding: '4px 5px', textAlign: 'right', borderRight: '1px solid #e8d5b5' }}>{`\u20b9`}{fmt(overallTotalAmount)}</td>
+              <td style={{ padding: '4px 5px', textAlign: 'right', borderRight: '1px solid #e8d5b5' }}>{`\u20b9`}{fmt(grandTotal)}</td>
+              <td style={{ padding: '4px 5px', textAlign: 'center', fontSize: '7.5px', color: overallBalance > 0 ? '#c00' : '#2e7d32' }}>
+                {overallBalance > 0 ? `Balance: \u20b9${fmt(overallBalance)}` : 'All Settled'}
+              </td>
             </tr>
           </tbody>
         </table>
@@ -123,15 +139,10 @@ const Template13_TraditionalSerif = ({ receiptData, copyType }) => {
           Amount in words: <strong>{numberToWords(grandTotal)}</strong>
         </div>
 
-        {/* FEE STATEMENT */}
+        {/* RECEIPT NARRATIVE */}
         {feeStatement.length > 0 && (
-          <div style={{ borderTop: '1px dashed #c9a96e', paddingTop: '3px', marginBottom: '3px' }}>
-            <div style={{ fontSize: '8px', fontVariant: 'small-caps', fontWeight: 'bold', color: '#5c2d0e', marginBottom: '2px' }}>Fee Statement</div>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', fontSize: '7.5px' }}>
-              {feeStatement.map((fee, i) => (
-                <span key={i} style={{ borderBottom: '1px dotted #c9a96e', padding: '1px 4px' }}>{fee.name}: ₹{fmt(fee.paid)}/{fmt(fee.amount)} <em>[{fee.status}]</em></span>
-              ))}
-            </div>
+          <div style={{ borderTop: '1px dashed #c9a96e', paddingTop: '3px', marginBottom: '3px', fontSize: '7.5px', fontStyle: 'italic', lineHeight: '1.5' }}>
+            This receipt acknowledges payment towards: {feeStatement.map((fee, i) => `${fee.name} (\u20b9${fmt(fee.paid)} of \u20b9${fmt(fee.amount)}, ${fee.status})`).join('; ')}.
           </div>
         )}
 

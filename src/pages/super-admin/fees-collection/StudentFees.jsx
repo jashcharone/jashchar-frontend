@@ -507,7 +507,7 @@ const StudentFees = () => {
                 .from('student_transport_details')
                 .select(`
                     *,
-                    route:transport_route_id(id, route_title, billing_cycle),
+                    route:transport_route_id(id, route_title),
                     pickup_point:transport_pickup_point_id(id, name)
                 `)
                 .eq('student_id', studentId)
@@ -523,8 +523,8 @@ const StudentFees = () => {
                     .eq('branch_id', selectedBranch.id)
                     .is('reverted_at', null);
 
-                // Get billing cycle from route (set in Routes page) or fallback to student_transport_details or default to monthly
-                const billingCycle = transportData.route?.billing_cycle || transportData.billing_cycle || 'monthly';
+                // Get billing cycle from student_transport_details (saved during admission) or default to monthly
+                const billingCycle = transportData.billing_cycle || 'monthly';
                 const periodFee = Number(transportData.transport_fee) || 0;
                 const isAnnualType = billingCycle === 'annual' || billingCycle === 'one_time';
                 
@@ -585,7 +585,7 @@ const StudentFees = () => {
                 .select(`
                     *,
                     room:room_id(id, room_number_name, cost_per_bed),
-                    room_type:hostel_room_type(id, name, cost, billing_cycle)
+                    room_type:hostel_room_type(id, name)
                 `)
                 .eq('student_id', studentId)
                 .eq('branch_id', selectedBranch.id)
@@ -600,8 +600,8 @@ const StudentFees = () => {
                     .eq('branch_id', selectedBranch.id)
                     .is('reverted_at', null);
 
-                // Get billing cycle from room_type (set in Room Types page) or fallback to student_hostel_details or default to monthly
-                const billingCycle = hostelData.room_type?.billing_cycle || hostelData.billing_cycle || 'monthly';
+                // Get billing cycle from student_hostel_details (saved during admission) or default to monthly
+                const billingCycle = hostelData.billing_cycle || 'monthly';
                 const periodFee = Number(hostelData.hostel_fee) || 0;
                 const isAnnualType = billingCycle === 'annual' || billingCycle === 'one_time';
                 
@@ -786,42 +786,6 @@ const StudentFees = () => {
         return Math.max(0, totalAssignedDiscount - totalDiscountAlreadyUsed);
     }, [totalAssignedDiscount, totalDiscountAlreadyUsed]);
 
-    // ? Calculate MAXIMUM payable amount based on selected fees
-    // User cannot pay MORE than this amount
-    const selectedFeesMaxBalance = useMemo(() => {
-        let total = 0;
-        selectedFees.forEach(id => {
-            const fee = fees.find(f => f.id === id);
-            if (fee && fee.balance > 0) {
-                total += fee.balance;
-            }
-        });
-        return total;
-    }, [selectedFees, fees]);
-
-    useEffect(() => {
-        let totalBalance = 0;
-        let totalFine = 0;
-
-        selectedFees.forEach(id => {
-            const fee = fees.find(f => f.id === id);
-            if (fee) {
-                totalBalance += feeAmounts[id] !== undefined ? Number(feeAmounts[id]) : (fee.balance > 0 ? fee.balance : 0);
-                totalFine += fee.fine > 0 ? fee.fine : 0;
-            }
-        });
-        
-        // Apply only REMAINING discount (not full assigned discount)
-        let applicableDiscount = Math.min(remainingDiscount, totalBalance);
-        
-        setPaymentDetails(prev => ({
-            ...prev,
-            amount: totalBalance.toFixed(2),
-            fine: totalFine.toFixed(2),
-            discount: applicableDiscount.toFixed(2)
-        }));
-    }, [selectedFees, fees, feeAmounts, remainingDiscount]);
-
     const feeSummary = useMemo(() => {
         // Check if ledger entries include transport/hostel fees (to avoid double-counting with old system)
         const hasLedgerTransport = fees.some(f => f.source === 'ledger' && f.group?.toLowerCase().includes('transport'));
@@ -883,13 +847,68 @@ const StudentFees = () => {
         return Math.max(0, (hostelDetails.balance || 0) + hostelRefunds);
     }, [hostelDetails, studentRefunds]);
 
+    // 🎯 Calculate MAXIMUM payable amount based on selected fees
+    // User cannot pay MORE than this amount - includes Transport/Hostel fees
+    const selectedFeesMaxBalance = useMemo(() => {
+        let total = 0;
+        selectedFees.forEach(id => {
+            // Check regular fees first
+            let fee = fees.find(f => f.id === id);
+            // Check transport fee
+            if (!fee && id.startsWith('transport-') && transportDetails) {
+                fee = { balance: transportBalanceWithRefunds || 0 };
+            }
+            // Check hostel fee
+            if (!fee && id.startsWith('hostel-') && hostelDetails) {
+                fee = { balance: hostelBalanceWithRefunds || 0 };
+            }
+            if (fee && fee.balance > 0) {
+                total += fee.balance;
+            }
+        });
+        return total;
+    }, [selectedFees, fees, transportDetails, hostelDetails, transportBalanceWithRefunds, hostelBalanceWithRefunds]);
+
+    // Update payment details when selected fees change
+    useEffect(() => {
+        let totalBalance = 0;
+        let totalFine = 0;
+
+        selectedFees.forEach(id => {
+            // Check regular fees first
+            let fee = fees.find(f => f.id === id);
+            // Check transport fee
+            if (!fee && id.startsWith('transport-') && transportDetails) {
+                fee = { balance: transportBalanceWithRefunds || 0, fine: 0 };
+            }
+            // Check hostel fee
+            if (!fee && id.startsWith('hostel-') && hostelDetails) {
+                fee = { balance: hostelBalanceWithRefunds || 0, fine: 0 };
+            }
+            if (fee) {
+                totalBalance += feeAmounts[id] !== undefined ? Number(feeAmounts[id]) : (fee.balance > 0 ? fee.balance : 0);
+                totalFine += fee.fine > 0 ? fee.fine : 0;
+            }
+        });
+        
+        // Apply only REMAINING discount (not full assigned discount)
+        let applicableDiscount = Math.min(remainingDiscount, totalBalance);
+        
+        setPaymentDetails(prev => ({
+            ...prev,
+            amount: totalBalance.toFixed(2),
+            fine: totalFine.toFixed(2),
+            discount: applicableDiscount.toFixed(2)
+        }));
+    }, [selectedFees, fees, feeAmounts, remainingDiscount, transportDetails, hostelDetails, transportBalanceWithRefunds, hostelBalanceWithRefunds]);
+
     // Generate UPI QR Code
     const generateUpiQr = async (amount, type = 'academic') => {
         if (!upiSettings.enabled || !upiSettings.upi_id) {
             toast({
                 variant: 'destructive',
                 title: 'UPI Not Configured',
-                description: 'Please configure UPI settings in School Settings ? Fees tab first.'
+                description: 'Please configure UPI settings in School Settings → Fees tab first.'
             });
             return;
         }
@@ -997,7 +1016,8 @@ const StudentFees = () => {
 
         // Validate per-fee amounts don't exceed individual balances
         for (const feeId of selectedFees) {
-            const fee = fees.find(f => f.id === feeId);
+            // Look in allFeesForDisplay (includes transport/hostel)
+            const fee = allFeesForDisplay.find(f => f.id === feeId);
             if (!fee) continue;
             const amt = Number(feeAmounts[feeId] || 0);
             if (amt > fee.balance) {
@@ -1042,23 +1062,146 @@ const StudentFees = () => {
             let remainingFineToDistribute = parseFloat(paymentDetails.fine);
 
             const paymentsToInsert = [];
+            const transportPaymentsToInsert = [];
+            const hostelPaymentsToInsert = [];
             
             // Generate readable Transaction ID (e.g., JIS/2601/00001)
             const branchCode = selectedBranch?.branch_code || selectedBranch?.code || 'TXN';
             const newTransactionId = await generateTransactionId(supabase, selectedBranch.id, branchCode);
+            const utrValue = isUpiPayment(paymentDetails.payment_mode) ? paymentDetails.utr_number?.trim() : null;
 
             for (const feeId of selectedFees) {
-                const fee = fees.find(f => f.id === feeId);
+                // Look in allFeesForDisplay to find transport/hostel fees too
+                const fee = allFeesForDisplay.find(f => f.id === feeId);
                 if (!fee || fee.balance <= 0) continue;
 
                 const amountForThisFee = Math.min(Number(feeAmounts[feeId] || 0), fee.balance);
                 const discountForThisFee = Math.min(remainingDiscountToDistribute, fee.balance - amountForThisFee);
-                const fineForThisFee = Math.min(remainingFineToDistribute, fee.fine);
+                const fineForThisFee = Math.min(remainingFineToDistribute, fee.fine || 0);
                 
-                // ? FIX: Calculate balance AFTER this payment (for historical receipt display)
+                // Calculate balance AFTER this payment
                 const balanceAfterThisPayment = Math.max(0, fee.balance - amountForThisFee - discountForThisFee);
                 
-                // ? BUILD COMPLETE RECEIPT SNAPSHOT - Saved at payment time for historical accuracy
+                if (amountForThisFee <= 0 && discountForThisFee <= 0 && fineForThisFee <= 0) continue;
+                
+                // 🚌 TRANSPORT FEE - Insert into transport_fee_payments
+                if (fee.isTransport && transportDetails) {
+                    const sessionName = student?.sessions?.name || 'Annual';
+                    const receiptSnapshot = {
+                        student: {
+                            id: studentId,
+                            name: student?.full_name || student?.name,
+                            admission_no: student?.admission_no,
+                            father_name: student?.father_name,
+                            class: student?.classes?.name || student?.class?.name,
+                            section: student?.sections?.name || student?.section?.name,
+                            session: sessionName,
+                        },
+                        transport: {
+                            route: transportDetails?.route?.route_title,
+                            total_fee: transportDetails?.totalFee || 0,
+                        },
+                        payment: {
+                            amount: amountForThisFee,
+                            discount: discountForThisFee,
+                            fine: fineForThisFee,
+                            mode: paymentDetails.payment_mode,
+                            date: paymentDetails.payment_date || format(new Date(), 'yyyy-MM-dd'),
+                            utr: utrValue,
+                        },
+                        calculated: {
+                            balance_before: fee.balance,
+                            balance_after: balanceAfterThisPayment,
+                        },
+                        transaction_id: newTransactionId,
+                        collected_by: user?.full_name || user?.email,
+                        branch_name: selectedBranch?.name,
+                        created_at: new Date().toISOString(),
+                    };
+                    
+                    transportPaymentsToInsert.push({
+                        branch_id: selectedBranch.id,
+                        session_id: currentSessionId,
+                        organization_id: organizationId,
+                        student_id: studentId,
+                        amount: amountForThisFee,
+                        discount_amount: discountForThisFee,
+                        fine_paid: fineForThisFee,
+                        payment_date: paymentDetails.payment_date || format(new Date(), 'yyyy-MM-dd'),
+                        payment_mode: paymentDetails.payment_mode,
+                        payment_month: `Annual ${sessionName}`,
+                        note: paymentDetails.note,
+                        transaction_id: newTransactionId,
+                        collected_by: user.id,
+                        utr_number: utrValue,
+                        balance_after_payment: balanceAfterThisPayment,
+                        receipt_snapshot: receiptSnapshot,
+                    });
+                    remainingDiscountToDistribute -= discountForThisFee;
+                    remainingFineToDistribute -= fineForThisFee;
+                    continue;
+                }
+                
+                // 🏠 HOSTEL FEE - Insert into hostel_fee_payments
+                if (fee.isHostel && hostelDetails) {
+                    const sessionName = student?.sessions?.name || 'Annual';
+                    const receiptSnapshot = {
+                        student: {
+                            id: studentId,
+                            name: student?.full_name || student?.name,
+                            admission_no: student?.admission_no,
+                            father_name: student?.father_name,
+                            class: student?.classes?.name || student?.class?.name,
+                            section: student?.sections?.name || student?.section?.name,
+                            session: sessionName,
+                        },
+                        hostel: {
+                            block: hostelDetails?.blockName,
+                            room: hostelDetails?.room?.room_number_name,
+                            total_fee: hostelDetails?.totalFee || 0,
+                        },
+                        payment: {
+                            amount: amountForThisFee,
+                            discount: discountForThisFee,
+                            fine: fineForThisFee,
+                            mode: paymentDetails.payment_mode,
+                            date: paymentDetails.payment_date || format(new Date(), 'yyyy-MM-dd'),
+                            utr: utrValue,
+                        },
+                        calculated: {
+                            balance_before: fee.balance,
+                            balance_after: balanceAfterThisPayment,
+                        },
+                        transaction_id: newTransactionId,
+                        collected_by: user?.full_name || user?.email,
+                        branch_name: selectedBranch?.name,
+                        created_at: new Date().toISOString(),
+                    };
+                    
+                    hostelPaymentsToInsert.push({
+                        branch_id: selectedBranch.id,
+                        session_id: currentSessionId,
+                        organization_id: organizationId,
+                        student_id: studentId,
+                        amount: amountForThisFee,
+                        discount_amount: discountForThisFee,
+                        fine_paid: fineForThisFee,
+                        payment_date: paymentDetails.payment_date || format(new Date(), 'yyyy-MM-dd'),
+                        payment_mode: paymentDetails.payment_mode,
+                        payment_month: `Annual ${sessionName}`,
+                        note: paymentDetails.note,
+                        transaction_id: newTransactionId,
+                        collected_by: user.id,
+                        utr_number: utrValue,
+                        balance_after_payment: balanceAfterThisPayment,
+                        receipt_snapshot: receiptSnapshot,
+                    });
+                    remainingDiscountToDistribute -= discountForThisFee;
+                    remainingFineToDistribute -= fineForThisFee;
+                    continue;
+                }
+                
+                // 📚 ACADEMIC FEE - Regular fee processing
                 const receiptSnapshot = {
                     student: {
                         id: studentId,
@@ -1083,7 +1226,7 @@ const StudentFees = () => {
                         fine: fineForThisFee,
                         mode: paymentDetails.payment_mode,
                         date: paymentDetails.payment_date || format(new Date(), 'yyyy-MM-dd'),
-                        utr: isUpiPayment(paymentDetails.payment_mode) ? paymentDetails.utr_number?.trim() : null,
+                        utr: utrValue,
                         note: paymentDetails.note,
                     },
                     calculated: {
@@ -1097,100 +1240,117 @@ const StudentFees = () => {
                     created_at: new Date().toISOString(),
                 };
                 
-                if (amountForThisFee > 0 || discountForThisFee > 0 || fineForThisFee > 0) {
-                    // Fee Engine 3.0: If this fee is from student_fee_ledger, update ledger directly
-                    if (fee.source === 'ledger' && fee.ledgerId) {
-                        // Update the ledger entry
-                        const newPaidAmount = (fee.totalPaid || 0) + amountForThisFee;
-                        const newDiscountAmount = (fee.totalDiscount || 0) + discountForThisFee;
-                        const newFineAmount = (fee.totalFine || 0) + fineForThisFee;
-                        const newStatus = (newPaidAmount + newDiscountAmount) >= fee.amount ? 'paid' : 'partial';
-                        
-                        const { error: ledgerErr } = await supabase
-                            .from('student_fee_ledger')
-                            .update({
-                                paid_amount: newPaidAmount,
-                                discount_amount: newDiscountAmount,
-                                fine_amount: newFineAmount,
-                                status: newStatus,
-                                is_paid: newStatus === 'paid',
-                                paid_date: newStatus === 'paid' ? format(new Date(), 'yyyy-MM-dd') : null,
-                                updated_at: new Date().toISOString(),
-                            })
-                            .eq('id', fee.ledgerId);
-                        
-                        if (ledgerErr) {
-                            console.error('Ledger update error:', ledgerErr);
-                        }
-                        
-                        // Also insert into fee_payments for receipt/history
-                        paymentsToInsert.push({
-                            branch_id: selectedBranch.id,
-                            session_id: currentSessionId,
-                            organization_id: organizationId,
-                            student_id: studentId,
-                            ledger_id: fee.ledgerId, // Fee Engine 3.0 ledger reference
-                            amount: amountForThisFee,
-                            payment_date: paymentDetails.payment_date || format(new Date(), 'yyyy-MM-dd'),
-                            payment_mode: paymentDetails.payment_mode,
-                            fine_paid: fineForThisFee,
-                            discount_amount: discountForThisFee,
-                            note: paymentDetails.note,
-                            transaction_id: newTransactionId,
-                            created_by: user.id,
-                            utr_number: isUpiPayment(paymentDetails.payment_mode) ? paymentDetails.utr_number.trim() : null,
-                            balance_after_payment: balanceAfterThisPayment,
-                            receipt_snapshot: receiptSnapshot,
-                        });
-                    } else {
-                        // Old system: insert fee_payments with fee_master_id
-                        paymentsToInsert.push({
-                            branch_id: selectedBranch.id,
-                            session_id: currentSessionId,
-                            organization_id: organizationId,
-                            student_id: studentId,
-                            fee_master_id: fee.masterId,
-                            amount: amountForThisFee,
-                            payment_date: paymentDetails.payment_date || format(new Date(), 'yyyy-MM-dd'),
-                            payment_mode: paymentDetails.payment_mode,
-                            fine_paid: fineForThisFee,
-                            discount_amount: discountForThisFee,
-                            note: paymentDetails.note,
-                            transaction_id: newTransactionId,
-                            created_by: user.id,
-                            utr_number: isUpiPayment(paymentDetails.payment_mode) ? paymentDetails.utr_number.trim() : null,
-                            balance_after_payment: balanceAfterThisPayment,
-                            receipt_snapshot: receiptSnapshot,
-                        });
+                // Fee Engine 3.0: If this fee is from student_fee_ledger, update ledger directly
+                if (fee.source === 'ledger' && fee.ledgerId) {
+                    const newPaidAmount = (fee.totalPaid || 0) + amountForThisFee;
+                    const newDiscountAmount = (fee.totalDiscount || 0) + discountForThisFee;
+                    const newFineAmount = (fee.totalFine || 0) + fineForThisFee;
+                    const newStatus = (newPaidAmount + newDiscountAmount) >= fee.amount ? 'paid' : 'partial';
+                    
+                    const { error: ledgerErr } = await supabase
+                        .from('student_fee_ledger')
+                        .update({
+                            paid_amount: newPaidAmount,
+                            discount_amount: newDiscountAmount,
+                            fine_amount: newFineAmount,
+                            status: newStatus,
+                            is_paid: newStatus === 'paid',
+                            paid_date: newStatus === 'paid' ? format(new Date(), 'yyyy-MM-dd') : null,
+                            updated_at: new Date().toISOString(),
+                        })
+                        .eq('id', fee.ledgerId);
+                    
+                    if (ledgerErr) {
+                        console.error('Ledger update error:', ledgerErr);
                     }
-                    remainingDiscountToDistribute -= discountForThisFee;
-                    remainingFineToDistribute -= fineForThisFee;
+                    
+                    paymentsToInsert.push({
+                        branch_id: selectedBranch.id,
+                        session_id: currentSessionId,
+                        organization_id: organizationId,
+                        student_id: studentId,
+                        ledger_id: fee.ledgerId,
+                        amount: amountForThisFee,
+                        payment_date: paymentDetails.payment_date || format(new Date(), 'yyyy-MM-dd'),
+                        payment_mode: paymentDetails.payment_mode,
+                        fine_paid: fineForThisFee,
+                        discount_amount: discountForThisFee,
+                        note: paymentDetails.note,
+                        transaction_id: newTransactionId,
+                        created_by: user.id,
+                        utr_number: utrValue,
+                        balance_after_payment: balanceAfterThisPayment,
+                        receipt_snapshot: receiptSnapshot,
+                    });
+                } else {
+                    paymentsToInsert.push({
+                        branch_id: selectedBranch.id,
+                        session_id: currentSessionId,
+                        organization_id: organizationId,
+                        student_id: studentId,
+                        fee_master_id: fee.masterId,
+                        amount: amountForThisFee,
+                        payment_date: paymentDetails.payment_date || format(new Date(), 'yyyy-MM-dd'),
+                        payment_mode: paymentDetails.payment_mode,
+                        fine_paid: fineForThisFee,
+                        discount_amount: discountForThisFee,
+                        note: paymentDetails.note,
+                        transaction_id: newTransactionId,
+                        created_by: user.id,
+                        utr_number: utrValue,
+                        balance_after_payment: balanceAfterThisPayment,
+                        receipt_snapshot: receiptSnapshot,
+                    });
                 }
+                remainingDiscountToDistribute -= discountForThisFee;
+                remainingFineToDistribute -= fineForThisFee;
             }
 
-            if (paymentsToInsert.length === 0) {
+            // Check if any payments to insert
+            const totalPayments = paymentsToInsert.length + transportPaymentsToInsert.length + hostelPaymentsToInsert.length;
+            if (totalPayments === 0) {
                 toast({ title: 'No payment needed', description: 'Selected fees seem to be paid or amount is zero.' });
                 setPaymentLoading(false);
                 return;
             }
 
-            const { data: insertedPayments, error } = await supabase
-                .from('fee_payments')
-                .insert(paymentsToInsert)
-                .select('id');
-
-            if (error) throw error;
+            // Insert academic fee payments
+            let insertedPayments = [];
+            if (paymentsToInsert.length > 0) {
+                const { data, error } = await supabase.from('fee_payments').insert(paymentsToInsert).select('id');
+                if (error) throw error;
+                insertedPayments = data || [];
+            }
             
-            toast({ title: '? Payment collected successfully!', description: `Transaction ID: ${newTransactionId}` });
+            // Insert transport fee payments
+            let insertedTransportPayments = [];
+            if (transportPaymentsToInsert.length > 0) {
+                const { data, error } = await supabase.from('transport_fee_payments').insert(transportPaymentsToInsert).select('id');
+                if (error) throw error;
+                insertedTransportPayments = data || [];
+            }
+            
+            // Insert hostel fee payments
+            let insertedHostelPayments = [];
+            if (hostelPaymentsToInsert.length > 0) {
+                const { data, error } = await supabase.from('hostel_fee_payments').insert(hostelPaymentsToInsert).select('id');
+                if (error) throw error;
+                insertedHostelPayments = data || [];
+            }
+            
+            toast({ title: '✅ Payment collected successfully!', description: `Transaction ID: ${newTransactionId}` });
             await fetchStudentAndFees();
             setSelectedFees([]);
             setFeeAmounts({});
             setPaymentDetails(prev => ({ ...prev, note: '', utr_number: '' }));
 
-            // Navigate to the new receipt page (use first payment's ID)
-            const firstPaymentId = insertedPayments?.[0]?.id;
-            if (firstPaymentId) {
-                navigate(`/${basePath}/fees-collection/print-receipt/fees/${firstPaymentId}`);
+            // Navigate to the receipt page based on what was paid
+            if (insertedPayments?.[0]?.id) {
+                navigate(`/${basePath}/fees-collection/print-receipt/fees/${insertedPayments[0].id}`);
+            } else if (insertedTransportPayments?.[0]?.id) {
+                navigate(`/${basePath}/fees-collection/print-receipt/transport/${insertedTransportPayments[0].id}`);
+            } else if (insertedHostelPayments?.[0]?.id) {
+                navigate(`/${basePath}/fees-collection/print-receipt/hostel/${insertedHostelPayments[0].id}`);
             }
 
         } catch (error) {
@@ -2293,7 +2453,11 @@ const StudentFees = () => {
                                 </TabsTrigger>
                                 <TabsTrigger value="history" className="gap-2">
                                     <History className="h-4 w-4" />Payment History
-                                    <Badge variant="secondary" className="ml-1">{new Set(payments.map(p => p.transaction_id || p.id)).size + (transportDetails?.payments ? new Set(transportDetails.payments.map(p => p.transaction_id || p.id)).size : 0) + (hostelDetails?.payments ? new Set(hostelDetails.payments.map(p => p.transaction_id || p.id)).size : 0)}</Badge>
+                                    <Badge variant="secondary" className="ml-1">{new Set([
+                                        ...payments.map(p => p.transaction_id || `fee-${p.id}`),
+                                        ...(transportDetails?.payments?.map(p => p.transaction_id || `transport-${p.id}`) || []),
+                                        ...(hostelDetails?.payments?.map(p => p.transaction_id || `hostel-${p.id}`) || [])
+                                    ]).size}</Badge>
                                 </TabsTrigger>
                             </TabsList>
                             {activeTab === 'fees' && feeSummary.unpaidCount > 0 && (
@@ -2329,16 +2493,13 @@ const StudentFees = () => {
                                                         className={`border-b hover:bg-muted/30 transition-colors ${selectedFees.includes(fee.id) ? 'bg-primary/5' : ''} ${fee.isOverdue ? 'bg-red-50 dark:bg-red-950/20' : ''} ${fee.isTransport ? 'bg-blue-50/50 dark:bg-blue-950/20' : ''} ${fee.isHostel ? 'bg-purple-50/50 dark:bg-purple-950/20' : ''}`}
                                                     >
                                                         <td className="p-3 text-center">
-                                                            {fee.balance > 0 && !fee.isTransport && !fee.isHostel && (
+                                                            {fee.balance > 0 && (
                                                                 <input 
                                                                     type="checkbox" 
                                                                     checked={selectedFees.includes(fee.id)} 
                                                                     onChange={() => handleFeeSelection(fee.id)} 
                                                                     className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
                                                                 />
-                                                            )}
-                                                            {(fee.isTransport || fee.isHostel) && fee.balance > 0 && (
-                                                                <Bus className="h-4 w-4 text-blue-500 mx-auto" />
                                                             )}
                                                         </td>
                                                         <td className="p-3 font-medium">
@@ -2392,527 +2553,6 @@ const StudentFees = () => {
                                             )}
                                         </table>
                                     </div>
-
-                                    {/* Transport Fee Collection Section - Only shows if balance > 0 */}
-                                    {transportDetails && transportBalanceWithRefunds > 0 && (
-                                        <div className="mt-6 border-t pt-4">
-                                            <div className="flex items-center gap-2 mb-4">
-                                                <Bus className="h-5 w-5 text-blue-600" />
-                                                <h3 className="font-semibold">🚌 Collect Transport Fee</h3>
-                                                <Badge variant="outline" className="text-xs">Route: {transportDetails.route?.route_title || 'N/A'}</Badge>
-                                            </div>
-                                            <div className="bg-blue-50 dark:bg-blue-950/20 rounded-lg p-4">
-                                                
-                                                {/* Transport Fee Collection Form */}
-                                                {transportBalanceWithRefunds > 0 && (
-                                                    <div>
-                                                        
-                                                        {/* ANNUAL/ONE-TIME: Simple amount input (any amount up to balance) */}
-                                                        {transportDetails.isAnnualType ? (
-                                                            <>
-                                                                <p className="text-sm font-medium mb-3">
-                                                                    Enter Amount to Pay 
-                                                                    <span className="text-xs text-muted-foreground ml-2">
-                                                                        (Balance: {currencySymbol}{transportBalanceWithRefunds.toLocaleString('en-IN')} → pay any amount)
-                                                                    </span>
-                                                                </p>
-                                                                <div className="grid sm:grid-cols-3 gap-3">
-                                                                    <div>
-                                                                        <Label className="text-xs">Amount ({currencySymbol})</Label>
-                                                                        <Input
-                                                                            type="number"
-                                                                            value={transportPaymentDetails.amount}
-                                                                            onChange={e => setTransportPaymentDetails(p => ({...p, amount: e.target.value}))}
-                                                                            placeholder={`Max ${transportBalanceWithRefunds.toLocaleString('en-IN')}`}
-                                                                            max={transportBalanceWithRefunds}
-                                                                        />
-                                                                    </div>
-                                                                    <div>
-                                                                        <Label className="text-xs">Discount ({currencySymbol})</Label>
-                                                                        <Input
-                                                                            type="number"
-                                                                            value={transportPaymentDetails.discount}
-                                                                            onChange={e => setTransportPaymentDetails(p => ({...p, discount: e.target.value}))}
-                                                                        />
-                                                                    </div>
-                                                                    <div>
-                                                                        <Label className="text-xs">Payment Mode</Label>
-                                                                        <Select value={transportPaymentDetails.payment_mode} onValueChange={v => setTransportPaymentDetails(p => ({...p, payment_mode: v}))}>
-                                                                            <SelectTrigger><SelectValue /></SelectTrigger>
-                                                                            <SelectContent>
-                                                                                <SelectItem value="Cash">Cash</SelectItem>
-                                                                                <SelectItem value="Cheque">Cheque</SelectItem>
-                                                                                <SelectItem value="Online">Online</SelectItem>
-                                                                                <SelectItem value="UPI">UPI</SelectItem>
-                                                                                <SelectItem value="Card">Card</SelectItem>
-                                                                            </SelectContent>
-                                                                        </Select>
-                                                                    </div>
-                                                                </div>
-                                                                {/* UPI QR Button for Transport */}
-                                                                {(transportPaymentDetails.payment_mode === 'Online' || transportPaymentDetails.payment_mode === 'UPI') && upiSettings.enabled && (
-                                                                    <Button
-                                                                        type="button"
-                                                                        variant="outline"
-                                                                        className="w-full mt-2 border-purple-300 text-purple-700 hover:bg-purple-50"
-                                                                        onClick={() => {
-                                                                            const total = parseFloat(transportPaymentDetails.amount || 0) - parseFloat(transportPaymentDetails.discount || 0) + parseFloat(transportPaymentDetails.fine || 0);
-                                                                            generateUpiQr(total, 'transport');
-                                                                        }}
-                                                                    >
-                                                                        <QrCode className="h-4 w-4 mr-2" />
-                                                                        Show UPI QR Code
-                                                                    </Button>
-                                                                )}
-                                                                {/* UTR Number for Transport */}
-                                                                {isUpiPayment(transportPaymentDetails.payment_mode) && (
-                                                                    <div className="mt-2">
-                                                                        <Label className="text-xs">UPI UTR Number <span className="text-red-500">*</span></Label>
-                                                                        <Input 
-                                                                            value={transportPaymentDetails.utr_number} 
-                                                                            onChange={(e) => setTransportPaymentDetails(p => ({...p, utr_number: e.target.value.toUpperCase() }))}
-                                                                            placeholder="Enter UTR number"
-                                                                            className="h-9 font-mono mt-1"
-                                                                            maxLength={22}
-                                                                        />
-                                                                    </div>
-                                                                )}
-                                                                <div className="mt-3">
-                                                                    <Button 
-                                                                        onClick={collectTransportFee} 
-                                                                        disabled={paymentLoading || !(parseFloat(transportPaymentDetails.amount) > 0)}
-                                                                        className="w-full bg-blue-600 hover:bg-blue-700"
-                                                                    >
-                                                                        {paymentLoading ? <Loader2 className="animate-spin mr-2 h-4 w-4" /> : <Receipt className="mr-2 h-4 w-4" />}
-                                                                        Collect & Print Receipt
-                                                                    </Button>
-                                                                </div>
-                                                            </>
-                                                        ) : (
-                                                            /* MONTHLY: Month selection grid */
-                                                            <>
-                                                        <p className="text-sm font-medium mb-3">Select Months to Pay</p>
-                                                        
-                                                        {/* Month Selection Grid */}
-                                                        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2 mb-4">
-                                                            {sessionMonths.map(month => {
-                                                                const isPaid = transportDetails.paidMonths?.includes(month.key);
-                                                                const isSelected = selectedTransportMonths.includes(month.key);
-                                                                return (
-                                                                    <div 
-                                                                        key={month.key}
-                                                                        onClick={() => {
-                                                                            if (isPaid) return;
-                                                                            setSelectedTransportMonths(prev => 
-                                                                                prev.includes(month.key) 
-                                                                                    ? prev.filter(k => k !== month.key)
-                                                                                    : [...prev, month.key]
-                                                                            );
-                                                                        }}
-                                                                        className={`p-2 text-center rounded-md border cursor-pointer text-sm transition-all ${
-                                                                            isPaid 
-                                                                                ? 'bg-green-100 dark:bg-green-900/30 border-green-300 text-green-700 dark:text-green-400 cursor-not-allowed' 
-                                                                                : isSelected 
-                                                                                    ? 'bg-blue-500 text-white border-blue-600' 
-                                                                                    : 'bg-background hover:bg-muted border-input'
-                                                                        }`}
-                                                                    >
-                                                                        <span className="font-medium">{month.shortLabel}</span>
-                                                                        {isPaid && <CheckCircle className="h-3 w-3 mx-auto mt-1" />}
-                                                                    </div>
-                                                                );
-                                                            })}
-                                                        </div>
-                                                        
-                                                        {/* Quick Select Buttons */}
-                                                        <div className="flex flex-wrap gap-2 mb-4">
-                                                            <Button 
-                                                                variant="outline" 
-                                                                size="sm"
-                                                                onClick={() => setSelectedTransportMonths(transportDetails.unpaidMonths?.map(m => m.key) || [])}
-                                                            >
-                                                                Select All Unpaid
-                                                            </Button>
-                                                            <Button 
-                                                                variant="outline" 
-                                                                size="sm"
-                                                                onClick={() => {
-                                                                    const unpaid = transportDetails.unpaidMonths?.slice(0, 6).map(m => m.key) || [];
-                                                                    setSelectedTransportMonths(unpaid);
-                                                                }}
-                                                            >
-                                                                Select 6 Months
-                                                            </Button>
-                                                            <Button 
-                                                                variant="outline" 
-                                                                size="sm"
-                                                                onClick={() => {
-                                                                    const firstUnpaid = transportDetails.unpaidMonths?.[0]?.key;
-                                                                    setSelectedTransportMonths(firstUnpaid ? [firstUnpaid] : []);
-                                                                }}
-                                                            >
-                                                                Select 1 Month
-                                                            </Button>
-                                                            <Button 
-                                                                variant="ghost" 
-                                                                size="sm"
-                                                                onClick={() => setSelectedTransportMonths([])}
-                                                            >
-                                                                Clear
-                                                            </Button>
-                                                        </div>
-                                                        
-                                                        {/* Payment Summary */}
-                                                        {selectedTransportMonths.length > 0 && (
-                                                            <div className="p-3 bg-blue-100 dark:bg-blue-900/30 rounded-md mb-4">
-                                                                <p className="text-sm">
-                                                                    <span className="font-medium">{selectedTransportMonths.length} month(s) selected</span>
-                                                                    <span className="mx-2">�</span>
-                                                                    Amount: <span className="font-bold">{currencySymbol}{(selectedTransportMonths.length * transportDetails.monthlyFee).toLocaleString('en-IN')}</span>
-                                                                </p>
-                                                            </div>
-                                                        )}
-                                                        
-                                                        <div className="grid sm:grid-cols-3 gap-3">
-                                                            <div>
-                                                                <Label className="text-xs">Amount ({currencySymbol})</Label>
-                                                                <Input
-                                                                    type="number"
-                                                                    value={selectedTransportMonths.length > 0 ? selectedTransportMonths.length * transportDetails.monthlyFee : transportPaymentDetails.amount}
-                                                                    onChange={e => setTransportPaymentDetails(p => ({...p, amount: e.target.value}))}
-                                                                    placeholder={transportDetails.monthlyFee}
-                                                                    readOnly={selectedTransportMonths.length > 0}
-                                                                    className={selectedTransportMonths.length > 0 ? 'bg-muted' : ''}
-                                                                />
-                                                            </div>
-                                                            <div>
-                                                                <Label className="text-xs">Discount ({currencySymbol})</Label>
-                                                                <Input
-                                                                    type="number"
-                                                                    value={transportPaymentDetails.discount}
-                                                                    onChange={e => setTransportPaymentDetails(p => ({...p, discount: e.target.value}))}
-                                                                />
-                                                            </div>
-                                                            <div>
-                                                                <Label className="text-xs">Payment Mode</Label>
-                                                                <Select value={transportPaymentDetails.payment_mode} onValueChange={v => setTransportPaymentDetails(p => ({...p, payment_mode: v}))}>
-                                                                    <SelectTrigger><SelectValue /></SelectTrigger>
-                                                                    <SelectContent>
-                                                                        <SelectItem value="Cash">Cash</SelectItem>
-                                                                        <SelectItem value="Cheque">Cheque</SelectItem>
-                                                                        <SelectItem value="Online">Online</SelectItem>
-                                                                        <SelectItem value="UPI">UPI</SelectItem>
-                                                                        <SelectItem value="Card">Card</SelectItem>
-                                                                    </SelectContent>
-                                                                </Select>
-                                                            </div>
-                                                        </div>
-                                                        {/* UPI QR Button for Monthly Transport */}
-                                                        {(transportPaymentDetails.payment_mode === 'Online' || transportPaymentDetails.payment_mode === 'UPI') && upiSettings.enabled && (
-                                                            <Button
-                                                                type="button"
-                                                                variant="outline"
-                                                                className="w-full mt-2 border-purple-300 text-purple-700 hover:bg-purple-50"
-                                                                onClick={() => {
-                                                                    const total = parseFloat(transportPaymentDetails.amount || 0) - parseFloat(transportPaymentDetails.discount || 0) + parseFloat(transportPaymentDetails.fine || 0);
-                                                                    generateUpiQr(total, 'transport');
-                                                                }}
-                                                            >
-                                                                <QrCode className="h-4 w-4 mr-2" />
-                                                                Show UPI QR Code
-                                                            </Button>
-                                                        )}
-                                                        {/* UTR Number for Monthly Transport */}
-                                                        {isUpiPayment(transportPaymentDetails.payment_mode) && (
-                                                            <div className="mt-2">
-                                                                <Label className="text-xs">UPI UTR Number <span className="text-red-500">*</span></Label>
-                                                                <Input 
-                                                                    value={transportPaymentDetails.utr_number} 
-                                                                    onChange={(e) => setTransportPaymentDetails(p => ({...p, utr_number: e.target.value.toUpperCase() }))}
-                                                                    placeholder="Enter UTR number"
-                                                                    className="h-9 font-mono mt-1"
-                                                                    maxLength={22}
-                                                                />
-                                                            </div>
-                                                        )}
-                                                        <div className="mt-3">
-                                                            <Button 
-                                                                onClick={collectTransportFee} 
-                                                                disabled={paymentLoading || selectedTransportMonths.length === 0}
-                                                                className="w-full bg-blue-600 hover:bg-blue-700"
-                                                            >
-                                                                {paymentLoading ? <Loader2 className="animate-spin mr-2 h-4 w-4" /> : <Receipt className="mr-2 h-4 w-4" />}
-                                                                Collect {selectedTransportMonths.length} Month(s) & Print Receipt
-                                                            </Button>
-                                                        </div>
-                                                            </>
-                                                        )}
-                                                    </div>
-                                                )}
-                                            </div>
-                                        </div>
-                                    )}
-
-                                    {/* Hostel Fee Collection Section - Only shows if balance > 0 */}
-                                    {hostelDetails && hostelBalanceWithRefunds > 0 && (
-                                        <div className="mt-6 border-t pt-4">
-                                            <div className="flex items-center gap-2 mb-4">
-                                                <Building2 className="h-5 w-5 text-purple-600" />
-                                                <h3 className="font-semibold">🏠 Collect Hostel Fee</h3>
-                                                <Badge variant="outline" className="text-purple-600 border-purple-300">
-                                                    Room: {hostelDetails.room?.room_number_name || 'N/A'}
-                                                </Badge>
-                                            </div>
-                                            <div className="bg-purple-50 dark:bg-purple-950/20 rounded-lg p-4">
-                                                {/* Hostel Fee Collection Form */}
-                                                {hostelBalanceWithRefunds > 0 && (
-                                                    <div className="border-t pt-4 mt-4">
-                                                        
-                                                        {/* ANNUAL/ONE-TIME: Simple amount input */}
-                                                        {hostelDetails.isAnnualType ? (
-                                                            <>
-                                                                <p className="text-sm font-medium mb-3">
-                                                                    Enter Amount to Pay 
-                                                                    <span className="text-xs text-muted-foreground ml-2">
-                                                                        (Balance: {currencySymbol}{hostelBalanceWithRefunds.toLocaleString('en-IN')} � pay any amount)
-                                                                    </span>
-                                                                </p>
-                                                                <div className="grid sm:grid-cols-3 gap-3">
-                                                                    <div>
-                                                                        <Label className="text-xs">Amount ({currencySymbol})</Label>
-                                                                        <Input
-                                                                            type="number"
-                                                                            value={hostelPaymentDetails.amount}
-                                                                            onChange={e => setHostelPaymentDetails(p => ({...p, amount: e.target.value}))}
-                                                                            placeholder={`Max ${hostelBalanceWithRefunds.toLocaleString('en-IN')}`}
-                                                                            max={hostelBalanceWithRefunds}
-                                                                        />
-                                                                    </div>
-                                                                    <div>
-                                                                        <Label className="text-xs">Discount ({currencySymbol})</Label>
-                                                                        <Input
-                                                                            type="number"
-                                                                            value={hostelPaymentDetails.discount}
-                                                                            onChange={e => setHostelPaymentDetails(p => ({...p, discount: e.target.value}))}
-                                                                        />
-                                                                    </div>
-                                                                    <div>
-                                                                        <Label className="text-xs">Payment Mode</Label>
-                                                                        <Select value={hostelPaymentDetails.payment_mode} onValueChange={v => setHostelPaymentDetails(p => ({...p, payment_mode: v}))}>
-                                                                            <SelectTrigger><SelectValue /></SelectTrigger>
-                                                                            <SelectContent>
-                                                                                <SelectItem value="Cash">Cash</SelectItem>
-                                                                                <SelectItem value="Cheque">Cheque</SelectItem>
-                                                                                <SelectItem value="Online">Online</SelectItem>
-                                                                                <SelectItem value="UPI">UPI</SelectItem>
-                                                                                <SelectItem value="Card">Card</SelectItem>
-                                                                            </SelectContent>
-                                                                        </Select>
-                                                                    </div>
-                                                                </div>
-                                                                {/* UPI QR Button for Hostel */}
-                                                                {(hostelPaymentDetails.payment_mode === 'Online' || hostelPaymentDetails.payment_mode === 'UPI') && upiSettings.enabled && (
-                                                                    <Button
-                                                                        type="button"
-                                                                        variant="outline"
-                                                                        className="w-full mt-2 border-purple-300 text-purple-700 hover:bg-purple-50"
-                                                                        onClick={() => {
-                                                                            const total = parseFloat(hostelPaymentDetails.amount || 0) - parseFloat(hostelPaymentDetails.discount || 0) + parseFloat(hostelPaymentDetails.fine || 0);
-                                                                            generateUpiQr(total, 'hostel');
-                                                                        }}
-                                                                    >
-                                                                        <QrCode className="h-4 w-4 mr-2" />
-                                                                        Show UPI QR Code
-                                                                    </Button>
-                                                                )}
-                                                                {/* UTR Number for Hostel */}
-                                                                {isUpiPayment(hostelPaymentDetails.payment_mode) && (
-                                                                    <div className="mt-2">
-                                                                        <Label className="text-xs">UPI UTR Number <span className="text-red-500">*</span></Label>
-                                                                        <Input 
-                                                                            value={hostelPaymentDetails.utr_number} 
-                                                                            onChange={(e) => setHostelPaymentDetails(p => ({...p, utr_number: e.target.value.toUpperCase() }))}
-                                                                            placeholder="Enter UTR number"
-                                                                            className="h-9 font-mono mt-1"
-                                                                            maxLength={22}
-                                                                        />
-                                                                    </div>
-                                                                )}
-                                                                <div className="mt-3">
-                                                                    <Button 
-                                                                        onClick={collectHostelFee} 
-                                                                        disabled={paymentLoading || !(parseFloat(hostelPaymentDetails.amount) > 0)}
-                                                                        className="w-full bg-purple-600 hover:bg-purple-700"
-                                                                    >
-                                                                        {paymentLoading ? <Loader2 className="animate-spin mr-2 h-4 w-4" /> : <Receipt className="mr-2 h-4 w-4" />}
-                                                                        Collect & Print Receipt
-                                                                    </Button>
-                                                                </div>
-                                                            </>
-                                                        ) : (
-                                                            /* MONTHLY: Month selection grid */
-                                                            <>
-                                                        <p className="text-sm font-medium mb-3">Select Months to Pay</p>
-                                                        
-                                                        {/* Month Selection Grid */}
-                                                        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2 mb-4">
-                                                            {sessionMonths.map(month => {
-                                                                const isPaid = hostelDetails.paidMonths?.includes(month.key);
-                                                                const isSelected = selectedHostelMonths.includes(month.key);
-                                                                return (
-                                                                    <div 
-                                                                        key={month.key}
-                                                                        onClick={() => {
-                                                                            if (isPaid) return;
-                                                                            setSelectedHostelMonths(prev => 
-                                                                                prev.includes(month.key) 
-                                                                                    ? prev.filter(k => k !== month.key)
-                                                                                    : [...prev, month.key]
-                                                                            );
-                                                                        }}
-                                                                        className={`p-2 text-center rounded-md border cursor-pointer text-sm transition-all ${
-                                                                            isPaid 
-                                                                                ? 'bg-green-100 dark:bg-green-900/30 border-green-300 text-green-700 dark:text-green-400 cursor-not-allowed' 
-                                                                                : isSelected 
-                                                                                    ? 'bg-purple-500 text-white border-purple-600' 
-                                                                                    : 'bg-background hover:bg-muted border-input'
-                                                                        }`}
-                                                                    >
-                                                                        <span className="font-medium">{month.shortLabel}</span>
-                                                                        {isPaid && <CheckCircle className="h-3 w-3 mx-auto mt-1" />}
-                                                                    </div>
-                                                                );
-                                                            })}
-                                                        </div>
-                                                        
-                                                        {/* Quick Select Buttons */}
-                                                        <div className="flex flex-wrap gap-2 mb-4">
-                                                            <Button 
-                                                                variant="outline" 
-                                                                size="sm"
-                                                                onClick={() => setSelectedHostelMonths(hostelDetails.unpaidMonths?.map(m => m.key) || [])}
-                                                            >
-                                                                Select All Unpaid
-                                                            </Button>
-                                                            <Button 
-                                                                variant="outline" 
-                                                                size="sm"
-                                                                onClick={() => {
-                                                                    const unpaid = hostelDetails.unpaidMonths?.slice(0, 6).map(m => m.key) || [];
-                                                                    setSelectedHostelMonths(unpaid);
-                                                                }}
-                                                            >
-                                                                Select 6 Months
-                                                            </Button>
-                                                            <Button 
-                                                                variant="outline" 
-                                                                size="sm"
-                                                                onClick={() => {
-                                                                    const firstUnpaid = hostelDetails.unpaidMonths?.[0]?.key;
-                                                                    setSelectedHostelMonths(firstUnpaid ? [firstUnpaid] : []);
-                                                                }}
-                                                            >
-                                                                Select 1 Month
-                                                            </Button>
-                                                            <Button 
-                                                                variant="ghost" 
-                                                                size="sm"
-                                                                onClick={() => setSelectedHostelMonths([])}
-                                                            >
-                                                                Clear
-                                                            </Button>
-                                                        </div>
-                                                        
-                                                        {/* Payment Summary */}
-                                                        {selectedHostelMonths.length > 0 && (
-                                                            <div className="p-3 bg-purple-100 dark:bg-purple-900/30 rounded-md mb-4">
-                                                                <p className="text-sm">
-                                                                    <span className="font-medium">{selectedHostelMonths.length} month(s) selected</span>
-                                                                    <span className="mx-2">�</span>
-                                                                    Amount: <span className="font-bold">{currencySymbol}{(selectedHostelMonths.length * hostelDetails.monthlyFee).toLocaleString('en-IN')}</span>
-                                                                </p>
-                                                            </div>
-                                                        )}
-                                                        
-                                                        <div className="grid sm:grid-cols-3 gap-3">
-                                                            <div>
-                                                                <Label className="text-xs">Amount ({currencySymbol})</Label>
-                                                                <Input
-                                                                    type="number"
-                                                                    value={selectedHostelMonths.length > 0 ? selectedHostelMonths.length * hostelDetails.monthlyFee : hostelPaymentDetails.amount}
-                                                                    onChange={e => setHostelPaymentDetails(p => ({...p, amount: e.target.value}))}
-                                                                    placeholder={hostelDetails.monthlyFee}
-                                                                    readOnly={selectedHostelMonths.length > 0}
-                                                                    className={selectedHostelMonths.length > 0 ? 'bg-muted' : ''}
-                                                                />
-                                                            </div>
-                                                            <div>
-                                                                <Label className="text-xs">Discount ({currencySymbol})</Label>
-                                                                <Input
-                                                                    type="number"
-                                                                    value={hostelPaymentDetails.discount}
-                                                                    onChange={e => setHostelPaymentDetails(p => ({...p, discount: e.target.value}))}
-                                                                />
-                                                            </div>
-                                                            <div>
-                                                                <Label className="text-xs">Payment Mode</Label>
-                                                                <Select value={hostelPaymentDetails.payment_mode} onValueChange={v => setHostelPaymentDetails(p => ({...p, payment_mode: v}))}>
-                                                                    <SelectTrigger><SelectValue /></SelectTrigger>
-                                                                    <SelectContent>
-                                                                        <SelectItem value="Cash">Cash</SelectItem>
-                                                                        <SelectItem value="Cheque">Cheque</SelectItem>
-                                                                        <SelectItem value="Online">Online</SelectItem>
-                                                                        <SelectItem value="UPI">UPI</SelectItem>
-                                                                        <SelectItem value="Card">Card</SelectItem>
-                                                                    </SelectContent>
-                                                                </Select>
-                                                            </div>
-                                                        </div>
-                                                        {/* UPI QR Button for Monthly Hostel */}
-                                                        {(hostelPaymentDetails.payment_mode === 'Online' || hostelPaymentDetails.payment_mode === 'UPI') && upiSettings.enabled && (
-                                                            <Button
-                                                                type="button"
-                                                                variant="outline"
-                                                                className="w-full mt-2 border-purple-300 text-purple-700 hover:bg-purple-50"
-                                                                onClick={() => {
-                                                                    const total = parseFloat(hostelPaymentDetails.amount || 0) - parseFloat(hostelPaymentDetails.discount || 0) + parseFloat(hostelPaymentDetails.fine || 0);
-                                                                    generateUpiQr(total, 'hostel');
-                                                                }}
-                                                            >
-                                                                <QrCode className="h-4 w-4 mr-2" />
-                                                                Show UPI QR Code
-                                                            </Button>
-                                                        )}
-                                                        {/* UTR Number for Monthly Hostel */}
-                                                        {isUpiPayment(hostelPaymentDetails.payment_mode) && (
-                                                            <div className="mt-2">
-                                                                <Label className="text-xs">UPI UTR Number <span className="text-red-500">*</span></Label>
-                                                                <Input 
-                                                                    value={hostelPaymentDetails.utr_number} 
-                                                                    onChange={(e) => setHostelPaymentDetails(p => ({...p, utr_number: e.target.value.toUpperCase() }))}
-                                                                    placeholder="Enter UTR number"
-                                                                    className="h-9 font-mono mt-1"
-                                                                    maxLength={22}
-                                                                />
-                                                            </div>
-                                                        )}
-                                                        <div className="mt-3">
-                                                            <Button 
-                                                                onClick={collectHostelFee} 
-                                                                disabled={paymentLoading || selectedHostelMonths.length === 0}
-                                                                className="w-full bg-purple-600 hover:bg-purple-700"
-                                                            >
-                                                                {paymentLoading ? <Loader2 className="animate-spin mr-2 h-4 w-4" /> : <Receipt className="mr-2 h-4 w-4" />}
-                                                                Collect {selectedHostelMonths.length} Month(s) & Print Receipt
-                                                            </Button>
-                                                        </div>
-                                                            </>
-                                                        )}
-                                                    </div>
-                                                )}
-                                            </div>
-                                        </div>
-                                    )}
                                 </TabsContent>
 
                                 <TabsContent value="history" className="m-0">
@@ -2945,9 +2585,11 @@ const StudentFees = () => {
                                         <div className="text-center p-2 bg-background rounded border">
                                             <p className="text-[10px] text-muted-foreground uppercase">Transactions</p>
                                             <p className="text-base font-bold text-purple-600">{
-                                                new Set(payments.filter(p => !p.reverted_at).map(p => p.transaction_id || p.id)).size +
-                                                (transportDetails?.payments ? new Set(transportDetails.payments.filter(p => !p.reverted_at).map(p => p.transaction_id || p.id)).size : 0) +
-                                                (hostelDetails?.payments ? new Set(hostelDetails.payments.filter(p => !p.reverted_at).map(p => p.transaction_id || p.id)).size : 0)
+                                                new Set([
+                                                    ...payments.filter(p => !p.reverted_at).map(p => p.transaction_id || `fee-${p.id}`),
+                                                    ...(transportDetails?.payments?.filter(p => !p.reverted_at).map(p => p.transaction_id || `transport-${p.id}`) || []),
+                                                    ...(hostelDetails?.payments?.filter(p => !p.reverted_at).map(p => p.transaction_id || `hostel-${p.id}`) || [])
+                                                ]).size
                                             }</p>
                                         </div>
                                     </div>
@@ -2969,54 +2611,162 @@ const StudentFees = () => {
                                                 </tr>
                                             </thead>
                                             <tbody>
-                                                {/* Academic Fee Payments - Grouped by transaction_id */}
+                                                {/* UNIFIED Payment History - All fee types merged by transaction_id */}
                                                 {(() => {
+                                                    // Build unified groups by transaction_id across all payment types
                                                     const groups = {};
+                                                    
+                                                    // Academic payments
                                                     payments.forEach(p => {
-                                                        const txId = p.transaction_id || p.id;
+                                                        const txId = p.transaction_id || `fee-${p.id}`;
                                                         if (!groups[txId]) {
-                                                            groups[txId] = { firstPayment: p, payments: [], totalAmount: 0, totalDiscount: 0, totalFine: 0, feeNames: [], allReverted: true };
+                                                            groups[txId] = { 
+                                                                firstPayment: p, payments: [], 
+                                                                totalAmount: 0, totalDiscount: 0, totalFine: 0, 
+                                                                feeNames: [], types: [], allReverted: true,
+                                                                createdAt: p.created_at, paymentDate: p.payment_date,
+                                                                paymentMode: p.payment_mode, transactionId: p.transaction_id,
+                                                                utrNumber: p.utr_number,
+                                                                // For receipt navigation
+                                                                hasFeePayment: false, hasTransportPayment: false, hasHostelPayment: false,
+                                                                firstFeePaymentId: null, firstTransportPaymentId: null, firstHostelPaymentId: null,
+                                                            };
                                                         }
-                                                        groups[txId].payments.push(p);
+                                                        groups[txId].payments.push({ ...p, _type: 'academic' });
                                                         groups[txId].totalAmount += Number(p.amount || 0);
                                                         groups[txId].totalDiscount += Number(p.discount_amount || 0);
                                                         groups[txId].totalFine += Number(p.fine_paid || 0);
+                                                        groups[txId].hasFeePayment = true;
+                                                        if (!groups[txId].firstFeePaymentId) groups[txId].firstFeePaymentId = p.id;
+                                                        if (!groups[txId].utrNumber && p.utr_number) groups[txId].utrNumber = p.utr_number;
+                                                        
                                                         const feeInfo = p.ledger_id
                                                             ? fees.find(f => f.ledgerId === p.ledger_id)
                                                             : fees.find(f => f.masterId === p.fee_master_id);
                                                         const name = feeInfo?.typeName || feeInfo?.feeTypeName || p.receipt_snapshot?.fee?.name || 'Fee';
                                                         if (!groups[txId].feeNames.includes(name)) groups[txId].feeNames.push(name);
+                                                        if (!groups[txId].types.includes('Academic')) groups[txId].types.push('Academic');
                                                         if (!p.reverted_at) groups[txId].allReverted = false;
                                                     });
-                                                    return Object.entries(groups).map(([txId, group]) => {
-                                                        const p = group.firstPayment;
-                                                        const feeInfo = p.ledger_id
-                                                            ? fees.find(f => f.ledgerId === p.ledger_id)
-                                                            : fees.find(f => f.masterId === p.fee_master_id);
+                                                    
+                                                    // Transport payments
+                                                    (transportDetails?.payments || []).forEach(p => {
+                                                        const txId = p.transaction_id || `transport-${p.id}`;
+                                                        if (!groups[txId]) {
+                                                            groups[txId] = { 
+                                                                firstPayment: p, payments: [], 
+                                                                totalAmount: 0, totalDiscount: 0, totalFine: 0, 
+                                                                feeNames: [], types: [], allReverted: true,
+                                                                createdAt: p.created_at, paymentDate: p.payment_date,
+                                                                paymentMode: p.payment_mode, transactionId: p.transaction_id,
+                                                                utrNumber: p.utr_number,
+                                                                hasFeePayment: false, hasTransportPayment: false, hasHostelPayment: false,
+                                                                firstFeePaymentId: null, firstTransportPaymentId: null, firstHostelPaymentId: null,
+                                                            };
+                                                        }
+                                                        groups[txId].payments.push({ ...p, _type: 'transport' });
+                                                        groups[txId].totalAmount += Number(p.amount || 0);
+                                                        groups[txId].totalDiscount += Number(p.discount_amount || 0);
+                                                        groups[txId].totalFine += Number(p.fine_paid || 0);
+                                                        groups[txId].hasTransportPayment = true;
+                                                        if (!groups[txId].firstTransportPaymentId) groups[txId].firstTransportPaymentId = p.id;
+                                                        if (!groups[txId].utrNumber && p.utr_number) groups[txId].utrNumber = p.utr_number;
+                                                        
+                                                        const tName = `Transport Fee`;
+                                                        if (!groups[txId].feeNames.includes(tName)) groups[txId].feeNames.push(tName);
+                                                        if (!groups[txId].types.includes('Transport')) groups[txId].types.push('Transport');
+                                                        if (!p.reverted_at) groups[txId].allReverted = false;
+                                                    });
+                                                    
+                                                    // Hostel payments
+                                                    (hostelDetails?.payments || []).forEach(p => {
+                                                        const txId = p.transaction_id || `hostel-${p.id}`;
+                                                        if (!groups[txId]) {
+                                                            groups[txId] = { 
+                                                                firstPayment: p, payments: [], 
+                                                                totalAmount: 0, totalDiscount: 0, totalFine: 0, 
+                                                                feeNames: [], types: [], allReverted: true,
+                                                                createdAt: p.created_at, paymentDate: p.payment_date,
+                                                                paymentMode: p.payment_mode, transactionId: p.transaction_id,
+                                                                utrNumber: p.utr_number,
+                                                                hasFeePayment: false, hasTransportPayment: false, hasHostelPayment: false,
+                                                                firstFeePaymentId: null, firstTransportPaymentId: null, firstHostelPaymentId: null,
+                                                            };
+                                                        }
+                                                        groups[txId].payments.push({ ...p, _type: 'hostel' });
+                                                        groups[txId].totalAmount += Number(p.amount || 0);
+                                                        groups[txId].totalDiscount += Number(p.discount_amount || 0);
+                                                        groups[txId].totalFine += Number(p.fine_paid || 0);
+                                                        groups[txId].hasHostelPayment = true;
+                                                        if (!groups[txId].firstHostelPaymentId) groups[txId].firstHostelPaymentId = p.id;
+                                                        if (!groups[txId].utrNumber && p.utr_number) groups[txId].utrNumber = p.utr_number;
+                                                        
+                                                        const hName = `Hostel Fee`;
+                                                        if (!groups[txId].feeNames.includes(hName)) groups[txId].feeNames.push(hName);
+                                                        if (!groups[txId].types.includes('Hostel')) groups[txId].types.push('Hostel');
+                                                        if (!p.reverted_at) groups[txId].allReverted = false;
+                                                    });
+                                                    
+                                                    // Sort by created_at descending
+                                                    const sortedGroups = Object.entries(groups).sort((a, b) => 
+                                                        new Date(b[1].createdAt) - new Date(a[1].createdAt)
+                                                    );
+                                                    
+                                                    return sortedGroups.map(([txId, group]) => {
                                                         const netPaid = group.totalAmount + group.totalFine - group.totalDiscount;
+                                                        // Determine receipt navigation
+                                                        const handlePrintReceipt = () => {
+                                                            if (group.hasFeePayment) {
+                                                                navigate(`/${basePath}/fees-collection/print-receipt/fees/${group.firstFeePaymentId}`);
+                                                            } else if (group.hasTransportPayment) {
+                                                                navigate(`/${basePath}/fees-collection/print-receipt/transport/${group.firstTransportPaymentId}`);
+                                                            } else if (group.hasHostelPayment) {
+                                                                navigate(`/${basePath}/fees-collection/print-receipt/hostel/${group.firstHostelPaymentId}`);
+                                                            }
+                                                        };
+                                                        // For revoke - use academicpayment as primary
+                                                        const revokePayment = group.hasFeePayment 
+                                                            ? group.payments.find(p => p._type === 'academic')
+                                                            : group.payments[0];
+                                                        const revokeType = group.hasFeePayment ? 'academic' 
+                                                            : group.hasTransportPayment ? 'transport' : 'hostel';
+                                                        
                                                         return (
-                                                    <tr key={`fee-${txId}`} className={`border-b ${group.allReverted ? 'bg-red-50 dark:bg-red-950/20 opacity-60 line-through' : 'hover:bg-muted/30'}`}>
+                                                    <tr key={txId} className={`border-b ${group.allReverted ? 'bg-red-50 dark:bg-red-950/20 opacity-60 line-through' : 'hover:bg-muted/30'}`}>
                                                         <td className="p-2">
-                                                            <div className="font-medium text-xs">{format(parseISO(p.payment_date), 'dd MMM yyyy')}</div>
-                                                            <div className="text-[10px] text-muted-foreground">{format(parseISO(p.created_at), 'hh:mm a')}</div>
+                                                            <div className="font-medium text-xs">{format(parseISO(group.paymentDate || group.createdAt), 'dd MMM yyyy')}</div>
+                                                            <div className="text-[10px] text-muted-foreground">{format(parseISO(group.createdAt), 'hh:mm a')}</div>
                                                         </td>
                                                         <td className="p-2">
-                                                            <Badge variant="secondary" className="bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300 text-[10px]">
-                                                                <FileText className="h-3 w-3 mr-1" />Academic
-                                                            </Badge>
+                                                            <div className="flex flex-col gap-0.5">
+                                                                {group.types.includes('Academic') && (
+                                                                    <Badge variant="secondary" className="bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300 text-[10px] w-fit">
+                                                                        <FileText className="h-3 w-3 mr-1" />Academic
+                                                                    </Badge>
+                                                                )}
+                                                                {group.types.includes('Transport') && (
+                                                                    <Badge variant="secondary" className="bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300 text-[10px] w-fit">
+                                                                        <Bus className="h-3 w-3 mr-1" />Transport
+                                                                    </Badge>
+                                                                )}
+                                                                {group.types.includes('Hostel') && (
+                                                                    <Badge variant="secondary" className="bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300 text-[10px] w-fit">
+                                                                        <Building2 className="h-3 w-3 mr-1" />Hostel
+                                                                    </Badge>
+                                                                )}
+                                                            </div>
                                                         </td>
                                                         <td className="p-2">
-                                                            <div className="font-medium text-xs max-w-[120px] truncate">{group.feeNames.join(', ')}</div>
-                                                            <div className="text-[10px] text-muted-foreground truncate">{feeInfo?.group || feeInfo?.groupName || feeInfo?.feeGroupName || p.receipt_snapshot?.fee?.group || ''}</div>
-                                                            {p.utr_number && (
-                                                                <code className="text-[9px] bg-purple-100 text-purple-700 px-1 py-0.5 rounded font-mono mt-0.5 inline-block">UTR: {p.utr_number}</code>
+                                                            <div className="font-medium text-xs max-w-[140px] truncate">{group.feeNames.join(', ')}</div>
+                                                            {group.utrNumber && (
+                                                                <code className="text-[9px] bg-purple-100 text-purple-700 px-1 py-0.5 rounded font-mono mt-0.5 inline-block">UTR: {group.utrNumber}</code>
                                                             )}
                                                         </td>
                                                         <td className="p-2">
-                                                            <code className="text-[10px] bg-muted px-1.5 py-0.5 rounded">{p.transaction_id || '-'}</code>
+                                                            <code className="text-[10px] bg-muted px-1.5 py-0.5 rounded">{group.transactionId || '-'}</code>
                                                         </td>
                                                         <td className="p-2">
-                                                            <Badge variant="outline" className="text-[10px]">{p.payment_mode}</Badge>
+                                                            <Badge variant="outline" className="text-[10px]">{group.paymentMode}</Badge>
                                                         </td>
                                                         <td className="p-2 text-right font-mono text-xs">{currencySymbol}{group.totalAmount.toLocaleString('en-IN')}</td>
                                                         <td className="p-2 text-right font-mono text-xs text-blue-600">{group.totalDiscount > 0 ? `-${currencySymbol}${group.totalDiscount.toLocaleString('en-IN')}` : '-'}</td>
@@ -3025,14 +2775,14 @@ const StudentFees = () => {
                                                         <td className="p-2 text-center">
                                                             {!group.allReverted ? (
                                                                 <div className="flex justify-center gap-1">
-                                                                    <Button variant="outline" size="sm" className="h-7 w-7 p-0" onClick={() => printReceipt(p)} title="Print Receipt">
+                                                                    <Button variant="outline" size="sm" className="h-7 w-7 p-0" onClick={handlePrintReceipt} title="Print Receipt">
                                                                         <Printer className="h-3 w-3" />
                                                                     </Button>
-                                                                    <Button variant="destructive" size="sm" className="h-7 w-7 p-0" onClick={() => { setPaymentToRevoke({ ...p, totalAmount: group.totalAmount, paymentIds: group.payments.map(pay => pay.id) }); setRevokeType('academic'); }} title="Revoke Payment">
+                                                                    <Button variant="destructive" size="sm" className="h-7 w-7 p-0" onClick={() => { setPaymentToRevoke({ ...revokePayment, totalAmount: group.totalAmount, paymentIds: group.payments.map(pay => pay.id) }); setRevokeType(revokeType); }} title="Revoke Payment">
                                                                         <RotateCcw className="h-3 w-3" />
                                                                     </Button>
-                                                                    {!hasExistingRefund(p.id, 'academic') && (
-                                                                        <Button variant="outline" size="sm" className="h-7 w-7 p-0 text-orange-600 border-orange-300 hover:bg-orange-50" onClick={() => openRefundDialog({ ...p, totalAmount: group.totalAmount, paymentIds: group.payments.map(pay => pay.id) }, 'academic')} title="Request Refund">
+                                                                    {!hasExistingRefund(revokePayment.id, revokeType) && (
+                                                                        <Button variant="outline" size="sm" className="h-7 w-7 p-0 text-orange-600 border-orange-300 hover:bg-orange-50" onClick={() => openRefundDialog({ ...revokePayment, totalAmount: group.totalAmount, paymentIds: group.payments.map(pay => pay.id) }, revokeType)} title="Request Refund">
                                                                             <Undo2 className="h-3 w-3" />
                                                                         </Button>
                                                                     )}
@@ -3040,159 +2790,10 @@ const StudentFees = () => {
                                                             ) : (
                                                                 <div className="text-[10px] text-red-600">
                                                                     <div className="font-medium">REVERTED</div>
-                                                                    <div>{format(parseISO(p.reverted_at), 'dd/MM/yy')}</div>
                                                                 </div>
                                                             )}
                                                         </td>
                                                     </tr>
-                                                        );
-                                                    });
-                                                })()}
-
-                                                {/* Transport Fee Payments - Grouped by transaction_id */}
-                                                {(() => {
-                                                    const groups = {};
-                                                    (transportDetails?.payments || []).forEach(p => {
-                                                        const txId = p.transaction_id || p.id;
-                                                        if (!groups[txId]) {
-                                                            groups[txId] = { firstPayment: p, payments: [], totalAmount: 0, totalDiscount: 0, totalFine: 0, months: [], allReverted: true };
-                                                        }
-                                                        groups[txId].payments.push(p);
-                                                        groups[txId].totalAmount += Number(p.amount || 0);
-                                                        groups[txId].totalDiscount += Number(p.discount_amount || 0);
-                                                        groups[txId].totalFine += Number(p.fine_paid || 0);
-                                                        if (p.payment_month) groups[txId].months.push(p.payment_month);
-                                                        if (!p.reverted_at) groups[txId].allReverted = false;
-                                                    });
-                                                    return Object.entries(groups).map(([txId, group]) => {
-                                                        const p = group.firstPayment;
-                                                        const monthsText = group.months.length > 0 ? group.months.join(', ') : (p.note || '-');
-                                                        const netPaid = group.totalAmount + group.totalFine - group.totalDiscount;
-                                                        return (
-                                                            <tr key={`transport-${txId}`} className={`border-b ${group.allReverted ? 'bg-red-50 dark:bg-red-950/20 opacity-60 line-through' : 'hover:bg-blue-50/30 dark:hover:bg-blue-950/20'}`}>
-                                                                <td className="p-3">
-                                                                    <div className="font-medium">{format(parseISO(p.payment_date), 'dd MMM yyyy')}</div>
-                                                                    <div className="text-xs text-muted-foreground">{format(parseISO(p.created_at), 'hh:mm a')}</div>
-                                                                </td>
-                                                                <td className="p-3">
-                                                                    <Badge variant="secondary" className="bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300">
-                                                                        <Bus className="h-3 w-3 mr-1" />Transport
-                                                                    </Badge>
-                                                                </td>
-                                                                <td className="p-3">
-                                                                    <div className="font-medium text-sm">{transportDetails?.routeName || 'Transport Fee'}</div>
-                                                                    <div className="text-xs text-muted-foreground">{monthsText}</div>
-                                                                    {p.utr_number && (
-                                                                        <code className="text-[10px] bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded font-mono mt-1 inline-block">UTR: {p.utr_number}</code>
-                                                                    )}
-                                                                </td>
-                                                                <td className="p-3">
-                                                                    <code className="text-xs bg-muted px-2 py-0.5 rounded">{p.transaction_id || '-'}</code>
-                                                                </td>
-                                                                <td className="p-3">
-                                                                    <Badge variant="outline">{p.payment_mode}</Badge>
-                                                                </td>
-                                                                <td className="p-3 text-right font-mono font-semibold">{currencySymbol}{group.totalAmount.toLocaleString('en-IN')}</td>
-                                                                <td className="p-3 text-right font-mono text-blue-600">{group.totalDiscount > 0 ? `-${currencySymbol}${group.totalDiscount.toLocaleString('en-IN')}` : '-'}</td>
-                                                                <td className="p-3 text-right font-mono text-amber-600">{group.totalFine > 0 ? `+${currencySymbol}${group.totalFine.toLocaleString('en-IN')}` : '-'}</td>
-                                                                <td className="p-3 text-right font-mono font-bold text-green-700">{currencySymbol}{netPaid.toLocaleString('en-IN')}</td>
-                                                                <td className="p-3 text-center">
-                                                                    {!group.allReverted ? (
-                                                                        <div className="flex justify-center gap-1">
-                                                                            <Button variant="outline" size="sm" onClick={() => navigate(`/${basePath}/fees-collection/print-receipt/transport/${p.id}`)} title="Print Receipt">
-                                                                                <Printer className="h-3 w-3" />
-                                                                            </Button>
-                                                                            <Button variant="destructive" size="sm" onClick={() => { setPaymentToRevoke({ ...p, totalAmount: group.totalAmount, paymentIds: group.payments.map(pay => pay.id) }); setRevokeType('transport'); }} title="Revoke Payment">
-                                                                                <RotateCcw className="h-3 w-3" />
-                                                                            </Button>
-                                                                            {!hasExistingRefund(p.id, 'transport') && (
-                                                                                <Button variant="outline" size="sm" className="text-orange-600 border-orange-300 hover:bg-orange-50" onClick={() => openRefundDialog({ ...p, totalAmount: group.totalAmount, paymentIds: group.payments.map(pay => pay.id) }, 'transport')} title="Request Refund">
-                                                                                    <Undo2 className="h-3 w-3" />
-                                                                                </Button>
-                                                                            )}
-                                                                        </div>
-                                                                    ) : (
-                                                                        <div className="text-xs text-red-600">
-                                                                            <div className="font-medium">REVERTED</div>
-                                                                            <div>{format(parseISO(p.reverted_at), 'dd/MM/yy')}</div>
-                                                                        </div>
-                                                                    )}
-                                                                </td>
-                                                            </tr>
-                                                        );
-                                                    });
-                                                })()}
-
-                                                {/* Hostel Fee Payments - Grouped by transaction_id */}
-                                                {(() => {
-                                                    const groups = {};
-                                                    (hostelDetails?.payments || []).forEach(p => {
-                                                        const txId = p.transaction_id || p.id;
-                                                        if (!groups[txId]) {
-                                                            groups[txId] = { firstPayment: p, payments: [], totalAmount: 0, totalDiscount: 0, totalFine: 0, months: [], allReverted: true };
-                                                        }
-                                                        groups[txId].payments.push(p);
-                                                        groups[txId].totalAmount += Number(p.amount || 0);
-                                                        groups[txId].totalDiscount += Number(p.discount_amount || 0);
-                                                        groups[txId].totalFine += Number(p.fine_paid || 0);
-                                                        if (p.payment_month) groups[txId].months.push(p.payment_month);
-                                                        if (!p.reverted_at) groups[txId].allReverted = false;
-                                                    });
-                                                    return Object.entries(groups).map(([txId, group]) => {
-                                                        const p = group.firstPayment;
-                                                        const monthsText = group.months.length > 0 ? group.months.join(', ') : (p.note || '-');
-                                                        const netPaid = group.totalAmount + group.totalFine - group.totalDiscount;
-                                                        return (
-                                                            <tr key={`hostel-${txId}`} className={`border-b ${group.allReverted ? 'bg-red-50 dark:bg-red-950/20 opacity-60 line-through' : 'hover:bg-purple-50/30 dark:hover:bg-purple-950/20'}`}>
-                                                                <td className="p-3">
-                                                                    <div className="font-medium">{format(parseISO(p.payment_date), 'dd MMM yyyy')}</div>
-                                                                    <div className="text-xs text-muted-foreground">{format(parseISO(p.created_at), 'hh:mm a')}</div>
-                                                                </td>
-                                                                <td className="p-3">
-                                                                    <Badge variant="secondary" className="bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300">
-                                                                        <Building2 className="h-3 w-3 mr-1" />Hostel
-                                                                    </Badge>
-                                                                </td>
-                                                                <td className="p-3">
-                                                                    <div className="font-medium text-sm">{hostelDetails?.blockName || 'Hostel Fee'}</div>
-                                                                    <div className="text-xs text-muted-foreground">{monthsText}</div>
-                                                                    {p.utr_number && (
-                                                                        <code className="text-[10px] bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded font-mono mt-1 inline-block">UTR: {p.utr_number}</code>
-                                                                    )}
-                                                                </td>
-                                                                <td className="p-3">
-                                                                    <code className="text-xs bg-muted px-2 py-0.5 rounded">{p.transaction_id || '-'}</code>
-                                                                </td>
-                                                                <td className="p-3">
-                                                                    <Badge variant="outline">{p.payment_mode}</Badge>
-                                                                </td>
-                                                                <td className="p-3 text-right font-mono font-semibold">{currencySymbol}{group.totalAmount.toLocaleString('en-IN')}</td>
-                                                                <td className="p-3 text-right font-mono text-blue-600">{group.totalDiscount > 0 ? `-${currencySymbol}${group.totalDiscount.toLocaleString('en-IN')}` : '-'}</td>
-                                                                <td className="p-3 text-right font-mono text-amber-600">{group.totalFine > 0 ? `+${currencySymbol}${group.totalFine.toLocaleString('en-IN')}` : '-'}</td>
-                                                                <td className="p-3 text-right font-mono font-bold text-green-700">{currencySymbol}{netPaid.toLocaleString('en-IN')}</td>
-                                                                <td className="p-3 text-center">
-                                                                    {!group.allReverted ? (
-                                                                        <div className="flex justify-center gap-1">
-                                                                            <Button variant="outline" size="sm" onClick={() => navigate(`/${basePath}/fees-collection/print-receipt/hostel/${p.id}`)} title="Print Receipt">
-                                                                                <Printer className="h-3 w-3" />
-                                                                            </Button>
-                                                                            <Button variant="destructive" size="sm" onClick={() => { setPaymentToRevoke({ ...p, totalAmount: group.totalAmount, paymentIds: group.payments.map(pay => pay.id) }); setRevokeType('hostel'); }} title="Revoke Payment">
-                                                                                <RotateCcw className="h-3 w-3" />
-                                                                            </Button>
-                                                                            {!hasExistingRefund(p.id, 'hostel') && (
-                                                                                <Button variant="outline" size="sm" className="text-orange-600 border-orange-300 hover:bg-orange-50" onClick={() => openRefundDialog({ ...p, totalAmount: group.totalAmount, paymentIds: group.payments.map(pay => pay.id) }, 'hostel')} title="Request Refund">
-                                                                                    <Undo2 className="h-3 w-3" />
-                                                                                </Button>
-                                                                            )}
-                                                                        </div>
-                                                                    ) : (
-                                                                        <div className="text-xs text-red-600">
-                                                                            <div className="font-medium">REVERTED</div>
-                                                                            <div>{format(parseISO(p.reverted_at), 'dd/MM/yy')}</div>
-                                                                        </div>
-                                                                    )}
-                                                                </td>
-                                                            </tr>
                                                         );
                                                     });
                                                 })()}
@@ -3274,12 +2875,17 @@ const StudentFees = () => {
                                                 </thead>
                                                 <tbody>
                                                     {selectedFees.map(feeId => {
-                                                        const fee = fees.find(f => f.id === feeId);
+                                                        // Look in allFeesForDisplay to include Transport/Hostel fees
+                                                        const fee = allFeesForDisplay.find(f => f.id === feeId);
                                                         if (!fee) return null;
                                                         return (
-                                                            <tr key={feeId} className="border-b last:border-0">
+                                                            <tr key={feeId} className={`border-b last:border-0 ${fee.isTransport ? 'bg-blue-50/50 dark:bg-blue-950/20' : ''} ${fee.isHostel ? 'bg-purple-50/50 dark:bg-purple-950/20' : ''}`}>
                                                                 <td className="p-2">
-                                                                    <div className="font-medium">{fee.typeName || fee.type}</div>
+                                                                    <div className="font-medium flex items-center gap-1">
+                                                                        {fee.isTransport && <span>🚌</span>}
+                                                                        {fee.isHostel && <span>🏠</span>}
+                                                                        {fee.typeName || fee.type}
+                                                                    </div>
                                                                     <div className="text-[10px] text-muted-foreground">{fee.group}</div>
                                                                 </td>
                                                                 <td className="p-2 text-right font-mono text-muted-foreground">{currencySymbol}{fee.balance.toLocaleString('en-IN')}</td>

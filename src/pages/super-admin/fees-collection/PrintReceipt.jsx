@@ -123,6 +123,25 @@ const PrintReceipt = () => {
     const { data: paymentData, error: paymentError } = await paymentQuery;
     if (paymentError) throw paymentError;
 
+    // 2c. ALSO fetch transport/hostel payments with same transaction_id (unified collection)
+    let transportPayments = [];
+    let hostelPayments = [];
+    if (transactionId) {
+      const { data: tData } = await supabase
+        .from('transport_fee_payments')
+        .select('*')
+        .eq('branch_id', branchId)
+        .eq('transaction_id', transactionId);
+      transportPayments = tData || [];
+      
+      const { data: hData } = await supabase
+        .from('hostel_fee_payments')
+        .select('*')
+        .eq('branch_id', branchId)
+        .eq('transaction_id', transactionId);
+      hostelPayments = hData || [];
+    }
+
     // 2b. Always recompute from live data for accuracy.
     //     Snapshot is still saved on first print for archival.
     const anyPrintedAlready = paymentData.some(p => p.printed_at);
@@ -289,17 +308,72 @@ const PrintReceipt = () => {
           };
         }).filter(f => f.amount > 0);
       }
+
+      // 7b. Add Transport fee to feeStatement
+      const { data: transportAssign } = await supabase
+        .from('student_transport_assignments')
+        .select('total_fee, transport_routes(route_title)')
+        .eq('student_id', studentId)
+        .eq('branch_id', branchId)
+        .maybeSingle();
+      
+      if (transportAssign && Number(transportAssign.total_fee || 0) > 0) {
+        const tFee = Number(transportAssign.total_fee || 0);
+        // Get total paid from transport_fee_payments
+        const { data: tPayments } = await supabase
+          .from('transport_fee_payments')
+          .select('amount, discount_amount')
+          .eq('student_id', studentId)
+          .eq('branch_id', branchId);
+        const tPaid = (tPayments || []).reduce((s, p) => s + Number(p.amount || 0) + Number(p.discount_amount || 0), 0);
+        const tBalance = Math.max(0, tFee - tPaid);
+        feeStatement.push({
+          name: `🚌 Transport Fee (${transportAssign.transport_routes?.route_title || 'Route'})`,
+          amount: tFee,
+          paid: tPaid,
+          balance: tBalance,
+          status: tBalance <= 0 ? 'Paid' : (tPaid > 0 ? 'Partial' : 'Unpaid')
+        });
+      }
+
+      // 7c. Add Hostel fee to feeStatement
+      const { data: hostelAssign } = await supabase
+        .from('student_hostel_assignments')
+        .select('total_fee, hostel_blocks(name), hostel_rooms(room_number_name)')
+        .eq('student_id', studentId)
+        .eq('branch_id', branchId)
+        .maybeSingle();
+      
+      if (hostelAssign && Number(hostelAssign.total_fee || 0) > 0) {
+        const hFee = Number(hostelAssign.total_fee || 0);
+        const { data: hPayments } = await supabase
+          .from('hostel_fee_payments')
+          .select('amount, discount_amount')
+          .eq('student_id', studentId)
+          .eq('branch_id', branchId);
+        const hPaid = (hPayments || []).reduce((s, p) => s + Number(p.amount || 0) + Number(p.discount_amount || 0), 0);
+        const hBalance = Math.max(0, hFee - hPaid);
+        feeStatement.push({
+          name: `🏠 Hostel Fee (${hostelAssign.hostel_blocks?.name || 'Block'})`,
+          amount: hFee,
+          paid: hPaid,
+          balance: hBalance,
+          status: hBalance <= 0 ? 'Paid' : (hPaid > 0 ? 'Partial' : 'Unpaid')
+        });
+      }
     }
 
-    // 8. CHECK IF SNAPSHOT EXISTS WITH COMPLETE DATA - USE IT DIRECTLY
+    // 8. CHECK IF SNAPSHOT EXISTS WITH COMPLETE DATA
+    // BUT also check for transport/hostel payments in same transaction
     const firstPayment = paymentData[0];
-    if (firstPayment?.receipt_snapshot?.lineItems?.length > 0) {
+    if (firstPayment?.receipt_snapshot?.lineItems?.length > 0 && transportPayments.length === 0 && hostelPayments.length === 0) {
+      // Only use snapshot if NO transport/hostel payments in this transaction
       const snap = firstPayment.receipt_snapshot;
       return {
         student,
         payments: paymentData,
         lineItems: snap.lineItems,
-        feeStatement: snap.feeStatement || feeStatement,
+        feeStatement,
         totalPaid: snap.totalPaid || snap.grandTotal,
         totalDiscount: snap.totalDiscount || 0,
         totalFine: snap.totalFine || 0,
@@ -313,54 +387,89 @@ const PrintReceipt = () => {
       };
     }
 
-    // 8. FALLBACK: Calculate totals — group by fee_type to avoid duplicating academic totals
+    // 9. FALLBACK: Calculate totals — group by fee_type to avoid duplicating academic totals
     const totalPaid = paymentsWithMaster.reduce((sum, p) => sum + Number(p.amount || 0), 0);
     const totalFine = paymentsWithMaster.reduce((sum, p) => sum + Number(p.fine_paid || 0), 0);
 
-    // Deduplicate academic totals per fee_type (multiple payments of same type in one transaction)
-    const seenFeeTypes = new Set();
+    // Deduplicate academic totals per unique fee (by ledger_id or fee_master_id to keep installments separate)
+    const seenFeeIds = new Set();
     let overallTotalAmount = 0;
     let overallBalance = 0;
     let totalDiscount = 0;
     paymentsWithMaster.forEach(p => {
-      const key = p.fee_name;
-      if (!seenFeeTypes.has(key)) {
-        seenFeeTypes.add(key);
+      // Use unique ID per installment (ledger_id or fee_master_id or payment id)
+      const uniqueKey = p.ledger_id || p.fee_master_id || p.id;
+      if (!seenFeeIds.has(uniqueKey)) {
+        seenFeeIds.add(uniqueKey);
         overallTotalAmount += Number(p.total_fee_amount || 0);
         overallBalance += Number(p.balance || 0);
         totalDiscount += Number(p.academic_discount || 0);
       }
     });
 
-    // Build lineItems — group by fee_name to show one row per fee type
-    const lineItemMap = {};
-    paymentsWithMaster.forEach(p => {
-      const key = p.fee_name;
-      if (!lineItemMap[key]) {
-        lineItemMap[key] = {
-          description: p.fee_name + (p.fee_group_name ? ` (${p.fee_group_name})` : ''),
-          amount: 0,
-          totalAmount: Number(p.total_fee_amount || 0),
-          balance: Number(p.balance || 0),
-          discount: 0,  // Start at 0, accumulate from THIS transaction
-          fine: 0
-        };
-      }
-      lineItemMap[key].amount += Number(p.amount || 0);
-      lineItemMap[key].discount += Number(p.academic_discount || 0);  // Sum THIS transaction's discounts
-      lineItemMap[key].fine += Number(p.fine_paid || 0);
+    // Build lineItems — each payment gets its own row (separate installments)
+    const lineItems = paymentsWithMaster.map(p => ({
+      description: p.fee_name + (p.fee_group_name ? ` (${p.fee_group_name})` : ''),
+      amount: Number(p.amount || 0),
+      totalAmount: Number(p.total_fee_amount || 0),
+      balance: Number(p.balance || 0),
+      discount: Number(p.academic_discount || 0),
+      fine: Number(p.fine_paid || 0)
+    }));
+
+    // 🚌 Add Transport payments to lineItems (unified receipt)
+    transportPayments.forEach(tp => {
+      const snap = tp.receipt_snapshot;
+      lineItems.push({
+        description: `🚌 Transport Fee (${snap?.transport?.route || 'Route'})`,
+        amount: Number(tp.amount || 0),
+        totalAmount: Number(snap?.transport?.total_fee || tp.amount || 0),
+        balance: Number(tp.balance_after_payment || 0),
+        discount: Number(tp.discount_amount || 0),
+        fine: Number(tp.fine_paid || 0),
+        isTransport: true
+      });
+      // Add to totals
+      overallTotalAmount += Number(snap?.transport?.total_fee || tp.amount || 0);
+      overallBalance += Number(tp.balance_after_payment || 0);
+      totalDiscount += Number(tp.discount_amount || 0);
     });
-    const lineItems = Object.values(lineItemMap);
+
+    // 🏠 Add Hostel payments to lineItems (unified receipt)
+    hostelPayments.forEach(hp => {
+      const snap = hp.receipt_snapshot;
+      lineItems.push({
+        description: `🏠 Hostel Fee (${snap?.hostel?.block || 'Block'} - ${snap?.hostel?.room || 'Room'})`,
+        amount: Number(hp.amount || 0),
+        totalAmount: Number(snap?.hostel?.total_fee || hp.amount || 0),
+        balance: Number(hp.balance_after_payment || 0),
+        discount: Number(hp.discount_amount || 0),
+        fine: Number(hp.fine_paid || 0),
+        isHostel: true
+      });
+      // Add to totals
+      overallTotalAmount += Number(snap?.hostel?.total_fee || hp.amount || 0);
+      overallBalance += Number(hp.balance_after_payment || 0);
+      totalDiscount += Number(hp.discount_amount || 0);
+    });
+
+    // Recalculate totalPaid/totalFine including transport/hostel
+    const finalTotalPaid = totalPaid + 
+      transportPayments.reduce((sum, p) => sum + Number(p.amount || 0), 0) +
+      hostelPayments.reduce((sum, p) => sum + Number(p.amount || 0), 0);
+    const finalTotalFine = totalFine +
+      transportPayments.reduce((sum, p) => sum + Number(p.fine_paid || 0), 0) +
+      hostelPayments.reduce((sum, p) => sum + Number(p.fine_paid || 0), 0);
 
     return {
       student,
-      payments: paymentsWithMaster,
+      payments: [...paymentsWithMaster, ...transportPayments, ...hostelPayments],
       lineItems,
       feeStatement,
-      totalPaid,
+      totalPaid: finalTotalPaid,
       totalDiscount,
-      totalFine,
-      grandTotal: totalPaid,
+      totalFine: finalTotalFine,
+      grandTotal: finalTotalPaid,
       overallTotalAmount,
       overallBalance,
       transactionId,
@@ -734,13 +843,13 @@ const PrintReceipt = () => {
         // Fetch transport details
         const { data: transportDetails } = await supabase
           .from('student_transport_details')
-          .select('*, route:transport_route_id(route_title, fare), pickup_point:transport_pickup_point_id(name)')
+          .select('*, route:transport_route_id(route_title), pickup_point:transport_pickup_point_id(name)')
           .eq('student_id', transportPayment.student_id)
           .eq('branch_id', branchId)
           .maybeSingle();
 
         const routeName = transportDetails?.route?.route_title || 'Transport';
-        const routeFare = Number(transportDetails?.route?.fare || transportPayment.total_amount || transportPayment.amount || 0);
+        const routeFare = Number(transportPayment.total_amount || transportPayment.amount || 0);
 
         allLineItems.push({
           description: `Transport - ${routeName}${transportPayment.month ? ` (${transportPayment.month})` : ''}`,
@@ -1287,7 +1396,7 @@ const PrintReceipt = () => {
       {/* ===== FEE STATEMENT (ALL INSTALLMENTS SUMMARY) ===== */}
       {feeStatement.length > 0 && (
         <div style={{ padding: '4px 10px', borderTop: '1px solid #ccc' }}>
-          <div style={{ fontSize: '8px', fontWeight: 'bold', marginBottom: '3px', color: '#333' }}>📋 FEE STATEMENT ({feeStatement.length} Installments)</div>
+          <div style={{ fontSize: '8px', fontWeight: 'bold', marginBottom: '3px', color: '#333' }}>📋 FEE STATEMENT ({feeStatement.length} Items)</div>
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '8px' }}>
             <thead>
               <tr style={{ backgroundColor: '#f5f5f5' }}>
@@ -1305,7 +1414,7 @@ const PrintReceipt = () => {
                   <td style={{ border: '1px solid #aaa', padding: '2px 4px', textAlign: 'right' }}>{fee.amount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
                   <td style={{ border: '1px solid #aaa', padding: '2px 4px', textAlign: 'right' }}>{fee.paid.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
                   <td style={{ border: '1px solid #aaa', padding: '2px 4px', textAlign: 'right' }}>{fee.balance.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
-                  <td style={{ border: '1px solid #aaa', padding: '2px 4px', textAlign: 'center', fontWeight: 'bold', fontSize: '7px', color: fee.status === 'PAID' ? '#080' : (fee.status === 'PARTIAL' ? '#c50' : '#c00') }}>{fee.status}</td>
+                  <td style={{ border: '1px solid #aaa', padding: '2px 4px', textAlign: 'center', fontWeight: 'bold', fontSize: '7px', color: fee.status?.toLowerCase() === 'paid' ? '#080' : (fee.status?.toLowerCase() === 'partial' ? '#c50' : '#c00') }}>{fee.status}</td>
                 </tr>
               ))}
             </tbody>

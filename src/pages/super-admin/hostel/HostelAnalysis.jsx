@@ -133,10 +133,10 @@ const HostelAnalysis = () => {
         .select('id, room_number_name, num_of_beds, hostel_id')
         .eq('branch_id', branchId);
 
-      // 4. Fetch room types
+      // 4. Fetch room types (cost moved to Fee Structures)
       const { data: roomTypes } = await supabase
         .from('hostel_room_types')
-        .select('id, name, cost')
+        .select('id, name')
         .eq('branch_id', branchId);
 
       // === CALCULATE STATISTICS ===
@@ -246,7 +246,7 @@ const HostelAnalysis = () => {
         roomTypeMap.set(rt.id, {
           typeId: rt.id,
           typeName: rt.name,
-          cost: rt.cost || 0,
+          // Note: cost now comes from Fee Structures, not room types
           count: 0
         });
       });

@@ -520,13 +520,12 @@ export const executePhaseTransport = async (context, logger) => {
     const { branchId, demoData, ownerClient } = context;
     const client = ownerClient || supabase;
 
-    // 1. Routes
+    // 1. Routes (fare column removed - fees now in Fee Structures)
     const routeMap = {};
     for (const r of demoData.transportRoutes) {
-        const { data } = await client.from('transport_route').insert({
+        const { data } = await client.from('transport_routes').insert({
             branch_id: branchId,
-            route_title: r.title,
-            fare: r.fare
+            route_title: r.title
         }).select('id').single();
         if (data) routeMap[r.title] = data.id;
     }

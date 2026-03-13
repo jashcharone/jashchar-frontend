@@ -1788,7 +1788,7 @@ const StudentAdmission = () => {
         ] = await Promise.all([
           supabase.from('classes').select('id, name').eq('branch_id', branchId),
           supabase.from('student_categories').select('id, name').eq('branch_id', branchId),
-          supabase.from('transport_routes').select('id, route_title, fare, billing_cycle').eq('branch_id', branchId),
+          supabase.from('transport_routes').select('id, route_title').eq('branch_id', branchId),
           supabase.from('hostels').select('id, name').eq('branch_id', branchId),
           supabase.from('hostel_room_types').select('*').eq('branch_id', branchId),
           supabase.from('fee_groups').select(`id, name, fee_masters (*, fee_types(name, code))`).eq('branch_id', branchId).eq('session_id', currentSessionId),
@@ -2113,7 +2113,7 @@ const StudentAdmission = () => {
       
       const { data, error } = await supabase
         .from('hostel_rooms')
-        .select('*, hostel_room_types(name, cost)')
+        .select('*, hostel_room_types(name)'))
         .eq('hostel_id', formData.hostel_id)
         .eq('room_type_id', formData.hostel_room_type)
         .order('room_number_name', { ascending: true });
@@ -2435,9 +2435,8 @@ const StudentAdmission = () => {
     try {
       let transport_details_id = null;
       if (formData.transport_required) {
-        // Get billing_cycle from selected route
-        const selectedRoute = routes.find(r => r.id === formData.transport_route_id);
-        const transportBillingCycle = selectedRoute?.billing_cycle || 'monthly';
+        // Billing cycle defaults to 'annual' - fees are now configured in Fee Structures
+        const transportBillingCycle = 'annual';
         
         const { data: transportData, error: transportError } = await supabase
           .from('student_transport_details')
@@ -2448,7 +2447,7 @@ const StudentAdmission = () => {
             transport_route_id: formData.transport_route_id,
             transport_pickup_point_id: formData.transport_pickup_point_id,
             transport_fee: formData.transport_fee,
-            billing_cycle: transportBillingCycle, // 🔧 Save billing_cycle from route
+            billing_cycle: transportBillingCycle, // Default to 'annual'
             pickup_time: formData.pickup_time || null,
             drop_time: formData.drop_time || null,
             vehicle_number: formData.vehicle_number,
@@ -2462,9 +2461,8 @@ const StudentAdmission = () => {
       
       let hostel_details_id = null;
       if (formData.hostel_required) {
-        // Get billing_cycle from selected room type
-        const selectedRoomType = hostelRoomTypes.find(rt => rt.id === formData.hostel_room_type);
-        const hostelBillingCycle = selectedRoomType?.billing_cycle || 'monthly';
+        // Billing cycle defaults to 'annual' - fees are now configured in Fee Structures
+        const hostelBillingCycle = 'annual';
         
         const { data: hostelData, error: hostelError } = await supabase
           .from('student_hostel_details')
@@ -2477,7 +2475,7 @@ const StudentAdmission = () => {
             room_number: formData.room_number,
             bed_number: formData.bed_number,
             hostel_fee: formData.hostel_fee,
-            billing_cycle: hostelBillingCycle, // 🔧 Save billing_cycle from room type
+            billing_cycle: hostelBillingCycle, // Default to 'annual'
             check_in_date: formData.check_in_date,
             check_out_date: formData.check_out_date,
             guardian_contact: formData.hostel_guardian_contact,

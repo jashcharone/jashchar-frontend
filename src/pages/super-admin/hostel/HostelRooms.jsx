@@ -53,7 +53,7 @@ const HostelRooms = () => {
       .select(`
         *,
         hostels(name, type),
-        hostel_room_types(name, cost)
+        hostel_room_types(name)
       `)
       .eq('branch_id', branchId)
       .order('hostel_id', { ascending: true })
@@ -75,7 +75,7 @@ const HostelRooms = () => {
 
   const fetchRoomTypes = useCallback(async () => {
     if (!branchId) return;
-    const { data } = await supabase.from('hostel_room_types').select('id, name, cost').eq('branch_id', branchId);
+    const { data } = await supabase.from('hostel_room_types').select('id, name').eq('branch_id', branchId);
     setRoomTypes(data || []);
   }, [branchId]);
 

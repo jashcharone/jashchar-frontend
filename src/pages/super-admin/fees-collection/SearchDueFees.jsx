@@ -135,7 +135,7 @@ const SearchDueFees = () => {
             // 5. Fetch Transport Details (Current Session Only)
             const { data: transportDetails } = await supabase
                 .from('student_transport_details')
-                .select('student_id, transport_fee, transport_routes(fare)')
+                .select('student_id, transport_fee'))
                 .in('student_id', studentIds)
                 .eq('branch_id', branchId)
                 .eq('session_id', currentSessionId);
@@ -152,7 +152,7 @@ const SearchDueFees = () => {
             // 7. Fetch Hostel Details (Current Session Only)
             const { data: hostelDetails } = await supabase
                 .from('student_hostel_details')
-                .select('student_id, hostel_fee, hostel_room_type, hostel_room_types!student_hostel_details_room_type_id_fkey(cost)')
+                .select('student_id, hostel_fee, hostel_room_type')
                 .in('student_id', studentIds)
                 .eq('branch_id', branchId)
                 .eq('session_id', currentSessionId);
@@ -195,7 +195,7 @@ const SearchDueFees = () => {
 
                 // Transport Fees
                 const studentTransport = transportDetails?.find(t => t.student_id === student.id);
-                const transportTotal = studentTransport ? Number(studentTransport.transport_fee || studentTransport.transport_routes?.fare || 0) : 0;
+                const transportTotal = studentTransport ? Number(studentTransport.transport_fee || 0) : 0;
                 
                 const studentTransportPayments = transportPayments?.filter(p => p.student_id === student.id) || [];
                 const transportPaid = studentTransportPayments.reduce((sum, p) => sum + Number(p.amount || 0), 0);
@@ -205,7 +205,7 @@ const SearchDueFees = () => {
 
                 // Hostel Fees
                 const studentHostel = hostelDetails?.find(h => h.student_id === student.id);
-                const hostelTotal = studentHostel ? Number(studentHostel.hostel_fee || studentHostel.hostel_room_types?.cost || 0) : 0;
+                const hostelTotal = studentHostel ? Number(studentHostel.hostel_fee || 0) : 0;
                 
                 const studentHostelPayments = hostelPayments?.filter(p => p.student_id === student.id) || [];
                 const hostelPaid = studentHostelPayments.reduce((sum, p) => sum + Number(p.amount || 0), 0);

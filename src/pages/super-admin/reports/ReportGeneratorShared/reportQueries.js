@@ -828,10 +828,10 @@ export const fetchHostelFeeStructure = async ({
 export const fetchTransportFeeStructure = async ({
   branchId, organizationId, sessionId
 }) => {
-  // Get transport routes
+  // Get transport routes (fare removed - now configured in Fee Structures)
   const { data: routes, error: routeError } = await supabase
     .from('transport_routes')
-    .select('id, route_title, fare')
+    .select('id, route_title')
     .eq('branch_id', branchId);
 
   if (routeError) {
@@ -898,16 +898,16 @@ export const fetchTransportFeeStructure = async ({
     const pickupPoints = routePickupMap[route.id] || [];
     
     if (pickupPoints.length === 0) {
-      // Route with no pickup points - use route's base fare
+      // Route with no pickup points - no fare info available (fees now in Fee Structures)
       result.push({
         id: route.id,
         route_name: route.route_title || '',
         pickup_point: 'All Points',
         distance_km: 0,
-        monthly_fee: route.fare || 0,
-        quarterly_fee: (route.fare || 0) * 3,
-        half_yearly_fee: (route.fare || 0) * 6,
-        annual_fee: (route.fare || 0) * 12,
+        monthly_fee: 0,
+        quarterly_fee: 0,
+        half_yearly_fee: 0,
+        annual_fee: 0,
         transport_students: routeStudentMap[route.id] || 0
       });
     } else {

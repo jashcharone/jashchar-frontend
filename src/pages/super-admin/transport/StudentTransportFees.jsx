@@ -206,14 +206,12 @@ const StudentTransportFees = () => {
   };
 
   const handleRouteChange = async (routeId) => {
-    // When route changes, try to get fee from route
-    const route = routes.find(r => r.id === routeId);
+    // When route changes, keep existing fee (fees configured in Fee Structures) and reset pickup point
     setFormData(prev => ({ 
       ...prev, 
       transport_route_id: routeId, 
       transport_pickup_point_id: '',
-      transport_fee: route?.fare || prev.transport_fee,
-      billing_cycle: route?.billing_cycle || 'monthly',
+      // transport_fee is entered manually - no auto-fill from route
       // Clear vehicle fields when route changes
       vehicle_number: '',
       driver_name: '',
@@ -419,7 +417,7 @@ const StudentTransportFees = () => {
                       <SelectTrigger><SelectValue placeholder="Select Route" /></SelectTrigger>
                       <SelectContent>
                         <SelectItem value="none">-- No Transport --</SelectItem>
-                        {routes.map(r => <SelectItem key={r.id} value={r.id}>{r.route_title} (₹{r.fare})</SelectItem>)}
+                        {routes.map(r => <SelectItem key={r.id} value={r.id}>{r.route_title}</SelectItem>)}
                       </SelectContent>
                     </Select>
                   </div>

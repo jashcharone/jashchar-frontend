@@ -350,7 +350,7 @@ const EditStudentProfile = () => {
                     api.get('/form-settings', { params: { branchId, module: 'student_admission' } }),
                     supabase.from('classes').select('id, name').eq('branch_id', branchId),
                     supabase.from('student_categories').select('id, name').eq('branch_id', branchId),
-                    supabase.from('transport_routes').select('id, route_title, fare, billing_cycle').eq('branch_id', branchId),
+                    supabase.from('transport_routes').select('id, route_title').eq('branch_id', branchId),
                     supabase.from('hostels').select('id, name').eq('branch_id', branchId),
                     supabase.from('hostel_room_types').select('*').eq('branch_id', branchId),
                     supabase.from('master_religions').select('name'),
@@ -732,9 +732,8 @@ const EditStudentProfile = () => {
             const transportRequired = formData.transport_required;
             const hostelRequired = formData.hostel_required;
             
-            // Get billing_cycle from selected route
-            const selectedRoute = routes.find(r => r.id === formData.transport_route_id);
-            const transportBillingCycle = selectedRoute?.billing_cycle || 'monthly';
+            // Billing cycle defaults to 'annual' - fees are now configured in Fee Structures
+            const transportBillingCycle = 'annual';
             
             const transportData = {
                 transport_route_id: formData.transport_route_id,
@@ -749,9 +748,8 @@ const EditStudentProfile = () => {
                 special_instructions: formData.transport_special_instructions
             };
             
-            // Get billing_cycle from selected room type
-            const selectedRoomType = hostelRoomTypes.find(rt => rt.id === formData.hostel_room_type);
-            const hostelBillingCycle = selectedRoomType?.billing_cycle || 'monthly';
+            // Billing cycle defaults to 'annual' - fees are now configured in Fee Structures
+            const hostelBillingCycle = 'annual';
             
             const hostelData = {
                 hostel_id: formData.hostel_id,
@@ -759,7 +757,7 @@ const EditStudentProfile = () => {
                 room_number: formData.room_number,
                 bed_number: formData.bed_number,
                 hostel_fee: formData.hostel_fee,
-                billing_cycle: hostelBillingCycle, // 🔧 Save billing_cycle from room type
+                billing_cycle: hostelBillingCycle, // Default to 'annual'
                 check_in_date: formData.check_in_date,
                 check_out_date: formData.check_out_date,
                 guardian_contact: formData.hostel_guardian_contact,

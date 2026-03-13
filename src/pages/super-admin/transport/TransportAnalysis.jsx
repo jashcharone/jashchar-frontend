@@ -118,7 +118,7 @@ const TransportAnalysis = () => {
       // 2. Fetch routes
       const { data: routes } = await supabase
         .from('transport_routes')
-        .select('id, route_title, fare')
+        .select('id, route_title')
         .eq('branch_id', branchId);
 
       // 3. Fetch vehicles
@@ -199,7 +199,6 @@ const TransportAnalysis = () => {
         routeMap.set(r.id, {
           routeId: r.id,
           routeName: r.route_title,
-          fare: r.fare || 0,
           studentCount: 0,
           vehicle: null,
           capacity: 0

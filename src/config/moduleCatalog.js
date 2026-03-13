@@ -89,14 +89,39 @@ export const MODULE_CATALOG = {
     label: "Examinations",
     slug: "examinations",
     submodules: [
-      { label: "Exam Group", slug: "exam_group" },
-      { label: "Exam Schedule", slug: "exam_schedule" },
-      { label: "Exam Result", slug: "exam_result" },
-      { label: "Design Admit Card", slug: "design_admit_card" },
-      { label: "Print Admit Card", slug: "print_admit_card" },
-      { label: "Design Marksheet", slug: "design_marksheet" },
-      { label: "Print Marksheet", slug: "print_marksheet" },
-      { label: "Marks Grade", slug: "marks_grade" }
+      // Phase 1 - Foundation
+      { label: "Board Configuration", slug: "board_configuration" },
+      { label: "Term Management", slug: "term_management" },
+      { label: "Exam Type Master", slug: "exam_type_master" },
+      { label: "Grade Scale Builder", slug: "grade_scale_builder" },
+      { label: "Exam Group Setup", slug: "exam_group_management" },
+      // Phase 2 - Exam Planning
+      { label: "Exam Management", slug: "exam_management" },
+      { label: "Student Assignment", slug: "student_assignment" },
+      // Phase 3 - Scheduling
+      { label: "Room Management", slug: "room_management" },
+      { label: "Invigilator Duty", slug: "invigilator_duty" },
+      { label: "Seating Arrangement", slug: "seating_arrangement" },
+      { label: "Exam Calendar", slug: "exam_calendar" },
+      // Phase 4 - Evaluation
+      { label: "Marks Entry", slug: "marks_entry_new" },
+      { label: "Internal Assessment", slug: "internal_assessment" },
+      { label: "Practical Marks", slug: "practical_marks" },
+      { label: "Bulk Upload Marks", slug: "bulk_upload_marks" },
+      // Phase 5 - Results
+      { label: "Grace Marks", slug: "grace_marks" },
+      { label: "Moderation Engine", slug: "moderation_engine" },
+      { label: "Result Calculation", slug: "result_calculation" },
+      { label: "Rank Generation", slug: "rank_generation" },
+      // Phase 6 - Documents
+      { label: "Admit Card Designer", slug: "admit_card_designer" },
+      { label: "Marksheet Designer", slug: "marksheet_designer" },
+      { label: "Report Card Designer", slug: "report_card_designer" },
+      { label: "Bulk Document Generator", slug: "bulk_document_generator" },
+      // Phase 7 - Analytics
+      { label: "Performance Dashboard", slug: "performance_dashboard" },
+      { label: "Question Bank", slug: "question_bank" },
+      { label: "Online Exam", slug: "online_exam" }
     ]
   },
   online_examinations: {

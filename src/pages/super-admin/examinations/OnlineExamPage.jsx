@@ -14,10 +14,11 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Switch } from '@/components/ui/switch';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { toast } from 'sonner';
-import { useAuth } from '@/contexts/AuthContext';
+import DashboardLayout from '@/components/DashboardLayout';
+import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { useBranch } from '@/contexts/BranchContext';
 import { onlineTestService, questionBankService } from '@/services/examinationService';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/lib/supabaseClient';
 import { formatDate, formatDateTime } from '@/utils/dateUtils';
 import { 
     Plus, Edit, Trash2, Search, Play, Pause, Eye, Copy, Share2,
@@ -129,30 +130,27 @@ const OnlineExamPage = () => {
     const loadSubjects = async () => {
         const { data } = await supabase
             .from('subjects')
-            .select('id, subject_name')
+            .select('id, name')
             .eq('branch_id', selectedBranch.id)
-            .eq('is_active', true)
-            .order('subject_name');
+            .order('name');
         setSubjects(data || []);
     };
 
     const loadClasses = async () => {
         const { data } = await supabase
             .from('classes')
-            .select('id, class_name')
+            .select('id, name')
             .eq('branch_id', selectedBranch.id)
-            .eq('is_active', true)
-            .order('class_name');
+            .order('name');
         setClasses(data || []);
     };
 
     const loadSections = async (classId) => {
         const { data } = await supabase
             .from('sections')
-            .select('id, section_name')
+            .select('id, name')
             .eq('class_id', classId)
-            .eq('is_active', true)
-            .order('section_name');
+            .order('name');
         setSections(data || []);
     };
 
@@ -415,6 +413,7 @@ const OnlineExamPage = () => {
     };
 
     return (
+        <DashboardLayout>
         <div className="p-6 space-y-6">
             <div className="flex justify-between items-center">
                 <div>
@@ -522,10 +521,9 @@ const OnlineExamPage = () => {
                                                 )}
                                             </div>
                                         </TableCell>
-                                        <TableCell>{test.subject?.subject_name || '-'}</TableCell>
+                                        <TableCell>{subjects.find(s => s.id === test.subject_id)?.name || '-'}</TableCell>
                                         <TableCell>
-                                            {test.class?.class_name || '-'}
-                                            {test.section?.section_name && ` - ${test.section.section_name}`}
+                                            {classes.find(c => c.id === test.class_id)?.name || '-'}
                                         </TableCell>
                                         <TableCell className="text-center">
                                             <div className="flex items-center justify-center gap-1">
@@ -663,7 +661,7 @@ const OnlineExamPage = () => {
                                         </SelectTrigger>
                                         <SelectContent>
                                             {subjects.map(s => (
-                                                <SelectItem key={s.id} value={s.id}>{s.subject_name}</SelectItem>
+                                                <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
                                             ))}
                                         </SelectContent>
                                     </Select>
@@ -679,7 +677,7 @@ const OnlineExamPage = () => {
                                         </SelectTrigger>
                                         <SelectContent>
                                             {classes.map(c => (
-                                                <SelectItem key={c.id} value={c.id}>{c.class_name}</SelectItem>
+                                                <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
                                             ))}
                                         </SelectContent>
                                     </Select>
@@ -687,17 +685,17 @@ const OnlineExamPage = () => {
                                 <div>
                                     <Label>Section</Label>
                                     <Select 
-                                        value={testForm.section_id} 
-                                        onValueChange={v => setTestForm(p => ({ ...p, section_id: v }))}
+                                        value={testForm.section_id || 'all'} 
+                                        onValueChange={v => setTestForm(p => ({ ...p, section_id: v === 'all' ? '' : v }))}
                                         disabled={!testForm.class_id}
                                     >
                                         <SelectTrigger>
                                             <SelectValue placeholder="All sections" />
                                         </SelectTrigger>
                                         <SelectContent>
-                                            <SelectItem value="">All Sections</SelectItem>
+                                            <SelectItem value="all">All Sections</SelectItem>
                                             {sections.map(s => (
-                                                <SelectItem key={s.id} value={s.id}>{s.section_name}</SelectItem>
+                                                <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
                                             ))}
                                         </SelectContent>
                                     </Select>
@@ -1084,6 +1082,7 @@ const OnlineExamPage = () => {
                 </AlertDialogContent>
             </AlertDialog>
         </div>
+        </DashboardLayout>
     );
 };
 

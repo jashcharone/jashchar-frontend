@@ -433,6 +433,15 @@ const Sidebar = ({ role, isSidebarOpen, isMobile, toggleSidebar, closeSidebar, o
       );
     }
 
+    // Handle divider items - render as non-clickable separator
+    if (item.divider || item.path?.startsWith('#')) {
+      return (
+        <div className="flex items-center justify-center px-4 py-1 my-1 mx-3 opacity-30">
+          <div className="h-[1px] flex-1" style={{ backgroundColor: settings.colors.sidebarMutedForeground }} />
+        </div>
+      );
+    }
+
     // Save scroll position before navigation
     const saveScrollPosition = () => {
       if (scrollAreaRef.current) {

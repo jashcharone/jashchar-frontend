@@ -47,8 +47,7 @@ import {
     Trash2,
     BookOpen,
     FileText,
-    Clock,
-    Sync
+    Clock
 } from 'lucide-react';
 
 const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
@@ -317,7 +316,7 @@ const ExamCalendar = () => {
                     </div>
                     <div className="flex gap-2">
                         <Button variant="outline" onClick={handleSyncFromExamGroup} disabled={!selectedExamGroup}>
-                            <Sync className="h-4 w-4 mr-2" />
+                            <RefreshCw className="h-4 w-4 mr-2" />
                             Sync from Exams
                         </Button>
                         <Button onClick={() => handleDateClick(new Date())}>
@@ -334,12 +333,12 @@ const ExamCalendar = () => {
                             <div className="flex items-center gap-4">
                                 <div className="space-y-1">
                                     <Label>Exam Group</Label>
-                                    <Select value={selectedExamGroup} onValueChange={setSelectedExamGroup}>
+                                    <Select value={selectedExamGroup || 'all'} onValueChange={(v) => setSelectedExamGroup(v === 'all' ? '' : v)}>
                                         <SelectTrigger className="w-[200px]">
                                             <SelectValue placeholder="All Groups" />
                                         </SelectTrigger>
                                         <SelectContent>
-                                            <SelectItem value="">All Groups</SelectItem>
+                                            <SelectItem value="all">All Groups</SelectItem>
                                             {examGroups.map(group => (
                                                 <SelectItem key={group.id} value={group.id}>
                                                     {group.group_name}

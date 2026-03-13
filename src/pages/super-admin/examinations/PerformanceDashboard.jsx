@@ -9,10 +9,11 @@ import { Progress } from '@/components/ui/progress';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { toast } from 'sonner';
-import { useAuth } from '@/contexts/AuthContext';
+import DashboardLayout from '@/components/DashboardLayout';
+import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { useBranch } from '@/contexts/BranchContext';
 import { analyticsService, examService } from '@/services/examinationService';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/lib/supabaseClient';
 import { formatDate } from '@/utils/dateUtils';
 import { 
     BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
@@ -76,7 +77,7 @@ const PerformanceDashboard = () => {
 
     const loadExams = async () => {
         try {
-            const response = await examService.getExams({
+            const response = await examService.getAll({
                 branch_id: selectedBranch.id,
                 session_id: currentSessionId
             });
@@ -91,10 +92,9 @@ const PerformanceDashboard = () => {
     const loadClasses = async () => {
         const { data, error } = await supabase
             .from('classes')
-            .select('id, class_name')
+            .select('id, name')
             .eq('branch_id', selectedBranch.id)
-            .eq('is_active', true)
-            .order('class_name');
+            .order('name');
         
         if (!error) setClasses(data || []);
     };
@@ -102,10 +102,9 @@ const PerformanceDashboard = () => {
     const loadSubjects = async () => {
         const { data, error } = await supabase
             .from('subjects')
-            .select('id, subject_name')
+            .select('id, name')
             .eq('branch_id', selectedBranch.id)
-            .eq('is_active', true)
-            .order('subject_name');
+            .order('name');
         
         if (!error) setSubjects(data || []);
     };
@@ -203,7 +202,7 @@ const PerformanceDashboard = () => {
 
     const getSubjectChartData = () => {
         return subjectSummary.map(s => ({
-            name: s.subject?.subject_name || 'Unknown',
+            name: s.subject?.name || 'Unknown',
             average: parseFloat(s.average_marks || 0).toFixed(1),
             pass_rate: parseFloat(s.pass_percentage || 0).toFixed(1)
         }));
@@ -246,6 +245,7 @@ const PerformanceDashboard = () => {
     );
 
     return (
+        <DashboardLayout>
         <div className="p-6 space-y-6">
             <div className="flex justify-between items-center">
                 <div>
@@ -286,15 +286,15 @@ const PerformanceDashboard = () => {
                         </div>
                         <div className="space-y-2">
                             <Label>Class (Optional)</Label>
-                            <Select value={selectedClass} onValueChange={setSelectedClass}>
+                            <Select value={selectedClass || 'all'} onValueChange={v => setSelectedClass(v === 'all' ? '' : v)}>
                                 <SelectTrigger>
                                     <SelectValue placeholder="All Classes" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="">All Classes</SelectItem>
+                                    <SelectItem value="all">All Classes</SelectItem>
                                     {classes.map(cls => (
                                         <SelectItem key={cls.id} value={cls.id}>
-                                            {cls.class_name}
+                                            {cls.name}
                                         </SelectItem>
                                     ))}
                                 </SelectContent>
@@ -302,15 +302,15 @@ const PerformanceDashboard = () => {
                         </div>
                         <div className="space-y-2">
                             <Label>Subject (Optional)</Label>
-                            <Select value={selectedSubject} onValueChange={setSelectedSubject}>
+                            <Select value={selectedSubject || 'all'} onValueChange={v => setSelectedSubject(v === 'all' ? '' : v)}>
                                 <SelectTrigger>
                                     <SelectValue placeholder="All Subjects" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="">All Subjects</SelectItem>
+                                    <SelectItem value="all">All Subjects</SelectItem>
                                     {subjects.map(sub => (
                                         <SelectItem key={sub.id} value={sub.id}>
-                                            {sub.subject_name}
+                                            {sub.name}
                                         </SelectItem>
                                     ))}
                                 </SelectContent>
@@ -591,6 +591,7 @@ const PerformanceDashboard = () => {
                 </>
             )}
         </div>
+        </DashboardLayout>
     );
 };
 

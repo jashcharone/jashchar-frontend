@@ -140,7 +140,9 @@ const ALREADY_IN_SIDEBAR_ALIASES = new Set([
  * ═══════════════════════════════════════════════════════════════════════════════
  */
 const FULLY_STATIC_PARENT_SLUGS = new Set([
-  'attendance',  // All 16 attendance submodules are in sidebarConfig.js
+  'attendance',     // All 16 attendance submodules are in sidebarConfig.js
+  'examinations',   // All Phase 1-7 examination modules are in sidebarConfig.js
+  'online_examinations', // CBSE exam modules are in sidebarConfig.js
 ]);
 
 /**

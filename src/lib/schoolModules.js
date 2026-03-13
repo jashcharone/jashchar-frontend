@@ -60,16 +60,39 @@ export const schoolModuleMap = {
     label: 'Examinations',
     role: 'school_owner',
     subModules: {
-      exam_group: 'Exam Group',
-      exam_list: 'Exam List',
-      exam_schedule: 'Exam Schedule',
-      exam_result: 'Exam Result',
-      marks_entry: 'Marks Entry',
-      marks_grade: 'Marks Grade',
-      admit_card: 'Admit Card',
-      marksheet: 'Marksheet',
-      design_admit_card: 'Design Admit Card',
-      design_marksheet: 'Design Marksheet'
+      // Phase 1 - Foundation
+      board_configuration: 'Board Configuration',
+      term_management: 'Term Management',
+      exam_type_master: 'Exam Type Master',
+      grade_scale_builder: 'Grade Scale Builder',
+      exam_group_management: 'Exam Group Setup',
+      // Phase 2 - Exam Planning
+      exam_management: 'Exam Management',
+      student_assignment: 'Student Assignment',
+      // Phase 3 - Scheduling
+      room_management: 'Room Management',
+      invigilator_duty: 'Invigilator Duty',
+      seating_arrangement: 'Seating Arrangement',
+      exam_calendar: 'Exam Calendar',
+      // Phase 4 - Evaluation
+      marks_entry_new: 'Marks Entry',
+      internal_assessment: 'Internal Assessment',
+      practical_marks: 'Practical Marks',
+      bulk_upload_marks: 'Bulk Upload Marks',
+      // Phase 5 - Results
+      grace_marks: 'Grace Marks',
+      moderation_engine: 'Moderation Engine',
+      result_calculation: 'Result Calculation',
+      rank_generation: 'Rank Generation',
+      // Phase 6 - Documents
+      admit_card_designer: 'Admit Card Designer',
+      marksheet_designer: 'Marksheet Designer',
+      report_card_designer: 'Report Card Designer',
+      bulk_document_generator: 'Bulk Document Generator',
+      // Phase 7 - Analytics
+      performance_dashboard: 'Performance Dashboard',
+      question_bank: 'Question Bank',
+      online_exam: 'Online Exam'
     }
   },
   online_examinations: {

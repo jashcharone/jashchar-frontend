@@ -354,16 +354,7 @@ const ReceiptTemplates = lazy(() => import('@/pages/super-admin/fees-collection/
 // 🌟 Fee Dashboard (Simplified)
 const FeeDashboard = lazy(() => import('@/pages/super-admin/fees-collection/FeeDashboard'));
 
-// Examinations
-const ExamGroup = lazy(() => import('@/pages/super-admin/examinations/ExamGroup'));
-const ExamList = lazy(() => import('@/pages/super-admin/examinations/ExamList'));
-const ExamSchedule = lazy(() => import('@/pages/super-admin/examinations/ExamSchedule'));
-const ExamAttendance = lazy(() => import('@/pages/super-admin/examinations/ExamAttendance'));
-const MarksEntry = lazy(() => import('@/pages/super-admin/examinations/MarksEntry'));
-const MarksDivision = lazy(() => import('@/pages/super-admin/examinations/MarksDivision'));
-const MarksGrade = lazy(() => import('@/pages/super-admin/examinations/MarksGrade'));
-const GeneralExamResult = lazy(() => import('@/pages/super-admin/examinations/GeneralExamResult'));
-const GeneralExamSchedule = lazy(() => import('@/pages/super-admin/examinations/GeneralExamSchedule'));
+// Examinations - CBSE Specific (Online Examinations Menu)
 const CbseExam = lazy(() => import('@/pages/super-admin/examinations/CbseExam'));
 const CbseSettings = lazy(() => import('@/pages/super-admin/examinations/CbseSettings'));
 const CbseTerm = lazy(() => import('@/pages/super-admin/examinations/CbseTerm'));
@@ -371,23 +362,10 @@ const CbseAssessment = lazy(() => import('@/pages/super-admin/examinations/CbseA
 const CbseObservation = lazy(() => import('@/pages/super-admin/examinations/CbseObservation'));
 const CbseObservationParameter = lazy(() => import('@/pages/super-admin/examinations/CbseObservationParameter'));
 const CbseExamGrade = lazy(() => import('@/pages/super-admin/examinations/CbseExamGrade'));
-const AddExamSubjects = lazy(() => import('@/pages/super-admin/examinations/AddExamSubjects'));
-const AssignStudents = lazy(() => import('@/pages/super-admin/examinations/AssignStudents'));
-const EnterMarks = lazy(() => import('@/pages/super-admin/examinations/EnterMarks'));
-const LinkExam = lazy(() => import('@/pages/super-admin/examinations/LinkExam'));
-const GenerateRank = lazy(() => import('@/pages/super-admin/examinations/GenerateRank'));
-const GenerateTemplateRank = lazy(() => import('@/pages/super-admin/examinations/GenerateTemplateRank'));
-const MarksheetTemplate = lazy(() => import('@/pages/super-admin/examinations/MarksheetTemplate'));
-const PrintMarksheet = lazy(() => import('@/pages/super-admin/examinations/PrintMarksheet'));
-const PrintMarksheetGeneral = lazy(() => import('@/pages/super-admin/examinations/PrintMarksheetGeneral'));
-const PrintAdmitCard = lazy(() => import('@/pages/super-admin/examinations/PrintAdmitCard'));
-const DesignMarksheet = lazy(() => import('@/pages/super-admin/examinations/DesignMarksheet'));
-const DesignAdmitCard = lazy(() => import('@/pages/super-admin/examinations/DesignAdmitCard'));
-const TeacherRemarks = lazy(() => import('@/pages/super-admin/examinations/TeacherRemarks'));
-const AssignObservation = lazy(() => import('@/pages/super-admin/examinations/AssignObservation'));
 const CbseReports = lazy(() => import('@/pages/super-admin/examinations/CbseReports'));
-const ReportCard = lazy(() => import('@/pages/super-admin/examinations/ReportCard'));
-// Examination Setup (New Engine)
+const AssignObservation = lazy(() => import('@/pages/super-admin/examinations/AssignObservation'));
+const TeacherRemarks = lazy(() => import('@/pages/super-admin/examinations/TeacherRemarks'));
+// Examination Setup (Phase 1 - Foundation)
 const BoardConfiguration = lazy(() => import('@/pages/super-admin/examinations/BoardConfiguration'));
 const TermManagement = lazy(() => import('@/pages/super-admin/examinations/TermManagement'));
 const ExamTypeMaster = lazy(() => import('@/pages/super-admin/examinations/ExamTypeMaster'));
@@ -849,11 +827,11 @@ function App() {
             <Route path={ROUTES.PRINCIPAL.TEACHER_TIMETABLE} element={<ProtectedRoute allowedRoles={['principal']} requiredModule="academics"><TeacherTimetable /></ProtectedRoute>} />
             <Route path={ROUTES.PRINCIPAL.ASSIGN_CLASS_TEACHER} element={<ProtectedRoute allowedRoles={['principal']} requiredModule="academics"><AssignClassTeacher /></ProtectedRoute>} />
             <Route path={ROUTES.PRINCIPAL.SUBJECT_TEACHER} element={<ProtectedRoute allowedRoles={['principal']} requiredModule="academics"><SubjectTeacher /></ProtectedRoute>} />
-            <Route path={ROUTES.PRINCIPAL.EXAM_GROUP} element={<ProtectedRoute allowedRoles={['principal']} requiredModule="examinations"><ExamGroup /></ProtectedRoute>} />
-            <Route path={ROUTES.PRINCIPAL.EXAM_SCHEDULE} element={<ProtectedRoute allowedRoles={['principal']} requiredModule="examinations"><ExamSchedule /></ProtectedRoute>} />
-            <Route path={ROUTES.PRINCIPAL.GENERAL_EXAM_RESULT} element={<ProtectedRoute allowedRoles={['principal']} requiredModule="examinations"><GeneralExamResult /></ProtectedRoute>} />
-            <Route path={ROUTES.PRINCIPAL.MARKS_ENTRY} element={<ProtectedRoute allowedRoles={['principal']} requiredModule="examinations"><MarksEntry /></ProtectedRoute>} />
-            <Route path={ROUTES.PRINCIPAL.REPORT_CARD} element={<ProtectedRoute allowedRoles={['principal']} requiredModule="examinations"><ReportCard /></ProtectedRoute>} />
+            <Route path={ROUTES.PRINCIPAL.EXAM_GROUP} element={<ProtectedRoute allowedRoles={['principal']} requiredModule="examinations"><ExamGroupManagement /></ProtectedRoute>} />
+            <Route path={ROUTES.PRINCIPAL.EXAM_SCHEDULE} element={<ProtectedRoute allowedRoles={['principal']} requiredModule="examinations"><ExamCalendar /></ProtectedRoute>} />
+            <Route path={ROUTES.PRINCIPAL.GENERAL_EXAM_RESULT} element={<ProtectedRoute allowedRoles={['principal']} requiredModule="examinations"><ResultCalculationPage /></ProtectedRoute>} />
+            <Route path={ROUTES.PRINCIPAL.MARKS_ENTRY} element={<ProtectedRoute allowedRoles={['principal']} requiredModule="examinations"><MarksEntryPageNew /></ProtectedRoute>} />
+            <Route path={ROUTES.PRINCIPAL.REPORT_CARD} element={<ProtectedRoute allowedRoles={['principal']} requiredModule="examinations"><ReportCardDesignerPage /></ProtectedRoute>} />
             <Route path={ROUTES.PRINCIPAL.CBSE_REPORTS} element={<ProtectedRoute allowedRoles={['principal']} requiredModule="examinations"><CbseReports /></ProtectedRoute>} />
             <Route path={ROUTES.PRINCIPAL.ASSIGN_INCIDENT} element={<ProtectedRoute allowedRoles={['principal']} requiredModule="behaviour_records"><AssignIncident /></ProtectedRoute>} />
             <Route path={ROUTES.PRINCIPAL.INCIDENTS} element={<ProtectedRoute allowedRoles={['principal']} requiredModule="behaviour_records"><Incidents /></ProtectedRoute>} />
@@ -1491,16 +1469,7 @@ function App() {
             {/* 🌟 Fee Dashboard (Simplified) */}
             <Route path="/super-admin/fees-collection/fee-dashboard" element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'accountant', 'principal']}><FeeDashboard /></ProtectedRoute>} />
 
-            {/* ? Examinations */}
-            <Route path={ROUTES.SUPER_ADMIN.EXAM_GROUP} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'teacher', 'principal']} requiredModule="examinations"><ExamGroup /></ProtectedRoute>} />
-            <Route path={ROUTES.SUPER_ADMIN.EXAM_LIST} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'teacher']} requiredModule="examinations"><ExamList /></ProtectedRoute>} />
-            <Route path={ROUTES.SUPER_ADMIN.EXAM_SCHEDULE} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'teacher', 'student', 'parent', 'principal']} requiredModule="examinations"><ExamSchedule /></ProtectedRoute>} />
-            <Route path={ROUTES.SUPER_ADMIN.EXAM_ATTENDANCE} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'teacher']} requiredModule="examinations"><ExamAttendance /></ProtectedRoute>} />
-            <Route path={ROUTES.SUPER_ADMIN.MARKS_ENTRY} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'teacher', 'principal']} requiredModule="examinations"><MarksEntry /></ProtectedRoute>} />
-            <Route path={ROUTES.SUPER_ADMIN.MARKS_DIVISION} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="examinations"><MarksDivision /></ProtectedRoute>} />
-            <Route path={ROUTES.SUPER_ADMIN.MARKS_GRADE} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="examinations"><MarksGrade /></ProtectedRoute>} />
-            <Route path={ROUTES.SUPER_ADMIN.GENERAL_EXAM_RESULT} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'teacher', 'principal']} requiredModule="examinations"><GeneralExamResult /></ProtectedRoute>} />
-            <Route path={ROUTES.SUPER_ADMIN.GENERAL_EXAM_SCHEDULE} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'teacher']} requiredModule="examinations"><GeneralExamSchedule /></ProtectedRoute>} />
+            {/* 📚 Examinations - CBSE Specific (Online Examinations Menu) */}
             <Route path={ROUTES.SUPER_ADMIN.CBSE_EXAM} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="examinations"><CbseExam /></ProtectedRoute>} />
             <Route path={ROUTES.SUPER_ADMIN.CBSE_SETTINGS} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="examinations"><CbseSettings /></ProtectedRoute>} />
             <Route path={ROUTES.SUPER_ADMIN.CBSE_TERM} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="examinations"><CbseTerm /></ProtectedRoute>} />
@@ -1508,55 +1477,42 @@ function App() {
             <Route path={ROUTES.SUPER_ADMIN.CBSE_OBSERVATION} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="examinations"><CbseObservation /></ProtectedRoute>} />
             <Route path={ROUTES.SUPER_ADMIN.CBSE_OBSERVATION_PARAM} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="examinations"><CbseObservationParameter /></ProtectedRoute>} />
             <Route path={ROUTES.SUPER_ADMIN.CBSE_EXAM_GRADE} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="examinations"><CbseExamGrade /></ProtectedRoute>} />
-            <Route path={ROUTES.SUPER_ADMIN.ADD_EXAM_SUBJECTS} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="examinations"><AddExamSubjects /></ProtectedRoute>} />
-            <Route path={ROUTES.SUPER_ADMIN.ASSIGN_STUDENTS} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="examinations"><AssignStudents /></ProtectedRoute>} />
-            <Route path={ROUTES.SUPER_ADMIN.ENTER_MARKS} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'teacher']} requiredModule="examinations"><EnterMarks /></ProtectedRoute>} />
-            <Route path={ROUTES.SUPER_ADMIN.LINK_EXAM} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="examinations"><LinkExam /></ProtectedRoute>} />
-            <Route path={ROUTES.SUPER_ADMIN.GENERATE_RANK} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="examinations"><GenerateRank /></ProtectedRoute>} />
-            <Route path={ROUTES.SUPER_ADMIN.GENERATE_TEMPLATE_RANK} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="examinations"><GenerateTemplateRank /></ProtectedRoute>} />
-            <Route path={ROUTES.SUPER_ADMIN.MARKSHEET_TEMPLATE} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="examinations"><MarksheetTemplate /></ProtectedRoute>} />
-            <Route path={ROUTES.SUPER_ADMIN.PRINT_MARKSHEET} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="examinations"><PrintMarksheet /></ProtectedRoute>} />
-            <Route path={ROUTES.SUPER_ADMIN.PRINT_MARKSHEET_GENERAL} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="examinations"><PrintMarksheetGeneral /></ProtectedRoute>} />
-            <Route path={ROUTES.SUPER_ADMIN.PRINT_ADMIT_CARD} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="examinations"><PrintAdmitCard /></ProtectedRoute>} />
-            <Route path={ROUTES.SUPER_ADMIN.DESIGN_MARKSHEET} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="examinations"><DesignMarksheet /></ProtectedRoute>} />
-            <Route path={ROUTES.SUPER_ADMIN.DESIGN_ADMIT_CARD} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="examinations"><DesignAdmitCard /></ProtectedRoute>} />
-            <Route path={ROUTES.SUPER_ADMIN.TEACHER_REMARKS} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'teacher']} requiredModule="examinations"><TeacherRemarks /></ProtectedRoute>} />
-            <Route path={ROUTES.SUPER_ADMIN.ASSIGN_OBSERVATION} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="examinations"><AssignObservation /></ProtectedRoute>} />
             <Route path={ROUTES.SUPER_ADMIN.CBSE_REPORTS} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'principal']} requiredModule="examinations"><CbseReports /></ProtectedRoute>} />
-            <Route path={ROUTES.SUPER_ADMIN.REPORT_CARD} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'principal']} requiredModule="examinations"><ReportCard /></ProtectedRoute>} />
-            {/* Examination Setup (New Engine) */}
-            <Route path={ROUTES.SUPER_ADMIN.BOARD_CONFIGURATION} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="examinations"><BoardConfiguration /></ProtectedRoute>} />
-            <Route path={ROUTES.SUPER_ADMIN.TERM_MANAGEMENT} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="examinations"><TermManagement /></ProtectedRoute>} />
-            <Route path={ROUTES.SUPER_ADMIN.EXAM_TYPE_MASTER} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="examinations"><ExamTypeMaster /></ProtectedRoute>} />
-            <Route path={ROUTES.SUPER_ADMIN.GRADE_SCALE_BUILDER} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="examinations"><GradeScaleBuilder /></ProtectedRoute>} />
-            <Route path={ROUTES.SUPER_ADMIN.EXAM_GROUP_MANAGEMENT} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="examinations"><ExamGroupManagement /></ProtectedRoute>} />
-            {/* Exam Planning (Phase 2) */}
-            <Route path={ROUTES.SUPER_ADMIN.EXAM_MANAGEMENT} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="examinations"><ExamManagement /></ProtectedRoute>} />
-            <Route path={ROUTES.SUPER_ADMIN.STUDENT_ASSIGNMENT} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="examinations"><StudentAssignmentPage /></ProtectedRoute>} />
-            {/* Scheduling Engine (Phase 3) */}
-            <Route path={ROUTES.SUPER_ADMIN.ROOM_MANAGEMENT} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="examinations"><RoomManagement /></ProtectedRoute>} />
-            <Route path={ROUTES.SUPER_ADMIN.INVIGILATOR_DUTY} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="examinations"><InvigilatorDuty /></ProtectedRoute>} />
-            <Route path={ROUTES.SUPER_ADMIN.SEATING_ARRANGEMENT} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="examinations"><SeatingArrangement /></ProtectedRoute>} />
-            <Route path={ROUTES.SUPER_ADMIN.EXAM_CALENDAR} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="examinations"><ExamCalendar /></ProtectedRoute>} />
-            {/* Evaluation Engine (Phase 4) */}
-            <Route path={ROUTES.SUPER_ADMIN.MARKS_ENTRY_NEW} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'teacher']} requiredModule="examinations"><MarksEntryPageNew /></ProtectedRoute>} />
-            <Route path={ROUTES.SUPER_ADMIN.INTERNAL_ASSESSMENT} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'teacher']} requiredModule="examinations"><InternalAssessmentEntry /></ProtectedRoute>} />
-            <Route path={ROUTES.SUPER_ADMIN.PRACTICAL_MARKS} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'teacher']} requiredModule="examinations"><PracticalMarksEntry /></ProtectedRoute>} />
-            <Route path={ROUTES.SUPER_ADMIN.BULK_UPLOAD_MARKS} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="examinations"><BulkUploadPage /></ProtectedRoute>} />
-            {/* Moderation & Results (Phase 5) */}
-            <Route path={ROUTES.SUPER_ADMIN.GRACE_MARKS} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="examinations"><GraceMarksPage /></ProtectedRoute>} />
-            <Route path={ROUTES.SUPER_ADMIN.MODERATION_ENGINE} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="examinations"><ModerationEnginePage /></ProtectedRoute>} />
-            <Route path={ROUTES.SUPER_ADMIN.RESULT_CALCULATION} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="examinations"><ResultCalculationPage /></ProtectedRoute>} />
-            <Route path={ROUTES.SUPER_ADMIN.RANK_GENERATION} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="examinations"><RankGenerationPage /></ProtectedRoute>} />
-            {/* Documents (Phase 6) */}
-            <Route path={ROUTES.SUPER_ADMIN.ADMIT_CARD_DESIGNER} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="examinations"><AdmitCardDesignerPage /></ProtectedRoute>} />
-            <Route path={ROUTES.SUPER_ADMIN.MARKSHEET_DESIGNER} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="examinations"><MarksheetDesignerPage /></ProtectedRoute>} />
-            <Route path={ROUTES.SUPER_ADMIN.REPORT_CARD_DESIGNER} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="examinations"><ReportCardDesignerPage /></ProtectedRoute>} />
-            <Route path={ROUTES.SUPER_ADMIN.BULK_DOCUMENT_GENERATOR} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="examinations"><BulkDocumentGenerator /></ProtectedRoute>} />
-            {/* Analytics & Online Exam (Phase 7) */}
-            <Route path={ROUTES.SUPER_ADMIN.PERFORMANCE_DASHBOARD} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="examinations"><PerformanceDashboard /></ProtectedRoute>} />
-            <Route path={ROUTES.SUPER_ADMIN.QUESTION_BANK} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="examinations"><QuestionBankPage /></ProtectedRoute>} />
-            <Route path={ROUTES.SUPER_ADMIN.ONLINE_EXAM} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="examinations"><OnlineExamPage /></ProtectedRoute>} />
+            <Route path={ROUTES.SUPER_ADMIN.ASSIGN_OBSERVATION} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="examinations"><AssignObservation /></ProtectedRoute>} />
+            <Route path={ROUTES.SUPER_ADMIN.TEACHER_REMARKS} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'teacher']} requiredModule="examinations"><TeacherRemarks /></ProtectedRoute>} />
+            {/* Phase 1: Foundation - Examination Setup */}
+            <Route path={ROUTES.SUPER_ADMIN.BOARD_CONFIGURATION} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'organization_owner', 'school_owner']} requiredModule="examinations"><BoardConfiguration /></ProtectedRoute>} />
+            <Route path={ROUTES.SUPER_ADMIN.TERM_MANAGEMENT} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'organization_owner', 'school_owner']} requiredModule="examinations"><TermManagement /></ProtectedRoute>} />
+            <Route path={ROUTES.SUPER_ADMIN.EXAM_TYPE_MASTER} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'organization_owner', 'school_owner']} requiredModule="examinations"><ExamTypeMaster /></ProtectedRoute>} />
+            <Route path={ROUTES.SUPER_ADMIN.GRADE_SCALE_BUILDER} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'organization_owner', 'school_owner']} requiredModule="examinations"><GradeScaleBuilder /></ProtectedRoute>} />
+            <Route path={ROUTES.SUPER_ADMIN.EXAM_GROUP_MANAGEMENT} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'organization_owner', 'school_owner']} requiredModule="examinations"><ExamGroupManagement /></ProtectedRoute>} />
+            {/* Phase 2: Exam Planning */}
+            <Route path={ROUTES.SUPER_ADMIN.EXAM_MANAGEMENT} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'organization_owner', 'school_owner']} requiredModule="examinations"><ExamManagement /></ProtectedRoute>} />
+            <Route path={ROUTES.SUPER_ADMIN.STUDENT_ASSIGNMENT} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'organization_owner', 'school_owner']} requiredModule="examinations"><StudentAssignmentPage /></ProtectedRoute>} />
+            {/* Phase 3: Scheduling Engine */}
+            <Route path={ROUTES.SUPER_ADMIN.ROOM_MANAGEMENT} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'organization_owner', 'school_owner']} requiredModule="examinations"><RoomManagement /></ProtectedRoute>} />
+            <Route path={ROUTES.SUPER_ADMIN.INVIGILATOR_DUTY} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'organization_owner', 'school_owner']} requiredModule="examinations"><InvigilatorDuty /></ProtectedRoute>} />
+            <Route path={ROUTES.SUPER_ADMIN.SEATING_ARRANGEMENT} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'organization_owner', 'school_owner']} requiredModule="examinations"><SeatingArrangement /></ProtectedRoute>} />
+            <Route path={ROUTES.SUPER_ADMIN.EXAM_CALENDAR} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'organization_owner', 'school_owner']} requiredModule="examinations"><ExamCalendar /></ProtectedRoute>} />
+            {/* Phase 4: Evaluation Engine */}
+            <Route path={ROUTES.SUPER_ADMIN.MARKS_ENTRY_NEW} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'organization_owner', 'school_owner', 'teacher']} requiredModule="examinations"><MarksEntryPageNew /></ProtectedRoute>} />
+            <Route path={ROUTES.SUPER_ADMIN.INTERNAL_ASSESSMENT} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'organization_owner', 'school_owner', 'teacher']} requiredModule="examinations"><InternalAssessmentEntry /></ProtectedRoute>} />
+            <Route path={ROUTES.SUPER_ADMIN.PRACTICAL_MARKS} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'organization_owner', 'school_owner', 'teacher']} requiredModule="examinations"><PracticalMarksEntry /></ProtectedRoute>} />
+            <Route path={ROUTES.SUPER_ADMIN.BULK_UPLOAD_MARKS} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'organization_owner', 'school_owner']} requiredModule="examinations"><BulkUploadPage /></ProtectedRoute>} />
+            {/* Phase 5: Moderation & Results */}
+            <Route path={ROUTES.SUPER_ADMIN.GRACE_MARKS} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'organization_owner', 'school_owner']} requiredModule="examinations"><GraceMarksPage /></ProtectedRoute>} />
+            <Route path={ROUTES.SUPER_ADMIN.MODERATION_ENGINE} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'organization_owner', 'school_owner']} requiredModule="examinations"><ModerationEnginePage /></ProtectedRoute>} />
+            <Route path={ROUTES.SUPER_ADMIN.RESULT_CALCULATION} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'organization_owner', 'school_owner']} requiredModule="examinations"><ResultCalculationPage /></ProtectedRoute>} />
+            <Route path={ROUTES.SUPER_ADMIN.RANK_GENERATION} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'organization_owner', 'school_owner']} requiredModule="examinations"><RankGenerationPage /></ProtectedRoute>} />
+            {/* Phase 6: Documents */}
+            <Route path={ROUTES.SUPER_ADMIN.ADMIT_CARD_DESIGNER} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'organization_owner', 'school_owner']} requiredModule="examinations"><AdmitCardDesignerPage /></ProtectedRoute>} />
+            <Route path={ROUTES.SUPER_ADMIN.MARKSHEET_DESIGNER} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'organization_owner', 'school_owner']} requiredModule="examinations"><MarksheetDesignerPage /></ProtectedRoute>} />
+            <Route path={ROUTES.SUPER_ADMIN.REPORT_CARD_DESIGNER} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'organization_owner', 'school_owner']} requiredModule="examinations"><ReportCardDesignerPage /></ProtectedRoute>} />
+            <Route path={ROUTES.SUPER_ADMIN.BULK_DOCUMENT_GENERATOR} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'organization_owner', 'school_owner']} requiredModule="examinations"><BulkDocumentGenerator /></ProtectedRoute>} />
+            {/* Phase 7: Analytics & Online Exam */}
+            <Route path={ROUTES.SUPER_ADMIN.PERFORMANCE_DASHBOARD} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'organization_owner', 'school_owner']} requiredModule="examinations"><PerformanceDashboard /></ProtectedRoute>} />
+            <Route path={ROUTES.SUPER_ADMIN.QUESTION_BANK} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'organization_owner', 'school_owner']} requiredModule="examinations"><QuestionBankPage /></ProtectedRoute>} />
+            <Route path={ROUTES.SUPER_ADMIN.ONLINE_EXAM} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'organization_owner', 'school_owner']} requiredModule="examinations"><OnlineExamPage /></ProtectedRoute>} />
 
             {/* ? Library */}
             <Route path={ROUTES.SUPER_ADMIN.LIBRARY_BOOKS} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'librarian']} requiredModule="library"><LibraryBooks /></ProtectedRoute>} />
@@ -1702,14 +1658,12 @@ function App() {
             <Route path="/:roleSlug/attendance/staff-attendance" element={<StaffModuleRoute requiredModule="attendance"><StaffAttendance /></StaffModuleRoute>} />
             <Route path="/:roleSlug/attendance/attendance-report" element={<StaffModuleRoute requiredModule="attendance"><AttendanceReport /></StaffModuleRoute>} />
             
-            {/* Examinations */}
-            <Route path="/:roleSlug/examinations/exam-group" element={<StaffModuleRoute requiredModule="examinations"><ExamGroup /></StaffModuleRoute>} />
-            <Route path="/:roleSlug/examinations/exam-group/:groupId/exams" element={<StaffModuleRoute requiredModule="examinations"><ExamList /></StaffModuleRoute>} />
-            <Route path="/:roleSlug/examinations/exam-schedule" element={<StaffModuleRoute requiredModule="examinations"><ExamSchedule /></StaffModuleRoute>} />
-            <Route path="/:roleSlug/examinations/general-exam-result" element={<StaffModuleRoute requiredModule="examinations"><GeneralExamResult /></StaffModuleRoute>} />
-            <Route path="/:roleSlug/examinations/marks-entry" element={<StaffModuleRoute requiredModule="examinations"><MarksEntry /></StaffModuleRoute>} />
-            <Route path="/:roleSlug/examinations/enter-marks" element={<StaffModuleRoute requiredModule="examinations"><EnterMarks /></StaffModuleRoute>} />
-            <Route path="/:roleSlug/examinations/report-card" element={<StaffModuleRoute requiredModule="examinations"><ReportCard /></StaffModuleRoute>} />
+            {/* Examinations - Updated to use Phase 1-7 components */}
+            <Route path="/:roleSlug/examinations/exam-group" element={<StaffModuleRoute requiredModule="examinations"><ExamGroupManagement /></StaffModuleRoute>} />
+            <Route path="/:roleSlug/examinations/exam-schedule" element={<StaffModuleRoute requiredModule="examinations"><ExamCalendar /></StaffModuleRoute>} />
+            <Route path="/:roleSlug/examinations/general-exam-result" element={<StaffModuleRoute requiredModule="examinations"><ResultCalculationPage /></StaffModuleRoute>} />
+            <Route path="/:roleSlug/examinations/marks-entry" element={<StaffModuleRoute requiredModule="examinations"><MarksEntryPageNew /></StaffModuleRoute>} />
+            <Route path="/:roleSlug/examinations/report-card" element={<StaffModuleRoute requiredModule="examinations"><ReportCardDesignerPage /></StaffModuleRoute>} />
             <Route path="/:roleSlug/examinations/cbse-reports" element={<StaffModuleRoute requiredModule="examinations"><CbseReports /></StaffModuleRoute>} />
             
             {/* Behaviour Records */}

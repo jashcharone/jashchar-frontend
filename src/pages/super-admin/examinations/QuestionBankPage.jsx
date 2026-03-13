@@ -14,10 +14,11 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Switch } from '@/components/ui/switch';
 import { toast } from 'sonner';
-import { useAuth } from '@/contexts/AuthContext';
+import DashboardLayout from '@/components/DashboardLayout';
+import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { useBranch } from '@/contexts/BranchContext';
 import { questionBankService } from '@/services/examinationService';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/lib/supabaseClient';
 import { 
     Plus, Edit, Trash2, Search, FolderTree, BookOpen, 
     Filter, Upload, Download, RefreshCw, ChevronRight,
@@ -116,6 +117,7 @@ const QuestionBankPage = () => {
     const loadCategories = async () => {
         try {
             const response = await questionBankService.getCategories({
+                organization_id: organizationId,
                 branch_id: selectedBranch.id
             });
             if (response.data.success) {
@@ -144,20 +146,18 @@ const QuestionBankPage = () => {
     const loadSubjects = async () => {
         const { data } = await supabase
             .from('subjects')
-            .select('id, subject_name')
+            .select('id, name')
             .eq('branch_id', selectedBranch.id)
-            .eq('is_active', true)
-            .order('subject_name');
+            .order('name');
         setSubjects(data || []);
     };
 
     const loadClasses = async () => {
         const { data } = await supabase
             .from('classes')
-            .select('id, class_name')
+            .select('id, name')
             .eq('branch_id', selectedBranch.id)
-            .eq('is_active', true)
-            .order('class_name');
+            .order('name');
         setClasses(data || []);
     };
 
@@ -334,7 +334,7 @@ const QuestionBankPage = () => {
     };
 
     const handleFilterChange = (key, value) => {
-        setFilters(prev => ({ ...prev, [key]: value }));
+        setFilters(prev => ({ ...prev, [key]: value === 'all' ? '' : value }));
     };
 
     const applyFilters = () => {
@@ -352,6 +352,7 @@ const QuestionBankPage = () => {
     };
 
     return (
+        <DashboardLayout>
         <div className="p-6 space-y-6">
             <div className="flex justify-between items-center">
                 <div>
@@ -390,25 +391,25 @@ const QuestionBankPage = () => {
                         <CardContent className="p-4">
                             <div className="grid grid-cols-6 gap-4">
                                 <div>
-                                    <Select value={filters.subject_id} onValueChange={v => handleFilterChange('subject_id', v)}>
+                                    <Select value={filters.subject_id || 'all'} onValueChange={v => handleFilterChange('subject_id', v)}>
                                         <SelectTrigger>
                                             <SelectValue placeholder="Subject" />
                                         </SelectTrigger>
                                         <SelectContent>
-                                            <SelectItem value="">All Subjects</SelectItem>
+                                            <SelectItem value="all">All Subjects</SelectItem>
                                             {subjects.map(s => (
-                                                <SelectItem key={s.id} value={s.id}>{s.subject_name}</SelectItem>
+                                                <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
                                             ))}
                                         </SelectContent>
                                     </Select>
                                 </div>
                                 <div>
-                                    <Select value={filters.category_id} onValueChange={v => handleFilterChange('category_id', v)}>
+                                    <Select value={filters.category_id || 'all'} onValueChange={v => handleFilterChange('category_id', v)}>
                                         <SelectTrigger>
                                             <SelectValue placeholder="Category" />
                                         </SelectTrigger>
                                         <SelectContent>
-                                            <SelectItem value="">All Categories</SelectItem>
+                                            <SelectItem value="all">All Categories</SelectItem>
                                             {categories.map(c => (
                                                 <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
                                             ))}
@@ -416,12 +417,12 @@ const QuestionBankPage = () => {
                                     </Select>
                                 </div>
                                 <div>
-                                    <Select value={filters.question_type} onValueChange={v => handleFilterChange('question_type', v)}>
+                                    <Select value={filters.question_type || 'all'} onValueChange={v => handleFilterChange('question_type', v)}>
                                         <SelectTrigger>
                                             <SelectValue placeholder="Type" />
                                         </SelectTrigger>
                                         <SelectContent>
-                                            <SelectItem value="">All Types</SelectItem>
+                                            <SelectItem value="all">All Types</SelectItem>
                                             {QUESTION_TYPES.map(t => (
                                                 <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
                                             ))}
@@ -429,12 +430,12 @@ const QuestionBankPage = () => {
                                     </Select>
                                 </div>
                                 <div>
-                                    <Select value={filters.difficulty} onValueChange={v => handleFilterChange('difficulty', v)}>
+                                    <Select value={filters.difficulty || 'all'} onValueChange={v => handleFilterChange('difficulty', v)}>
                                         <SelectTrigger>
                                             <SelectValue placeholder="Difficulty" />
                                         </SelectTrigger>
                                         <SelectContent>
-                                            <SelectItem value="">All Levels</SelectItem>
+                                            <SelectItem value="all">All Levels</SelectItem>
                                             {DIFFICULTY_LEVELS.map(d => (
                                                 <SelectItem key={d.value} value={d.value}>{d.label}</SelectItem>
                                             ))}
@@ -495,7 +496,7 @@ const QuestionBankPage = () => {
                                                         <span className="text-xs text-muted-foreground">{q.category.name}</span>
                                                     )}
                                                 </TableCell>
-                                                <TableCell>{q.subject?.subject_name || '-'}</TableCell>
+                                                <TableCell>{q.subject?.name || '-'}</TableCell>
                                                 <TableCell>
                                                     <Badge variant="outline">
                                                         {QUESTION_TYPES.find(t => t.value === q.question_type)?.label || q.question_type}
@@ -622,14 +623,14 @@ const QuestionBankPage = () => {
                         <div>
                             <Label>Parent Category</Label>
                             <Select 
-                                value={categoryForm.parent_id} 
-                                onValueChange={v => setCategoryForm(p => ({ ...p, parent_id: v }))}
+                                value={categoryForm.parent_id || '__none'} 
+                                onValueChange={v => setCategoryForm(p => ({ ...p, parent_id: v === '__none' ? '' : v }))}
                             >
                                 <SelectTrigger>
                                     <SelectValue placeholder="None (Root Category)" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="">None (Root Category)</SelectItem>
+                                    <SelectItem value="__none">None (Root Category)</SelectItem>
                                     {categories
                                         .filter(c => c.id !== editingCategory?.id)
                                         .map(c => (
@@ -668,7 +669,7 @@ const QuestionBankPage = () => {
                                     </SelectTrigger>
                                     <SelectContent>
                                         {subjects.map(s => (
-                                            <SelectItem key={s.id} value={s.id}>{s.subject_name}</SelectItem>
+                                            <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
                                         ))}
                                     </SelectContent>
                                 </Select>
@@ -676,14 +677,14 @@ const QuestionBankPage = () => {
                             <div>
                                 <Label>Category</Label>
                                 <Select 
-                                    value={questionForm.category_id} 
-                                    onValueChange={v => setQuestionForm(p => ({ ...p, category_id: v }))}
+                                    value={questionForm.category_id || '__none'} 
+                                    onValueChange={v => setQuestionForm(p => ({ ...p, category_id: v === '__none' ? '' : v }))}
                                 >
                                     <SelectTrigger>
                                         <SelectValue placeholder="Select category" />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        <SelectItem value="">None</SelectItem>
+                                        <SelectItem value="__none">None</SelectItem>
                                         {categories.map(c => (
                                             <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
                                         ))}
@@ -888,6 +889,7 @@ const QuestionBankPage = () => {
                 </AlertDialogContent>
             </AlertDialog>
         </div>
+        </DashboardLayout>
     );
 };
 

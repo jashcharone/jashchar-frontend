@@ -15,7 +15,7 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { formatDate } from '@/utils/dateUtils';
 import DashboardLayout from '@/components/DashboardLayout';
-import apiClient from '@/services/apiClient';
+import { supabase } from '@/lib/customSupabaseClient';
 
 // UI Components
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -184,10 +184,12 @@ const GraceMarksPage = () => {
 
     const loadSubjects = async () => {
         try {
-            const response = await apiClient.get('/api/subjects');
-            if (response.success) {
-                setSubjects(response.data || []);
-            }
+            const { data } = await supabase
+                .from('subjects')
+                .select('id, name')
+                .eq('branch_id', selectedBranch.id)
+                .order('name');
+            setSubjects(data || []);
         } catch (error) {
             console.error('Error loading subjects:', error);
         }

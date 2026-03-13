@@ -115,19 +115,40 @@ export const PATH_TO_SLUG_MAP = {
   'user_log': 'user_log',
   'audit_trail': 'audit_trail',
 
-  // Examinations
-  'exam_group': 'exam_group',
-  'exam_schedule': 'exam_schedule',
-  'exam_result': 'exam_result',
-  'design_admit_card': 'design_admit_card',
-  'print_admit_card': 'print_admit_card',
-  'design_marksheet': 'design_marksheet',
-  'print_marksheet': 'print_marksheet',
-  'marks_grade': 'marks_grade',
-  'exam_list': 'exam_list',
-  'marks_entry': 'marks_entry',
-  'admit_card': 'admit_card',
-  'marksheet': 'marksheet',
+  // Examinations - Phase 1 (Foundation)
+  'board_configuration': 'board_configuration',
+  'term_management': 'term_management',
+  'exam_type_master': 'exam_type_master',
+  'grade_scale_builder': 'grade_scale_builder',
+  'exam_group_management': 'exam_group_management',
+  // Phase 2 (Exam Planning)
+  'exam_management': 'exam_management',
+  'student_assignment': 'student_assignment',
+  // Phase 3 (Scheduling)
+  'room_management': 'room_management',
+  'invigilator_duty': 'invigilator_duty',
+  'seating_arrangement': 'seating_arrangement',
+  'exam_calendar': 'exam_calendar',
+  // Phase 4 (Evaluation)
+  'marks_entry_new': 'marks_entry_new',
+  'internal_assessment': 'internal_assessment',
+  'practical_marks': 'practical_marks',
+  'bulk_upload_marks': 'bulk_upload_marks',
+  // Phase 5 (Results)
+  'grace_marks': 'grace_marks',
+  'moderation_engine': 'moderation_engine',
+  'result_calculation': 'result_calculation',
+  'rank_generation': 'rank_generation',
+  // Phase 6 (Documents)
+  'admit_card_designer': 'admit_card_designer',
+  'marksheet_designer': 'marksheet_designer',
+  'report_card_designer': 'report_card_designer',
+  'bulk_document_generator': 'bulk_document_generator',
+  // Phase 7 (Analytics & Online)
+  'performance_dashboard': 'performance_dashboard',
+  'question_bank': 'question_bank',
+  'online_exam': 'online_exam',
+  // CBSE Specific
   'cbse_exam': 'cbse_exam',
   'cbse_settings': 'cbse_settings',
   'cbse_term': 'cbse_term',

@@ -12,7 +12,8 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { toast } from 'sonner';
-import { useAuth } from '@/contexts/AuthContext';
+import DashboardLayout from '@/components/DashboardLayout';
+import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { useBranch } from '@/contexts/BranchContext';
 import { reportCardTemplateService } from '@/services/examinationService';
 import { 
@@ -563,6 +564,7 @@ const ReportCardDesignerPage = () => {
     };
 
     return (
+        <DashboardLayout>
         <div className="p-6 space-y-6">
             <div className="flex justify-between items-center">
                 <div>
@@ -1034,6 +1036,7 @@ const ReportCardDesignerPage = () => {
                 </DialogContent>
             </Dialog>
         </div>
+        </DashboardLayout>
     );
 };
 

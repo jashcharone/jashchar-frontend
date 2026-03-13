@@ -11,7 +11,8 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Progress } from '@/components/ui/progress';
 import { toast } from 'sonner';
-import { useAuth } from '@/contexts/AuthContext';
+import DashboardLayout from '@/components/DashboardLayout';
+import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { useBranch } from '@/contexts/BranchContext';
 import { 
     admitCardTemplateService, 
@@ -20,7 +21,7 @@ import {
     documentGenerationService,
     examService
 } from '@/services/examinationService';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/lib/supabaseClient';
 import { formatDate } from '@/utils/dateUtils';
 import { 
     FileText, Download, Printer, Clock, CheckCircle, 
@@ -78,7 +79,9 @@ const BulkDocumentGenerator = () => {
     }, [selectedSection]);
 
     useEffect(() => {
-        loadTemplates();
+        if (selectedBranch?.id) {
+            loadTemplates();
+        }
     }, [documentType]);
 
     const loadInitialData = async () => {
@@ -100,10 +103,9 @@ const BulkDocumentGenerator = () => {
     const loadClasses = async () => {
         const { data, error } = await supabase
             .from('classes')
-            .select('id, class_name')
+            .select('id, name')
             .eq('branch_id', selectedBranch.id)
-            .eq('is_active', true)
-            .order('class_name');
+            .order('name');
         
         if (!error) setClasses(data || []);
     };
@@ -111,17 +113,16 @@ const BulkDocumentGenerator = () => {
     const loadSections = async () => {
         const { data, error } = await supabase
             .from('sections')
-            .select('id, section_name')
+            .select('id, name')
             .eq('class_id', selectedClass)
-            .eq('is_active', true)
-            .order('section_name');
+            .order('name');
         
         if (!error) setSections(data || []);
     };
 
     const loadExams = async () => {
         try {
-            const response = await examService.getExams({
+            const response = await examService.getAll({
                 branch_id: selectedBranch.id,
                 session_id: currentSessionId
             });
@@ -297,6 +298,7 @@ const BulkDocumentGenerator = () => {
     };
 
     return (
+        <DashboardLayout>
         <div className="p-6 space-y-6">
             <div className="flex justify-between items-center">
                 <div>
@@ -393,7 +395,7 @@ const BulkDocumentGenerator = () => {
                                         <SelectContent>
                                             {classes.map(cls => (
                                                 <SelectItem key={cls.id} value={cls.id}>
-                                                    {cls.class_name}
+                                                    {cls.name}
                                                 </SelectItem>
                                             ))}
                                         </SelectContent>
@@ -413,7 +415,7 @@ const BulkDocumentGenerator = () => {
                                         <SelectContent>
                                             {sections.map(sec => (
                                                 <SelectItem key={sec.id} value={sec.id}>
-                                                    {sec.section_name}
+                                                    {sec.name}
                                                 </SelectItem>
                                             ))}
                                         </SelectContent>
@@ -626,6 +628,7 @@ const BulkDocumentGenerator = () => {
                 </DialogContent>
             </Dialog>
         </div>
+        </DashboardLayout>
     );
 };
 

@@ -648,15 +648,15 @@ const StudentAssignmentPage = () => {
                                 <div className="space-y-2">
                                     <Label>Section</Label>
                                     <Select 
-                                        value={filterSection} 
-                                        onValueChange={setFilterSection}
+                                        value={filterSection || 'all'} 
+                                        onValueChange={(v) => setFilterSection(v === 'all' ? '' : v)}
                                         disabled={!filterClass}
                                     >
                                         <SelectTrigger>
                                             <SelectValue placeholder="All sections" />
                                         </SelectTrigger>
                                         <SelectContent>
-                                            <SelectItem value="">All Sections</SelectItem>
+                                            <SelectItem value="all">All Sections</SelectItem>
                                             {sections.map(sec => (
                                                 <SelectItem key={sec.id} value={sec.id}>
                                                     {sec.name}

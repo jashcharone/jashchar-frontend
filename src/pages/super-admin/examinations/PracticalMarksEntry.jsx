@@ -375,7 +375,7 @@ const PracticalMarksEntry = () => {
                                     </SelectTrigger>
                                     <SelectContent>
                                         {subjects.length === 0 ? (
-                                            <SelectItem value="" disabled>No practical subjects</SelectItem>
+                                            <SelectItem value="__none" disabled>No practical subjects</SelectItem>
                                         ) : (
                                             subjects.map(subject => (
                                                 <SelectItem key={subject.id} value={subject.id}>

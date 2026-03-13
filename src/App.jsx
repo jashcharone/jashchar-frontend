@@ -349,6 +349,8 @@ const QuickFees = lazy(() => import('@/pages/super-admin/fees-collection/QuickFe
 const OnlinePayment = lazy(() => import('@/pages/super-admin/fees-collection/OnlinePayment'));
 const FeesAnalysis = lazy(() => import('@/pages/super-admin/fees-collection/FeesAnalysis'));
 const RefundApprovals = lazy(() => import('@/pages/super-admin/fees-collection/RefundApprovals'));
+// 🧾 Receipt Template Engine
+const ReceiptTemplates = lazy(() => import('@/pages/super-admin/fees-collection/ReceiptTemplates'));
 // 🌟 Fee Dashboard (Simplified)
 const FeeDashboard = lazy(() => import('@/pages/super-admin/fees-collection/FeeDashboard'));
 
@@ -1457,6 +1459,8 @@ function App() {
             <Route path="/super-admin/fees-collection/offline-bank-payments" element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'accountant']}><OfflineBankPayments /></ProtectedRoute>} />
             <Route path={ROUTES.SUPER_ADMIN.FEES_ANALYSIS} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'accountant', 'principal']}><FeesAnalysis /></ProtectedRoute>} />
             <Route path={ROUTES.SUPER_ADMIN.REFUND_APPROVALS} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']}><RefundApprovals /></ProtectedRoute>} />
+            {/* 🧾 Receipt Template Engine */}
+            <Route path={ROUTES.SUPER_ADMIN.RECEIPT_TEMPLATES} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']}><ReceiptTemplates /></ProtectedRoute>} />
             {/* 🌟 Fee Dashboard (Simplified) */}
             <Route path="/super-admin/fees-collection/fee-dashboard" element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'accountant', 'principal']}><FeeDashboard /></ProtectedRoute>} />
 

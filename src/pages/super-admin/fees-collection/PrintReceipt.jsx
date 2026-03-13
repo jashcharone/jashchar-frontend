@@ -929,6 +929,81 @@ const PrintReceipt = () => {
 
     if (!student) throw new Error('No valid payments found');
 
+    // Add Transport/Hostel to feeStatement (same as fetchFeesReceipt)
+    const studentId = student.id;
+    if (studentId) {
+      // If feeStatement is empty, build from ledger
+      if (feeStatement.length === 0) {
+        const { data: ledgerEntries } = await supabase
+          .from('student_fee_ledger')
+          .select('id, fee_type_id, net_amount, discount_amount, balance, fee_types:fee_type_id(name)')
+          .eq('student_id', studentId)
+          .eq('branch_id', branchId);
+        if (ledgerEntries?.length > 0) {
+          feeStatement = ledgerEntries.map(entry => {
+            const amount = Number(entry.net_amount || 0);
+            const balance = Number(entry.balance || 0);
+            const paid = Math.max(0, amount - balance);
+            return {
+              name: entry.fee_types?.name || 'Fee',
+              amount, paid, balance,
+              status: balance <= 0 ? 'Paid' : (paid > 0 ? 'Partial' : 'Unpaid')
+            };
+          }).filter(f => f.amount > 0);
+        }
+      }
+
+      // Add Transport fee to feeStatement if not already present
+      if (!feeStatement.some(f => f.name?.includes('Transport'))) {
+        const { data: transportAssign } = await supabase
+          .from('student_transport_assignments')
+          .select('total_fee, transport_routes(route_title)')
+          .eq('student_id', studentId)
+          .eq('branch_id', branchId)
+          .maybeSingle();
+        if (transportAssign && Number(transportAssign.total_fee || 0) > 0) {
+          const tFee = Number(transportAssign.total_fee || 0);
+          const { data: tPayments } = await supabase
+            .from('transport_fee_payments')
+            .select('amount, discount_amount')
+            .eq('student_id', studentId)
+            .eq('branch_id', branchId);
+          const tPaid = (tPayments || []).reduce((s, p) => s + Number(p.amount || 0) + Number(p.discount_amount || 0), 0);
+          const tBalance = Math.max(0, tFee - tPaid);
+          feeStatement.push({
+            name: `🚌 Transport Fee (${transportAssign.transport_routes?.route_title || 'Route'})`,
+            amount: tFee, paid: tPaid, balance: tBalance,
+            status: tBalance <= 0 ? 'Paid' : (tPaid > 0 ? 'Partial' : 'Unpaid')
+          });
+        }
+      }
+
+      // Add Hostel fee to feeStatement if not already present
+      if (!feeStatement.some(f => f.name?.includes('Hostel'))) {
+        const { data: hostelAssign } = await supabase
+          .from('student_hostel_assignments')
+          .select('total_fee, hostel_blocks(name), hostel_rooms(room_number_name)')
+          .eq('student_id', studentId)
+          .eq('branch_id', branchId)
+          .maybeSingle();
+        if (hostelAssign && Number(hostelAssign.total_fee || 0) > 0) {
+          const hFee = Number(hostelAssign.total_fee || 0);
+          const { data: hPayments } = await supabase
+            .from('hostel_fee_payments')
+            .select('amount, discount_amount')
+            .eq('student_id', studentId)
+            .eq('branch_id', branchId);
+          const hPaid = (hPayments || []).reduce((s, p) => s + Number(p.amount || 0) + Number(p.discount_amount || 0), 0);
+          const hBalance = Math.max(0, hFee - hPaid);
+          feeStatement.push({
+            name: `🏠 Hostel Fee (${hostelAssign.hostel_blocks?.name || 'Block'})`,
+            amount: hFee, paid: hPaid, balance: hBalance,
+            status: hBalance <= 0 ? 'Paid' : (hPaid > 0 ? 'Partial' : 'Unpaid')
+          });
+        }
+      }
+    }
+
     // Check printed status
     const anyPrinted = allPayments.some(p => p.printed_at);
     setIsOriginal(!anyPrinted);

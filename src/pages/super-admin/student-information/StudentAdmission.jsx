@@ -2113,7 +2113,7 @@ const StudentAdmission = () => {
       
       const { data, error } = await supabase
         .from('hostel_rooms')
-        .select('*, hostel_room_types(name)'))
+        .select('*, hostel_room_types(name)')
         .eq('hostel_id', formData.hostel_id)
         .eq('room_type_id', formData.hostel_room_type)
         .order('room_number_name', { ascending: true });

@@ -46,13 +46,12 @@ import StudentAttendance from '@/pages/super-admin/attendance/StudentAttendance'
 import AttendanceByDate from '@/pages/super-admin/attendance/AttendanceByDate';
 import ApproveLeave from '@/pages/super-admin/attendance/ApproveStudentLeave';
 
-// Examinations
-import ExamGroup from '@/pages/super-admin/examinations/ExamGroup';
-import ExamSchedule from '@/pages/super-admin/examinations/ExamSchedule';
-import ExamResult from '@/pages/super-admin/examinations/GeneralExamResult'; // Mapped to General Result
-import DesignMarksheet from '@/pages/super-admin/examinations/DesignMarksheet';
-import PrintMarksheet from '@/pages/super-admin/examinations/PrintMarksheet';
-import MarksGrade from '@/pages/super-admin/examinations/MarksGrade';
+// Examinations (New Examination Engine)
+import ExamGroupManagement from '@/pages/super-admin/examinations/ExamGroupManagement';
+import ExamCalendar from '@/pages/super-admin/examinations/ExamCalendar';
+import ResultCalculationPage from '@/pages/super-admin/examinations/ResultCalculationPage';
+import MarksheetDesignerPage from '@/pages/super-admin/examinations/MarksheetDesignerPage';
+import GradeScaleBuilder from '@/pages/super-admin/examinations/GradeScaleBuilder';
 
 // Academics
 import ClassTimetable from '@/pages/super-admin/academics/ClassTimetable';
@@ -303,13 +302,13 @@ export const ROUTE_COMPONENT_MAP = {
   '/school-owner/attendance/attendance-by-date': AttendanceByDate,
   '/school-owner/attendance/approve-leave': ApproveLeave,
 
-  // Examinations
-  '/school-owner/examinations/exam-group': ExamGroup,
-  '/school-owner/examinations/exam-schedule': ExamSchedule,
-  '/school-owner/examinations/exam-result': ExamResult,
-  '/school-owner/examinations/design-marksheet': DesignMarksheet,
-  '/school-owner/examinations/print-marksheet': PrintMarksheet,
-  '/school-owner/examinations/marks-grade': MarksGrade,
+  // Examinations (New Examination Engine)
+  '/school-owner/examinations/exam-group': ExamGroupManagement,
+  '/school-owner/examinations/exam-schedule': ExamCalendar,
+  '/school-owner/examinations/exam-result': ResultCalculationPage,
+  '/school-owner/examinations/design-marksheet': MarksheetDesignerPage,
+  '/school-owner/examinations/print-marksheet': MarksheetDesignerPage,
+  '/school-owner/examinations/marks-grade': GradeScaleBuilder,
 
   // Academics
   '/school-owner/academics/class-timetable': ClassTimetable,

@@ -16,10 +16,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { PlusCircle, Edit, Trash2, Loader2, CheckCircle2, XCircle, Users, BookPlus, ClipboardEdit, CalendarCheck, MessageSquarePlus, Award } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import MultiSelectDropdown from '@/components/ui/MultiSelectDropdown';
-import AssignStudents from './AssignStudents';
-import AddExamSubjects from './AddExamSubjects';
-import EnterMarks from './EnterMarks';
-import ExamAttendance from './ExamAttendance';
 import TeacherRemarks from './TeacherRemarks';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -149,11 +145,18 @@ const CbseExam = () => {
     const renderActionDialog = () => {
         if (!selectedExam || !currentAction) return null;
         
+        const MigratedPlaceholder = ({ label }) => (
+            <div className="py-8 text-center space-y-4">
+                <p className="text-sm text-muted-foreground">{label} - This feature has been migrated to the new examination module.</p>
+                <DialogFooter><Button variant="outline" onClick={handleCloseAction}>Close</Button></DialogFooter>
+            </div>
+        );
+
         const dialogs = {
-            assign: { title: "Assign Students", component: <AssignStudents exam={selectedExam} onClose={handleCloseAction} /> },
-            subjects: { title: "Add Exam Subjects", component: <AddExamSubjects exam={selectedExam} onClose={handleCloseAction} /> },
-            marks: { title: "Enter Marks", component: <EnterMarks exam={selectedExam} onClose={handleCloseAction} /> },
-            attendance: { title: "Exam Attendance", component: <ExamAttendance exam={selectedExam} onClose={handleCloseAction} /> },
+            assign: { title: "Assign Students", component: <MigratedPlaceholder label="Assign Students" /> },
+            subjects: { title: "Add Exam Subjects", component: <MigratedPlaceholder label="Add Exam Subjects" /> },
+            marks: { title: "Enter Marks", component: <MigratedPlaceholder label="Enter Marks" /> },
+            attendance: { title: "Exam Attendance", component: <MigratedPlaceholder label="Exam Attendance" /> },
             remarks: { title: "Teacher Remarks", component: <TeacherRemarks exam={selectedExam} onClose={handleCloseAction} /> },
         };
 

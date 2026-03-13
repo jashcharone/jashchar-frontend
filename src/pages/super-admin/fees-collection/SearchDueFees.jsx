@@ -135,7 +135,7 @@ const SearchDueFees = () => {
             // 5. Fetch Transport Details (Current Session Only)
             const { data: transportDetails } = await supabase
                 .from('student_transport_details')
-                .select('student_id, transport_fee'))
+                .select('student_id, transport_fee')
                 .in('student_id', studentIds)
                 .eq('branch_id', branchId)
                 .eq('session_id', currentSessionId);

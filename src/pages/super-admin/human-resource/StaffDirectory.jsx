@@ -770,10 +770,6 @@ const StaffDirectory = () => {
             </Dialog>
         </DashboardLayout>
     );
-                )}
-            </div>
-        </DashboardLayout>
-    );
 };
 
 export default StaffDirectory;

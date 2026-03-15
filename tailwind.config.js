@@ -17,6 +17,15 @@ module.exports = {
         "2xl": "100%",
       },
     },
+    // Custom screen breakpoints for better tablet support
+    screens: {
+      'sm': '640px',   // Mobile landscape
+      'md': '768px',   // Tablet portrait
+      'tablet': '900px', // Custom: Tablet landscape / small laptops
+      'lg': '1024px',  // Desktop / iPad Pro landscape
+      'xl': '1280px',  // Large desktop
+      '2xl': '1536px', // Extra large
+    },
     extend: {
       fontFamily: {
         sans: ['var(--font-family)', ...defaultTheme.fontFamily.sans],

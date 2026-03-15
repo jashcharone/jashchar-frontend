@@ -911,7 +911,7 @@ const SchoolOwnerDashboard = () => {
         {/* ================================================================ */}
         {/* TOP STATS BAR - Quick Overview Badges */}
         {/* ================================================================ */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-3 tablet:grid-cols-4 lg:grid-cols-6 gap-3">
           <TopStatsBadge 
             label="Fees Awaiting Payment" 
             value={topStats.feesAwaiting.value} 
@@ -958,7 +958,7 @@ const SchoolOwnerDashboard = () => {
         {/* ================================================================ */}
         {/* STATS CARDS WITH ANIMATIONS */}
         {/* ================================================================ */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 tablet:grid-cols-3 lg:grid-cols-4 gap-4">
           <AnimatedStatCard
             title="Total Students"
             value={statsData.total_students + statsData.inactive_students}

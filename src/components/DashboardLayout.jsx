@@ -19,9 +19,11 @@ const DashboardLayout = ({ children }) => {
   const location = useLocation();
 
   const [isCustomizerOpen, setIsCustomizerOpen] = useState(false);
-  const [isSidebarOpen, setIsSidebarOpen] = useState(window.innerWidth > 768);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(window.innerWidth > 1024);
   const [isSidebarHovered, setIsSidebarHovered] = useState(false);
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+  const [isTablet, setIsTablet] = useState(window.innerWidth > 768 && window.innerWidth <= 1024);
+  const [isLandscape, setIsLandscape] = useState(window.innerWidth > window.innerHeight);
   const [isChatbotOpen, setIsChatbotOpen] = useState(false);
 
   // Detect if running inside Capacitor native app (NOT web browser)
@@ -35,12 +37,42 @@ const DashboardLayout = ({ children }) => {
 
   useEffect(() => {
     const handleResize = () => {
-      const mobile = window.innerWidth <= 768;
+      const width = window.innerWidth;
+      const height = window.innerHeight;
+      const mobile = width <= 768;
+      const tablet = width > 768 && width <= 1024;
+      const landscape = width > height;
+      
       setIsMobile(mobile);
-      setIsSidebarOpen(!mobile);
+      setIsTablet(tablet);
+      setIsLandscape(landscape);
+      
+      // Auto-collapse sidebar behavior:
+      // - Mobile: Always collapsed (drawer mode)
+      // - Tablet portrait: Collapsed by default
+      // - Tablet landscape: Expanded by default
+      // - Desktop: Expanded by default
+      if (mobile) {
+        setIsSidebarOpen(false);
+      } else if (tablet && !landscape) {
+        // Tablet portrait - keep current state or collapse
+        // Don't auto-toggle on resize to avoid jarring UX
+      } else if (width > 1024) {
+        // Desktop - expand
+        setIsSidebarOpen(true);
+      }
     };
+    
     window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
+    // Also listen for orientation change (especially important for tablets)
+    window.addEventListener("orientationchange", () => {
+      setTimeout(handleResize, 100); // Small delay for orientation to complete
+    });
+    
+    return () => {
+      window.removeEventListener("resize", handleResize);
+      window.removeEventListener("orientationchange", handleResize);
+    };
   }, []);
 
   // Only close sidebar on mobile when navigating to a completely different module
@@ -93,8 +125,8 @@ const DashboardLayout = ({ children }) => {
   return (
     <div className="min-h-screen w-full bg-background text-foreground">
       <div className="relative min-h-screen flex">
-        {/* Mobile overlay for sidebar drawer */}
-        {isMobile && isSidebarOpen && (
+        {/* Mobile/Tablet overlay for sidebar drawer */}
+        {(isMobile || (isTablet && !isLandscape)) && isSidebarOpen && (
           <div
             className="fixed inset-0 bg-black/50 z-30"
             onClick={() => setIsSidebarOpen(false)}
@@ -106,7 +138,7 @@ const DashboardLayout = ({ children }) => {
           <Sidebar
             role={role}
             isSidebarOpen={isSidebarOpen}
-            isMobile={isMobile}
+            isMobile={isMobile || (isTablet && !isLandscape)}
             toggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
             onHoverChange={setIsSidebarHovered}
           />
@@ -115,7 +147,13 @@ const DashboardLayout = ({ children }) => {
         <div
           className={cn(
             "flex-1 flex flex-col transition-all duration-300 ease-out min-w-0",
-            !isCapacitorApp && isExpanded && !isMobile ? "md:ml-[270px]" : !isCapacitorApp ? "md:ml-[80px]" : ""
+            // Margin calculation:
+            // - Mobile: No margin (sidebar is overlay drawer)
+            // - Tablet portrait: No margin (sidebar is overlay drawer)
+            // - Tablet landscape: Margin for sidebar
+            // - Desktop: Margin for sidebar
+            !isCapacitorApp && !isMobile && !(isTablet && !isLandscape) && isExpanded ? "lg:ml-[270px] ml-[80px]" : 
+            !isCapacitorApp && !isMobile && !(isTablet && !isLandscape) ? "md:ml-[80px]" : ""
           )}
         >
           {/* Header — full Header on website, compact on Capacitor native only */}

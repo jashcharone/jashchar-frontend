@@ -66,7 +66,6 @@ import SubjectGroup from '@/pages/super-admin/academics/SubjectGroup';
 // HR
 import StaffDirectory from '@/pages/super-admin/human-resource/StaffDirectory';
 import StaffAttendance from '@/pages/super-admin/human-resource/StaffAttendance';
-import StaffPayroll from '@/pages/super-admin/human-resource/EmployeePayroll';
 import ApproveLeaveRequest from '@/pages/super-admin/human-resource/ApproveStaffLeave';
 import ApplyLeave from '@/pages/super-admin/human-resource/StaffApplyLeave';
 import LeaveTypes from '@/pages/super-admin/human-resource/StaffLeaveType';
@@ -323,7 +322,6 @@ export const ROUTE_COMPONENT_MAP = {
   // Human Resource
   '/school-owner/human-resource/staff-directory': StaffDirectory,
   '/school-owner/human-resource/staff-attendance': StaffAttendance,
-  '/school-owner/human-resource/staff-payroll': StaffPayroll,
   '/school-owner/human-resource/approve-leave-request': ApproveLeaveRequest,
   '/school-owner/human-resource/apply-leave': ApplyLeave,
   '/school-owner/human-resource/leave-types': LeaveTypes,

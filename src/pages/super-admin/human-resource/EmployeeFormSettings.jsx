@@ -25,7 +25,8 @@ import {
     ChevronDown, ChevronRight, Type, LayoutList, AlignLeft, Hash, Calendar,
     CheckSquare, Circle, Upload, User, Key, Phone, Briefcase, GraduationCap, 
     CreditCard, Files, FileText, Building, Asterisk, MoreHorizontal, X, Check,
-    AlertCircle, Sparkles, Layers, ToggleLeft, ListChecks
+    AlertCircle, Sparkles, Layers, ToggleLeft, ListChecks, Copy, PlayCircle,
+    CheckCircle2, XCircle, ChevronUp
 } from 'lucide-react';
 
 // ============================================================================
@@ -39,10 +40,24 @@ const FIELD_TYPES = [
     { value: 'text', label: 'Text', icon: Type },
     { value: 'number', label: 'Number', icon: Hash },
     { value: 'date', label: 'Date', icon: Calendar },
+    { value: 'email', label: 'Email', icon: Type },
+    { value: 'tel', label: 'Phone', icon: Phone },
     { value: 'select', label: 'Dropdown', icon: LayoutList },
     { value: 'textarea', label: 'Text Area', icon: AlignLeft },
     { value: 'checkbox', label: 'Checkbox', icon: CheckSquare },
     { value: 'radio', label: 'Radio', icon: Circle },
+    { value: 'file', label: 'File Upload', icon: Upload },
+];
+
+const VALIDATION_PATTERNS = [
+    { value: '', label: 'None' },
+    { value: '^[a-zA-Z\\s]+$', label: 'Letters only' },
+    { value: '^[0-9]+$', label: 'Numbers only' },
+    { value: '^[a-zA-Z0-9]+$', label: 'Alphanumeric' },
+    { value: '^[A-Z]{5}[0-9]{4}[A-Z]{1}$', label: 'PAN Card' },
+    { value: '^[0-9]{12}$', label: 'Aadhaar (12 digits)' },
+    { value: '^[0-9]{10}$', label: 'Phone (10 digits)' },
+    { value: 'custom', label: 'Custom Regex' },
 ];
 
 const getFieldTypeIcon = (type) => {
@@ -288,13 +303,27 @@ const FormFieldsSettings = () => {
     // Dialogs
     const [showAddField, setShowAddField] = useState(false);
     const [showEditOptions, setShowEditOptions] = useState(false);
+    const [showPreview, setShowPreview] = useState(false);
     const [editingField, setEditingField] = useState(null);
     const [optionsText, setOptionsText] = useState('');
     
-    // New field form
+    // New field form - enhanced with validation rules
     const [newField, setNewField] = useState({
-        field_label: '', field_type: 'text', is_required: false, field_options: '', section_key: ''
+        field_label: '', 
+        field_type: 'text', 
+        is_required: false, 
+        field_options: '', 
+        section_key: '',
+        placeholder: '',
+        min_length: '',
+        max_length: '',
+        validation_pattern: '',
+        custom_pattern: '',
+        help_text: ''
     });
+    
+    // Preview state
+    const [previewValues, setPreviewValues] = useState({});
 
     // ==================== DATA FETCHING ====================
     const fetchSettings = useCallback(async () => {
@@ -454,6 +483,16 @@ const FormFieldsSettings = () => {
                 .filter(Boolean)
                 .map(opt => ({ value: opt, label: opt }));
         }
+        
+        // Build validation object
+        const validation = {};
+        if (newField.min_length) validation.min_length = parseInt(newField.min_length);
+        if (newField.max_length) validation.max_length = parseInt(newField.max_length);
+        if (newField.validation_pattern === 'custom' && newField.custom_pattern) {
+            validation.pattern = newField.custom_pattern;
+        } else if (newField.validation_pattern) {
+            validation.pattern = newField.validation_pattern;
+        }
 
         try {
             await api.post('/form-settings/custom-field', {
@@ -464,14 +503,85 @@ const FormFieldsSettings = () => {
                 is_required: newField.is_required,
                 field_options: optionsJson,
                 section_key: newField.section_key,
-                sort_order: customFields.filter(f => getSectionKey(f) === newField.section_key).length
+                sort_order: customFields.filter(f => getSectionKey(f) === newField.section_key).length,
+                placeholder: newField.placeholder || null,
+                validation: Object.keys(validation).length > 0 ? validation : null,
+                help_text: newField.help_text || null
             });
             toast({ title: 'Field added successfully' });
-            setNewField({ field_label: '', field_type: 'text', is_required: false, field_options: '', section_key: '' });
+            setNewField({ 
+                field_label: '', field_type: 'text', is_required: false, field_options: '', section_key: '',
+                placeholder: '', min_length: '', max_length: '', validation_pattern: '', custom_pattern: '', help_text: ''
+            });
             setShowAddField(false);
             fetchSettings();
         } catch (error) {
             toast({ variant: 'destructive', title: 'Error adding field' });
+        } finally {
+            setSaving(false);
+        }
+    };
+    
+    // Duplicate field helper
+    const handleDuplicateField = async (field) => {
+        if (field.is_system) {
+            toast({ variant: 'destructive', title: 'Cannot duplicate system fields' });
+            return;
+        }
+        
+        setSaving(true);
+        try {
+            await api.post('/form-settings/custom-field', {
+                branch_id: school.id,
+                module: 'employee_registration',
+                field_label: `${field.field_label} (Copy)`,
+                field_type: field.field_type,
+                is_required: false,
+                field_options: field.field_options || [],
+                section_key: getSectionKey(field),
+                sort_order: customFields.filter(f => getSectionKey(f) === getSectionKey(field)).length,
+                placeholder: field.placeholder || null,
+                validation: field.validation || null,
+                help_text: field.help_text || null
+            });
+            toast({ title: 'Field duplicated' });
+            fetchSettings();
+        } catch (error) {
+            toast({ variant: 'destructive', title: 'Error duplicating field' });
+        } finally {
+            setSaving(false);
+        }
+    };
+    
+    // Bulk toggle function
+    const handleBulkToggle = async (sectionKey, toggleType, value) => {
+        const sectionFields = getFieldsForSection(sectionKey);
+        setSaving(true);
+        
+        try {
+            for (const field of sectionFields) {
+                if (field.is_system) {
+                    await api.post('/form-settings/save', {
+                        branch_id: school.id,
+                        module: 'employee_registration',
+                        settings: [{
+                            field_key: field.key,
+                            field_label: field.field_label || field.label,
+                            is_enabled: toggleType === 'is_enabled' ? value : (field.is_enabled !== false),
+                            is_required: toggleType === 'is_required' ? value : !!field.is_required,
+                            field_options: field.field_options || [],
+                            section_key: getSectionKey(field),
+                            sort_order: field.sort_order || 0
+                        }]
+                    });
+                } else {
+                    await api.put(`/form-settings/custom-field/${field.id}`, { [toggleType]: value });
+                }
+            }
+            toast({ title: `All fields ${value ? 'enabled' : 'disabled'}` });
+            fetchSettings();
+        } catch (error) {
+            toast({ variant: 'destructive', title: 'Error updating fields' });
         } finally {
             setSaving(false);
         }
@@ -601,10 +711,52 @@ const FormFieldsSettings = () => {
                                         </CardDescription>
                                     </div>
                                 </div>
-                                <Button onClick={() => { setNewField({...newField, section_key: activeSection !== '_orphaned' ? activeSection : ''}); setShowAddField(true); }}>
-                                    <Plus className="h-4 w-4 mr-2" />
-                                    Add Field
-                                </Button>
+                                <div className="flex items-center gap-2">
+                                    {activeSection && activeSection !== '_orphaned' && (
+                                        <>
+                                            <Tooltip>
+                                                <TooltipTrigger asChild>
+                                                    <Button 
+                                                        variant="outline" 
+                                                        size="sm"
+                                                        onClick={() => handleBulkToggle(activeSection, 'is_enabled', true)}
+                                                        disabled={saving}
+                                                    >
+                                                        <CheckCircle2 className="h-4 w-4 mr-1 text-green-500" />
+                                                        Enable All
+                                                    </Button>
+                                                </TooltipTrigger>
+                                                <TooltipContent>Enable all fields in this section</TooltipContent>
+                                            </Tooltip>
+                                            <Tooltip>
+                                                <TooltipTrigger asChild>
+                                                    <Button 
+                                                        variant="outline" 
+                                                        size="sm"
+                                                        onClick={() => handleBulkToggle(activeSection, 'is_enabled', false)}
+                                                        disabled={saving}
+                                                    >
+                                                        <XCircle className="h-4 w-4 mr-1 text-red-500" />
+                                                        Disable All
+                                                    </Button>
+                                                </TooltipTrigger>
+                                                <TooltipContent>Disable all fields in this section</TooltipContent>
+                                            </Tooltip>
+                                        </>
+                                    )}
+                                    <Button 
+                                        variant="outline" 
+                                        size="sm"
+                                        onClick={() => setShowPreview(true)}
+                                    >
+                                        <PlayCircle className="h-4 w-4 mr-1" />
+                                        Preview
+                                    </Button>
+                                    <Button onClick={() => { setNewField({...newField, section_key: activeSection !== '_orphaned' ? activeSection : ''}); setShowAddField(true); }}>
+                                        <Plus className="h-4 w-4 mr-2" />
+                                        Add Field
+                                    </Button>
+                                </div>
                             </div>
                         </CardHeader>
                         
@@ -692,14 +844,24 @@ const FormFieldsSettings = () => {
                                                                             </Tooltip>
                                                                         )}
                                                                         {isCustom && (
-                                                                            <Tooltip>
-                                                                                <TooltipTrigger asChild>
-                                                                                    <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => handleDeleteField(field.id)}>
-                                                                                        <Trash2 className="h-4 w-4" />
-                                                                                    </Button>
-                                                                                </TooltipTrigger>
-                                                                                <TooltipContent>Delete Field</TooltipContent>
-                                                                            </Tooltip>
+                                                                            <>
+                                                                                <Tooltip>
+                                                                                    <TooltipTrigger asChild>
+                                                                                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleDuplicateField(field)}>
+                                                                                            <Copy className="h-4 w-4 text-purple-500" />
+                                                                                        </Button>
+                                                                                    </TooltipTrigger>
+                                                                                    <TooltipContent>Duplicate Field</TooltipContent>
+                                                                                </Tooltip>
+                                                                                <Tooltip>
+                                                                                    <TooltipTrigger asChild>
+                                                                                        <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => handleDeleteField(field.id)}>
+                                                                                            <Trash2 className="h-4 w-4" />
+                                                                                        </Button>
+                                                                                    </TooltipTrigger>
+                                                                                    <TooltipContent>Delete Field</TooltipContent>
+                                                                                </Tooltip>
+                                                                            </>
                                                                         )}
                                                                     </div>
                                                                 </TableCell>
@@ -716,58 +878,78 @@ const FormFieldsSettings = () => {
                 </div>
             </div>
 
-            {/* Add Field Dialog */}
+            {/* Add Field Dialog - Enhanced with validation rules */}
             <Dialog open={showAddField} onOpenChange={setShowAddField}>
-                <DialogContent className="max-w-md">
+                <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
                     <DialogHeader>
                         <DialogTitle className="flex items-center gap-2">
                             <Sparkles className="h-5 w-5 text-primary" />
                             Add Custom Field
                         </DialogTitle>
-                        <DialogDescription>Create a new field for the employee form</DialogDescription>
+                        <DialogDescription>Create a new field with validation rules</DialogDescription>
                     </DialogHeader>
                     
                     <div className="space-y-4 py-4">
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="col-span-2 space-y-2">
+                                <Label>Field Label <span className="text-destructive">*</span></Label>
+                                <Input 
+                                    value={newField.field_label}
+                                    onChange={(e) => setNewField({...newField, field_label: e.target.value})}
+                                    placeholder="e.g., PAN Card Number"
+                                />
+                            </div>
+                            
+                            <div className="space-y-2">
+                                <Label>Section <span className="text-destructive">*</span></Label>
+                                <Select value={newField.section_key} onValueChange={(v) => setNewField({...newField, section_key: v})}>
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Select section..." />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {sections.map(s => (
+                                            <SelectItem key={s.key} value={s.key}>{s.label}</SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                            
+                            <div className="space-y-2">
+                                <Label>Field Type</Label>
+                                <Select value={newField.field_type} onValueChange={(v) => setNewField({...newField, field_type: v})}>
+                                    <SelectTrigger>
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {FIELD_TYPES.map(t => (
+                                            <SelectItem key={t.value} value={t.value}>
+                                                <div className="flex items-center gap-2">
+                                                    <t.icon className="h-4 w-4" />
+                                                    {t.label}
+                                                </div>
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                        </div>
+                        
                         <div className="space-y-2">
-                            <Label>Field Label <span className="text-destructive">*</span></Label>
+                            <Label>Placeholder Text</Label>
                             <Input 
-                                value={newField.field_label}
-                                onChange={(e) => setNewField({...newField, field_label: e.target.value})}
-                                placeholder="e.g., Pan Card Number"
+                                value={newField.placeholder}
+                                onChange={(e) => setNewField({...newField, placeholder: e.target.value})}
+                                placeholder="e.g., Enter your PAN number"
                             />
                         </div>
                         
                         <div className="space-y-2">
-                            <Label>Section <span className="text-destructive">*</span></Label>
-                            <Select value={newField.section_key} onValueChange={(v) => setNewField({...newField, section_key: v})}>
-                                <SelectTrigger>
-                                    <SelectValue placeholder="Select section..." />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {sections.map(s => (
-                                        <SelectItem key={s.key} value={s.key}>{s.label}</SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                        </div>
-                        
-                        <div className="space-y-2">
-                            <Label>Field Type</Label>
-                            <Select value={newField.field_type} onValueChange={(v) => setNewField({...newField, field_type: v})}>
-                                <SelectTrigger>
-                                    <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {FIELD_TYPES.map(t => (
-                                        <SelectItem key={t.value} value={t.value}>
-                                            <div className="flex items-center gap-2">
-                                                <t.icon className="h-4 w-4" />
-                                                {t.label}
-                                            </div>
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
+                            <Label>Help Text</Label>
+                            <Input 
+                                value={newField.help_text}
+                                onChange={(e) => setNewField({...newField, help_text: e.target.value})}
+                                placeholder="e.g., Format: ABCDE1234F"
+                            />
                         </div>
                         
                         {['select', 'radio', 'checkbox'].includes(newField.field_type) && (
@@ -779,6 +961,69 @@ const FormFieldsSettings = () => {
                                     placeholder={"Option 1\nOption 2\nOption 3"}
                                     rows={4}
                                 />
+                            </div>
+                        )}
+                        
+                        {/* Validation Rules Section */}
+                        {['text', 'textarea', 'email', 'tel', 'number'].includes(newField.field_type) && (
+                            <div className="space-y-4 p-4 bg-muted/50 rounded-lg border">
+                                <h4 className="font-medium text-sm flex items-center gap-2">
+                                    <CheckSquare className="h-4 w-4" />
+                                    Validation Rules
+                                </h4>
+                                
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="space-y-2">
+                                        <Label>Min Length</Label>
+                                        <Input 
+                                            type="number"
+                                            value={newField.min_length}
+                                            onChange={(e) => setNewField({...newField, min_length: e.target.value})}
+                                            placeholder="0"
+                                            min="0"
+                                        />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label>Max Length</Label>
+                                        <Input 
+                                            type="number"
+                                            value={newField.max_length}
+                                            onChange={(e) => setNewField({...newField, max_length: e.target.value})}
+                                            placeholder="255"
+                                            min="0"
+                                        />
+                                    </div>
+                                </div>
+                                
+                                <div className="space-y-2">
+                                    <Label>Validation Pattern</Label>
+                                    <Select 
+                                        value={newField.validation_pattern} 
+                                        onValueChange={(v) => setNewField({...newField, validation_pattern: v})}
+                                    >
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="Select pattern..." />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {VALIDATION_PATTERNS.map(p => (
+                                                <SelectItem key={p.value || 'none'} value={p.value}>{p.label}</SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                                
+                                {newField.validation_pattern === 'custom' && (
+                                    <div className="space-y-2">
+                                        <Label>Custom Regex Pattern</Label>
+                                        <Input 
+                                            value={newField.custom_pattern}
+                                            onChange={(e) => setNewField({...newField, custom_pattern: e.target.value})}
+                                            placeholder="^[A-Z]{5}[0-9]{4}[A-Z]{1}$"
+                                            className="font-mono text-sm"
+                                        />
+                                        <p className="text-xs text-muted-foreground">Enter a valid JavaScript regex pattern</p>
+                                    </div>
+                                )}
                             </div>
                         )}
                         
@@ -829,6 +1074,135 @@ const FormFieldsSettings = () => {
                         <Button onClick={saveOptions} disabled={saving}>
                             {saving && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
                             Save Options
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            {/* Preview Dialog - Shows how form will look */}
+            <Dialog open={showPreview} onOpenChange={setShowPreview}>
+                <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+                    <DialogHeader>
+                        <DialogTitle className="flex items-center gap-2">
+                            <PlayCircle className="h-5 w-5 text-primary" />
+                            Form Preview - {activeSectionData?.label || 'Section'}
+                        </DialogTitle>
+                        <DialogDescription>
+                            This is how the form fields will appear to users
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="py-4 space-y-6">
+                        {activeFields
+                            .filter(f => f.is_enabled !== false)
+                            .sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0))
+                            .map((field, idx) => {
+                                const fieldType = field.field_type || field.type;
+                                const label = field.field_label || field.label;
+                                const key = field.id || field.key;
+                                const options = field.field_options || [];
+                                const placeholder = field.placeholder || `Enter ${label.toLowerCase()}`;
+                                
+                                return (
+                                    <div key={key} className="space-y-2">
+                                        <Label className="flex items-center gap-1">
+                                            {label}
+                                            {field.is_required && <span className="text-destructive">*</span>}
+                                        </Label>
+                                        
+                                        {fieldType === 'text' || fieldType === 'email' || fieldType === 'tel' ? (
+                                            <Input 
+                                                type={fieldType}
+                                                placeholder={placeholder}
+                                                value={previewValues[key] || ''}
+                                                onChange={(e) => setPreviewValues({...previewValues, [key]: e.target.value})}
+                                            />
+                                        ) : fieldType === 'number' ? (
+                                            <Input 
+                                                type="number"
+                                                placeholder={placeholder}
+                                                value={previewValues[key] || ''}
+                                                onChange={(e) => setPreviewValues({...previewValues, [key]: e.target.value})}
+                                            />
+                                        ) : fieldType === 'date' ? (
+                                            <Input 
+                                                type="date"
+                                                value={previewValues[key] || ''}
+                                                onChange={(e) => setPreviewValues({...previewValues, [key]: e.target.value})}
+                                            />
+                                        ) : fieldType === 'textarea' ? (
+                                            <Textarea 
+                                                placeholder={placeholder}
+                                                rows={3}
+                                                value={previewValues[key] || ''}
+                                                onChange={(e) => setPreviewValues({...previewValues, [key]: e.target.value})}
+                                            />
+                                        ) : fieldType === 'select' ? (
+                                            <Select value={previewValues[key] || ''} onValueChange={(v) => setPreviewValues({...previewValues, [key]: v})}>
+                                                <SelectTrigger>
+                                                    <SelectValue placeholder={`Select ${label.toLowerCase()}...`} />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    {options.map((opt, i) => (
+                                                        <SelectItem key={i} value={typeof opt === 'string' ? opt : opt.value}>
+                                                            {typeof opt === 'string' ? opt : opt.label}
+                                                        </SelectItem>
+                                                    ))}
+                                                </SelectContent>
+                                            </Select>
+                                        ) : fieldType === 'checkbox' ? (
+                                            <div className="space-y-2">
+                                                {options.map((opt, i) => (
+                                                    <div key={i} className="flex items-center gap-2">
+                                                        <input 
+                                                            type="checkbox" 
+                                                            id={`${key}-${i}`}
+                                                            className="h-4 w-4 rounded border-gray-300"
+                                                        />
+                                                        <label htmlFor={`${key}-${i}`} className="text-sm">
+                                                            {typeof opt === 'string' ? opt : opt.label}
+                                                        </label>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        ) : fieldType === 'radio' ? (
+                                            <div className="space-y-2">
+                                                {options.map((opt, i) => (
+                                                    <div key={i} className="flex items-center gap-2">
+                                                        <input 
+                                                            type="radio" 
+                                                            name={key}
+                                                            id={`${key}-${i}`}
+                                                            className="h-4 w-4"
+                                                        />
+                                                        <label htmlFor={`${key}-${i}`} className="text-sm">
+                                                            {typeof opt === 'string' ? opt : opt.label}
+                                                        </label>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        ) : fieldType === 'file' ? (
+                                            <Input type="file" />
+                                        ) : (
+                                            <Input placeholder={placeholder} />
+                                        )}
+                                        
+                                        {field.help_text && (
+                                            <p className="text-xs text-muted-foreground">{field.help_text}</p>
+                                        )}
+                                    </div>
+                                );
+                            })}
+                        
+                        {activeFields.filter(f => f.is_enabled !== false).length === 0 && (
+                            <div className="text-center py-8 text-muted-foreground">
+                                <Eye className="h-12 w-12 mx-auto mb-3 opacity-30" />
+                                <p>No enabled fields to preview</p>
+                            </div>
+                        )}
+                    </div>
+                    <DialogFooter>
+                        <Button onClick={() => { setShowPreview(false); setPreviewValues({}); }}>
+                            Close Preview
                         </Button>
                     </DialogFooter>
                 </DialogContent>
@@ -959,11 +1333,11 @@ const EmployeeFormSettings = () => {
                     </TabsContent>
                     
                     <TabsContent value="departments" className="mt-6">
-                        <DepartmentSettings branchId={school?.id} branchId={selectedBranch?.id} />
+                        <DepartmentSettings branchId={selectedBranch?.id || school?.id} />
                     </TabsContent>
                     
                     <TabsContent value="designations" className="mt-6">
-                        <DesignationSettings branchId={school?.id} branchId={selectedBranch?.id} />
+                        <DesignationSettings branchId={selectedBranch?.id || school?.id} />
                     </TabsContent>
                 </Tabs>
             </div>

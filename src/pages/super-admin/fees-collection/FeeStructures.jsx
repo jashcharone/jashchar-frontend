@@ -351,6 +351,32 @@ const FeeStructures = () => {
       return;
     }
 
+    // ── Propagate due_date changes to existing student_fee_ledger entries ──
+    if (isEditing && structureId) {
+      let ledgerUpdated = 0;
+      let ledgerErrors = 0;
+      for (const comp of componentPayloads) {
+        const { data: updatedRows, error: updErr } = await supabase
+          .from('student_fee_ledger')
+          .update({
+            due_date: comp.due_date,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('fee_structure_id', structureId)
+          .eq('fee_type_id', comp.fee_type_id)
+          .eq('installment_number', comp.installment_number)
+          .select('id');
+
+        if (updErr) {
+          console.error('[FeeStructures] Ledger update error:', updErr.message, comp);
+          ledgerErrors++;
+        } else {
+          ledgerUpdated += (updatedRows?.length || 0);
+        }
+      }
+      console.log(`[FeeStructures] Ledger propagation: ${ledgerUpdated} entries updated, ${ledgerErrors} errors`);
+    }
+
     toast({ title: isEditing ? 'Structure Updated!' : 'Structure Created!' });
     setDialogOpen(false);
     resetForm();

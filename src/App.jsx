@@ -310,6 +310,7 @@ const EmployeeDocuments = lazy(() => import('@/pages/super-admin/human-resource/
 const EmployeePerformance = lazy(() => import('@/pages/super-admin/human-resource/EmployeePerformance'));
 const EmployeePayroll = lazy(() => import('@/pages/super-admin/human-resource/EmployeePayroll'));
 const LeaveManagement = lazy(() => import('@/pages/super-admin/human-resource/LeaveManagement'));
+const HRDashboard = lazy(() => import('@/pages/super-admin/human-resource/HRDashboard'));
 
 // Attendance
 const StudentAttendance = lazy(() => import('@/pages/super-admin/attendance/StudentAttendance'));
@@ -1389,6 +1390,7 @@ function App() {
             <Route path={ROUTES.SUPER_ADMIN.STUDENT_ANALYSIS} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'principal']} requiredModule="student_information"><StudentAnalysis /></ProtectedRoute>} />
 
             {/* ? HR */}
+            <Route path="/super-admin/human-resource/hr-dashboard" element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'principal']} requiredModule="human_resource"><HRDashboard /></ProtectedRoute>} />
             <Route path={ROUTES.SUPER_ADMIN.EMPLOYEE_FORM_SETTINGS} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="human_resource"><EmployeeFormSettings /></ProtectedRoute>} />
             <Route path={ROUTES.SUPER_ADMIN.DEPARTMENTS} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'principal']} requiredModule="human_resource"><Departments /></ProtectedRoute>} />
             <Route path={ROUTES.SUPER_ADMIN.EMPLOYMENT_CATEGORY} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="human_resource"><EmploymentCategory /></ProtectedRoute>} />

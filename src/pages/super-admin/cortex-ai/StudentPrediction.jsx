@@ -12,9 +12,9 @@
 
 import React, { useState, useEffect } from 'react';
 import { 
-  Target, AlertTriangle, TrendingUp, GraduationCap, 
+  Target, AlertTriangle, TrendingUp, TrendingDown, GraduationCap, 
   Brain, Search, Filter, ChevronDown, RefreshCw,
-  BookOpen, Briefcase, Star, Award
+  BookOpen, Briefcase, Star, Award, Minus
 } from 'lucide-react';
 import api from '@/services/api';
 import { formatDate } from '@/utils/dateUtils';
@@ -502,19 +502,5 @@ const StudentPrediction = () => {
     </div>
   );
 };
-
-// TrendingDown placeholder
-const TrendingDown = ({ className }) => (
-  <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6" />
-  </svg>
-);
-
-// Minus placeholder
-const Minus = ({ className }) => (
-  <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" />
-  </svg>
-);
 
 export default StudentPrediction;

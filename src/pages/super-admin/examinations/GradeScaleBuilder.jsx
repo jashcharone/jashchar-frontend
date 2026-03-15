@@ -86,9 +86,22 @@ const GradeScaleBuilder = () => {
   const fetchGradeScales = async () => {
     setLoading(true);
     try {
-      const response = await gradeScaleService.getAll();
+      const response = await gradeScaleService.getAll({ include_details: true });
       if (response.success) {
-        setGradeScales(response.data || []);
+        // Transform data to normalize field names
+        const transformedData = (response.data || []).map(scale => {
+          // Handle grades from exam_grade_details
+          const grades = scale.exam_grade_details || scale.grades || [];
+          // Calculate max_grade_point from grade details if not present
+          const maxGradePoint = scale.max_grade_point || (grades.length > 0 ? Math.max(...grades.map(g => g.grade_point || 0)) : 10);
+          return {
+            ...scale,
+            scale_type: scale.scale_type || scale.grading_type || 'points',
+            max_grade_point: maxGradePoint,
+            grades: grades
+          };
+        });
+        setGradeScales(transformedData);
       }
     } catch (error) {
       toast({ variant: 'destructive', title: 'Error', description: error.message });
@@ -144,8 +157,8 @@ const GradeScaleBuilder = () => {
     setEditMode(true);
     setEditingId(scale.id);
     setValue('scale_name', scale.scale_name);
-    setValue('scale_type', scale.scale_type);
-    setValue('max_grade_point', scale.max_grade_point);
+    setValue('scale_type', scale.scale_type || scale.grading_type || 'points');
+    setValue('max_grade_point', scale.max_grade_point || 10);
     setValue('description', scale.description || '');
     setValue('is_default', scale.is_default);
     setValue('is_active', scale.is_active);
@@ -153,14 +166,17 @@ const GradeScaleBuilder = () => {
     // Load grade details
     try {
       const response = await gradeScaleService.getById(scale.id);
-      if (response.success && response.data.grades) {
-        replace(response.data.grades.map(g => ({
+      if (response.success) {
+        const gradeDetails = response.data.exam_grade_details || response.data.grades || [];
+        if (gradeDetails.length > 0) {
+          replace(gradeDetails.map(g => ({
           grade: g.grade,
           min_percentage: g.min_percentage,
           max_percentage: g.max_percentage,
           grade_point: g.grade_point,
           description: g.description || ''
         })));
+        }
       }
     } catch (error) {
       console.error('Error loading grade details:', error);
@@ -240,9 +256,10 @@ const GradeScaleBuilder = () => {
     try {
       const response = await gradeScaleService.getById(scaleId);
       if (response.success) {
-        // Update the scale in the list with grades
+        // Update the scale in the list with grades (handle both field names)
+        const gradeDetails = response.data.exam_grade_details || response.data.grades || [];
         setGradeScales(scales => 
-          scales.map(s => s.id === scaleId ? { ...s, grades: response.data.grades } : s)
+          scales.map(s => s.id === scaleId ? { ...s, grades: gradeDetails } : s)
         );
       }
       setExpandedScale(scaleId);

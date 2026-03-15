@@ -311,6 +311,21 @@ const EmployeePerformance = lazy(() => import('@/pages/super-admin/human-resourc
 const EmployeePayroll = lazy(() => import('@/pages/super-admin/human-resource/EmployeePayroll'));
 const LeaveManagement = lazy(() => import('@/pages/super-admin/human-resource/LeaveManagement'));
 const HRDashboard = lazy(() => import('@/pages/super-admin/human-resource/HRDashboard'));
+// Recruitment Module
+const JobPostings = lazy(() => import('@/pages/super-admin/human-resource/recruitment/JobPostings'));
+const Applications = lazy(() => import('@/pages/super-admin/human-resource/recruitment/Applications'));
+const InterviewScheduler = lazy(() => import('@/pages/super-admin/human-resource/recruitment/InterviewScheduler'));
+// Onboarding Module
+const OnboardingChecklist = lazy(() => import('@/pages/super-admin/human-resource/onboarding/OnboardingChecklist'));
+const NewEmployeeOnboarding = lazy(() => import('@/pages/super-admin/human-resource/onboarding/NewEmployeeOnboarding'));
+// Leave Management Enhanced
+const LeaveBalance = lazy(() => import('@/pages/super-admin/human-resource/leave/LeaveBalance'));
+const LeavePolicy = lazy(() => import('@/pages/super-admin/human-resource/leave/LeavePolicy'));
+const LeaveCalendar = lazy(() => import('@/pages/super-admin/human-resource/leave/LeaveCalendar'));
+// Payroll Module
+const SalaryStructure = lazy(() => import('@/pages/super-admin/human-resource/payroll/SalaryStructure'));
+const PayrollRun = lazy(() => import('@/pages/super-admin/human-resource/payroll/PayrollRun'));
+const Payslips = lazy(() => import('@/pages/super-admin/human-resource/payroll/Payslips'));
 
 // Attendance
 const StudentAttendance = lazy(() => import('@/pages/super-admin/attendance/StudentAttendance'));
@@ -1408,6 +1423,21 @@ function App() {
             <Route path={ROUTES.SUPER_ADMIN.EMPLOYEE_PERFORMANCE} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="human_resource"><EmployeePerformance /></ProtectedRoute>} />
             <Route path={ROUTES.SUPER_ADMIN.EMPLOYEE_PAYROLL} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'accountant']} requiredModule="human_resource"><EmployeePayroll /></ProtectedRoute>} />
             <Route path={ROUTES.SUPER_ADMIN.LEAVE_MANAGEMENT} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'principal']} requiredModule="human_resource"><LeaveManagement /></ProtectedRoute>} />
+            {/* Recruitment Module */}
+            <Route path="/super-admin/human-resource/recruitment/job-postings" element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'principal']} requiredModule="human_resource"><JobPostings /></ProtectedRoute>} />
+            <Route path="/super-admin/human-resource/recruitment/applications" element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'principal']} requiredModule="human_resource"><Applications /></ProtectedRoute>} />
+            <Route path="/super-admin/human-resource/recruitment/interviews" element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'principal']} requiredModule="human_resource"><InterviewScheduler /></ProtectedRoute>} />
+            {/* Onboarding Module */}
+            <Route path="/super-admin/human-resource/onboarding/checklists" element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="human_resource"><OnboardingChecklist /></ProtectedRoute>} />
+            <Route path="/super-admin/human-resource/onboarding/employee" element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="human_resource"><NewEmployeeOnboarding /></ProtectedRoute>} />
+            {/* Leave Management Enhanced */}
+            <Route path="/super-admin/human-resource/leave/balances" element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'principal']} requiredModule="human_resource"><LeaveBalance /></ProtectedRoute>} />
+            <Route path="/super-admin/human-resource/leave/policies" element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="human_resource"><LeavePolicy /></ProtectedRoute>} />
+            <Route path="/super-admin/human-resource/leave/calendar" element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'principal']} requiredModule="human_resource"><LeaveCalendar /></ProtectedRoute>} />
+            {/* Payroll Module */}
+            <Route path="/super-admin/human-resource/payroll/salary-structure" element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'accountant']} requiredModule="human_resource"><SalaryStructure /></ProtectedRoute>} />
+            <Route path="/super-admin/human-resource/payroll/run" element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'accountant']} requiredModule="human_resource"><PayrollRun /></ProtectedRoute>} />
+            <Route path="/super-admin/human-resource/payroll/payslips" element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'accountant']} requiredModule="human_resource"><Payslips /></ProtectedRoute>} />
 
             {/* ? Attendance */}
             <Route path={ROUTES.SUPER_ADMIN.STUDENT_ATTENDANCE} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'teacher', 'principal']} requiredModule="attendance"><StudentAttendance /></ProtectedRoute>} />

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { LogOut, User, Settings, Sun, Moon, Menu, Clock, Bell, Download, Search, Command, Calendar, Mail, Key, Briefcase, Bug, MessageCircle } from 'lucide-react';
+import { LogOut, User, Settings, Sun, Moon, Menu, Clock, Bell, Download, Search, Command, Calendar, Mail, Key, Briefcase, Bug, MessageCircle, Trash2, Loader2, ClipboardList, History } from 'lucide-react';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { Button } from '@/components/ui/button';
@@ -32,6 +32,7 @@ const Header = ({ toggleSidebar, onThemeSettingsClick, onChatbotToggle }) => {
   const [currentDateTime, setCurrentDateTime] = useState(new Date());
   const [canInstall, setCanInstall] = useState(false);
   const [isBugModalOpen, setIsBugModalOpen] = useState(false);
+  const [isClearingCache, setIsClearingCache] = useState(false);
   
   // Get role from all possible sources for consistency
   // Note: user?.role might be "authenticated" (Supabase default) - check user_metadata first
@@ -107,6 +108,101 @@ const Header = ({ toggleSidebar, onThemeSettingsClick, onChatbotToggle }) => {
     if (outcome === 'accepted') {
       window.pwaInstallPrompt = null;
       setCanInstall(false);
+    }
+  };
+
+  // Cache Clear Function - Clears all browser storage and caches (PRESERVES AUTH)
+  const handleCacheClear = async () => {
+    if (isClearingCache) return; // Prevent double-click
+    
+    setIsClearingCache(true);
+    try {
+      // 1. PRESERVE Supabase auth data before clearing localStorage
+      const authKeysToPreserve = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        // Preserve all Supabase auth-related keys
+        if (key && (
+          key.startsWith('sb-') || 
+          key.includes('supabase') || 
+          key.includes('auth') ||
+          key.includes('session')
+        )) {
+          authKeysToPreserve.push({ key, value: localStorage.getItem(key) });
+        }
+      }
+      
+      // 2. Clear localStorage
+      localStorage.clear();
+      
+      // 3. RESTORE auth data immediately
+      authKeysToPreserve.forEach(({ key, value }) => {
+        if (value) localStorage.setItem(key, value);
+      });
+      
+      // 4. Clear sessionStorage (but preserve auth-related if any)
+      const sessionAuthKeys = [];
+      for (let i = 0; i < sessionStorage.length; i++) {
+        const key = sessionStorage.key(i);
+        if (key && (key.startsWith('sb-') || key.includes('supabase') || key.includes('auth'))) {
+          sessionAuthKeys.push({ key, value: sessionStorage.getItem(key) });
+        }
+      }
+      sessionStorage.clear();
+      sessionAuthKeys.forEach(({ key, value }) => {
+        if (value) sessionStorage.setItem(key, value);
+      });
+      
+      // 5. Clear Service Worker caches (PWA) - Safe, doesn't affect auth
+      if ('caches' in window) {
+        const cacheNames = await caches.keys();
+        await Promise.all(
+          cacheNames.map(cacheName => caches.delete(cacheName))
+        );
+      }
+      
+      // 6. Unregister Service Workers - Safe, doesn't affect auth
+      if ('serviceWorker' in navigator) {
+        const registrations = await navigator.serviceWorker.getRegistrations();
+        for (const registration of registrations) {
+          await registration.unregister();
+        }
+      }
+      
+      // 7. Clear IndexedDB EXCEPT Supabase auth databases
+      if ('indexedDB' in window && indexedDB.databases) {
+        try {
+          const databases = await indexedDB.databases();
+          for (const db of databases) {
+            // Skip Supabase auth-related databases
+            if (db.name && !db.name.includes('supabase') && !db.name.includes('auth')) {
+              indexedDB.deleteDatabase(db.name);
+            }
+          }
+        } catch (e) {
+          console.log('IndexedDB clear skipped:', e);
+        }
+      }
+      
+      toast({
+        title: "✅ Cache Cleared",
+        description: "App cache cleared successfully. Reloading...",
+        variant: "default",
+      });
+      
+      // Reload page after short delay to show toast
+      setTimeout(() => {
+        window.location.reload();
+      }, 1500);
+      
+    } catch (error) {
+      console.error('Cache clear error:', error);
+      setIsClearingCache(false);
+      toast({
+        title: "❌ Error",
+        description: "Failed to clear some caches. Try again.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -213,6 +309,46 @@ const Header = ({ toggleSidebar, onThemeSettingsClick, onChatbotToggle }) => {
             title="Report Bug/Issue"
           >
             <Bug className="h-5 w-5 text-pink-500" />
+          </Button>
+
+          {/* My Bug Reports - All authenticated users to view their submissions */}
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => navigate(`/${currentPathSlug}/my-bug-reports`)}
+            className="rounded-xl hover:bg-orange-500/10 transition-transform hover:scale-105"
+            title="My Bug Reports"
+          >
+            <History className="h-5 w-5 text-orange-500" />
+          </Button>
+
+          {/* View Bug Reports - Master Admin Only */}
+          {role === 'master_admin' && (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => navigate('/master-admin/bug-reports')}
+              className="rounded-xl hover:bg-purple-500/10 transition-transform hover:scale-105"
+              title="View All Bug Reports"
+            >
+              <ClipboardList className="h-5 w-5 text-purple-500" />
+            </Button>
+          )}
+
+          {/* Cache Clear Button */}
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={handleCacheClear}
+            disabled={isClearingCache}
+            className="rounded-xl hover:bg-red-500/10 transition-transform hover:scale-105"
+            title="Clear Cache"
+          >
+            {isClearingCache ? (
+              <Loader2 className="h-5 w-5 text-red-500 animate-spin" />
+            ) : (
+              <Trash2 className="h-5 w-5 text-red-500" />
+            )}
           </Button>
 
           {/* Notifications */}

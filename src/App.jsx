@@ -194,6 +194,8 @@ const BulkInvoiceGenerator = lazy(() => import('@/pages/master-admin/subscriptio
 const EstimatesList = lazy(() => import('@/pages/master-admin/subscriptions/EstimatesList'));
 const GenerateEstimate = lazy(() => import('@/pages/master-admin/subscriptions/GenerateEstimate'));
 const QueriesFinder = lazyWithRetry(() => import('@/pages/master-admin/system-settings/QueriesFinder'), 'QueriesFinder'); // With retry
+const BugReportsPage = lazy(() => import('@/pages/master-admin/BugReportsPage')); // User Bug Reports Viewer
+const MyBugReportsPage = lazy(() => import('@/pages/common/MyBugReportsPage')); // User's own bug reports history
 const CommunicationSettingsMaster = lazy(() => import('@/pages/master-admin/system-settings/CommunicationSettings'));
 // const WhatsAppManager = lazy(() => import('@/pages/master-admin/whatsapp/WhatsAppManager')); // Already declared above
 const EmailSettingsMaster = lazy(() => import('@/pages/master-admin/system-settings/EmailSettings'));
@@ -1320,6 +1322,7 @@ function App() {
             <Route path={ROUTES.MASTER_ADMIN.ESTIMATES_LIST} element={<ProtectedRoute allowedRoles={['master_admin']}><EstimatesList /></ProtectedRoute>} />
             <Route path={ROUTES.MASTER_ADMIN.GENERATE_ESTIMATE} element={<ProtectedRoute allowedRoles={['master_admin']}><GenerateEstimate /></ProtectedRoute>} />
             <Route path={ROUTES.MASTER_ADMIN.QUERIES_FINDER} element={<ProtectedRoute allowedRoles={['master_admin']}><QueriesFinder /></ProtectedRoute>} />
+            <Route path="/master-admin/bug-reports" element={<ProtectedRoute allowedRoles={['master_admin']}><BugReportsPage /></ProtectedRoute>} />
             <Route path={ROUTES.MASTER_ADMIN.COMMUNICATION_SETTINGS} element={<ProtectedRoute allowedRoles={['master_admin']}><CommunicationSettingsMaster /></ProtectedRoute>} />
             <Route path={ROUTES.MASTER_ADMIN.EMAIL_SETTINGS} element={<ProtectedRoute allowedRoles={['master_admin']}><EmailSettingsMaster /></ProtectedRoute>} />
             <Route path={ROUTES.MASTER_ADMIN.PAYMENT_SETTINGS} element={<ProtectedRoute allowedRoles={['master_admin']}><PaymentSettingsMaster /></ProtectedRoute>} />
@@ -1803,6 +1806,9 @@ function App() {
             {/* Reports */}
             <Route path="/:roleSlug/reports/student-information-report" element={<StaffModuleRoute><StudentInformationReport /></StaffModuleRoute>} />
             <Route path="/:roleSlug/reports/attendance-report" element={<StaffModuleRoute requiredModule="attendance"><AttendanceReport /></StaffModuleRoute>} />
+            
+            {/* 📋 My Bug Reports - Accessible to ALL authenticated users */}
+            <Route path="/:roleSlug/my-bug-reports" element={<StaffModuleRoute><MyBugReportsPage /></StaffModuleRoute>} />
             <Route path="/:roleSlug/reports/payroll-report" element={<StaffModuleRoute requiredModule="human_resource"><PayrollReport /></StaffModuleRoute>} />
             <Route path="/:roleSlug/reports/income-report" element={<StaffModuleRoute requiredModule="income"><IncomeReport /></StaffModuleRoute>} />
             <Route path="/:roleSlug/reports/expense-report" element={<StaffModuleRoute requiredModule="expenses"><ExpenseReport /></StaffModuleRoute>} />

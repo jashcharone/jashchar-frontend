@@ -10,6 +10,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { Loader2 } from "lucide-react";
 import { Capacitor } from '@capacitor/core';
+import { useResponsive, useSidebarMode, BREAKPOINTS } from "@/hooks/useResponsive";
 
 const DashboardLayout = ({ children }) => {
   const { user, loading } = useAuth();
@@ -18,12 +19,23 @@ const DashboardLayout = ({ children }) => {
   const role = detectedRole || user?.role || user?.profile?.role || user?.user_metadata?.role || "guest";
   const location = useLocation();
 
+  // Use centralized responsive hook
+  const { 
+    isMobile, 
+    isTablet, 
+    isTabletPortrait,
+    isTabletLandscape,
+    isLandscape, 
+    isDesktop,
+    width,
+    breakpoint,
+    deviceCategory
+  } = useResponsive();
+  const { isDrawerMode, shouldAutoExpand } = useSidebarMode();
+
   const [isCustomizerOpen, setIsCustomizerOpen] = useState(false);
-  const [isSidebarOpen, setIsSidebarOpen] = useState(window.innerWidth > 1024);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(shouldAutoExpand);
   const [isSidebarHovered, setIsSidebarHovered] = useState(false);
-  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
-  const [isTablet, setIsTablet] = useState(window.innerWidth > 768 && window.innerWidth <= 1024);
-  const [isLandscape, setIsLandscape] = useState(window.innerWidth > window.innerHeight);
   const [isChatbotOpen, setIsChatbotOpen] = useState(false);
 
   // Detect if running inside Capacitor native app (NOT web browser)
@@ -35,52 +47,26 @@ const DashboardLayout = ({ children }) => {
     return false;
   })();
 
+  // Auto-manage sidebar based on screen size
   useEffect(() => {
-    const handleResize = () => {
-      const width = window.innerWidth;
-      const height = window.innerHeight;
-      const mobile = width <= 768;
-      const tablet = width > 768 && width <= 1024;
-      const landscape = width > height;
-      
-      setIsMobile(mobile);
-      setIsTablet(tablet);
-      setIsLandscape(landscape);
-      
-      // Auto-collapse sidebar behavior:
-      // - Mobile: Always collapsed (drawer mode)
-      // - Tablet portrait: Collapsed by default
-      // - Tablet landscape: Expanded by default
-      // - Desktop: Expanded by default
-      if (mobile) {
-        setIsSidebarOpen(false);
-      } else if (tablet && !landscape) {
-        // Tablet portrait - keep current state or collapse
-        // Don't auto-toggle on resize to avoid jarring UX
-      } else if (width > 1024) {
-        // Desktop - expand
-        setIsSidebarOpen(true);
-      }
-    };
-    
-    window.addEventListener("resize", handleResize);
-    // Also listen for orientation change (especially important for tablets)
-    window.addEventListener("orientationchange", () => {
-      setTimeout(handleResize, 100); // Small delay for orientation to complete
-    });
-    
-    return () => {
-      window.removeEventListener("resize", handleResize);
-      window.removeEventListener("orientationchange", handleResize);
-    };
-  }, []);
+    // Auto-collapse sidebar behavior:
+    // - Mobile: Always collapsed (drawer mode)
+    // - Tablet portrait: Collapsed by default (drawer mode)
+    // - Tablet landscape: Expanded by default
+    // - Desktop: Expanded by default
+    if (isMobile || isTabletPortrait) {
+      setIsSidebarOpen(false);
+    } else if (shouldAutoExpand) {
+      setIsSidebarOpen(true);
+    }
+  }, [isMobile, isTabletPortrait, shouldAutoExpand]);
 
   // Only close sidebar on mobile when navigating to a completely different module
   // Not when navigating within submenu items of the same module
   const previousPathRef = React.useRef(location.pathname);
   
   useEffect(() => {
-    if (isMobile) {
+    if (isDrawerMode) {
       const prevPath = previousPathRef.current;
       const currentPath = location.pathname;
       
@@ -95,7 +81,7 @@ const DashboardLayout = ({ children }) => {
       
       previousPathRef.current = currentPath;
     }
-  }, [location, isMobile]);
+  }, [location, isDrawerMode]);
 
   // ? REMOVED: Don't auto-redirect - ProtectedRoute handles auth
   // The useEffect was causing race condition where user state wasn't loaded yet
@@ -126,7 +112,7 @@ const DashboardLayout = ({ children }) => {
     <div className="min-h-screen w-full bg-background text-foreground">
       <div className="relative min-h-screen flex">
         {/* Mobile/Tablet overlay for sidebar drawer */}
-        {(isMobile || (isTablet && !isLandscape)) && isSidebarOpen && (
+        {isDrawerMode && isSidebarOpen && (
           <div
             className="fixed inset-0 bg-black/50 z-30"
             onClick={() => setIsSidebarOpen(false)}
@@ -138,7 +124,7 @@ const DashboardLayout = ({ children }) => {
           <Sidebar
             role={role}
             isSidebarOpen={isSidebarOpen}
-            isMobile={isMobile || (isTablet && !isLandscape)}
+            isMobile={isDrawerMode}
             toggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
             onHoverChange={setIsSidebarHovered}
           />
@@ -147,13 +133,14 @@ const DashboardLayout = ({ children }) => {
         <div
           className={cn(
             "flex-1 flex flex-col transition-all duration-300 ease-out min-w-0",
-            // Margin calculation:
-            // - Mobile: No margin (sidebar is overlay drawer)
-            // - Tablet portrait: No margin (sidebar is overlay drawer)
-            // - Tablet landscape: Margin for sidebar
-            // - Desktop: Margin for sidebar
-            !isCapacitorApp && !isMobile && !(isTablet && !isLandscape) && isExpanded ? "lg:ml-[270px] ml-[80px]" : 
-            !isCapacitorApp && !isMobile && !(isTablet && !isLandscape) ? "md:ml-[80px]" : ""
+            // Enhanced margin calculation using breakpoints:
+            // - Drawer mode (mobile/tablet portrait): No margin (sidebar is overlay)
+            // - Non-drawer mode: Margin based on sidebar state
+            !isCapacitorApp && !isDrawerMode && isExpanded 
+              ? "tablet:ml-[270px] md:ml-[80px]" 
+              : !isCapacitorApp && !isDrawerMode 
+              ? "md:ml-[80px]" 
+              : ""
           )}
         >
           {/* Header — full Header on website, compact on Capacitor native only */}
@@ -173,7 +160,10 @@ const DashboardLayout = ({ children }) => {
           <main 
             className={cn(
               "flex-1 overflow-y-auto",
-              isCapacitorApp ? "p-3 pb-20" : "p-4 sm:p-6",
+              // Fluid responsive padding
+              isCapacitorApp 
+                ? "p-3 pb-20" 
+                : "p-fluid-sm sm:p-fluid-md lg:p-fluid-lg 3xl:p-fluid-xl",
             )} 
             id="main-content"
           >

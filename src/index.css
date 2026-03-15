@@ -3,6 +3,9 @@
 /* JashSync & Cortex AI Theme Styles */
 @import './styles/jashsync.css';
 
+/* Responsive Design System */
+@import './styles/responsive.css';
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;

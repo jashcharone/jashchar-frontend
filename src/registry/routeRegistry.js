@@ -47,6 +47,7 @@ export const ROUTES = {
     GENERATE_ESTIMATE: '/master-admin/estimates/:estimateId',
     ROLE_PERMISSION: '/master-admin/role-permission',
     QUERIES_FINDER: '/master-admin/queries-finder', // New Module
+    BUG_REPORTS: '/master-admin/bug-reports', // User Bug Reports Viewer
     ASSIGN_PERMISSION: '/master-admin/assign-permission',
     ASSIGN_PERMISSION_ID: '/master-admin/assign-permission/:roleId',
     ASSIGN_PERMISSION_FULL: '/master-admin/assign-permission/:branchId/:roleId',

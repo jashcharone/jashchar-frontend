@@ -17,14 +17,17 @@ module.exports = {
         "2xl": "100%",
       },
     },
-    // Custom screen breakpoints for better tablet support
+    // Custom screen breakpoints for comprehensive responsive support
     screens: {
-      'sm': '640px',   // Mobile landscape
-      'md': '768px',   // Tablet portrait
+      'xs': '375px',   // Mobile M+ (iPhone 12/13/14)
+      'sm': '640px',   // Mobile XL / Phablet
+      'md': '768px',   // Tablet Portrait
       'tablet': '900px', // Custom: Tablet landscape / small laptops
-      'lg': '1024px',  // Desktop / iPad Pro landscape
-      'xl': '1280px',  // Large desktop
-      '2xl': '1536px', // Extra large
+      'lg': '1024px',  // Tablet Landscape / Small Laptop
+      'xl': '1280px',  // Laptop / Desktop
+      '2xl': '1536px', // Large Desktop
+      '3xl': '1920px', // Full HD+
+      '4xl': '2560px', // 2K/4K Monitors
     },
     extend: {
       fontFamily: {

@@ -411,7 +411,8 @@ const StaffCountCard = ({ icon: Icon, label, count, value, bgColor, color = 'blu
 // ============================================================================
 const SchoolOwnerDashboard = () => {
   const { user, currentSessionId, school } = useAuth();
-  const { selectedBranch } = useBranch();
+  const branchContext = useBranch();
+  const selectedBranch = branchContext?.selectedBranch;
   const navigate = useNavigate();
   const { toast } = useToast();
   

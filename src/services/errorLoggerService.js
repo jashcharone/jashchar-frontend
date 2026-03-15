@@ -110,6 +110,22 @@ export const errorLoggerService = {
         }
     },
 
+    /**
+     * Fetches the logged-in user's own bug reports (for My Bug Reports page)
+     */
+    getMyReports: async () => {
+        try {
+            const { data: { session } } = await supabase.auth.getSession();
+            const response = await retryWithBackoff(() => axios.get(`${API_URL}/queries-finder/my-reports`, {
+                headers: { Authorization: `Bearer ${session?.access_token}` }
+            }));
+            return response.data.data || [];
+        } catch (error) {
+            console.error('Failed to fetch my reports:', error);
+            return [];
+        }
+    },
+
     updateStatus: async (id, status) => {
         const { data: { session } } = await supabase.auth.getSession();
         await retryWithBackoff(() => axios.patch(`${API_URL}/queries-finder/logs/${id}/status`, { status }, {

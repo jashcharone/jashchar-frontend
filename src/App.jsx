@@ -310,8 +310,6 @@ const StaffApplyLeave = lazy(() => import('@/pages/super-admin/human-resource/St
 const ApproveStaffLeave = lazy(() => import('@/pages/super-admin/human-resource/ApproveStaffLeave'));
 const EmployeeDocuments = lazy(() => import('@/pages/super-admin/human-resource/EmployeeDocuments'));
 const EmployeePerformance = lazy(() => import('@/pages/super-admin/human-resource/EmployeePerformance'));
-const EmployeePayroll = lazy(() => import('@/pages/super-admin/human-resource/EmployeePayroll'));
-const LeaveManagement = lazy(() => import('@/pages/super-admin/human-resource/LeaveManagement'));
 const HRDashboard = lazy(() => import('@/pages/super-admin/human-resource/HRDashboard'));
 // Recruitment Module
 const JobPostings = lazy(() => import('@/pages/super-admin/human-resource/recruitment/JobPostings'));
@@ -835,7 +833,6 @@ function App() {
             <Route path={ROUTES.PRINCIPAL.STAFF_DIRECTORY} element={<ProtectedRoute allowedRoles={['principal']} requiredModule="human_resource"><StaffDirectory /></ProtectedRoute>} />
             <Route path={ROUTES.PRINCIPAL.DEPARTMENTS} element={<ProtectedRoute allowedRoles={['principal']} requiredModule="human_resource"><Departments /></ProtectedRoute>} />
             <Route path={ROUTES.PRINCIPAL.DESIGNATIONS} element={<ProtectedRoute allowedRoles={['principal']} requiredModule="human_resource"><Designations /></ProtectedRoute>} />
-            <Route path={ROUTES.PRINCIPAL.LEAVE_MANAGEMENT} element={<ProtectedRoute allowedRoles={['principal']} requiredModule="human_resource"><LeaveManagement /></ProtectedRoute>} />
             <Route path={ROUTES.PRINCIPAL.APPROVE_STAFF_LEAVE} element={<ProtectedRoute allowedRoles={['principal']} requiredModule="human_resource"><ApproveStaffLeave /></ProtectedRoute>} />
             <Route path={ROUTES.PRINCIPAL.STUDENT_ATTENDANCE} element={<ProtectedRoute allowedRoles={['principal']} requiredModule="attendance"><StudentAttendance /></ProtectedRoute>} />
             <Route path={ROUTES.PRINCIPAL.STAFF_ATTENDANCE} element={<ProtectedRoute allowedRoles={['principal']} requiredModule="attendance"><StaffAttendance /></ProtectedRoute>} />
@@ -1424,8 +1421,6 @@ function App() {
             <Route path={ROUTES.SUPER_ADMIN.APPROVE_STAFF_LEAVE} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'principal']} requiredModule="human_resource"><ApproveStaffLeave /></ProtectedRoute>} />
             <Route path={ROUTES.SUPER_ADMIN.EMPLOYEE_DOCUMENTS} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="human_resource"><EmployeeDocuments /></ProtectedRoute>} />
             <Route path={ROUTES.SUPER_ADMIN.EMPLOYEE_PERFORMANCE} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="human_resource"><EmployeePerformance /></ProtectedRoute>} />
-            <Route path={ROUTES.SUPER_ADMIN.EMPLOYEE_PAYROLL} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'accountant']} requiredModule="human_resource"><EmployeePayroll /></ProtectedRoute>} />
-            <Route path={ROUTES.SUPER_ADMIN.LEAVE_MANAGEMENT} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'principal']} requiredModule="human_resource"><LeaveManagement /></ProtectedRoute>} />
             {/* Recruitment Module */}
             <Route path="/super-admin/human-resource/recruitment/job-postings" element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'principal']} requiredModule="human_resource"><JobPostings /></ProtectedRoute>} />
             <Route path="/super-admin/human-resource/recruitment/applications" element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'principal']} requiredModule="human_resource"><Applications /></ProtectedRoute>} />
@@ -1743,10 +1738,8 @@ function App() {
             <Route path="/:roleSlug/human-resource/staff-directory" element={<StaffModuleRoute requiredModule="human_resource"><StaffDirectory /></StaffModuleRoute>} />
             <Route path="/:roleSlug/human-resource/departments" element={<StaffModuleRoute requiredModule="human_resource"><Departments /></StaffModuleRoute>} />
             <Route path="/:roleSlug/human-resource/designations" element={<StaffModuleRoute requiredModule="human_resource"><Designations /></StaffModuleRoute>} />
-            <Route path="/:roleSlug/human-resource/leave-management" element={<StaffModuleRoute requiredModule="human_resource"><LeaveManagement /></StaffModuleRoute>} />
             <Route path="/:roleSlug/human-resource/approve-staff-leave" element={<StaffModuleRoute requiredModule="human_resource"><ApproveStaffLeave /></StaffModuleRoute>} />
             <Route path="/:roleSlug/human-resource/staff-apply-leave" element={<StaffModuleRoute requiredModule="human_resource"><StaffApplyLeave /></StaffModuleRoute>} />
-            <Route path="/:roleSlug/human-resource/payroll" element={<StaffModuleRoute requiredModule="human_resource"><EmployeePayroll /></StaffModuleRoute>} />
             <Route path="/:roleSlug/human-resource/staff-profile/:employeeId" element={<StaffModuleRoute requiredModule="human_resource"><StaffProfile /></StaffModuleRoute>} />
             
             {/* Communicate */}

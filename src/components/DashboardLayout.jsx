@@ -109,8 +109,8 @@ const DashboardLayout = ({ children }) => {
   const isExpanded = isSidebarOpen || (isSidebarHovered && !isMobile);
 
   return (
-    <div className="min-h-screen w-full bg-background text-foreground">
-      <div className="relative min-h-screen flex">
+    <div className="h-screen w-full bg-background text-foreground overflow-hidden">
+      <div className="relative h-full flex">
         {/* Mobile/Tablet overlay for sidebar drawer */}
         {isDrawerMode && isSidebarOpen && (
           <div
@@ -132,15 +132,15 @@ const DashboardLayout = ({ children }) => {
         
         <div
           className={cn(
-            "flex-1 flex flex-col transition-all duration-300 ease-out min-w-0",
+            "flex-1 flex flex-col transition-all duration-300 ease-out min-w-0 h-full overflow-hidden",
             // Enhanced margin calculation:
-            // - Drawer mode (mobile/tablet portrait): No margin (sidebar is overlay)
-            // - Fixed sidebar mode: Add margin based on sidebar state
-            // Using lg: instead of custom tablet: for better Tailwind support
+            // - Drawer mode (mobile/tablet): No margin (sidebar is overlay)
+            // - Fixed sidebar mode (desktop): Add margin based on sidebar state
+            // Desktop sidebar has left-3 (12px) offset, so add extra margin
             !isCapacitorApp && !isDrawerMode && isExpanded 
-              ? "lg:ml-[270px] md:ml-[80px]" 
+              ? "ml-[285px]" 
               : !isCapacitorApp && !isDrawerMode 
-              ? "lg:ml-[80px]" 
+              ? "ml-[95px]" 
               : ""
           )}
         >

@@ -5,7 +5,7 @@
  * @date 2026-03-09
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import DashboardLayout from '@/components/DashboardLayout';
 import { Button } from '@/components/ui/button';
@@ -41,7 +41,8 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { useToast } from '@/components/ui/use-toast';
-import { Loader2, Pencil, Trash2, Save, X, Plus, FileSpreadsheet, RefreshCw, Sparkles } from 'lucide-react';
+import { Progress } from '@/components/ui/progress';
+import { Loader2, Pencil, Trash2, Save, X, Plus, FileSpreadsheet, RefreshCw, Sparkles, AlertCircle, CheckCircle2, Percent } from 'lucide-react';
 import { examTypeService } from '@/services/examinationService';
 
 const categories = [
@@ -78,6 +79,18 @@ const ExamTypeMaster = () => {
   const [editingId, setEditingId] = useState(null);
   const [deleteId, setDeleteId] = useState(null);
   const [isDeleteAlertOpen, setIsDeleteAlertOpen] = useState(false);
+
+  // Calculate total weightage from all active exam types
+  const weightageStats = useMemo(() => {
+    const activeTypes = examTypes.filter(t => t.is_active);
+    const total = activeTypes.reduce((sum, t) => sum + (Number(t.weightage) || 0), 0);
+    const byCategory = categories.map(cat => ({
+      ...cat,
+      weightage: activeTypes.filter(t => t.category === cat.value).reduce((sum, t) => sum + (Number(t.weightage) || 0), 0),
+      count: activeTypes.filter(t => t.category === cat.value).length
+    })).filter(c => c.count > 0);
+    return { total, byCategory, isValid: total === 100, activeCount: activeTypes.length };
+  }, [examTypes]);
 
   const { register, handleSubmit, reset, setValue, watch, formState: { errors } } = useForm({
     defaultValues: {
@@ -241,6 +254,91 @@ const ExamTypeMaster = () => {
             </Button>
           </div>
         </div>
+
+        {/* Total Weightage Summary Card - Highlighted */}
+        <Card className={`border-2 ${
+          weightageStats.total === 0 ? 'border-muted bg-muted/30' :
+          weightageStats.isValid ? 'border-green-500 bg-green-50 dark:bg-green-950/30' : 
+          weightageStats.total > 100 ? 'border-red-500 bg-red-50 dark:bg-red-950/30' :
+          'border-yellow-500 bg-yellow-50 dark:bg-yellow-950/30'
+        }`}>
+          <CardContent className="pt-6">
+            <div className="flex flex-col md:flex-row items-start md:items-center gap-6">
+              {/* Main Total Display */}
+              <div className="flex items-center gap-4">
+                <div className={`p-3 rounded-full ${
+                  weightageStats.total === 0 ? 'bg-muted text-muted-foreground' :
+                  weightageStats.isValid ? 'bg-green-500 text-white' : 
+                  weightageStats.total > 100 ? 'bg-red-500 text-white' :
+                  'bg-yellow-500 text-white'
+                }`}>
+                  {weightageStats.isValid ? (
+                    <CheckCircle2 className="w-8 h-8" />
+                  ) : (
+                    <AlertCircle className="w-8 h-8" />
+                  )}
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">Total Weightage</p>
+                  <div className="flex items-baseline gap-2">
+                    <span className={`text-4xl font-bold ${
+                      weightageStats.total === 0 ? 'text-muted-foreground' :
+                      weightageStats.isValid ? 'text-green-600 dark:text-green-400' : 
+                      weightageStats.total > 100 ? 'text-red-600 dark:text-red-400' :
+                      'text-yellow-600 dark:text-yellow-400'
+                    }`}>
+                      {weightageStats.total}%
+                    </span>
+                    <span className="text-lg text-muted-foreground">/ 100%</span>
+                  </div>
+                  <p className={`text-sm mt-1 ${
+                    weightageStats.total === 0 ? 'text-muted-foreground' :
+                    weightageStats.isValid ? 'text-green-600 dark:text-green-400' : 
+                    weightageStats.total > 100 ? 'text-red-600 dark:text-red-400' :
+                    'text-yellow-600 dark:text-yellow-400'
+                  }`}>
+                    {weightageStats.total === 0 ? 'No active exam types configured' :
+                     weightageStats.isValid ? '✓ Perfect! Weightage is balanced' : 
+                     weightageStats.total > 100 ? `⚠ Over by ${weightageStats.total - 100}% - Please reduce weightage` :
+                     `⚠ ${100 - weightageStats.total}% remaining to reach 100%`}
+                  </p>
+                </div>
+              </div>
+
+              {/* Progress Bar */}
+              <div className="flex-1 w-full md:w-auto">
+                <div className="space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Progress</span>
+                    <span className="font-medium">{weightageStats.activeCount} active exam types</span>
+                  </div>
+                  <Progress 
+                    value={Math.min(weightageStats.total, 100)} 
+                    className={`h-4 ${
+                      weightageStats.isValid ? '[&>div]:bg-green-500' : 
+                      weightageStats.total > 100 ? '[&>div]:bg-red-500' :
+                      '[&>div]:bg-yellow-500'
+                    }`}
+                  />
+                </div>
+              </div>
+
+              {/* Category Breakdown */}
+              {weightageStats.byCategory.length > 0 && (
+                <div className="border-l pl-6 hidden lg:block">
+                  <p className="text-sm font-medium text-muted-foreground mb-2">By Category</p>
+                  <div className="flex flex-wrap gap-2">
+                    {weightageStats.byCategory.map((cat) => (
+                      <Badge key={cat.value} className={`${cat.color} text-white`}>
+                        {cat.label.split(' ')[0]}: {cat.weightage}%
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Form Section */}

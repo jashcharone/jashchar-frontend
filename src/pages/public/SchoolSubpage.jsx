@@ -47,7 +47,6 @@ const SchoolSubpage = ({ variant, title }) => {
 
     if (variant === 'online_course') return 'Online Course';
     if (variant === 'online_admission') return 'Online Admission';
-    if (variant === 'cbseexam') return 'Cbse Exam Result';
     if (variant === 'examresult') return 'Exam Result';
     if (variant === 'annual_calendar') return 'Annual Calendar';
     return 'Page';
@@ -130,7 +129,7 @@ const SchoolSubpage = ({ variant, title }) => {
       );
     }
 
-    if (variant === 'cbseexam' || variant === 'examresult') {
+    if (variant === 'examresult') {
       return (
         <PageShell title={resolvedTitle}>
           <p className="text-sm text-gray-600 mb-6">

@@ -53,7 +53,7 @@ const PublicNewsDetail = lazy(() => import('@/pages/public/PublicNewsDetail'));
 const PublicGallery = lazy(() => import('@/pages/public/PublicGallery'));
 const PublicExamResult = lazy(() => import('@/pages/public/PublicExamResult'));
 const ExamResultPage = lazy(() => import('@/pages/public/ExamResultPage'));
-const CBSEExamResult = lazy(() => import('@/pages/public/CBSEExamResult'));
+
 const SchoolServicesHub = lazy(() => import('@/pages/public/SchoolServicesHub'));
 const OnlineCourseFrontSite = lazy(() => import('@/pages/public/OnlineCourseFrontSite'));
 const OnlineAdmission = lazy(() => import('@/pages/public/OnlineAdmission'));
@@ -354,15 +354,6 @@ const ReceiptTemplates = lazy(() => import('@/pages/super-admin/fees-collection/
 // 🌟 Fee Dashboard (Simplified)
 const FeeDashboard = lazy(() => import('@/pages/super-admin/fees-collection/FeeDashboard'));
 
-// Examinations - CBSE Specific (Online Examinations Menu)
-const CbseExam = lazy(() => import('@/pages/super-admin/examinations/CbseExam'));
-const CbseSettings = lazy(() => import('@/pages/super-admin/examinations/CbseSettings'));
-const CbseTerm = lazy(() => import('@/pages/super-admin/examinations/CbseTerm'));
-const CbseAssessment = lazy(() => import('@/pages/super-admin/examinations/CbseAssessment'));
-const CbseObservation = lazy(() => import('@/pages/super-admin/examinations/CbseObservation'));
-const CbseObservationParameter = lazy(() => import('@/pages/super-admin/examinations/CbseObservationParameter'));
-const CbseExamGrade = lazy(() => import('@/pages/super-admin/examinations/CbseExamGrade'));
-const CbseReports = lazy(() => import('@/pages/super-admin/examinations/CbseReports'));
 const AssignObservation = lazy(() => import('@/pages/super-admin/examinations/AssignObservation'));
 const TeacherRemarks = lazy(() => import('@/pages/super-admin/examinations/TeacherRemarks'));
 // Examination Setup (Phase 1 - Foundation)
@@ -398,6 +389,17 @@ const BulkDocumentGenerator = lazy(() => import('@/pages/super-admin/examination
 const PerformanceDashboard = lazy(() => import('@/pages/super-admin/examinations/PerformanceDashboard'));
 const QuestionBankPage = lazy(() => import('@/pages/super-admin/examinations/QuestionBankPage'));
 const OnlineExamPage = lazy(() => import('@/pages/super-admin/examinations/OnlineExamPage'));
+// Phase 8: Advanced Configuration & Compliance
+const DivisionConfigPage = lazy(() => import('@/pages/super-admin/examinations/DivisionConfigPage'));
+const SubjectWeightagePage = lazy(() => import('@/pages/super-admin/examinations/SubjectWeightagePage'));
+const AssessmentPatternBuilder = lazy(() => import('@/pages/super-admin/examinations/AssessmentPatternBuilder'));
+const ExamLinkingPage = lazy(() => import('@/pages/super-admin/examinations/ExamLinkingPage'));
+const QuestionBlueprintPage = lazy(() => import('@/pages/super-admin/examinations/QuestionBlueprintPage'));
+const VerificationDashboard = lazy(() => import('@/pages/super-admin/examinations/VerificationDashboard'));
+const RevaluationRequestPage = lazy(() => import('@/pages/super-admin/examinations/RevaluationRequestPage'));
+const RevaluationProcessPage = lazy(() => import('@/pages/super-admin/examinations/RevaluationProcessPage'));
+const ExamArchivePage = lazy(() => import('@/pages/super-admin/examinations/ExamArchivePage'));
+const ComplianceReportsPage = lazy(() => import('@/pages/super-admin/examinations/ComplianceReportsPage'));
 
 // Library
 const LibraryBooks = lazy(() => import('@/pages/super-admin/library/LibraryBooks'));
@@ -554,7 +556,7 @@ function App() {
                 <Route path="/forgot-password" element={<PublicForgotPassword />} />
                 <Route path="/signup" element={<PublicSignUp />} />
                 <Route path="/exam-result" element={<ExamResultPage />} />
-                <Route path="/cbse-exam-result" element={<CBSEExamResult />} />
+
                 <Route path="/services" element={<SchoolServicesHub />} />
                 <Route path="/pages/:pageSlug" element={<PublicPageDetail />} />
                 <Route path="/events" element={<PublicEvents />} />
@@ -602,7 +604,7 @@ function App() {
                 <Route path="/s/:domain/signup" element={<PublicSignUp />} />
                 <Route path="/s/:domain/online_course" element={<SchoolSubpage variant="online_course" />} />
                 <Route path="/s/:domain/online_admission" element={<SchoolSubpage variant="online_admission" />} />
-                <Route path="/s/:domain/cbseexam" element={<SchoolSubpage variant="cbseexam" />} />
+
                 <Route path="/s/:domain/examresult" element={<SchoolSubpage variant="examresult" />} />
                 <Route path="/s/:domain/annual_calendar" element={<SchoolSubpage variant="annual_calendar" />} />
                 <Route path="/s/:domain/page/:pageSlug" element={<SchoolSubpage variant="page" />} />
@@ -832,7 +834,6 @@ function App() {
             <Route path={ROUTES.PRINCIPAL.GENERAL_EXAM_RESULT} element={<ProtectedRoute allowedRoles={['principal']} requiredModule="examinations"><ResultCalculationPage /></ProtectedRoute>} />
             <Route path={ROUTES.PRINCIPAL.MARKS_ENTRY} element={<ProtectedRoute allowedRoles={['principal']} requiredModule="examinations"><MarksEntryPageNew /></ProtectedRoute>} />
             <Route path={ROUTES.PRINCIPAL.REPORT_CARD} element={<ProtectedRoute allowedRoles={['principal']} requiredModule="examinations"><ReportCardDesignerPage /></ProtectedRoute>} />
-            <Route path={ROUTES.PRINCIPAL.CBSE_REPORTS} element={<ProtectedRoute allowedRoles={['principal']} requiredModule="examinations"><CbseReports /></ProtectedRoute>} />
             <Route path={ROUTES.PRINCIPAL.ASSIGN_INCIDENT} element={<ProtectedRoute allowedRoles={['principal']} requiredModule="behaviour_records"><AssignIncident /></ProtectedRoute>} />
             <Route path={ROUTES.PRINCIPAL.INCIDENTS} element={<ProtectedRoute allowedRoles={['principal']} requiredModule="behaviour_records"><Incidents /></ProtectedRoute>} />
             <Route path={ROUTES.PRINCIPAL.BEHAVIOUR_REPORTS} element={<ProtectedRoute allowedRoles={['principal']} requiredModule="behaviour_records"><BehaviourReports /></ProtectedRoute>} />
@@ -1469,15 +1470,6 @@ function App() {
             {/* 🌟 Fee Dashboard (Simplified) */}
             <Route path="/super-admin/fees-collection/fee-dashboard" element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'accountant', 'principal']}><FeeDashboard /></ProtectedRoute>} />
 
-            {/* 📚 Examinations - CBSE Specific (Online Examinations Menu) */}
-            <Route path={ROUTES.SUPER_ADMIN.CBSE_EXAM} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="examinations"><CbseExam /></ProtectedRoute>} />
-            <Route path={ROUTES.SUPER_ADMIN.CBSE_SETTINGS} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="examinations"><CbseSettings /></ProtectedRoute>} />
-            <Route path={ROUTES.SUPER_ADMIN.CBSE_TERM} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="examinations"><CbseTerm /></ProtectedRoute>} />
-            <Route path={ROUTES.SUPER_ADMIN.CBSE_ASSESSMENT} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="examinations"><CbseAssessment /></ProtectedRoute>} />
-            <Route path={ROUTES.SUPER_ADMIN.CBSE_OBSERVATION} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="examinations"><CbseObservation /></ProtectedRoute>} />
-            <Route path={ROUTES.SUPER_ADMIN.CBSE_OBSERVATION_PARAM} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="examinations"><CbseObservationParameter /></ProtectedRoute>} />
-            <Route path={ROUTES.SUPER_ADMIN.CBSE_EXAM_GRADE} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="examinations"><CbseExamGrade /></ProtectedRoute>} />
-            <Route path={ROUTES.SUPER_ADMIN.CBSE_REPORTS} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'principal']} requiredModule="examinations"><CbseReports /></ProtectedRoute>} />
             <Route path={ROUTES.SUPER_ADMIN.ASSIGN_OBSERVATION} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="examinations"><AssignObservation /></ProtectedRoute>} />
             <Route path={ROUTES.SUPER_ADMIN.TEACHER_REMARKS} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'teacher']} requiredModule="examinations"><TeacherRemarks /></ProtectedRoute>} />
             {/* Phase 1: Foundation - Examination Setup */}
@@ -1513,6 +1505,17 @@ function App() {
             <Route path={ROUTES.SUPER_ADMIN.PERFORMANCE_DASHBOARD} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'organization_owner', 'school_owner']} requiredModule="examinations"><PerformanceDashboard /></ProtectedRoute>} />
             <Route path={ROUTES.SUPER_ADMIN.QUESTION_BANK} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'organization_owner', 'school_owner']} requiredModule="examinations"><QuestionBankPage /></ProtectedRoute>} />
             <Route path={ROUTES.SUPER_ADMIN.ONLINE_EXAM} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'organization_owner', 'school_owner']} requiredModule="examinations"><OnlineExamPage /></ProtectedRoute>} />
+            {/* Phase 8: Advanced Configuration & Compliance */}
+            <Route path={ROUTES.SUPER_ADMIN.DIVISION_CONFIG} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'organization_owner', 'school_owner']} requiredModule="examinations"><DivisionConfigPage /></ProtectedRoute>} />
+            <Route path={ROUTES.SUPER_ADMIN.SUBJECT_WEIGHTAGE} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'organization_owner', 'school_owner']} requiredModule="examinations"><SubjectWeightagePage /></ProtectedRoute>} />
+            <Route path={ROUTES.SUPER_ADMIN.ASSESSMENT_PATTERN} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'organization_owner', 'school_owner']} requiredModule="examinations"><AssessmentPatternBuilder /></ProtectedRoute>} />
+            <Route path={ROUTES.SUPER_ADMIN.EXAM_LINKING} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'organization_owner', 'school_owner']} requiredModule="examinations"><ExamLinkingPage /></ProtectedRoute>} />
+            <Route path={ROUTES.SUPER_ADMIN.QUESTION_BLUEPRINT} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'organization_owner', 'school_owner']} requiredModule="examinations"><QuestionBlueprintPage /></ProtectedRoute>} />
+            <Route path={ROUTES.SUPER_ADMIN.VERIFICATION_DASHBOARD} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'organization_owner', 'school_owner']} requiredModule="examinations"><VerificationDashboard /></ProtectedRoute>} />
+            <Route path={ROUTES.SUPER_ADMIN.REVALUATION_REQUEST} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'organization_owner', 'school_owner']} requiredModule="examinations"><RevaluationRequestPage /></ProtectedRoute>} />
+            <Route path={ROUTES.SUPER_ADMIN.REVALUATION_PROCESS} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'organization_owner', 'school_owner']} requiredModule="examinations"><RevaluationProcessPage /></ProtectedRoute>} />
+            <Route path={ROUTES.SUPER_ADMIN.EXAM_ARCHIVE} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'organization_owner', 'school_owner']} requiredModule="examinations"><ExamArchivePage /></ProtectedRoute>} />
+            <Route path={ROUTES.SUPER_ADMIN.COMPLIANCE_REPORTS} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'organization_owner', 'school_owner']} requiredModule="examinations"><ComplianceReportsPage /></ProtectedRoute>} />
 
             {/* ? Library */}
             <Route path={ROUTES.SUPER_ADMIN.LIBRARY_BOOKS} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'librarian']} requiredModule="library"><LibraryBooks /></ProtectedRoute>} />
@@ -1664,7 +1667,6 @@ function App() {
             <Route path="/:roleSlug/examinations/general-exam-result" element={<StaffModuleRoute requiredModule="examinations"><ResultCalculationPage /></StaffModuleRoute>} />
             <Route path="/:roleSlug/examinations/marks-entry" element={<StaffModuleRoute requiredModule="examinations"><MarksEntryPageNew /></StaffModuleRoute>} />
             <Route path="/:roleSlug/examinations/report-card" element={<StaffModuleRoute requiredModule="examinations"><ReportCardDesignerPage /></StaffModuleRoute>} />
-            <Route path="/:roleSlug/examinations/cbse-reports" element={<StaffModuleRoute requiredModule="examinations"><CbseReports /></StaffModuleRoute>} />
             
             {/* Behaviour Records */}
             <Route path="/:roleSlug/behaviour-records/assign-incident" element={<StaffModuleRoute requiredModule="behaviour_records"><AssignIncident /></StaffModuleRoute>} />
@@ -1822,7 +1824,6 @@ function App() {
             <Route path={ROUTES.PUBLIC.DYNAMIC_ONLINE_COURSE} element={<OnlineCourseFrontSite />} />
             <Route path={ROUTES.PUBLIC.DYNAMIC_ADMISSION} element={<OnlineAdmission />} />
             <Route path={ROUTES.PUBLIC.DYNAMIC_ONLINE_ADMISSION} element={<OnlineAdmission />} />
-            <Route path={ROUTES.PUBLIC.DYNAMIC_CBSE_EXAM_RESULT} element={<CBSEExamResult />} />
             <Route path={ROUTES.PUBLIC.DYNAMIC_SERVICES_HUB} element={<SchoolServicesHub />} />
 
             {/* ? Dynamic New Module Routes (Moved to bottom to prevent blocking) */}

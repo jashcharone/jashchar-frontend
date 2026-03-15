@@ -14,6 +14,7 @@ import apiClient from '@/lib/apiClient';
 import { useToast } from '@/hooks/use-toast';
 import { useForm } from 'react-hook-form';
 import { formatDate, formatTime } from '@/utils/dateUtils';
+import DatePicker from '@/components/ui/DatePicker';
 import DashboardLayout from '@/components/DashboardLayout';
 
 // UI Components
@@ -604,11 +605,12 @@ const InvigilatorDuty = () => {
 
                             <div className="grid grid-cols-3 gap-4">
                                 <div className="space-y-2">
-                                    <Label htmlFor="duty_date">Date *</Label>
-                                    <Input
+                                    <DatePicker
                                         id="duty_date"
-                                        type="date"
-                                        {...register('duty_date', { required: 'Date is required' })}
+                                        label="Date *"
+                                        required
+                                        value={watch('duty_date')}
+                                        onChange={(date) => setValue('duty_date', date)}
                                     />
                                 </div>
                                 <div className="space-y-2">

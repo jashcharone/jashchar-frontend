@@ -19,7 +19,7 @@ export const ROUTES = {
     DYNAMIC_ONLINE_COURSE: '/:schoolAlias/online-course',
     DYNAMIC_ADMISSION: '/:schoolAlias/admission',
     DYNAMIC_ONLINE_ADMISSION: '/:schoolAlias/online-admission',
-    DYNAMIC_CBSE_EXAM_RESULT: '/:schoolAlias/cbse-exam-result',
+
     DYNAMIC_SERVICES_HUB: '/:schoolAlias/services',
   },
   MASTER_ADMIN: {
@@ -195,15 +195,7 @@ export const ROUTES = {
     WEARABLE_DEVICES: '/super-admin/attendance/wearable-devices',
     ATTENDANCE_ANALYTICS: '/super-admin/attendance/analytics',
     // Examinations (Phase 1-7 New Engine)
-    // CBSE Specific Routes
-    CBSE_EXAM: '/super-admin/examinations/cbse-exam',
-    CBSE_SETTINGS: '/super-admin/examinations/cbse-settings',
-    CBSE_TERM: '/super-admin/examinations/cbse-term',
-    CBSE_ASSESSMENT: '/super-admin/examinations/cbse-assessment',
-    CBSE_OBSERVATION: '/super-admin/examinations/cbse-observation',
-    CBSE_OBSERVATION_PARAM: '/super-admin/examinations/cbse-observation-parameter',
-    CBSE_EXAM_GRADE: '/super-admin/examinations/cbse-exam-grade',
-    CBSE_REPORTS: '/super-admin/examinations/cbse-reports',
+
     ASSIGN_OBSERVATION: '/super-admin/examinations/assign-observation',
     TEACHER_REMARKS: '/super-admin/examinations/teacher-remarks',
     // Examination Setup (New Engine)
@@ -239,6 +231,17 @@ export const ROUTES = {
     PERFORMANCE_DASHBOARD: '/super-admin/examinations/performance-dashboard',
     QUESTION_BANK: '/super-admin/examinations/question-bank',
     ONLINE_EXAM: '/super-admin/examinations/online-exam',
+    // Phase 8: Advanced Configuration & Compliance
+    DIVISION_CONFIG: '/super-admin/examinations/division-config',
+    SUBJECT_WEIGHTAGE: '/super-admin/examinations/subject-weightage',
+    ASSESSMENT_PATTERN: '/super-admin/examinations/assessment-pattern',
+    EXAM_LINKING: '/super-admin/examinations/exam-linking',
+    QUESTION_BLUEPRINT: '/super-admin/examinations/question-blueprint',
+    VERIFICATION_DASHBOARD: '/super-admin/examinations/verification-dashboard',
+    REVALUATION_REQUEST: '/super-admin/examinations/revaluation-request',
+    REVALUATION_PROCESS: '/super-admin/examinations/revaluation-process',
+    EXAM_ARCHIVE: '/super-admin/examinations/exam-archive',
+    COMPLIANCE_REPORTS: '/super-admin/examinations/compliance-reports',
     // Fees
     FEES_GROUP: '/super-admin/fees-collection/fees-group',
     FEES_TYPE: '/super-admin/fees-collection/fees-type',
@@ -536,7 +539,7 @@ export const ROUTES = {
     GENERAL_EXAM_RESULT: '/principal/examinations/general-exam-result',
     MARKS_ENTRY: '/principal/examinations/marks-entry',
     REPORT_CARD: '/principal/examinations/report-card',
-    CBSE_REPORTS: '/principal/examinations/cbse-reports',
+
     // Behaviour Records
     ASSIGN_INCIDENT: '/principal/behaviour-records/assign-incident',
     INCIDENTS: '/principal/behaviour-records/incidents',

@@ -126,7 +126,7 @@ import FrontCMSSetting from '@/pages/super-admin/front-cms/FrontCMSSetting';
 import StudentInformationReport from '@/pages/super-admin/reports/student-information/StudentInformationReport';
 import FinanceReport from '@/pages/super-admin/reports/finance/IncomeReport'; // Using Income Report as placeholder for general finance
 import AttendanceReport from '@/pages/super-admin/reports/attendance/StudentAttendanceTypeReport';
-import ExaminationsReport from '@/pages/super-admin/examinations/CbseReports'; // Placeholder
+import ExaminationsReport from '@/pages/super-admin/examinations/ResultCalculationPage'; // Placeholder
 import LibraryReport from '@/pages/super-admin/reports/library/BookInventoryReport';
 import InventoryReport from '@/pages/super-admin/reports/library/BookInventoryReport'; // Placeholder
 import HostelReport from '@/pages/super-admin/reports/HostelReport';

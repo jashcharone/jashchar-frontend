@@ -13,6 +13,7 @@ import { examGroupService, termService, examTypeService, gradeScaleService } fro
 import apiClient from '@/lib/apiClient';
 import { useToast } from '@/hooks/use-toast';
 import { formatDate } from '@/utils/dateUtils';
+import DatePicker from '@/components/ui/DatePicker';
 import DashboardLayout from '@/components/DashboardLayout';
 
 // UI Components
@@ -547,17 +548,17 @@ const ExamGroupManagement = () => {
                                 {/* Dates */}
                                 <div className="grid grid-cols-2 gap-3">
                                     <div className="space-y-2">
-                                        <Label>Start Date</Label>
-                                        <Input
-                                            type="date"
-                                            {...register('start_date')}
+                                        <DatePicker
+                                            label="Start Date"
+                                            value={watch('start_date')}
+                                            onChange={(date) => setValue('start_date', date)}
                                         />
                                     </div>
                                     <div className="space-y-2">
-                                        <Label>End Date</Label>
-                                        <Input
-                                            type="date"
-                                            {...register('end_date')}
+                                        <DatePicker
+                                            label="End Date"
+                                            value={watch('end_date')}
+                                            onChange={(date) => setValue('end_date', date)}
                                         />
                                     </div>
                                 </div>
@@ -685,10 +686,10 @@ const ExamGroupManagement = () => {
                                                     {...register(`subjects.${index}.passing_marks`)}
                                                 />
                                             </div>
-                                            <Input
-                                                type="date"
+                                            <DatePicker
                                                 className="h-8 text-xs"
-                                                {...register(`subjects.${index}.exam_date`)}
+                                                value={watch(`subjects.${index}.exam_date`)}
+                                                onChange={(date) => setValue(`subjects.${index}.exam_date`, date)}
                                             />
                                         </div>
                                     ))}

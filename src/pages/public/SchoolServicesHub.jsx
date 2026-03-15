@@ -114,18 +114,6 @@ const SchoolServicesHub = () => {
       stats: 'Open for 2025-26'
     },
     {
-      id: 'cbse-exam-result',
-      title: 'CBSE Exam Results',
-      description: 'Check your CBSE board examination results. View detailed subject-wise marks, grades, and CGPA.',
-      icon: Award,
-      color: 'from-purple-500 to-violet-600',
-      bgColor: 'bg-purple-50',
-      textColor: 'text-purple-700',
-      features: ['Subject-wise marks', 'CGPA calculation', 'Print result card'],
-      link: `/${schoolAlias}/cbse-exam-result`,
-      stats: 'Results Available'
-    },
-    {
       id: 'exam-result',
       title: 'School Exam Results',
       description: 'View your internal examination results. Check marks, grades, and class performance analysis.',

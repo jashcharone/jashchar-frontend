@@ -254,20 +254,20 @@ export const BASE_SIDEBAR = {
         { title: '📊 Performance Dashboard', path: ROUTES.SUPER_ADMIN.PERFORMANCE_DASHBOARD },
         { title: '📚 Question Bank', path: ROUTES.SUPER_ADMIN.QUESTION_BANK },
         { title: '💻 Online Exam', path: ROUTES.SUPER_ADMIN.ONLINE_EXAM },
-      ],
-    },
-    {
-      title: 'Online Examinations',
-      icon: CheckSquare,
-      submenu: [
-        { title: '📝 CBSE Exam', path: ROUTES.SUPER_ADMIN.CBSE_EXAM },
-        { title: '📆 CBSE Term', path: ROUTES.SUPER_ADMIN.CBSE_TERM },
-        { title: '📊 CBSE Assessment', path: ROUTES.SUPER_ADMIN.CBSE_ASSESSMENT },
-        { title: '👁️ CBSE Observation', path: ROUTES.SUPER_ADMIN.CBSE_OBSERVATION },
-        { title: '⚙️ Observation Param', path: ROUTES.SUPER_ADMIN.CBSE_OBSERVATION_PARAM },
-        { title: '⭐ CBSE Exam Grade', path: ROUTES.SUPER_ADMIN.CBSE_EXAM_GRADE },
-        { title: '🔧 CBSE Settings', path: ROUTES.SUPER_ADMIN.CBSE_SETTINGS },
-        { title: '📊 CBSE Reports', path: ROUTES.SUPER_ADMIN.CBSE_REPORTS },
+        { title: '---', path: '#phase8-divider', divider: true },
+        // Advanced Configuration (Phase 8)
+        { title: '🏅 Division Config', path: ROUTES.SUPER_ADMIN.DIVISION_CONFIG },
+        { title: '⚖️ Subject Weightage', path: ROUTES.SUPER_ADMIN.SUBJECT_WEIGHTAGE },
+        { title: '📐 Assessment Pattern', path: ROUTES.SUPER_ADMIN.ASSESSMENT_PATTERN },
+        { title: '🔗 Exam Linking', path: ROUTES.SUPER_ADMIN.EXAM_LINKING },
+        { title: '📝 Question Blueprint', path: ROUTES.SUPER_ADMIN.QUESTION_BLUEPRINT },
+        { title: '---', path: '#phase8b-divider', divider: true },
+        // Verification & Revaluation (Phase 8)
+        { title: '✅ Verification Dashboard', path: ROUTES.SUPER_ADMIN.VERIFICATION_DASHBOARD },
+        { title: '📩 Revaluation Request', path: ROUTES.SUPER_ADMIN.REVALUATION_REQUEST },
+        { title: '🔄 Revaluation Process', path: ROUTES.SUPER_ADMIN.REVALUATION_PROCESS },
+        { title: '📦 Exam Archive', path: ROUTES.SUPER_ADMIN.EXAM_ARCHIVE },
+        { title: '📋 Compliance Reports', path: ROUTES.SUPER_ADMIN.COMPLIANCE_REPORTS },
       ],
     },
     {
@@ -634,7 +634,6 @@ export const BASE_SIDEBAR = {
         { title: '✍️ Marks Entry', path: ROUTES.SUPER_ADMIN.MARKS_ENTRY_NEW },
         { title: '📋 Results', path: ROUTES.SUPER_ADMIN.RESULT_CALCULATION },
         { title: '📁 Report Card', path: ROUTES.SUPER_ADMIN.REPORT_CARD_DESIGNER },
-        { title: '📊 CBSE Reports', path: ROUTES.SUPER_ADMIN.CBSE_REPORTS },
       ]
     },
     {
@@ -670,7 +669,7 @@ export const BASE_SIDEBAR = {
       submenu: [
         { title: '👨‍🎓 Student Information', path: ROUTES.PRINCIPAL.REPORT_STUDENT_INFO },
         { title: '✅ Attendance', path: ROUTES.PRINCIPAL.ATTENDANCE_REPORT },
-        { title: '📝 Examinations', path: ROUTES.PRINCIPAL.CBSE_REPORTS },
+        { title: '📝 Examinations', path: ROUTES.PRINCIPAL.GENERAL_EXAM_RESULT },
         { title: '👥 Human Resource', path: ROUTES.PRINCIPAL.REPORT_PAYROLL },
       ]
     },

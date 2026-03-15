@@ -1324,6 +1324,138 @@ export const onlineTestService = {
     }
 };
 
+// ============================================================================
+// DIVISION CONFIGURATION (Phase 8)
+// ============================================================================
+
+export const divisionService = {
+    getAll: async (params = {}) => {
+        const queryString = new URLSearchParams(params).toString();
+        return apiClient.get(`${BASE_URL}/divisions${queryString ? `?${queryString}` : ''}`);
+    },
+    getById: async (id) => apiClient.get(`${BASE_URL}/divisions/${id}`),
+    create: async (data) => apiClient.post(`${BASE_URL}/divisions`, data),
+    update: async (id, data) => apiClient.put(`${BASE_URL}/divisions/${id}`, data),
+    delete: async (id) => apiClient.delete(`${BASE_URL}/divisions/${id}`),
+};
+
+// ============================================================================
+// SUBJECT WEIGHTAGE (Phase 8)
+// ============================================================================
+
+export const subjectWeightageService = {
+    getAll: async (params = {}) => {
+        const queryString = new URLSearchParams(params).toString();
+        return apiClient.get(`${BASE_URL}/subject-weightage${queryString ? `?${queryString}` : ''}`);
+    },
+    getById: async (id) => apiClient.get(`${BASE_URL}/subject-weightage/${id}`),
+    create: async (data) => apiClient.post(`${BASE_URL}/subject-weightage`, data),
+    update: async (id, data) => apiClient.put(`${BASE_URL}/subject-weightage/${id}`, data),
+    delete: async (id) => apiClient.delete(`${BASE_URL}/subject-weightage/${id}`),
+};
+
+// ============================================================================
+// ASSESSMENT PATTERN (Phase 8)
+// ============================================================================
+
+export const assessmentPatternService = {
+    getAll: async (params = {}) => {
+        const queryString = new URLSearchParams(params).toString();
+        return apiClient.get(`${BASE_URL}/assessment-patterns${queryString ? `?${queryString}` : ''}`);
+    },
+    getById: async (id) => apiClient.get(`${BASE_URL}/assessment-patterns/${id}`),
+    create: async (data) => apiClient.post(`${BASE_URL}/assessment-patterns`, data),
+    update: async (id, data) => apiClient.put(`${BASE_URL}/assessment-patterns/${id}`, data),
+    delete: async (id) => apiClient.delete(`${BASE_URL}/assessment-patterns/${id}`),
+};
+
+// ============================================================================
+// EXAM LINKING (Phase 8)
+// ============================================================================
+
+export const examLinkingService = {
+    getAll: async (params = {}) => {
+        const queryString = new URLSearchParams(params).toString();
+        return apiClient.get(`${BASE_URL}/exam-links${queryString ? `?${queryString}` : ''}`);
+    },
+    getById: async (id) => apiClient.get(`${BASE_URL}/exam-links/${id}`),
+    create: async (data) => apiClient.post(`${BASE_URL}/exam-links`, data),
+    update: async (id, data) => apiClient.put(`${BASE_URL}/exam-links/${id}`, data),
+    delete: async (id) => apiClient.delete(`${BASE_URL}/exam-links/${id}`),
+};
+
+// ============================================================================
+// QUESTION BLUEPRINT (Phase 8)
+// ============================================================================
+
+export const questionBlueprintService = {
+    getAll: async (params = {}) => {
+        const queryString = new URLSearchParams(params).toString();
+        return apiClient.get(`${BASE_URL}/question-blueprints${queryString ? `?${queryString}` : ''}`);
+    },
+    getById: async (id) => apiClient.get(`${BASE_URL}/question-blueprints/${id}`),
+    create: async (data) => apiClient.post(`${BASE_URL}/question-blueprints`, data),
+    update: async (id, data) => apiClient.put(`${BASE_URL}/question-blueprints/${id}`, data),
+    delete: async (id) => apiClient.delete(`${BASE_URL}/question-blueprints/${id}`),
+};
+
+// ============================================================================
+// VERIFICATION (Phase 8)
+// ============================================================================
+
+export const verificationService = {
+    getAll: async (params = {}) => {
+        const queryString = new URLSearchParams(params).toString();
+        return apiClient.get(`${BASE_URL}/verifications${queryString ? `?${queryString}` : ''}`);
+    },
+    approve: async (id, data) => apiClient.post(`${BASE_URL}/verifications/${id}/approve`, data),
+    reject: async (id, data) => apiClient.post(`${BASE_URL}/verifications/${id}/reject`, data),
+};
+
+// ============================================================================
+// REVALUATION (Phase 8)
+// ============================================================================
+
+export const revaluationService = {
+    getRequests: async (params = {}) => {
+        const queryString = new URLSearchParams(params).toString();
+        return apiClient.get(`${BASE_URL}/revaluations${queryString ? `?${queryString}` : ''}`);
+    },
+    createRequest: async (data) => apiClient.post(`${BASE_URL}/revaluations`, data),
+    processRequest: async (id, data) => apiClient.put(`${BASE_URL}/revaluations/${id}/process`, data),
+};
+
+// ============================================================================
+// ARCHIVE (Phase 8)
+// ============================================================================
+
+export const archiveService = {
+    getAll: async (params = {}) => {
+        const queryString = new URLSearchParams(params).toString();
+        return apiClient.get(`${BASE_URL}/archives${queryString ? `?${queryString}` : ''}`);
+    },
+    archiveExam: async (examId) => apiClient.post(`${BASE_URL}/archives`, { exam_id: examId }),
+    restoreExam: async (id) => apiClient.post(`${BASE_URL}/archives/${id}/restore`),
+    download: async (id) => apiClient.get(`${BASE_URL}/archives/${id}/download`),
+};
+
+// ============================================================================
+// COMPLIANCE (Phase 8)
+// ============================================================================
+
+export const complianceService = {
+    getReports: async (params = {}) => {
+        const queryString = new URLSearchParams(params).toString();
+        return apiClient.get(`${BASE_URL}/compliance/reports${queryString ? `?${queryString}` : ''}`);
+    },
+    generateReport: async (data) => apiClient.post(`${BASE_URL}/compliance/reports`, data),
+    downloadReport: async (id) => apiClient.get(`${BASE_URL}/compliance/reports/${id}/download`),
+    getAuditTrail: async (params = {}) => {
+        const queryString = new URLSearchParams(params).toString();
+        return apiClient.get(`${BASE_URL}/compliance/audit-trail${queryString ? `?${queryString}` : ''}`);
+    },
+};
+
 export default {
     boardConfigService,
     termService,
@@ -1355,5 +1487,15 @@ export default {
     // Phase 7
     analyticsService,
     questionBankService,
-    onlineTestService
+    onlineTestService,
+    // Phase 8
+    divisionService,
+    subjectWeightageService,
+    assessmentPatternService,
+    examLinkingService,
+    questionBlueprintService,
+    verificationService,
+    revaluationService,
+    archiveService,
+    complianceService
 };

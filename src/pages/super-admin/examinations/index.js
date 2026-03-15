@@ -44,14 +44,17 @@ export { default as PerformanceDashboard } from './PerformanceDashboard';
 export { default as QuestionBankPage } from './QuestionBankPage';
 export { default as OnlineExamPage } from './OnlineExamPage';
 
-// CBSE Specific (Separate Menu)
-export { default as CbseExam } from './CbseExam';
-export { default as CbseTerm } from './CbseTerm';
-export { default as CbseAssessment } from './CbseAssessment';
-export { default as CbseObservation } from './CbseObservation';
-export { default as CbseObservationParameter } from './CbseObservationParameter';
-export { default as CbseExamGrade } from './CbseExamGrade';
-export { default as CbseSettings } from './CbseSettings';
-export { default as CbseReports } from './CbseReports';
+// Phase 8: Advanced Configuration & Compliance
+export { default as DivisionConfigPage } from './DivisionConfigPage';
+export { default as SubjectWeightagePage } from './SubjectWeightagePage';
+export { default as AssessmentPatternBuilder } from './AssessmentPatternBuilder';
+export { default as ExamLinkingPage } from './ExamLinkingPage';
+export { default as QuestionBlueprintPage } from './QuestionBlueprintPage';
+export { default as VerificationDashboard } from './VerificationDashboard';
+export { default as RevaluationRequestPage } from './RevaluationRequestPage';
+export { default as RevaluationProcessPage } from './RevaluationProcessPage';
+export { default as ExamArchivePage } from './ExamArchivePage';
+export { default as ComplianceReportsPage } from './ComplianceReportsPage';
+
 export { default as AssignObservation } from './AssignObservation';
 export { default as TeacherRemarks } from './TeacherRemarks';

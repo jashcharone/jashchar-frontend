@@ -207,7 +207,7 @@ const Sidebar = ({ role, isSidebarOpen, isMobile, toggleSidebar, closeSidebar, o
               'student_information': ['students', 'student_information'],
               'finance': ['fees_collection', 'finance', 'income', 'expenses'],
               'attendance': ['attendance'],
-              'examinations': ['examinations', 'cbse_examination'],
+              'examinations': ['examinations'],
               'human_resource': ['human_resource', 'hr'],
               'library': ['library'],
               'transport': ['transport'],

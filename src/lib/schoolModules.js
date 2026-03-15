@@ -95,20 +95,6 @@ export const schoolModuleMap = {
       online_exam: 'Online Exam'
     }
   },
-  online_examinations: {
-    label: 'Online Examinations',
-    role: 'school_owner',
-    subModules: {
-      cbse_exam: 'CBSE Exam',
-      cbse_term: 'CBSE Term',
-      cbse_assessment: 'CBSE Assessment',
-      cbse_observation: 'CBSE Observation',
-      observation_param: 'Observation Param',
-      cbse_exam_grade: 'CBSE Exam Grade',
-      cbse_settings: 'CBSE Settings',
-      cbse_reports: 'CBSE Reports'
-    }
-  },
   academics: { 
     label: 'Academics', 
     role: 'school_owner',

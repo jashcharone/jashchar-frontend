@@ -37,6 +37,7 @@ import { useToast } from '@/components/ui/use-toast';
 import { Loader2, Pencil, Trash2, Save, X, Plus, Calendar, CheckCircle, RefreshCw } from 'lucide-react';
 import { termService } from '@/services/examinationService';
 import { formatDate, formatDateForInput } from '@/utils/dateUtils';
+import DatePicker from '@/components/ui/DatePicker';
 
 const quickTerms = [
   { term_name: 'Term 1', term_code: 'T1', sequence_order: 1 },
@@ -246,19 +247,19 @@ const TermManagement = () => {
 
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label htmlFor="start_date">Start Date</Label>
-                      <Input
+                      <DatePicker
                         id="start_date"
-                        type="date"
-                        {...register('start_date')}
+                        label="Start Date"
+                        value={watch('start_date')}
+                        onChange={(date) => setValue('start_date', date)}
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="end_date">End Date</Label>
-                      <Input
+                      <DatePicker
                         id="end_date"
-                        type="date"
-                        {...register('end_date')}
+                        label="End Date"
+                        value={watch('end_date')}
+                        onChange={(date) => setValue('end_date', date)}
                       />
                     </div>
                   </div>

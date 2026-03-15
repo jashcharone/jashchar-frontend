@@ -14,6 +14,7 @@ import { examService, examGroupService, examTypeService } from '@/services/exami
 import apiClient from '@/lib/apiClient';
 import { useToast } from '@/hooks/use-toast';
 import { formatDate, formatDateForInput } from '@/utils/dateUtils';
+import DatePicker from '@/components/ui/DatePicker';
 import DashboardLayout from '@/components/DashboardLayout';
 
 // UI Components
@@ -682,10 +683,10 @@ const ExamManagement = () => {
                                 <h3 className="font-semibold">Schedule</h3>
                                 <div className="grid grid-cols-4 gap-4">
                                     <div className="space-y-2">
-                                        <Label>Exam Date</Label>
-                                        <Input
-                                            type="date"
-                                            {...register('exam_date')}
+                                        <DatePicker
+                                            label="Exam Date"
+                                            value={watch('exam_date')}
+                                            onChange={(date) => setValue('exam_date', date)}
                                         />
                                     </div>
                                     <div className="space-y-2">

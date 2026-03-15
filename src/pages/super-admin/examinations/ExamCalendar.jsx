@@ -12,6 +12,7 @@ import { useBranch } from '@/contexts/BranchContext';
 import { examCalendarService, examGroupService } from '@/services/examinationService';
 import { useToast } from '@/hooks/use-toast';
 import { formatDate } from '@/utils/dateUtils';
+import DatePicker from '@/components/ui/DatePicker';
 import DashboardLayout from '@/components/DashboardLayout';
 
 // UI Components
@@ -500,11 +501,11 @@ const ExamCalendar = () => {
 
                         <div className="space-y-4">
                             <div className="space-y-2">
-                                <Label>Date *</Label>
-                                <Input
-                                    type="date"
+                                <DatePicker
+                                    label="Date *"
+                                    required
                                     value={eventForm.schedule_date}
-                                    onChange={(e) => setEventForm({...eventForm, schedule_date: e.target.value})}
+                                    onChange={(date) => setEventForm({...eventForm, schedule_date: date})}
                                 />
                             </div>
 

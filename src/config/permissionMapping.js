@@ -148,15 +148,7 @@ export const PATH_TO_SLUG_MAP = {
   'performance_dashboard': 'performance_dashboard',
   'question_bank': 'question_bank',
   'online_exam': 'online_exam',
-  // CBSE Specific
-  'cbse_exam': 'cbse_exam',
-  'cbse_settings': 'cbse_settings',
-  'cbse_term': 'cbse_term',
-  'cbse_assessment': 'cbse_assessment',
-  'cbse_observation': 'cbse_observation',
-  'observation_param': 'observation_param',
-  'cbse_exam_grade': 'cbse_exam_grade',
-  'cbse_reports': 'cbse_reports',
+
 
   // Online Course
   'online_course': 'online_course_list',

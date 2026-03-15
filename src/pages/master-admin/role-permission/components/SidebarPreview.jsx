@@ -67,13 +67,6 @@ const SIDEBAR_MODULES = [
     subItems: ['Exam Group', 'Exam List', 'Exam Schedule', 'Exam Result', 'Marks Entry', 'Marks Grade', 'Admit Card', 'Marksheet']
   },
   { 
-    slug: 'online_examinations', 
-    title: 'Online Examinations', 
-    icon: CheckSquare,
-    color: 'text-purple-400',
-    subItems: ['CBSE Exam', 'CBSE Term', 'CBSE Assessment', 'CBSE Observation', 'CBSE Settings', 'CBSE Reports']
-  },
-  { 
     slug: 'online_course', 
     title: 'Online Course', 
     icon: MonitorPlay,

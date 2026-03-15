@@ -16,7 +16,7 @@ const MountCarmelHeader = ({ school, settings, alias }) => {
     { label: 'Home', path: `/s/${alias}` },
     { label: 'Online Course', path: `/s/${alias}/online_course` },
     { label: 'Online Admission', path: `/s/${alias}/online_admission` },
-    { label: 'Cbse Exam Result', path: `/s/${alias}/cbseexam` },
+
     { label: 'Exam Result', path: `/s/${alias}/examresult` },
     { label: 'Annual Calendar', path: `/s/${alias}/annual_calendar` },
     { 

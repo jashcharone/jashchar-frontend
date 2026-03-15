@@ -17,6 +17,7 @@ import {
 } from '@/services/examinationService';
 import { useToast } from '@/hooks/use-toast';
 import { formatDateForInput } from '@/utils/dateUtils';
+import DatePicker from '@/components/ui/DatePicker';
 import DashboardLayout from '@/components/DashboardLayout';
 
 // UI Components
@@ -403,10 +404,9 @@ const PracticalMarksEntry = () => {
                                         <Calendar className="h-4 w-4" />
                                         Practical Date
                                     </Label>
-                                    <Input
-                                        type="date"
+                                    <DatePicker
                                         value={examinerDetails.practical_date}
-                                        onChange={(e) => setExaminerDetails({...examinerDetails, practical_date: e.target.value})}
+                                        onChange={(date) => setExaminerDetails({...examinerDetails, practical_date: date})}
                                     />
                                 </div>
                                 <div className="space-y-2">

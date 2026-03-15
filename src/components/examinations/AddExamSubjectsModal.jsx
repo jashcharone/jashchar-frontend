@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label';
 import { useBranch } from '@/contexts/BranchContext';
 import { Loader2, Plus, Trash2, Save } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import DatePicker from '@/components/ui/DatePicker';
 
 const AddExamSubjectsModal = ({ isOpen, onClose, exam, branchId }) => {
     const { toast } = useToast();
@@ -165,7 +166,7 @@ const AddExamSubjectsModal = ({ isOpen, onClose, exam, branchId }) => {
                                         </Select>
                                     </div>
                                     <div className="col-span-2">
-                                        <Input type="date" className="h-8" value={row.date} onChange={(e) => handleChange(index, 'date', e.target.value)} />
+                                        <DatePicker className="h-8" value={row.date} onChange={(date) => handleChange(index, 'date', date)} />
                                     </div>
                                     <div className="col-span-1">
                                         <Input type="time" className="h-8" value={row.time} onChange={(e) => handleChange(index, 'time', e.target.value)} />

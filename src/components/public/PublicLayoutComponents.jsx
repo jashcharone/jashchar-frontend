@@ -256,7 +256,7 @@ export const PublicHeader = ({ settings, menus, mobileMenuOpen, setMobileMenuOpe
     { id: 'home', title: 'Home', url: `/${activeSlug}`, sort_order: 1, parent_id: null, children: [] },
     { id: 'online-course', title: 'Online Course', url: '/online-course', sort_order: 2, parent_id: null, children: [] },
     { id: 'online-admission', title: 'Online Admission', url: '/online-admission', sort_order: 3, parent_id: null, children: [] },
-    { id: 'cbse-exam', title: 'Cbse Exam Result', url: '/cbse-exam-result', sort_order: 4, parent_id: null, children: [] },
+
     { id: 'exam-result', title: 'Exam Result', url: '/exam-result', sort_order: 5, parent_id: null, children: [] },
     { id: 'about', title: 'About Us', url: '/about-us', sort_order: 6, parent_id: null, children: [] },
     { id: 'academics', title: 'Academics', url: '/academics', sort_order: 7, parent_id: null, children: [] },

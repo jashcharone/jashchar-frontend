@@ -483,22 +483,28 @@ const Sidebar = ({ role, isSidebarOpen, isMobile, toggleSidebar, closeSidebar, o
       {/* Mobile Backdrop */}
       {isMobile && isSidebarOpen && (
         <div 
-          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 transition-opacity duration-300"
+          className="fixed inset-0 top-[72px] bg-black/60 backdrop-blur-sm z-40 transition-opacity duration-300"
           onClick={toggleSidebar}
         />
       )}
 
       <aside
         className={cn(
-          "fixed top-3 bottom-3 left-3 z-50 shadow-2xl transition-all duration-300 ease-out flex flex-col",
+          "fixed z-50 shadow-2xl transition-all duration-300 ease-out flex flex-col",
           "border",
+          // Mobile/Tablet drawer mode: Start below header
+          isMobile 
+            ? "top-[72px] bottom-0 left-0 rounded-none border-r border-y-0 border-l-0" 
+            : "top-3 bottom-3 left-3",
           isMobile 
             ? (isSidebarOpen ? "translate-x-0" : "-translate-x-[110%]") 
             : (isExpanded ? SIDEBAR_WIDTH_EXPANDED : SIDEBAR_WIDTH_COLLAPSED),
-          isMobile && MOBILE_DRAWER_WIDTH
+          isMobile && MOBILE_DRAWER_WIDTH,
+          // Border radius only for desktop
+          !isMobile && ""
         )}
         style={{
-          borderRadius: `${settings.sidebarRadius ?? 32}px`,
+          borderRadius: isMobile ? 0 : `${settings.sidebarRadius ?? 32}px`,
           background: settings.colors.sidebarBackground,
           borderColor: settings.colors.sidebarBorder,
         }}

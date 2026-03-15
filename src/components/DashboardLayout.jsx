@@ -133,13 +133,14 @@ const DashboardLayout = ({ children }) => {
         <div
           className={cn(
             "flex-1 flex flex-col transition-all duration-300 ease-out min-w-0",
-            // Enhanced margin calculation using breakpoints:
+            // Enhanced margin calculation:
             // - Drawer mode (mobile/tablet portrait): No margin (sidebar is overlay)
-            // - Non-drawer mode: Margin based on sidebar state
+            // - Fixed sidebar mode: Add margin based on sidebar state
+            // Using lg: instead of custom tablet: for better Tailwind support
             !isCapacitorApp && !isDrawerMode && isExpanded 
-              ? "tablet:ml-[270px] md:ml-[80px]" 
+              ? "lg:ml-[270px] md:ml-[80px]" 
               : !isCapacitorApp && !isDrawerMode 
-              ? "md:ml-[80px]" 
+              ? "lg:ml-[80px]" 
               : ""
           )}
         >

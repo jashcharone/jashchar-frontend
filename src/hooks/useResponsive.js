@@ -278,15 +278,15 @@ export function useFluidSpacing() {
  * Returns whether sidebar should be in drawer mode (overlay) or fixed mode
  */
 export function useSidebarMode() {
-  const { isMobile, isTabletPortrait, isLandscape, width } = useResponsive();
+  const { isMobile, isTablet, isTabletPortrait, isLandscape, width } = useResponsive();
   
-  // Drawer mode for:
-  // - Mobile phones
-  // - Tablets in portrait
-  // Fixed mode for:
-  // - Tablets in landscape
-  // - Desktop
-  const isDrawerMode = isMobile || isTabletPortrait;
+  // Drawer mode (overlay sidebar) for:
+  // - Mobile phones (< 768px)
+  // - All tablets (768px - 1024px) - BOTH portrait AND landscape
+  //   (Tablets don't have enough space for fixed sidebar)
+  // Fixed sidebar for:
+  // - Desktop/Laptop (>= 1024px)
+  const isDrawerMode = isMobile || isTablet;
   const shouldAutoExpand = width >= BREAKPOINTS.lg;
   
   return {

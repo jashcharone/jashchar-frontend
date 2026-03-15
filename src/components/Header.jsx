@@ -219,19 +219,19 @@ const Header = ({ toggleSidebar, onThemeSettingsClick, onChatbotToggle }) => {
             ...(settings.colors.border && { borderColor: settings.colors.border })
         }}
       >
-        {/* LEFT: Mobile Toggle & Time */}
+        {/* LEFT: Mobile/Tablet Toggle & Time */}
         <div className="flex items-center gap-2 sm:gap-4">
           <Button 
             variant="ghost" 
             size="icon" 
-            className="md:hidden rounded-xl h-9 w-9"
+            className="lg:hidden rounded-xl h-9 w-9"
             onClick={toggleSidebar}
           >
             <Menu className="h-5 w-5" />
           </Button>
 
-          {/* Digital Clock & Session */}
-          <div className="hidden md:flex items-center gap-3">
+          {/* Digital Clock & Session - Hidden on tablet to save space */}
+          <div className="hidden lg:flex items-center gap-3">
              <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-primary/5 border border-primary/10">
                 <Clock className="h-4 w-4 text-primary" />
                 <span className="font-mono font-bold text-sm text-primary">
@@ -246,25 +246,25 @@ const Header = ({ toggleSidebar, onThemeSettingsClick, onChatbotToggle }) => {
           </div>
         </div>
 
-        {/* CENTER: Branch Selector - Only for Admin roles */}
-        <div className="hidden md:block flex-1 max-w-md mx-4">
+        {/* CENTER: Branch Selector - Hidden on mobile, shown on tablet+ */}
+        <div className="hidden md:block flex-1 max-w-xs lg:max-w-md mx-2 lg:mx-4">
              {(role === 'super_admin' || role === 'school_owner' || role === 'organization_owner' || role === 'admin' || userType === 'owner') && <BranchSelector />}
         </div>
 
         {/* RIGHT: Actions */}
         <div className="flex items-center gap-1 sm:gap-2">
           
-          {/* Role Switcher - For V2 Auth multi-role users */}
-          <div className="hidden sm:block">
+          {/* Role Switcher - For V2 Auth multi-role users - Hidden on tablet */}
+          <div className="hidden lg:block">
             <RoleSwitcher />
           </div>
           
-          {/* PWA Install */}
+          {/* PWA Install - Hidden on tablet */}
           {canInstall && (
             <Button 
                 variant="outline" 
                 size="sm" 
-                className="hidden sm:flex gap-2 rounded-xl border-primary/20 text-primary hover:bg-primary/10"
+                className="hidden lg:flex gap-2 rounded-xl border-primary/20 text-primary hover:bg-primary/10"
                 onClick={handleInstallApp}
             >
                 <Download className="h-4 w-4" />
@@ -272,7 +272,7 @@ const Header = ({ toggleSidebar, onThemeSettingsClick, onChatbotToggle }) => {
             </Button>
           )}
 
-          {/* Theme Toggle */}
+          {/* Theme Toggle - Always visible */}
           <Button
             variant="ghost"
             size="icon"
@@ -286,13 +286,13 @@ const Header = ({ toggleSidebar, onThemeSettingsClick, onChatbotToggle }) => {
             )}
           </Button>
 
-          {/* AI Chatbot Toggle */}
+          {/* AI Chatbot Toggle - Hidden on tablet to save space */}
           {onChatbotToggle && (
             <Button
               variant="ghost"
               size="icon"
               onClick={onChatbotToggle}
-              className="rounded-xl hover:bg-blue-500/10 transition-transform hover:scale-105 relative"
+              className="hidden lg:flex rounded-xl hover:bg-blue-500/10 transition-transform hover:scale-105 relative"
               title="AI Chatbot"
             >
               <MessageCircle className="h-5 w-5 text-blue-500" />
@@ -300,48 +300,48 @@ const Header = ({ toggleSidebar, onThemeSettingsClick, onChatbotToggle }) => {
             </Button>
           )}
 
-          {/* Bug Report */}
+          {/* Bug Report - Hidden on tablet */}
           <Button
             variant="ghost"
             size="icon"
             onClick={() => setIsBugModalOpen(true)}
-            className="rounded-xl hover:bg-pink-500/10 transition-transform hover:scale-105"
+            className="hidden lg:flex rounded-xl hover:bg-pink-500/10 transition-transform hover:scale-105"
             title="Report Bug/Issue"
           >
             <Bug className="h-5 w-5 text-pink-500" />
           </Button>
 
-          {/* My Bug Reports - All authenticated users to view their submissions */}
+          {/* My Bug Reports - Hidden on tablet */}
           <Button
             variant="ghost"
             size="icon"
             onClick={() => navigate(`/${currentPathSlug}/my-bug-reports`)}
-            className="rounded-xl hover:bg-orange-500/10 transition-transform hover:scale-105"
+            className="hidden lg:flex rounded-xl hover:bg-orange-500/10 transition-transform hover:scale-105"
             title="My Bug Reports"
           >
             <History className="h-5 w-5 text-orange-500" />
           </Button>
 
-          {/* View Bug Reports - Master Admin Only */}
+          {/* View Bug Reports - Master Admin Only - Hidden on tablet */}
           {role === 'master_admin' && (
             <Button
               variant="ghost"
               size="icon"
               onClick={() => navigate('/master-admin/bug-reports')}
-              className="rounded-xl hover:bg-purple-500/10 transition-transform hover:scale-105"
+              className="hidden lg:flex rounded-xl hover:bg-purple-500/10 transition-transform hover:scale-105"
               title="View All Bug Reports"
             >
               <ClipboardList className="h-5 w-5 text-purple-500" />
             </Button>
           )}
 
-          {/* Cache Clear Button */}
+          {/* Cache Clear Button - Hidden on tablet */}
           <Button
             variant="ghost"
             size="icon"
             onClick={handleCacheClear}
             disabled={isClearingCache}
-            className="rounded-xl hover:bg-red-500/10 transition-transform hover:scale-105"
+            className="hidden lg:flex rounded-xl hover:bg-red-500/10 transition-transform hover:scale-105"
             title="Clear Cache"
           >
             {isClearingCache ? (
@@ -351,7 +351,66 @@ const Header = ({ toggleSidebar, onThemeSettingsClick, onChatbotToggle }) => {
             )}
           </Button>
 
-          {/* Notifications */}
+          {/* MORE DROPDOWN - Visible only on tablet (md-lg) to show hidden icons */}
+          <div className="lg:hidden">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="rounded-xl hover:bg-muted"
+                >
+                  <Settings className="h-5 w-5 text-muted-foreground" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuLabel>Quick Actions</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                
+                {onChatbotToggle && (
+                  <DropdownMenuItem onClick={onChatbotToggle} className="gap-2">
+                    <MessageCircle className="h-4 w-4 text-blue-500" />
+                    AI Chatbot
+                  </DropdownMenuItem>
+                )}
+                
+                <DropdownMenuItem onClick={() => setIsBugModalOpen(true)} className="gap-2">
+                  <Bug className="h-4 w-4 text-pink-500" />
+                  Report Bug
+                </DropdownMenuItem>
+                
+                <DropdownMenuItem onClick={() => navigate(`/${currentPathSlug}/my-bug-reports`)} className="gap-2">
+                  <History className="h-4 w-4 text-orange-500" />
+                  My Bug Reports
+                </DropdownMenuItem>
+                
+                {role === 'master_admin' && (
+                  <DropdownMenuItem onClick={() => navigate('/master-admin/bug-reports')} className="gap-2">
+                    <ClipboardList className="h-4 w-4 text-purple-500" />
+                    All Bug Reports
+                  </DropdownMenuItem>
+                )}
+                
+                <DropdownMenuSeparator />
+                
+                <DropdownMenuItem onClick={handleCacheClear} disabled={isClearingCache} className="gap-2">
+                  {isClearingCache ? (
+                    <Loader2 className="h-4 w-4 text-red-500 animate-spin" />
+                  ) : (
+                    <Trash2 className="h-4 w-4 text-red-500" />
+                  )}
+                  Clear Cache
+                </DropdownMenuItem>
+                
+                <DropdownMenuItem onClick={onThemeSettingsClick} className="gap-2">
+                  <Settings className="h-4 w-4 text-muted-foreground" />
+                  Theme Settings
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+
+          {/* Notifications - Always visible */}
           <Button
             variant="ghost"
             size="icon"
@@ -359,10 +418,9 @@ const Header = ({ toggleSidebar, onThemeSettingsClick, onChatbotToggle }) => {
             onClick={() => toast({ title: "No new notifications" })}
           >
             <Bell className="h-5 w-5 text-muted-foreground" />
-            {/* TC-04 FIX: Red dot removed - only show when there are actual notifications */}
           </Button>
 
-          {/* Settings (Theme Studio) */}
+          {/* Settings (Theme Studio) - Always visible */}
           <Button
             variant="ghost"
             size="icon"

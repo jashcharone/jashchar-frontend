@@ -1,9 +1,9 @@
-﻿import { useState, useEffect } from 'react';
+﻿import { useState, useCallback } from 'react';
 
 export function useToast() {
   const [toasts, setToasts] = useState([]);
 
-  const toast = ({ title, description, variant = 'default' }) => {
+  const toast = useCallback(({ title, description, variant = 'default' }) => {
     const id = Date.now();
     const newToast = { id, title, description, variant };
     
@@ -13,7 +13,7 @@ export function useToast() {
     setTimeout(() => {
       setToasts((prev) => prev.filter((t) => t.id !== id));
     }, 3000);
-  };
+  }, []);
 
   return { toast, toasts };
 }

@@ -97,7 +97,7 @@ const Designations = () => {
             .from('employee_profiles')
             .select('designation_id')
             .eq('branch_id', selectedBranch.id)
-            .eq('is_active', true);
+            .neq('is_disabled', true);
         
         if (!error && data) {
             const counts = {};

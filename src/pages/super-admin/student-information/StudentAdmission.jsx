@@ -2575,7 +2575,8 @@ const StudentAdmission = () => {
       }
       
       // Call backend API to create student (handles auth user + profile + fees creation)
-      const response = await api.post('/students', studentPayload);
+      // ✅ FIX: Use longer timeout (2 minutes) as student creation involves many operations
+      const response = await api.post('/students', studentPayload, { timeout: 120000 });
       
       if (!response.data?.success) {
         throw new Error(response.data?.error || 'Failed to create student');

@@ -105,7 +105,7 @@ const Departments = () => {
             .from('employee_profiles')
             .select('id, full_name, photo_url, department_id')
             .eq('branch_id', selectedBranch.id)
-            .eq('is_active', true)
+            .neq('is_disabled', true)
             .order('full_name');
         
         if (error) {

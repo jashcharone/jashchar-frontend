@@ -506,12 +506,21 @@ const PrintReceipt = () => {
 
     // Use snapshot or fetch fresh
     const snapshot = payment.receipt_snapshot;
-    let student, hostelDetails;
+    let student, hostelInfo;
 
     if (snapshot?.student) {
-      student = snapshot.student;
-      hostelDetails = snapshot.hostel_details || {};
+      // ✅ FIX: Map snapshot fields to expected template fields
+      student = {
+        full_name: snapshot.student.name || snapshot.student.full_name,
+        father_name: snapshot.student.father_name,
+        admission_no: snapshot.student.admission_no,
+        school_code: snapshot.student.admission_no,
+        class: { name: snapshot.student.class },
+        section: { name: snapshot.student.section },
+      };
+      hostelInfo = snapshot.hostel || {};
     } else {
+      // Fetch fresh from DB
       const { data: studentData } = await supabase
         .from('student_profiles')
         .select('*, classes!student_profiles_class_id_fkey(name), sections!student_profiles_section_id_fkey(name)')
@@ -521,11 +530,16 @@ const PrintReceipt = () => {
 
       const { data: hostelData } = await supabase
         .from('student_hostel_details')
-        .select('*, room:room_id(room_number_name)')
+        .select('*, room:room_id(room_number_name), block:block_id(name)')
         .eq('student_id', payment.student_id)
         .eq('branch_id', branchId)
         .maybeSingle();
-      hostelDetails = hostelData || {};
+      hostelInfo = hostelData ? {
+        room: hostelData.room?.room_number_name,
+        block: hostelData.block?.name,
+        bed_number: hostelData.bed_number,
+        total_fee: hostelData.annual_fee || hostelData.total_fee || 0
+      } : {};
     }
 
     if (!student) throw new Error('Student not found');
@@ -533,39 +547,55 @@ const PrintReceipt = () => {
     // Check printed status
     setIsOriginal(!payment.printed_at);
 
-    // Build line items from months paid
-    const lineItems = payments.map(p => ({
-      description: `Hostel Fee - ${p.month || 'Monthly'}`,
-      amount: Number(p.amount || 0),
-      totalAmount: Number(p.total_amount || p.amount || 0),
-      balance: Number(p.balance_after_payment || 0),
-      discount: 0,
-      fine: Number(p.fine_paid || 0)
-    }));
-
-    const totalPaid = payments.reduce((sum, p) => sum + Number(p.amount || 0), 0);
+    // ✅ FIX: Calculate discount and totals properly
+    const totalDiscount = payments.reduce((sum, p) => sum + Number(p.discount_amount || 0), 0);
     const totalFine = payments.reduce((sum, p) => sum + Number(p.fine_paid || 0), 0);
-    const overallTotalAmount = lineItems.reduce((sum, item) => sum + item.totalAmount, 0);
-    const overallBalance = lineItems.reduce((sum, item) => sum + item.balance, 0);
+    const totalPaid = payments.reduce((sum, p) => sum + Number(p.amount || 0), 0);
+    
+    // Get hostel total fee from snapshot or hostelInfo
+    const hostelTotalFee = Number(hostelInfo?.total_fee || snapshot?.hostel?.total_fee || 0);
+    
+    // Build line items from months paid
+    const lineItems = payments.map(p => {
+      const pDiscount = Number(p.discount_amount || 0);
+      const pAmount = Number(p.amount || 0);
+      const pFine = Number(p.fine_paid || 0);
+      const pBalance = Number(p.balance_after_payment || 0);
+      // For the total amount, use the total fee if available, else calculate from payment + discount + balance
+      const pTotalAmount = hostelTotalFee > 0 ? hostelTotalFee : (pAmount + pDiscount + pBalance);
+      
+      return {
+        description: `Hostel Fee - ${p.payment_month || p.month || 'Annual'}`,
+        amount: pAmount,
+        totalAmount: pTotalAmount,
+        balance: pBalance,
+        discount: pDiscount,
+        fine: pFine
+      };
+    });
+
+    const overallTotalAmount = hostelTotalFee > 0 ? hostelTotalFee : lineItems.reduce((sum, item) => sum + item.totalAmount, 0);
+    const overallBalance = payments[payments.length - 1]?.balance_after_payment || 0;
 
     return {
       student,
       payments,
       lineItems,
       totalPaid,
-      totalDiscount: 0,
+      totalDiscount,
       totalFine,
       grandTotal: totalPaid,
       overallTotalAmount,
-      overallBalance,
+      overallBalance: Number(overallBalance),
       transactionId: payment.transaction_id,
       receiptDate: payment.created_at || payment.payment_date,
       paymentMode: payment.payment_mode || 'Cash',
-      remarks: payment.remarks,
+      remarks: payment.remarks || payment.note,
       extraInfo: {
         type: 'hostel',
-        roomNo: hostelDetails?.room?.room_number_name || hostelDetails?.room_number || '-',
-        bedNo: hostelDetails?.bed_number || '-'
+        roomNo: hostelInfo?.room || '-',
+        bedNo: hostelInfo?.bed_number || '-',
+        blockName: hostelInfo?.block || ''
       }
     };
   }, [paymentId, branchId]);

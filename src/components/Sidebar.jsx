@@ -666,27 +666,21 @@ const Sidebar = ({ role, isSidebarOpen, isMobile, toggleSidebar, closeSidebar, o
               </div>
             )}
 
-            {/* Logout Button */}
+            {/* Logout Button - Fixed: Removed asChild to prevent ref forwarding infinite loop */}
             {isExpanded && (
-              <TooltipProvider delayDuration={0}>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8 shrink-0 hover:bg-red-100 hover:text-red-600 dark:hover:bg-red-900/20"
-                      onClick={() => {
-                        // Redirect to school homepage after logout (if school has a slug)
-                        const redirectPath = school?.slug ? `/${school.slug}` : '/';
-                        signOut(redirectPath);
-                      }}
-                    >
-                      <LogOut size={16} />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>Logout</TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 shrink-0 hover:bg-red-100 hover:text-red-600 dark:hover:bg-red-900/20"
+                title="Logout"
+                onClick={() => {
+                  // Redirect to school homepage after logout (if school has a slug)
+                  const redirectPath = school?.slug ? `/${school.slug}` : '/';
+                  signOut(redirectPath);
+                }}
+              >
+                <LogOut size={16} />
+              </Button>
             )}
           </div>
         </div>

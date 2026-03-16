@@ -147,10 +147,10 @@ const CortexLayout = ({ children }) => {
   };
 
   return (
-    <div className="flex min-h-[calc(100vh-4rem)]">
+    <div className="flex h-[calc(100vh-4rem)] overflow-hidden">
       {/* Cortex AI Sidebar */}
       <div 
-        className={`bg-gradient-to-b from-gray-900 via-purple-900/20 to-gray-900 border-r border-purple-500/20 transition-all duration-300 flex flex-col ${
+        className={`bg-gradient-to-b from-gray-900 via-purple-900/20 to-gray-900 border-r border-purple-500/20 transition-all duration-300 flex flex-col overflow-hidden ${
           isCollapsed ? 'w-16' : 'w-64'
         }`}
       >
@@ -188,7 +188,7 @@ const CortexLayout = ({ children }) => {
         )}
 
         {/* Navigation Menu */}
-        <nav className="p-2 space-y-1 flex-1 overflow-y-auto">
+        <nav className="p-2 space-y-1 flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-purple-600 scrollbar-track-transparent">
           {menuItems.map((item) => {
             const Icon = item.icon;
             const active = isActive(item.path);
@@ -237,7 +237,7 @@ const CortexLayout = ({ children }) => {
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 bg-gray-50 dark:bg-gray-900 p-6 overflow-auto">
+      <div className="flex-1 bg-gray-50 dark:bg-gray-900 p-6 overflow-y-auto overflow-x-hidden">
         {children}
       </div>
     </div>

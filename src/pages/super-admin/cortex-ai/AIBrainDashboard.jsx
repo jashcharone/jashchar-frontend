@@ -54,29 +54,29 @@ const AIBrainDashboard = () => {
         // Fetch each API independently so one failure doesn't block others
         try {
             const statusRes = await api.get('/cortex/brain/status');
-            console.log('[AI Brain] Status response:', statusRes.data);
-            setBrainStatus(statusRes.data);
+            console.log('[AI Brain] Status response:', statusRes);
+            setBrainStatus(statusRes);
         } catch (error) {
             console.error('[AI Brain] Status API error:', error?.response?.data || error.message);
         }
         
         try {
             const logsRes = await api.get('/cortex/brain/logs?limit=10');
-            setDecisionLogs(logsRes.data?.data || []);
+            setDecisionLogs(logsRes?.data || []);
         } catch (error) {
             console.error('[AI Brain] Logs API error:', error?.response?.data || error.message);
         }
         
         try {
             const historyRes = await api.get('/cortex/brain/history?days=7');
-            setAnalysisHistory(historyRes.data || []);
+            setAnalysisHistory(historyRes || []);
         } catch (error) {
             console.error('[AI Brain] History API error:', error?.response?.data || error.message);
         }
         
         try {
             const rulesRes = await api.get('/cortex/brain/rules');
-            setAIRules(rulesRes.data || []);
+            setAIRules(rulesRes || []);
         } catch (error) {
             console.error('[AI Brain] Rules API error:', error?.response?.data || error.message);
         }
@@ -90,11 +90,11 @@ const AIBrainDashboard = () => {
             const response = await api.post('/cortex/brain/analyze');
             console.log('Analysis response:', response);
             
-            if (response?.data?.success) {
-                alert(`✅ Analysis Complete!\n\nInsights: ${response.data.results?.insights || 0}\nAlerts: ${response.data.results?.alerts || 0}\nSuggestions: ${response.data.results?.suggestions || 0}`);
+            if (response?.success) {
+                alert(`✅ Analysis Complete!\n\nInsights: ${response.results?.insights || 0}\nAlerts: ${response.results?.alerts || 0}\nSuggestions: ${response.results?.suggestions || 0}`);
                 fetchAllData();
-            } else if (response?.data?.error) {
-                alert(`❌ Analysis failed: ${response.data.error}`);
+            } else if (response?.error) {
+                alert(`❌ Analysis failed: ${response.error}`);
             } else {
                 // Still refresh data even if response format is different
                 alert('✅ Analysis triggered successfully!');

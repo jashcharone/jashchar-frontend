@@ -146,12 +146,17 @@ const StaffDirectory = () => {
     const fetchEmployees = async () => {
         setLoading(true);
         
+        // ✅ FIX: Specify exact FK relationship to avoid ambiguous FK error
+        // departments has two FKs with employee_profiles:
+        // 1. departments_head_employee_id_fkey (departments.head_employee_id -> employee_profiles.id)
+        // 2. employee_profiles_department_id_fkey (employee_profiles.department_id -> departments.id)
+        // We need the second one for fetching employee's department
         let query = supabase
             .from('employee_profiles')
             .select(`
                 *,
                 role:roles(name),
-                department:departments(name),
+                department:departments!employee_profiles_department_id_fkey(name),
                 designation:designations(name)
             `)
             .eq('branch_id', branchId);
@@ -295,15 +300,15 @@ const StaffDirectory = () => {
                             filters.designation !== 'all' || filters.status !== 'all' || 
                             filters.search !== '';
 
-    // Get status badge
+    // Get status badge - Dark/Light mode compatible
     const getStatusBadge = (emp) => {
         if (emp.is_active === false) {
             return <Badge variant="destructive" className="text-xs">Inactive</Badge>;
         }
         if (emp.on_leave) {
-            return <Badge variant="secondary" className="text-xs bg-yellow-100 text-yellow-800">On Leave</Badge>;
+            return <Badge className="text-xs bg-yellow-500/20 text-yellow-600 dark:text-yellow-400 border border-yellow-500/30">On Leave</Badge>;
         }
-        return <Badge variant="default" className="text-xs bg-green-100 text-green-800">Active</Badge>;
+        return <Badge className="text-xs bg-green-500/20 text-green-600 dark:text-green-400 border border-green-500/30">Active</Badge>;
     };
 
     return (
@@ -356,69 +361,69 @@ const StaffDirectory = () => {
                     </div>
                 </div>
 
-                {/* Stats Cards */}
+                {/* Stats Cards - Dark/Light mode compatible */}
                 <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-                    <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200">
+                    <Card className="bg-blue-500/10 border-blue-500/30 dark:bg-blue-500/20">
                         <CardContent className="pt-4">
                             <div className="flex items-center gap-3">
                                 <div className="p-2 bg-blue-500 rounded-lg">
                                     <Users className="h-5 w-5 text-white" />
                                 </div>
                                 <div>
-                                    <p className="text-2xl font-bold text-blue-700">{stats.total}</p>
-                                    <p className="text-xs text-blue-600">Total Staff</p>
+                                    <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">{stats.total}</p>
+                                    <p className="text-xs text-blue-600/70 dark:text-blue-400/70">Total Staff</p>
                                 </div>
                             </div>
                         </CardContent>
                     </Card>
-                    <Card className="bg-gradient-to-br from-green-50 to-green-100 border-green-200">
+                    <Card className="bg-green-500/10 border-green-500/30 dark:bg-green-500/20">
                         <CardContent className="pt-4">
                             <div className="flex items-center gap-3">
                                 <div className="p-2 bg-green-500 rounded-lg">
                                     <UserCheck className="h-5 w-5 text-white" />
                                 </div>
                                 <div>
-                                    <p className="text-2xl font-bold text-green-700">{stats.active}</p>
-                                    <p className="text-xs text-green-600">Active</p>
+                                    <p className="text-2xl font-bold text-green-600 dark:text-green-400">{stats.active}</p>
+                                    <p className="text-xs text-green-600/70 dark:text-green-400/70">Active</p>
                                 </div>
                             </div>
                         </CardContent>
                     </Card>
-                    <Card className="bg-gradient-to-br from-yellow-50 to-yellow-100 border-yellow-200">
+                    <Card className="bg-yellow-500/10 border-yellow-500/30 dark:bg-yellow-500/20">
                         <CardContent className="pt-4">
                             <div className="flex items-center gap-3">
                                 <div className="p-2 bg-yellow-500 rounded-lg">
                                     <Clock className="h-5 w-5 text-white" />
                                 </div>
                                 <div>
-                                    <p className="text-2xl font-bold text-yellow-700">{stats.onLeave}</p>
-                                    <p className="text-xs text-yellow-600">On Leave</p>
+                                    <p className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">{stats.onLeave}</p>
+                                    <p className="text-xs text-yellow-600/70 dark:text-yellow-400/70">On Leave</p>
                                 </div>
                             </div>
                         </CardContent>
                     </Card>
-                    <Card className="bg-gradient-to-br from-red-50 to-red-100 border-red-200">
+                    <Card className="bg-red-500/10 border-red-500/30 dark:bg-red-500/20">
                         <CardContent className="pt-4">
                             <div className="flex items-center gap-3">
                                 <div className="p-2 bg-red-500 rounded-lg">
                                     <UserX className="h-5 w-5 text-white" />
                                 </div>
                                 <div>
-                                    <p className="text-2xl font-bold text-red-700">{stats.inactive}</p>
-                                    <p className="text-xs text-red-600">Inactive</p>
+                                    <p className="text-2xl font-bold text-red-600 dark:text-red-400">{stats.inactive}</p>
+                                    <p className="text-xs text-red-600/70 dark:text-red-400/70">Inactive</p>
                                 </div>
                             </div>
                         </CardContent>
                     </Card>
-                    <Card className="bg-gradient-to-br from-purple-50 to-purple-100 border-purple-200">
+                    <Card className="bg-purple-500/10 border-purple-500/30 dark:bg-purple-500/20">
                         <CardContent className="pt-4">
                             <div className="flex items-center gap-3">
                                 <div className="p-2 bg-purple-500 rounded-lg">
                                     <Building2 className="h-5 w-5 text-white" />
                                 </div>
                                 <div>
-                                    <p className="text-2xl font-bold text-purple-700">{stats.deptCount}</p>
-                                    <p className="text-xs text-purple-600">Departments</p>
+                                    <p className="text-2xl font-bold text-purple-600 dark:text-purple-400">{stats.deptCount}</p>
+                                    <p className="text-xs text-purple-600/70 dark:text-purple-400/70">Departments</p>
                                 </div>
                             </div>
                         </CardContent>

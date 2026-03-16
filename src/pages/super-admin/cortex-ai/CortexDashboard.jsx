@@ -25,7 +25,8 @@ import {
   Users,
   IndianRupee,
   GraduationCap,
-  UserCheck
+  UserCheck,
+  Building2
 } from 'lucide-react';
 import api from '@/services/api';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
@@ -38,7 +39,7 @@ import QuickStatsCard from './components/QuickStatsCard';
 
 const CortexDashboard = () => {
   const { user, currentSessionId } = useAuth();
-  const { selectedBranch } = useBranch();
+  const { selectedBranch, branches: contextBranches } = useBranch();
   
   const [isLoading, setIsLoading] = useState(true);
   const [aiScore, setAiScore] = useState(0);
@@ -46,30 +47,44 @@ const CortexDashboard = () => {
   const [metrics, setMetrics] = useState({});
   const [lastUpdated, setLastUpdated] = useState(new Date());
   
+  // Branch filter for Super Admin
+  const [branchFilter, setBranchFilter] = useState('all');
+  const [availableBranches, setAvailableBranches] = useState([]);
+  
   // Real data states
   const [alerts, setAlerts] = useState([]);
   const [suggestions, setSuggestions] = useState([]);
   const [insights, setInsights] = useState([]);
   const [quickStats, setQuickStats] = useState([]);
 
+  // Fetch branches for filter dropdown - use context only
+  useEffect(() => {
+    if (contextBranches && contextBranches.length > 0) {
+      setAvailableBranches(contextBranches);
+    }
+  }, [contextBranches]);
+
   // Fetch dashboard data from API
   const fetchDashboardData = useCallback(async () => {
     try {
       setIsLoading(true);
       
+      // Build query params with branch filter
+      const branchParam = branchFilter === 'all' ? 'all' : branchFilter;
+      
       // Fetch AI Score
-      const scoreResponse = await api.get('/cortex/dashboard/score');
-      if (scoreResponse.data) {
-        setAiScore(scoreResponse.data.score || 0);
-        setScoreBreakdown(scoreResponse.data.breakdown || {});
-        setMetrics(scoreResponse.data.metrics || {});
+      const scoreResponse = await api.get(`/cortex/dashboard/score?branch_id=${branchParam}`);
+      if (scoreResponse) {
+        setAiScore(scoreResponse.score || 0);
+        setScoreBreakdown(scoreResponse.breakdown || {});
+        setMetrics(scoreResponse.metrics || {});
       }
       
       // Fetch alerts
       try {
         const alertsResponse = await api.get('/cortex/alerts?active_only=true&limit=5');
-        if (alertsResponse.data && Array.isArray(alertsResponse.data)) {
-          setAlerts(alertsResponse.data.map(a => ({
+        if (alertsResponse && Array.isArray(alertsResponse)) {
+          setAlerts(alertsResponse.map(a => ({
             id: a.id,
             type: a.severity === 'critical' ? 'danger' : a.severity === 'high' ? 'warning' : 'info',
             title: a.title,
@@ -86,8 +101,8 @@ const CortexDashboard = () => {
       // Fetch suggestions
       try {
         const suggestionsResponse = await api.get('/cortex/suggestions?status=pending&limit=5');
-        if (suggestionsResponse.data && Array.isArray(suggestionsResponse.data)) {
-          setSuggestions(suggestionsResponse.data.map(s => ({
+        if (suggestionsResponse && Array.isArray(suggestionsResponse)) {
+          setSuggestions(suggestionsResponse.map(s => ({
             id: s.id,
             title: s.title,
             description: s.description,
@@ -102,13 +117,13 @@ const CortexDashboard = () => {
       
       // Fetch quick stats
       try {
-        const statsResponse = await api.get('/cortex/dashboard/stats');
-        if (statsResponse.data) {
+        const statsResponse = await api.get(`/cortex/dashboard/stats?branch_id=${branchParam}`);
+        if (statsResponse) {
           setQuickStats([
-            { label: 'Total Students', value: statsResponse.data.totalStudents || 0, icon: Users, trend: '+0' },
-            { label: 'Total Staff', value: statsResponse.data.totalStaff || 0, icon: UserCheck, trend: '+0' },
-            { label: 'Fees Collected', value: formatCurrency(statsResponse.data.feesCollected || 0), icon: IndianRupee, trend: '+0' },
-            { label: 'Attendance Rate', value: `${statsResponse.data.attendanceRate || 0}%`, icon: GraduationCap, trend: '+0' }
+            { label: 'Total Students', value: statsResponse.totalStudents || 0, icon: Users, trend: '+0' },
+            { label: 'Total Staff', value: statsResponse.totalStaff || 0, icon: UserCheck, trend: '+0' },
+            { label: 'Fees Collected', value: formatCurrency(statsResponse.feesCollected || 0), icon: IndianRupee, trend: '+0' },
+            { label: 'Attendance Rate', value: `${statsResponse.attendanceRate || 0}%`, icon: GraduationCap, trend: '+0' }
           ]);
         }
       } catch (e) {
@@ -126,7 +141,7 @@ const CortexDashboard = () => {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [branchFilter]);
 
   // Generate insights based on metrics
   const generateInsights = useCallback(() => {
@@ -184,7 +199,7 @@ const CortexDashboard = () => {
 
   useEffect(() => {
     fetchDashboardData();
-  }, [fetchDashboardData]);
+  }, [fetchDashboardData, branchFilter]);
 
   useEffect(() => {
     if (Object.keys(metrics).length > 0 || aiScore > 0) {
@@ -335,19 +350,39 @@ const CortexDashboard = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
             <Brain className="w-8 h-8 text-purple-600" />
             Cortex AI Dashboard
           </h1>
           <p className="text-gray-500 dark:text-gray-400 mt-1">
-            Your school's intelligent decision partner
+            {branchFilter === 'all' 
+              ? 'All Branches - Aggregated Overview' 
+              : `Branch: ${availableBranches.find(b => b.id === branchFilter)?.name || 'Selected Branch'}`
+            }
           </p>
         </div>
-        <div className="flex items-center gap-4">
-          <span className="text-sm text-gray-500 dark:text-gray-400">
-            Last updated: {lastUpdated.toLocaleTimeString()}
+        <div className="flex flex-wrap items-center gap-3">
+          {/* Branch Selector - Super Admin Feature */}
+          <div className="flex items-center gap-2 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 px-3 py-2">
+            <Building2 className="w-4 h-4 text-purple-600" />
+            <select
+              value={branchFilter}
+              onChange={(e) => setBranchFilter(e.target.value)}
+              className="bg-transparent text-sm text-gray-700 dark:text-gray-300 border-none focus:ring-0 focus:outline-none cursor-pointer min-w-[140px]"
+            >
+              <option value="all">📊 All Branches</option>
+              {availableBranches.map(branch => (
+                <option key={branch.id} value={branch.id}>
+                  🏫 {branch.name || branch.school_name}
+                </option>
+              ))}
+            </select>
+          </div>
+          
+          <span className="text-sm text-gray-500 dark:text-gray-400 hidden sm:inline">
+            Last: {lastUpdated.toLocaleTimeString()}
           </span>
           <button
             onClick={handleRefresh}

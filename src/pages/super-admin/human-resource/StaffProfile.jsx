@@ -98,6 +98,7 @@ const StaffProfile = () => {
     const fetchStaff = async () => {
       if (!selectedBranch) return;
       try {
+        // ✅ FIX: Specify exact FK relationship to avoid ambiguous FK error
         // Fetch Profile
         const { data, error } = await supabase
           .from('employee_profiles')
@@ -105,7 +106,7 @@ const StaffProfile = () => {
             *,
             role:roles(name),
             designation:designations(name),
-            department:departments(name)
+            department:departments!employee_profiles_department_id_fkey(name)
           `)
           .eq('id', employeeId)
           .eq('branch_id', selectedBranch.id) // Enforce branch check

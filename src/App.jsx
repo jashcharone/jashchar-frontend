@@ -1404,7 +1404,8 @@ function App() {
             <Route path={ROUTES.SUPER_ADMIN.STUDENT_ID_CARD} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="student_information"><StudentIdCard /></ProtectedRoute>} />
             <Route path={ROUTES.SUPER_ADMIN.STUDENT_ANALYSIS} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'principal']} requiredModule="student_information"><StudentAnalysis /></ProtectedRoute>} />
 
-            {/* ? HR */}
+            {/* 🧑 HR */}
+            <Route path="/super-admin/human-resource/dashboard" element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'principal']} requiredModule="human_resource"><HRDashboard /></ProtectedRoute>} />
             <Route path="/super-admin/human-resource/hr-dashboard" element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'principal']} requiredModule="human_resource"><HRDashboard /></ProtectedRoute>} />
             <Route path={ROUTES.SUPER_ADMIN.EMPLOYEE_FORM_SETTINGS} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="human_resource"><EmployeeFormSettings /></ProtectedRoute>} />
             <Route path={ROUTES.SUPER_ADMIN.DEPARTMENTS} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'principal']} requiredModule="human_resource"><Departments /></ProtectedRoute>} />

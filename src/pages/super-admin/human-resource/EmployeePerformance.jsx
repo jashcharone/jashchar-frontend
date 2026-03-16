@@ -28,17 +28,16 @@ const EmployeePerformance = () => {
         review_date: new Date().toISOString().split('T')[0]
     });
 
-    const branchId = user?.profile?.branch_id;
-
     useEffect(() => {
-        if (branchId && selectedBranch) fetchData();
-    }, [branchId, selectedBranch]);
+        if (selectedBranch?.id) fetchData();
+    }, [selectedBranch?.id]);
 
     const fetchData = async () => {
+        if (!selectedBranch?.id) return;
         setLoading(true);
         const [staffRes, reviewsRes] = await Promise.all([
-            supabase.from('employee_profiles').select('id, full_name').eq('branch_id', branchId).eq('branch_id', selectedBranch.id),
-            supabase.from('employee_performance').select('*, employee:employee_id(full_name)').eq('branch_id', branchId).eq('branch_id', selectedBranch.id).order('review_date', { ascending: false })
+            supabase.from('employee_profiles').select('id, full_name').eq('branch_id', selectedBranch.id),
+            supabase.from('employee_performance').select('*, employee:employee_id(full_name)').eq('branch_id', selectedBranch.id).order('review_date', { ascending: false })
         ]);
         setStaffList(staffRes.data || []);
         setReviews(reviewsRes.data || []);
@@ -50,13 +49,12 @@ const EmployeePerformance = () => {
             toast({ variant: 'destructive', title: 'Please select an employee' });
             return;
         }
-        if (!selectedBranch) {
+        if (!selectedBranch?.id) {
             toast({ variant: 'destructive', title: 'Please select a branch' });
             return;
         }
         const { error } = await supabase.from('employee_performance').insert({
             ...newReview,
-            branch_id: branchId,
             branch_id: selectedBranch.id,
             reviewer_id: user.id
         });

@@ -26,7 +26,7 @@ import {
     AlertCircle, XCircle, Info, Image, FileText,
     ChevronLeft, ChevronRight, Filter, Mail, Globe,
     Smartphone, Target, ListOrdered, MessageSquare,
-    Calendar, ZoomIn, ExternalLink
+    Calendar, ZoomIn, ExternalLink, Copy, Terminal, Database
 } from 'lucide-react';
 import { formatDateTime } from '@/utils/dateUtils';
 
@@ -805,6 +805,116 @@ const BugReportsPage = () => {
                                                 </CardContent>
                                             </Card>
                                         )}
+
+                                        {/* Console Logs if available */}
+                                        {selectedReport.metadata?.console_logs && selectedReport.metadata.console_logs.length > 0 && (
+                                            <Card>
+                                                <CardHeader className="pb-3">
+                                                    <div className="flex items-center justify-between">
+                                                        <CardTitle className="text-sm flex items-center gap-2">
+                                                            <Terminal className="h-4 w-4 text-yellow-500" />
+                                                            Console Logs ({selectedReport.metadata.console_logs.length} entries)
+                                                        </CardTitle>
+                                                        <Button 
+                                                            size="sm" 
+                                                            variant="outline"
+                                                            onClick={() => {
+                                                                const logsText = selectedReport.metadata.console_logs.map(log => 
+                                                                    `[${log.type}] ${log.timestamp || ''} - ${log.message}`
+                                                                ).join('\n');
+                                                                navigator.clipboard.writeText(logsText);
+                                                                toast({ title: 'Copied!', description: 'Console logs copied to clipboard' });
+                                                            }}
+                                                        >
+                                                            <Copy className="h-3 w-3 mr-1" /> Copy Logs
+                                                        </Button>
+                                                    </div>
+                                                </CardHeader>
+                                                <CardContent>
+                                                    <div className="bg-gray-900 dark:bg-black p-3 rounded-lg overflow-auto max-h-64 font-mono text-xs">
+                                                        {selectedReport.metadata.console_logs.map((log, index) => (
+                                                            <div 
+                                                                key={index} 
+                                                                className={`py-1 border-b border-gray-800 last:border-0 ${
+                                                                    log.type === 'error' ? 'text-red-400' :
+                                                                    log.type === 'warning' ? 'text-yellow-400' :
+                                                                    log.type === 'resource_error' ? 'text-orange-400' :
+                                                                    log.type === 'memory_info' ? 'text-blue-400' :
+                                                                    log.type === 'timing_info' ? 'text-green-400' :
+                                                                    'text-gray-300'
+                                                                }`}
+                                                            >
+                                                                <span className="text-gray-500">[{log.type}]</span>{' '}
+                                                                {log.timestamp && <span className="text-gray-600">{log.timestamp.split('T')[1]?.split('.')[0] || ''}</span>}{' '}
+                                                                <span>{log.message}</span>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                </CardContent>
+                                            </Card>
+                                        )}
+
+                                        {/* Full Raw Data - For Developer Copy */}
+                                        <Card>
+                                            <CardHeader className="pb-3">
+                                                <div className="flex items-center justify-between">
+                                                    <CardTitle className="text-sm flex items-center gap-2">
+                                                        <Database className="h-4 w-4 text-purple-500" />
+                                                        Full Raw Data (F12 Console Copy)
+                                                    </CardTitle>
+                                                    <Button 
+                                                        size="sm" 
+                                                        variant="default"
+                                                        className="bg-purple-600 hover:bg-purple-700"
+                                                        onClick={() => {
+                                                            // Create clean copy without screenshot data (too large)
+                                                            const cleanReport = {
+                                                                ...selectedReport,
+                                                                metadata: {
+                                                                    ...selectedReport.metadata,
+                                                                    screenshot_data: selectedReport.metadata?.screenshot_data ? '[BASE64_IMAGE_DATA_EXCLUDED]' : null
+                                                                }
+                                                            };
+                                                            const jsonText = JSON.stringify(cleanReport, null, 2);
+                                                            navigator.clipboard.writeText(jsonText);
+                                                            toast({ 
+                                                                title: 'Copied!', 
+                                                                description: 'Full bug report data copied to clipboard (ready for F12 paste)' 
+                                                            });
+                                                        }}
+                                                    >
+                                                        <Copy className="h-3 w-3 mr-1" /> Copy All Data
+                                                    </Button>
+                                                </div>
+                                                <CardDescription className="text-xs">
+                                                    Complete bug report data in JSON format - Copy and paste in F12 console for debugging
+                                                </CardDescription>
+                                            </CardHeader>
+                                            <CardContent>
+                                                <pre className="text-xs bg-gray-900 dark:bg-black text-green-400 p-3 rounded-lg overflow-auto max-h-72 whitespace-pre-wrap font-mono">
+                                                    {JSON.stringify({
+                                                        id: selectedReport.id,
+                                                        status: selectedReport.status,
+                                                        severity: selectedReport.severity,
+                                                        source: selectedReport.source,
+                                                        module_name: selectedReport.module_name,
+                                                        page_url: selectedReport.page_url,
+                                                        error_message: selectedReport.error_message,
+                                                        stack_trace: selectedReport.stack_trace,
+                                                        user_id: selectedReport.user_id,
+                                                        user_role: selectedReport.user_role,
+                                                        created_at: selectedReport.created_at,
+                                                        updated_at: selectedReport.updated_at,
+                                                        device_info: selectedReport.device_info,
+                                                        metadata: {
+                                                            ...selectedReport.metadata,
+                                                            screenshot_data: selectedReport.metadata?.screenshot_data ? '[BASE64_IMAGE - See Screenshot Tab]' : null,
+                                                            console_logs: selectedReport.metadata?.console_logs || []
+                                                        }
+                                                    }, null, 2)}
+                                                </pre>
+                                            </CardContent>
+                                        </Card>
                                     </TabsContent>
 
                                     {/* Tab 4: Screenshot */}

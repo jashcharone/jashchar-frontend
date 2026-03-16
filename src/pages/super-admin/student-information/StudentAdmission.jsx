@@ -2628,8 +2628,14 @@ const StudentAdmission = () => {
       });
     } catch (error) {
       console.error("Admission Error:", error);
-      // Handle axios errors and regular errors
-      const errorMessage = error.response?.data?.error || error.message || error.context?.error_description || 'An unknown error occurred.';
+      console.error("Admission Error Response:", error.response?.data);
+      // Handle axios errors and regular errors - check multiple response formats
+      const errorMessage = error.response?.data?.error 
+                        || error.response?.data?.message 
+                        || error.response?.data?.msg
+                        || error.message 
+                        || error.context?.error_description 
+                        || 'An unknown error occurred.';
       const isDuplicate = errorMessage.includes('duplicate key value') || errorMessage.includes('already exists') || errorMessage.includes('already registered');
       toast({ variant: 'destructive', title: 'Admission Failed', description: isDuplicate ? `Duplicate Entry Detected (ID, Email or Aadhar)` : errorMessage });
       if (isDuplicate && schoolSettings?.student_admission_no_auto_generation) await generateNextId(schoolSettings);

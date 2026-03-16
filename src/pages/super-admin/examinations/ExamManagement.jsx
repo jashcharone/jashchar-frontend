@@ -143,9 +143,8 @@ const ExamManagement = () => {
                 params.exam_group_id = selectedExamGroup;
             }
             const response = await examService.getAll(params);
-            if (response.success) {
-                setExams(response.data || []);
-            }
+            const examsData = response?.data || (Array.isArray(response) ? response : []);
+            setExams(examsData);
         } catch (error) {
             console.error('Error fetching exams:', error);
             toast({
@@ -163,15 +162,13 @@ const ExamManagement = () => {
         try {
             // Fetch exam groups
             const groupsRes = await examGroupService.getAll();
-            if (groupsRes.success) {
-                setExamGroups(groupsRes.data || []);
-            }
+            const groupsData = groupsRes?.data || (Array.isArray(groupsRes) ? groupsRes : []);
+            setExamGroups(groupsData);
 
-            // Fetch classes
+            // Fetch classes (academics API returns plain array)
             const classesRes = await apiClient.get('/academics/classes');
-            if (classesRes.success) {
-                setClasses(classesRes.data || []);
-            }
+            const classesData = classesRes?.data || (Array.isArray(classesRes) ? classesRes : []);
+            setClasses(classesData);
         } catch (error) {
             console.error('Error fetching reference data:', error);
         }
@@ -183,12 +180,12 @@ const ExamManagement = () => {
             if (watchExamGroupId) {
                 try {
                     const group = examGroups.find(g => g.id === watchExamGroupId);
-                    if (group?.class_id) {
-                        const subjectsRes = await apiClient.get(`/academics/subjects?class_id=${group.class_id}`);
-                        if (subjectsRes.success) {
-                            setSubjects(subjectsRes.data || []);
-                        }
-                    }
+                    // Build query - filter by class_id if exam group has one, otherwise get all
+                    const classFilter = group?.class_id ? `?class_id=${group.class_id}` : '';
+                    const subjectsRes = await apiClient.get(`/academics/subjects${classFilter}`);
+                    // Academics API returns plain array, handle both formats
+                    const subjectsData = subjectsRes?.data || (Array.isArray(subjectsRes) ? subjectsRes : []);
+                    setSubjects(subjectsData);
                 } catch (error) {
                     console.error('Error fetching subjects:', error);
                 }
@@ -269,6 +266,24 @@ const ExamManagement = () => {
     // Submit form
     const onSubmit = async (data) => {
         try {
+            // Validate required Select fields
+            if (!data.exam_group_id) {
+                toast({
+                    title: 'Validation Error',
+                    description: 'Please select an Exam Group',
+                    variant: 'destructive'
+                });
+                return;
+            }
+            if (!data.subject_id) {
+                toast({
+                    title: 'Validation Error',
+                    description: 'Please select a Subject',
+                    variant: 'destructive'
+                });
+                return;
+            }
+
             setLoading(true);
 
             // Get class_id from exam group if not set

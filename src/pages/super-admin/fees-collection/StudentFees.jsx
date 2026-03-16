@@ -17,7 +17,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
     Loader2, User, Printer, RotateCcw, ShieldX, ExternalLink, FileText, CheckCircle, Clock, 
     Phone, Mail, Calendar, CreditCard, Banknote, AlertTriangle, GraduationCap, Users,
-    IndianRupee, Receipt, History, ArrowLeft, Building2, Bus, Undo2, QrCode, X, Smartphone
+    IndianRupee, Receipt, History, ArrowLeft, Building2, Bus, Undo2, QrCode, X, Smartphone,
+    MapPin, Bed, Plus, Save
 } from 'lucide-react';
 import { format, parseISO, addMonths, startOfMonth, isBefore, isAfter, isSameMonth } from 'date-fns';
 import QRCode from 'qrcode';
@@ -231,6 +232,28 @@ const StudentFees = () => {
     const [showQrModal, setShowQrModal] = useState(false);
     const [qrCodeDataUrl, setQrCodeDataUrl] = useState('');
     const [qrPaymentType, setQrPaymentType] = useState('academic'); // academic/transport/hostel
+
+    // ── Transport/Hostel Assignment State ──
+    const [transportAssignOpen, setTransportAssignOpen] = useState(false);
+    const [hostelAssignOpen, setHostelAssignOpen] = useState(false);
+    const [assignSaving, setAssignSaving] = useState(false);
+    const [transportRoutes, setTransportRoutes] = useState([]);
+    const [transportPickupPoints, setTransportPickupPoints] = useState([]);
+    const [routePickupPoints, setRoutePickupPoints] = useState([]);
+    const [routeVehicles, setRouteVehicles] = useState([]);
+    const [hostelsList, setHostelsList] = useState([]);
+    const [hostelRooms, setHostelRooms] = useState([]);
+    const [hostelRoomTypes, setHostelRoomTypes] = useState([]);
+    const [assignedBeds, setAssignedBeds] = useState([]);
+    const [transportForm, setTransportForm] = useState({
+        transport_route_id: '', transport_pickup_point_id: '', transport_fee: '',
+        billing_cycle: 'monthly', pickup_time: '', drop_time: '',
+        vehicle_number: '', driver_name: '', driver_contact: '', special_instructions: ''
+    });
+    const [hostelForm, setHostelForm] = useState({
+        hostel_id: '', room_id: '', room_type_id: '', bed_number: '',
+        hostel_fee: '', billing_cycle: 'monthly', check_in_date: '', hostel_guardian_contact: ''
+    });
 
     const fetchStudentAndFees = useCallback(async () => {
         // Validate studentId is a proper UUID (not a route template like ':studentId')
@@ -700,6 +723,225 @@ const StudentFees = () => {
             fetchStudentAndFees();
         }
     }, [fetchStudentAndFees, studentId, selectedBranch?.id]);
+
+    // ── Transport Assignment Helpers ──
+    const openTransportAssign = async () => {
+        const bId = selectedBranch?.id;
+        if (!bId) return;
+        const [routesRes, ppRes] = await Promise.all([
+            supabase.from('transport_routes').select('*').eq('branch_id', bId),
+            supabase.from('transport_pickup_points').select('*').eq('branch_id', bId)
+        ]);
+        setTransportRoutes(routesRes.data || []);
+        setTransportPickupPoints(ppRes.data || []);
+        // Pre-fill if already assigned
+        if (transportDetails) {
+            setTransportForm({
+                transport_route_id: transportDetails.transport_route_id || '',
+                transport_pickup_point_id: transportDetails.transport_pickup_point_id || '',
+                transport_fee: transportDetails.transport_fee || '',
+                billing_cycle: transportDetails.billing_cycle || 'monthly',
+                pickup_time: transportDetails.pickup_time || '',
+                drop_time: transportDetails.drop_time || '',
+                vehicle_number: transportDetails.vehicle_number || '',
+                driver_name: transportDetails.driver_name || '',
+                driver_contact: transportDetails.driver_contact || '',
+                special_instructions: transportDetails.special_instructions || ''
+            });
+            // Load route-specific pickup points
+            if (transportDetails.transport_route_id) {
+                loadRoutePickupPoints(transportDetails.transport_route_id);
+            }
+        } else {
+            setTransportForm({ transport_route_id: '', transport_pickup_point_id: '', transport_fee: '', billing_cycle: 'monthly', pickup_time: '', drop_time: '', vehicle_number: '', driver_name: '', driver_contact: '', special_instructions: '' });
+            setRoutePickupPoints([]);
+            setRouteVehicles([]);
+        }
+        setTransportAssignOpen(true);
+    };
+
+    const loadRoutePickupPoints = async (routeId) => {
+        if (!routeId) { setRoutePickupPoints([]); setRouteVehicles([]); return; }
+        const [mappingsRes, vehiclesRes] = await Promise.all([
+            supabase.from('route_pickup_point_mappings').select('pickup_point_id, monthly_fees, pickup_time, stop_order, pickup_point:pickup_point_id(id, name)').eq('route_id', routeId).order('stop_order'),
+            supabase.from('route_vehicle_assignments').select('vehicle_id, vehicle:vehicle_id(*)').eq('route_id', routeId)
+        ]);
+        setRoutePickupPoints((mappingsRes.data || []).filter(m => m.pickup_point).map(m => ({ ...m.pickup_point, monthly_fees: m.monthly_fees, pickup_time: m.pickup_time })));
+        setRouteVehicles((vehiclesRes.data || []).filter(a => a.vehicle).map(a => a.vehicle));
+    };
+
+    const handleTransportRouteChange = async (routeId) => {
+        setTransportForm(prev => ({ ...prev, transport_route_id: routeId, transport_pickup_point_id: '', vehicle_number: '', driver_name: '', driver_contact: '' }));
+        await loadRoutePickupPoints(routeId);
+    };
+
+    const handleTransportPickupChange = async (ppId) => {
+        if (transportForm.transport_route_id && ppId) {
+            const { data } = await supabase.from('route_pickup_point_mappings').select('monthly_fees, pickup_time').eq('route_id', transportForm.transport_route_id).eq('pickup_point_id', ppId).single();
+            setTransportForm(prev => ({ ...prev, transport_pickup_point_id: ppId, transport_fee: data?.monthly_fees || prev.transport_fee, pickup_time: data?.pickup_time || prev.pickup_time }));
+        } else {
+            setTransportForm(prev => ({ ...prev, transport_pickup_point_id: ppId }));
+        }
+    };
+
+    const handleTransportVehicleSelect = (vehicleId) => {
+        const v = routeVehicles.find(rv => rv.id === vehicleId);
+        if (v) setTransportForm(prev => ({ ...prev, vehicle_number: v.vehicle_number, driver_name: v.driver_name, driver_contact: v.driver_contact }));
+    };
+
+    const saveTransportAssignment = async () => {
+        if (!transportForm.transport_route_id) {
+            toast({ variant: 'destructive', title: 'Route is required' }); return;
+        }
+        setAssignSaving(true);
+        const payload = {
+            student_id: studentId, branch_id: selectedBranch.id, session_id: currentSessionId,
+            transport_route_id: transportForm.transport_route_id || null,
+            transport_pickup_point_id: transportForm.transport_pickup_point_id || null,
+            transport_fee: transportForm.transport_fee ? parseFloat(transportForm.transport_fee) : null,
+            billing_cycle: transportForm.billing_cycle || 'monthly',
+            pickup_time: transportForm.pickup_time || null,
+            drop_time: transportForm.drop_time || null,
+            vehicle_number: transportForm.vehicle_number || null,
+            driver_name: transportForm.driver_name || null,
+            driver_contact: transportForm.driver_contact || null,
+            special_instructions: transportForm.special_instructions || null
+        };
+        let error;
+        if (transportDetails?.id) {
+            const { error: e } = await supabase.from('student_transport_details').update(payload).eq('id', transportDetails.id);
+            error = e;
+        } else {
+            const { error: e } = await supabase.from('student_transport_details').insert(payload);
+            error = e;
+        }
+        if (error) {
+            toast({ variant: 'destructive', title: 'Error saving transport', description: error.message });
+        } else {
+            toast({ title: 'Transport assigned successfully!' });
+            setTransportAssignOpen(false);
+            await fetchStudentAndFees();
+        }
+        setAssignSaving(false);
+    };
+
+    const removeTransportAssignment = async () => {
+        if (!transportDetails?.id) return;
+        setAssignSaving(true);
+        const { error } = await supabase.from('student_transport_details').delete().eq('id', transportDetails.id);
+        if (error) {
+            toast({ variant: 'destructive', title: 'Error removing transport', description: error.message });
+        } else {
+            toast({ title: 'Transport removed' });
+            setTransportAssignOpen(false);
+            await fetchStudentAndFees();
+        }
+        setAssignSaving(false);
+    };
+
+    // ── Hostel Assignment Helpers ──
+    const openHostelAssign = async () => {
+        const bId = selectedBranch?.id;
+        if (!bId) return;
+        const [hostelsRes, roomsRes, rtRes] = await Promise.all([
+            supabase.from('hostels').select('*').eq('branch_id', bId),
+            supabase.from('hostel_rooms').select('*, hostels(name)').eq('branch_id', bId),
+            supabase.from('hostel_room_types').select('*').eq('branch_id', bId)
+        ]);
+        setHostelsList(hostelsRes.data || []);
+        setHostelRooms(roomsRes.data || []);
+        setHostelRoomTypes(rtRes.data || []);
+        if (hostelDetails) {
+            setHostelForm({
+                hostel_id: hostelDetails.hostel_id || '',
+                room_id: hostelDetails.room_id || '',
+                room_type_id: hostelDetails.room_type_id || '',
+                bed_number: hostelDetails.bed_number || '',
+                hostel_fee: hostelDetails.hostel_fee || '',
+                billing_cycle: hostelDetails.billing_cycle || 'monthly',
+                check_in_date: hostelDetails.check_in_date || '',
+                hostel_guardian_contact: hostelDetails.hostel_guardian_contact || ''
+            });
+            if (hostelDetails.room_id) {
+                await loadAssignedBeds(hostelDetails.room_id);
+            }
+        } else {
+            setHostelForm({ hostel_id: '', room_id: '', room_type_id: '', bed_number: '', hostel_fee: '', billing_cycle: 'monthly', check_in_date: '', hostel_guardian_contact: '' });
+            setAssignedBeds([]);
+        }
+        setHostelAssignOpen(true);
+    };
+
+    const loadAssignedBeds = async (roomId) => {
+        if (!roomId) { setAssignedBeds([]); return; }
+        const { data } = await supabase.from('student_hostel_details').select('bed_number').eq('room_id', roomId).eq('branch_id', selectedBranch.id).neq('student_id', studentId).not('bed_number', 'is', null);
+        setAssignedBeds(data?.map(d => d.bed_number) || []);
+    };
+
+    const handleHostelRoomChange = async (roomId) => {
+        const room = hostelRooms.find(r => r.id === roomId);
+        setHostelForm(prev => ({ ...prev, room_id: roomId, room_type_id: room?.room_type_id || '', bed_number: '' }));
+        await loadAssignedBeds(roomId);
+    };
+
+    const getAvailableBeds = () => {
+        if (!hostelForm.room_id) return [];
+        const room = hostelRooms.find(r => r.id === hostelForm.room_id);
+        if (!room?.num_of_beds) return [];
+        const allBeds = Array.from({ length: room.num_of_beds }, (_, i) => `B${i + 1}`);
+        return allBeds.filter(b => !assignedBeds.includes(b));
+    };
+
+    const saveHostelAssignment = async () => {
+        if (!hostelForm.hostel_id) {
+            toast({ variant: 'destructive', title: 'Hostel is required' }); return;
+        }
+        if (hostelForm.room_id && !hostelForm.bed_number) {
+            toast({ variant: 'destructive', title: 'Bed number is required' }); return;
+        }
+        setAssignSaving(true);
+        const payload = {
+            student_id: studentId, branch_id: selectedBranch.id, session_id: currentSessionId, organization_id: organizationId,
+            hostel_id: hostelForm.hostel_id || null,
+            room_id: hostelForm.room_id || null,
+            room_type_id: hostelForm.room_type_id || null,
+            bed_number: hostelForm.bed_number || null,
+            hostel_fee: hostelForm.hostel_fee ? parseFloat(hostelForm.hostel_fee) : null,
+            billing_cycle: hostelForm.billing_cycle || 'monthly',
+            check_in_date: hostelForm.check_in_date || null,
+            hostel_guardian_contact: hostelForm.hostel_guardian_contact || null
+        };
+        let error;
+        if (hostelDetails?.id) {
+            const { error: e } = await supabase.from('student_hostel_details').update(payload).eq('id', hostelDetails.id);
+            error = e;
+        } else {
+            const { error: e } = await supabase.from('student_hostel_details').insert(payload);
+            error = e;
+        }
+        if (error) {
+            toast({ variant: 'destructive', title: 'Error saving hostel', description: error.message });
+        } else {
+            toast({ title: 'Hostel assigned successfully!' });
+            setHostelAssignOpen(false);
+            await fetchStudentAndFees();
+        }
+        setAssignSaving(false);
+    };
+
+    const removeHostelAssignment = async () => {
+        if (!hostelDetails?.id) return;
+        setAssignSaving(true);
+        const { error } = await supabase.from('student_hostel_details').delete().eq('id', hostelDetails.id);
+        if (error) {
+            toast({ variant: 'destructive', title: 'Error removing hostel', description: error.message });
+        } else {
+            toast({ title: 'Hostel removed' });
+            setHostelAssignOpen(false);
+            await fetchStudentAndFees();
+        }
+        setAssignSaving(false);
+    };
 
     // Fetch UPI settings from branch
     useEffect(() => {
@@ -2416,6 +2658,313 @@ const StudentFees = () => {
                 )}
                 <SummaryCard title="Balance Due" amount={feeSummary.balance} icon={feeSummary.balance > 0 ? AlertTriangle : Clock} variant={feeSummary.balance > 0 ? 'danger' : 'success'} currencySymbol={currencySymbol} />
             </div>
+
+            {/* Transport & Hostel Assignment Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
+                {/* Transport Card */}
+                <Card className={`border ${transportDetails ? 'border-green-500/30 bg-green-50/50 dark:bg-green-950/20' : 'border-dashed border-muted-foreground/30'}`}>
+                    <CardContent className="p-3">
+                        <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-3 min-w-0">
+                                <div className={`p-2 rounded-lg ${transportDetails ? 'bg-green-100 dark:bg-green-900' : 'bg-muted'}`}>
+                                    <Bus className={`h-5 w-5 ${transportDetails ? 'text-green-600' : 'text-muted-foreground'}`} />
+                                </div>
+                                {transportDetails ? (
+                                    <div className="min-w-0">
+                                        <p className="text-sm font-semibold truncate">Transport Assigned</p>
+                                        <p className="text-xs text-muted-foreground truncate">
+                                            {transportDetails.route?.route_title || 'Route'}
+                                            {transportDetails.pickup_point?.name ? ` • ${transportDetails.pickup_point.name}` : ''}
+                                        </p>
+                                        <div className="flex items-center gap-2 mt-0.5">
+                                            <Badge variant="outline" className="text-[10px] px-1.5 py-0">
+                                                {currencySymbol}{Number(transportDetails.transport_fee || 0).toLocaleString('en-IN')}/{transportDetails.billing_cycle || 'monthly'}
+                                            </Badge>
+                                            <Badge variant={transportDetails.status === 'Paid' ? 'default' : 'destructive'} className="text-[10px] px-1.5 py-0">
+                                                {transportDetails.status}
+                                            </Badge>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div>
+                                        <p className="text-sm font-medium text-muted-foreground">No Transport Assigned</p>
+                                        <p className="text-xs text-muted-foreground">Click to assign route & pickup point</p>
+                                    </div>
+                                )}
+                            </div>
+                            <Button variant={transportDetails ? 'outline' : 'default'} size="sm" onClick={openTransportAssign} className="gap-1.5 flex-shrink-0">
+                                {transportDetails ? <><Bus className="h-3.5 w-3.5" />Edit</> : <><Plus className="h-3.5 w-3.5" />Assign</>}
+                            </Button>
+                        </div>
+                    </CardContent>
+                </Card>
+
+                {/* Hostel Card */}
+                <Card className={`border ${hostelDetails ? 'border-blue-500/30 bg-blue-50/50 dark:bg-blue-950/20' : 'border-dashed border-muted-foreground/30'}`}>
+                    <CardContent className="p-3">
+                        <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-3 min-w-0">
+                                <div className={`p-2 rounded-lg ${hostelDetails ? 'bg-blue-100 dark:bg-blue-900' : 'bg-muted'}`}>
+                                    <Building2 className={`h-5 w-5 ${hostelDetails ? 'text-blue-600' : 'text-muted-foreground'}`} />
+                                </div>
+                                {hostelDetails ? (
+                                    <div className="min-w-0">
+                                        <p className="text-sm font-semibold truncate">Hostel Assigned</p>
+                                        <p className="text-xs text-muted-foreground truncate">
+                                            {hostelDetails.blockName || 'Hostel'}
+                                            {hostelDetails.room?.room_number_name ? ` • Room ${hostelDetails.room.room_number_name}` : ''}
+                                            {hostelDetails.bed_number ? ` • ${hostelDetails.bed_number}` : ''}
+                                        </p>
+                                        <div className="flex items-center gap-2 mt-0.5">
+                                            <Badge variant="outline" className="text-[10px] px-1.5 py-0">
+                                                {currencySymbol}{Number(hostelDetails.hostel_fee || 0).toLocaleString('en-IN')}/{hostelDetails.billing_cycle || 'monthly'}
+                                            </Badge>
+                                            <Badge variant={hostelDetails.status === 'Paid' ? 'default' : 'destructive'} className="text-[10px] px-1.5 py-0">
+                                                {hostelDetails.status}
+                                            </Badge>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div>
+                                        <p className="text-sm font-medium text-muted-foreground">No Hostel Assigned</p>
+                                        <p className="text-xs text-muted-foreground">Click to assign room & bed</p>
+                                    </div>
+                                )}
+                            </div>
+                            <Button variant={hostelDetails ? 'outline' : 'default'} size="sm" onClick={openHostelAssign} className="gap-1.5 flex-shrink-0">
+                                {hostelDetails ? <><Building2 className="h-3.5 w-3.5" />Edit</> : <><Plus className="h-3.5 w-3.5" />Assign</>}
+                            </Button>
+                        </div>
+                    </CardContent>
+                </Card>
+            </div>
+
+            {/* ═══ Transport Assignment Dialog ═══ */}
+            <Dialog open={transportAssignOpen} onOpenChange={setTransportAssignOpen}>
+                <DialogContent className="max-w-lg">
+                    <DialogHeader>
+                        <DialogTitle className="flex items-center gap-2">
+                            <Bus className="h-5 w-5 text-green-600" />
+                            {transportDetails ? 'Edit Transport Assignment' : 'Assign Transport'}
+                        </DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-1">
+                        {/* Route */}
+                        <div className="space-y-1.5">
+                            <Label>Route <span className="text-red-500">*</span></Label>
+                            <Select value={transportForm.transport_route_id || 'none'} onValueChange={(v) => handleTransportRouteChange(v === 'none' ? '' : v)}>
+                                <SelectTrigger><SelectValue placeholder="Select Route" /></SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="none">-- Select Route --</SelectItem>
+                                    {transportRoutes.map(r => <SelectItem key={r.id} value={r.id}>{r.route_title}</SelectItem>)}
+                                </SelectContent>
+                            </Select>
+                        </div>
+                        {/* Pickup Point */}
+                        {transportForm.transport_route_id && (
+                            <div className="space-y-1.5">
+                                <Label>Pickup Point</Label>
+                                <Select value={transportForm.transport_pickup_point_id || 'none'} onValueChange={(v) => handleTransportPickupChange(v === 'none' ? '' : v)}>
+                                    <SelectTrigger><SelectValue placeholder="Select Pickup Point" /></SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="none">-- Select Pickup Point --</SelectItem>
+                                        {(routePickupPoints.length > 0 ? routePickupPoints : transportPickupPoints).map(pp => (
+                                            <SelectItem key={pp.id} value={pp.id}>
+                                                {pp.name}{pp.monthly_fees ? ` (${currencySymbol}${pp.monthly_fees})` : ''}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                        )}
+                        {/* Vehicle */}
+                        {routeVehicles.length > 0 && (
+                            <div className="space-y-1.5">
+                                <Label>Vehicle</Label>
+                                <Select value="none" onValueChange={(v) => v !== 'none' && handleTransportVehicleSelect(v)}>
+                                    <SelectTrigger><SelectValue placeholder={transportForm.vehicle_number ? `${transportForm.vehicle_number}` : 'Select Vehicle'} /></SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="none">-- Select Vehicle --</SelectItem>
+                                        {routeVehicles.map(v => <SelectItem key={v.id} value={v.id}>{v.vehicle_number} - {v.driver_name}</SelectItem>)}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                        )}
+                        {/* Fee & Billing */}
+                        <div className="grid grid-cols-2 gap-3">
+                            <div className="space-y-1.5">
+                                <Label>Transport Fee ({currencySymbol})</Label>
+                                <Input type="number" value={transportForm.transport_fee} onChange={(e) => setTransportForm(prev => ({ ...prev, transport_fee: e.target.value }))} placeholder="0" />
+                            </div>
+                            <div className="space-y-1.5">
+                                <Label>Billing Cycle</Label>
+                                <Select value={transportForm.billing_cycle} onValueChange={(v) => setTransportForm(prev => ({ ...prev, billing_cycle: v }))}>
+                                    <SelectTrigger><SelectValue /></SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="monthly">Monthly</SelectItem>
+                                        <SelectItem value="quarterly">Quarterly</SelectItem>
+                                        <SelectItem value="half_yearly">Half-Yearly</SelectItem>
+                                        <SelectItem value="annual">Annual</SelectItem>
+                                        <SelectItem value="one_time">One-Time</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                        </div>
+                        {/* Pickup & Drop Time */}
+                        <div className="grid grid-cols-2 gap-3">
+                            <div className="space-y-1.5">
+                                <Label>Pickup Time</Label>
+                                <Input type="time" value={transportForm.pickup_time} onChange={(e) => setTransportForm(prev => ({ ...prev, pickup_time: e.target.value }))} />
+                            </div>
+                            <div className="space-y-1.5">
+                                <Label>Drop Time</Label>
+                                <Input type="time" value={transportForm.drop_time} onChange={(e) => setTransportForm(prev => ({ ...prev, drop_time: e.target.value }))} />
+                            </div>
+                        </div>
+                        {/* Special Instructions */}
+                        <div className="space-y-1.5">
+                            <Label>Special Instructions</Label>
+                            <Textarea value={transportForm.special_instructions} onChange={(e) => setTransportForm(prev => ({ ...prev, special_instructions: e.target.value }))} placeholder="Any special notes..." rows={2} />
+                        </div>
+                    </div>
+                    <div className="flex items-center justify-between pt-2">
+                        {transportDetails && (
+                            <Button variant="destructive" size="sm" onClick={removeTransportAssignment} disabled={assignSaving}>
+                                Remove Transport
+                            </Button>
+                        )}
+                        <div className="flex gap-2 ml-auto">
+                            <Button variant="outline" onClick={() => setTransportAssignOpen(false)}>Cancel</Button>
+                            <Button onClick={saveTransportAssignment} disabled={assignSaving} className="gap-1.5">
+                                {assignSaving && <Loader2 className="h-4 w-4 animate-spin" />}
+                                <Save className="h-4 w-4" />{transportDetails ? 'Update' : 'Assign'}
+                            </Button>
+                        </div>
+                    </div>
+                </DialogContent>
+            </Dialog>
+
+            {/* ═══ Hostel Assignment Dialog ═══ */}
+            <Dialog open={hostelAssignOpen} onOpenChange={setHostelAssignOpen}>
+                <DialogContent className="max-w-lg">
+                    <DialogHeader>
+                        <DialogTitle className="flex items-center gap-2">
+                            <Building2 className="h-5 w-5 text-blue-600" />
+                            {hostelDetails ? 'Edit Hostel Assignment' : 'Assign Hostel'}
+                        </DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-1">
+                        {/* Hostel */}
+                        <div className="space-y-1.5">
+                            <Label>Hostel <span className="text-red-500">*</span></Label>
+                            <Select value={hostelForm.hostel_id || 'none'} onValueChange={(v) => {
+                                const val = v === 'none' ? '' : v;
+                                setHostelForm(prev => ({ ...prev, hostel_id: val, room_id: '', room_type_id: '', bed_number: '' }));
+                                setAssignedBeds([]);
+                            }}>
+                                <SelectTrigger><SelectValue placeholder="Select Hostel" /></SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="none">-- Select Hostel --</SelectItem>
+                                    {hostelsList.map(h => <SelectItem key={h.id} value={h.id}>{h.name}</SelectItem>)}
+                                </SelectContent>
+                            </Select>
+                        </div>
+                        {/* Room */}
+                        {hostelForm.hostel_id && (
+                            <div className="space-y-1.5">
+                                <Label>Room</Label>
+                                <Select value={hostelForm.room_id || 'none'} onValueChange={(v) => handleHostelRoomChange(v === 'none' ? '' : v)}>
+                                    <SelectTrigger><SelectValue placeholder="Select Room" /></SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="none">-- Select Room --</SelectItem>
+                                        {hostelRooms.filter(r => r.hostel_id === hostelForm.hostel_id).map(r => (
+                                            <SelectItem key={r.id} value={r.id}>{r.room_number_name}</SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                        )}
+                        {/* Bed Number */}
+                        {hostelForm.room_id && (
+                            <div className="space-y-1.5">
+                                <Label>Bed Number <span className="text-red-500">*</span></Label>
+                                <Select value={hostelForm.bed_number || 'none'} onValueChange={(v) => setHostelForm(prev => ({ ...prev, bed_number: v === 'none' ? '' : v }))}>
+                                    <SelectTrigger><SelectValue placeholder="Select Bed" /></SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="none">-- Select Bed --</SelectItem>
+                                        {(() => {
+                                            const avail = getAvailableBeds();
+                                            const beds = hostelForm.bed_number && !avail.includes(hostelForm.bed_number) ? [hostelForm.bed_number, ...avail] : avail;
+                                            return beds.map(b => <SelectItem key={b} value={b}>{b}{b === hostelForm.bed_number && hostelDetails?.bed_number === b ? ' (Current)' : ''}</SelectItem>);
+                                        })()}
+                                    </SelectContent>
+                                </Select>
+                                {assignedBeds.length > 0 && (
+                                    <p className="text-xs text-muted-foreground">Occupied: {assignedBeds.join(', ')}</p>
+                                )}
+                            </div>
+                        )}
+                        {/* Room Type */}
+                        {hostelForm.room_id && hostelRoomTypes.length > 0 && (
+                            <div className="space-y-1.5">
+                                <Label>Room Type</Label>
+                                <Select value={hostelForm.room_type_id || 'none'} onValueChange={(v) => setHostelForm(prev => ({ ...prev, room_type_id: v === 'none' ? '' : v }))}>
+                                    <SelectTrigger><SelectValue placeholder="Room Type" /></SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="none">-- Select --</SelectItem>
+                                        {hostelRoomTypes.map(rt => <SelectItem key={rt.id} value={rt.id}>{rt.name}</SelectItem>)}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                        )}
+                        {/* Fee & Billing */}
+                        <div className="grid grid-cols-2 gap-3">
+                            <div className="space-y-1.5">
+                                <Label>Hostel Fee ({currencySymbol})</Label>
+                                <Input type="number" value={hostelForm.hostel_fee} onChange={(e) => setHostelForm(prev => ({ ...prev, hostel_fee: e.target.value }))} placeholder="0" />
+                            </div>
+                            <div className="space-y-1.5">
+                                <Label>Billing Cycle</Label>
+                                <Select value={hostelForm.billing_cycle} onValueChange={(v) => setHostelForm(prev => ({ ...prev, billing_cycle: v }))}>
+                                    <SelectTrigger><SelectValue /></SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="monthly">Monthly</SelectItem>
+                                        <SelectItem value="quarterly">Quarterly</SelectItem>
+                                        <SelectItem value="half_yearly">Half-Yearly</SelectItem>
+                                        <SelectItem value="annual">Annual</SelectItem>
+                                        <SelectItem value="one_time">One-Time</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                        </div>
+                        {/* Check-in & Guardian */}
+                        <div className="grid grid-cols-2 gap-3">
+                            <div className="space-y-1.5">
+                                <Label>Check-in Date</Label>
+                                <Input type="date" value={hostelForm.check_in_date} onChange={(e) => setHostelForm(prev => ({ ...prev, check_in_date: e.target.value }))} />
+                            </div>
+                            <div className="space-y-1.5">
+                                <Label>Guardian Contact</Label>
+                                <Input value={hostelForm.hostel_guardian_contact} onChange={(e) => setHostelForm(prev => ({ ...prev, hostel_guardian_contact: e.target.value }))} placeholder="Phone number" />
+                            </div>
+                        </div>
+                    </div>
+                    <div className="flex items-center justify-between pt-2">
+                        {hostelDetails && (
+                            <Button variant="destructive" size="sm" onClick={removeHostelAssignment} disabled={assignSaving}>
+                                Remove Hostel
+                            </Button>
+                        )}
+                        <div className="flex gap-2 ml-auto">
+                            <Button variant="outline" onClick={() => setHostelAssignOpen(false)}>Cancel</Button>
+                            <Button onClick={saveHostelAssignment} disabled={assignSaving} className="gap-1.5">
+                                {assignSaving && <Loader2 className="h-4 w-4 animate-spin" />}
+                                <Save className="h-4 w-4" />{hostelDetails ? 'Update' : 'Assign'}
+                            </Button>
+                        </div>
+                    </div>
+                </DialogContent>
+            </Dialog>
 
             {/* Class Teacher & Discounts - Inline */}
             {(classTeacher || studentDiscounts.length > 0) && (

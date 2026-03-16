@@ -4,6 +4,8 @@ import { Capacitor } from '@capacitor/core';
 
 let monitorInterval = null;
 let isMonitoring = false;
+let consecutiveFailures = 0;
+const FAILURE_THRESHOLD = 3; // Require 3 consecutive failures before read-only mode
 
 /**
  * Check if running inside Capacitor native (Android/iOS).
@@ -48,12 +50,14 @@ export const startMonitoring = (onStatusChange) => {
     const result = await getConnectionStatus();
     
     if (result.status === 'HEALTHY' || result.status === 'HEALTHY_WITH_WARNINGS') {
+      consecutiveFailures = 0;
       if (typeof window !== 'undefined' && window['__SAFE_READ_ONLY_MODE']) {
          disableReadOnlyMode();
          if (onStatusChange) onStatusChange(true);
       }
     } else {
-       if (typeof window !== 'undefined' && !window['__SAFE_READ_ONLY_MODE']) {
+       consecutiveFailures++;
+       if (consecutiveFailures >= FAILURE_THRESHOLD && typeof window !== 'undefined' && !window['__SAFE_READ_ONLY_MODE']) {
          enableReadOnlyMode();
          if (onStatusChange) onStatusChange(false);
        }

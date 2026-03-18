@@ -141,7 +141,7 @@ const FeesReminder = () => {
                 <CardHeader className="pb-3">
                     <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
-                            <div className={`p-2 rounded-lg ${type === 'before' ? 'bg-blue-100 text-blue-600' : 'bg-orange-100 text-orange-600'}`}>
+                            <div className={`p-2 rounded-lg ${type === 'before' ? 'bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400' : 'bg-orange-100 text-orange-600 dark:bg-orange-900/30 dark:text-orange-400'}`}>
                                 <Icon className="h-5 w-5" />
                             </div>
                             <div>
@@ -177,7 +177,7 @@ const FeesReminder = () => {
                                                 checked={reminder.is_active}
                                                 onCheckedChange={(checked) => handleReminderChange(reminder.id, 'is_active', checked)}
                                             />
-                                            <span className={`text-xs font-medium ${reminder.is_active ? 'text-green-600' : 'text-gray-400'}`}>
+                                            <span className={`text-xs font-medium ${reminder.is_active ? 'text-green-600 dark:text-green-400' : 'text-gray-400'}`}>
                                                 {reminder.is_active ? 'Active' : 'Inactive'}
                                             </span>
                                         </div>
@@ -235,7 +235,7 @@ const FeesReminder = () => {
                 <div className="flex items-center gap-4">
                     {totalCount > 0 && (
                         <div className="text-sm text-muted-foreground">
-                            <span className="font-medium text-green-600">{activeCount}</span> active / {totalCount} total
+                            <span className="font-medium text-green-600 dark:text-green-400">{activeCount}</span> active / {totalCount} total
                         </div>
                     )}
                     <Button onClick={handleSave} disabled={isSubmitting || loading || reminders.length === 0}>

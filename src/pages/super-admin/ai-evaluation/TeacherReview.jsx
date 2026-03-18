@@ -62,8 +62,8 @@ const TeacherReview = () => {
       try {
         const params = new URLSearchParams({ status: 'review,processing', branch_id: selectedBranch.id });
         const response = await api.get(`/ai-evaluation/sessions?${params.toString()}`);
-        if (response.data?.success) {
-          setSessions(response.data.data || []);
+        if (response?.success) {
+          setSessions(response.data || []);
         }
       } catch (error) {
         console.error('Error fetching sessions:', error);
@@ -81,8 +81,8 @@ const TeacherReview = () => {
         setLoading(true);
         const params = new URLSearchParams({ ...filters, branch_id: selectedBranch.id });
         const response = await api.get(`/ai-evaluation/review/papers?${params.toString()}`);
-        if (response.data?.success) {
-          setPapers(response.data.data || []);
+        if (response?.success) {
+          setPapers(response.data || []);
         }
       } catch (error) {
         console.error('Error fetching papers:', error);
@@ -156,8 +156,8 @@ const TeacherReview = () => {
     try {
       const params = new URLSearchParams(filters);
       const response = await api.get(`/ai-evaluation/review/papers?${params.toString()}`);
-      if (response.data?.success) {
-        setPapers(response.data.data || []);
+      if (response?.success) {
+        setPapers(response.data || []);
         setSelectedPapers([]);
         toast({ title: 'Papers refreshed' });
       }

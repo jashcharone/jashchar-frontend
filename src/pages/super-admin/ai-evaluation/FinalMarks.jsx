@@ -46,12 +46,12 @@ const FinalMarks = () => {
       try {
         const params = new URLSearchParams({ status: 'completed', branch_id: selectedBranch.id });
         const response = await api.get(`/ai-evaluation/sessions?${params.toString()}`);
-        if (response.data?.success) {
-          setSessions(response.data.data || []);
+        if (response?.success) {
+          setSessions(response.data || []);
           
           // Auto-select first session if none selected
-          if (!selectedSession && response.data.data?.length > 0) {
-            setSelectedSession(response.data.data[0].id);
+          if (!selectedSession && response.data?.length > 0) {
+            setSelectedSession(response.data[0].id);
           }
         }
       } catch (error) {
@@ -74,8 +74,8 @@ const FinalMarks = () => {
       try {
         setLoading(true);
         const response = await api.get(`/ai-evaluation/sessions/${selectedSession}/final-marks`);
-        if (response.data?.success) {
-          setMarks(response.data.data || []);
+        if (response?.success) {
+          setMarks(response.data || []);
         }
       } catch (error) {
         console.error('Error fetching marks:', error);
@@ -119,10 +119,10 @@ const FinalMarks = () => {
       setSyncing(true);
       const response = await api.post(`/ai-evaluation/sessions/${selectedSession}/sync-to-exam`);
       
-      if (response.data?.success) {
-        toast({ title: `${response.data.data.synced} marks synced to exam module!` });
+      if (response?.success) {
+        toast({ title: `${response.data?.synced} marks synced to exam module!` });
       } else {
-        throw new Error(response.data?.error || 'Sync failed');
+        throw new Error(response?.error || 'Sync failed');
       }
     } catch (error) {
       console.error('Sync error:', error);

@@ -123,7 +123,7 @@ const StudentProfileFeesTab = ({ studentId }) => {
                         </thead>
                         <tbody>
                             {fees.length > 0 ? fees.map(fee => (
-                                <tr key={fee.id} className="border-b hover:bg-muted/50">
+                                <tr key={fee.id} className="border-b dark:border-slate-700 hover:bg-muted/50">
                                     <td className="p-2">{fee.group}</td>
                                     <td className="p-2">{fee.type}</td>
                                     <td className="p-2">{fee.dueDate ? format(parseISO(fee.dueDate), 'dd-MM-yyyy') : 'N/A'}</td>
@@ -132,7 +132,7 @@ const StudentProfileFeesTab = ({ studentId }) => {
                                     <td className="p-2 text-right">{fee.totalDiscount.toFixed(2)}</td>
                                     <td className="p-2 text-right font-semibold">{fee.balance.toFixed(2)}</td>
                                     <td className="p-2">
-                                        <span className={`px-2 py-1 text-xs rounded-full ${fee.status === 'Paid' ? 'bg-green-100 text-green-800' : fee.status === 'Partial' ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-800'}`}>
+                                        <span className={`px-2 py-1 text-xs rounded-full ${fee.status === 'Paid' ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' : fee.status === 'Partial' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400' : 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400'}`}>
                                             {fee.status}
                                         </span>
                                     </td>
@@ -146,7 +146,7 @@ const StudentProfileFeesTab = ({ studentId }) => {
                                                         <thead><tr className="border-b text-left text-muted-foreground"><th className="p-2">Date</th><th className="p-2">Mode</th><th className="p-2 text-right">Amount</th><th className="p-2 text-right">Discount</th><th className="p-2 text-right">Fine</th><th className="p-2">Note</th></tr></thead>
                                                         <tbody>
                                                             {fee.payments.map(p => (
-                                                                <tr key={p.id} className={`border-b ${p.reverted_at ? 'bg-red-50 text-muted-foreground line-through' : ''}`}>
+                                                                <tr key={p.id} className={`border-b dark:border-slate-700 ${p.reverted_at ? 'bg-red-50 dark:bg-red-950/20 text-muted-foreground line-through' : ''}`}>
                                                                     <td className="p-2">{format(parseISO(p.payment_date), 'dd-MM-yyyy')}</td>
                                                                     <td className="p-2">{p.payment_mode}</td>
                                                                     <td className="p-2 text-right">{(Number(p.amount) || 0).toFixed(2)}</td>

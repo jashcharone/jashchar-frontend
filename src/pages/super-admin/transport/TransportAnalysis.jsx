@@ -9,12 +9,18 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import {
   Bus, Users, IndianRupee, MapPin, Loader2, TrendingUp,
-  Route, Car, AlertCircle, CheckCircle, Clock, BarChart3, PieChart,
-  Download, Printer, FileSpreadsheet, RefreshCw, Calendar, Filter
+  Route, Car, AlertCircle, CheckCircle, Clock, BarChart3, PieChart as PieChartIcon,
+  Download, Printer, Sheet, RefreshCw, Calendar, Filter, Activity
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { fetchPrintHeaderData, buildOrgHeaderHtml, PRINT_STYLES, downloadReportAsPDF } from '@/utils/printOrgHeader';
+import {
+  BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, AreaChart, Area,
+  XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer
+} from 'recharts';
+import api from '@/services/api';
+import AIInsightsPanel from '@/components/transport/AIInsightsPanel';
 
 // Simple progress bar component
 const ProgressBar = ({ value, max, color = 'bg-primary', label }) => {
@@ -77,6 +83,8 @@ const TransportAnalysis = () => {
   const [sessions, setSessions] = useState([]);
   const [selectedSessionId, setSelectedSessionId] = useState(currentSessionId);
   const [printHeaderData, setPrintHeaderData] = useState(null);
+  const [analyticsOverview, setAnalyticsOverview] = useState(null);
+  const [trendData, setTrendData] = useState([]);
 
   const branchId = selectedBranch?.id || user?.profile?.branch_id;
 
@@ -241,6 +249,24 @@ const TransportAnalysis = () => {
     fetchAnalyticsData();
   }, [fetchAnalyticsData]);
 
+  // Fetch Recharts analytics from API
+  const fetchChartsData = useCallback(async () => {
+    if (!branchId) return;
+    try {
+      const params = { branchId, organizationId };
+      const [overviewRes, trendsRes] = await Promise.all([
+        api.get('/transport/analytics/overview', { params }),
+        api.get('/transport/analytics/trends', { params }),
+      ]);
+      setAnalyticsOverview(overviewRes.data?.data || null);
+      setTrendData(trendsRes.data?.data || []);
+    } catch (err) {
+      console.error('[TransportAnalysis] Charts error:', err);
+    }
+  }, [branchId, organizationId]);
+
+  useEffect(() => { fetchChartsData(); }, [fetchChartsData]);
+
   const formatCurrency = (amount) => {
     return new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(amount);
   };
@@ -357,7 +383,7 @@ const TransportAnalysis = () => {
               <Download className="h-4 w-4 mr-1" /> Download PDF
             </Button>
             <Button variant="outline" size="sm" onClick={handleExportExcel}>
-              <FileSpreadsheet className="h-4 w-4 mr-1" /> Export Excel
+              <Sheet className="h-4 w-4 mr-1" /> Export Excel
             </Button>
           </div>
         </div>
@@ -462,7 +488,7 @@ const TransportAnalysis = () => {
           <Card>
             <CardHeader>
               <CardTitle className="text-lg flex items-center gap-2">
-                <PieChart className="h-5 w-5" />
+                <PieChartIcon className="h-5 w-5" />
                 Class-wise Transport Usage
               </CardTitle>
               <CardDescription>Students using transport by class</CardDescription>
@@ -553,6 +579,146 @@ const TransportAnalysis = () => {
             </CardContent>
           </Card>
         </div>
+
+        {/* ═══════════ RECHARTS ANALYTICS SECTION ═══════════ */}
+        <div className="mt-6">
+          <h2 className="text-lg font-bold flex items-center gap-2 mb-4">
+            <Activity className="h-5 w-5 text-indigo-600" />
+            Visual Analytics
+          </h2>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Monthly Trip Trends */}
+            {trendData.length > 0 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-sm">Monthly Trip Trends</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <ResponsiveContainer width="100%" height={250}>
+                    <LineChart data={trendData}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="month" tick={{ fontSize: 12 }} />
+                      <YAxis tick={{ fontSize: 12 }} />
+                      <Tooltip />
+                      <Legend />
+                      <Line type="monotone" dataKey="trips" stroke="#3b82f6" strokeWidth={2} name="Trips" />
+                      <Line type="monotone" dataKey="incidents" stroke="#ef4444" strokeWidth={2} name="Incidents" />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Fuel & Maintenance Cost Trends */}
+            {trendData.length > 0 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-sm">Cost Trends (₹)</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <ResponsiveContainer width="100%" height={250}>
+                    <AreaChart data={trendData}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="month" tick={{ fontSize: 12 }} />
+                      <YAxis tick={{ fontSize: 12 }} />
+                      <Tooltip formatter={(val) => `₹${Number(val).toLocaleString('en-IN')}`} />
+                      <Legend />
+                      <Area type="monotone" dataKey="fuel_cost" stroke="#f59e0b" fill="#fef3c7" name="Fuel Cost" />
+                      <Area type="monotone" dataKey="maintenance_cost" stroke="#8b5cf6" fill="#ede9fe" name="Maintenance" />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Route Utilization Bar Chart */}
+            {routeWiseData.length > 0 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-sm">Route Utilization</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <ResponsiveContainer width="100%" height={250}>
+                    <BarChart data={routeWiseData.slice(0, 10).map(r => ({
+                      name: r.routeName?.length > 15 ? r.routeName.slice(0, 15) + '…' : r.routeName,
+                      students: r.studentCount,
+                      capacity: r.capacity,
+                    }))}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="name" tick={{ fontSize: 10 }} angle={-20} textAnchor="end" height={60} />
+                      <YAxis tick={{ fontSize: 12 }} />
+                      <Tooltip />
+                      <Legend />
+                      <Bar dataKey="students" fill="#3b82f6" name="Students" radius={[4, 4, 0, 0]} />
+                      <Bar dataKey="capacity" fill="#e5e7eb" name="Capacity" radius={[4, 4, 0, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Class Distribution Pie */}
+            {classWiseData.length > 0 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-sm">Class-wise Distribution</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <ResponsiveContainer width="100%" height={250}>
+                    <PieChart>
+                      <Pie
+                        data={classWiseData.map(c => ({ name: c.className, value: c.count }))}
+                        dataKey="value"
+                        nameKey="name"
+                        cx="50%"
+                        cy="50%"
+                        outerRadius={80}
+                        label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                      >
+                        {classWiseData.map((_, i) => (
+                          <Cell key={i} fill={['#3b82f6','#10b981','#f59e0b','#ef4444','#8b5cf6','#ec4899','#06b6d4','#84cc16','#f97316','#6366f1'][i % 10]} />
+                        ))}
+                      </Pie>
+                      <Tooltip />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Fleet Overview from API */}
+            {analyticsOverview && (
+              <Card className="lg:col-span-2">
+                <CardHeader>
+                  <CardTitle className="text-sm">Fleet Overview (API Analytics)</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    {[
+                      { label: 'Total Vehicles', value: analyticsOverview.totalVehicles, color: 'text-blue-600' },
+                      { label: 'Total Drivers', value: analyticsOverview.totalDrivers, color: 'text-green-600' },
+                      { label: 'Total Trips', value: analyticsOverview.totalTrips, color: 'text-purple-600' },
+                      { label: 'Total Routes', value: analyticsOverview.totalRoutes, color: 'text-orange-600' },
+                      { label: 'Students Enrolled', value: analyticsOverview.totalStudents, color: 'text-indigo-600' },
+                      { label: 'Incidents', value: analyticsOverview.totalIncidents, color: 'text-red-600' },
+                      { label: 'Fuel Logs', value: analyticsOverview.totalFuelLogs, color: 'text-amber-600' },
+                      { label: 'Maintenance Records', value: analyticsOverview.totalMaintenance, color: 'text-violet-600' },
+                    ].map((item, i) => (
+                      <div key={i} className="text-center p-3 bg-muted/30 rounded-lg">
+                        <p className={cn("text-2xl font-bold", item.color)}>{item.value ?? 0}</p>
+                        <p className="text-xs text-muted-foreground mt-1">{item.label}</p>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+          </div>
+        </div>
+
+        {/* AI Insights Panel */}
+        <AIInsightsPanel branchId={branchId} organizationId={organizationId} />
           </>
         )}
       </div>

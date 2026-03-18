@@ -18,7 +18,7 @@ import SaveTemplateModal from './SaveTemplateModal';
 import ScheduleReportModal from './ScheduleReportModal';
 import { useFilterOptions } from './hooks';
 import { REPORT_MODULES } from './constants';
-import { FileSpreadsheet, Loader2, RefreshCw, AlertCircle } from 'lucide-react';
+import { Sheet, Loader2, RefreshCw, AlertCircle } from 'lucide-react';
 
 const ReportPageWrapper = ({
   module,                      // Module key (e.g., 'student-information')
@@ -211,11 +211,11 @@ const ReportPageWrapper = ({
 
         {/* Error Display */}
         {error && (
-          <div className="m-4 p-4 bg-red-50 border border-red-200 rounded-lg flex items-center gap-3">
+          <div className="m-4 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg flex items-center gap-3">
             <AlertCircle className="w-5 h-5 text-red-500" />
             <div>
-              <div className="font-medium text-red-700">Error loading report</div>
-              <div className="text-sm text-red-600">{error}</div>
+              <div className="font-medium text-red-700 dark:text-red-400">Error loading report</div>
+              <div className="text-sm text-red-600 dark:text-red-300">{error}</div>
             </div>
           </div>
         )}

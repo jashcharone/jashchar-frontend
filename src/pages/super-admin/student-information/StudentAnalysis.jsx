@@ -11,7 +11,7 @@ import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import {
   Users, UserPlus, UserMinus, UserCheck, GraduationCap, IndianRupee,
-  Loader2, Download, Printer, FileSpreadsheet, BarChart3, PieChart,
+  Loader2, Download, Printer, Sheet, BarChart3, PieChart,
   TrendingUp, TrendingDown, Calendar, Filter, RefreshCw, ChevronDown,
   AlertCircle, CheckCircle2, Clock, Eye, MapPin, Phone, Mail, Home
 } from 'lucide-react';
@@ -407,7 +407,7 @@ const StudentAnalysis = () => {
               <Download className="h-4 w-4 mr-1" /> Download PDF
             </Button>
             <Button variant="outline" size="sm" onClick={handleExportExcel}>
-              <FileSpreadsheet className="h-4 w-4 mr-1" /> Export Excel
+              <Sheet className="h-4 w-4 mr-1" /> Export Excel
             </Button>
           </div>
         </div>

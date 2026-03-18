@@ -107,7 +107,7 @@ const MarksOverrideModal = ({
 
       const response = await api.post(`/ai-evaluation/papers/${paperId}/questions/${question.id}/override`, overrideData);
 
-      if (response.data?.success) {
+      if (response?.success) {
         toast({ title: 'Marks updated successfully' });
         onSave?.({
           ...question,
@@ -117,11 +117,11 @@ const MarksOverrideModal = ({
         });
         onClose();
       } else {
-        throw new Error(response.data?.error || 'Failed to save override');
+        throw new Error(response?.error || 'Failed to save override');
       }
     } catch (error) {
       console.error('Override save error:', error);
-      toast({ variant: 'destructive', title: error.response?.data?.error || 'Failed to save marks override' });
+      toast({ variant: 'destructive', title: error.message || 'Failed to save marks override' });
     } finally {
       setLoading(false);
     }

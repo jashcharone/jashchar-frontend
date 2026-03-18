@@ -548,7 +548,7 @@ const SeatingArrangement = () => {
                                                                     <div 
                                                                         key={`${rowIdx}-${colIdx}`}
                                                                         className={`w-20 h-16 border rounded flex flex-col items-center justify-center text-xs ${
-                                                                            seat ? 'bg-blue-50 border-blue-300' : 'bg-gray-50'
+                                                                            seat ? 'bg-blue-50 dark:bg-blue-950 border-blue-300 dark:border-blue-700' : 'bg-gray-50 dark:bg-gray-800'
                                                                         }`}
                                                                     >
                                                                         {seat ? (
@@ -559,7 +559,7 @@ const SeatingArrangement = () => {
                                                                                 </div>
                                                                             </>
                                                                         ) : (
-                                                                            <span className="text-gray-400">Empty</span>
+                                                                            <span className="text-gray-400 dark:text-gray-500">Empty</span>
                                                                         )}
                                                                     </div>
                                                                 ))}

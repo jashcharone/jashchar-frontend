@@ -322,7 +322,7 @@ const AcademicsClasses = () => {
                         <Dialog onOpenChange={(isOpen) => !isOpen && setEditingClass(null)}>
                             <DialogTrigger asChild>
                                 <Button variant="ghost" size="icon" onClick={() => openEditDialog(c)}>
-                                    <Edit className="h-4 w-4 text-blue-600" />
+                                    <Edit className="h-4 w-4 text-blue-600 dark:text-blue-400" />
                                 </Button>
                             </DialogTrigger>
                             <DialogContent>
@@ -361,7 +361,7 @@ const AcademicsClasses = () => {
                         {canDelete('academics.class') && (
                         <AlertDialog>
                           <AlertDialogTrigger asChild>
-                            <Button variant="ghost" size="icon"><Trash2 className="h-4 w-4 text-red-600" /></Button>
+                            <Button variant="ghost" size="icon"><Trash2 className="h-4 w-4 text-red-600 dark:text-red-400" /></Button>
                           </AlertDialogTrigger>
                           <AlertDialogContent>
                             <AlertDialogHeader>

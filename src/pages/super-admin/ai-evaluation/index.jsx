@@ -32,6 +32,7 @@ import ReviewPaper from './ReviewPaper';
 import FinalMarks from './FinalMarks';
 import AIEvaluationAnalytics from './AIEvaluationAnalytics';
 import AIEvaluationSettings from './AIEvaluationSettings';
+import AuditLogs from './AuditLogs';
 import CortexUpgradePage from '../cortex-ai/CortexUpgradePage';
 
 const AIEvaluation = () => {
@@ -135,6 +136,7 @@ const AIEvaluation = () => {
         <Route path="sessions/:sessionId/questions" element={<QuestionMapping />} />
         <Route path="sessions/:sessionId/evaluate" element={<AIEvaluationProcess />} />
         <Route path="sessions/:sessionId/results" element={<FinalMarks />} />
+        <Route path="sessions/:sessionId/audit-logs" element={<AuditLogs />} />
         
         {/* Teacher Review */}
         <Route path="review" element={<TeacherReview />} />

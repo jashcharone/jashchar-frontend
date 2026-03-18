@@ -15,7 +15,7 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 import { useToast } from '@/components/ui/use-toast';
-import { Copy, FileSpreadsheet, FileDown, FileText, Printer, Columns, Check } from 'lucide-react';
+import { Copy, Sheet, FileDown, FileText, Printer, Columns, Check } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
 import jsPDF from 'jspdf';
@@ -333,7 +333,7 @@ const DataTableExport = ({
               disabled={data.length === 0}
               className="h-8 w-8 border-green-500/50 bg-green-500/10 hover:bg-green-500/20 dark:border-green-500/30 dark:bg-green-500/10 dark:hover:bg-green-500/20"
             >
-              <FileSpreadsheet className="h-4 w-4 text-green-600 dark:text-green-400" />
+              <Sheet className="h-4 w-4 text-green-600 dark:text-green-400" />
             </Button>
           </TooltipTrigger>
           <TooltipContent side="bottom" className="bg-popover text-popover-foreground">

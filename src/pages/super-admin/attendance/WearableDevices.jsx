@@ -96,7 +96,7 @@ const wearableTypes = {
         name_kn: 'ಸ್ಮಾರ್ಟ್ ಬ್ಯಾಂಡ್',
         icon: Watch,
         color: 'text-violet-500',
-        bg: 'bg-violet-100',
+        bg: 'bg-violet-100 dark:bg-violet-900/30',
         description: 'Mi Band, Fitbit, Honor Band',
         features: ['NFC', 'Heart Rate', 'Steps', 'Bluetooth'],
     },
@@ -105,7 +105,7 @@ const wearableTypes = {
         name_kn: 'ಸ್ಮಾರ್ಟ್ ವಾಚ್',
         icon: Watch,
         color: 'text-blue-500',
-        bg: 'bg-blue-100',
+        bg: 'bg-blue-100 dark:bg-blue-900/30',
         description: 'Apple Watch, Galaxy Watch, Noise',
         features: ['NFC', 'GPS', 'Bluetooth', 'WiFi'],
     },
@@ -114,7 +114,7 @@ const wearableTypes = {
         name_kn: 'ಎನ್ಎಫ್ಸಿ ರಿಸ್ಟ್‌ಬ್ಯಾಂಡ್',
         icon: CreditCard,
         color: 'text-green-500',
-        bg: 'bg-green-100',
+        bg: 'bg-green-100 dark:bg-green-900/30',
         description: 'Silicon NFC wristband (Low cost)',
         features: ['NFC'],
     },
@@ -123,7 +123,7 @@ const wearableTypes = {
         name_kn: 'ಬೀಕನ್ ಟ್ಯಾಗ್',
         icon: Bluetooth,
         color: 'text-amber-500',
-        bg: 'bg-amber-100',
+        bg: 'bg-amber-100 dark:bg-amber-900/30',
         description: 'BLE beacon keychain/tag',
         features: ['Bluetooth', 'Proximity'],
     },
@@ -478,7 +478,7 @@ const PairWearableDialog = ({ open, onClose, branchId, organizationId, onSaved }
                 {/* Step 1: Discover Device */}
                 {step === 1 && (
                     <div className="space-y-6">
-                        <div className="grid grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             {Object.entries(wearableTypes).map(([key, config]) => {
                                 const TypeIcon = config.icon;
                                 return (
@@ -586,7 +586,7 @@ const PairWearableDialog = ({ open, onClose, branchId, organizationId, onSaved }
                         
                         <div className="space-y-4">
                             <h4 className="font-medium">Manual Entry</h4>
-                            <div className="grid grid-cols-2 gap-4">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <div>
                                     <Label>Device Name *</Label>
                                     <Input

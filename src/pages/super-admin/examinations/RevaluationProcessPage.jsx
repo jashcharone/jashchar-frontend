@@ -149,10 +149,10 @@ const RevaluationProcessPage = () => {
 
         {/* Stats */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <Card><CardContent className="pt-6"><div className="text-2xl font-bold text-yellow-600">{stats.pending}</div><p className="text-sm text-muted-foreground">Pending</p></CardContent></Card>
-          <Card><CardContent className="pt-6"><div className="text-2xl font-bold text-blue-600">{stats.inProgress}</div><p className="text-sm text-muted-foreground">In Progress</p></CardContent></Card>
-          <Card><CardContent className="pt-6"><div className="text-2xl font-bold text-green-600">{stats.completed}</div><p className="text-sm text-muted-foreground">Completed</p></CardContent></Card>
-          <Card><CardContent className="pt-6"><div className="text-2xl font-bold text-red-600">{stats.rejected}</div><p className="text-sm text-muted-foreground">Rejected</p></CardContent></Card>
+          <Card><CardContent className="pt-6"><div className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">{stats.pending}</div><p className="text-sm text-muted-foreground">Pending</p></CardContent></Card>
+          <Card><CardContent className="pt-6"><div className="text-2xl font-bold text-blue-600 dark:text-blue-400">{stats.inProgress}</div><p className="text-sm text-muted-foreground">In Progress</p></CardContent></Card>
+          <Card><CardContent className="pt-6"><div className="text-2xl font-bold text-green-600 dark:text-green-400">{stats.completed}</div><p className="text-sm text-muted-foreground">Completed</p></CardContent></Card>
+          <Card><CardContent className="pt-6"><div className="text-2xl font-bold text-red-600 dark:text-red-400">{stats.rejected}</div><p className="text-sm text-muted-foreground">Rejected</p></CardContent></Card>
         </div>
 
         {/* Filter */}
@@ -192,6 +192,7 @@ const RevaluationProcessPage = () => {
                 <RotateCcw className="w-12 h-12 mb-4 opacity-50" /><p>No requests in this filter</p>
               </div>
             ) : (
+              <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -223,7 +224,7 @@ const RevaluationProcessPage = () => {
                                 <UserCheck className="w-4 h-4" />
                               </Button>
                             )}
-                            <Button variant="ghost" size="sm" className="text-green-600" onClick={() => openProcessDialog(r, 'complete')}>
+                            <Button variant="ghost" size="sm" className="text-green-600 dark:text-green-400" onClick={() => openProcessDialog(r, 'complete')}>
                               <CheckCircle className="w-4 h-4" />
                             </Button>
                             <Button variant="ghost" size="sm" className="text-destructive" onClick={() => openProcessDialog(r, 'reject')}>
@@ -236,6 +237,7 @@ const RevaluationProcessPage = () => {
                   ))}
                 </TableBody>
               </Table>
+              </div>
             )}
           </CardContent>
         </Card>

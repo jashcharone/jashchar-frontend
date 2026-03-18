@@ -98,6 +98,7 @@ const ParentHomework = lazy(() => import('@/pages/parent/ParentHomework'));
 const ParentTimetable = lazy(() => import('@/pages/parent/ParentTimetable'));
 const ParentApplyLeave = lazy(() => import('@/pages/parent/ParentApplyLeave'));
 const ParentNoticeBoard = lazy(() => import('@/pages/parent/ParentNoticeBoard'));
+const MobileFaceAttendance = lazy(() => import('@/pages/parent/MobileFaceAttendance'));
 // ? Role-specific Dashboards
 const PrincipalDashboard = lazy(() => import('@/pages/PrincipalDashboard'));
 const AccountantDashboard = lazy(() => import('@/pages/AccountantDashboard'));
@@ -170,6 +171,7 @@ const DemoAutomationV2 = lazy(() => import('@/pages/master-admin/DemoAutomationV
 const SchoolOwnerDiagnostics = lazy(() => import('@/pages/master-admin/SchoolOwnerDiagnostics'));
 const WhatsAppManager = lazy(() => import('@/pages/master-admin/whatsapp/WhatsAppManager'));
 const JashSyncControlMain = lazy(() => import('@/pages/master-admin/jashsync-control/JashSyncControlMain'));
+const AIHealthMonitorDashboard = lazy(() => import('@/pages/master-admin/AIHealthMonitorDashboard'));
 
 const DomainList = lazy(() => import('@/pages/master-admin/custom-domain/DomainList'));
 const DomainSettings = lazy(() => import('@/pages/master-admin/custom-domain/DomainSettings'));
@@ -264,6 +266,22 @@ const OnlineCourseReport = lazy(() => import('@/pages/super-admin/online-course/
 const OnlineCourseSetting = lazy(() => import('@/pages/super-admin/online-course/Setting'));
 
 // Academics
+const AcademicDashboard = lazy(() => import('@/pages/super-admin/academics/AcademicDashboard'));
+const AcademicSetup = lazy(() => import('@/pages/super-admin/academics/AcademicSetup'));
+const CurriculumMaster = lazy(() => import('@/pages/super-admin/academics/CurriculumMaster'));
+const LearningOutcomes = lazy(() => import('@/pages/super-admin/academics/LearningOutcomes'));
+const LessonPlans = lazy(() => import('@/pages/super-admin/academics/LessonPlans'));
+const TeacherWorkload = lazy(() => import('@/pages/super-admin/academics/TeacherWorkload'));
+const EnhancedTimetable = lazy(() => import('@/pages/super-admin/academics/EnhancedTimetable'));
+const StudyMaterials = lazy(() => import('@/pages/super-admin/academics/StudyMaterials'));
+const EnhancedHomework = lazy(() => import('@/pages/super-admin/academics/EnhancedHomework'));
+const ClassActivities = lazy(() => import('@/pages/super-admin/academics/ClassActivities'));
+const CompetencyBadges = lazy(() => import('@/pages/super-admin/academics/CompetencyBadges'));
+const AcademicAnalytics = lazy(() => import('@/pages/super-admin/academics/AcademicAnalytics'));
+const AIAcademicInsights = lazy(() => import('@/pages/super-admin/academics/AIAcademicInsights'));
+const SyllabusProgressTracker = lazy(() => import('@/pages/super-admin/academics/SyllabusProgressTracker'));
+const ReportsEngine = lazy(() => import('@/pages/super-admin/academics/ReportsEngine'));
+const AcademicIntelligenceHub = lazy(() => import('@/pages/super-admin/academics/AcademicIntelligenceHub'));
 const Classes = lazy(() => import('@/pages/super-admin/academics/Classes'));
 const Sections = lazy(() => import('@/pages/super-admin/academics/Sections'));
 const Subjects = lazy(() => import('@/pages/super-admin/academics/Subjects'));
@@ -278,6 +296,7 @@ const PromoteStudent = lazy(() => import('@/pages/super-admin/academics/PromoteS
 const AcademicAnalysis = lazy(() => import('@/pages/super-admin/academics/AcademicAnalysis'));
 
 // Student Info
+const StudentInfoDashboard = lazy(() => import('@/pages/super-admin/student-information/StudentDashboard'));
 const StudentAdmission = lazy(() => import('@/pages/super-admin/student-information/StudentAdmission'));
 const AdmissionFormSettings = lazy(() => import('@/pages/super-admin/student-information/AdmissionFormSettings'));
 const StudentDetails = lazy(() => import('@/pages/super-admin/student-information/StudentDetails'));
@@ -293,6 +312,13 @@ const BulkDelete = lazy(() => import('@/pages/super-admin/student-information/Bu
 const BulkUpload = lazy(() => import('@/pages/super-admin/student-information/BulkUpload'));
 const StudentIdCard = lazy(() => import('@/pages/super-admin/student-information/StudentIdCard'));
 const StudentAnalysis = lazy(() => import('@/pages/super-admin/student-information/StudentAnalysis'));
+const TransferCertificate = lazy(() => import('@/pages/super-admin/student-information/TransferCertificate'));
+const DocumentChecklist = lazy(() => import('@/pages/super-admin/student-information/DocumentChecklist'));
+const StudentAttendanceDashboard = lazy(() => import('@/pages/super-admin/student-information/StudentAttendanceDashboard'));
+const StudentCommunication = lazy(() => import('@/pages/super-admin/student-information/StudentCommunication'));
+const StudentIdCardDesigner = lazy(() => import('@/pages/super-admin/student-information/StudentIdCardDesigner'));
+const StudentAnalytics2 = lazy(() => import('@/pages/super-admin/student-information/StudentAnalytics2'));
+const StudentAIInsights = lazy(() => import('@/pages/super-admin/student-information/StudentAIInsights'));
 
 // HR
 const EmployeeFormSettings = lazy(() => import('@/pages/super-admin/human-resource/EmployeeFormSettings.jsx'));
@@ -341,6 +367,18 @@ const DeviceManagement = lazy(() => import('@/pages/super-admin/attendance/Devic
 const CardManagement = lazy(() => import('@/pages/super-admin/attendance/CardManagement'));
 const FaceRegistration = lazy(() => import('@/pages/super-admin/attendance/FaceRegistration'));
 const LiveFaceAttendance = lazy(() => import('@/pages/super-admin/attendance/LiveFaceAttendance'));
+const AICameraManagement = lazy(() => import('@/pages/super-admin/attendance/AICameraManagement'));
+const FaissIndexManagement = lazy(() => import('@/pages/super-admin/attendance/IndexManagement'));
+const SpoofAlerts = lazy(() => import('@/pages/super-admin/attendance/SpoofAlerts'));
+const FaceAttendanceDashboard = lazy(() => import('@/pages/super-admin/attendance/FaceAttendanceDashboard'));
+const AttendanceHeatmap = lazy(() => import('@/pages/super-admin/attendance/AttendanceHeatmap'));
+const LateArrivalTracking = lazy(() => import('@/pages/super-admin/attendance/LateArrivalTracking'));
+const UnknownFaceManagement = lazy(() => import('@/pages/super-admin/attendance/UnknownFaceManagement'));
+const FaceAttendanceReports = lazy(() => import('@/pages/super-admin/attendance/FaceAttendanceReports'));
+const AttendanceNotificationSettings = lazy(() => import('@/pages/super-admin/attendance/AttendanceNotificationSettings'));
+const FaceAttendanceTestDashboard = lazy(() => import('@/pages/super-admin/attendance/FaceAttendanceTestDashboard'));
+const FaceAttendanceHelp = lazy(() => import('@/pages/super-admin/attendance/FaceAttendanceHelp'));
+const FaceAttendanceAdminSettings = lazy(() => import('@/pages/super-admin/attendance/FaceAttendanceAdminSettings'));
 const AttendanceRules = lazy(() => import('@/pages/super-admin/attendance/AttendanceRules'));
 const GeoFenceSetup = lazy(() => import('@/pages/super-admin/attendance/GeoFenceSetup'));
 const AttendanceAnalytics = lazy(() => import('@/pages/super-admin/attendance/AttendanceAnalytics'));
@@ -369,6 +407,14 @@ const RefundApprovals = lazy(() => import('@/pages/super-admin/fees-collection/R
 const ReceiptTemplates = lazy(() => import('@/pages/super-admin/fees-collection/ReceiptTemplates'));
 // 🌟 Fee Dashboard (Simplified)
 const FeeDashboard = lazy(() => import('@/pages/super-admin/fees-collection/FeeDashboard'));
+// 🆕 Advanced Fee Management Pages
+const FeeTemplates = lazy(() => import('@/pages/super-admin/fees-collection/FeeTemplates'));
+const SiblingGroups = lazy(() => import('@/pages/super-admin/fees-collection/SiblingGroups'));
+const LateFeesSlabs = lazy(() => import('@/pages/super-admin/fees-collection/LateFeesSlabs'));
+const ConcessionRequests = lazy(() => import('@/pages/super-admin/fees-collection/ConcessionRequests'));
+const InstallmentPlans = lazy(() => import('@/pages/super-admin/fees-collection/InstallmentPlans'));
+const PaymentSchedule = lazy(() => import('@/pages/super-admin/fees-collection/PaymentSchedule'));
+const FeeCalendar = lazy(() => import('@/pages/super-admin/fees-collection/FeeCalendar'));
 
 const AssignObservation = lazy(() => import('@/pages/super-admin/examinations/AssignObservation'));
 const TeacherRemarks = lazy(() => import('@/pages/super-admin/examinations/TeacherRemarks'));
@@ -429,6 +475,56 @@ const HostelRooms = lazy(() => import('@/pages/super-admin/hostel/HostelRooms'))
 const RoomTypes = lazy(() => import('@/pages/super-admin/hostel/RoomTypes'));
 const HostelFee = lazy(() => import('@/pages/super-admin/hostel/HostelFee'));
 const HostelAnalysis = lazy(() => import('@/pages/super-admin/hostel/HostelAnalysis'));
+const HostelAttendance = lazy(() => import('@/pages/super-admin/hostel/HostelAttendance'));
+const MarkAttendance = lazy(() => import('@/pages/super-admin/hostel/MarkAttendance'));
+const NightRollCall = lazy(() => import('@/pages/super-admin/hostel/NightRollCall'));
+const QRAttendance = lazy(() => import('@/pages/super-admin/hostel/QRAttendance'));
+const CurfewSettings = lazy(() => import('@/pages/super-admin/hostel/CurfewSettings'));
+const HostelAttendanceReport = lazy(() => import('@/pages/super-admin/hostel/AttendanceReport'));
+const CurfewViolations = lazy(() => import('@/pages/super-admin/hostel/CurfewViolations'));
+const VisitorManagement = lazy(() => import('@/pages/super-admin/hostel/VisitorManagement'));
+const RegisterVisitor = lazy(() => import('@/pages/super-admin/hostel/RegisterVisitor'));
+const InPremisesVisitors = lazy(() => import('@/pages/super-admin/hostel/InPremisesVisitors'));
+const VisitorApprovals = lazy(() => import('@/pages/super-admin/hostel/VisitorApprovals'));
+const VisitorRestrictions = lazy(() => import('@/pages/super-admin/hostel/VisitorRestrictions'));
+const VisitorBlacklist = lazy(() => import('@/pages/super-admin/hostel/VisitorBlacklist'));
+const MessManagement = lazy(() => import('@/pages/super-admin/hostel/mess/MessManagement'));
+const WeeklyMenu = lazy(() => import('@/pages/super-admin/hostel/mess/WeeklyMenu'));
+const TodayMenu = lazy(() => import('@/pages/super-admin/hostel/mess/TodayMenu'));
+const MessAttendance = lazy(() => import('@/pages/super-admin/hostel/mess/MessAttendance'));
+const MessFeedback = lazy(() => import('@/pages/super-admin/hostel/mess/MessFeedback'));
+const MessInventory = lazy(() => import('@/pages/super-admin/hostel/mess/MessInventory'));
+const ComplaintDashboard = lazy(() => import('@/pages/super-admin/hostel/complaints/ComplaintDashboard'));
+const ComplaintList = lazy(() => import('@/pages/super-admin/hostel/complaints/ComplaintList'));
+const ComplaintDetail = lazy(() => import('@/pages/super-admin/hostel/complaints/ComplaintDetail'));
+const CreateComplaint = lazy(() => import('@/pages/super-admin/hostel/complaints/CreateComplaint'));
+const ComplaintAnalytics = lazy(() => import('@/pages/super-admin/hostel/complaints/ComplaintAnalytics'));
+const AssetManagement = lazy(() => import('@/pages/super-admin/hostel/assets/AssetManagement'));
+const AddAsset = lazy(() => import('@/pages/super-admin/hostel/assets/AddAsset'));
+const AssetDetail = lazy(() => import('@/pages/super-admin/hostel/assets/AssetDetail'));
+const DamagedAssets = lazy(() => import('@/pages/super-admin/hostel/assets/DamagedAssets'));
+const AssetReport = lazy(() => import('@/pages/super-admin/hostel/assets/AssetReport'));
+const LeaveManagement = lazy(() => import('@/pages/super-admin/hostel/leave/LeaveManagement'));
+const HostelApplyLeave = lazy(() => import('@/pages/super-admin/hostel/leave/ApplyLeave'));
+const LeaveDetail = lazy(() => import('@/pages/super-admin/hostel/leave/LeaveDetail'));
+const LeaveApprovals = lazy(() => import('@/pages/super-admin/hostel/leave/LeaveApprovals'));
+const OnLeaveToday = lazy(() => import('@/pages/super-admin/hostel/leave/OnLeaveToday'));
+const RoomChangeRequests = lazy(() => import('@/pages/super-admin/hostel/leave/RoomChangeRequests'));
+const RequestRoomChange = lazy(() => import('@/pages/super-admin/hostel/leave/RequestRoomChange'));
+// Security & Safety
+const SecurityDashboard = lazy(() => import('@/pages/super-admin/hostel/security/SecurityDashboard'));
+const AlertsList = lazy(() => import('@/pages/super-admin/hostel/security/AlertsList'));
+const SOSAlerts = lazy(() => import('@/pages/super-admin/hostel/security/SOSAlerts'));
+const CurfewMonitor = lazy(() => import('@/pages/super-admin/hostel/security/CurfewMonitor'));
+const GirlsHostelSafety = lazy(() => import('@/pages/super-admin/hostel/security/GirlsHostelSafety'));
+// AI Insights
+const AIInsightsDashboard = lazy(() => import('@/pages/super-admin/hostel/ai/AIInsightsDashboard'));
+const OccupancyPrediction = lazy(() => import('@/pages/super-admin/hostel/ai/OccupancyPrediction'));
+const AttendanceAnomalies = lazy(() => import('@/pages/super-admin/hostel/ai/AttendanceAnomalies'));
+const ComplaintAnalysisAI = lazy(() => import('@/pages/super-admin/hostel/ai/ComplaintAnalysisAI'));
+// Parent Portal
+const ParentHostelDashboard = lazy(() => import('@/pages/super-admin/hostel/parent/ParentHostelDashboard'));
+const StudentHostelView = lazy(() => import('@/pages/super-admin/hostel/parent/StudentHostelView'));
 
 // Transport
 const TransportRoutes = lazy(() => import('@/pages/super-admin/transport/TransportRoutes'));
@@ -439,6 +535,21 @@ const AssignVehicle = lazy(() => import('@/pages/super-admin/transport/AssignVeh
 const StudentTransportFees = lazy(() => import('@/pages/super-admin/transport/StudentTransportFees'));
 const TransportFeesMaster = lazy(() => import('@/pages/super-admin/transport/TransportFeesMaster'));
 const TransportAnalysis = lazy(() => import('@/pages/super-admin/transport/TransportAnalysis'));
+const DriverManagement = lazy(() => import('@/pages/super-admin/transport/DriverManagement'));
+const TripManagement = lazy(() => import('@/pages/super-admin/transport/TripManagement'));
+const BusBoardingAttendance = lazy(() => import('@/pages/super-admin/transport/BusBoardingAttendance'));
+const VehicleMaintenance = lazy(() => import('@/pages/super-admin/transport/VehicleMaintenance'));
+const FuelManagement = lazy(() => import('@/pages/super-admin/transport/FuelManagement'));
+const IncidentManagement = lazy(() => import('@/pages/super-admin/transport/IncidentManagement'));
+const TransportDashboard = lazy(() => import('@/pages/super-admin/transport/TransportDashboard'));
+const LiveTracking = lazy(() => import('@/pages/super-admin/transport/LiveTracking'));
+const GeofenceManagement = lazy(() => import('@/pages/super-admin/transport/GeofenceManagement'));
+const NotificationSettings = lazy(() => import('@/pages/super-admin/transport/NotificationSettings'));
+const TransportSOSAlerts = lazy(() => import('@/pages/super-admin/transport/SOSAlerts'));
+const VehicleChecklist = lazy(() => import('@/pages/super-admin/transport/VehicleChecklist'));
+const TransportCommunication = lazy(() => import('@/pages/super-admin/transport/TransportCommunication'));
+const TransportReports = lazy(() => import('@/pages/super-admin/transport/TransportReports'));
+const TransportIDCard = lazy(() => import('@/pages/super-admin/transport/TransportIDCard'));
 
 // Communicate
 const NoticeBoard = lazy(() => import('@/pages/super-admin/communicate/NoticeBoard'));
@@ -508,6 +619,17 @@ const CreateEditTask = lazy(() => import('@/pages/super-admin/task-management/Cr
 const MyTasks = lazy(() => import('@/pages/super-admin/task-management/MyTasks'));
 const TaskCategories = lazy(() => import('@/pages/super-admin/task-management/TaskCategories'));
 const TaskPriorities = lazy(() => import('@/pages/super-admin/task-management/TaskPriorities'));
+
+// User Management
+const UserMgmtDashboard = lazy(() => import('@/pages/super-admin/user-management/Dashboard'));
+const UserMgmtAllUsers = lazy(() => import('@/pages/super-admin/user-management/AllUsers'));
+const UserMgmtStudents = lazy(() => import('@/pages/super-admin/user-management/StudentUsers'));
+const UserMgmtStaff = lazy(() => import('@/pages/super-admin/user-management/StaffUsers'));
+const UserMgmtParents = lazy(() => import('@/pages/super-admin/user-management/ParentUsers'));
+const UserMgmtTransferStaff = lazy(() => import('@/pages/super-admin/user-management/TransferStaff'));
+
+// HR Loans
+const LoansManagement = lazy(() => import('@/pages/super-admin/human-resource/LoansManagement'));
 
 // ? Advanced Analytics & AI
 const AdvancedAnalytics = lazy(() => import('@/pages/super-admin/AdvancedAnalytics'));
@@ -721,6 +843,14 @@ function App() {
               }
             />
             <Route
+              path="/master-admin/ai-health"
+              element={
+                <ProtectedRoute allowedRoles={['master_admin']}>
+                  <AIHealthMonitorDashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
               path={ROUTES.MASTER_ADMIN.EDIT_SCHOOL}
               element={
                 <ProtectedRoute allowedRoles={['master_admin']}>
@@ -810,12 +940,12 @@ function App() {
             />
 
             {/* ✅ School Owner - Redirect all to school dashboard */}
-            <Route path="/school-owner" element={<Navigate to={ROUTES.SUPER_ADMIN.DASHBOARD} replace />} />
-            <Route path="/school-owner/*" element={<Navigate to={ROUTES.SUPER_ADMIN.DASHBOARD} replace />} />
+            <Route path="/school-owner" element={<ProtectedRoute allowedRoles={['super_admin', 'school_owner', 'organization_owner', 'admin']}><Navigate to={ROUTES.SUPER_ADMIN.DASHBOARD} replace /></ProtectedRoute>} />
+            <Route path="/school-owner/*" element={<ProtectedRoute allowedRoles={['super_admin', 'school_owner', 'organization_owner', 'admin']}><Navigate to={ROUTES.SUPER_ADMIN.DASHBOARD} replace /></ProtectedRoute>} />
             
             {/* Redirect organization-owner to school dashboard */}
-            <Route path="/organization-owner/dashboard" element={<Navigate to={ROUTES.SUPER_ADMIN.DASHBOARD} replace />} />
-            <Route path="/organization-owner/*" element={<Navigate to={ROUTES.SUPER_ADMIN.DASHBOARD} replace />} />
+            <Route path="/organization-owner/dashboard" element={<ProtectedRoute allowedRoles={['super_admin', 'school_owner', 'organization_owner', 'admin']}><Navigate to={ROUTES.SUPER_ADMIN.DASHBOARD} replace /></ProtectedRoute>} />
+            <Route path="/organization-owner/*" element={<ProtectedRoute allowedRoles={['super_admin', 'school_owner', 'organization_owner', 'admin']}><Navigate to={ROUTES.SUPER_ADMIN.DASHBOARD} replace /></ProtectedRoute>} />
 
             {/* ✅ Remove old redirect - we now keep /super-admin/ URLs */}
             {/* Each role gets their own dashboard URL */}
@@ -907,6 +1037,7 @@ function App() {
             <Route path={ROUTES.PARENT.TRANSPORT} element={<ProtectedRoute allowedRoles={['parent']}><ParentTransport /></ProtectedRoute>} />
             <Route path={ROUTES.PARENT.HOSTEL} element={<ProtectedRoute allowedRoles={['parent']}><ParentHostel /></ProtectedRoute>} />
             <Route path={ROUTES.PARENT.NOTICE_BOARD} element={<ProtectedRoute allowedRoles={['parent']}><ParentNoticeBoard /></ProtectedRoute>} />
+            <Route path={ROUTES.PARENT.FACE_ATTENDANCE} element={<ProtectedRoute allowedRoles={['parent']}><MobileFaceAttendance /></ProtectedRoute>} />
             <Route path="/Parent/*" element={<Navigate to="/Parent/dashboard" replace />} />
             
             {/* ✅ Student Portal Routes */}
@@ -1388,6 +1519,7 @@ function App() {
             <Route path={ROUTES.SUPER_ADMIN.ACADEMIC_ANALYSIS} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'principal']} requiredModule="academics"><AcademicAnalysis /></ProtectedRoute>} />
 
             {/* ? Student Information */}
+            <Route path={ROUTES.SUPER_ADMIN.STUDENT_DASHBOARD} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'principal']} requiredModule="student_information"><StudentInfoDashboard /></ProtectedRoute>} />
             <Route path={ROUTES.SUPER_ADMIN.STUDENT_ADMISSION} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'principal']} requiredModule="student_information"><StudentAdmission /></ProtectedRoute>} />
             <Route path={ROUTES.SUPER_ADMIN.ADMISSION_FORM_SETTINGS} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="student_information"><AdmissionFormSettings /></ProtectedRoute>} />
             <Route path={ROUTES.SUPER_ADMIN.STUDENT_DETAILS} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'teacher', 'accountant', 'receptionist', 'principal']} requiredModule="student_information"><StudentDetails /></ProtectedRoute>} />
@@ -1403,10 +1535,18 @@ function App() {
             <Route path={ROUTES.SUPER_ADMIN.STUDENT_BULK_UPLOAD} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="student_information"><BulkUpload /></ProtectedRoute>} />
             <Route path={ROUTES.SUPER_ADMIN.STUDENT_ID_CARD} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="student_information"><StudentIdCard /></ProtectedRoute>} />
             <Route path={ROUTES.SUPER_ADMIN.STUDENT_ANALYSIS} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'principal']} requiredModule="student_information"><StudentAnalysis /></ProtectedRoute>} />
+            <Route path={ROUTES.SUPER_ADMIN.TRANSFER_CERTIFICATE} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'principal']} requiredModule="student_information"><TransferCertificate /></ProtectedRoute>} />
+            <Route path={ROUTES.SUPER_ADMIN.DOCUMENT_CHECKLIST} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'principal']} requiredModule="student_information"><DocumentChecklist /></ProtectedRoute>} />
+            <Route path={ROUTES.SUPER_ADMIN.STUDENT_ATTENDANCE_DASHBOARD} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'principal']} requiredModule="student_information"><StudentAttendanceDashboard /></ProtectedRoute>} />
+            <Route path={ROUTES.SUPER_ADMIN.STUDENT_COMMUNICATION} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'principal']} requiredModule="student_information"><StudentCommunication /></ProtectedRoute>} />
+            <Route path={ROUTES.SUPER_ADMIN.STUDENT_ID_CARD_DESIGNER} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'principal']} requiredModule="student_information"><StudentIdCardDesigner /></ProtectedRoute>} />
+            <Route path={ROUTES.SUPER_ADMIN.STUDENT_ANALYTICS_2} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'principal']} requiredModule="student_information"><StudentAnalytics2 /></ProtectedRoute>} />
+            <Route path={ROUTES.SUPER_ADMIN.STUDENT_AI_INSIGHTS} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'principal']} requiredModule="student_information"><StudentAIInsights /></ProtectedRoute>} />
 
             {/* 🧑 HR */}
             <Route path="/super-admin/human-resource/dashboard" element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'principal']} requiredModule="human_resource"><HRDashboard /></ProtectedRoute>} />
-            <Route path="/super-admin/human-resource/hr-dashboard" element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'principal']} requiredModule="human_resource"><HRDashboard /></ProtectedRoute>} />
+            {/* Redirect old hr-dashboard path to canonical dashboard */}
+            <Route path="/super-admin/human-resource/hr-dashboard" element={<Navigate to="/super-admin/human-resource/dashboard" replace />} />
             <Route path={ROUTES.SUPER_ADMIN.EMPLOYEE_FORM_SETTINGS} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="human_resource"><EmployeeFormSettings /></ProtectedRoute>} />
             <Route path={ROUTES.SUPER_ADMIN.DEPARTMENTS} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'principal']} requiredModule="human_resource"><Departments /></ProtectedRoute>} />
             <Route path={ROUTES.SUPER_ADMIN.EMPLOYMENT_CATEGORY} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="human_resource"><EmploymentCategory /></ProtectedRoute>} />
@@ -1437,10 +1577,11 @@ function App() {
             <Route path="/super-admin/human-resource/payroll/salary-structure" element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'accountant']} requiredModule="human_resource"><SalaryStructure /></ProtectedRoute>} />
             <Route path="/super-admin/human-resource/payroll/run" element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'accountant']} requiredModule="human_resource"><PayrollRun /></ProtectedRoute>} />
             <Route path="/super-admin/human-resource/payroll/payslips" element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'accountant']} requiredModule="human_resource"><Payslips /></ProtectedRoute>} />
+            <Route path={ROUTES.SUPER_ADMIN.HR_LOANS} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'accountant']} requiredModule="human_resource"><LoansManagement /></ProtectedRoute>} />
 
             {/* ? Attendance */}
             <Route path={ROUTES.SUPER_ADMIN.STUDENT_ATTENDANCE} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'teacher', 'principal']} requiredModule="attendance"><StudentAttendance /></ProtectedRoute>} />
-            <Route path={ROUTES.SUPER_ADMIN.ATTENDANCE_BY_DATE} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'teacher']} requiredModule="attendance"><AttendanceByDate /></ProtectedRoute>} />
+            <Route path={ROUTES.SUPER_ADMIN.ATTENDANCE_BY_DATE} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'teacher', 'principal']} requiredModule="attendance"><AttendanceByDate /></ProtectedRoute>} />
             <Route path={ROUTES.SUPER_ADMIN.APPROVE_LEAVE} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'teacher', 'principal']} requiredModule="attendance"><ApproveStudentLeave /></ProtectedRoute>} />
             <Route path={ROUTES.SUPER_ADMIN.STAFF_ATTENDANCE} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'principal']} requiredModule="attendance"><StaffAttendance /></ProtectedRoute>} />
             <Route path={ROUTES.SUPER_ADMIN.ATTENDANCE_REPORT} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'teacher', 'principal']} requiredModule="attendance"><AttendanceReport /></ProtectedRoute>} />
@@ -1451,6 +1592,18 @@ function App() {
             <Route path={ROUTES.SUPER_ADMIN.CARD_MANAGEMENT} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="attendance"><CardManagement /></ProtectedRoute>} />
             <Route path={ROUTES.SUPER_ADMIN.FACE_REGISTRATION} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="attendance"><FaceRegistration /></ProtectedRoute>} />
             <Route path={ROUTES.SUPER_ADMIN.LIVE_FACE_ATTENDANCE} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'teacher']} requiredModule="attendance"><LiveFaceAttendance /></ProtectedRoute>} />
+            <Route path={ROUTES.SUPER_ADMIN.AI_CAMERA_MANAGEMENT} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="attendance"><AICameraManagement /></ProtectedRoute>} />
+            <Route path={ROUTES.SUPER_ADMIN.FAISS_INDEX_MANAGEMENT} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="attendance"><FaissIndexManagement /></ProtectedRoute>} />
+            <Route path={ROUTES.SUPER_ADMIN.SPOOF_ALERTS} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="attendance"><SpoofAlerts /></ProtectedRoute>} />
+            <Route path={ROUTES.SUPER_ADMIN.FACE_ATTENDANCE_DASHBOARD} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'principal']} requiredModule="attendance"><FaceAttendanceDashboard /></ProtectedRoute>} />
+            <Route path={ROUTES.SUPER_ADMIN.ATTENDANCE_HEATMAP} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'principal']} requiredModule="attendance"><AttendanceHeatmap /></ProtectedRoute>} />
+            <Route path={ROUTES.SUPER_ADMIN.LATE_ARRIVAL_TRACKING} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'principal', 'teacher']} requiredModule="attendance"><LateArrivalTracking /></ProtectedRoute>} />
+            <Route path={ROUTES.SUPER_ADMIN.UNKNOWN_FACE_MANAGEMENT} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="attendance"><UnknownFaceManagement /></ProtectedRoute>} />
+            <Route path={ROUTES.SUPER_ADMIN.FACE_ATTENDANCE_REPORTS} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'principal']} requiredModule="attendance"><FaceAttendanceReports /></ProtectedRoute>} />
+            <Route path={ROUTES.SUPER_ADMIN.ATTENDANCE_NOTIFICATION_SETTINGS} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="attendance"><AttendanceNotificationSettings /></ProtectedRoute>} />
+            <Route path={ROUTES.SUPER_ADMIN.FACE_ATTENDANCE_TEST_DASHBOARD} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="attendance"><FaceAttendanceTestDashboard /></ProtectedRoute>} />
+            <Route path={ROUTES.SUPER_ADMIN.FACE_ATTENDANCE_HELP} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'principal', 'teacher']} requiredModule="attendance"><FaceAttendanceHelp /></ProtectedRoute>} />
+            <Route path={ROUTES.SUPER_ADMIN.FACE_ATTENDANCE_ADMIN_SETTINGS} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="attendance"><FaceAttendanceAdminSettings /></ProtectedRoute>} />
             <Route path={ROUTES.SUPER_ADMIN.ATTENDANCE_RULES} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="attendance"><AttendanceRules /></ProtectedRoute>} />
             <Route path={ROUTES.SUPER_ADMIN.GEO_FENCE_SETUP} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="attendance"><GeoFenceSetup /></ProtectedRoute>} />
             <Route path={ROUTES.SUPER_ADMIN.WEARABLE_DEVICES} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="attendance"><WearableDevices /></ProtectedRoute>} />
@@ -1466,6 +1619,14 @@ function App() {
             <Route path="/super-admin/task-management/my-tasks" element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'principal', 'vice_principal', 'coordinator', 'accountant', 'cashier', 'receptionist', 'teacher', 'class_teacher', 'subject_teacher', 'librarian', 'lab_assistant', 'driver', 'hostel_warden', 'sports_coach', 'security_guard', 'maintenance_staff', 'peon', 'employee', 'staff']} requiredModule="task_management.my_tasks"><MyTasks /></ProtectedRoute>} />
             <Route path="/super-admin/task-management/categories" element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'principal']} requiredModule="task_management.categories"><TaskCategories /></ProtectedRoute>} />
             <Route path="/super-admin/task-management/priorities" element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'principal']} requiredModule="task_management.priorities"><TaskPriorities /></ProtectedRoute>} />
+
+            {/* 👤 User Management */}
+            <Route path={ROUTES.SUPER_ADMIN.USER_MGMT_DASHBOARD} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']}><UserMgmtDashboard /></ProtectedRoute>} />
+            <Route path={ROUTES.SUPER_ADMIN.USER_MGMT_ALL_USERS} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']}><UserMgmtAllUsers /></ProtectedRoute>} />
+            <Route path={ROUTES.SUPER_ADMIN.USER_MGMT_STUDENTS} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']}><UserMgmtStudents /></ProtectedRoute>} />
+            <Route path={ROUTES.SUPER_ADMIN.USER_MGMT_STAFF} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']}><UserMgmtStaff /></ProtectedRoute>} />
+            <Route path={ROUTES.SUPER_ADMIN.USER_MGMT_PARENTS} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']}><UserMgmtParents /></ProtectedRoute>} />
+            <Route path={ROUTES.SUPER_ADMIN.USER_MGMT_TRANSFER_STAFF} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']}><UserMgmtTransferStaff /></ProtectedRoute>} />
 
             {/* ⚡ Cortex AI - India's First Thinking ERP (Add-on billing - NOT module permission) */}
             <Route path="/super-admin/cortex-ai/*" element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'principal']}><CortexAI /></ProtectedRoute>} />
@@ -1500,6 +1661,14 @@ function App() {
             <Route path={ROUTES.SUPER_ADMIN.RECEIPT_TEMPLATES} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']}><ReceiptTemplates /></ProtectedRoute>} />
             {/* 🌟 Fee Dashboard (Simplified) */}
             <Route path="/super-admin/fees-collection/fee-dashboard" element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'accountant', 'principal']}><FeeDashboard /></ProtectedRoute>} />
+            {/* 🆕 Advanced Fee Management */}
+            <Route path="/super-admin/fees-collection/fee-templates" element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'accountant']}><FeeTemplates /></ProtectedRoute>} />
+            <Route path="/super-admin/fees-collection/sibling-groups" element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'accountant']}><SiblingGroups /></ProtectedRoute>} />
+            <Route path="/super-admin/fees-collection/late-fee-slabs" element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'accountant']}><LateFeesSlabs /></ProtectedRoute>} />
+            <Route path="/super-admin/fees-collection/concession-requests" element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'accountant']}><ConcessionRequests /></ProtectedRoute>} />
+            <Route path="/super-admin/fees-collection/installment-plans" element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'accountant']}><InstallmentPlans /></ProtectedRoute>} />
+            <Route path="/super-admin/fees-collection/payment-schedule" element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'accountant']}><PaymentSchedule /></ProtectedRoute>} />
+            <Route path="/super-admin/fees-collection/fee-calendar" element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'accountant']}><FeeCalendar /></ProtectedRoute>} />
 
             <Route path={ROUTES.SUPER_ADMIN.ASSIGN_OBSERVATION} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="examinations"><AssignObservation /></ProtectedRoute>} />
             <Route path={ROUTES.SUPER_ADMIN.TEACHER_REMARKS} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'teacher']} requiredModule="examinations"><TeacherRemarks /></ProtectedRoute>} />
@@ -1560,6 +1729,39 @@ function App() {
             <Route path={ROUTES.SUPER_ADMIN.ROOM_TYPES} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="hostel"><RoomTypes /></ProtectedRoute>} />
             <Route path={ROUTES.SUPER_ADMIN.HOSTEL_FEE} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="hostel"><HostelFee /></ProtectedRoute>} />
             <Route path={ROUTES.SUPER_ADMIN.HOSTEL_ANALYSIS} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="hostel"><HostelAnalysis /></ProtectedRoute>} />
+            <Route path={ROUTES.SUPER_ADMIN.HOSTEL_ATTENDANCE} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="hostel"><HostelAttendance /></ProtectedRoute>} />
+            <Route path={ROUTES.SUPER_ADMIN.HOSTEL_MARK_ATTENDANCE} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="hostel"><MarkAttendance /></ProtectedRoute>} />
+            <Route path={ROUTES.SUPER_ADMIN.HOSTEL_NIGHT_ROLL_CALL} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="hostel"><NightRollCall /></ProtectedRoute>} />
+            <Route path={ROUTES.SUPER_ADMIN.HOSTEL_QR_ATTENDANCE} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="hostel"><QRAttendance /></ProtectedRoute>} />
+            <Route path={ROUTES.SUPER_ADMIN.HOSTEL_CURFEW_SETTINGS} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="hostel"><CurfewSettings /></ProtectedRoute>} />
+            <Route path={ROUTES.SUPER_ADMIN.HOSTEL_ATTENDANCE_REPORT} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="hostel"><HostelAttendanceReport /></ProtectedRoute>} />
+            <Route path={ROUTES.SUPER_ADMIN.HOSTEL_CURFEW_VIOLATIONS} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="hostel"><CurfewViolations /></ProtectedRoute>} />
+            <Route path={ROUTES.SUPER_ADMIN.HOSTEL_VISITOR_MANAGEMENT} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="hostel"><VisitorManagement /></ProtectedRoute>} />
+            <Route path={ROUTES.SUPER_ADMIN.HOSTEL_REGISTER_VISITOR} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="hostel"><RegisterVisitor /></ProtectedRoute>} />
+            <Route path={ROUTES.SUPER_ADMIN.HOSTEL_IN_PREMISES_VISITORS} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="hostel"><InPremisesVisitors /></ProtectedRoute>} />
+            <Route path={ROUTES.SUPER_ADMIN.HOSTEL_VISITOR_APPROVALS} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="hostel"><VisitorApprovals /></ProtectedRoute>} />
+            <Route path={ROUTES.SUPER_ADMIN.HOSTEL_VISITOR_RESTRICTIONS} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="hostel"><VisitorRestrictions /></ProtectedRoute>} />
+            <Route path={ROUTES.SUPER_ADMIN.HOSTEL_VISITOR_BLACKLIST} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="hostel"><VisitorBlacklist /></ProtectedRoute>} />
+            <Route path={ROUTES.SUPER_ADMIN.HOSTEL_MESS_MANAGEMENT} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="hostel"><MessManagement /></ProtectedRoute>} />
+            <Route path={ROUTES.SUPER_ADMIN.HOSTEL_WEEKLY_MENU} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="hostel"><WeeklyMenu /></ProtectedRoute>} />
+            <Route path={ROUTES.SUPER_ADMIN.HOSTEL_TODAY_MENU} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="hostel"><TodayMenu /></ProtectedRoute>} />
+            <Route path={ROUTES.SUPER_ADMIN.HOSTEL_MESS_ATTENDANCE} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="hostel"><MessAttendance /></ProtectedRoute>} />
+            <Route path={ROUTES.SUPER_ADMIN.HOSTEL_MESS_FEEDBACK} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="hostel"><MessFeedback /></ProtectedRoute>} />
+            <Route path={ROUTES.SUPER_ADMIN.HOSTEL_MESS_INVENTORY} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="hostel"><MessInventory /></ProtectedRoute>} />
+            {/* 🛡️ Hostel Security & Safety */}
+            <Route path={ROUTES.SUPER_ADMIN.HOSTEL_SECURITY_DASHBOARD} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="hostel"><SecurityDashboard /></ProtectedRoute>} />
+            <Route path={ROUTES.SUPER_ADMIN.HOSTEL_ALERTS_LIST} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="hostel"><AlertsList /></ProtectedRoute>} />
+            <Route path={ROUTES.SUPER_ADMIN.HOSTEL_SOS_ALERTS} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="hostel"><SOSAlerts /></ProtectedRoute>} />
+            <Route path={ROUTES.SUPER_ADMIN.HOSTEL_CURFEW_MONITOR} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="hostel"><CurfewMonitor /></ProtectedRoute>} />
+            <Route path={ROUTES.SUPER_ADMIN.HOSTEL_GIRLS_HOSTEL_SAFETY} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="hostel"><GirlsHostelSafety /></ProtectedRoute>} />
+            {/* 🤖 Hostel AI Insights */}
+            <Route path={ROUTES.SUPER_ADMIN.HOSTEL_AI_INSIGHTS} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="hostel"><AIInsightsDashboard /></ProtectedRoute>} />
+            <Route path={ROUTES.SUPER_ADMIN.HOSTEL_OCCUPANCY_PREDICTION} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="hostel"><OccupancyPrediction /></ProtectedRoute>} />
+            <Route path={ROUTES.SUPER_ADMIN.HOSTEL_ATTENDANCE_ANOMALIES} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="hostel"><AttendanceAnomalies /></ProtectedRoute>} />
+            <Route path={ROUTES.SUPER_ADMIN.HOSTEL_COMPLAINT_ANALYSIS_AI} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="hostel"><ComplaintAnalysisAI /></ProtectedRoute>} />
+            {/* 👪 Hostel Parent Portal */}
+            <Route path={ROUTES.SUPER_ADMIN.HOSTEL_PARENT_DASHBOARD} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="hostel"><ParentHostelDashboard /></ProtectedRoute>} />
+            <Route path={ROUTES.SUPER_ADMIN.HOSTEL_STUDENT_HOSTEL_VIEW} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="hostel"><StudentHostelView /></ProtectedRoute>} />
 
             {/* ? Transport */}
             <Route path={ROUTES.SUPER_ADMIN.TRANSPORT_ROUTES} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="transport"><TransportRoutes /></ProtectedRoute>} />
@@ -1570,6 +1772,21 @@ function App() {
             <Route path={ROUTES.SUPER_ADMIN.STUDENT_TRANSPORT_FEES} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="transport"><StudentTransportFees /></ProtectedRoute>} />
             <Route path={ROUTES.SUPER_ADMIN.TRANSPORT_FEES_MASTER} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="transport"><TransportFeesMaster /></ProtectedRoute>} />
             <Route path={ROUTES.SUPER_ADMIN.TRANSPORT_ANALYSIS} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="transport"><TransportAnalysis /></ProtectedRoute>} />
+            <Route path={ROUTES.SUPER_ADMIN.TRANSPORT_DRIVERS} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="transport"><DriverManagement /></ProtectedRoute>} />
+            <Route path={ROUTES.SUPER_ADMIN.TRANSPORT_TRIPS} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="transport"><TripManagement /></ProtectedRoute>} />
+            <Route path={ROUTES.SUPER_ADMIN.TRANSPORT_BOARDING} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="transport"><BusBoardingAttendance /></ProtectedRoute>} />
+            <Route path={ROUTES.SUPER_ADMIN.TRANSPORT_MAINTENANCE} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="transport"><VehicleMaintenance /></ProtectedRoute>} />
+            <Route path={ROUTES.SUPER_ADMIN.TRANSPORT_FUEL} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="transport"><FuelManagement /></ProtectedRoute>} />
+            <Route path={ROUTES.SUPER_ADMIN.TRANSPORT_INCIDENTS} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="transport"><IncidentManagement /></ProtectedRoute>} />
+            <Route path={ROUTES.SUPER_ADMIN.TRANSPORT_DASHBOARD} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="transport"><TransportDashboard /></ProtectedRoute>} />
+            <Route path={ROUTES.SUPER_ADMIN.TRANSPORT_LIVE_TRACKING} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="transport"><LiveTracking /></ProtectedRoute>} />
+            <Route path={ROUTES.SUPER_ADMIN.TRANSPORT_GEOFENCING} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="transport"><GeofenceManagement /></ProtectedRoute>} />
+            <Route path={ROUTES.SUPER_ADMIN.TRANSPORT_NOTIFICATIONS} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="transport"><NotificationSettings /></ProtectedRoute>} />
+            <Route path={ROUTES.SUPER_ADMIN.TRANSPORT_SOS} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="transport"><TransportSOSAlerts /></ProtectedRoute>} />
+            <Route path={ROUTES.SUPER_ADMIN.TRANSPORT_CHECKLIST} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="transport"><VehicleChecklist /></ProtectedRoute>} />
+            <Route path={ROUTES.SUPER_ADMIN.TRANSPORT_COMMUNICATION} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="transport"><TransportCommunication /></ProtectedRoute>} />
+            <Route path={ROUTES.SUPER_ADMIN.TRANSPORT_REPORTS} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="transport"><TransportReports /></ProtectedRoute>} />
+            <Route path={ROUTES.SUPER_ADMIN.TRANSPORT_ID_CARDS} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="transport"><TransportIDCard /></ProtectedRoute>} />
 
             {/* ? Communicate */}
             <Route path={ROUTES.SUPER_ADMIN.NOTICE_BOARD} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'teacher', 'student', 'parent', 'principal']} requiredModule="communicate"><NoticeBoard /></ProtectedRoute>} />
@@ -1676,6 +1893,22 @@ function App() {
             <Route path="/:roleSlug/front-office/setup" element={<StaffModuleRoute requiredModule="front_office"><SetupFrontOffice /></StaffModuleRoute>} />
             
             {/* Academics */}
+            <Route path="/:roleSlug/academics/dashboard" element={<StaffModuleRoute requiredModule="academics"><AcademicDashboard /></StaffModuleRoute>} />
+            <Route path="/:roleSlug/academics/setup" element={<StaffModuleRoute requiredModule="academics"><AcademicSetup /></StaffModuleRoute>} />
+            <Route path="/:roleSlug/academics/curriculum" element={<StaffModuleRoute requiredModule="academics"><CurriculumMaster /></StaffModuleRoute>} />
+            <Route path="/:roleSlug/academics/learning-outcomes" element={<StaffModuleRoute requiredModule="academics"><LearningOutcomes /></StaffModuleRoute>} />
+            <Route path="/:roleSlug/academics/lesson-plans" element={<StaffModuleRoute requiredModule="academics"><LessonPlans /></StaffModuleRoute>} />
+            <Route path="/:roleSlug/academics/teacher-workload" element={<StaffModuleRoute requiredModule="academics"><TeacherWorkload /></StaffModuleRoute>} />
+            <Route path="/:roleSlug/academics/enhanced-timetable" element={<StaffModuleRoute requiredModule="academics"><EnhancedTimetable /></StaffModuleRoute>} />
+            <Route path="/:roleSlug/academics/study-materials" element={<StaffModuleRoute requiredModule="academics"><StudyMaterials /></StaffModuleRoute>} />
+            <Route path="/:roleSlug/academics/enhanced-homework" element={<StaffModuleRoute requiredModule="academics"><EnhancedHomework /></StaffModuleRoute>} />
+            <Route path="/:roleSlug/academics/class-activities" element={<StaffModuleRoute requiredModule="academics"><ClassActivities /></StaffModuleRoute>} />
+            <Route path="/:roleSlug/academics/competency-badges" element={<StaffModuleRoute requiredModule="academics"><CompetencyBadges /></StaffModuleRoute>} />
+            <Route path="/:roleSlug/academics/analytics" element={<StaffModuleRoute requiredModule="academics"><AcademicAnalytics /></StaffModuleRoute>} />
+            <Route path="/:roleSlug/academics/ai-insights" element={<StaffModuleRoute requiredModule="academics"><AIAcademicInsights /></StaffModuleRoute>} />
+            <Route path="/:roleSlug/academics/syllabus-progress" element={<StaffModuleRoute requiredModule="academics"><SyllabusProgressTracker /></StaffModuleRoute>} />
+            <Route path="/:roleSlug/academics/reports-engine" element={<StaffModuleRoute requiredModule="academics"><ReportsEngine /></StaffModuleRoute>} />
+            <Route path="/:roleSlug/academics/intelligence-hub" element={<StaffModuleRoute requiredModule="academics"><AcademicIntelligenceHub /></StaffModuleRoute>} />
             <Route path="/:roleSlug/academics/classes" element={<StaffModuleRoute requiredModule="academics"><Classes /></StaffModuleRoute>} />
             <Route path="/:roleSlug/academics/sections" element={<StaffModuleRoute requiredModule="academics"><Sections /></StaffModuleRoute>} />
             <Route path="/:roleSlug/academics/subjects" element={<StaffModuleRoute requiredModule="academics"><Subjects /></StaffModuleRoute>} />
@@ -1708,22 +1941,30 @@ function App() {
             <Route path="/:roleSlug/fees-collection/collect-fees" element={<StaffModuleRoute requiredModule="fees_collection"><CollectFees /></StaffModuleRoute>} />
             <Route path="/:roleSlug/fees-collection/fee-structures" element={<StaffModuleRoute requiredModule="fees_collection"><FeeStructures /></StaffModuleRoute>} />
             <Route path="/:roleSlug/fees-collection/fee-rules" element={<StaffModuleRoute requiredModule="fees_collection"><FeeRules /></StaffModuleRoute>} />
-            <Route path="/:roleSlug/fees-collection/search-fees-payment" element={<StaffModuleRoute><SearchFeesPayment /></StaffModuleRoute>} />
-            <Route path="/:roleSlug/fees-collection/search-due-fees" element={<StaffModuleRoute><SearchDueFees /></StaffModuleRoute>} />
+            <Route path="/:roleSlug/fees-collection/search-fees-payment" element={<StaffModuleRoute requiredModule="fees_collection"><SearchFeesPayment /></StaffModuleRoute>} />
+            <Route path="/:roleSlug/fees-collection/search-due-fees" element={<StaffModuleRoute requiredModule="fees_collection"><SearchDueFees /></StaffModuleRoute>} />
             <Route path="/:roleSlug/fees-collection/fees-master" element={<StaffModuleRoute requiredModule="fees_collection"><FeesMaster /></StaffModuleRoute>} />
             <Route path="/:roleSlug/fees-collection/fees-group" element={<StaffModuleRoute requiredModule="fees_collection"><FeesGroup /></StaffModuleRoute>} />
             <Route path="/:roleSlug/fees-collection/fees-type" element={<StaffModuleRoute requiredModule="fees_collection"><FeesType /></StaffModuleRoute>} />
             <Route path="/:roleSlug/fees-collection/fees-discount" element={<StaffModuleRoute requiredModule="fees_collection"><FeesDiscount /></StaffModuleRoute>} />
-            <Route path="/:roleSlug/fees-collection/fees-reminder" element={<StaffModuleRoute><FeesReminder /></StaffModuleRoute>} />
+            <Route path="/:roleSlug/fees-collection/fees-reminder" element={<StaffModuleRoute requiredModule="fees_collection"><FeesReminder /></StaffModuleRoute>} />
             <Route path="/:roleSlug/fees-collection/quick-fees" element={<StaffModuleRoute requiredModule="fees_collection"><QuickFees /></StaffModuleRoute>} />
             <Route path="/:roleSlug/fees-collection/offline-bank-payments" element={<StaffModuleRoute requiredModule="fees_collection"><OfflineBankPayments /></StaffModuleRoute>} />
             <Route path="/:roleSlug/fees-collection/online-payment" element={<StaffModuleRoute requiredModule="fees_collection"><OnlinePayment /></StaffModuleRoute>} />
             <Route path="/:roleSlug/fees-collection/student-fees/:studentId" element={<StaffModuleRoute requiredModule="fees_collection"><StudentFees /></StaffModuleRoute>} />
             {/* 🧾 Unified Print Receipt - Staff routes */}
-            <Route path="/:roleSlug/fees-collection/print-receipt/combined" element={<StaffModuleRoute><PrintReceipt /></StaffModuleRoute>} />
-            <Route path="/:roleSlug/fees-collection/print-receipt/:type/:paymentId" element={<StaffModuleRoute><PrintReceipt /></StaffModuleRoute>} />
+            <Route path="/:roleSlug/fees-collection/print-receipt/combined" element={<StaffModuleRoute requiredModule="fees_collection"><PrintReceipt /></StaffModuleRoute>} />
+            <Route path="/:roleSlug/fees-collection/print-receipt/:type/:paymentId" element={<StaffModuleRoute requiredModule="fees_collection"><PrintReceipt /></StaffModuleRoute>} />
             {/* 🌟 Fee Dashboard (Simplified) */}
             <Route path="/:roleSlug/fees-collection/fee-dashboard" element={<StaffModuleRoute requiredModule="fees_collection"><FeeDashboard /></StaffModuleRoute>} />
+            {/* 🆕 Advanced Fee Management */}
+            <Route path="/:roleSlug/fees-collection/fee-templates" element={<StaffModuleRoute requiredModule="fees_collection"><FeeTemplates /></StaffModuleRoute>} />
+            <Route path="/:roleSlug/fees-collection/sibling-groups" element={<StaffModuleRoute requiredModule="fees_collection"><SiblingGroups /></StaffModuleRoute>} />
+            <Route path="/:roleSlug/fees-collection/late-fee-slabs" element={<StaffModuleRoute requiredModule="fees_collection"><LateFeesSlabs /></StaffModuleRoute>} />
+            <Route path="/:roleSlug/fees-collection/concession-requests" element={<StaffModuleRoute requiredModule="fees_collection"><ConcessionRequests /></StaffModuleRoute>} />
+            <Route path="/:roleSlug/fees-collection/installment-plans" element={<StaffModuleRoute requiredModule="fees_collection"><InstallmentPlans /></StaffModuleRoute>} />
+            <Route path="/:roleSlug/fees-collection/payment-schedule" element={<StaffModuleRoute requiredModule="fees_collection"><PaymentSchedule /></StaffModuleRoute>} />
+            <Route path="/:roleSlug/fees-collection/fee-calendar" element={<StaffModuleRoute requiredModule="fees_collection"><FeeCalendar /></StaffModuleRoute>} />
             
             {/* Finance */}
             <Route path="/:roleSlug/finance/income" element={<StaffModuleRoute requiredModule="income"><Income /></StaffModuleRoute>} />
@@ -1763,6 +2004,57 @@ function App() {
             <Route path="/:roleSlug/hostel/room-types" element={<StaffModuleRoute requiredModule="hostel"><RoomTypes /></StaffModuleRoute>} />
             <Route path="/:roleSlug/hostel/hostel-fee" element={<StaffModuleRoute requiredModule="hostel"><HostelFee /></StaffModuleRoute>} />
             <Route path="/:roleSlug/hostel/hostel-analysis" element={<StaffModuleRoute requiredModule="hostel"><HostelAnalysis /></StaffModuleRoute>} />
+            <Route path="/:roleSlug/hostel/attendance" element={<StaffModuleRoute requiredModule="hostel"><HostelAttendance /></StaffModuleRoute>} />
+            <Route path="/:roleSlug/hostel/mark-attendance" element={<StaffModuleRoute requiredModule="hostel"><MarkAttendance /></StaffModuleRoute>} />
+            <Route path="/:roleSlug/hostel/night-roll-call" element={<StaffModuleRoute requiredModule="hostel"><NightRollCall /></StaffModuleRoute>} />
+            <Route path="/:roleSlug/hostel/qr-attendance" element={<StaffModuleRoute requiredModule="hostel"><QRAttendance /></StaffModuleRoute>} />
+            <Route path="/:roleSlug/hostel/curfew-settings" element={<StaffModuleRoute requiredModule="hostel"><CurfewSettings /></StaffModuleRoute>} />
+            <Route path="/:roleSlug/hostel/attendance-report" element={<StaffModuleRoute requiredModule="hostel"><HostelAttendanceReport /></StaffModuleRoute>} />
+            <Route path="/:roleSlug/hostel/curfew-violations" element={<StaffModuleRoute requiredModule="hostel"><CurfewViolations /></StaffModuleRoute>} />
+            <Route path="/:roleSlug/hostel/visitor-management" element={<StaffModuleRoute requiredModule="hostel"><VisitorManagement /></StaffModuleRoute>} />
+            <Route path="/:roleSlug/hostel/register-visitor" element={<StaffModuleRoute requiredModule="hostel"><RegisterVisitor /></StaffModuleRoute>} />
+            <Route path="/:roleSlug/hostel/in-premises-visitors" element={<StaffModuleRoute requiredModule="hostel"><InPremisesVisitors /></StaffModuleRoute>} />
+            <Route path="/:roleSlug/hostel/visitor-approvals" element={<StaffModuleRoute requiredModule="hostel"><VisitorApprovals /></StaffModuleRoute>} />
+            <Route path="/:roleSlug/hostel/visitor-restrictions" element={<StaffModuleRoute requiredModule="hostel"><VisitorRestrictions /></StaffModuleRoute>} />
+            <Route path="/:roleSlug/hostel/visitor-blacklist" element={<StaffModuleRoute requiredModule="hostel"><VisitorBlacklist /></StaffModuleRoute>} />
+            <Route path="/:roleSlug/hostel/mess-management" element={<StaffModuleRoute requiredModule="hostel"><MessManagement /></StaffModuleRoute>} />
+            <Route path="/:roleSlug/hostel/weekly-menu" element={<StaffModuleRoute requiredModule="hostel"><WeeklyMenu /></StaffModuleRoute>} />
+            <Route path="/:roleSlug/hostel/today-menu" element={<StaffModuleRoute requiredModule="hostel"><TodayMenu /></StaffModuleRoute>} />
+            <Route path="/:roleSlug/hostel/mess-attendance" element={<StaffModuleRoute requiredModule="hostel"><MessAttendance /></StaffModuleRoute>} />
+            <Route path="/:roleSlug/hostel/mess-feedback" element={<StaffModuleRoute requiredModule="hostel"><MessFeedback /></StaffModuleRoute>} />
+            <Route path="/:roleSlug/hostel/mess-inventory" element={<StaffModuleRoute requiredModule="hostel"><MessInventory /></StaffModuleRoute>} />
+            <Route path="/:roleSlug/hostel/complaints" element={<StaffModuleRoute requiredModule="hostel"><ComplaintDashboard /></StaffModuleRoute>} />
+            <Route path="/:roleSlug/hostel/complaint-list" element={<StaffModuleRoute requiredModule="hostel"><ComplaintList /></StaffModuleRoute>} />
+            <Route path="/:roleSlug/hostel/create-complaint" element={<StaffModuleRoute requiredModule="hostel"><CreateComplaint /></StaffModuleRoute>} />
+            <Route path="/:roleSlug/hostel/complaint-analytics" element={<StaffModuleRoute requiredModule="hostel"><ComplaintAnalytics /></StaffModuleRoute>} />
+            <Route path="/:roleSlug/hostel/complaints/:id" element={<StaffModuleRoute requiredModule="hostel"><ComplaintDetail /></StaffModuleRoute>} />
+            <Route path="/:roleSlug/hostel/assets" element={<StaffModuleRoute requiredModule="hostel"><AssetManagement /></StaffModuleRoute>} />
+            <Route path="/:roleSlug/hostel/assets/add" element={<StaffModuleRoute requiredModule="hostel"><AddAsset /></StaffModuleRoute>} />
+            <Route path="/:roleSlug/hostel/assets/report" element={<StaffModuleRoute requiredModule="hostel"><AssetReport /></StaffModuleRoute>} />
+            <Route path="/:roleSlug/hostel/assets/damaged" element={<StaffModuleRoute requiredModule="hostel"><DamagedAssets /></StaffModuleRoute>} />
+            <Route path="/:roleSlug/hostel/assets/edit/:id" element={<StaffModuleRoute requiredModule="hostel"><AddAsset /></StaffModuleRoute>} />
+            <Route path="/:roleSlug/hostel/assets/:id" element={<StaffModuleRoute requiredModule="hostel"><AssetDetail /></StaffModuleRoute>} />
+            <Route path="/:roleSlug/hostel/leave" element={<StaffModuleRoute requiredModule="hostel"><LeaveManagement /></StaffModuleRoute>} />
+            <Route path="/:roleSlug/hostel/leave/apply" element={<StaffModuleRoute requiredModule="hostel"><HostelApplyLeave /></StaffModuleRoute>} />
+            <Route path="/:roleSlug/hostel/leave/approvals" element={<StaffModuleRoute requiredModule="hostel"><LeaveApprovals /></StaffModuleRoute>} />
+            <Route path="/:roleSlug/hostel/leave/on-leave-today" element={<StaffModuleRoute requiredModule="hostel"><OnLeaveToday /></StaffModuleRoute>} />
+            <Route path="/:roleSlug/hostel/leave/:id" element={<StaffModuleRoute requiredModule="hostel"><LeaveDetail /></StaffModuleRoute>} />
+            <Route path="/:roleSlug/hostel/room-change" element={<StaffModuleRoute requiredModule="hostel"><RoomChangeRequests /></StaffModuleRoute>} />
+            <Route path="/:roleSlug/hostel/room-change/new" element={<StaffModuleRoute requiredModule="hostel"><RequestRoomChange /></StaffModuleRoute>} />
+            {/* Security & Safety */}
+            <Route path="/:roleSlug/hostel/security-dashboard" element={<StaffModuleRoute requiredModule="hostel"><SecurityDashboard /></StaffModuleRoute>} />
+            <Route path="/:roleSlug/hostel/alerts-list" element={<StaffModuleRoute requiredModule="hostel"><AlertsList /></StaffModuleRoute>} />
+            <Route path="/:roleSlug/hostel/sos-alerts" element={<StaffModuleRoute requiredModule="hostel"><SOSAlerts /></StaffModuleRoute>} />
+            <Route path="/:roleSlug/hostel/curfew-monitor" element={<StaffModuleRoute requiredModule="hostel"><CurfewMonitor /></StaffModuleRoute>} />
+            <Route path="/:roleSlug/hostel/girls-hostel-safety" element={<StaffModuleRoute requiredModule="hostel"><GirlsHostelSafety /></StaffModuleRoute>} />
+            {/* AI Insights */}
+            <Route path="/:roleSlug/hostel/ai-insights" element={<StaffModuleRoute requiredModule="hostel"><AIInsightsDashboard /></StaffModuleRoute>} />
+            <Route path="/:roleSlug/hostel/occupancy-prediction" element={<StaffModuleRoute requiredModule="hostel"><OccupancyPrediction /></StaffModuleRoute>} />
+            <Route path="/:roleSlug/hostel/attendance-anomalies" element={<StaffModuleRoute requiredModule="hostel"><AttendanceAnomalies /></StaffModuleRoute>} />
+            <Route path="/:roleSlug/hostel/complaint-analysis-ai" element={<StaffModuleRoute requiredModule="hostel"><ComplaintAnalysisAI /></StaffModuleRoute>} />
+            {/* Parent Portal */}
+            <Route path="/:roleSlug/hostel/parent-dashboard" element={<StaffModuleRoute requiredModule="hostel"><ParentHostelDashboard /></StaffModuleRoute>} />
+            <Route path="/:roleSlug/hostel/student-hostel-view/:studentId" element={<StaffModuleRoute requiredModule="hostel"><StudentHostelView /></StaffModuleRoute>} />
             
             {/* Transport */}
             <Route path="/:roleSlug/transport/transport-routes" element={<StaffModuleRoute requiredModule="transport"><TransportRoutes /></StaffModuleRoute>} />

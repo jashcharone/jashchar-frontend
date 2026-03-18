@@ -17,7 +17,7 @@ import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Switch } from '@/components/ui/switch';
 import { 
-    Upload, Download, FileSpreadsheet, CheckCircle, XCircle, AlertTriangle, Loader2, 
+    Upload, Download, Sheet, CheckCircle, XCircle, AlertTriangle, Loader2, 
     ArrowRight, ArrowLeft, Eye, Save, Check, Users, GraduationCap, Building2, 
     Calendar, MapPin, Phone, Mail, User, Shield, Database, Settings, Sparkles, 
     Info, FileUp, RotateCcw, Wand2, ArrowUpDown, Star, Hash
@@ -2158,7 +2158,7 @@ const BulkUpload = () => {
                                  onClick={() => document.getElementById('file-input').click()}>
                                 <div className="flex flex-col items-center gap-4">
                                     <div className="p-6 bg-primary/10 rounded-full">
-                                        <FileSpreadsheet className="h-16 w-16 text-primary" />
+                                        <Sheet className="h-16 w-16 text-primary" />
                                     </div>
                                     <div>
                                         <p className="text-xl font-semibold">Drop your file here or click to browse</p>
@@ -2254,10 +2254,10 @@ const BulkUpload = () => {
                                     </ul>
                                     
                                     {photoMatchCount > 0 && (
-                                        <Alert className="bg-green-50 border-green-200">
-                                            <CheckCircle className="h-4 w-4 text-green-600" />
-                                            <AlertTitle className="text-green-700">Photos Loaded</AlertTitle>
-                                            <AlertDescription className="text-green-600">
+                                        <Alert className="bg-green-50 border-green-200 dark:bg-green-950/20 dark:border-green-900">
+                                            <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400" />
+                                            <AlertTitle className="text-green-700 dark:text-green-300">Photos Loaded</AlertTitle>
+                                            <AlertDescription className="text-green-600 dark:text-green-400">
                                                 Successfully extracted {photoMatchCount} images from ZIP.
                                             </AlertDescription>
                                         </Alert>
@@ -2420,46 +2420,46 @@ const BulkUpload = () => {
                             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                                 <Card className="border-green-500 bg-green-50 dark:bg-green-950/20">
                                     <CardContent className="p-4 flex items-center gap-3">
-                                        <CheckCircle className="h-8 w-8 text-green-600" />
+                                        <CheckCircle className="h-8 w-8 text-green-600 dark:text-green-400" />
                                         <div>
                                             <p className="text-2xl font-bold text-green-700 dark:text-green-400">
                                                 {validatedData.filter(r => !r._errors?.length && !r._isDuplicate).length}
                                             </p>
-                                            <p className="text-sm text-green-600">Valid Records</p>
+                                            <p className="text-sm text-green-600 dark:text-green-400">Valid Records</p>
                                         </div>
                                     </CardContent>
                                 </Card>
                                 <Card className="border-red-500 bg-red-50 dark:bg-red-950/20">
                                     <CardContent className="p-4 flex items-center gap-3">
-                                        <XCircle className="h-8 w-8 text-red-600" />
+                                        <XCircle className="h-8 w-8 text-red-600 dark:text-red-400" />
                                         <div>
                                             <p className="text-2xl font-bold text-red-700 dark:text-red-400">
                                                 {validationErrors.length}
                                             </p>
-                                            <p className="text-sm text-red-600">Errors</p>
+                                            <p className="text-sm text-red-600 dark:text-red-400">Errors</p>
                                         </div>
                                     </CardContent>
                                 </Card>
                                 <Card className="border-yellow-500 bg-yellow-50 dark:bg-yellow-950/20">
                                     <CardContent className="p-4 flex items-center gap-3">
-                                        <Users className="h-8 w-8 text-yellow-600" />
+                                        <Users className="h-8 w-8 text-yellow-600 dark:text-yellow-400" />
                                         <div>
                                             <p className="text-2xl font-bold text-yellow-700 dark:text-yellow-400">
                                                 {duplicates.length}
                                             </p>
-                                            <p className="text-sm text-yellow-600">Duplicates</p>
+                                            <p className="text-sm text-yellow-600 dark:text-yellow-400">Duplicates</p>
                                         </div>
                                     </CardContent>
                                 </Card>
                                 {importFees && (
                                      <Card className="border-blue-500 bg-blue-50 dark:bg-blue-950/20">
                                         <CardContent className="p-4 flex items-center gap-3">
-                                            <Database className="h-8 w-8 text-blue-600" />
+                                            <Database className="h-8 w-8 text-blue-600 dark:text-blue-400" />
                                             <div>
                                                 <p className="text-2xl font-bold text-blue-700 dark:text-blue-400">
                                                     Yes
                                                 </p>
-                                                <p className="text-sm text-blue-600">Fees Included</p>
+                                                <p className="text-sm text-blue-600 dark:text-blue-400">Fees Included</p>
                                             </div>
                                         </CardContent>
                                     </Card>
@@ -2469,8 +2469,8 @@ const BulkUpload = () => {
                             {/* Error Details */}
                             {validationErrors.length > 0 && (
                                 <div className="border rounded-xl overflow-hidden">
-                                    <div className="bg-red-100 dark:bg-red-950/30 px-4 py-2 border-b flex items-center gap-2">
-                                        <XCircle className="h-4 w-4 text-red-600" />
+                                    <div className="bg-red-100 dark:bg-red-950/30 px-4 py-2 border-b dark:border-red-900 flex items-center gap-2">
+                                        <XCircle className="h-4 w-4 text-red-600 dark:text-red-400" />
                                         <span className="font-semibold text-red-700 dark:text-red-400">Validation Errors</span>
                                     </div>
                                     <ScrollArea className="h-48">
@@ -2487,7 +2487,7 @@ const BulkUpload = () => {
                                                     <TableRow key={idx}>
                                                         <TableCell className="font-mono">{err.row}</TableCell>
                                                         <TableCell>{err.name || '-'}</TableCell>
-                                                        <TableCell className="text-red-600 text-sm">
+                                                        <TableCell className="text-red-600 dark:text-red-400 text-sm">
                                                             {err.errors.join(', ')}
                                                         </TableCell>
                                                     </TableRow>
@@ -2501,8 +2501,8 @@ const BulkUpload = () => {
                             {/* Duplicates */}
                             {duplicates.length > 0 && (
                                 <div className="border rounded-xl overflow-hidden">
-                                    <div className="bg-amber-100 dark:bg-amber-950/30 px-4 py-2 border-b flex items-center gap-2">
-                                        <AlertTriangle className="h-4 w-4 text-amber-600" />
+                                    <div className="bg-amber-100 dark:bg-amber-950/30 px-4 py-2 border-b dark:border-amber-900 flex items-center gap-2">
+                                        <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400" />
                                         <span className="font-semibold text-amber-700 dark:text-amber-400">
                                             Duplicate Records {skipDuplicates && '(Will be skipped)'}
                                         </span>
@@ -2641,7 +2641,7 @@ const BulkUpload = () => {
                                         <p className="text-5xl font-bold text-green-700 dark:text-green-400">
                                             {uploadResults.success}
                                         </p>
-                                        <p className="text-green-600 font-medium mt-2">Students Imported Successfully</p>
+                                        <p className="text-green-600 dark:text-green-400 font-medium mt-2">Students Imported Successfully</p>
                                     </CardContent>
                                 </Card>
                                 <Card className={uploadResults.failed > 0 ? "border-red-500 bg-gradient-to-br from-red-50 to-orange-50 dark:from-red-950/30 dark:to-orange-950/30" : "border-muted"}>
@@ -2652,7 +2652,7 @@ const BulkUpload = () => {
                                                 <p className="text-5xl font-bold text-red-700 dark:text-red-400">
                                                     {uploadResults.failed}
                                                 </p>
-                                                <p className="text-red-600 font-medium mt-2">Failed to Import</p>
+                                                <p className="text-red-600 dark:text-red-400 font-medium mt-2">Failed to Import</p>
                                             </>
                                         ) : (
                                             <>
@@ -2660,7 +2660,7 @@ const BulkUpload = () => {
                                                 <p className="text-2xl font-bold text-amber-700 dark:text-amber-400">
                                                     Perfect!
                                                 </p>
-                                                <p className="text-amber-600 font-medium mt-2">No Errors</p>
+                                                <p className="text-amber-600 dark:text-amber-400 font-medium mt-2">No Errors</p>
                                             </>
                                         )}
                                     </CardContent>
@@ -2670,9 +2670,9 @@ const BulkUpload = () => {
                             {/* Failed Records */}
                             {uploadResults.errors.length > 0 && (
                                 <div className="border rounded-xl overflow-hidden">
-                                    <div className="bg-red-100 dark:bg-red-950/30 px-4 py-3 border-b flex items-center justify-between">
+                                    <div className="bg-red-100 dark:bg-red-950/30 px-4 py-3 border-b dark:border-red-900 flex items-center justify-between">
                                         <div className="flex items-center gap-2">
-                                            <XCircle className="h-4 w-4 text-red-600" />
+                                            <XCircle className="h-4 w-4 text-red-600 dark:text-red-400" />
                                             <span className="font-semibold text-red-700 dark:text-red-400">
                                                 Failed Records ({uploadResults.errors.length})
                                             </span>
@@ -2696,7 +2696,7 @@ const BulkUpload = () => {
                                                     <TableRow key={idx}>
                                                         <TableCell className="font-mono">{err.row}</TableCell>
                                                         <TableCell>{err.name}</TableCell>
-                                                        <TableCell className="text-red-600">{err.error}</TableCell>
+                                                        <TableCell className="text-red-600 dark:text-red-400">{err.error}</TableCell>
                                                     </TableRow>
                                                 ))}
                                             </TableBody>
@@ -2708,9 +2708,9 @@ const BulkUpload = () => {
                             {/* Success Records Preview */}
                             {uploadResults.successRecords.length > 0 && (
                                 <div className="border rounded-xl overflow-hidden">
-                                    <div className="bg-green-100 dark:bg-green-950/30 px-4 py-3 border-b flex items-center justify-between">
+                                    <div className="bg-green-100 dark:bg-green-950/30 px-4 py-3 border-b dark:border-green-900 flex items-center justify-between">
                                         <div className="flex items-center gap-2">
-                                            <CheckCircle className="h-4 w-4 text-green-600" />
+                                            <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400" />
                                             <span className="font-semibold text-green-700 dark:text-green-400">
                                                 Imported Students (First 10)
                                             </span>

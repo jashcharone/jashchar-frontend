@@ -134,35 +134,35 @@ const AddEmployeeV2 = () => {
     };
     
     return (
-        <div className="p-6 space-y-6">
+        <div className="p-3 sm:p-4 md:p-6 space-y-4 sm:space-y-6">
             {/* Header */}
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2 sm:gap-4">
                 <Button variant="outline" size="icon" onClick={() => navigate(-1)}>
                     <ArrowLeft className="w-4 h-4" />
                 </Button>
                 <div>
-                    <h1 className="text-2xl font-bold">Add New Employee</h1>
-                    <p className="text-gray-500">Create a new employee record</p>
+                    <h1 className="text-xl sm:text-2xl font-bold">Add New Employee</h1>
+                    <p className="text-xs sm:text-sm text-gray-500">Create a new employee record</p>
                 </div>
             </div>
             
             <form onSubmit={handleSubmit}>
                 <Tabs defaultValue="basic" className="space-y-6">
-                    <TabsList className="grid grid-cols-5 w-full max-w-2xl">
-                        <TabsTrigger value="basic" className="flex items-center gap-2">
-                            <User className="w-4 h-4" /> Basic
+                    <TabsList className="grid grid-cols-3 sm:grid-cols-5 w-full max-w-2xl gap-1">
+                        <TabsTrigger value="basic" className="flex items-center gap-1 sm:gap-2">
+                            <User className="w-4 h-4" /> <span className="hidden sm:inline">Basic</span>
                         </TabsTrigger>
-                        <TabsTrigger value="employment" className="flex items-center gap-2">
-                            <Briefcase className="w-4 h-4" /> Employment
+                        <TabsTrigger value="employment" className="flex items-center gap-1 sm:gap-2">
+                            <Briefcase className="w-4 h-4" /> <span className="hidden sm:inline">Employment</span>
                         </TabsTrigger>
-                        <TabsTrigger value="address" className="flex items-center gap-2">
-                            <Building className="w-4 h-4" /> Address
+                        <TabsTrigger value="address" className="flex items-center gap-1 sm:gap-2">
+                            <Building className="w-4 h-4" /> <span className="hidden sm:inline">Address</span>
                         </TabsTrigger>
-                        <TabsTrigger value="bank" className="flex items-center gap-2">
-                            <CreditCard className="w-4 h-4" /> Bank
+                        <TabsTrigger value="bank" className="flex items-center gap-1 sm:gap-2">
+                            <CreditCard className="w-4 h-4" /> <span className="hidden sm:inline">Bank</span>
                         </TabsTrigger>
-                        <TabsTrigger value="compliance" className="flex items-center gap-2">
-                            <FileCheck className="w-4 h-4" /> Compliance
+                        <TabsTrigger value="compliance" className="flex items-center gap-1 sm:gap-2">
+                            <FileCheck className="w-4 h-4" /> <span className="hidden sm:inline">Compliance</span>
                         </TabsTrigger>
                     </TabsList>
                     

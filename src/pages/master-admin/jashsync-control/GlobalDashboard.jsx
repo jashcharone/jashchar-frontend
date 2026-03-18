@@ -9,58 +9,70 @@ import { Badge } from "@/components/ui/badge";
 /**
  * GlobalDashboard - Overview of all JashSync activity across all schools
  */
-const GlobalDashboard = ({ stats, loading }) => {
+const GlobalDashboard = ({ stats = {}, loading }) => {
+  // Ensure all stats have default values to prevent NaN
+  const safeStats = {
+    totalSchools: stats.totalSchools || 0,
+    activeSchools: stats.activeSchools || 0,
+    trialSchools: stats.trialSchools || 0,
+    lowBalanceSchools: stats.lowBalanceSchools || 0,
+    todayMessages: stats.todayMessages || 0,
+    totalMessages: stats.totalMessages || 0,
+    monthRevenue: stats.monthRevenue || 0,
+    totalRevenue: stats.totalRevenue || 0
+  };
+
   const statCards = [
     {
       title: 'Total Schools',
-      value: stats.totalSchools,
+      value: safeStats.totalSchools,
       icon: School,
       color: 'blue',
       change: '+5 this month'
     },
     {
       title: 'Active Schools',
-      value: stats.activeSchools,
-      subtitle: `${stats.trialSchools} on trial`,
+      value: safeStats.activeSchools,
+      subtitle: `${safeStats.trialSchools} on trial`,
       icon: Activity,
       color: 'green'
     },
     {
       title: 'Low Balance',
-      value: stats.lowBalanceSchools,
+      value: safeStats.lowBalanceSchools,
       icon: AlertTriangle,
       color: 'red',
       alert: true
     },
     {
       title: 'Today Messages',
-      value: stats.todayMessages.toLocaleString(),
+      value: safeStats.todayMessages.toLocaleString(),
       icon: MessageSquare,
       color: 'purple',
       change: '+12% from yesterday'
     },
     {
       title: 'Total Messages',
-      value: `${(stats.totalMessages / 1000000).toFixed(1)}M`,
+      value: `${(safeStats.totalMessages / 1000000).toFixed(1)}M`,
       icon: MessageSquare,
       color: 'indigo'
     },
     {
       title: 'This Month Revenue',
-      value: `₹${(stats.monthRevenue / 1000).toFixed(0)}K`,
+      value: `₹${(safeStats.monthRevenue / 1000).toFixed(0)}K`,
       icon: DollarSign,
       color: 'green',
       change: '+18% from last month'
     },
     {
       title: 'Total Revenue',
-      value: `₹${(stats.totalRevenue / 100000).toFixed(1)}L`,
+      value: `₹${(safeStats.totalRevenue / 100000).toFixed(1)}L`,
       icon: TrendingUp,
       color: 'emerald'
     },
     {
       title: 'Avg Messages/School',
-      value: Math.round(stats.todayMessages / stats.activeSchools),
+      value: safeStats.activeSchools > 0 ? Math.round(safeStats.todayMessages / safeStats.activeSchools) : 0,
       subtitle: 'per day',
       icon: Users,
       color: 'cyan'

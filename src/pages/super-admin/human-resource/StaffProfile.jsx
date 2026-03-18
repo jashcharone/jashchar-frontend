@@ -239,7 +239,7 @@ const StaffProfile = () => {
                             alt="QR Code" 
                             className="w-24 h-24"
                           />
-                      ) : <QrCode className="w-24 h-24 text-gray-300" />}
+                      ) : <QrCode className="w-24 h-24 text-gray-300 dark:text-gray-600" />}
                    </div>
                 </div>
 
@@ -371,7 +371,7 @@ const StaffProfile = () => {
                         <h3 className="text-lg font-semibold flex items-center gap-2 text-primary mb-4"><Activity className="w-5 h-5" /> Social Media Links</h3>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                             <div className="flex items-center gap-3 p-2 border rounded hover:bg-muted/50 transition-colors">
-                                <Facebook className="w-5 h-5 text-blue-600" />
+                                <Facebook className="w-5 h-5 text-blue-600 dark:text-blue-400" />
                                 <span className="truncate text-muted-foreground">{staff.facebook_url || 'Not Linked'}</span>
                             </div>
                             <div className="flex items-center gap-3 p-2 border rounded hover:bg-muted/50 transition-colors">
@@ -379,11 +379,11 @@ const StaffProfile = () => {
                                 <span className="truncate text-muted-foreground">{staff.twitter_url || 'Not Linked'}</span>
                             </div>
                             <div className="flex items-center gap-3 p-2 border rounded hover:bg-muted/50 transition-colors">
-                                <Linkedin className="w-5 h-5 text-blue-700" />
+                                <Linkedin className="w-5 h-5 text-blue-700 dark:text-blue-400" />
                                 <span className="truncate text-muted-foreground">{staff.linkedin_url || 'Not Linked'}</span>
                             </div>
                             <div className="flex items-center gap-3 p-2 border rounded hover:bg-muted/50 transition-colors">
-                                <Instagram className="w-5 h-5 text-pink-600" />
+                                <Instagram className="w-5 h-5 text-pink-600 dark:text-pink-400" />
                                 <span className="truncate text-muted-foreground">{staff.instagram_url || 'Not Linked'}</span>
                             </div>
                         </div>
@@ -442,7 +442,7 @@ const StaffProfile = () => {
                                             <TableCell>{p.month} - {p.year}</TableCell>
                                             <TableCell>{new Date(p.created_at).toLocaleDateString()}</TableCell>
                                             <TableCell>{p.payment_mode || 'Bank Transfer'}</TableCell>
-                                            <TableCell><Badge variant={p.status === 'paid' ? 'success' : 'warning'} className={p.status === 'paid' ? 'bg-green-500' : 'bg-yellow-500'}>{p.status}</Badge></TableCell>
+                                            <TableCell><Badge variant={p.status === 'paid' ? 'success' : 'warning'} className={p.status === 'paid' ? 'bg-green-500 dark:bg-green-600' : 'bg-yellow-500 dark:bg-yellow-600'}>{p.status}</Badge></TableCell>
                                             <TableCell className="text-right font-bold">₹{p.net_salary}</TableCell>
                                             <TableCell className="text-right">
                                                 <Button size="sm" variant="outline">View Payslip</Button>
@@ -511,8 +511,8 @@ const StaffProfile = () => {
                                             <TableCell>{new Date(l.created_at).toLocaleDateString()}</TableCell>
                                             <TableCell>
                                                 <Badge className={
-                                                    l.status === 'approved' ? 'bg-green-500' : 
-                                                    l.status === 'rejected' ? 'bg-red-500' : 'bg-yellow-500'
+                                                    l.status === 'approved' ? 'bg-green-500 dark:bg-green-600' : 
+                                                    l.status === 'rejected' ? 'bg-red-500 dark:bg-red-600' : 'bg-yellow-500 dark:bg-yellow-600'
                                                 }>{l.status}</Badge>
                                             </TableCell>
                                             <TableCell className="text-right">
@@ -529,10 +529,10 @@ const StaffProfile = () => {
                   {/* TAB: ATTENDANCE */}
                   <TabsContent value="attendance" className="p-6 space-y-6 animate-in fade-in-50">
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                        <Card><CardContent className="p-4 flex flex-col items-center"><span className="text-2xl font-bold text-green-600">{attendance.filter(a => a.status === 'present').length}</span><span className="text-xs text-muted-foreground uppercase">Total Present</span></CardContent></Card>
-                        <Card><CardContent className="p-4 flex flex-col items-center"><span className="text-2xl font-bold text-yellow-600">{attendance.filter(a => a.status === 'late').length}</span><span className="text-xs text-muted-foreground uppercase">Total Late</span></CardContent></Card>
-                        <Card><CardContent className="p-4 flex flex-col items-center"><span className="text-2xl font-bold text-red-600">{attendance.filter(a => a.status === 'absent').length}</span><span className="text-xs text-muted-foreground uppercase">Total Absent</span></CardContent></Card>
-                        <Card><CardContent className="p-4 flex flex-col items-center"><span className="text-2xl font-bold text-blue-600">{attendance.filter(a => a.status === 'half_day').length}</span><span className="text-xs text-muted-foreground uppercase">Half Day</span></CardContent></Card>
+                        <Card><CardContent className="p-4 flex flex-col items-center"><span className="text-2xl font-bold text-green-600 dark:text-green-400">{attendance.filter(a => a.status === 'present').length}</span><span className="text-xs text-muted-foreground uppercase">Total Present</span></CardContent></Card>
+                        <Card><CardContent className="p-4 flex flex-col items-center"><span className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">{attendance.filter(a => a.status === 'late').length}</span><span className="text-xs text-muted-foreground uppercase">Total Late</span></CardContent></Card>
+                        <Card><CardContent className="p-4 flex flex-col items-center"><span className="text-2xl font-bold text-red-600 dark:text-red-400">{attendance.filter(a => a.status === 'absent').length}</span><span className="text-xs text-muted-foreground uppercase">Total Absent</span></CardContent></Card>
+                        <Card><CardContent className="p-4 flex flex-col items-center"><span className="text-2xl font-bold text-blue-600 dark:text-blue-400">{attendance.filter(a => a.status === 'half_day').length}</span><span className="text-xs text-muted-foreground uppercase">Half Day</span></CardContent></Card>
                     </div>
                     
                     <div className="border rounded-md p-8 text-center bg-muted/10">

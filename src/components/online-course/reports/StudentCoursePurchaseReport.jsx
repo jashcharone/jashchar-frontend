@@ -1,11 +1,11 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { supabase } from '@/lib/customSupabaseClient';
-import { Loader2, FileText, Printer, FileSpreadsheet, Search } from 'lucide-react';
+import { Loader2, FileText, Printer, Sheet, Search } from 'lucide-react';
 import { format, subMonths, startOfMonth, endOfMonth, isSameDay } from 'date-fns';
 
 const StudentCoursePurchaseReport = ({ branchId }) => {
@@ -172,7 +172,7 @@ const StudentCoursePurchaseReport = ({ branchId }) => {
               onChange={e => setSearchQuery(e.target.value)}
             />
             <div className="flex gap-2">
-              <Button variant="outline" size="icon" onClick={handleExportCSV} title="Export Excel"><FileSpreadsheet className="h-4 w-4" /></Button>
+              <Button variant="outline" size="icon" onClick={handleExportCSV} title="Export Excel"><Sheet className="h-4 w-4" /></Button>
               <Button variant="outline" size="icon" onClick={handlePrint} title="Print"><Printer className="h-4 w-4" /></Button>
             </div>
           </div>

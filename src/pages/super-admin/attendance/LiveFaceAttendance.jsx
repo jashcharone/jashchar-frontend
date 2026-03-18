@@ -33,6 +33,12 @@ import {
     analyzeFaceQuality
 } from '@/utils/faceRecognition';
 
+// AI Engine API for Python-based recognition (ArcFace 512D)
+import { aiEngineApi } from '@/services/aiEngineApi';
+
+// WebSocket hook for real-time face recognition (Day 18)
+import { useFaceRecognitionWebSocket, captureVideoFrame } from '@/hooks/useFaceRecognitionWebSocket';
+
 import {
     ScanFace, Camera, Video, VideoOff, Users, User, GraduationCap, Briefcase, CheckCircle2, XCircle,
     AlertTriangle, Loader2, Clock, Calendar, Play, Pause, RefreshCw, Volume2, VolumeX, Settings,
@@ -93,6 +99,31 @@ const LiveFaceAttendance = () => {
     const [matchThreshold, setMatchThreshold] = useState(0.5);
     const [showFullscreen, setShowFullscreen] = useState(false);
     
+    // 🚀 AI Engine State (Python backend with ArcFace 512D)
+    const [useAIEngine, setUseAIEngine] = useState(true); // Prefer AI Engine
+    const [aiEngineAvailable, setAIEngineAvailable] = useState(false);
+    const [aiEngineChecking, setAIEngineChecking] = useState(true);
+    
+    // 🔴 WebSocket State (Real-time recognition - Day 21)
+    const [useWebSocket, setUseWebSocket] = useState(true); // Prefer WebSocket for real-time
+    const wsFrameIntervalRef = useRef(null);
+    
+    // WebSocket hook for real-time face recognition
+    const ws = useFaceRecognitionWebSocket({
+        branchId,
+        clientId: `live_attendance_${branchId}`,
+        autoConnect: false,
+        onResult: handleWebSocketResult,
+        onError: (error) => {
+            console.error('WebSocket error:', error);
+            toast({
+                variant: 'destructive',
+                title: 'Recognition Error',
+                description: 'WebSocket connection error'
+            });
+        }
+    });
+    
     // Stats
     const [todayStats, setTodayStats] = useState({ total: 0, present: 0, students: 0, staff: 0 });
     const [classProgress, setClassProgress] = useState({ total: 0, present: 0, percent: 0 });
@@ -102,6 +133,99 @@ const LiveFaceAttendance = () => {
     const hasViewPermission = canView('attendance.live_attendance') || canView('attendance');
     
     // ═══════════════════════════════════════════════════════════════════════════════════════════════
+    // WEBSOCKET RESULT HANDLER (Day 21 - Real-time face recognition)
+    // ═══════════════════════════════════════════════════════════════════════════════════════════════
+    
+    const handleWebSocketResult = useCallback(async (result) => {
+        if (!result.success) return;
+        
+        // Update detected faces count
+        const detectionCount = result.face_count || 0;
+        setDetectedFaces(Array(detectionCount).fill({ bbox: null }));
+        
+        if (result.faces && result.faces.length > 0) {
+            // Convert WebSocket results to display format
+            const matches = result.faces
+                .filter(face => face.recognized)
+                .map(face => ({
+                    detection: { detection: { box: { x: face.bbox?.[0] || 0, y: face.bbox?.[1] || 0, width: face.bbox?.[2] - face.bbox?.[0] || 100, height: face.bbox?.[3] - face.bbox?.[1] || 100 } } },
+                    quality: { isGood: true, score: face.confidence || 0.9 },
+                    match: {
+                        person_id: face.person_id,
+                        person_name: face.person_id, // Will be enriched from local data
+                        person_type: 'student' // Default, will be enriched
+                    },
+                    confidence: face.match_score || 0,
+                    bbox: face.bbox
+                }));
+            
+            // Enrich with local data
+            for (const m of matches) {
+                const localFace = registeredFaces.find(f => f.person_id === m.match.person_id);
+                if (localFace) {
+                    m.match.person_name = localFace.person_name || localFace.name || m.match.person_id;
+                    m.match.person_type = localFace.person_type || 'student';
+                }
+            }
+            
+            setMatchedPersons(matches);
+            
+            // Auto-mark attendance if enabled
+            for (const m of matches) {
+                if (autoMark && m.confidence > matchThreshold) {
+                    const personId = m.match.person_id;
+                    if (!recentlyMarked.has(personId)) {
+                        await markAttendance(m.match, m.confidence);
+                    }
+                }
+            }
+            
+            // Draw face boxes on canvas
+            drawFaceBoxesFromWs(result.faces);
+        } else {
+            setMatchedPersons([]);
+            clearOverlay();
+        }
+    }, [registeredFaces, autoMark, matchThreshold, recentlyMarked]);
+    
+    // Draw face boxes from WebSocket results
+    const drawFaceBoxesFromWs = useCallback((faces) => {
+        if (!overlayCanvasRef.current || !videoRef.current) return;
+        
+        const canvas = overlayCanvasRef.current;
+        const video = videoRef.current;
+        const ctx = canvas.getContext('2d');
+        
+        // Match canvas to video size
+        canvas.width = video.videoWidth || 640;
+        canvas.height = video.videoHeight || 480;
+        
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        
+        faces.forEach(face => {
+            if (!face.bbox) return;
+            
+            const [x1, y1, x2, y2] = face.bbox;
+            const width = x2 - x1;
+            const height = y2 - y1;
+            
+            // Draw box
+            ctx.strokeStyle = face.recognized ? '#22c55e' : '#ef4444';
+            ctx.lineWidth = 3;
+            ctx.strokeRect(x1, y1, width, height);
+            
+            // Draw label
+            if (face.recognized && face.person_id) {
+                ctx.fillStyle = '#22c55e';
+                ctx.font = '14px Inter, sans-serif';
+                ctx.fillRect(x1, y1 - 22, width, 22);
+                ctx.fillStyle = '#ffffff';
+                ctx.fillText(face.person_id, x1 + 4, y1 - 6);
+            }
+        });
+    }, []);
+    
+    // ═══════════════════════════════════════════════════════════════════════════════════════════════
     // INITIALIZATION
     // ═══════════════════════════════════════════════════════════════════════════════════════════════
     
@@ -109,6 +233,22 @@ const LiveFaceAttendance = () => {
         const init = async () => {
             try {
                 setModelsLoading(true);
+                
+                // 🚀 Check AI Engine availability first
+                setAIEngineChecking(true);
+                try {
+                    const health = await aiEngineApi.checkHealth();
+                    if (health && health.detector_loaded && health.recognizer_loaded) {
+                        setAIEngineAvailable(true);
+                        console.log('✅ AI Engine available (ArcFace 512D)');
+                    }
+                } catch (aiError) {
+                    console.log('⚠️ AI Engine not available, using browser AI');
+                    setAIEngineAvailable(false);
+                }
+                setAIEngineChecking(false);
+                
+                // Load browser-based models as fallback
                 await loadFaceModels((progress) => setModelLoadProgress(progress));
                 setModelsLoading(false);
             } catch (error) {
@@ -305,6 +445,15 @@ const LiveFaceAttendance = () => {
             clearInterval(scanLoopRef.current);
             scanLoopRef.current = null;
         }
+        // Clean up WebSocket frame interval
+        if (wsFrameIntervalRef.current) {
+            clearInterval(wsFrameIntervalRef.current);
+            wsFrameIntervalRef.current = null;
+        }
+        // Disconnect WebSocket
+        if (ws.isConnected) {
+            ws.disconnect();
+        }
         setIsScanning(false);
         setDetectedFaces([]);
         setMatchedPersons([]);
@@ -317,57 +466,125 @@ const LiveFaceAttendance = () => {
     
     const startFaceLoop = () => {
         if (scanLoopRef.current) clearInterval(scanLoopRef.current);
+        if (wsFrameIntervalRef.current) clearInterval(wsFrameIntervalRef.current);
         
+        // 🔴 WebSocket Mode (Real-time, most efficient) - Day 21
+        if (useWebSocket && aiEngineAvailable) {
+            // Connect to WebSocket if not already connected
+            if (!ws.isConnected) {
+                ws.connect();
+            }
+            
+            // Send frames at ~5 FPS via WebSocket
+            wsFrameIntervalRef.current = setInterval(() => {
+                if (!videoRef.current || !ws.isConnected) return;
+                
+                const imageBase64 = captureVideoFrame(videoRef.current);
+                if (imageBase64) {
+                    ws.sendFrame(imageBase64, matchThreshold);
+                }
+            }, 200); // 5 FPS
+            
+            return; // WebSocket handles the rest via handleWebSocketResult callback
+        }
+        
+        // 🚀 HTTP Polling Mode (Fallback when WebSocket not available)
         scanLoopRef.current = setInterval(async () => {
-            if (!videoRef.current || !areModelsLoaded()) return;
+            if (!videoRef.current) return;
+            
+            // Skip if models not ready (for browser mode)
+            if (!useAIEngine && !aiEngineAvailable && !areModelsLoaded()) return;
             
             try {
-                const detections = await detectAllFaces(videoRef.current);
-                setDetectedFaces(detections);
-                
-                if (detections.length > 0) {
-                    const matches = [];
+                // 🚀 USE AI ENGINE (Python ArcFace 512D) if available
+                if (useAIEngine && aiEngineAvailable) {
+                    // Capture frame
+                    const imageBase64 = aiEngineApi.captureVideoFrame(videoRef.current);
                     
-                    for (const detection of detections) {
-                        const quality = analyzeFaceQuality(detection);
-                        const descriptor = detection.descriptor;
+                    // Call AI Engine recognize endpoint
+                    const result = await aiEngineApi.recognizeFace(imageBase64, matchThreshold);
+                    
+                    if (result.success) {
+                        // Convert AI Engine results to display format
+                        const detectionCount = result.faces_detected || 0;
+                        setDetectedFaces(Array(detectionCount).fill({ bbox: null }));
                         
-                        let bestMatch = null;
-                        let bestConfidence = 0;
+                        const matches = (result.matches || []).map(match => ({
+                            detection: { detection: { box: { x: 0, y: 0, width: 100, height: 100 } } },
+                            quality: { isGood: true, score: match.confidence },
+                            match: {
+                                person_id: match.person_id,
+                                person_name: match.person_name,
+                                person_type: match.person_type
+                            },
+                            confidence: match.confidence
+                        }));
                         
-                        // Compare with registered faces
-                        for (const regFace of registeredFaces) {
-                            if (!regFace.descriptor) continue;
-                            
-                            const confidence = compareFaces(descriptor, regFace.descriptor);
-                            if (confidence > matchThreshold && confidence > bestConfidence) {
-                                bestMatch = regFace;
-                                bestConfidence = confidence;
-                            }
-                        }
-                        
-                        matches.push({
-                            detection,
-                            quality,
-                            match: bestMatch,
-                            confidence: bestConfidence
-                        });
+                        setMatchedPersons(matches);
                         
                         // Auto-mark if enabled & matched
-                        if (autoMark && bestMatch && bestConfidence > matchThreshold) {
-                            const personId = bestMatch.person_id || bestMatch.user_id;
-                            if (!recentlyMarked.has(personId)) {
-                                // Get class_id and section_id for the matched person
-                                await markAttendance(bestMatch, bestConfidence);
+                        for (const m of matches) {
+                            if (autoMark && m.match && m.confidence > matchThreshold) {
+                                const personId = m.match.person_id;
+                                if (!recentlyMarked.has(personId)) {
+                                    await markAttendance(m.match, m.confidence);
+                                }
                             }
                         }
+                        
+                        drawFaceBoxes(matches);
+                    } else {
+                        setMatchedPersons([]);
+                        clearOverlay();
                     }
-                    
-                    setMatchedPersons(matches);
-                    drawFaceBoxes(matches);
                 } else {
-                    setMatchedPersons([]);
-                    clearOverlay();
+                    // 🌐 USE BROWSER-BASED face-api.js
+                    const detections = await detectAllFaces(videoRef.current);
+                    setDetectedFaces(detections);
+                    
+                    if (detections.length > 0) {
+                        const matches = [];
+                        
+                        for (const detection of detections) {
+                            const quality = analyzeFaceQuality(detection);
+                            const descriptor = detection.descriptor;
+                            
+                            let bestMatch = null;
+                            let bestConfidence = 0;
+                            
+                            // Compare with registered faces
+                            for (const regFace of registeredFaces) {
+                                if (!regFace.descriptor) continue;
+                                
+                                const confidence = compareFaces(descriptor, regFace.descriptor);
+                                if (confidence > matchThreshold && confidence > bestConfidence) {
+                                    bestMatch = regFace;
+                                    bestConfidence = confidence;
+                                }
+                            }
+                            
+                            matches.push({
+                                detection,
+                                quality,
+                                match: bestMatch,
+                                confidence: bestConfidence
+                            });
+                            
+                            // Auto-mark if enabled & matched
+                            if (autoMark && bestMatch && bestConfidence > matchThreshold) {
+                                const personId = bestMatch.person_id || bestMatch.user_id;
+                                if (!recentlyMarked.has(personId)) {
+                                    await markAttendance(bestMatch, bestConfidence);
+                                }
+                            }
+                        }
+                        
+                        setMatchedPersons(matches);
+                        drawFaceBoxes(matches);
+                    } else {
+                        setMatchedPersons([]);
+                        clearOverlay();
+                    }
                 }
             } catch (error) {
                 console.error('Face detection error:', error);
@@ -716,7 +933,7 @@ const LiveFaceAttendance = () => {
                                     <UserCheck className="h-5 w-5 text-green-600" />
                                 </div>
                                 <div>
-                                    <p className="text-2xl font-bold text-green-700">{todayStats.present}</p>
+                                    <p className="text-lg sm:text-2xl font-bold text-green-700">{todayStats.present}</p>
                                     <p className="text-xs text-green-600/80">Present Today</p>
                                 </div>
                             </div>
@@ -730,7 +947,7 @@ const LiveFaceAttendance = () => {
                                     <Activity className="h-5 w-5 text-purple-600" />
                                 </div>
                                 <div>
-                                    <p className="text-2xl font-bold">{detectedFaces.length}</p>
+                                    <p className="text-lg sm:text-2xl font-bold">{detectedFaces.length}</p>
                                     <p className="text-xs text-muted-foreground">Faces in Frame</p>
                                 </div>
                             </div>
@@ -744,7 +961,7 @@ const LiveFaceAttendance = () => {
                                     <Target className="h-5 w-5 text-blue-600" />
                                 </div>
                                 <div>
-                                    <p className="text-2xl font-bold">{matchedPersons.filter(m => m.match).length}</p>
+                                    <p className="text-lg sm:text-2xl font-bold">{matchedPersons.filter(m => m.match).length}</p>
                                     <p className="text-xs text-muted-foreground">Recognized</p>
                                 </div>
                             </div>
@@ -758,7 +975,7 @@ const LiveFaceAttendance = () => {
                                     <History className="h-5 w-5 text-orange-600" />
                                 </div>
                                 <div>
-                                    <p className="text-2xl font-bold">{attendanceLog.length}</p>
+                                    <p className="text-lg sm:text-2xl font-bold">{attendanceLog.length}</p>
                                     <p className="text-xs text-muted-foreground">Log Entries</p>
                                 </div>
                             </div>

@@ -24,7 +24,7 @@ import {
   Plus, 
   Search, 
   RefreshCw,
-  FileSpreadsheet,
+  Sheet,
   FileText,
   Filter,
   CheckCircle2,
@@ -238,7 +238,7 @@ const ReportScheduleManager = () => {
   };
 
   const getFormatIcon = (format) => {
-    if (format === 'excel') return <FileSpreadsheet className="h-4 w-4 text-green-600" />;
+    if (format === 'excel') return <Sheet className="h-4 w-4 text-green-600" />;
     if (format === 'pdf') return <FileText className="h-4 w-4 text-red-600" />;
     return <FileText className="h-4 w-4 text-gray-600" />;
   };
@@ -269,7 +269,7 @@ const ReportScheduleManager = () => {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-6 gap-4">
         <Card className="dark:bg-gray-800 dark:border-gray-700">
           <CardContent className="p-4">
             <div className="flex items-center gap-3">

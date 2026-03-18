@@ -150,8 +150,8 @@ const ParentLoginCredentialReport = () => {
             <div className="text-center py-8">Loading report data...</div>
           ) : reportData.length > 0 ? (
             <div className="overflow-x-auto">
-              <table className="w-full text-sm text-left text-gray-500">
-                <thead className="text-xs text-gray-700 uppercase bg-gray-50">
+              <table className="w-full text-sm text-left text-gray-500 dark:text-gray-400">
+                <thead className="text-xs text-gray-700 dark:text-gray-300 uppercase bg-gray-50 dark:bg-gray-800">
                   <tr>
                     <th scope="col" className="px-6 py-3">Admission No</th>
                     <th scope="col" className="px-6 py-3">Student Name</th>
@@ -161,7 +161,7 @@ const ParentLoginCredentialReport = () => {
                 </thead>
                 <tbody>
                   {reportData.map((row, index) => (
-                    <tr key={index} className="bg-white border-b hover:bg-gray-50">
+                    <tr key={index} className="bg-white dark:bg-gray-900 border-b dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800">
                       <td className="px-6 py-4 font-medium">{row.admissionNo}</td>
                       <td className="px-6 py-4">{row.studentName}</td>
                       <td className="px-6 py-4">{row.parentUsername}</td>

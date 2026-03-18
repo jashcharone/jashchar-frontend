@@ -54,11 +54,11 @@ const EvaluationSessions = () => {
       params.append('limit', pagination.limit.toString());
       const response = await api.get(`/ai-evaluation/sessions?${params.toString()}`);
       
-      if (response.data?.success) {
-        setSessions(response.data.data || []);
+      if (response?.success) {
+        setSessions(response.data || []);
         setPagination(prev => ({
           ...prev,
-          ...response.data.pagination
+          ...response.pagination
         }));
       }
     } catch (error) {
@@ -76,10 +76,11 @@ const EvaluationSessions = () => {
   const StatusBadge = ({ status }) => {
     const configs = {
       draft: { color: 'bg-gray-500/20 text-gray-400', label: 'Draft' },
-      in_progress: { color: 'bg-blue-500/20 text-blue-400', label: 'In Progress' },
-      evaluated: { color: 'bg-yellow-500/20 text-yellow-400', label: 'Evaluated' },
-      reviewed: { color: 'bg-purple-500/20 text-purple-400', label: 'Reviewed' },
-      finalized: { color: 'bg-green-500/20 text-green-400', label: 'Finalized' },
+      uploading: { color: 'bg-blue-500/20 text-blue-400', label: 'Uploading' },
+      processing: { color: 'bg-yellow-500/20 text-yellow-400', label: 'Processing' },
+      ready_for_review: { color: 'bg-orange-500/20 text-orange-400', label: 'Ready for Review' },
+      reviewing: { color: 'bg-purple-500/20 text-purple-400', label: 'Reviewing' },
+      completed: { color: 'bg-green-500/20 text-green-400', label: 'Completed' },
       cancelled: { color: 'bg-red-500/20 text-red-400', label: 'Cancelled' }
     };
     const config = configs[status] || configs.draft;
@@ -93,7 +94,7 @@ const EvaluationSessions = () => {
   // Filter sessions by search
   const filteredSessions = sessions.filter(session =>
     session.evaluation_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    session.exam_name?.toLowerCase().includes(searchQuery.toLowerCase())
+    session.evaluation_code?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   return (
@@ -135,10 +136,11 @@ const EvaluationSessions = () => {
         >
           <option value="">All Status</option>
           <option value="draft">Draft</option>
-          <option value="in_progress">In Progress</option>
-          <option value="evaluated">Evaluated</option>
-          <option value="reviewed">Reviewed</option>
-          <option value="finalized">Finalized</option>
+          <option value="uploading">Uploading</option>
+          <option value="processing">Processing</option>
+          <option value="ready_for_review">Ready for Review</option>
+          <option value="reviewing">Reviewing</option>
+          <option value="completed">Completed</option>
         </select>
         <button
           onClick={fetchSessions}
@@ -190,11 +192,11 @@ const EvaluationSessions = () => {
                   <td className="px-4 py-3">
                     <p className="text-white font-medium">{session.evaluation_name}</p>
                   </td>
-                  <td className="px-4 py-3 text-gray-400">{session.exam_name || '-'}</td>
+                  <td className="px-4 py-3 text-gray-400">{session.evaluation_code || '-'}</td>
                   <td className="px-4 py-3 text-gray-400">{session.classes?.name || '-'}</td>
                   <td className="px-4 py-3 text-gray-400">{session.subjects?.name || '-'}</td>
                   <td className="px-4 py-3">
-                    <span className="text-white">{session.evaluated_papers || 0}</span>
+                    <span className="text-white">{session.processed_papers || 0}</span>
                     <span className="text-gray-500">/{session.total_papers || 0}</span>
                   </td>
                   <td className="px-4 py-3">

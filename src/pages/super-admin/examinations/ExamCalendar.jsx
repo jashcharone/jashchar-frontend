@@ -398,7 +398,7 @@ const ExamCalendar = () => {
                                             !isCurrentMonth ? 'bg-muted/30 text-muted-foreground' : ''
                                         } ${isTodayDate ? 'ring-2 ring-blue-500' : ''}`}
                                     >
-                                        <div className={`text-sm font-medium mb-1 ${isTodayDate ? 'text-blue-600' : ''}`}>
+                                        <div className={`text-sm font-medium mb-1 ${isTodayDate ? 'text-blue-600 dark:text-blue-400' : ''}`}>
                                             {date.getDate()}
                                         </div>
                                         <div className="space-y-1">
@@ -408,7 +408,7 @@ const ExamCalendar = () => {
                                                     <div
                                                         key={event.id}
                                                         onClick={(e) => handleEventClick(event, e)}
-                                                        className="text-xs p-1 rounded bg-blue-100 text-blue-800 truncate hover:bg-blue-200 transition-colors"
+                                                        className="text-xs p-1 rounded bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300 truncate hover:bg-blue-200 dark:hover:bg-blue-900/50 transition-colors"
                                                         title={event.subject_name || 'Event'}
                                                     >
                                                         {event.start_time && (

@@ -81,12 +81,12 @@ import {
 } from 'lucide-react';
 
 const GRACE_TYPES = [
-    { value: 'passing', label: 'Passing Grace', icon: CheckCircle, color: 'bg-green-500' },
-    { value: 'compartment', label: 'Compartment Grace', icon: AlertCircle, color: 'bg-yellow-500' },
-    { value: 'improvement', label: 'Improvement', icon: Award, color: 'bg-blue-500' },
-    { value: 'sports', label: 'Sports Quota', icon: Trophy, color: 'bg-purple-500' },
-    { value: 'medical', label: 'Medical', icon: Stethoscope, color: 'bg-red-500' },
-    { value: 'other', label: 'Other', icon: Gift, color: 'bg-gray-500' }
+    { value: 'passing', label: 'Passing Grace', icon: CheckCircle, color: 'bg-green-500 dark:bg-green-600' },
+    { value: 'compartment', label: 'Compartment Grace', icon: AlertCircle, color: 'bg-yellow-500 dark:bg-yellow-600' },
+    { value: 'improvement', label: 'Improvement', icon: Award, color: 'bg-blue-500 dark:bg-blue-600' },
+    { value: 'sports', label: 'Sports Quota', icon: Trophy, color: 'bg-purple-500 dark:bg-purple-600' },
+    { value: 'medical', label: 'Medical', icon: Stethoscope, color: 'bg-red-500 dark:bg-red-600' },
+    { value: 'other', label: 'Other', icon: Gift, color: 'bg-gray-500 dark:bg-gray-600' }
 ];
 
 const GraceMarksPage = () => {

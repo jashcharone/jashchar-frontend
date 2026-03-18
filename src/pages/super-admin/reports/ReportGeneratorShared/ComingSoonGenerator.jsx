@@ -80,7 +80,7 @@ const ComingSoonGenerator = ({
           </p>
 
           {/* Features Preview */}
-          <div className="grid grid-cols-2 gap-4 mb-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
             {displayFeatures.map((feature, idx) => (
               <div 
                 key={idx}

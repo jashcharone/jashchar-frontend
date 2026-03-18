@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import {
-  IndianRupee, Users, Loader2, Download, Printer, FileSpreadsheet,
+  IndianRupee, Users, Loader2, Download, Printer, Sheet,
   BarChart3, TrendingUp, TrendingDown, Calendar, Filter, RefreshCw,
   AlertCircle, CheckCircle2, Clock, CreditCard, Wallet, PieChart,
   ArrowUpRight, ArrowDownRight, GraduationCap, Search, Undo2
@@ -670,7 +670,7 @@ const FeesAnalysis = () => {
               <Download className="h-4 w-4 mr-1" /> Download PDF
             </Button>
             <Button variant="outline" size="sm" onClick={handleExportExcel}>
-              <FileSpreadsheet className="h-4 w-4 mr-1" /> Export Excel
+              <Sheet className="h-4 w-4 mr-1" /> Export Excel
             </Button>
           </div>
         </div>

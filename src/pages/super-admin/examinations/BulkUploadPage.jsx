@@ -54,7 +54,7 @@ import {
 import { 
     Upload,
     Download,
-    FileSpreadsheet,
+    Sheet,
     CheckCircle,
     XCircle,
     AlertTriangle,
@@ -412,7 +412,7 @@ const BulkUploadPage = () => {
                 <div className="flex items-center justify-between">
                     <div>
                         <h1 className="text-2xl font-bold flex items-center gap-2">
-                            <FileSpreadsheet className="h-6 w-6" />
+                            <Sheet className="h-6 w-6" />
                             Bulk Upload Marks
                         </h1>
                         <p className="text-muted-foreground">
@@ -546,7 +546,7 @@ const BulkUploadPage = () => {
                                     />
                                     {selectedFile ? (
                                         <div>
-                                            <FileSpreadsheet className="h-12 w-12 mx-auto text-primary mb-2" />
+                                            <Sheet className="h-12 w-12 mx-auto text-primary mb-2" />
                                             <p className="font-medium">{selectedFile.name}</p>
                                             <p className="text-sm text-muted-foreground">
                                                 {(selectedFile.size / 1024).toFixed(2)} KB
@@ -566,7 +566,7 @@ const BulkUploadPage = () => {
                                 {previewData.length > 0 && (
                                     <div className="grid grid-cols-3 gap-4">
                                         <div className="flex items-center gap-2 p-3 bg-muted rounded-lg">
-                                            <FileSpreadsheet className="h-5 w-5" />
+                                            <Sheet className="h-5 w-5" />
                                             <div>
                                                 <div className="text-lg font-semibold">{previewStats.total}</div>
                                                 <div className="text-xs text-muted-foreground">Total Rows</div>

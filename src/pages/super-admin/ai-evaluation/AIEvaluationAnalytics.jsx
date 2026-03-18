@@ -47,8 +47,8 @@ const AIEvaluationAnalytics = () => {
         const params = new URLSearchParams({ time_range: timeRange, branch_id: selectedBranch.id });
         const response = await api.get(`/ai-evaluation/analytics/dashboard?${params.toString()}`);
         
-        if (response.data?.success) {
-          setAnalytics(response.data.data);
+        if (response?.success) {
+          setAnalytics(response.data);
         }
       } catch (error) {
         console.error('Error fetching analytics:', error);

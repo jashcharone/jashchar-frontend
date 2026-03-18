@@ -39,8 +39,7 @@ const CreateSession = () => {
   const [exams, setExams] = useState([]);
   
   const [formData, setFormData] = useState({
-    session_name: '',
-    exam_id: '',
+    evaluation_name: '',
     exam_name: '',
     class_id: '',
     section_id: '',
@@ -199,7 +198,7 @@ const CreateSession = () => {
     try {
       setIsSubmitting(true);
       
-      const sessionName = formData.session_name || generateSessionName();
+      const sessionName = formData.evaluation_name || generateSessionName();
       
       // Map frontend field names to backend expected names
       const response = await api.post('/ai-evaluation/sessions', {
@@ -264,8 +263,8 @@ const CreateSession = () => {
               </label>
               <input
                 type="text"
-                name="session_name"
-                value={formData.session_name}
+                name="evaluation_name"
+                value={formData.evaluation_name}
                 onChange={handleChange}
                 placeholder={generateSessionName()}
                 className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50"

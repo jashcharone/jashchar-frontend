@@ -76,7 +76,7 @@ import {
     Save,
     X,
     GraduationCap,
-    FileSpreadsheet
+    Sheet
 } from 'lucide-react';
 
 const ExamGroupManagement = () => {
@@ -704,7 +704,7 @@ const ExamGroupManagement = () => {
                     <Card>
                         <CardHeader className="border-b">
                             <CardTitle className="flex items-center gap-2">
-                                <FileSpreadsheet className="w-5 h-5" />
+                                <Sheet className="w-5 h-5" />
                                 Exam Groups List
                             </CardTitle>
                             <CardDescription>

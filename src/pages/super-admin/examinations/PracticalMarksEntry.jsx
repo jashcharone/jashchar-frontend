@@ -447,13 +447,13 @@ const PracticalMarksEntry = () => {
                         </Card>
                         <Card>
                             <CardContent className="pt-4">
-                                <div className="text-2xl font-bold text-blue-600">{stats.entered}</div>
+                                <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">{stats.entered}</div>
                                 <div className="text-sm text-muted-foreground">Entered</div>
                             </CardContent>
                         </Card>
                         <Card>
                             <CardContent className="pt-4">
-                                <div className="text-2xl font-bold text-orange-600">{stats.absent}</div>
+                                <div className="text-2xl font-bold text-orange-600 dark:text-orange-400">{stats.absent}</div>
                                 <div className="text-sm text-muted-foreground">Absent</div>
                             </CardContent>
                         </Card>
@@ -507,7 +507,7 @@ const PracticalMarksEntry = () => {
                                         </TableHeader>
                                         <TableBody>
                                             {practicalData.map((student, idx) => (
-                                                <TableRow key={student.student_id} className={student.is_absent ? 'bg-orange-50' : ''}>
+                                                <TableRow key={student.student_id} className={student.is_absent ? 'bg-orange-50 dark:bg-orange-900/20' : ''}>
                                                     <TableCell className="font-medium">{student.roll_number}</TableCell>
                                                     <TableCell>
                                                         <div>{student.student_name}</div>

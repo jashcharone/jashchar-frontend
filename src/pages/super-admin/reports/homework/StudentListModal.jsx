@@ -1,9 +1,9 @@
-﻿import React, { useState } from 'react';
+import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Search, Copy, FileSpreadsheet, FileText, Printer } from 'lucide-react';
+import { Search, Copy, Sheet, FileText, Printer } from 'lucide-react';
 import { format } from 'date-fns';
 
 const StudentListModal = ({ isOpen, onClose, title, students }) => {
@@ -41,7 +41,7 @@ const StudentListModal = ({ isOpen, onClose, title, students }) => {
             </div>
             <div className="flex gap-1">
               <Button variant="outline" size="sm" className="h-8 w-8 p-0" title="Copy"><Copy className="h-3.5 w-3.5" /></Button>
-              <Button variant="outline" size="sm" className="h-8 w-8 p-0" title="Excel"><FileSpreadsheet className="h-3.5 w-3.5" /></Button>
+              <Button variant="outline" size="sm" className="h-8 w-8 p-0" title="Excel"><Sheet className="h-3.5 w-3.5" /></Button>
               <Button variant="outline" size="sm" className="h-8 w-8 p-0" title="CSV"><FileText className="h-3.5 w-3.5" /></Button>
               <Button variant="outline" size="sm" className="h-8 w-8 p-0" title="Print"><Printer className="h-3.5 w-3.5" /></Button>
             </div>

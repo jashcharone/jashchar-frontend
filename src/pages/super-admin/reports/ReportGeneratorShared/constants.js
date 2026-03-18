@@ -247,7 +247,7 @@ export const TABLE_COLORS = {
 
 // Export formats
 export const EXPORT_FORMATS = {
-  excel: { key: 'excel', label: 'Excel', icon: 'FileSpreadsheet', extension: '.xlsx' },
+  excel: { key: 'excel', label: 'Excel', icon: 'Sheet', extension: '.xlsx' },
   pdf: { key: 'pdf', label: 'PDF', icon: 'FileText', extension: '.pdf' },
   csv: { key: 'csv', label: 'CSV', icon: 'FileText', extension: '.csv' },
   print: { key: 'print', label: 'Print', icon: 'Printer' },

@@ -288,9 +288,9 @@ const OfflineBankPayments = () => {
     // Status badge
     const getStatusBadge = (status) => {
         const statusConfig = {
-            pending: { label: 'Pending Review', variant: 'secondary', icon: Clock, color: 'text-yellow-600' },
-            approved: { label: 'Approved', variant: 'default', icon: CheckCircle2, color: 'text-green-600' },
-            rejected: { label: 'Rejected', variant: 'destructive', icon: XCircle, color: 'text-red-600' }
+            pending: { label: 'Pending Review', variant: 'secondary', icon: Clock, color: 'text-yellow-600 dark:text-yellow-400' },
+            approved: { label: 'Approved', variant: 'default', icon: CheckCircle2, color: 'text-green-600 dark:text-green-400' },
+            rejected: { label: 'Rejected', variant: 'destructive', icon: XCircle, color: 'text-red-600 dark:text-red-400' }
         };
         const config = statusConfig[status] || statusConfig.pending;
         const Icon = config.icon;

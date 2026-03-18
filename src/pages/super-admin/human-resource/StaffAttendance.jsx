@@ -215,6 +215,7 @@ const StaffAttendance = () => {
                 <Save className="mr-2 h-4 w-4" /> Save Attendance
               </Button>
             </div>
+            <div className="overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -264,6 +265,7 @@ const StaffAttendance = () => {
                 ))}
               </TableBody>
             </Table>
+            </div>
           </div>
         )}
       </div>

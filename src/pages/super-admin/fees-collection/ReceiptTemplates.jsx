@@ -153,7 +153,7 @@ const ReceiptTemplates = () => {
                   <CardContent>
                     {/* Mini preview area */}
                     <div 
-                      className="bg-gray-50 border rounded-lg mb-3 overflow-hidden flex items-center justify-center"
+                      className="bg-gray-50 dark:bg-gray-800/50 border rounded-lg mb-3 overflow-hidden flex items-center justify-center"
                       style={{ height: '140px' }}
                     >
                       <div style={{ transform: 'scale(0.35)', transformOrigin: 'center center' }}>

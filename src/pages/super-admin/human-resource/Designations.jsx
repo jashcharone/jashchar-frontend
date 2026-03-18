@@ -34,14 +34,14 @@ import {
 
 // Predefined salary grades
 const SALARY_GRADES = [
-    { value: 'L1', label: 'Level 1 (Entry)', color: 'bg-gray-100 text-gray-800' },
-    { value: 'L2', label: 'Level 2 (Junior)', color: 'bg-blue-100 text-blue-800' },
-    { value: 'L3', label: 'Level 3 (Associate)', color: 'bg-green-100 text-green-800' },
-    { value: 'M1', label: 'Manager 1 (Team Lead)', color: 'bg-yellow-100 text-yellow-800' },
-    { value: 'M2', label: 'Manager 2 (Senior Manager)', color: 'bg-orange-100 text-orange-800' },
-    { value: 'S1', label: 'Senior 1 (Director)', color: 'bg-purple-100 text-purple-800' },
-    { value: 'S2', label: 'Senior 2 (VP)', color: 'bg-pink-100 text-pink-800' },
-    { value: 'E1', label: 'Executive (CXO)', color: 'bg-red-100 text-red-800' },
+    { value: 'L1', label: 'Level 1 (Entry)', color: 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300' },
+    { value: 'L2', label: 'Level 2 (Junior)', color: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400' },
+    { value: 'L3', label: 'Level 3 (Associate)', color: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' },
+    { value: 'M1', label: 'Manager 1 (Team Lead)', color: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400' },
+    { value: 'M2', label: 'Manager 2 (Senior Manager)', color: 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400' },
+    { value: 'S1', label: 'Senior 1 (Director)', color: 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400' },
+    { value: 'S2', label: 'Senior 2 (VP)', color: 'bg-pink-100 text-pink-800 dark:bg-pink-900/30 dark:text-pink-400' },
+    { value: 'E1', label: 'Executive (CXO)', color: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400' },
 ];
 
 const Designations = () => {

@@ -245,7 +245,7 @@ const StudentAttendance = () => {
 
     return (
         <DashboardLayout>
-            <h1 className="text-2xl font-bold mb-4">Student Attendance</h1>
+            <h1 className="text-xl sm:text-2xl font-bold mb-4">Student Attendance</h1>
             
             {/* ✅ Permission Warning */}
             {!hasViewPermission && (
@@ -310,9 +310,9 @@ const StudentAttendance = () => {
                                     <tr>
                                         <th className="p-2 text-left">#</th>
                                         <th className="p-2 text-left">Student Name</th>
-                                        <th className="p-2 text-left">Roll No / Code</th>
+                                        <th className="p-2 text-left hidden sm:table-cell">Roll No / Code</th>
                                         <th className="p-2 text-left">Attendance</th>
-                                        <th className="p-2 text-left">Note</th>
+                                        <th className="p-2 text-left hidden md:table-cell">Note</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -320,21 +320,21 @@ const StudentAttendance = () => {
                                         <tr key={student.id} className="border-b hover:bg-muted/50">
                                             <td className="p-2">{index + 1}</td>
                                             <td className="p-2 font-medium">{student.full_name}</td>
-                                            <td className="p-2 text-muted-foreground">{student.roll_number || student.school_code || '-'}</td>
+                                            <td className="p-2 text-muted-foreground hidden sm:table-cell">{student.roll_number || student.school_code || '-'}</td>
                                             <td className="p-2">
                                                 <RadioGroup
                                                     value={attendance[student.id]?.status || 'Present'}
                                                     onValueChange={(v) => handleAttendanceChange(student.id, 'status', v)}
-                                                    className="flex flex-wrap gap-4"
+                                                    className="flex flex-wrap gap-2 sm:gap-4"
                                                     disabled={!hasAddPermission && !hasEditPermission}
                                                 >
-                                                    <div className="flex items-center space-x-2"><RadioGroupItem value="Present" id={`p-${student.id}`} /><Label htmlFor={`p-${student.id}`} className="text-green-600">Present</Label></div>
-                                                    <div className="flex items-center space-x-2"><RadioGroupItem value="Late" id={`l-${student.id}`} /><Label htmlFor={`l-${student.id}`} className="text-yellow-600">Late</Label></div>
-                                                    <div className="flex items-center space-x-2"><RadioGroupItem value="Absent" id={`a-${student.id}`} /><Label htmlFor={`a-${student.id}`} className="text-red-600">Absent</Label></div>
-                                                    <div className="flex items-center space-x-2"><RadioGroupItem value="Half Day" id={`h-${student.id}`} /><Label htmlFor={`h-${student.id}`} className="text-orange-600">Half Day</Label></div>
+                                                    <div className="flex items-center space-x-2"><RadioGroupItem value="Present" id={`p-${student.id}`} /><Label htmlFor={`p-${student.id}`} className="text-green-600 dark:text-green-400">Present</Label></div>
+                                                    <div className="flex items-center space-x-2"><RadioGroupItem value="Late" id={`l-${student.id}`} /><Label htmlFor={`l-${student.id}`} className="text-yellow-600 dark:text-yellow-400">Late</Label></div>
+                                                    <div className="flex items-center space-x-2"><RadioGroupItem value="Absent" id={`a-${student.id}`} /><Label htmlFor={`a-${student.id}`} className="text-red-600 dark:text-red-400">Absent</Label></div>
+                                                    <div className="flex items-center space-x-2"><RadioGroupItem value="Half Day" id={`h-${student.id}`} /><Label htmlFor={`h-${student.id}`} className="text-orange-600 dark:text-orange-400">Half Day</Label></div>
                                                 </RadioGroup>
                                             </td>
-                                            <td className="p-2">
+                                            <td className="p-2 hidden md:table-cell">
                                                 <Input
                                                     type="text"
                                                     value={attendance[student.id]?.note || ''}
@@ -353,7 +353,7 @@ const StudentAttendance = () => {
                             <Button 
                                 onClick={handleSave} 
                                 disabled={isSaving || (!hasAddPermission && !hasEditPermission)}
-                                className="min-w-[180px]"
+                                className="w-full sm:min-w-[180px]"
                             >
                                 {isSaving ? <Loader2 className="animate-spin mr-2" /> : <Save className="mr-2 h-4 w-4" />} Save Attendance
                             </Button>

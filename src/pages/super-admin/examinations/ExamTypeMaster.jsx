@@ -42,7 +42,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { useToast } from '@/components/ui/use-toast';
 import { Progress } from '@/components/ui/progress';
-import { Loader2, Pencil, Trash2, Save, X, Plus, FileSpreadsheet, RefreshCw, Sparkles, AlertCircle, CheckCircle2, Percent } from 'lucide-react';
+import { Loader2, Pencil, Trash2, Save, X, Plus, Sheet, RefreshCw, Sparkles, AlertCircle, CheckCircle2, Percent } from 'lucide-react';
 import { examTypeService } from '@/services/examinationService';
 
 const categories = [
@@ -346,7 +346,7 @@ const ExamTypeMaster = () => {
             <Card>
               <CardHeader className="border-b">
                 <CardTitle className="flex items-center gap-2">
-                  <FileSpreadsheet className="w-5 h-5" />
+                  <Sheet className="w-5 h-5" />
                   {editMode ? 'Edit Exam Type' : 'Add Exam Type'}
                 </CardTitle>
                 <CardDescription>
@@ -511,7 +511,7 @@ const ExamTypeMaster = () => {
                   </div>
                 ) : examTypes.length === 0 ? (
                   <div className="text-center py-12 text-muted-foreground">
-                    <FileSpreadsheet className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                    <Sheet className="w-12 h-12 mx-auto mb-4 opacity-50" />
                     <p>No exam types configured yet</p>
                     <p className="text-sm">Add exam types or use "Seed Defaults" button</p>
                   </div>

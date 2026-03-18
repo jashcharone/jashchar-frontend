@@ -289,11 +289,11 @@ const ResultCalculationPage = () => {
     const getStatusBadge = (status) => {
         switch (status) {
             case 'pass':
-                return <Badge className="bg-green-500">Pass</Badge>;
+                return <Badge className="bg-green-500 dark:bg-green-600">Pass</Badge>;
             case 'compartment':
-                return <Badge className="bg-yellow-500">Compartment</Badge>;
+                return <Badge className="bg-yellow-500 dark:bg-yellow-600">Compartment</Badge>;
             case 'fail':
-                return <Badge className="bg-red-500">Fail</Badge>;
+                return <Badge className="bg-red-500 dark:bg-red-600">Fail</Badge>;
             default:
                 return <Badge variant="secondary">{status}</Badge>;
         }
@@ -301,18 +301,18 @@ const ResultCalculationPage = () => {
 
     const getGradeBadge = (grade) => {
         const gradeColors = {
-            'A+': 'bg-emerald-500',
-            'A': 'bg-green-500',
-            'B+': 'bg-teal-500',
-            'B': 'bg-cyan-500',
-            'C+': 'bg-blue-500',
-            'C': 'bg-indigo-500',
-            'D': 'bg-yellow-500',
-            'E': 'bg-orange-500',
-            'F': 'bg-red-500'
+            'A+': 'bg-emerald-500 dark:bg-emerald-600',
+            'A': 'bg-green-500 dark:bg-green-600',
+            'B+': 'bg-teal-500 dark:bg-teal-600',
+            'B': 'bg-cyan-500 dark:bg-cyan-600',
+            'C+': 'bg-blue-500 dark:bg-blue-600',
+            'C': 'bg-indigo-500 dark:bg-indigo-600',
+            'D': 'bg-yellow-500 dark:bg-yellow-600',
+            'E': 'bg-orange-500 dark:bg-orange-600',
+            'F': 'bg-red-500 dark:bg-red-600'
         };
         return (
-            <Badge className={gradeColors[grade] || 'bg-gray-500'}>
+            <Badge className={gradeColors[grade] || 'bg-gray-500 dark:bg-gray-600'}>
                 {grade}
             </Badge>
         );
@@ -438,7 +438,7 @@ const ResultCalculationPage = () => {
                                 <div className="flex items-center gap-2">
                                     <CheckCircle className="w-5 h-5 text-green-500" />
                                     <div>
-                                        <p className="text-2xl font-bold text-green-600">{stats.passed}</p>
+                                        <p className="text-2xl font-bold text-green-600 dark:text-green-400">{stats.passed}</p>
                                         <p className="text-xs text-muted-foreground">Passed</p>
                                     </div>
                                 </div>
@@ -449,7 +449,7 @@ const ResultCalculationPage = () => {
                                 <div className="flex items-center gap-2">
                                     <AlertTriangle className="w-5 h-5 text-yellow-500" />
                                     <div>
-                                        <p className="text-2xl font-bold text-yellow-600">{stats.compartment}</p>
+                                        <p className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">{stats.compartment}</p>
                                         <p className="text-xs text-muted-foreground">Compartment</p>
                                     </div>
                                 </div>
@@ -460,7 +460,7 @@ const ResultCalculationPage = () => {
                                 <div className="flex items-center gap-2">
                                     <XCircle className="w-5 h-5 text-red-500" />
                                     <div>
-                                        <p className="text-2xl font-bold text-red-600">{stats.failed}</p>
+                                        <p className="text-2xl font-bold text-red-600 dark:text-red-400">{stats.failed}</p>
                                         <p className="text-xs text-muted-foreground">Failed</p>
                                     </div>
                                 </div>
@@ -471,7 +471,7 @@ const ResultCalculationPage = () => {
                                 <div className="flex items-center gap-2">
                                     <ShieldCheck className="w-5 h-5 text-purple-500" />
                                     <div>
-                                        <p className="text-2xl font-bold text-purple-600">{stats.verified}</p>
+                                        <p className="text-2xl font-bold text-purple-600 dark:text-purple-400">{stats.verified}</p>
                                         <p className="text-xs text-muted-foreground">Verified</p>
                                     </div>
                                 </div>
@@ -482,7 +482,7 @@ const ResultCalculationPage = () => {
                                 <div className="flex items-center gap-2">
                                     <Globe className="w-5 h-5 text-indigo-500" />
                                     <div>
-                                        <p className="text-2xl font-bold text-indigo-600">{stats.published}</p>
+                                        <p className="text-2xl font-bold text-indigo-600 dark:text-indigo-400">{stats.published}</p>
                                         <p className="text-xs text-muted-foreground">Published</p>
                                     </div>
                                 </div>
@@ -562,6 +562,7 @@ const ResultCalculationPage = () => {
                                     </p>
                                 </div>
                             ) : (
+                                <div className="overflow-x-auto">
                                 <Table>
                                     <TableHeader>
                                         <TableRow>
@@ -638,6 +639,7 @@ const ResultCalculationPage = () => {
                                         ))}
                                     </TableBody>
                                 </Table>
+                                </div>
                             )}
                         </CardContent>
                     </Card>
@@ -685,6 +687,7 @@ const ResultCalculationPage = () => {
                             {/* Subject-wise Results */}
                             <div>
                                 <h3 className="font-medium mb-2">Subject-wise Results</h3>
+                                <div className="overflow-x-auto">
                                 <Table>
                                     <TableHeader>
                                         <TableRow>
@@ -715,14 +718,14 @@ const ResultCalculationPage = () => {
                                                 </TableCell>
                                                 <TableCell>
                                                     {sub.grace_applied && (
-                                                        <Badge variant="outline" className="text-green-600">
+                                                        <Badge variant="outline" className="text-green-600 dark:text-green-400">
                                                             Applied
                                                         </Badge>
                                                     )}
                                                 </TableCell>
                                                 <TableCell>
                                                     {sub.moderation_applied && (
-                                                        <Badge variant="outline" className="text-blue-600">
+                                                        <Badge variant="outline" className="text-blue-600 dark:text-blue-400">
                                                             Applied
                                                         </Badge>
                                                     )}
@@ -731,17 +734,18 @@ const ResultCalculationPage = () => {
                                         ))}
                                     </TableBody>
                                 </Table>
+                                </div>
                             </div>
 
                             {/* Status summary */}
                             <div className="flex items-center gap-4 p-3 bg-muted rounded-lg">
                                 <div className="flex items-center gap-2">
                                     <span className="text-sm">Subjects Passed:</span>
-                                    <Badge className="bg-green-500">{selectedStudent?.subjects_passed}</Badge>
+                                    <Badge className="bg-green-500 dark:bg-green-600">{selectedStudent?.subjects_passed}</Badge>
                                 </div>
                                 <div className="flex items-center gap-2">
                                     <span className="text-sm">Subjects Failed:</span>
-                                    <Badge className="bg-red-500">{selectedStudent?.subjects_failed}</Badge>
+                                    <Badge className="bg-red-500 dark:bg-red-600">{selectedStudent?.subjects_failed}</Badge>
                                 </div>
                                 <div className="flex items-center gap-2">
                                     <span className="text-sm">Result:</span>

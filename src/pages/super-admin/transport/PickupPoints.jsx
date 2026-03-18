@@ -24,7 +24,7 @@ import {
 
 const PickupPoints = () => {
   const navigate = useNavigate();
-  const { user, currentSessionId } = useAuth();
+  const { user, currentSessionId, organizationId } = useAuth();
   const { selectedBranch } = useBranch();
   const { toast } = useToast();
   const [points, setPoints] = useState([]);
@@ -103,7 +103,9 @@ const PickupPoints = () => {
         name: formData.name.trim(),
         latitude: formData.latitude?.trim() || null,
         longitude: formData.longitude?.trim() || null,
-        branch_id: branchId
+        branch_id: branchId,
+        organization_id: organizationId,
+        session_id: currentSessionId
       };
       
       console.log('[PickupPoints] Inserting new point:', insertData);
@@ -199,7 +201,11 @@ const PickupPoints = () => {
                     <Loader2 className="h-8 w-8 animate-spin text-primary" />
                   </div>
                 ) : points.length === 0 ? (
-                  <p className="text-center py-10 text-muted-foreground">No pickup points found. Add one to get started.</p>
+                  <div className="text-center py-16">
+                    <MapPin className="h-12 w-12 mx-auto text-gray-300 dark:text-gray-600 mb-3" />
+                    <p className="text-gray-500 dark:text-gray-400 font-medium">No pickup points found</p>
+                    <p className="text-sm text-muted-foreground mt-1">Add one to get started</p>
+                  </div>
                 ) : (
                   <>
                     <div className="border rounded-lg overflow-hidden max-h-[500px] overflow-y-auto">

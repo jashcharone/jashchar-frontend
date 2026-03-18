@@ -149,8 +149,8 @@ const RoomTypes = () => {
           <CardContent className="flex items-center p-4">
             <Bed className="h-10 w-10 text-blue-600 mr-4" />
             <div>
-              <p className="text-2xl font-bold text-blue-700">{roomTypes.length}</p>
-              <p className="text-sm text-blue-600">Total Room Types</p>
+              <p className="text-2xl font-bold text-blue-700 dark:text-blue-400">{roomTypes.length}</p>
+              <p className="text-sm text-blue-600 dark:text-blue-400">Total Room Types</p>
             </div>
           </CardContent>
         </Card>

@@ -583,7 +583,7 @@ const CollectFees = () => {
 
     return (
         <DashboardLayout>
-            <h1 className="text-2xl font-bold mb-6">Collect Fees</h1>
+            <h1 className="text-xl sm:text-2xl font-bold mb-4 sm:mb-6">Collect Fees</h1>
             <Card className="mb-6">
                 <CardHeader>
                     <CardTitle>Select Criteria</CardTitle>
@@ -690,7 +690,7 @@ const CollectFees = () => {
                         <Card className="mb-6 border-indigo-200 dark:border-indigo-800">
                             <CardContent className="p-4">
                                 <div className="flex flex-wrap items-center justify-between gap-4">
-                                    <div className="flex items-center gap-6">
+                                    <div className="flex items-center gap-3 sm:gap-6">
                                         <div>
                                             <p className="text-xs text-muted-foreground">Total Fees</p>
                                             <p className="text-lg font-bold flex items-center"><IndianRupee className="h-4 w-4" />{summaryStats.totalFees.toLocaleString('en-IN')}</p>
@@ -706,7 +706,7 @@ const CollectFees = () => {
                                             <p className="text-lg font-bold text-red-600 dark:text-red-400 flex items-center"><IndianRupee className="h-4 w-4" />{summaryStats.totalBalance.toLocaleString('en-IN')}</p>
                                         </div>
                                     </div>
-                                    <div className="flex items-center gap-3 min-w-[200px]">
+                                    <div className="flex items-center gap-3 min-w-0 sm:min-w-[200px]">
                                         <Progress value={summaryStats.totalFees > 0 ? Math.round((summaryStats.totalCollected / summaryStats.totalFees) * 100) : 0} className="h-3 flex-1" />
                                         <span className="text-sm font-bold">{summaryStats.totalFees > 0 ? Math.round((summaryStats.totalCollected / summaryStats.totalFees) * 100) : 0}%</span>
                                     </div>
@@ -718,7 +718,7 @@ const CollectFees = () => {
                     {/* Student List Table */}
                     <Card>
                         <CardHeader className="pb-3">
-                            <div className="flex items-center justify-between">
+                            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
                                 <CardTitle className="flex items-center gap-2">
                                     <Users className="h-5 w-5" />
                                     Student List
@@ -731,7 +731,7 @@ const CollectFees = () => {
                                 <div className="flex items-center gap-2">
                                     <Input 
                                         placeholder="Type to search instantly..." 
-                                        className="w-64 h-8" 
+                                        className="w-full sm:w-64 h-8" 
                                         value={keyword} 
                                         onChange={e => setKeyword(e.target.value)} 
                                     />
@@ -749,14 +749,14 @@ const CollectFees = () => {
                                     <table className="w-full text-sm">
                                         <thead>
                                             <tr className="border-b bg-muted/50">
-                                                <th className="p-3 font-semibold text-left w-10">#</th>
-                                                <th className="p-3 font-semibold text-left">Student</th>
-                                                <th className="p-3 font-semibold text-left">Class</th>
-                                                <th className="p-3 font-semibold text-left">Guardian / Phone</th>
-                                                <th className="p-3 font-semibold text-center">Hostel</th>
-                                                <th className="p-3 font-semibold text-center">Transport</th>
-                                                <th className="p-3 font-semibold text-left min-w-[220px]">Fees Status</th>
-                                                <th className="p-3 font-semibold text-center">Action</th>
+                                                <th className="p-2 sm:p-3 font-semibold text-left w-10">#</th>
+                                                <th className="p-2 sm:p-3 font-semibold text-left">Student</th>
+                                                <th className="p-2 sm:p-3 font-semibold text-left hidden sm:table-cell">Class</th>
+                                                <th className="p-2 sm:p-3 font-semibold text-left hidden md:table-cell">Guardian / Phone</th>
+                                                <th className="p-2 sm:p-3 font-semibold text-center hidden lg:table-cell">Hostel</th>
+                                                <th className="p-2 sm:p-3 font-semibold text-center hidden lg:table-cell">Transport</th>
+                                                <th className="p-2 sm:p-3 font-semibold text-left min-w-[180px] sm:min-w-[220px]">Fees Status</th>
+                                                <th className="p-2 sm:p-3 font-semibold text-center">Action</th>
                                             </tr>
                                         </thead>
                                         <tbody>
@@ -769,8 +769,8 @@ const CollectFees = () => {
 
                                                 return (
                                                     <tr key={student.id} className={`border-b hover:bg-muted/50 transition-colors ${progressBg}`}>
-                                                        <td className="p-3 text-muted-foreground">{index + 1}</td>
-                                                        <td className="p-3">
+                                                        <td className="p-2 sm:p-3 text-muted-foreground">{index + 1}</td>
+                                                        <td className="p-2 sm:p-3">
                                                             <div className="flex items-center gap-3">
                                                                 {/* Avatar */}
                                                                 <div className="h-10 w-10 rounded-full bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center text-white font-bold text-sm shrink-0">
@@ -786,13 +786,13 @@ const CollectFees = () => {
                                                                 </div>
                                                             </div>
                                                         </td>
-                                                        <td className="p-3">
+                                                        <td className="p-2 sm:p-3 hidden sm:table-cell">
                                                             <div>
                                                                 <p className="font-medium">{student.classes?.name || '-'}</p>
                                                                 {student.sections?.name && <p className="text-xs text-muted-foreground">Section: {student.sections.name}</p>}
                                                             </div>
                                                         </td>
-                                                        <td className="p-3">
+                                                        <td className="p-2 sm:p-3 hidden md:table-cell">
                                                             <div>
                                                                 <p className="font-medium text-sm">{highlightText(student.father_name || student.mother_name, keyword) || '-'}</p>
                                                                 <p className="text-xs text-emerald-600 dark:text-emerald-400 flex items-center gap-1 mt-0.5">
@@ -801,7 +801,7 @@ const CollectFees = () => {
                                                                 </p>
                                                             </div>
                                                         </td>
-                                                        <td className="p-3 text-center">
+                                                        <td className="p-2 sm:p-3 text-center hidden lg:table-cell">
                                                             {hostelAssignments[student.id] ? (
                                                                 <div className="inline-flex items-center gap-1 px-2 py-1 bg-purple-100 text-purple-700 rounded-full dark:bg-purple-900 dark:text-purple-300" title={`${hostelAssignments[student.id].hostel_name} - Room ${hostelAssignments[student.id].room_no}`}>
                                                                     <Home className="h-3.5 w-3.5" />
@@ -811,7 +811,7 @@ const CollectFees = () => {
                                                                 <span className="text-xs text-muted-foreground">-</span>
                                                             )}
                                                         </td>
-                                                        <td className="p-3 text-center">
+                                                        <td className="p-2 sm:p-3 text-center hidden lg:table-cell">
                                                             {transportAssignments[student.id] ? (
                                                                 <div className="inline-flex items-center gap-1 px-2 py-1 bg-blue-100 text-blue-700 rounded-full dark:bg-blue-900 dark:text-blue-300" title={`${transportAssignments[student.id].route} - ${transportAssignments[student.id].pickup_point}`}>
                                                                     <Bus className="h-3.5 w-3.5" />
@@ -821,7 +821,7 @@ const CollectFees = () => {
                                                                 <span className="text-xs text-muted-foreground">-</span>
                                                             )}
                                                         </td>
-                                                        <td className="p-3">
+                                                        <td className="p-2 sm:p-3">
                                                             <div className="space-y-1.5">
                                                                 <div className="flex items-center justify-between gap-2">
                                                                     <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${badgeColor}`}>{badgeText}</span>
@@ -859,7 +859,7 @@ const CollectFees = () => {
                                                                 )}
                                                             </div>
                                                         </td>
-                                                        <td className="p-3 text-center">
+                                                        <td className="p-2 sm:p-3 text-center">
                                                             <Button 
                                                                 size="sm" 
                                                                 className={fee.balance > 0 ? 'bg-red-600 hover:bg-red-700 text-white' : 'bg-green-600 hover:bg-green-700 text-white'}

@@ -258,7 +258,7 @@ const StudentIdCard = () => {
     };
 
     // ID Card Component
-    const IdCard = ({ student }) => {
+    const Contact = ({ student }) => {
         // FIXED: Derive name from full_name OR first_name + last_name
         const fullName = student.full_name || `${student.first_name || ''} ${student.last_name || ''}`.trim() || 'Unknown';
         const nameParts = fullName.split(' ');
@@ -477,8 +477,8 @@ const StudentIdCard = () => {
                 {/* Preview Modal */}
                 {showPreview && (
                     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-                        <div className="bg-white rounded-lg max-w-4xl max-h-[90vh] overflow-auto w-full">
-                            <div className="sticky top-0 bg-white border-b p-4 flex justify-between items-center">
+                        <div className="bg-white dark:bg-gray-900 rounded-lg max-w-4xl max-h-[90vh] overflow-auto w-full">
+                            <div className="sticky top-0 bg-white dark:bg-gray-900 border-b dark:border-gray-700 p-4 flex justify-between items-center">
                                 <h2 className="text-xl font-bold">ID Card Preview ({selectedStudents.length} cards)</h2>
                                 <div className="flex gap-2">
                                     <Button onClick={executePrint}>
@@ -492,7 +492,7 @@ const StudentIdCard = () => {
                             </div>
                             <div ref={printRef} className="p-6 flex flex-wrap gap-4 justify-center">
                                 {getSelectedStudentsData().map((student) => (
-                                    <IdCard key={student.id} student={student} />
+                                    <Contact key={student.id} student={student} />
                                 ))}
                             </div>
                         </div>

@@ -35,12 +35,19 @@ import {
   Users, IndianRupee, Percent, Star, ChevronRight, Eye, Camera, 
   Fingerprint, Globe, Flag, Hash, CalendarDays, School, Briefcase,
   MessageSquare, Bell, Settings, History, FileCheck, Upload, ArrowLeft,
-  CircleDot, Sparkles, Zap, Target, BarChart3, PieChart, LineChart
+  CircleDot, Sparkles, Zap, Target, BarChart3, PieChart, LineChart, Brain, AlertTriangle
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format, parseISO, differenceInYears, differenceInMonths } from 'date-fns';
 import StudentProfileFeesTab from './StudentProfileFeesTab';
 import StudentProfileAttendanceTab from './StudentProfileAttendanceTab';
+import StudentProfileHealthTab from './StudentProfileHealthTab';
+import StudentProfileBehaviorTab from './StudentProfileBehaviorTab';
+import StudentProfileDocChecklistSection from './StudentProfileDocChecklistSection';
+import StudentProfileAcademicTracker from './StudentProfileAcademicTracker';
+import StudentProfileSiblingsTab from './StudentProfileSiblingsTab';
+import StudentProfileTimeline from './StudentProfileTimeline';
+import StudentProfileAIInsightsTab from './StudentProfileAIInsightsTab';
 import DocumentUploadField from '@/components/common/DocumentUploadField';
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -195,6 +202,8 @@ const StudentProfile = () => {
   const [activeTab, setActiveTab] = useState('overview');
   const [feesSummary, setFeesSummary] = useState({ total: 0, paid: 0, balance: 0 });
   const [attendanceSummary, setAttendanceSummary] = useState({ present: 0, absent: 0, total: 0 });
+  const [behaviorSummary, setBehaviorSummary] = useState({ total: 0, positive: 0, negative: 0, score: 0 });
+  const [examSummary, setExamSummary] = useState({ avgPercent: 0, rank: null, totalExams: 0 });
   const [refreshKey, setRefreshKey] = useState(0); // For forcing refresh
   const [isExporting, setIsExporting] = useState(false); // PDF export loading state
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false); // Document upload dialog
@@ -767,6 +776,54 @@ const StudentProfile = () => {
           .maybeSingle();
         if (cData?.custom_data) setCustomData(cData.custom_data);
 
+        // 8. Fetch Attendance Summary (current session)
+        try {
+          const { data: attData } = await supabase
+            .from('student_attendance')
+            .select('status')
+            .eq('student_id', targetId)
+            .eq('branch_id', branchId)
+            .eq('session_id', currentSessionId);
+          if (attData) {
+            const total = attData.length;
+            const present = attData.filter(a => a.status === 'present' || a.status === 'late' || a.status === 'half_day').length;
+            const absent = attData.filter(a => a.status === 'absent').length;
+            setAttendanceSummary({ present, absent, total });
+          }
+        } catch (e) { console.log('Attendance summary fetch error:', e); }
+
+        // 9. Fetch Behavior Summary
+        try {
+          const { data: behData } = await supabase
+            .from('student_behaviour_incidents')
+            .select('type, points')
+            .eq('student_id', targetId)
+            .eq('branch_id', branchId);
+          if (behData) {
+            const positive = behData.filter(b => b.type === 'positive').length;
+            const negative = behData.filter(b => b.type === 'negative').length;
+            const score = behData.reduce((sum, b) => sum + (b.points || 0), 0);
+            setBehaviorSummary({ total: behData.length, positive, negative, score });
+          }
+        } catch (e) { console.log('Behavior summary fetch error:', e); }
+
+        // 10. Fetch Exam Summary (average percentage from latest marks)
+        try {
+          const { data: examData } = await supabase
+            .from('exam_marks_v2')
+            .select('percentage, total_marks')
+            .eq('student_id', targetId)
+            .eq('branch_id', branchId)
+            .in('status', ['submitted', 'verified', 'locked']);
+          if (examData && examData.length > 0) {
+            const validMarks = examData.filter(e => e.percentage != null);
+            const avgPercent = validMarks.length > 0
+              ? Math.round(validMarks.reduce((sum, e) => sum + Number(e.percentage), 0) / validMarks.length)
+              : 0;
+            setExamSummary({ avgPercent, rank: null, totalExams: validMarks.length });
+          }
+        } catch (e) { console.log('Exam summary fetch error:', e); }
+
       } catch (err) {
         console.error("Profile Load Error:", err);
         toast({ variant: 'destructive', title: 'Error', description: 'Failed to load student profile' });
@@ -950,17 +1007,18 @@ const StudentProfile = () => {
           <StatCard 
             icon={Calendar} 
             label="Attendance" 
-            value="92%"
-            subValue="Last 30 days"
-            color="green"
+            value={attendanceSummary.total > 0 ? `${Math.round((attendanceSummary.present / attendanceSummary.total) * 100)}%` : 'N/A'}
+            subValue={attendanceSummary.total > 0 ? `${attendanceSummary.present}/${attendanceSummary.total} days` : 'No data'}
+            color={attendanceSummary.total > 0 && (attendanceSummary.present / attendanceSummary.total) >= 0.75 ? "green" : "orange"}
             onClick={() => setActiveTab('attendance')}
           />
           <StatCard 
             icon={Award} 
-            label="Class Rank" 
-            value="#5"
-            subValue="Out of 45 students"
+            label="Avg Score" 
+            value={examSummary.totalExams > 0 ? `${examSummary.avgPercent}%` : 'N/A'}
+            subValue={examSummary.totalExams > 0 ? `${examSummary.totalExams} subjects` : 'No exams yet'}
             color="purple"
+            onClick={() => setActiveTab('academic')}
           />
           <StatCard 
             icon={Clock} 
@@ -995,6 +1053,9 @@ const StudentProfile = () => {
               <TabsTrigger value="parents" className="px-4 py-2.5 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-lg">
                 <Users className="mr-2 h-4 w-4" /> Parents
               </TabsTrigger>
+              <TabsTrigger value="family" className="px-4 py-2.5 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-lg">
+                <Users className="mr-2 h-4 w-4" /> Family
+              </TabsTrigger>
               <TabsTrigger value="fees" className="px-4 py-2.5 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-lg">
                 <CreditCard className="mr-2 h-4 w-4" /> Fees
               </TabsTrigger>
@@ -1013,8 +1074,17 @@ const StudentProfile = () => {
               <TabsTrigger value="documents" className="px-4 py-2.5 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-lg">
                 <Files className="mr-2 h-4 w-4" /> Documents
               </TabsTrigger>
+              <TabsTrigger value="health" className="px-4 py-2.5 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-lg">
+                <Heart className="mr-2 h-4 w-4" /> Health
+              </TabsTrigger>
+              <TabsTrigger value="behavior" className="px-4 py-2.5 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-lg">
+                <AlertTriangle className="mr-2 h-4 w-4" /> Behavior
+              </TabsTrigger>
               <TabsTrigger value="timeline" className="px-4 py-2.5 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-lg">
                 <History className="mr-2 h-4 w-4" /> Timeline
+              </TabsTrigger>
+              <TabsTrigger value="ai-insights" className="px-4 py-2.5 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-lg">
+                <Brain className="mr-2 h-4 w-4" /> AI Insights
               </TabsTrigger>
             </TabsList>
           </div>
@@ -1023,6 +1093,56 @@ const StudentProfile = () => {
           {/* 📋 OVERVIEW TAB */}
           {/* ═══════════════════════════════════════════════════════════════════════════════ */}
           <TabsContent value="overview" className="mt-0 space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+            {/* Quick Glance Row */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="p-4 rounded-xl bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 border border-blue-100 dark:border-blue-900 cursor-pointer hover:shadow-md transition-all" onClick={() => setActiveTab('attendance')}>
+                <div className="flex items-center gap-2 mb-2">
+                  <CalendarDays className="h-4 w-4 text-blue-600" />
+                  <span className="text-xs font-medium text-blue-700 dark:text-blue-400">Attendance</span>
+                </div>
+                <p className="text-2xl font-bold text-blue-900 dark:text-blue-100">
+                  {attendanceSummary.total > 0 ? `${Math.round((attendanceSummary.present / attendanceSummary.total) * 100)}%` : '—'}
+                </p>
+                <p className="text-xs text-blue-600/70 dark:text-blue-400/70 mt-1">
+                  {attendanceSummary.total > 0 ? `${attendanceSummary.present} of ${attendanceSummary.total} days` : 'No records yet'}
+                </p>
+              </div>
+              <div className="p-4 rounded-xl bg-gradient-to-br from-purple-50 to-violet-50 dark:from-purple-950/30 dark:to-violet-950/30 border border-purple-100 dark:border-purple-900 cursor-pointer hover:shadow-md transition-all" onClick={() => setActiveTab('academic')}>
+                <div className="flex items-center gap-2 mb-2">
+                  <GraduationCap className="h-4 w-4 text-purple-600" />
+                  <span className="text-xs font-medium text-purple-700 dark:text-purple-400">Academics</span>
+                </div>
+                <p className="text-2xl font-bold text-purple-900 dark:text-purple-100">
+                  {examSummary.totalExams > 0 ? `${examSummary.avgPercent}%` : '—'}
+                </p>
+                <p className="text-xs text-purple-600/70 dark:text-purple-400/70 mt-1">
+                  {examSummary.totalExams > 0 ? `Avg across ${examSummary.totalExams} subjects` : 'No exams yet'}
+                </p>
+              </div>
+              <div className="p-4 rounded-xl bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-950/30 dark:to-orange-950/30 border border-amber-100 dark:border-amber-900 cursor-pointer hover:shadow-md transition-all" onClick={() => setActiveTab('behavior')}>
+                <div className="flex items-center gap-2 mb-2">
+                  <Shield className="h-4 w-4 text-amber-600" />
+                  <span className="text-xs font-medium text-amber-700 dark:text-amber-400">Behavior</span>
+                </div>
+                <p className="text-2xl font-bold text-amber-900 dark:text-amber-100">
+                  {behaviorSummary.total > 0 ? (behaviorSummary.score > 0 ? `+${behaviorSummary.score}` : behaviorSummary.score) : '—'}
+                </p>
+                <p className="text-xs text-amber-600/70 dark:text-amber-400/70 mt-1">
+                  {behaviorSummary.total > 0 ? `${behaviorSummary.positive} good · ${behaviorSummary.negative} concerns` : 'No incidents'}
+                </p>
+              </div>
+              <div className="p-4 rounded-xl bg-gradient-to-br from-emerald-50 to-green-50 dark:from-emerald-950/30 dark:to-green-950/30 border border-emerald-100 dark:border-emerald-900 cursor-pointer hover:shadow-md transition-all" onClick={() => setActiveTab('fees')}>
+                <div className="flex items-center gap-2 mb-2">
+                  <CreditCard className="h-4 w-4 text-emerald-600" />
+                  <span className="text-xs font-medium text-emerald-700 dark:text-emerald-400">Fee Status</span>
+                </div>
+                <p className="text-2xl font-bold text-emerald-900 dark:text-emerald-100">{feePaymentPercent}%</p>
+                <p className="text-xs text-emerald-600/70 dark:text-emerald-400/70 mt-1">
+                  {feesSummary.balance > 0 ? `₹${feesSummary.balance.toLocaleString()} due` : 'Fully paid'}
+                </p>
+              </div>
+            </div>
+
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               
               {/* Left Column - Basic Info */}
@@ -1219,6 +1339,14 @@ const StudentProfile = () => {
                 <InfoItem icon={Calendar} label="TC Date" value={student.tc_date ? format(parseISO(student.tc_date), 'dd MMM yyyy') : null} />
               </div>
             </GlassCard>
+
+            {/* Academic Performance Tracker */}
+            <GlassCard className="p-6" gradient>
+              <SectionTitle icon={BarChart3} title="Academic Performance" subtitle="Exam results & subject analysis" />
+              <div className="mt-4">
+                <StudentProfileAcademicTracker studentId={targetId} />
+              </div>
+            </GlassCard>
           </TabsContent>
 
           {/* ═══════════════════════════════════════════════════════════════════════════════ */}
@@ -1295,7 +1423,14 @@ const StudentProfile = () => {
           </TabsContent>
 
           {/* ═══════════════════════════════════════════════════════════════════════════════ */}
-          {/* 💰 FEES TAB */}
+          {/* �‍👩‍👧‍👦 FAMILY / SIBLINGS TAB */}
+          {/* ═══════════════════════════════════════════════════════════════════════════════ */}
+          <TabsContent value="family" className="mt-0 animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <StudentProfileSiblingsTab studentId={targetId} />
+          </TabsContent>
+
+          {/* ═══════════════════════════════════════════════════════════════════════════════ */}
+          {/* �💰 FEES TAB */}
           {/* ═══════════════════════════════════════════════════════════════════════════════ */}
           <TabsContent value="fees" className="mt-0 animate-in fade-in slide-in-from-bottom-4 duration-500">
             <StudentProfileFeesTab studentId={targetId} />
@@ -1312,16 +1447,10 @@ const StudentProfile = () => {
           {/* 📝 EXAMS TAB */}
           {/* ═══════════════════════════════════════════════════════════════════════════════ */}
           <TabsContent value="exams" className="mt-0 space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-            <GlassCard className="p-8">
-              <div className="flex flex-col items-center justify-center text-center py-12">
-                <div className="p-6 bg-gradient-to-br from-purple-100 to-purple-50 dark:from-purple-950/50 dark:to-purple-900/30 rounded-full mb-6">
-                  <BookOpen className="h-12 w-12 text-purple-600" />
-                </div>
-                <h3 className="text-xl font-bold mb-2">Examination Results</h3>
-                <p className="text-muted-foreground max-w-md">
-                  Exam results, mark sheets, progress reports, and performance analytics will be displayed here.
-                </p>
-                <Badge variant="secondary" className="mt-4">Coming Soon</Badge>
+            <GlassCard className="p-6" gradient>
+              <SectionTitle icon={BookOpen} title="Examination Results" subtitle="Marks, grades & performance analysis" />
+              <div className="mt-4">
+                <StudentProfileAcademicTracker studentId={targetId} />
               </div>
             </GlassCard>
           </TabsContent>
@@ -1396,10 +1525,25 @@ const StudentProfile = () => {
           </TabsContent>
 
           {/* ═══════════════════════════════════════════════════════════════════════════════ */}
+          {/* 🏥 HEALTH TAB */}
+          {/* ═══════════════════════════════════════════════════════════════════════════════ */}
+          <TabsContent value="health" className="mt-0 animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <StudentProfileHealthTab studentId={targetId} />
+          </TabsContent>
+
+          {/* ═══════════════════════════════════════════════════════════════════════════════ */}
+          {/* ⚠️ BEHAVIOR TAB */}
+          {/* ═══════════════════════════════════════════════════════════════════════════════ */}
+          <TabsContent value="behavior" className="mt-0 animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <StudentProfileBehaviorTab studentId={targetId} />
+          </TabsContent>
+
+          {/* ═══════════════════════════════════════════════════════════════════════════════ */}
           {/* 📄 DOCUMENTS TAB */}
           {/* ═══════════════════════════════════════════════════════════════════════════════ */}
           <TabsContent value="documents" className="mt-0 space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
             <GlassCard className="p-6" gradient>
+              <StudentProfileDocChecklistSection studentId={targetId} />
               <SectionTitle 
                 icon={Files} 
                 title="Documents Received" 
@@ -1535,32 +1679,14 @@ const StudentProfile = () => {
           {/* ⏳ TIMELINE TAB */}
           {/* ═══════════════════════════════════════════════════════════════════════════════ */}
           <TabsContent value="timeline" className="mt-0 space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-            <GlassCard className="p-6" gradient>
-              <SectionTitle icon={History} title="Student Journey" subtitle="Complete activity timeline" />
-              <div className="mt-6">
-                <TimelineItem 
-                  icon={GraduationCap}
-                  title="Admission"
-                  description={`Admitted to Class ${student.class?.name || 'N/A'}`}
-                  date={student.admission_date ? format(parseISO(student.admission_date), 'dd MMM yyyy') : 'N/A'}
-                  status="completed"
-                />
-                <TimelineItem 
-                  icon={CreditCard}
-                  title="Fee Payment"
-                  description={`₹${feesSummary.paid.toLocaleString()} paid out of ₹${feesSummary.total.toLocaleString()}`}
-                  date="Current Session"
-                  status={feePaymentPercent >= 100 ? "completed" : "pending"}
-                />
-                <TimelineItem 
-                  icon={User}
-                  title="Profile Created"
-                  description="Student profile was created in the system"
-                  date={student.created_at ? format(parseISO(student.created_at), 'dd MMM yyyy') : 'N/A'}
-                  status="completed"
-                />
-              </div>
-            </GlassCard>
+            <StudentProfileTimeline studentId={targetId} student={student} />
+          </TabsContent>
+
+          {/* ═══════════════════════════════════════════════════════════════════════════════ */}
+          {/* 🧠 AI INSIGHTS TAB */}
+          {/* ═══════════════════════════════════════════════════════════════════════════════ */}
+          <TabsContent value="ai-insights" className="mt-0 space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <StudentProfileAIInsightsTab studentId={targetId} />
           </TabsContent>
 
         </Tabs>

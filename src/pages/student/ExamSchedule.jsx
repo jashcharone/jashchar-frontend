@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { supabase } from '@/lib/customSupabaseClient';
@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Eye, Search, FileText, FileSpreadsheet, Printer, Copy, X } from 'lucide-react';
+import { Eye, Search, FileText, Sheet, Printer, Copy, X } from 'lucide-react';
 import { format } from 'date-fns';
 
 const StudentExamSchedule = () => {
@@ -123,7 +123,7 @@ const StudentExamSchedule = () => {
               </div>
               <div className="flex gap-2">
                 <Button variant="outline" size="icon" title="Copy"><Copy className="h-4 w-4 text-muted-foreground" /></Button>
-                <Button variant="outline" size="icon" title="Excel"><FileSpreadsheet className="h-4 w-4 text-muted-foreground" /></Button>
+                <Button variant="outline" size="icon" title="Excel"><Sheet className="h-4 w-4 text-muted-foreground" /></Button>
                 <Button variant="outline" size="icon" title="CSV"><FileText className="h-4 w-4 text-muted-foreground" /></Button>
                 <Button variant="outline" size="icon" title="PDF"><FileText className="h-4 w-4 text-muted-foreground" /></Button>
                 <Button variant="outline" size="icon" title="Print"><Printer className="h-4 w-4 text-muted-foreground" /></Button>
@@ -206,7 +206,7 @@ const StudentExamSchedule = () => {
                 </div>
                 <div className="flex gap-1">
                   <Button variant="outline" size="sm" className="h-8 w-8 p-0"><Copy className="h-3.5 w-3.5" /></Button>
-                  <Button variant="outline" size="sm" className="h-8 w-8 p-0"><FileSpreadsheet className="h-3.5 w-3.5" /></Button>
+                  <Button variant="outline" size="sm" className="h-8 w-8 p-0"><Sheet className="h-3.5 w-3.5" /></Button>
                   <Button variant="outline" size="sm" className="h-8 w-8 p-0"><FileText className="h-3.5 w-3.5" /></Button>
                   <Button variant="outline" size="sm" className="h-8 w-8 p-0"><Printer className="h-3.5 w-3.5" /></Button>
                 </div>

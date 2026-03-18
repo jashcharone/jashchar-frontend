@@ -1,7 +1,7 @@
-﻿import React, { useState, useRef } from 'react';
+import React, { useState, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
-import { Upload, X, Loader2, FileImage as ImageIcon } from 'lucide-react';
+import { Upload, X, Loader2, Image as ImageIcon } from 'lucide-react';
 import { supabase } from '@/lib/customSupabaseClient';
 import { useToast } from '@/components/ui/use-toast';
 

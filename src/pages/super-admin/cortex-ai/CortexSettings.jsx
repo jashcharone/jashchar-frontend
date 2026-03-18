@@ -353,7 +353,7 @@ const CortexSettings = () => {
 
       {/* AI Status */}
       <div className="bg-gradient-to-r from-purple-600 to-blue-600 rounded-xl p-6 text-white">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-4">
             <div className="w-16 h-16 bg-white/20 rounded-xl flex items-center justify-center">
               <Brain className="w-8 h-8" />
@@ -368,7 +368,29 @@ const CortexSettings = () => {
               <div className="w-3 h-3 bg-green-400 rounded-full animate-pulse" />
               <span className="font-medium">Online</span>
             </div>
-            <p className="text-sm text-purple-200 mt-1">Last sync: 2 minutes ago</p>
+          </div>
+        </div>
+        <div className="grid grid-cols-3 gap-3">
+          <div className="bg-white/10 rounded-lg p-3 flex items-center gap-3">
+            <CheckCircle className="w-5 h-5 text-green-300" />
+            <div>
+              <p className="text-sm font-medium">Claude (Analytics)</p>
+              <p className="text-xs text-purple-200">Ready</p>
+            </div>
+          </div>
+          <div className="bg-white/10 rounded-lg p-3 flex items-center gap-3">
+            <CheckCircle className="w-5 h-5 text-green-300" />
+            <div>
+              <p className="text-sm font-medium">OpenAI (Chat)</p>
+              <p className="text-xs text-purple-200">Ready</p>
+            </div>
+          </div>
+          <div className="bg-white/10 rounded-lg p-3 flex items-center gap-3">
+            <CheckCircle className="w-5 h-5 text-green-300" />
+            <div>
+              <p className="text-sm font-medium">OCR (Tesseract)</p>
+              <p className="text-xs text-purple-200">Ready</p>
+            </div>
           </div>
         </div>
       </div>

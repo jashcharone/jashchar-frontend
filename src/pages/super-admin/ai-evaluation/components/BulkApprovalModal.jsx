@@ -75,16 +75,16 @@ const BulkApprovalModal = ({
         min_confidence: minConfidence / 100
       });
 
-      if (response.data?.success) {
+      if (response?.success) {
         toast({ title: `${selectedPapers.length} papers approved successfully!` });
         onSuccess?.();
         onClose();
       } else {
-        throw new Error(response.data?.error || 'Bulk approval failed');
+        throw new Error(response?.error || 'Bulk approval failed');
       }
     } catch (error) {
       console.error('Bulk approval error:', error);
-      toast({ variant: 'destructive', title: error.response?.data?.error || 'Failed to approve papers' });
+      toast({ variant: 'destructive', title: error.message || 'Failed to approve papers' });
     } finally {
       setLoading(false);
     }

@@ -481,11 +481,11 @@ const MarksEntryPageNew = () => {
 
     return (
         <DashboardLayout>
-            <div className="container mx-auto py-6 space-y-6">
+            <div className="container mx-auto py-4 sm:py-6 space-y-4 sm:space-y-6">
                 {/* Header */}
-                <div className="flex items-center justify-between">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
                     <div>
-                        <h1 className="text-2xl font-bold flex items-center gap-2">
+                        <h1 className="text-xl sm:text-2xl font-bold flex items-center gap-2">
                             <Calculator className="h-6 w-6" />
                             Marks Entry
                             {selectedSubject && getStatusBadge()}
@@ -559,41 +559,41 @@ const MarksEntryPageNew = () => {
 
                 {/* Stats Cards */}
                 {selectedSubject && (
-                    <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
+                    <div className="grid grid-cols-3 md:grid-cols-6 gap-3 sm:gap-4">
                         <Card>
-                            <CardContent className="pt-4">
-                                <div className="text-2xl font-bold">{stats.total}</div>
-                                <div className="text-sm text-muted-foreground">Total Students</div>
+                            <CardContent className="pt-3 sm:pt-4">
+                                <div className="text-lg sm:text-2xl font-bold">{stats.total}</div>
+                                <div className="text-xs sm:text-sm text-muted-foreground">Total Students</div>
                             </CardContent>
                         </Card>
                         <Card>
-                            <CardContent className="pt-4">
-                                <div className="text-2xl font-bold text-blue-600">{stats.entered}</div>
-                                <div className="text-sm text-muted-foreground">Entered</div>
+                            <CardContent className="pt-3 sm:pt-4">
+                                <div className="text-lg sm:text-2xl font-bold text-blue-600">{stats.entered}</div>
+                                <div className="text-xs sm:text-sm text-muted-foreground">Entered</div>
                             </CardContent>
                         </Card>
                         <Card>
-                            <CardContent className="pt-4">
-                                <div className="text-2xl font-bold text-orange-600">{stats.absent}</div>
-                                <div className="text-sm text-muted-foreground">Absent</div>
+                            <CardContent className="pt-3 sm:pt-4">
+                                <div className="text-lg sm:text-2xl font-bold text-orange-600">{stats.absent}</div>
+                                <div className="text-xs sm:text-sm text-muted-foreground">Absent</div>
                             </CardContent>
                         </Card>
                         <Card>
-                            <CardContent className="pt-4">
-                                <div className="text-2xl font-bold text-green-600">{stats.pass}</div>
-                                <div className="text-sm text-muted-foreground">Pass</div>
+                            <CardContent className="pt-3 sm:pt-4">
+                                <div className="text-lg sm:text-2xl font-bold text-green-600">{stats.pass}</div>
+                                <div className="text-xs sm:text-sm text-muted-foreground">Pass</div>
                             </CardContent>
                         </Card>
                         <Card>
-                            <CardContent className="pt-4">
-                                <div className="text-2xl font-bold text-red-600">{stats.fail}</div>
-                                <div className="text-sm text-muted-foreground">Fail</div>
+                            <CardContent className="pt-3 sm:pt-4">
+                                <div className="text-lg sm:text-2xl font-bold text-red-600">{stats.fail}</div>
+                                <div className="text-xs sm:text-sm text-muted-foreground">Fail</div>
                             </CardContent>
                         </Card>
                         <Card>
-                            <CardContent className="pt-4">
-                                <div className="text-2xl font-bold">{stats.average}</div>
-                                <div className="text-sm text-muted-foreground">Average</div>
+                            <CardContent className="pt-3 sm:pt-4">
+                                <div className="text-lg sm:text-2xl font-bold">{stats.average}</div>
+                                <div className="text-xs sm:text-sm text-muted-foreground">Average</div>
                             </CardContent>
                         </Card>
                     </div>
@@ -602,7 +602,7 @@ const MarksEntryPageNew = () => {
                 {/* Marks Entry Table */}
                 {selectedSubject && (
                     <Card>
-                        <CardHeader className="flex flex-row items-center justify-between">
+                        <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
                             <div>
                                 <CardTitle>Enter Marks</CardTitle>
                                 <CardDescription>
@@ -648,19 +648,19 @@ const MarksEntryPageNew = () => {
                                         <TableHeader>
                                             <TableRow>
                                                 <TableHead className="w-[60px]">Roll</TableHead>
-                                                <TableHead className="min-w-[180px]">Student</TableHead>
-                                                <TableHead className="w-[100px]">Theory</TableHead>
-                                                <TableHead className="w-[100px]">Practical</TableHead>
-                                                <TableHead className="w-[100px]">Internal</TableHead>
+                                                <TableHead className="min-w-[120px] sm:min-w-[180px]">Student</TableHead>
+                                                <TableHead className="w-[80px] sm:w-[100px]">Theory</TableHead>
+                                                <TableHead className="w-[80px] sm:w-[100px] hidden sm:table-cell">Practical</TableHead>
+                                                <TableHead className="w-[80px] sm:w-[100px] hidden md:table-cell">Internal</TableHead>
                                                 <TableHead className="w-[80px]">Total</TableHead>
-                                                <TableHead className="w-[60px]">%</TableHead>
-                                                <TableHead className="w-[60px]">Grade</TableHead>
+                                                <TableHead className="w-[60px] hidden sm:table-cell">%</TableHead>
+                                                <TableHead className="w-[60px] hidden sm:table-cell">Grade</TableHead>
                                                 <TableHead className="w-[60px]">Absent</TableHead>
                                             </TableRow>
                                         </TableHeader>
                                         <TableBody>
                                             {marksData.map((student, idx) => (
-                                                <TableRow key={student.student_id} className={student.is_absent ? 'bg-orange-50' : ''}>
+                                                <TableRow key={student.student_id} className={student.is_absent ? 'bg-orange-50 dark:bg-orange-900/20' : ''}>
                                                     <TableCell className="font-medium">{student.roll_number}</TableCell>
                                                     <TableCell>
                                                         <div>{student.student_name}</div>
@@ -674,36 +674,36 @@ const MarksEntryPageNew = () => {
                                                             value={student.marks_theory}
                                                             onChange={(e) => handleMarksChange(idx, 'marks_theory', e.target.value)}
                                                             disabled={student.is_absent || marksStatus === 'locked'}
-                                                            className="w-20"
+                                                            className="w-16 sm:w-20"
                                                         />
                                                     </TableCell>
-                                                    <TableCell>
+                                                    <TableCell className="hidden sm:table-cell">
                                                         <Input
                                                             type="number"
                                                             min="0"
                                                             value={student.marks_practical}
                                                             onChange={(e) => handleMarksChange(idx, 'marks_practical', e.target.value)}
                                                             disabled={student.is_absent || marksStatus === 'locked'}
-                                                            className="w-20"
+                                                            className="w-16 sm:w-20"
                                                         />
                                                     </TableCell>
-                                                    <TableCell>
+                                                    <TableCell className="hidden md:table-cell">
                                                         <Input
                                                             type="number"
                                                             min="0"
                                                             value={student.marks_internal}
                                                             onChange={(e) => handleMarksChange(idx, 'marks_internal', e.target.value)}
                                                             disabled={student.is_absent || marksStatus === 'locked'}
-                                                            className="w-20"
+                                                            className="w-16 sm:w-20"
                                                         />
                                                     </TableCell>
                                                     <TableCell className="font-semibold">
                                                         {student.total_marks || 0}
                                                     </TableCell>
-                                                    <TableCell>
+                                                    <TableCell className="hidden sm:table-cell">
                                                         {student.percentage}%
                                                     </TableCell>
-                                                    <TableCell>
+                                                    <TableCell className="hidden sm:table-cell">
                                                         <Badge variant={student.is_absent ? 'destructive' : 'outline'}>
                                                             {student.grade || '-'}
                                                         </Badge>
@@ -723,7 +723,7 @@ const MarksEntryPageNew = () => {
                             )}
 
                             {isDirty && (
-                                <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg flex items-center gap-2 text-yellow-800">
+                                <div className="mt-4 p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg flex items-center gap-2 text-yellow-800 dark:text-yellow-300">
                                     <AlertCircle className="h-4 w-4" />
                                     Unsaved changes. Click "Save Draft" to save.
                                 </div>

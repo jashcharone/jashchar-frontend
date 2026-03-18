@@ -45,7 +45,7 @@ import {
     Loader2,
     ChevronDown,
     Printer,
-    FileSpreadsheet,
+    Sheet,
     ArrowUpRight,
     ArrowDownRight,
     Eye,
@@ -490,7 +490,7 @@ const AttendanceReport = () => {
                             Refresh
                         </Button>
                         <Button variant="outline" onClick={exportToCSV}>
-                            <FileSpreadsheet className="w-4 h-4 mr-2" />
+                            <Sheet className="w-4 h-4 mr-2" />
                             Export CSV
                         </Button>
                         <Button variant="outline" onClick={printReport}>
@@ -792,10 +792,10 @@ const AttendanceReport = () => {
                                                 <TableHead className="sticky top-0 bg-background">Section</TableHead>
                                             )}
                                             <TableHead className="sticky top-0 bg-background text-center">Days</TableHead>
-                                            <TableHead className="sticky top-0 bg-background text-center text-green-600">P</TableHead>
-                                            <TableHead className="sticky top-0 bg-background text-center text-red-600">A</TableHead>
-                                            <TableHead className="sticky top-0 bg-background text-center text-amber-600">L</TableHead>
-                                            <TableHead className="sticky top-0 bg-background text-center text-blue-600">Lv</TableHead>
+                                            <TableHead className="sticky top-0 bg-background text-center text-green-600 dark:text-green-400">P</TableHead>
+                                            <TableHead className="sticky top-0 bg-background text-center text-red-600 dark:text-red-400">A</TableHead>
+                                            <TableHead className="sticky top-0 bg-background text-center text-amber-600 dark:text-amber-400">L</TableHead>
+                                            <TableHead className="sticky top-0 bg-background text-center text-blue-600 dark:text-blue-400">Lv</TableHead>
                                             <TableHead className="sticky top-0 bg-background text-center">%</TableHead>
                                             <TableHead className="sticky top-0 bg-background">Status</TableHead>
                                         </TableRow>
@@ -851,8 +851,8 @@ const AttendanceReport = () => {
                                                             className="w-16 h-2"
                                                         />
                                                         <span className={`font-semibold ${
-                                                            item.percentage >= 75 ? 'text-green-600' :
-                                                            item.percentage >= 50 ? 'text-amber-600' : 'text-red-600'
+                                                            item.percentage >= 75 ? 'text-green-600 dark:text-green-400' :
+                                                            item.percentage >= 50 ? 'text-amber-600 dark:text-amber-400' : 'text-red-600 dark:text-red-400'
                                                         }`}>
                                                             {item.percentage}%
                                                         </span>

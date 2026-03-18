@@ -347,7 +347,7 @@ const DeviceDialog = ({ open, onClose, device, deviceTypes, branchId, organizati
                             <Settings className="w-4 h-4" />
                             Basic Information
                         </h4>
-                        <div className="grid grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div className="col-span-2">
                                 <Label>Device Name *</Label>
                                 <Input
@@ -417,7 +417,7 @@ const DeviceDialog = ({ open, onClose, device, deviceTypes, branchId, organizati
                             <Network className="w-4 h-4" />
                             Network Configuration
                         </h4>
-                        <div className="grid grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div>
                                 <Label>IP Address</Label>
                                 <Input
@@ -471,7 +471,7 @@ const DeviceDialog = ({ open, onClose, device, deviceTypes, branchId, organizati
                             <MapPin className="w-4 h-4" />
                             Location
                         </h4>
-                        <div className="grid grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div>
                                 <Label>Location Name</Label>
                                 <Input

@@ -143,11 +143,11 @@ const AttendanceByDate = () => {
     
     const getStatusColor = (status) => {
         switch (status) {
-            case 'P': return 'text-green-600';
-            case 'A': return 'text-red-600';
-            case 'L': return 'text-yellow-600';
-            case 'H': return 'text-blue-600';
-            default: return 'text-gray-500';
+            case 'P': return 'text-green-600 dark:text-green-400';
+            case 'A': return 'text-red-600 dark:text-red-400';
+            case 'L': return 'text-yellow-600 dark:text-yellow-400';
+            case 'H': return 'text-blue-600 dark:text-blue-400';
+            default: return 'text-gray-500 dark:text-gray-400';
         }
     }
 

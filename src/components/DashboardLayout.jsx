@@ -132,7 +132,7 @@ const DashboardLayout = ({ children }) => {
         
         <div
           className={cn(
-            "flex-1 flex flex-col transition-all duration-300 ease-out min-w-0 h-full overflow-hidden",
+            "flex-1 flex flex-col transition-all duration-300 ease-out min-w-0 min-h-0 h-full",
             // Enhanced margin calculation:
             // - Drawer mode (mobile/tablet): No margin (sidebar is overlay)
             // - Fixed sidebar mode (desktop): Add margin based on sidebar state

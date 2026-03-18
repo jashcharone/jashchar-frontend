@@ -165,11 +165,11 @@ import Alumni from '@/pages/super-admin/Alumni';
 import Calendar from '@/pages/super-admin/Calendar';
 import MultiBranch from '@/pages/super-admin/MultiBranch';
 import OnlineExam from '@/pages/super-admin/OnlineExam';
-import LessonPlan from '@/pages/super-admin/LessonPlan';
+// import LessonPlan from '@/pages/super-admin/LessonPlan'; // Removed - orphan stub file
 import DownloadCenter from '@/pages/super-admin/DownloadCenter';
 import ZoomLiveClasses from '@/pages/super-admin/ZoomLiveClasses';
 import QrCodeAttendance from '@/pages/super-admin/QrCodeAttendance';
-import OfflineBankPayment from '@/pages/super-admin/OfflineBankPayment';
+// import OfflineBankPayment from '@/pages/super-admin/OfflineBankPayment'; // Removed - orphan stub file
 import QuestionBank from '@/pages/super-admin/QuestionBank';
 
 // Master Admin Imports
@@ -271,7 +271,7 @@ export const ROUTE_COMPONENT_MAP = {
 
   // Fees Collection
   '/school-owner/fees-collection/collect-fees': CollectFees,
-  '/school-owner/online-course/offline-payment': OfflineBankPayment,
+  // '/school-owner/online-course/offline-payment': OfflineBankPayment, // Removed - orphan stub file
   '/school-owner/online-course/online-course-report': OnlineCourseReport,
   '/school-owner/online-course/setting': OnlineCourseSetting,
 

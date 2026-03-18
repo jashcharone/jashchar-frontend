@@ -71,8 +71,8 @@ const AIEvaluationDashboard = () => {
       });
       const analyticsResponse = await api.get(`/ai-evaluation/analytics/dashboard?${analyticsParams.toString()}`);
       
-      if (analyticsResponse.data?.success) {
-        setStats(analyticsResponse.data.data);
+      if (analyticsResponse?.success) {
+        setStats(analyticsResponse.data);
       }
       
       // Fetch recent sessions
@@ -83,8 +83,8 @@ const AIEvaluationDashboard = () => {
       });
       const sessionsResponse = await api.get(`/ai-evaluation/sessions?${sessionsParams.toString()}`);
       
-      if (sessionsResponse.data?.success) {
-        setRecentSessions(sessionsResponse.data.data || []);
+      if (sessionsResponse?.success) {
+        setRecentSessions(sessionsResponse.data || []);
       }
       
       setLastRefresh(new Date());
@@ -187,10 +187,11 @@ const AIEvaluationDashboard = () => {
   const StatusBadge = ({ status }) => {
     const configs = {
       draft: { color: 'bg-gray-500/20 text-gray-400', icon: FileText },
-      in_progress: { color: 'bg-blue-500/20 text-blue-400', icon: RefreshCw },
-      evaluated: { color: 'bg-yellow-500/20 text-yellow-400', icon: ClipboardCheck },
-      reviewed: { color: 'bg-purple-500/20 text-purple-400', icon: CheckCircle2 },
-      finalized: { color: 'bg-green-500/20 text-green-400', icon: Award },
+      uploading: { color: 'bg-blue-500/20 text-blue-400', icon: RefreshCw },
+      processing: { color: 'bg-yellow-500/20 text-yellow-400', icon: ClipboardCheck },
+      ready_for_review: { color: 'bg-orange-500/20 text-orange-400', icon: CheckCircle2 },
+      reviewing: { color: 'bg-purple-500/20 text-purple-400', icon: CheckCircle2 },
+      completed: { color: 'bg-green-500/20 text-green-400', icon: Award },
       cancelled: { color: 'bg-red-500/20 text-red-400', icon: XCircle }
     };
     const config = configs[status] || configs.draft;
@@ -373,12 +374,12 @@ const AIEvaluationDashboard = () => {
                     <td className="px-4 py-3">
                       <p className="text-white font-medium">{session.evaluation_name}</p>
                     </td>
-                    <td className="px-4 py-3 text-gray-400">{session.exam_name || '-'}</td>
+                    <td className="px-4 py-3 text-gray-400">{session.evaluation_code || '-'}</td>
                     <td className="px-4 py-3 text-gray-400">
                       {session.classes?.name || '-'} {session.sections?.name && `- ${session.sections.name}`}
                     </td>
                     <td className="px-4 py-3">
-                      <span className="text-white">{session.evaluated_papers || 0}</span>
+                      <span className="text-white">{session.processed_papers || 0}</span>
                       <span className="text-gray-500">/{session.total_papers || 0}</span>
                     </td>
                     <td className="px-4 py-3">

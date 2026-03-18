@@ -64,6 +64,7 @@ const AIEvaluationSettings = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [activeSection, setActiveSection] = useState('ocr');
+  const [aiStatus, setAiStatus] = useState(null);
 
   // Fetch settings
   useEffect(() => {
@@ -75,18 +76,29 @@ const AIEvaluationSettings = () => {
         const params = new URLSearchParams({ branch_id: selectedBranch.id });
         const response = await api.get(`/ai-evaluation/settings?${params.toString()}`);
         
-        if (response.data?.success && response.data.data) {
-          setSettings(prev => ({ ...prev, ...response.data.data }));
+        if (response?.success && response.data) {
+          setSettings(prev => ({ ...prev, ...response.data }));
         }
       } catch (error) {
         console.error('Error fetching settings:', error);
-        // Use defaults
       } finally {
         setLoading(false);
       }
     };
     
+    const fetchStatus = async () => {
+      try {
+        const response = await api.get('/cortex-ai/status');
+        if (response?.success) {
+          setAiStatus(response.data);
+        }
+      } catch (error) {
+        console.error('Error fetching AI status:', error);
+      }
+    };
+    
     fetchSettings();
+    fetchStatus();
   }, [selectedBranch?.id]);
 
   // Save settings
@@ -98,10 +110,10 @@ const AIEvaluationSettings = () => {
         branch_id: selectedBranch?.id
       });
       
-      if (response.data?.success) {
+      if (response?.success) {
         toast({ title: 'Settings saved successfully!' });
       } else {
-        throw new Error(response.data?.error || 'Failed to save');
+        throw new Error(response?.error || 'Failed to save');
       }
     } catch (error) {
       console.error('Error saving settings:', error);
@@ -201,6 +213,36 @@ const AIEvaluationSettings = () => {
                   <Eye className="w-6 h-6 text-blue-400" />
                   <h2 className="text-lg font-semibold text-white">OCR Settings</h2>
                 </div>
+
+                {/* AI Provider Status */}
+                {aiStatus && (
+                  <div className="bg-gray-900/50 border border-gray-700 rounded-xl p-4 mb-4">
+                    <h3 className="text-sm font-semibold text-gray-300 mb-3 uppercase tracking-wider">Cortex AI Engine Status</h3>
+                    <div className="grid grid-cols-3 gap-3">
+                      <div className="flex items-center gap-2 p-2 rounded-lg bg-gray-800/50">
+                        <div className={`w-2.5 h-2.5 rounded-full ${aiStatus.claude?.available ? 'bg-green-400' : 'bg-red-400'}`} />
+                        <span className="text-sm text-gray-300">Claude (Analytics)</span>
+                        <span className={`text-xs ml-auto ${aiStatus.claude?.available ? 'text-green-400' : 'text-red-400'}`}>
+                          {aiStatus.claude?.available ? 'Ready' : 'N/A'}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2 p-2 rounded-lg bg-gray-800/50">
+                        <div className={`w-2.5 h-2.5 rounded-full ${aiStatus.openai?.available ? 'bg-green-400' : 'bg-red-400'}`} />
+                        <span className="text-sm text-gray-300">OpenAI (Chat)</span>
+                        <span className={`text-xs ml-auto ${aiStatus.openai?.available ? 'text-green-400' : 'text-red-400'}`}>
+                          {aiStatus.openai?.available ? 'Ready' : 'N/A'}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2 p-2 rounded-lg bg-gray-800/50">
+                        <div className={`w-2.5 h-2.5 rounded-full ${aiStatus.ocr?.available ? 'bg-green-400' : 'bg-red-400'}`} />
+                        <span className="text-sm text-gray-300">OCR ({aiStatus.ocr?.activeEngine === 'google_vision' ? 'Google Vision' : aiStatus.ocr?.activeEngine === 'azure_ocr' ? 'Azure' : 'Tesseract'})</span>
+                        <span className={`text-xs ml-auto ${aiStatus.ocr?.available ? 'text-green-400' : 'text-red-400'}`}>
+                          {aiStatus.ocr?.available ? 'Ready' : 'N/A'}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                )}
                 
                 <div className="grid grid-cols-2 gap-6">
                   <div>

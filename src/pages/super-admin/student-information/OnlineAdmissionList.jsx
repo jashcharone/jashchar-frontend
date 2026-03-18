@@ -1161,7 +1161,10 @@ const OnlineAdmissionList = () => {
                                   <Inbox className="h-10 w-10 text-slate-400 dark:text-gray-500" />
                                 </div>
                                 <p className="text-lg font-medium text-slate-600 dark:text-gray-300">No applications found</p>
-                                <p className="text-sm text-muted-foreground dark:text-gray-500 mt-1">Applications will appear here when students apply</p>
+                                <p className="text-sm text-muted-foreground mt-1">Share the admission link or QR code to start receiving applications</p>
+                                <Button variant="outline" size="sm" className="mt-4" onClick={() => document.querySelector('[value="qrcode"]')?.click()}>
+                                  <QrCode className="h-4 w-4 mr-2" /> Generate QR Code & Share Link
+                                </Button>
                               </div>
                             </TableCell>
                           </TableRow>

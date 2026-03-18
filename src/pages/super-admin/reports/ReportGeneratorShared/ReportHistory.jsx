@@ -19,7 +19,7 @@ import {
   Download, 
   Eye, 
   RefreshCw,
-  FileSpreadsheet,
+  Sheet,
   FileText,
   CheckCircle2,
   XCircle,
@@ -353,11 +353,11 @@ const ReportHistory = () => {
       failed: 'bg-red-100 text-red-700 dark:bg-red-900/50 dark:text-red-300',
       processing: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/50 dark:text-yellow-300'
     };
-    return colors[status] || 'bg-gray-100 text-gray-700';
+    return colors[status] || 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300';
   };
 
   const getFormatIcon = (format) => {
-    if (format === 'excel') return <FileSpreadsheet className="h-4 w-4 text-green-600" />;
+    if (format === 'excel') return <Sheet className="h-4 w-4 text-green-600" />;
     if (format === 'pdf') return <FileText className="h-4 w-4 text-red-600" />;
     return <FileText className="h-4 w-4 text-gray-600" />;
   };
@@ -388,7 +388,7 @@ const ReportHistory = () => {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-4">
         <Card className="dark:bg-gray-800 dark:border-gray-700">
           <CardContent className="p-4">
             <div className="flex items-center gap-3">

@@ -149,9 +149,9 @@ const RefundApprovals = () => {
 
     const getStatusBadge = (status) => {
         switch (status) {
-            case 'pending': return <Badge variant="warning" className="bg-yellow-100 text-yellow-700"><Clock className="h-3 w-3 mr-1" />Pending</Badge>;
-            case 'approved': return <Badge variant="default" className="bg-blue-100 text-blue-700"><CheckCircle className="h-3 w-3 mr-1" />Approved</Badge>;
-            case 'completed': return <Badge variant="success" className="bg-green-100 text-green-700"><CheckCircle className="h-3 w-3 mr-1" />Completed</Badge>;
+            case 'pending': return <Badge variant="warning" className="bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400"><Clock className="h-3 w-3 mr-1" />Pending</Badge>;
+            case 'approved': return <Badge variant="default" className="bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400"><CheckCircle className="h-3 w-3 mr-1" />Approved</Badge>;
+            case 'completed': return <Badge variant="success" className="bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"><CheckCircle className="h-3 w-3 mr-1" />Completed</Badge>;
             case 'rejected': return <Badge variant="destructive"><XCircle className="h-3 w-3 mr-1" />Rejected</Badge>;
             default: return <Badge variant="outline">{status}</Badge>;
         }
@@ -197,28 +197,28 @@ const RefundApprovals = () => {
 
                 {/* Summary Cards */}
                 <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-                    <Card className="bg-yellow-50 dark:bg-yellow-950/20 border-yellow-200">
+                    <Card className="bg-yellow-50 dark:bg-yellow-950/20 border-yellow-200 dark:border-yellow-800">
                         <CardContent className="p-4 text-center">
-                            <p className="text-2xl font-bold text-yellow-700">{counts.pending}</p>
-                            <p className="text-xs text-yellow-600">Pending</p>
+                            <p className="text-2xl font-bold text-yellow-700 dark:text-yellow-400">{counts.pending}</p>
+                            <p className="text-xs text-yellow-600 dark:text-yellow-400">Pending</p>
                         </CardContent>
                     </Card>
-                    <Card className="bg-blue-50 dark:bg-blue-950/20 border-blue-200">
+                    <Card className="bg-blue-50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-800">
                         <CardContent className="p-4 text-center">
-                            <p className="text-2xl font-bold text-blue-700">{counts.approved}</p>
-                            <p className="text-xs text-blue-600">Approved</p>
+                            <p className="text-2xl font-bold text-blue-700 dark:text-blue-400">{counts.approved}</p>
+                            <p className="text-xs text-blue-600 dark:text-blue-400">Approved</p>
                         </CardContent>
                     </Card>
-                    <Card className="bg-green-50 dark:bg-green-950/20 border-green-200">
+                    <Card className="bg-green-50 dark:bg-green-950/20 border-green-200 dark:border-green-800">
                         <CardContent className="p-4 text-center">
-                            <p className="text-2xl font-bold text-green-700">{counts.completed}</p>
-                            <p className="text-xs text-green-600">Completed</p>
+                            <p className="text-2xl font-bold text-green-700 dark:text-green-400">{counts.completed}</p>
+                            <p className="text-xs text-green-600 dark:text-green-400">Completed</p>
                         </CardContent>
                     </Card>
-                    <Card className="bg-red-50 dark:bg-red-950/20 border-red-200">
+                    <Card className="bg-red-50 dark:bg-red-950/20 border-red-200 dark:border-red-800">
                         <CardContent className="p-4 text-center">
-                            <p className="text-2xl font-bold text-red-700">{counts.rejected}</p>
-                            <p className="text-xs text-red-600">Rejected</p>
+                            <p className="text-2xl font-bold text-red-700 dark:text-red-400">{counts.rejected}</p>
+                            <p className="text-xs text-red-600 dark:text-red-400">Rejected</p>
                         </CardContent>
                     </Card>
                     <Card>
@@ -298,7 +298,7 @@ const RefundApprovals = () => {
                                                                 <Button 
                                                                     variant="outline" 
                                                                     size="sm" 
-                                                                    className="text-green-600 border-green-300 hover:bg-green-50"
+                                                                    className="text-green-600 dark:text-green-400 border-green-300 dark:border-green-700 hover:bg-green-50 dark:hover:bg-green-950/30"
                                                                     onClick={() => { setSelectedRefund(refund); setActionType('approve'); }}
                                                                 >
                                                                     <CheckCircle className="h-3 w-3" />
@@ -306,7 +306,7 @@ const RefundApprovals = () => {
                                                                 <Button 
                                                                     variant="outline" 
                                                                     size="sm" 
-                                                                    className="text-red-600 border-red-300 hover:bg-red-50"
+                                                                    className="text-red-600 dark:text-red-400 border-red-300 dark:border-red-700 hover:bg-red-50 dark:hover:bg-red-950/30"
                                                                     onClick={() => { setSelectedRefund(refund); setActionType('reject'); }}
                                                                 >
                                                                     <XCircle className="h-3 w-3" />
@@ -317,7 +317,7 @@ const RefundApprovals = () => {
                                                             <Button 
                                                                 variant="outline" 
                                                                 size="sm"
-                                                                className="text-blue-600 border-blue-300 hover:bg-blue-50"
+                                                                className="text-blue-600 dark:text-blue-400 border-blue-300 dark:border-blue-700 hover:bg-blue-50 dark:hover:bg-blue-900/30"
                                                                 onClick={() => { setSelectedRefund(refund); setActionType('complete'); }}
                                                             >
                                                                 <IndianRupee className="h-3 w-3 mr-1" />Complete

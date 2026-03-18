@@ -14,7 +14,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogContent, AlertDialogDescription, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
-import { BookOpen, User, Key, Users, Bus, FileText, UserCog, Save, Shield, Loader2, UserPlus, FileCheck2, Copy, Percent, Wallet, AlertCircle, Building, X, Sparkles, BedDouble, GraduationCap, Phone, MapPin, Files, CheckCircle2, ChevronDown, ChevronUp, Camera, Mail, CreditCard, Home, Heart, School, CalendarDays, Hash, Globe, FileUp, Info, Zap, Search, Star, Award, BadgeCheck, Fingerprint, UserCircle2, MapPinned, Landmark, ShieldCheck, Clock, FileImage, Upload, Eye, EyeOff, Lock, Unlock, IndianRupee, Gift, Truck, Building2, Bed, PhoneCall, AlertTriangle, CircleDot, ArrowRight, Check, Ban, Banknote, Receipt, Tag, Percent as PercentIcon, MessageCircle, Send, Download, FileDown } from 'lucide-react';
+import { BookOpen, User, Key, Users, Bus, FileText, UserCog, Save, Shield, Loader2, UserPlus, FileCheck2, Copy, Percent, Wallet, AlertCircle, Building, X, Sparkles, BedDouble, GraduationCap, Phone, MapPin, Files, CheckCircle2, ChevronDown, ChevronUp, Camera, Mail, CreditCard, Home, Heart, School, CalendarDays, Hash, Globe, FileUp, Info, Zap, Search, Star, Award, BadgeCheck, Fingerprint, UserCircle2, MapPinned, Landmark, ShieldCheck, Clock, Image, Upload, Eye, EyeOff, Lock, Unlock, IndianRupee, Gift, Truck, Building2, Bed, PhoneCall, AlertTriangle, CircleDot, ArrowRight, Check, Ban, Banknote, Receipt, Tag, Percent as PercentIcon, MessageCircle, Send, Download, FileDown } from 'lucide-react';
 import ImageUploader from '@/components/ImageUploader';
 import { v4 as uuidv4 } from 'uuid';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
@@ -73,7 +73,7 @@ const SectionBox = ({ icon, title, children, className, collapsible = false, def
       {/* Header */}
       <div 
         className={cn(
-          "relative flex items-center justify-between gap-4 px-6 py-5 border-b border-border/30",
+          "relative flex items-center justify-between gap-4 px-4 sm:px-6 py-4 sm:py-5 border-b border-border/30",
           collapsible && "cursor-pointer group/header"
         )}
         onClick={() => collapsible && setIsOpen(!isOpen)}
@@ -115,7 +115,7 @@ const SectionBox = ({ icon, title, children, className, collapsible = false, def
         "relative transition-all duration-500 ease-out",
         isOpen ? "opacity-100" : "opacity-0 h-0 overflow-hidden"
       )}>
-        <div className="p-6 pt-5">
+        <div className="p-4 sm:p-6 pt-4 sm:pt-5">
           {children}
         </div>
       </div>
@@ -2703,15 +2703,15 @@ const StudentAdmission = () => {
           {/* Top Accent Line */}
           <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 pointer-events-none" />
           
-          <div className="p-8">
-            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+          <div className="p-4 sm:p-6 md:p-8">
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 sm:gap-6">
               {/* Left Side - Title & Info */}
-              <div className="flex items-start gap-5">
+              <div className="flex items-start gap-3 sm:gap-5">
                 {/* Premium Icon */}
                 <div className="relative flex-shrink-0">
                   <div className="absolute inset-0 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl blur-xl opacity-50 animate-pulse pointer-events-none" />
-                  <div className="relative bg-gradient-to-br from-blue-500 via-indigo-500 to-purple-600 p-5 rounded-2xl shadow-2xl">
-                    <GraduationCap className="h-10 w-10 text-white drop-shadow-lg" />
+                  <div className="relative bg-gradient-to-br from-blue-500 via-indigo-500 to-purple-600 p-3 sm:p-5 rounded-2xl shadow-2xl">
+                    <GraduationCap className="h-7 w-7 sm:h-10 sm:w-10 text-white drop-shadow-lg" />
                   </div>
                   {/* Live Indicator */}
                   <div className="absolute -top-1 -right-1 pointer-events-none">

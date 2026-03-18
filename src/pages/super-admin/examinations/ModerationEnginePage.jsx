@@ -86,28 +86,28 @@ const MODERATION_TYPES = [
         value: 'linear_scaling', 
         label: 'Linear Scaling', 
         icon: ArrowUpCircle, 
-        color: 'bg-blue-500',
+        color: 'bg-blue-500 dark:bg-blue-600',
         description: 'Add fixed marks to all students'
     },
     { 
         value: 'percentage_increase', 
         label: 'Percentage Increase', 
         icon: Percent, 
-        color: 'bg-green-500',
+        color: 'bg-green-500 dark:bg-green-600',
         description: 'Increase marks by percentage'
     },
     { 
         value: 'curve_adjustment', 
         label: 'Curve Adjustment', 
         icon: LineChart, 
-        color: 'bg-purple-500',
+        color: 'bg-purple-500 dark:bg-purple-600',
         description: 'Bell curve normalization'
     },
     { 
         value: 'minimum_marks', 
         label: 'Minimum Marks', 
         icon: TrendingUp, 
-        color: 'bg-orange-500',
+        color: 'bg-orange-500 dark:bg-orange-600',
         description: 'Set minimum threshold'
     }
 ];
@@ -887,12 +887,12 @@ const ModerationEnginePage = () => {
                                     </SelectContent>
                                 </Select>
                             </div>
-                            <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                            <div className="p-3 bg-yellow-50 dark:bg-yellow-900/30 border border-yellow-200 dark:border-yellow-800 rounded-lg">
                                 <div className="flex items-start gap-2">
-                                    <AlertCircle className="w-5 h-5 text-yellow-600 mt-0.5" />
+                                    <AlertCircle className="w-5 h-5 text-yellow-600 dark:text-yellow-400 mt-0.5" />
                                     <div>
-                                        <p className="text-sm font-medium text-yellow-800">Warning</p>
-                                        <p className="text-xs text-yellow-700">
+                                        <p className="text-sm font-medium text-yellow-800 dark:text-yellow-300">Warning</p>
+                                        <p className="text-xs text-yellow-700 dark:text-yellow-400">
                                             This will create moderation records for all matching marks. 
                                             Review carefully before applying.
                                         </p>

@@ -349,11 +349,11 @@ const MarksheetDesignerPage = () => {
                 <div className="text-center mb-6 pb-4" style={{ borderBottom: `2px solid ${template.primary_color}` }}>
                     <div className="flex justify-center items-center gap-4 mb-2">
                         {template.show_school_logo && (
-                            <div className="w-20 h-20 border-2 rounded flex items-center justify-center bg-gray-50">
+                            <div className="w-20 h-20 border-2 rounded flex items-center justify-center bg-gray-50 dark:bg-gray-800">
                                 {template.logo_url ? (
                                     <img src={template.logo_url} alt="Logo" className="w-full h-full object-contain" />
                                 ) : (
-                                    <span className="text-gray-400 text-xs">LOGO</span>
+                                    <span className="text-gray-400 dark:text-gray-500 text-xs">LOGO</span>
                                 )}
                             </div>
                         )}
@@ -427,8 +427,8 @@ const MarksheetDesignerPage = () => {
                         )}
                     </div>
                     {template.show_student_photo && (
-                        <div className="w-24 h-28 border-2 border-gray-400 flex items-center justify-center bg-gray-100">
-                            <span className="text-gray-400 text-xs">PHOTO</span>
+                        <div className="w-24 h-28 border-2 border-gray-400 dark:border-gray-600 flex items-center justify-center bg-gray-100 dark:bg-gray-700">
+                            <span className="text-gray-400 dark:text-gray-500 text-xs">PHOTO</span>
                         </div>
                     )}
                 </div>
@@ -436,7 +436,7 @@ const MarksheetDesignerPage = () => {
                 {/* Marks Table */}
                 <table className="w-full border-collapse text-sm mb-6">
                     <thead>
-                        <tr className="bg-gray-100">
+                        <tr className="bg-gray-100 dark:bg-gray-800">
                             <th className="border p-2 text-left">S.No</th>
                             {template.show_subject_code && <th className="border p-2 text-left">Code</th>}
                             <th className="border p-2 text-left">Subject</th>
@@ -462,7 +462,7 @@ const MarksheetDesignerPage = () => {
                                 {template.show_grade && <td className="border p-2 text-center">A</td>}
                             </tr>
                         ))}
-                        <tr className="bg-gray-50 font-bold">
+                        <tr className="bg-gray-50 dark:bg-gray-900 font-bold">
                             <td colSpan={template.show_subject_code ? 3 : 2} className="border p-2 text-right">Total</td>
                             {template.show_max_marks && <td className="border p-2 text-center">500</td>}
                             {template.show_theory_marks && <td className="border p-2 text-center">385</td>}
@@ -497,7 +497,7 @@ const MarksheetDesignerPage = () => {
                     {template.show_result_status && (
                         <div className="border p-2 text-center">
                             <span className="font-semibold block">Result</span>
-                            <span className="text-lg font-bold text-green-600">PASS</span>
+                            <span className="text-lg font-bold text-green-600 dark:text-green-400">PASS</span>
                         </div>
                     )}
                 </div>
@@ -518,7 +518,7 @@ const MarksheetDesignerPage = () => {
                             <span>{template.left_sign_title || 'Class Teacher'}</span>
                         </div>
                     )}
-                    <div className="text-center text-xs text-gray-500">
+                    <div className="text-center text-xs text-gray-500 dark:text-gray-400">
                         {template.printing_date_text} 15-03-2026
                     </div>
                     {template.show_principal_sign && (
@@ -591,7 +591,7 @@ const MarksheetDesignerPage = () => {
                                         </CardHeader>
                                         <CardContent>
                                             {/* Mini preview placeholder */}
-                                            <div className="border rounded bg-gray-50 p-2 mb-4 h-24 flex items-center justify-center text-gray-400 text-sm">
+                                            <div className="border rounded bg-gray-50 dark:bg-gray-800 p-2 mb-4 h-24 flex items-center justify-center text-gray-400 dark:text-gray-500 text-sm">
                                                 <Printer className="w-8 h-8" />
                                             </div>
                                             
@@ -615,7 +615,7 @@ const MarksheetDesignerPage = () => {
                                                 <Button variant="outline" size="sm" onClick={() => handleDuplicate(template)}>
                                                     <Copy className="w-4 h-4" />
                                                 </Button>
-                                                <Button variant="outline" size="sm" className="text-red-600" onClick={() => handleDelete(template)}>
+                                                <Button variant="outline" size="sm" className="text-red-600 dark:text-red-400" onClick={() => handleDelete(template)}>
                                                     <Trash2 className="w-4 h-4" />
                                                 </Button>
                                             </div>

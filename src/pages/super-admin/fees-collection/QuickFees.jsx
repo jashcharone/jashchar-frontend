@@ -773,7 +773,7 @@ const QuickFees = () => {
                     <div className="pt-6 border-t space-y-6">
                         {/* Info Message if Assigned */}
                         {isAssigned && (
-                            <div className="bg-blue-50 border-l-4 border-blue-500 text-blue-700 p-4 flex justify-between items-center rounded-r-lg">
+                            <div className="bg-blue-50 dark:bg-blue-900/20 border-l-4 border-blue-500 text-blue-700 dark:text-blue-300 p-4 flex justify-between items-center rounded-r-lg">
                                 <div className="flex items-center gap-2">
                                     <CheckCircle2 className="h-5 w-5" />
                                     <p className="font-bold">Fee assigned successfully to {selectedStudent.full_name}</p>

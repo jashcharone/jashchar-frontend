@@ -94,10 +94,10 @@ const EmployeeListV2 = () => {
     
     const getStatusBadge = (status) => {
         const colors = {
-            active: 'bg-green-100 text-green-800',
-            resigned: 'bg-yellow-100 text-yellow-800',
-            terminated: 'bg-red-100 text-red-800',
-            on_notice: 'bg-orange-100 text-orange-800'
+            active: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400',
+            resigned: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400',
+            terminated: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400',
+            on_notice: 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400'
         };
         return <Badge className={colors[status] || 'bg-gray-100'}>{status?.replace('_', ' ')}</Badge>;
     };

@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus, Edit, Trash2, Save, X, Loader2, ArrowLeft } from 'lucide-react';
+import { Plus, Edit, Trash2, Save, X, Loader2, ArrowLeft, MapPin } from 'lucide-react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { v4 as uuidv4 } from 'uuid';
 
@@ -261,7 +261,11 @@ const RoutePickupPoint = () => {
                                 {loading ? (
                                     <div className="flex justify-center items-center py-10"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
                                 ) : routesWithPoints.length === 0 ? (
-                                    <p className="text-center py-10 text-muted-foreground">No route pickup points defined. Add one to get started.</p>
+                                    <div className="text-center py-16">
+                                        <MapPin className="h-12 w-12 mx-auto text-gray-300 dark:text-gray-600 mb-3" />
+                                        <p className="text-gray-500 dark:text-gray-400 font-medium">No route pickup points defined</p>
+                                        <p className="text-sm text-muted-foreground mt-1">Add one to get started</p>
+                                    </div>
                                 ) : (
                                     <div className="space-y-4 max-h-[500px] overflow-y-auto">
                                         {routesWithPoints.map(route => (

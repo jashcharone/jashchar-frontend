@@ -6,7 +6,7 @@
 
 import React, { useState } from 'react';
 import {
-  Download, FileSpreadsheet, FileText, Printer, Mail,
+  Download, Sheet, FileText, Printer, Mail,
   Share2, ChevronDown, Loader2
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
@@ -894,7 +894,7 @@ const ExportButtons = ({
 
   // Button config
   const buttonConfig = {
-    excel: { icon: FileSpreadsheet, label: 'Excel', color: 'hover:bg-green-50 dark:hover:bg-green-900/30 hover:text-green-600 dark:hover:text-green-400' },
+    excel: { icon: Sheet, label: 'Excel', color: 'hover:bg-green-50 dark:hover:bg-green-900/30 hover:text-green-600 dark:hover:text-green-400' },
     pdf: { icon: FileText, label: 'PDF', color: 'hover:bg-red-50 dark:hover:bg-red-900/30 hover:text-red-600 dark:hover:text-red-400' },
     csv: { icon: FileText, label: 'CSV', color: 'hover:bg-blue-50 dark:hover:bg-blue-900/30 hover:text-blue-600 dark:hover:text-blue-400' },
     print: { icon: Printer, label: 'Print', color: 'hover:bg-gray-100 dark:hover:bg-gray-700' }

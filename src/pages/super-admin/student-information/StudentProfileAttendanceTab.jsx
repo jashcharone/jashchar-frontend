@@ -152,10 +152,10 @@ const AttendanceCalendar = ({ attendanceData, currentMonth, onMonthChange }) => 
       </div>
 
       {/* Week Day Headers */}
-      <div className="grid grid-cols-7 gap-2 mb-2">
+      <div className="grid grid-cols-7 gap-1 sm:gap-2 mb-2">
         {weekDays.map(day => (
           <div key={day} className={cn(
-            "text-center text-xs font-semibold py-2 rounded-lg",
+            "text-center text-[10px] sm:text-xs font-semibold py-1.5 sm:py-2 rounded-lg",
             day === 'Sun' ? "text-red-500 bg-red-50 dark:bg-red-950/30" : "text-muted-foreground bg-muted/30"
           )}>
             {day}
@@ -164,7 +164,7 @@ const AttendanceCalendar = ({ attendanceData, currentMonth, onMonthChange }) => 
       </div>
 
       {/* Calendar Grid */}
-      <div className="grid grid-cols-7 gap-2">
+      <div className="grid grid-cols-7 gap-1 sm:gap-2">
         {/* Empty cells for offset */}
         {Array.from({ length: startDayOffset }).map((_, i) => (
           <div key={`empty-${i}`} className="aspect-square" />
@@ -181,14 +181,14 @@ const AttendanceCalendar = ({ attendanceData, currentMonth, onMonthChange }) => 
             <div
               key={dateStr}
               className={cn(
-                "aspect-square rounded-xl flex flex-col items-center justify-center relative transition-all duration-300 cursor-pointer",
+                "aspect-square rounded-lg sm:rounded-xl flex flex-col items-center justify-center relative transition-all duration-300 cursor-pointer",
                 "hover:scale-105 hover:shadow-lg",
                 status ? getStatusColor(status) : (isSunday_ ? "bg-red-50 dark:bg-red-950/20 text-red-400" : "bg-gray-50 dark:bg-gray-800/50 text-gray-400"),
                 isToday_ && "ring-2 ring-primary ring-offset-2"
               )}
               title={`${format(day, 'dd MMM yyyy')} - ${status || 'No data'}`}
             >
-              <span className={cn("text-sm font-bold", isToday_ && !status && "text-primary")}>
+              <span className={cn("text-[10px] sm:text-sm font-bold", isToday_ && !status && "text-primary")}>
                 {format(day, 'd')}
               </span>
               {status && (

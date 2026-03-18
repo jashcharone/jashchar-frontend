@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
 import { supabase } from '@/lib/customSupabaseClient';
 import { useToast } from '@/components/ui/use-toast';
@@ -12,7 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { 
     Loader2, Search, Grid, List, Eye, Edit, Phone, MapPin, Plus, 
-    Download, FileSpreadsheet, FileText, Users, UserCheck, UserX, 
+    Download, Sheet, FileText, Users, UserCheck, UserX, 
     Clock, Building2, Briefcase, Mail, CalendarDays, MoreVertical,
     UserCog, Filter, X, Columns
 } from 'lucide-react';
@@ -146,7 +146,7 @@ const StaffDirectory = () => {
     const fetchEmployees = async () => {
         setLoading(true);
         
-        // ✅ FIX: Specify exact FK relationship to avoid ambiguous FK error
+        // ? FIX: Specify exact FK relationship to avoid ambiguous FK error
         // departments has two FKs with employee_profiles:
         // 1. departments_head_employee_id_fkey (departments.head_employee_id -> employee_profiles.id)
         // 2. employee_profiles_department_id_fkey (employee_profiles.department_id -> departments.id)
@@ -330,7 +330,7 @@ const StaffDirectory = () => {
                             </DropdownMenuTrigger>
                             <DropdownMenuContent>
                                 <DropdownMenuItem onClick={exportToExcel}>
-                                    <FileSpreadsheet className="h-4 w-4 mr-2" /> Export to CSV/Excel
+                                    <Sheet className="h-4 w-4 mr-2" /> Export to CSV/Excel
                                 </DropdownMenuItem>
                             </DropdownMenuContent>
                         </DropdownMenu>
@@ -636,7 +636,7 @@ const StaffDirectory = () => {
                                     </div>
                                     <div className="pt-12 px-4 pb-4">
                                         <h3 className="font-bold text-lg truncate">{emp.full_name}</h3>
-                                        <p className="text-sm text-muted-foreground mb-2">{emp.role?.name} • {emp.department?.name || 'No Dept'}</p>
+                                        <p className="text-sm text-muted-foreground mb-2">{emp.role?.name} � {emp.department?.name || 'No Dept'}</p>
                                         <p className="text-xs text-muted-foreground mb-1 flex items-center gap-1">
                                             <Briefcase className="h-3 w-3" /> {emp.designation?.name || 'Not assigned'}
                                         </p>

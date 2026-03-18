@@ -259,11 +259,11 @@ const ApproveStaffLeave = () => {
                                         <td className="px-6 py-4">{format(new Date(leave.from_date), 'dd/MM/yy')} - {format(new Date(leave.to_date), 'dd/MM/yy')}</td>
                                         <td className="px-6 py-4">{differenceInDays(new Date(leave.to_date), new Date(leave.from_date)) + 1}</td>
                                         <td className="px-6 py-4">{format(new Date(leave.created_at), 'dd/MM/yy')}</td>
-                                        <td className="px-6 py-4"><span className={`px-2 py-1 rounded-full text-xs font-semibold ${leave.status === 'approved' ? 'bg-green-100 text-green-800' : leave.status === 'rejected' ? 'bg-red-100 text-red-800' : 'bg-yellow-100 text-yellow-800'}`}>{leave.status}</span></td>
+                                        <td className="px-6 py-4"><span className={`px-2 py-1 rounded-full text-xs font-semibold ${leave.status === 'approved' ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' : leave.status === 'rejected' ? 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400' : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400'}`}>{leave.status}</span></td>
                                         <td className="px-6 py-4 space-x-1">
                                             <Button variant="ghost" size="icon" onClick={() => { setEditingLeave(leave); setViewModalOpen(true); }}><Eye className="h-4 w-4" /></Button>
-                                            <Button variant="ghost" size="icon" onClick={() => { setEditingLeave(leave); setModalOpen(true); }}><Edit className="h-4 w-4 text-blue-600" /></Button>
-                                            <Button variant="ghost" size="icon" onClick={() => handleDelete(leave.id)}><Trash2 className="h-4 w-4 text-red-600" /></Button>
+                                            <Button variant="ghost" size="icon" onClick={() => { setEditingLeave(leave); setModalOpen(true); }}><Edit className="h-4 w-4 text-blue-600 dark:text-blue-400" /></Button>
+                                            <Button variant="ghost" size="icon" onClick={() => handleDelete(leave.id)}><Trash2 className="h-4 w-4 text-red-600 dark:text-red-400" /></Button>
                                         </td>
                                     </tr>
                                 ))}

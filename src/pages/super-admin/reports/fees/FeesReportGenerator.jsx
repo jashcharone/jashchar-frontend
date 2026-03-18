@@ -373,7 +373,7 @@ const FeesReportGenerator = () => {
       <div className="flex h-full">
         {/* Template Sidebar */}
         {showSidebar && (
-          <div className="w-56 border-r dark:border-gray-700 bg-slate-50/50 dark:bg-gray-800/50 overflow-hidden flex-shrink-0">
+          <div className="hidden md:block w-56 border-r dark:border-gray-700 bg-slate-50/50 dark:bg-gray-800/50 overflow-hidden flex-shrink-0">
             <TemplateSidebar
               templates={allTemplates}
               categories={FEES_CATEGORIES}

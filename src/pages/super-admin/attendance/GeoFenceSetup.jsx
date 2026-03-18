@@ -465,7 +465,7 @@ const ZoneDialog = ({ open, onClose, zone, branchId, organizationId, onSaved }) 
                             <Settings className="w-4 h-4" />
                             Zone Information
                         </h4>
-                        <div className="grid grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div className="col-span-2">
                                 <Label>Zone Name *</Label>
                                 <Input
@@ -535,7 +535,7 @@ const ZoneDialog = ({ open, onClose, zone, branchId, organizationId, onSaved }) 
                                 Get Current Location
                             </Button>
                         </div>
-                        <div className="grid grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div>
                                 <Label>Latitude *</Label>
                                 <Input
@@ -592,7 +592,7 @@ const ZoneDialog = ({ open, onClose, zone, branchId, organizationId, onSaved }) 
                                     ))}
                                 </div>
                             </div>
-                            <div className="grid grid-cols-2 gap-4">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <div>
                                     <Label>Start Time</Label>
                                     <Input
@@ -618,7 +618,7 @@ const ZoneDialog = ({ open, onClose, zone, branchId, organizationId, onSaved }) 
                     {/* Options */}
                     <div className="space-y-4">
                         <h4 className="font-semibold">Options</h4>
-                        <div className="grid grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div className="flex items-center justify-between p-3 border rounded-lg">
                                 <Label>Allow Check-in</Label>
                                 <Switch 

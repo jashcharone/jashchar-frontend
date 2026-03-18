@@ -72,19 +72,29 @@ const JashSyncControlMain = () => {
     const fetchGlobalStats = async () => {
       setLoading(true);
       try {
-        // Mock data for now - will be replaced with actual API calls
+        // Fetch real data from API
+        const response = await api.get('/jashsync/master/dashboard');
+        console.log('[JashSync] Dashboard API response:', response.data);
+        
+        // Map API response to expected format
+        const data = response.data || {};
         setGlobalStats({
-          totalSchools: 156,
-          activeSchools: 143,
-          trialSchools: 45,
-          lowBalanceSchools: 12,
-          totalMessages: 2500000,
-          todayMessages: 45230,
-          monthRevenue: 125000,
-          totalRevenue: 850000
+          totalSchools: data.schools?.total || 0,
+          activeSchools: data.schools?.active || 0,
+          trialSchools: data.trialSchools || 0,
+          lowBalanceSchools: data.schools?.lowBalance || 0,
+          totalMessages: data.messaging?.totalMessagesThisMonth || 0,
+          todayMessages: data.messaging?.todayMessages || 0,
+          monthRevenue: data.messaging?.revenueThisMonth || 0,
+          totalRevenue: data.totalRevenue || data.messaging?.totalRevenue || 0
         });
       } catch (error) {
         console.error('Failed to fetch stats:', error);
+        toast({
+          title: "Error",
+          description: "Failed to load dashboard data",
+          variant: "destructive"
+        });
       } finally {
         setLoading(false);
       }

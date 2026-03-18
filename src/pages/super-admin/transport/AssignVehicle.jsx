@@ -8,7 +8,7 @@ import { useToast } from '@/components/ui/use-toast';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Edit, Trash2, Save, Loader2, Bus, Route, X, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, ArrowLeft } from 'lucide-react';
+import { Edit, Trash2, Save, Loader2, Bus, Route, X, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, ArrowLeft, AlertTriangle, Users, BarChart3 } from 'lucide-react';
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger
@@ -314,6 +314,80 @@ const AssignVehicle = () => {
             </div>
           </div>
         </div>
+
+        {/* ═══════ OPTIMIZATION INSIGHTS (Day 23 Enhancement) ═══════ */}
+        {!loading && assignments.length > 0 && (
+          <div className="mt-6 bg-card text-card-foreground rounded-xl shadow-lg p-6">
+            <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
+              <BarChart3 className="h-5 w-5 text-blue-600" /> Assignment Insights & Optimization
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {/* Unassigned Routes */}
+              {(() => {
+                const assignedRouteIdsList = assignments.map(a => a.route_id);
+                const unassignedRoutes = routes.filter(r => !assignedRouteIdsList.includes(r.id));
+                return (
+                  <div className={`p-4 rounded-lg border ${unassignedRoutes.length > 0 ? 'border-yellow-200 dark:border-yellow-800 bg-yellow-50 dark:bg-yellow-950/20' : 'border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-950/20'}`}>
+                    <div className="flex items-center gap-2 mb-2">
+                      {unassignedRoutes.length > 0 ? (
+                        <AlertTriangle className="h-5 w-5 text-yellow-600" />
+                      ) : (
+                        <Route className="h-5 w-5 text-green-600" />
+                      )}
+                      <span className="font-semibold text-sm">
+                        {unassignedRoutes.length > 0 ? `${unassignedRoutes.length} Routes Without Vehicle` : 'All Routes Assigned ✅'}
+                      </span>
+                    </div>
+                    {unassignedRoutes.length > 0 && (
+                      <ul className="text-xs text-gray-600 dark:text-gray-400 space-y-1 mt-2">
+                        {unassignedRoutes.slice(0, 5).map(r => (
+                          <li key={r.id}>• {r.route_title}</li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+                );
+              })()}
+
+              {/* Unassigned Vehicles */}
+              {(() => {
+                const assignedVehicleIdsList = assignments.map(a => a.vehicle_id);
+                const unassignedVehicles = vehicles.filter(v => !assignedVehicleIdsList.includes(v.id));
+                return (
+                  <div className={`p-4 rounded-lg border ${unassignedVehicles.length > 0 ? 'border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-950/20' : 'border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-950/20'}`}>
+                    <div className="flex items-center gap-2 mb-2">
+                      <Bus className="h-5 w-5 text-blue-600" />
+                      <span className="font-semibold text-sm">
+                        {unassignedVehicles.length > 0 ? `${unassignedVehicles.length} Idle Vehicles` : 'All Vehicles Utilized ✅'}
+                      </span>
+                    </div>
+                    {unassignedVehicles.length > 0 && (
+                      <ul className="text-xs text-gray-600 dark:text-gray-400 space-y-1 mt-2">
+                        {unassignedVehicles.slice(0, 5).map(v => (
+                          <li key={v.id}>• {v.vehicle_number} (Cap: {v.seating_capacity || 'N/A'})</li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+                );
+              })()}
+
+              {/* Capacity Overview */}
+              <div className="p-4 rounded-lg border border-purple-200 dark:border-purple-800 bg-purple-50 dark:bg-purple-950/20">
+                <div className="flex items-center gap-2 mb-2">
+                  <Users className="h-5 w-5 text-purple-600" />
+                  <span className="font-semibold text-sm">Fleet Summary</span>
+                </div>
+                <div className="text-xs text-gray-600 dark:text-gray-400 space-y-1 mt-2">
+                  <p>Total Vehicles: <strong>{vehicles.length}</strong></p>
+                  <p>Total Routes: <strong>{routes.length}</strong></p>
+                  <p>Assigned: <strong>{assignments.length}</strong></p>
+                  <p>Total Capacity: <strong>{vehicles.reduce((s, v) => s + (v.seating_capacity || 0), 0)} seats</strong></p>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </DashboardLayout>
   );

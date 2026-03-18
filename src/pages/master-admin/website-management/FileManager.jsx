@@ -21,7 +21,7 @@ import {
     Eye, History, FileText, Image as ImageIcon, Video, File, Music,
     Filter, X, Calendar, Tag, FolderOpen, Info, Clock, User,
     ChevronLeft, BarChart3, Star, Clock3, Cloud, LayoutGrid, Monitor,
-    Database, FileSpreadsheet, ExternalLink
+    Database, Table2 as SheetIcon, ExternalLink
 } from 'lucide-react';
 import DashboardLayout from '@/components/DashboardLayout';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
@@ -514,7 +514,7 @@ const FileManager = () => {
         if (['csv', 'xlsx', 'xls'].includes(file.file_extension)) {
             return (
                 <div className="relative w-full h-full flex flex-col items-center justify-center bg-emerald-50 dark:bg-emerald-900/10 rounded border border-emerald-100 dark:border-emerald-900/30 p-2">
-                     <FileSpreadsheet className="h-10 w-10 text-emerald-600 mb-1" />
+                     <SheetIcon className="h-10 w-10 text-emerald-600 mb-1" />
                      <span className="text-[10px] font-bold text-emerald-700 dark:text-emerald-400 uppercase tracking-widest">{file.file_extension}</span>
                 </div>
             );

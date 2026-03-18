@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import {
   Building, Users, IndianRupee, BedDouble, Loader2, TrendingUp,
   Home, DoorOpen, AlertCircle, CheckCircle, Clock, BarChart3, PieChart, Percent,
-  Download, Printer, FileSpreadsheet, RefreshCw, Calendar, Filter
+  Download, Printer, Sheet, RefreshCw, Calendar, Filter
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
@@ -378,7 +378,7 @@ const HostelAnalysis = () => {
               <Download className="h-4 w-4 mr-1" /> Download PDF
             </Button>
             <Button variant="outline" size="sm" onClick={handleExportExcel}>
-              <FileSpreadsheet className="h-4 w-4 mr-1" /> Export Excel
+              <Sheet className="h-4 w-4 mr-1" /> Export Excel
             </Button>
           </div>
         </div>

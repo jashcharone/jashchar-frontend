@@ -47,12 +47,12 @@ const QuestionMapping = () => {
           api.get(`/ai-evaluation/sessions/${sessionId}/questions`)
         ]);
         
-        if (sessionRes.data?.success) {
-          setSession(sessionRes.data.data);
+        if (sessionRes?.success) {
+          setSession(sessionRes.data);
         }
         
-        if (questionsRes.data?.success) {
-          setQuestions(questionsRes.data.data || []);
+        if (questionsRes?.success) {
+          setQuestions(questionsRes.data || []);
         }
       } catch (error) {
         console.error('Error fetching data:', error);
@@ -114,15 +114,15 @@ const QuestionMapping = () => {
         }))
       });
       
-      if (response.data?.success) {
+      if (response?.success) {
         toast({ title: 'Questions saved successfully!' });
         // Refresh questions from server
         const refreshRes = await api.get(`/ai-evaluation/sessions/${sessionId}/questions`);
-        if (refreshRes.data?.success) {
-          setQuestions(refreshRes.data.data || []);
+        if (refreshRes?.success) {
+          setQuestions(refreshRes.data || []);
         }
       } else {
-        throw new Error(response.data?.error || 'Failed to save');
+        throw new Error(response?.error || 'Failed to save');
       }
     } catch (error) {
       console.error('Error saving questions:', error);

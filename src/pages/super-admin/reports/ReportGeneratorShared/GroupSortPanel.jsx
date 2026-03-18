@@ -70,9 +70,9 @@ const GroupSortPanel = ({
 
   // Color classes
   const colorClasses = {
-    blue: { btn: 'bg-blue-500 hover:bg-blue-600', light: 'bg-blue-100 text-blue-700', border: 'border-blue-200' },
-    green: { btn: 'bg-green-500 hover:bg-green-600', light: 'bg-green-100 text-green-700', border: 'border-green-200' },
-    purple: { btn: 'bg-purple-500 hover:bg-purple-600', light: 'bg-purple-100 text-purple-700', border: 'border-purple-200' },
+    blue: { btn: 'bg-blue-500 hover:bg-blue-600', light: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400', border: 'border-blue-200 dark:border-blue-700' },
+    green: { btn: 'bg-green-500 hover:bg-green-600', light: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400', border: 'border-green-200 dark:border-green-700' },
+    purple: { btn: 'bg-purple-500 hover:bg-purple-600', light: 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400', border: 'border-purple-200 dark:border-purple-700' },
   };
   const colors = colorClasses[color] || colorClasses.blue;
 

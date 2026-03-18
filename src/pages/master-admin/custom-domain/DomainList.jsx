@@ -1,7 +1,7 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { 
-  Search, Copy, FileSpreadsheet, FileText, Printer, Trash2, HelpCircle, ChevronLeft, ChevronRight, Loader2 
+  Search, Copy, Sheet, FileText, Printer, Trash2, HelpCircle, ChevronLeft, ChevronRight, Loader2 
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -95,7 +95,7 @@ const DomainList = () => {
             {/* Export Buttons */}
             <div className="flex gap-2">
               <Button variant="outline" size="icon" title="Copy"><Copy size={16} /></Button>
-              <Button variant="outline" size="icon" title="Excel"><FileSpreadsheet size={16} /></Button>
+              <Button variant="outline" size="icon" title="Excel"><Sheet size={16} /></Button>
               <Button variant="outline" size="icon" title="CSV"><FileText size={16} /></Button>
               <Button variant="outline" size="icon" title="PDF"><FileText size={16} /></Button>
               <Button variant="outline" size="icon" title="Print"><Printer size={16} /></Button>

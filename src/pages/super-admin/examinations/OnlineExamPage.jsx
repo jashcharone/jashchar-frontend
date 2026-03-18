@@ -27,11 +27,11 @@ import {
 } from 'lucide-react';
 
 const TEST_STATUS = {
-    DRAFT: { label: 'Draft', color: 'bg-gray-100 text-gray-800', icon: FileText },
-    SCHEDULED: { label: 'Scheduled', color: 'bg-blue-100 text-blue-800', icon: Clock },
-    ACTIVE: { label: 'Active', color: 'bg-green-100 text-green-800', icon: Play },
-    COMPLETED: { label: 'Completed', color: 'bg-purple-100 text-purple-800', icon: CheckCircle },
-    CANCELLED: { label: 'Cancelled', color: 'bg-red-100 text-red-800', icon: XCircle }
+    DRAFT: { label: 'Draft', color: 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300', icon: FileText },
+    SCHEDULED: { label: 'Scheduled', color: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400', icon: Clock },
+    ACTIVE: { label: 'Active', color: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400', icon: Play },
+    COMPLETED: { label: 'Completed', color: 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400', icon: CheckCircle },
+    CANCELLED: { label: 'Cancelled', color: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400', icon: XCircle }
 };
 
 const OnlineExamPage = () => {
@@ -486,6 +486,7 @@ const OnlineExamPage = () => {
                     <CardDescription>Manage your online examinations</CardDescription>
                 </CardHeader>
                 <CardContent className="p-0">
+                    <div className="overflow-x-auto">
                     <Table>
                         <TableHeader>
                             <TableRow>
@@ -612,6 +613,7 @@ const OnlineExamPage = () => {
                             )}
                         </TableBody>
                     </Table>
+                    </div>
                 </CardContent>
             </Card>
 
@@ -825,8 +827,8 @@ const OnlineExamPage = () => {
                         </TabsContent>
 
                         <TabsContent value="proctoring" className="space-y-4 mt-4">
-                            <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-                                <p className="text-sm text-yellow-800">
+                            <div className="p-4 bg-yellow-50 dark:bg-yellow-900/30 border border-yellow-200 dark:border-yellow-800 rounded-lg">
+                                <p className="text-sm text-yellow-800 dark:text-yellow-300">
                                     <AlertCircle className="w-4 h-4 inline mr-2" />
                                     Proctoring features help prevent cheating during online exams.
                                 </p>
@@ -959,9 +961,9 @@ const OnlineExamPage = () => {
                                             </TableCell>
                                             <TableCell>
                                                 <Badge className={
-                                                    q.difficulty_level === 'EASY' ? 'bg-green-100 text-green-800' :
-                                                    q.difficulty_level === 'HARD' ? 'bg-red-100 text-red-800' :
-                                                    'bg-yellow-100 text-yellow-800'
+                                                    q.difficulty_level === 'EASY' ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' :
+                                                    q.difficulty_level === 'HARD' ? 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400' :
+                                                    'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400'
                                                 }>
                                                     {q.difficulty_level}
                                                 </Badge>

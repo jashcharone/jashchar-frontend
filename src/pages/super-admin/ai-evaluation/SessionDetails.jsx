@@ -53,10 +53,10 @@ const SessionDetails = () => {
         setLoading(true);
         const response = await api.get(`/ai-evaluation/sessions/${id}`);
         
-        if (response.data?.success) {
-          setSession(response.data.data);
+        if (response?.success) {
+          setSession(response.data);
         } else {
-          throw new Error(response.data?.error || 'Failed to load session');
+          throw new Error(response?.error || 'Failed to load session');
         }
       } catch (error) {
         console.error('Error fetching session:', error);
@@ -77,8 +77,8 @@ const SessionDetails = () => {
     const fetchPapers = async () => {
       try {
         const response = await api.get(`/ai-evaluation/sessions/${id}/papers`);
-        if (response.data?.success) {
-          setPapers(response.data.data || []);
+        if (response?.success) {
+          setPapers(response.data || []);
         }
       } catch (error) {
         console.error('Error fetching papers:', error);
@@ -95,8 +95,8 @@ const SessionDetails = () => {
     const fetchQuestions = async () => {
       try {
         const response = await api.get(`/ai-evaluation/sessions/${id}/questions`);
-        if (response.data?.success) {
-          setQuestions(response.data.data || []);
+        if (response?.success) {
+          setQuestions(response.data || []);
         }
       } catch (error) {
         console.error('Error fetching questions:', error);
@@ -111,11 +111,18 @@ const SessionDetails = () => {
   // Get status badge
   const getStatusBadge = (status) => {
     const badges = {
+      // Session statuses
       draft: { color: 'bg-gray-500/20 text-gray-400 border-gray-500/30', icon: Clock },
       uploading: { color: 'bg-blue-500/20 text-blue-400 border-blue-500/30', icon: Upload },
       processing: { color: 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30', icon: RefreshCw },
-      review: { color: 'bg-purple-500/20 text-purple-400 border-purple-500/30', icon: Eye },
+      ready_for_review: { color: 'bg-orange-500/20 text-orange-400 border-orange-500/30', icon: Eye },
+      reviewing: { color: 'bg-purple-500/20 text-purple-400 border-purple-500/30', icon: Eye },
       completed: { color: 'bg-green-500/20 text-green-400 border-green-500/30', icon: CheckCircle },
+      cancelled: { color: 'bg-red-500/20 text-red-400 border-red-500/30', icon: AlertTriangle },
+      // Paper-level statuses (ai_evaluation_status)
+      pending: { color: 'bg-gray-500/20 text-gray-400 border-gray-500/30', icon: Clock },
+      evaluating: { color: 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30', icon: RefreshCw },
+      partial: { color: 'bg-orange-500/20 text-orange-400 border-orange-500/30', icon: AlertTriangle },
       failed: { color: 'bg-red-500/20 text-red-400 border-red-500/30', icon: AlertTriangle }
     };
     
@@ -145,7 +152,8 @@ const SessionDetails = () => {
       draft: 0,
       uploading: 1,
       processing: 2,
-      review: 3,
+      ready_for_review: 3,
+      reviewing: 3,
       completed: 4
     };
     
@@ -304,7 +312,7 @@ const SessionDetails = () => {
             </div>
             <div>
               <p className="text-2xl font-bold text-white">
-                {papers.filter(p => p.ai_status === 'completed').length}
+                {papers.filter(p => p.ai_evaluation_status === 'completed').length}
               </p>
               <p className="text-sm text-gray-400">Evaluated</p>
             </div>
@@ -318,7 +326,7 @@ const SessionDetails = () => {
             </div>
             <div>
               <p className="text-2xl font-bold text-white">
-                {papers.filter(p => p.ai_status === 'completed' && !p.reviewed).length}
+                {papers.filter(p => p.ai_evaluation_status === 'completed' && !p.reviewed).length}
               </p>
               <p className="text-sm text-gray-400">Pending Review</p>
             </div>
@@ -366,7 +374,7 @@ const SessionDetails = () => {
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-400">Exam</span>
-                  <span className="text-white">{session.exam_name || 'N/A'}</span>
+                  <span className="text-white">{session.evaluation_code || 'N/A'}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-400">Exam Date</span>
@@ -426,7 +434,7 @@ const SessionDetails = () => {
                       </div>
                     </div>
                     <div className="flex items-center gap-4">
-                      {getStatusBadge(paper.ai_status || 'pending')}
+                      {getStatusBadge(paper.ai_evaluation_status || 'pending')}
                       <Link
                         to={`/super-admin/ai-evaluation/review/${paper.id}`}
                         className="px-3 py-1 text-blue-400 hover:text-blue-300"

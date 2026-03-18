@@ -95,8 +95,8 @@ const ReportGeneratorLayout = ({
                 <IconComponent className="w-6 h-6" />
               </div>
               <div>
-                <h1 className="text-xl font-bold">{title}</h1>
-                {subtitle && <p className="text-sm text-white/80">{subtitle}</p>}
+                <h1 className="text-base sm:text-xl font-bold">{title}</h1>
+                {subtitle && <p className="text-xs sm:text-sm text-white/80">{subtitle}</p>}
               </div>
             </div>
 

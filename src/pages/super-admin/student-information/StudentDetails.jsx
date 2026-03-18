@@ -826,7 +826,7 @@ const StudentDetails = () => {
                                             <td className="p-3">
                                                 <div>
                                                     <span>{highlightText(guardian.name, filters.keyword)}</span>
-                                                    {guardian.phone && <div className="text-xs text-emerald-600">{highlightText(guardian.phone, filters.keyword)}</div>}
+                                                    {guardian.phone && <div className="text-xs text-emerald-600 dark:text-emerald-400">{highlightText(guardian.phone, filters.keyword)}</div>}
                                                 </div>
                                             </td>
                                             <td className="p-3 text-center">
@@ -856,54 +856,54 @@ const StudentDetails = () => {
                                                             value={feesProgress} 
                                                             className={`h-2 flex-1 ${feesProgress === 100 ? '[&>div]:bg-green-500' : feesProgress > 0 ? '[&>div]:bg-amber-500' : '[&>div]:bg-red-400'}`} 
                                                         />
-                                                        <span className={`text-xs font-medium w-10 ${feesProgress === 100 ? 'text-green-600' : feesProgress > 0 ? 'text-amber-600' : 'text-red-500'}`}>{feesProgress}%</span>
+                                                        <span className={`text-xs font-medium w-10 ${feesProgress === 100 ? 'text-green-600 dark:text-green-400' : feesProgress > 0 ? 'text-amber-600 dark:text-amber-400' : 'text-red-500 dark:text-red-400'}`}>{feesProgress}%</span>
                                                     </div>
                                                     <div className="flex items-center justify-between text-xs">
-                                                        <span className="text-green-600">₹{studentFees.paid.toLocaleString('en-IN')}</span>
+                                                        <span className="text-green-600 dark:text-green-400">₹{studentFees.paid.toLocaleString('en-IN')}</span>
                                                         <span className="text-muted-foreground">/</span>
                                                         <span className="text-muted-foreground">₹{studentFees.total.toLocaleString('en-IN')}</span>
                                                     </div>
                                                     {/* Show discount, fine, and refund if present */}
                                                     <div className="flex flex-wrap gap-1 text-[10px]">
                                                         {studentFees.discount > 0 && (
-                                                            <span className="text-amber-600" title="Discount">D:₹{studentFees.discount.toLocaleString('en-IN')}</span>
+                                                            <span className="text-amber-600 dark:text-amber-400" title="Discount">D:₹{studentFees.discount.toLocaleString('en-IN')}</span>
                                                         )}
                                                         {studentFees.fine > 0 && (
-                                                            <span className="text-orange-600" title="Fine">F:₹{studentFees.fine.toLocaleString('en-IN')}</span>
+                                                            <span className="text-orange-600 dark:text-orange-400" title="Fine">F:₹{studentFees.fine.toLocaleString('en-IN')}</span>
                                                         )}
                                                         {studentFees.refunded > 0 && (
-                                                            <span className="text-blue-600" title="Refund">R:₹{studentFees.refunded.toLocaleString('en-IN')}</span>
+                                                            <span className="text-blue-600 dark:text-blue-400" title="Refund">R:₹{studentFees.refunded.toLocaleString('en-IN')}</span>
                                                         )}
                                                     </div>
                                                     {studentFees.balance > 0 && (
-                                                        <div className="text-xs text-red-600 font-medium">Due: ₹{studentFees.balance.toLocaleString('en-IN')}</div>
+                                                        <div className="text-xs text-red-600 dark:text-red-400 font-medium">Due: ₹{studentFees.balance.toLocaleString('en-IN')}</div>
                                                     )}
                                                 </div>
                                             </td>
                                             <td className="p-3">
                                                 <div className="flex items-center justify-center gap-1">
-                                                    <Button variant="ghost" size="icon" className="h-8 w-8 bg-blue-500/10 hover:bg-blue-500/20" onClick={() => navigate(`/${basePath}/student-information/profile/${s.id}`)} title="View">
-                                                        <Eye className="h-4 w-4 text-blue-600" />
+                                                    <Button variant="ghost" size="icon" className="h-8 w-8 bg-blue-500/10 hover:bg-blue-500/20 dark:bg-blue-500/20 dark:hover:bg-blue-500/30" onClick={() => navigate(`/${basePath}/student-information/profile/${s.id}`)} title="View">
+                                                        <Eye className="h-4 w-4 text-blue-600 dark:text-blue-400" />
                                                     </Button>
                                                     {canEdit('student_information.student_details') && (
-                                                        <Button variant="ghost" size="icon" className="h-8 w-8 bg-orange-500/10 hover:bg-orange-500/20" onClick={() => navigate(`/${basePath}/student-information/edit/${s.id}`)} title="Edit">
-                                                            <Edit className="h-4 w-4 text-orange-600" />
+                                                        <Button variant="ghost" size="icon" className="h-8 w-8 bg-orange-500/10 hover:bg-orange-500/20 dark:bg-orange-500/20 dark:hover:bg-orange-500/30" onClick={() => navigate(`/${basePath}/student-information/edit/${s.id}`)} title="Edit">
+                                                            <Edit className="h-4 w-4 text-orange-600 dark:text-orange-400" />
                                                         </Button>
                                                     )}
                                                     {canEdit('student_information.student_details') && (
                                                         s.is_disabled ? (
-                                                            <Button variant="ghost" size="icon" className="h-8 w-8 bg-green-500/10 hover:bg-green-500/20" onClick={() => handleEnableStudent(s)} title="Re-Enable">
-                                                                <RefreshCcw className="h-4 w-4 text-green-600" />
+                                                            <Button variant="ghost" size="icon" className="h-8 w-8 bg-green-500/10 hover:bg-green-500/20 dark:bg-green-500/20 dark:hover:bg-green-500/30" onClick={() => handleEnableStudent(s)} title="Re-Enable">
+                                                                <RefreshCcw className="h-4 w-4 text-green-600 dark:text-green-400" />
                                                             </Button>
                                                         ) : (
-                                                            <Button variant="ghost" size="icon" className="h-8 w-8 bg-red-500/10 hover:bg-red-500/20" onClick={() => { setStudentToDisable(s); setIsDisableDialogOpen(true); }} title="Disable">
-                                                                <UserX className="h-4 w-4 text-red-600" />
+                                                            <Button variant="ghost" size="icon" className="h-8 w-8 bg-red-500/10 hover:bg-red-500/20 dark:bg-red-500/20 dark:hover:bg-red-500/30" onClick={() => { setStudentToDisable(s); setIsDisableDialogOpen(true); }} title="Disable">
+                                                                <UserX className="h-4 w-4 text-red-600 dark:text-red-400" />
                                                             </Button>
                                                         )
                                                     )}
                                                     {canDelete('student_information.student_details') && (
-                                                        <Button variant="ghost" size="icon" className="h-8 w-8 bg-red-500/10 hover:bg-red-500/20" onClick={() => handleDelete(s.id)} title="Delete">
-                                                            <Trash2 className="h-4 w-4 text-red-600" />
+                                                        <Button variant="ghost" size="icon" className="h-8 w-8 bg-red-500/10 hover:bg-red-500/20 dark:bg-red-500/20 dark:hover:bg-red-500/30" onClick={() => handleDelete(s.id)} title="Delete">
+                                                            <Trash2 className="h-4 w-4 text-red-600 dark:text-red-400" />
                                                         </Button>
                                                     )}
                                                 </div>
@@ -1005,7 +1005,7 @@ const StudentDetails = () => {
                                 rows={3}
                             />
                         </div>
-                        <div className="p-3 bg-amber-50 dark:bg-amber-950 rounded-lg border border-amber-200">
+                        <div className="p-3 bg-amber-50 dark:bg-amber-950 rounded-lg border border-amber-200 dark:border-amber-800">
                             <p className="text-sm text-amber-800 dark:text-amber-200">
                                 <strong>Warning:</strong> Disabled students will not appear in attendance, fees, or other modules.
                             </p>

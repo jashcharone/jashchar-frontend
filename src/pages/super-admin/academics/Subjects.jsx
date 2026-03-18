@@ -201,12 +201,12 @@ const Subjects = () => {
                                             <td className="px-6 py-4 capitalize">{subject.type}</td>
                                             <td className="px-6 py-4 text-right space-x-1">
                                                 {canEdit('academics.subjects') && (
-                                                <Button variant="ghost" size="icon" onClick={() => handleEdit(subject)}><Edit className="h-4 w-4 text-blue-600" /></Button>
+                                                <Button variant="ghost" size="icon" onClick={() => handleEdit(subject)}><Edit className="h-4 w-4 text-blue-600 dark:text-blue-400" /></Button>
                                                 )}
                                                 {canDelete('academics.subjects') && (
                                                 <AlertDialog>
                                                     <AlertDialogTrigger asChild>
-                                                        <Button variant="ghost" size="icon"><Trash2 className="h-4 w-4 text-red-600" /></Button>
+                                                        <Button variant="ghost" size="icon"><Trash2 className="h-4 w-4 text-red-600 dark:text-red-400" /></Button>
                                                     </AlertDialogTrigger>
                                                     <AlertDialogContent>
                                                         <AlertDialogHeader>

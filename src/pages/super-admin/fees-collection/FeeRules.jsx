@@ -34,10 +34,10 @@ import {
 // ============================================================================
 
 const RULE_TYPES = [
-  { value: 'auto_assign', label: 'Auto-Assign Structure', icon: '📦', color: 'bg-blue-100 text-blue-800' },
-  { value: 'auto_discount', label: 'Auto-Discount', icon: '🏷️', color: 'bg-green-100 text-green-800' },
-  { value: 'auto_add_fee', label: 'Auto-Add Fee', icon: '➕', color: 'bg-purple-100 text-purple-800' },
-  { value: 'auto_waive', label: 'Auto-Waive', icon: '🎁', color: 'bg-yellow-100 text-yellow-800' },
+  { value: 'auto_assign', label: 'Auto-Assign Structure', icon: '📦', color: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400' },
+  { value: 'auto_discount', label: 'Auto-Discount', icon: '🏷️', color: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' },
+  { value: 'auto_add_fee', label: 'Auto-Add Fee', icon: '➕', color: 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400' },
+  { value: 'auto_waive', label: 'Auto-Waive', icon: '🎁', color: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400' },
 ];
 
 const ACTION_TYPES = [

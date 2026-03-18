@@ -187,9 +187,9 @@ const StaffApplyLeave = () => {
                                         <p className="text-sm text-muted-foreground">{format(new Date(leave.from_date), 'dd/MM/yy')} - {format(new Date(leave.to_date), 'dd/MM/yy')}</p>
                                     </div>
                                     <div className={`px-2 py-1 rounded text-xs font-bold ${
-                                        leave.status === 'approved' ? 'bg-green-100 text-green-800' :
-                                        leave.status === 'rejected' ? 'bg-red-100 text-red-800' :
-                                        'bg-yellow-100 text-yellow-800'
+                                        leave.status === 'approved' ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' :
+                                        leave.status === 'rejected' ? 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400' :
+                                        'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400'
                                     }`}>
                                         {leave.status}
                                     </div>

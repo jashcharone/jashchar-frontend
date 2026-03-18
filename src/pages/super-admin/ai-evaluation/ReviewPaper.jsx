@@ -67,12 +67,12 @@ const ReviewPaper = () => {
           api.get(`/ai-evaluation/papers/${paperId}/results`)
         ]);
         
-        if (paperRes.data?.success) {
-          setPaper(paperRes.data.data);
+        if (paperRes?.success) {
+          setPaper(paperRes.data);
         }
         
-        if (resultsRes.data?.success) {
-          setResults(resultsRes.data.data || []);
+        if (resultsRes?.success) {
+          setResults(resultsRes.data || []);
         }
       } catch (error) {
         console.error('Error fetching paper:', error);
@@ -92,8 +92,8 @@ const ReviewPaper = () => {
       try {
         const params = new URLSearchParams({ status: 'pending', limit: '100' });
         const response = await api.get(`/ai-evaluation/review/papers?${params.toString()}`);
-        if (response.data?.success) {
-          const list = response.data.data || [];
+        if (response?.success) {
+          const list = response.data || [];
           setPapersList(list);
           const currentIdx = list.findIndex(p => p.id === paperId);
           if (currentIdx >= 0) setCurrentPaperIndex(currentIdx);
@@ -129,11 +129,11 @@ const ReviewPaper = () => {
         comment: comment || null
       });
       
-      if (response.data?.success) {
+      if (response?.success) {
         toast({ title: `Paper ${status === 'approved' ? 'approved' : 'marks updated'}!` });
         navigate('/super-admin/ai-evaluation/review');
       } else {
-        throw new Error(response.data?.error || 'Failed to save');
+        throw new Error(response?.error || 'Failed to save');
       }
     } catch (error) {
       console.error('Error saving review:', error);
@@ -319,9 +319,9 @@ const ReviewPaper = () => {
           </div>
           
           <div className="bg-gray-900 rounded-lg overflow-auto max-h-[600px]">
-            {paper.file_url ? (
+            {paper.file_urls?.length > 0 ? (
               <img
-                src={paper.file_url}
+                src={paper.file_urls[0]?.url || paper.file_urls[0]}
                 alt="Answer Sheet"
                 className="mx-auto transition-transform"
                 style={{ 

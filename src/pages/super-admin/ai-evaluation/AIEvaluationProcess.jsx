@@ -47,14 +47,14 @@ const AIEvaluationProcess = () => {
           api.get(`/ai-evaluation/sessions/${sessionId}/papers`)
         ]);
         
-        if (sessionRes.data?.success) {
-          setSession(sessionRes.data.data);
+        if (sessionRes?.success) {
+          setSession(sessionRes.data);
         }
         
-        if (papersRes.data?.success) {
-          setPapers(papersRes.data.data || []);
-          const completed = (papersRes.data.data || []).filter(p => p.ai_status === 'completed').length;
-          const total = (papersRes.data.data || []).length;
+        if (papersRes?.success) {
+          setPapers(papersRes.data || []);
+          const completed = (papersRes.data || []).filter(p => p.ai_evaluation_status === 'completed').length;
+          const total = (papersRes.data || []).length;
           setProgress({
             completed,
             total,
@@ -77,18 +77,18 @@ const AIEvaluationProcess = () => {
     try {
       setEvaluating(true);
       
-      const pendingPapers = papers.filter(p => p.ai_status !== 'completed');
+      const pendingPapers = papers.filter(p => p.ai_evaluation_status !== 'completed');
       
       for (const paper of pendingPapers) {
         setCurrentPaper(paper.id);
         
         try {
-          const response = await api.post(`/ai-evaluation/evaluate/${paper.id}`);
+          const response = await api.post(`/ai-evaluation/papers/${paper.id}/evaluate`);
           
-          if (response.data?.success) {
+          if (response?.success) {
             setPapers(prev => prev.map(p => 
               p.id === paper.id 
-                ? { ...p, ai_status: 'completed', ...response.data.data }
+                ? { ...p, ai_evaluation_status: 'completed', ...response.data }
                 : p
             ));
             
@@ -101,7 +101,7 @@ const AIEvaluationProcess = () => {
         } catch (error) {
           console.error(`Error evaluating paper ${paper.id}:`, error);
           setPapers(prev => prev.map(p => 
-            p.id === paper.id ? { ...p, ai_status: 'failed' } : p
+            p.id === paper.id ? { ...p, ai_evaluation_status: 'failed' } : p
           ));
         }
         
@@ -256,7 +256,7 @@ const AIEvaluationProcess = () => {
                 </div>
                 
                 <div className="flex items-center gap-4">
-                  {paper.ai_status === 'completed' && (
+                  {paper.ai_evaluation_status === 'completed' && (
                     <div className="text-right">
                       <p className="text-lg font-bold text-white">
                         {paper.ai_total_marks || 0}
@@ -275,7 +275,7 @@ const AIEvaluationProcess = () => {
                     </div>
                   )}
                   
-                  {getStatusIcon(currentPaper === paper.id ? 'processing' : paper.ai_status)}
+                  {getStatusIcon(currentPaper === paper.id ? 'processing' : paper.ai_evaluation_status)}
                 </div>
               </div>
             ))}

@@ -95,26 +95,24 @@ const UploadPapers = () => {
         setUploadProgress(prev => ({ ...prev, [fileObj.id]: 0 }));
         
         const formData = new FormData();
-        formData.append('file', fileObj.file);
-        formData.append('session_id', sessionId);
+        formData.append('files', fileObj.file);
         
         try {
-          const response = await api.post('/ai-evaluation/upload', formData, {
-            headers: { 'Content-Type': 'multipart/form-data' },
-            onUploadProgress: (progressEvent) => {
-              const progress = Math.round((progressEvent.loaded * 100) / progressEvent.total);
-              setUploadProgress(prev => ({ ...prev, [fileObj.id]: progress }));
-            }
-          });
+          setFiles(prev => prev.map(f => 
+            f.id === fileObj.id ? { ...f, status: 'uploading' } : f
+          ));
           
-          if (response.data?.success) {
+          const response = await api.post(`/ai-evaluation/sessions/${sessionId}/papers/upload`, formData);
+          
+          if (response?.success) {
+            setUploadProgress(prev => ({ ...prev, [fileObj.id]: 100 }));
             setFiles(prev => prev.map(f => 
               f.id === fileObj.id 
-                ? { ...f, status: 'uploaded', uploadedId: response.data.data.id }
+                ? { ...f, status: 'uploaded', uploadedId: response.data?.[0]?.id }
                 : f
             ));
           } else {
-            throw new Error(response.data?.error || 'Upload failed');
+            throw new Error(response?.error || 'Upload failed');
           }
         } catch (error) {
           setFiles(prev => prev.map(f => 

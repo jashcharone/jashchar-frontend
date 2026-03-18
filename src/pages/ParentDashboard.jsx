@@ -1,9 +1,11 @@
-﻿import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Users, GraduationCap, Calendar, CreditCard, BookOpen, 
   ArrowLeft, Clock, MapPin, Phone, Mail, ChevronRight,
-  TrendingUp, Bell, FileText, Bus, Building, CheckCircle2
+  TrendingUp, Bell, FileText, Bus, Building, CheckCircle2,
+  XCircle, AlertCircle, IndianRupee, Award, BarChart3, Star,
+  CalendarDays, Loader2
 } from 'lucide-react';
 import DashboardLayout from '@/components/DashboardLayout';
 import { useToast } from '@/components/ui/use-toast';
@@ -105,39 +107,87 @@ const ChildCard = ({ child, onViewDashboard, index }) => {
 
 // Child Dashboard Component - Shows when "Dashboard" is clicked
 const ChildDashboard = ({ child, onBack }) => {
-  const [activeTab, setActiveTab] = useState('overview');
   const [feeData, setFeeData] = useState(null);
   const [attendanceData, setAttendanceData] = useState(null);
+  const [recentExam, setRecentExam] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchChildData = async () => {
       try {
-        // Fetch fee payments for this child (only non-reverted payments)
+        // Fetch fee payments (non-reverted)
         const { data: fees } = await supabase
           .from('fee_payments')
           .select('amount, payment_date, payment_mode, reverted_at')
           .eq('student_id', child.id)
-          .is('reverted_at', null)  // Only valid (non-reverted) payments
+          .is('reverted_at', null)
           .order('payment_date', { ascending: false });
 
-        // Calculate fee summary - all non-reverted payments are "paid"
         const paidFees = fees?.reduce((sum, f) => sum + (f.amount || 0), 0) || 0;
-        
+
+        // Fetch fee allocations for total
+        const { data: allocs } = await supabase
+          .from('student_fee_allocations')
+          .select('total_amount')
+          .eq('student_id', child.id);
+
+        const totalFees = allocs?.reduce((sum, a) => sum + (a.total_amount || 0), 0) || 0;
+
         setFeeData({
-          total: paidFees,  // For now, show paid amount as total (will be updated with actual fee allocation)
+          total: totalFees,
           paid: paidFees,
-          remaining: 0,
-          payments: fees || []
+          remaining: Math.max(totalFees - paidFees, 0),
+          recentPayments: (fees || []).slice(0, 3),
         });
 
-        // Fetch attendance (mock data for now)
-        setAttendanceData({
-          present: 85,
-          absent: 10,
-          late: 5,
-          percentage: '85%'
+        // Fetch attendance for current month
+        const now = new Date();
+        const monthStart = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
+        const monthEnd = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate()}`;
+        
+        const { data: attRecords } = await supabase
+          .from('student_attendance')
+          .select('status, date')
+          .eq('student_id', child.id)
+          .gte('date', monthStart)
+          .lte('date', monthEnd);
+
+        const attCounts = { present: 0, absent: 0, late: 0, leave: 0, total: 0 };
+        (attRecords || []).forEach(r => {
+          attCounts.total++;
+          if (r.status === 'present' || r.status === 'late' || r.status === 'half_day') attCounts.present++;
+          else if (r.status === 'absent') attCounts.absent++;
+          else if (r.status === 'late') attCounts.late++;
+          else if (r.status === 'leave') attCounts.leave++;
         });
+        attCounts.percentage = attCounts.total > 0 ? Math.round((attCounts.present / attCounts.total) * 100) : 0;
+
+        // Check today's attendance
+        const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+        const todayRecord = (attRecords || []).find(r => r.date === today);
+
+        setAttendanceData({ ...attCounts, todayStatus: todayRecord?.status || null });
+
+        // Fetch latest exam result
+        const { data: examMarks } = await supabase
+          .from('exam_marks_v2')
+          .select('total_marks, percentage, grade, exam_subjects(max_marks, exams(name, exam_date))')
+          .eq('student_id', child.id)
+          .in('status', ['submitted', 'verified', 'locked'])
+          .order('created_at', { ascending: false })
+          .limit(5);
+
+        if (examMarks?.length) {
+          const latestExam = examMarks[0]?.exam_subjects?.exams?.name;
+          const examGroup = examMarks.filter(m => m.exam_subjects?.exams?.name === latestExam);
+          const totalObtained = examGroup.reduce((s, m) => s + (m.total_marks || 0), 0);
+          const totalMax = examGroup.reduce((s, m) => s + (m.exam_subjects?.max_marks || 100), 0);
+          setRecentExam({
+            name: latestExam,
+            percentage: totalMax > 0 ? Math.round((totalObtained / totalMax) * 100) : 0,
+            subjects: examGroup.length,
+          });
+        }
 
       } catch (error) {
         console.error('Error fetching child data:', error);
@@ -149,171 +199,188 @@ const ChildDashboard = ({ child, onBack }) => {
     fetchChildData();
   }, [child.id]);
 
-  const stats = [
-    { title: 'Total Fees', value: `₹${feeData?.total?.toLocaleString() || 0}`, icon: CreditCard, color: 'text-blue-500' },
-    { title: 'Attendance', value: attendanceData?.percentage || '0%', icon: CheckCircle2, color: 'text-green-500' },
-    { title: 'Total Due Days', value: '0.00', icon: Clock, color: 'text-orange-500' },
-    { title: 'Homework', value: '0', icon: BookOpen, color: 'text-purple-500' },
-  ];
+  const getAttStatusColor = (status) => {
+    if (status === 'present') return 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400';
+    if (status === 'absent') return 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400';
+    if (status === 'late') return 'bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-400';
+    if (status === 'leave') return 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-400';
+    return 'bg-gray-100 text-gray-500';
+  };
 
-  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  const quickLinks = [
+    { title: 'Attendance', icon: CheckCircle2, path: '/Parent/attendance', color: 'text-emerald-500' },
+    { title: 'Fee Details', icon: CreditCard, path: '/Parent/fees', color: 'text-blue-500' },
+    { title: 'Exam Results', icon: Award, path: '/Parent/exam-result', color: 'text-purple-500' },
+    { title: 'Apply Leave', icon: CalendarDays, path: '/Parent/apply-leave', color: 'text-amber-500' },
+    { title: 'Homework', icon: BookOpen, path: '/Parent/homework', color: 'text-pink-500' },
+    { title: 'Timetable', icon: Clock, path: '/Parent/timetable', color: 'text-indigo-500' },
+    { title: 'Transport', icon: Bus, path: '/Parent/transport', color: 'text-teal-500' },
+    { title: 'Notice Board', icon: Bell, path: '/Parent/notice-board', color: 'text-red-500' },
+  ];
 
   return (
     <div className="space-y-6">
-      {/* Header with Back Button */}
+      {/* Header */}
       <div className="flex items-center gap-4">
         <Button variant="ghost" size="icon" onClick={onBack}>
           <ArrowLeft className="h-5 w-5" />
         </Button>
-        <div>
-          <h1 className="text-2xl font-bold">{child.full_name || `${child.first_name} ${child.last_name}`} - Dashboard</h1>
-          <p className="text-muted-foreground">{child.class_name} {child.section_name && `(${child.section_name})`}</p>
+        <div className="flex items-center gap-4 flex-1">
+          <div className="w-14 h-14 rounded-full bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center overflow-hidden border-2 border-primary/20">
+            {child.photo_url ? (
+              <img src={child.photo_url} alt="" className="w-full h-full object-cover" />
+            ) : (
+              <span className="text-xl font-bold text-primary">
+                {(child.full_name || child.first_name || '?')[0].toUpperCase()}
+              </span>
+            )}
+          </div>
+          <div>
+            <h1 className="text-xl font-bold">{child.full_name || `${child.first_name} ${child.last_name}`}</h1>
+            <p className="text-sm text-muted-foreground">
+              {child.class_name} {child.section_name && `(${child.section_name})`} • Roll #{child.roll_number || 'N/A'}
+            </p>
+          </div>
         </div>
+        {/* Today's Status */}
+        {attendanceData?.todayStatus && (
+          <Badge className={`text-sm px-3 py-1 ${getAttStatusColor(attendanceData.todayStatus)}`}>
+            Today: {attendanceData.todayStatus.charAt(0).toUpperCase() + attendanceData.todayStatus.slice(1)}
+          </Badge>
+        )}
       </div>
 
-      {/* Fee Summary Chart Area */}
-      <Card>
-        <CardHeader>
-          <CardTitle>My Annual Fee Summary</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="h-32 flex items-end justify-between gap-2 mb-4">
-            {months.map((month, i) => (
-              <div key={month} className="flex-1 flex flex-col items-center">
-                <div 
-                  className="w-full bg-gray-200 dark:bg-gray-700 rounded-t" 
-                  style={{ height: `${Math.random() * 80 + 20}%` }}
-                />
-                <span className="text-xs text-muted-foreground mt-1">{month}</span>
-              </div>
-            ))}
+      {loading ? (
+        <div className="flex items-center justify-center py-16">
+          <Loader2 className="h-6 w-6 animate-spin mr-2" /> Loading dashboard...
+        </div>
+      ) : (
+        <>
+          {/* ── Summary Cards ── */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0 }}>
+              <Card className="border-emerald-200 dark:border-emerald-800">
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-3">
+                    <CheckCircle2 className="h-8 w-8 text-emerald-500" />
+                    <div>
+                      <p className="text-2xl font-bold text-emerald-600">{attendanceData?.percentage || 0}%</p>
+                      <p className="text-xs text-muted-foreground">Attendance This Month</p>
+                    </div>
+                  </div>
+                  <div className="flex gap-3 mt-2 text-xs">
+                    <span className="text-emerald-600">P: {attendanceData?.present || 0}</span>
+                    <span className="text-red-500">A: {attendanceData?.absent || 0}</span>
+                    <span className="text-blue-500">L: {attendanceData?.leave || 0}</span>
+                  </div>
+                </CardContent>
+              </Card>
+            </motion.div>
+            <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}>
+              <Card className="border-blue-200 dark:border-blue-800">
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-3">
+                    <IndianRupee className="h-8 w-8 text-blue-500" />
+                    <div>
+                      <p className="text-2xl font-bold text-blue-600">₹{(feeData?.remaining || 0).toLocaleString()}</p>
+                      <p className="text-xs text-muted-foreground">Fee Pending</p>
+                    </div>
+                  </div>
+                  <div className="text-xs text-muted-foreground mt-2">
+                    Paid: ₹{(feeData?.paid || 0).toLocaleString()} / ₹{(feeData?.total || 0).toLocaleString()}
+                  </div>
+                </CardContent>
+              </Card>
+            </motion.div>
+            <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
+              <Card className="border-purple-200 dark:border-purple-800">
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-3">
+                    <Award className="h-8 w-8 text-purple-500" />
+                    <div>
+                      <p className="text-2xl font-bold text-purple-600">{recentExam?.percentage || '-'}%</p>
+                      <p className="text-xs text-muted-foreground">Last Exam Score</p>
+                    </div>
+                  </div>
+                  {recentExam && (
+                    <p className="text-xs text-muted-foreground mt-2 truncate">{recentExam.name} ({recentExam.subjects} subjects)</p>
+                  )}
+                </CardContent>
+              </Card>
+            </motion.div>
+            <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}>
+              <Card>
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-3">
+                    <GraduationCap className="h-8 w-8 text-primary" />
+                    <div>
+                      <p className="text-lg font-bold">{child.class_name}</p>
+                      <p className="text-xs text-muted-foreground">
+                        Section {child.section_name || '-'} • Roll #{child.roll_number || '-'}
+                      </p>
+                    </div>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-2">
+                    Adm#: {child.school_code || child.admission_number || '-'}
+                  </p>
+                </CardContent>
+              </Card>
+            </motion.div>
           </div>
-          <div className="flex gap-6 text-sm">
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 bg-red-500 rounded" />
-              <span>Total</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 bg-blue-500 rounded" />
-              <span>Collected</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 bg-green-500 rounded" />
-              <span>Remaining</span>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {stats.map((stat, index) => (
-          <motion.div
-            key={stat.title}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: index * 0.1 }}
-          >
-            <Card className="hover:shadow-lg transition-shadow">
-              <CardContent className="p-4">
-                <div className="flex items-center gap-4">
-                  <div className={`p-3 rounded-lg bg-gray-100 dark:bg-gray-800 ${stat.color}`}>
-                    <stat.icon size={24} />
-                  </div>
-                  <div>
-                    <p className="text-2xl font-bold text-red-500">{stat.value}</p>
-                    <p className="text-sm text-muted-foreground">{stat.title}</p>
-                  </div>
-                </div>
-                <div className="mt-3 text-xs text-muted-foreground uppercase">
-                  Interval: 30 Days
+          {/* ── Quick Links ── */}
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base">Quick Actions</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-4 md:grid-cols-8 gap-3">
+                {quickLinks.map((link, i) => (
+                  <motion.a
+                    key={link.title}
+                    href={link.path}
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: i * 0.03 }}
+                    className="flex flex-col items-center gap-1.5 p-3 rounded-xl hover:bg-muted/50 transition-colors text-center"
+                  >
+                    <div className={`p-2 rounded-lg bg-muted/50 ${link.color}`}>
+                      <link.icon className="h-5 w-5" />
+                    </div>
+                    <span className="text-xs font-medium">{link.title}</span>
+                  </motion.a>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* ── Recent Fee Payments ── */}
+          {feeData?.recentPayments?.length > 0 && (
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <CreditCard className="h-4 w-4" /> Recent Fee Payments
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  {feeData.recentPayments.map((p, i) => (
+                    <div key={i} className="flex items-center justify-between p-3 rounded-lg bg-muted/30">
+                      <div>
+                        <p className="font-medium text-sm">₹{(p.amount || 0).toLocaleString()}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {p.payment_date ? format(new Date(p.payment_date), 'dd MMM yyyy') : ''} • {p.payment_mode || 'Cash'}
+                        </p>
+                      </div>
+                      <Badge variant="outline" className="text-emerald-600">Paid</Badge>
+                    </div>
+                  ))}
                 </div>
               </CardContent>
             </Card>
-          </motion.div>
-        ))}
-      </div>
-
-      {/* Attendance Overview */}
-      <Card>
-        <CardHeader>
-          <CardTitle>My Annual Attendance Overview</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="h-32 flex items-end justify-between gap-2 mb-4">
-            {months.map((month, i) => (
-              <div key={month} className="flex-1 flex flex-col items-center">
-                <div 
-                  className="w-full bg-gradient-to-t from-green-500 to-green-300 rounded-t opacity-70" 
-                  style={{ height: `${Math.random() * 60 + 40}%` }}
-                />
-                <span className="text-xs text-muted-foreground mt-1">{month}</span>
-              </div>
-            ))}
-          </div>
-          <div className="flex gap-6 text-sm">
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 bg-green-500 rounded" />
-              <span>Total Presents</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 bg-red-500 rounded" />
-              <span>Total Absents</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 bg-yellow-500 rounded" />
-              <span>Total Late</span>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Calendar */}
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
-          <div className="flex items-center gap-4">
-            <Button variant="ghost" size="icon">◀</Button>
-            <Button variant="ghost" size="icon">▶</Button>
-            <span className="text-sm">Today</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <Calendar className="h-4 w-4 text-red-500" />
-            <span className="font-medium">January 2026</span>
-          </div>
-          <div className="flex gap-2">
-            <Button variant="outline" size="sm">Month</Button>
-            <Button variant="outline" size="sm">Week</Button>
-            <Button variant="outline" size="sm">Day</Button>
-            <Button variant="outline" size="sm">List</Button>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-7 gap-1">
-            {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map(day => (
-              <div key={day} className="text-center text-sm font-medium text-muted-foreground py-2">
-                {day}
-              </div>
-            ))}
-            {Array.from({ length: 35 }, (_, i) => {
-              const day = i - 2; // Adjust for starting day
-              const isCurrentMonth = day > 0 && day <= 31;
-              const isToday = day === 21;
-              return (
-                <div 
-                  key={i} 
-                  className={`text-center py-4 rounded ${
-                    isToday ? 'bg-red-500 text-white' : 
-                    isCurrentMonth ? 'hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer' : 
-                    'text-gray-300 dark:text-gray-600'
-                  }`}
-                >
-                  {isCurrentMonth ? day : ''}
-                </div>
-              );
-            })}
-          </div>
-        </CardContent>
-      </Card>
+          )}
+        </>
+      )}
     </div>
   );
 };

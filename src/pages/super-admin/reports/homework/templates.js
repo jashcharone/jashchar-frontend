@@ -336,7 +336,7 @@ export const HOMEWORK_TEMPLATES = [
     name: 'Student Homework Card',
     description: 'Individual student homework status',
     category: 'parent_communication',
-    icon: 'IdCard',
+    icon: 'Contact',
     popular: true,
     columns: getColumns(COLUMN_SETS.student_homework_card),
     defaultFilters: {},

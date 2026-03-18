@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { useSchoolSlug } from '@/hooks/useSchoolSlug';
 import { useSchoolPublicData } from '@/hooks/useSchoolPublicData';
@@ -6,7 +6,7 @@ import PublicSchoolHeader from '@/components/public/PublicSchoolHeader';
 import PublicSchoolFooter from '@/components/public/PublicSchoolFooter';
 import { supabase } from '@/lib/customSupabaseClient';
 import { Button } from '@/components/ui/button';
-import { Calendar, ArrowRight, FileImage as ImageIcon, GraduationCap, BookOpen, Users } from 'lucide-react';
+import { Calendar, ArrowRight, Image as ImageIcon, GraduationCap, BookOpen, Users } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { format } from 'date-fns';
 

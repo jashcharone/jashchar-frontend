@@ -340,7 +340,7 @@ export const HOMEWORK_EVAL_TEMPLATES = [
     name: 'Student Progress Card',
     description: 'Individual student progress summary',
     category: 'feedback_communication',
-    icon: 'IdCard',
+    icon: 'Contact',
     popular: true,
     columns: getColumns(COLUMN_SETS.student_progress_card),
     defaultFilters: {},

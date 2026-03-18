@@ -93,7 +93,7 @@ const PulseIndicator = ({ isLive, className = '' }) => (
                 )}
             </div>
         </div>
-        <span className={`text-sm font-medium ${isLive ? 'text-green-600' : 'text-red-600'}`}>
+        <span className={`text-sm font-medium ${isLive ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
             {isLive ? 'LIVE' : 'OFFLINE'}
         </span>
     </div>

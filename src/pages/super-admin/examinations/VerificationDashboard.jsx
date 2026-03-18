@@ -158,9 +158,9 @@ const VerificationDashboard = () => {
         {/* Stats Cards */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <Card><CardContent className="pt-6"><div className="text-2xl font-bold">{stats.total}</div><p className="text-sm text-muted-foreground">Total Records</p></CardContent></Card>
-          <Card><CardContent className="pt-6"><div className="text-2xl font-bold text-yellow-600">{stats.pending}</div><p className="text-sm text-muted-foreground">Pending</p></CardContent></Card>
-          <Card><CardContent className="pt-6"><div className="text-2xl font-bold text-green-600">{stats.approved}</div><p className="text-sm text-muted-foreground">Approved</p></CardContent></Card>
-          <Card><CardContent className="pt-6"><div className="text-2xl font-bold text-red-600">{stats.rejected}</div><p className="text-sm text-muted-foreground">Rejected</p></CardContent></Card>
+          <Card><CardContent className="pt-6"><div className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">{stats.pending}</div><p className="text-sm text-muted-foreground">Pending</p></CardContent></Card>
+          <Card><CardContent className="pt-6"><div className="text-2xl font-bold text-green-600 dark:text-green-400">{stats.approved}</div><p className="text-sm text-muted-foreground">Approved</p></CardContent></Card>
+          <Card><CardContent className="pt-6"><div className="text-2xl font-bold text-red-600 dark:text-red-400">{stats.rejected}</div><p className="text-sm text-muted-foreground">Rejected</p></CardContent></Card>
         </div>
 
         {/* Filters */}
@@ -215,6 +215,7 @@ const VerificationDashboard = () => {
                 <ShieldCheck className="w-12 h-12 mb-4 opacity-50" /><p>No verification records found</p>
               </div>
             ) : (
+              <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -239,7 +240,7 @@ const VerificationDashboard = () => {
                       <TableCell className="text-right">
                         {v.status === 'pending' && (
                           <div className="flex justify-end gap-2">
-                            <Button variant="ghost" size="sm" className="text-green-600" onClick={() => { setSelectedItem(v); setIsApproveOpen(true); }}>
+                            <Button variant="ghost" size="sm" className="text-green-600 dark:text-green-400" onClick={() => { setSelectedItem(v); setIsApproveOpen(true); }}>
                               <CheckCircle className="w-4 h-4" />
                             </Button>
                             <Button variant="ghost" size="sm" className="text-destructive" onClick={() => { setSelectedItem(v); setIsRejectOpen(true); }}>
@@ -252,6 +253,7 @@ const VerificationDashboard = () => {
                   ))}
                 </TableBody>
               </Table>
+              </div>
             )}
           </CardContent>
         </Card>

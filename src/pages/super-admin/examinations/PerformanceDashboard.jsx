@@ -223,8 +223,8 @@ const PerformanceDashboard = () => {
                         <p className="text-2xl font-bold mt-1">{value}</p>
                         {subtitle && <p className="text-xs text-muted-foreground mt-1">{subtitle}</p>}
                     </div>
-                    <div className={`p-3 rounded-lg bg-${color}-100`}>
-                        <Icon className={`w-6 h-6 text-${color}-600`} />
+                    <div className={`p-3 rounded-lg bg-${color}-100 dark:bg-${color}-900/30`}>
+                        <Icon className={`w-6 h-6 text-${color}-600 dark:text-${color}-400`} />
                     </div>
                 </div>
                 {trend && (
@@ -234,7 +234,7 @@ const PerformanceDashboard = () => {
                         ) : (
                             <ArrowDownRight className="w-4 h-4 text-red-500 mr-1" />
                         )}
-                        <span className={trend === 'up' ? 'text-green-600' : 'text-red-600'}>
+                        <span className={trend === 'up' ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}>
                             {trendValue}
                         </span>
                         <span className="text-muted-foreground ml-1">vs previous exam</span>
@@ -268,7 +268,7 @@ const PerformanceDashboard = () => {
             {/* Filters */}
             <Card>
                 <CardContent className="p-4">
-                    <div className="grid grid-cols-4 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                         <div className="space-y-2">
                             <Label>Examination</Label>
                             <Select value={selectedExam} onValueChange={setSelectedExam}>
@@ -336,7 +336,7 @@ const PerformanceDashboard = () => {
             ) : (
                 <>
                     {/* Stats Overview */}
-                    <div className="grid grid-cols-4 gap-4">
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                         <StatCard
                             title="Total Students"
                             value={analytics?.appeared_students || 0}
@@ -378,7 +378,7 @@ const PerformanceDashboard = () => {
                         </TabsList>
 
                         <TabsContent value="overview" className="mt-4">
-                            <div className="grid grid-cols-2 gap-6">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 {/* Division Chart */}
                                 <Card>
                                     <CardHeader>
@@ -417,7 +417,7 @@ const PerformanceDashboard = () => {
                                         <div>
                                             <div className="flex justify-between mb-2">
                                                 <span className="text-sm">Passed</span>
-                                                <span className="text-sm font-medium text-green-600">
+                                                <span className="text-sm font-medium text-green-600 dark:text-green-400">
                                                     {analytics?.passed_students || 0} students
                                                 </span>
                                             </div>
@@ -431,7 +431,7 @@ const PerformanceDashboard = () => {
                                         <div>
                                             <div className="flex justify-between mb-2">
                                                 <span className="text-sm">Failed</span>
-                                                <span className="text-sm font-medium text-red-600">
+                                                <span className="text-sm font-medium text-red-600 dark:text-red-400">
                                                     {analytics?.failed_students || 0} students
                                                 </span>
                                             </div>
@@ -445,14 +445,14 @@ const PerformanceDashboard = () => {
                                         
                                         <div className="pt-4 border-t">
                                             <div className="grid grid-cols-2 gap-4 text-center">
-                                                <div className="p-4 bg-green-50 rounded-lg">
-                                                    <p className="text-2xl font-bold text-green-600">
+                                                <div className="p-4 bg-green-50 dark:bg-green-900/30 rounded-lg">
+                                                    <p className="text-2xl font-bold text-green-600 dark:text-green-400">
                                                         {analytics?.highest_marks || 0}
                                                     </p>
                                                     <p className="text-sm text-muted-foreground">Highest Marks</p>
                                                 </div>
-                                                <div className="p-4 bg-red-50 rounded-lg">
-                                                    <p className="text-2xl font-bold text-red-600">
+                                                <div className="p-4 bg-red-50 dark:bg-red-900/30 rounded-lg">
+                                                    <p className="text-2xl font-bold text-red-600 dark:text-red-400">
                                                         {analytics?.lowest_marks || 0}
                                                     </p>
                                                     <p className="text-sm text-muted-foreground">Lowest Marks</p>
@@ -503,6 +503,7 @@ const PerformanceDashboard = () => {
                                 </CardHeader>
                                 <CardContent>
                                     {topPerformers.length > 0 ? (
+                                        <div className="overflow-x-auto">
                                         <Table>
                                             <TableHeader>
                                                 <TableRow>
@@ -520,9 +521,9 @@ const PerformanceDashboard = () => {
                                                         <TableCell>
                                                             {index < 3 ? (
                                                                 <Badge variant={index === 0 ? 'default' : 'outline'} className={
-                                                                    index === 0 ? 'bg-yellow-500' :
-                                                                    index === 1 ? 'bg-gray-400' :
-                                                                    'bg-orange-400'
+                                                                    index === 0 ? 'bg-yellow-500 dark:bg-yellow-600' :
+                                                                    index === 1 ? 'bg-gray-400 dark:bg-gray-500' :
+                                                                    'bg-orange-400 dark:bg-orange-500'
                                                                 }>
                                                                     #{index + 1}
                                                                 </Badge>
@@ -547,6 +548,7 @@ const PerformanceDashboard = () => {
                                                 ))}
                                             </TableBody>
                                         </Table>
+                                        </div>
                                     ) : (
                                         <div className="text-center py-12 text-muted-foreground">
                                             <Award className="w-12 h-12 mx-auto mb-4 opacity-50" />

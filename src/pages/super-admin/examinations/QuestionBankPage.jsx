@@ -35,9 +35,9 @@ const QUESTION_TYPES = [
 ];
 
 const DIFFICULTY_LEVELS = [
-    { value: 'EASY', label: 'Easy', color: 'bg-green-100 text-green-800' },
-    { value: 'MEDIUM', label: 'Medium', color: 'bg-yellow-100 text-yellow-800' },
-    { value: 'HARD', label: 'Hard', color: 'bg-red-100 text-red-800' }
+    { value: 'EASY', label: 'Easy', color: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' },
+    { value: 'MEDIUM', label: 'Medium', color: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400' },
+    { value: 'HARD', label: 'Hard', color: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400' }
 ];
 
 const COGNITIVE_LEVELS = [

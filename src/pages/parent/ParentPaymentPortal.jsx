@@ -46,7 +46,7 @@ import {
   School,
   QrCode
 } from 'lucide-react';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
 import { formatDate, formatDateTime } from '@/utils/dateUtils';

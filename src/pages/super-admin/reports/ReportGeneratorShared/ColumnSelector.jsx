@@ -93,9 +93,9 @@ const ColumnSelector = ({
 
   // Color classes
   const colorClasses = {
-    blue: { bg: 'bg-blue-500', hover: 'hover:bg-blue-600', light: 'bg-blue-100 text-blue-700' },
-    green: { bg: 'bg-green-500', hover: 'hover:bg-green-600', light: 'bg-green-100 text-green-700' },
-    purple: { bg: 'bg-purple-500', hover: 'hover:bg-purple-600', light: 'bg-purple-100 text-purple-700' },
+    blue: { bg: 'bg-blue-500', hover: 'hover:bg-blue-600', light: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' },
+    green: { bg: 'bg-green-500', hover: 'hover:bg-green-600', light: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' },
+    purple: { bg: 'bg-purple-500', hover: 'hover:bg-purple-600', light: 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400' },
   };
   const colors = colorClasses[color] || colorClasses.blue;
 

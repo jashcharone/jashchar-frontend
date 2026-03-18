@@ -120,6 +120,8 @@ export const SUBMODULE_OVERRIDES = {
   "💳 Card Management": "card_management",
   "👤 Face Registration": "face_registration",
   "🤖 Live Face Attendance": "face_registration", // Maps to face_registration
+  "📹 AI Camera Management": "face_registration", // AI Face Attendance cameras
+  "🧠 FAISS Index Management": "face_registration", // AI Face index management
   "⌚ Wearable Devices": "wearable_devices",
   "⚙️ Attendance Rules": "attendance_rules",
   "📍 Geo-Fence Setup": "geo_fence_setup",

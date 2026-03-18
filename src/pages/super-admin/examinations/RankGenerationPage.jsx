@@ -278,21 +278,21 @@ const RankGenerationPage = () => {
     const getRankBadge = (rank) => {
         if (rank === 1) {
             return (
-                <Badge className="bg-yellow-500 text-yellow-900">
+                <Badge className="bg-yellow-500 dark:bg-yellow-600 text-yellow-900 dark:text-yellow-100">
                     <Crown className="w-3 h-3 mr-1" />
                     1st
                 </Badge>
             );
         } else if (rank === 2) {
             return (
-                <Badge className="bg-gray-400 text-gray-900">
+                <Badge className="bg-gray-400 dark:bg-gray-500 text-gray-900 dark:text-gray-100">
                     <Medal className="w-3 h-3 mr-1" />
                     2nd
                 </Badge>
             );
         } else if (rank === 3) {
             return (
-                <Badge className="bg-amber-600 text-amber-100">
+                <Badge className="bg-amber-600 dark:bg-amber-700 text-amber-100">
                     <Award className="w-3 h-3 mr-1" />
                     3rd
                 </Badge>
@@ -471,6 +471,7 @@ const RankGenerationPage = () => {
                                             </p>
                                         </div>
                                     ) : (
+                                        <div className="overflow-x-auto">
                                         <Table>
                                             <TableHeader>
                                                 <TableRow>
@@ -488,7 +489,7 @@ const RankGenerationPage = () => {
                                                 {rankedResults.map(result => (
                                                     <TableRow 
                                                         key={result.id}
-                                                        className={result.rank <= 3 ? 'bg-yellow-50' : ''}
+                                                        className={result.rank <= 3 ? 'bg-yellow-50 dark:bg-yellow-900/20' : ''}
                                                     >
                                                         <TableCell>
                                                             {result.rank ? getRankBadge(result.rank) : '-'}
@@ -516,6 +517,7 @@ const RankGenerationPage = () => {
                                                 ))}
                                             </TableBody>
                                         </Table>
+                                        </div>
                                     )}
                                 </CardContent>
                             </Card>
@@ -614,11 +616,11 @@ const RankGenerationPage = () => {
                                                             key={topper.id}
                                                             className={`flex items-center justify-between p-2 rounded ${
                                                                 topper.rank === 1 
-                                                                    ? 'bg-yellow-100' 
+                                                                    ? 'bg-yellow-100 dark:bg-yellow-900/30' 
                                                                     : topper.rank === 2 
-                                                                        ? 'bg-gray-100' 
+                                                                        ? 'bg-gray-100 dark:bg-gray-800' 
                                                                         : topper.rank === 3 
-                                                                            ? 'bg-amber-100' 
+                                                                            ? 'bg-amber-100 dark:bg-amber-900/30' 
                                                                             : 'bg-muted'
                                                             }`}
                                                         >
@@ -672,10 +674,10 @@ const RankGenerationPage = () => {
                                             key={result.id}
                                             className={`${
                                                 result.rank === 1 
-                                                    ? 'border-yellow-400 bg-yellow-50' 
+                                                    ? 'border-yellow-400 bg-yellow-50 dark:border-yellow-600 dark:bg-yellow-900/20' 
                                                     : result.rank === 2 
-                                                        ? 'border-gray-400 bg-gray-50' 
-                                                        : 'border-amber-400 bg-amber-50'
+                                                        ? 'border-gray-400 bg-gray-50 dark:border-gray-600 dark:bg-gray-800' 
+                                                        : 'border-amber-400 bg-amber-50 dark:border-amber-600 dark:bg-amber-900/20'
                                             }`}
                                         >
                                             <CardContent className="pt-4 text-center">

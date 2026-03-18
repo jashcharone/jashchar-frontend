@@ -1,10 +1,10 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { supabase } from '@/lib/customSupabaseClient';
-import { Loader2, Printer, FileSpreadsheet, Menu } from 'lucide-react';
+import { Loader2, Printer, Sheet, Menu } from 'lucide-react';
 
 const CourseSellCountReport = ({ branchId }) => {
   const [loading, setLoading] = useState(true);

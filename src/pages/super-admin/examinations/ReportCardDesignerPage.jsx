@@ -332,8 +332,8 @@ const ReportCardDesignerPage = () => {
                 <div className="text-center mb-6 pb-4" style={{ borderBottom: `2px solid ${template.primary_color}` }}>
                     <div className="flex justify-center items-center gap-4 mb-2">
                         {template.show_school_logo && (
-                            <div className="w-20 h-20 border-2 rounded flex items-center justify-center bg-gray-50">
-                                <span className="text-gray-400 text-xs">LOGO</span>
+                            <div className="w-20 h-20 border-2 rounded flex items-center justify-center bg-gray-50 dark:bg-gray-800">
+                                <span className="text-gray-400 dark:text-gray-500 text-xs">LOGO</span>
                             </div>
                         )}
                         <div>
@@ -382,8 +382,8 @@ const ReportCardDesignerPage = () => {
                         )}
                     </div>
                     {template.show_student_photo && (
-                        <div className="w-24 h-28 border-2 border-gray-400 flex items-center justify-center bg-gray-100">
-                            <span className="text-gray-400 text-xs">PHOTO</span>
+                        <div className="w-24 h-28 border-2 border-gray-400 dark:border-gray-600 flex items-center justify-center bg-gray-100 dark:bg-gray-700">
+                            <span className="text-gray-400 dark:text-gray-500 text-xs">PHOTO</span>
                         </div>
                     )}
                 </div>
@@ -396,7 +396,7 @@ const ReportCardDesignerPage = () => {
                         </h3>
                         <table className="w-full border-collapse text-sm">
                             <thead>
-                                <tr className="bg-gray-100">
+                                <tr className="bg-gray-100 dark:bg-gray-800">
                                     <th className="border p-2 text-left">Subject</th>
                                     <th className="border p-2 text-center">Term 1</th>
                                     <th className="border p-2 text-center">Term 2</th>
@@ -411,7 +411,7 @@ const ReportCardDesignerPage = () => {
                                         <td className="border p-2 text-center">{85 + idx * 2}</td>
                                         {template.show_subject_trend_chart && (
                                             <td className="border p-2 text-center">
-                                                <TrendingUp className="w-4 h-4 inline text-green-600" />
+                                                <TrendingUp className="w-4 h-4 inline text-green-600 dark:text-green-400" />
                                             </td>
                                         )}
                                     </tr>
@@ -428,7 +428,7 @@ const ReportCardDesignerPage = () => {
                     </h3>
                     <table className="w-full border-collapse text-sm">
                         <thead>
-                            <tr className="bg-gray-100">
+                            <tr className="bg-gray-100 dark:bg-gray-800">
                                 <th className="border p-2 text-left">Subject</th>
                                 {template.show_max_marks && <th className="border p-2 text-center">Max</th>}
                                 {template.show_marks_obtained && <th className="border p-2 text-center">Obtained</th>}
@@ -477,7 +477,7 @@ const ReportCardDesignerPage = () => {
                             {['Sports', 'Music', 'Art', 'Drama'].map((activity, idx) => (
                                 <div key={idx} className="border p-2 flex justify-between">
                                     <span>{activity}</span>
-                                    <span className="text-green-600">Active</span>
+                                    <span className="text-green-600 dark:text-green-400">Active</span>
                                 </div>
                             ))}
                         </div>
@@ -492,19 +492,19 @@ const ReportCardDesignerPage = () => {
                         </h3>
                         <div className="grid grid-cols-4 gap-2 text-sm">
                             <div className="border p-2 text-center">
-                                <span className="block text-xs text-gray-500">Height</span>
+                                <span className="block text-xs text-gray-500 dark:text-gray-400">Height</span>
                                 <span>152 cm</span>
                             </div>
                             <div className="border p-2 text-center">
-                                <span className="block text-xs text-gray-500">Weight</span>
+                                <span className="block text-xs text-gray-500 dark:text-gray-400">Weight</span>
                                 <span>45 kg</span>
                             </div>
                             <div className="border p-2 text-center">
-                                <span className="block text-xs text-gray-500">Vision</span>
+                                <span className="block text-xs text-gray-500 dark:text-gray-400">Vision</span>
                                 <span>Normal</span>
                             </div>
                             <div className="border p-2 text-center">
-                                <span className="block text-xs text-gray-500">Hearing</span>
+                                <span className="block text-xs text-gray-500 dark:text-gray-400">Hearing</span>
                                 <span>Normal</span>
                             </div>
                         </div>
@@ -622,7 +622,7 @@ const ReportCardDesignerPage = () => {
                                         </CardHeader>
                                         <CardContent>
                                             {/* Mini preview placeholder */}
-                                            <div className="border rounded bg-gray-50 p-2 mb-4 h-24 flex items-center justify-center text-gray-400 text-sm">
+                                            <div className="border rounded bg-gray-50 dark:bg-gray-800 p-2 mb-4 h-24 flex items-center justify-center text-gray-400 dark:text-gray-500 text-sm">
                                                 <BookOpen className="w-8 h-8" />
                                             </div>
                                             
@@ -645,7 +645,7 @@ const ReportCardDesignerPage = () => {
                                                 <Button variant="outline" size="sm" onClick={() => handleDuplicate(template)}>
                                                     <Copy className="w-4 h-4" />
                                                 </Button>
-                                                <Button variant="outline" size="sm" className="text-red-600" onClick={() => handleDelete(template)}>
+                                                <Button variant="outline" size="sm" className="text-red-600 dark:text-red-400" onClick={() => handleDelete(template)}>
                                                     <Trash2 className="w-4 h-4" />
                                                 </Button>
                                             </div>

@@ -318,7 +318,7 @@ const GlobalReportSearch = ({
                 <TrendingUp className="h-3 w-3" />
                 Popular Templates
               </h3>
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 {popularTemplates.map(template => {
                   const Icon = MODULE_ICONS[template.module] || FileText;
                   const color = getModuleColor(template.module);

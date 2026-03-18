@@ -88,14 +88,14 @@ const CardStatusBadge = ({ status }) => {
 
 const CardTypeBadge = ({ type }) => {
     const typeConfig = {
-        rfid: { label: 'RFID', color: 'text-blue-500', bg: 'bg-blue-100' },
-        nfc: { label: 'NFC', color: 'text-green-500', bg: 'bg-green-100' },
-        mifare: { label: 'MIFARE', color: 'text-purple-500', bg: 'bg-purple-100' },
-        hid: { label: 'HID', color: 'text-amber-500', bg: 'bg-amber-100' },
-        smartcard: { label: 'Smart Card', color: 'text-cyan-500', bg: 'bg-cyan-100' },
+        rfid: { label: 'RFID', color: 'text-blue-500', bg: 'bg-blue-100 dark:bg-blue-900/30' },
+        nfc: { label: 'NFC', color: 'text-green-500', bg: 'bg-green-100 dark:bg-green-900/30' },
+        mifare: { label: 'MIFARE', color: 'text-purple-500', bg: 'bg-purple-100 dark:bg-purple-900/30' },
+        hid: { label: 'HID', color: 'text-amber-500', bg: 'bg-amber-100 dark:bg-amber-900/30' },
+        smartcard: { label: 'Smart Card', color: 'text-cyan-500', bg: 'bg-cyan-100 dark:bg-cyan-900/30' },
     };
     
-    const config = typeConfig[type] || { label: type, color: 'text-gray-500', bg: 'bg-gray-100' };
+    const config = typeConfig[type] || { label: type, color: 'text-gray-500', bg: 'bg-gray-100 dark:bg-gray-800' };
     
     return (
         <Badge variant="outline" className={`${config.color} ${config.bg}`}>
@@ -321,7 +321,7 @@ const IssueCardDialog = ({ open, onClose, branchId, organizationId, onSaved }) =
                             <CreditCard className="w-4 h-4" />
                             Card Details
                         </h4>
-                        <div className="grid grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div>
                                 <Label>Card Type *</Label>
                                 <Select 

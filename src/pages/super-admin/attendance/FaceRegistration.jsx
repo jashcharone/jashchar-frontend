@@ -35,11 +35,14 @@ import {
     analyzeFaceQuality
 } from '@/utils/faceRecognition';
 
+// AI Engine API for 512D ArcFace embeddings
+import { aiEngineApi } from '@/services/aiEngineApi';
+
 import {
     ScanFace, Camera, Plus, Search, RefreshCw, Trash2, Edit, Eye, CheckCircle2, XCircle,
     AlertTriangle, Loader2, Users, User, GraduationCap, Briefcase, Shield, Calendar, Clock,
     Download, Upload, Save, X, Circle, Aperture, Maximize2, RotateCcw, ZoomIn, Video, VideoOff,
-    Image, Check, Filter, ChevronDown, FileSpreadsheet, BarChart3, Building, School,
+    Image, Check, Filter, ChevronDown, Sheet, BarChart3, Building, School,
     UserCheck, UserX, Percent, TrendingUp, AlertCircle, CheckCheck, ListFilter
 } from 'lucide-react';
 
@@ -703,11 +706,26 @@ const CameraCapture = ({ onCapture, onClose, personName }) => {
 // REGISTRATION DIALOG - Direct capture for selected person
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════
 
-const QuickRegisterDialog = ({ open, onClose, person, personType, branchId, organizationId, onSaved }) => {
+const QuickRegisterDialog = ({ open, onClose, person, personType, branchId, organizationId, sessionId, onSaved }) => {
     const { toast } = useToast();
     const [capturedPhotos, setCapturedPhotos] = useState([]);
     const [loading, setLoading] = useState(false);
     const [showCamera, setShowCamera] = useState(true);
+    const [aiEngineStatus, setAIEngineStatus] = useState({ available: false, checked: false });
+    const [enrollmentProgress, setEnrollmentProgress] = useState('');
+    
+    // Check AI Engine availability on mount
+    useEffect(() => {
+        const checkAIEngine = async () => {
+            try {
+                const health = await aiEngineApi.checkHealth();
+                setAIEngineStatus({ available: !!health, checked: true });
+            } catch {
+                setAIEngineStatus({ available: false, checked: true });
+            }
+        };
+        if (open) checkAIEngine();
+    }, [open]);
     
     useEffect(() => {
         if (!open) {
@@ -732,14 +750,49 @@ const QuickRegisterDialog = ({ open, onClose, person, personType, branchId, orga
                 .sort((a, b) => b.quality - a.quality)[0] || capturedPhotos[0];
             
             let encodingVector = null;
-            if (bestPhoto.descriptor) {
+            let modelName = 'fallback_random';
+            let modelVersion = '0.0';
+            let isArcFace = false;
+            
+            // 🚀 Try AI Engine first for 512D ArcFace embeddings
+            if (aiEngineStatus.available && bestPhoto?.data) {
                 try {
-                    encodingVector = JSON.parse(bestPhoto.descriptor);
-                } catch {
+                    setEnrollmentProgress('Generating 512D ArcFace embedding...');
+                    const imageBase64 = bestPhoto.data.split(',')[1] || bestPhoto.data;
+                    
+                    const enrollResult = await aiEngineApi.enrollFace(
+                        person.id,
+                        personType,
+                        person.full_name,
+                        imageBase64
+                    );
+                    
+                    if (enrollResult.success && enrollResult.embedding) {
+                        encodingVector = enrollResult.embedding;
+                        modelName = 'arcface_r100';
+                        modelVersion = '1.0-512D';
+                        isArcFace = true;
+                        console.log('✅ AI Engine: 512D ArcFace embedding generated');
+                    }
+                } catch (aiError) {
+                    console.warn('AI Engine enrollment failed, using fallback:', aiError);
+                }
+            }
+            
+            // Fallback to browser-based face-api.js descriptor
+            if (!encodingVector) {
+                setEnrollmentProgress('Using browser-based face recognition...');
+                if (bestPhoto.descriptor) {
+                    try {
+                        encodingVector = JSON.parse(bestPhoto.descriptor);
+                        modelName = 'face-api.js';
+                        modelVersion = '1.0-128D';
+                    } catch {
+                        encodingVector = Array(128).fill(0).map(() => Math.random() * 2 - 1);
+                    }
+                } else {
                     encodingVector = Array(128).fill(0).map(() => Math.random() * 2 - 1);
                 }
-            } else {
-                encodingVector = Array(128).fill(0).map(() => Math.random() * 2 - 1);
             }
             
             const avgQuality = capturedPhotos.reduce((sum, p) => sum + (p.quality || 0), 0) / capturedPhotos.length;
@@ -747,30 +800,32 @@ const QuickRegisterDialog = ({ open, onClose, person, personType, branchId, orga
             const payload = {
                 branch_id: branchId,
                 organization_id: organizationId,
+                session_id: sessionId,
                 user_id: person.id,
                 user_type: personType,
                 person_type: personType,
                 person_id: person.id,
                 person_name: person.full_name,
-                encoding_vector: JSON.stringify(encodingVector),
+                encoding_vector: Array.isArray(encodingVector) ? JSON.stringify(encodingVector) : encodingVector,
                 photo_url: bestPhoto?.data || null,
                 photo_angle: bestPhoto?.angle || 'front',
                 confidence_score: Math.min(1.0, avgQuality),
                 lighting_quality: avgQuality > 0.7 ? 'good' : avgQuality > 0.5 ? 'medium' : 'poor',
-                model_name: bestPhoto.hasRealAI ? 'face-api.js' : 'fallback_random',
-                model_version: bestPhoto.hasRealAI ? '1.0' : '0.0',
+                model_name: modelName,
+                model_version: modelVersion,
                 is_active: true,
             };
             
-            console.log('Saving face with payload:', { ...payload, photo_url: '[BASE64_IMAGE]', encoding_vector: '[VECTOR]' });
+            console.log('Saving face with payload:', { ...payload, photo_url: '[BASE64_IMAGE]', encoding_vector: `[${isArcFace ? '512D' : '128D'} VECTOR]` });
             
+            setEnrollmentProgress('Saving to database...');
             const { error } = await supabase.from('face_encodings').insert(payload);
             
             if (error) throw error;
             
             toast({ 
-                title: bestPhoto.hasRealAI ? '🤖 Real AI Face Registered!' : 'Face registered',
-                description: `${capturedPhotos.length} photos captured for ${person.full_name}`,
+                title: isArcFace ? '🚀 AI Engine: 512D Face Registered!' : (bestPhoto.hasRealAI ? '🤖 Face Registered!' : 'Face registered'),
+                description: `${capturedPhotos.length} photos • ${isArcFace ? 'ArcFace 512D' : 'Browser AI'} • ${person.full_name}`,
             });
             
             onSaved();
@@ -781,6 +836,7 @@ const QuickRegisterDialog = ({ open, onClose, person, personType, branchId, orga
         }
         
         setLoading(false);
+        setEnrollmentProgress('');
     };
     
     return (
@@ -1797,6 +1853,7 @@ const FaceRegistration = () => {
                     personType={selectedPerson.personType}
                     branchId={branchId}
                     organizationId={organizationId}
+                    sessionId={currentSessionId}
                     onSaved={() => {
                         fetchFaceRegistrations();
                         setRegisterDialogOpen(false);

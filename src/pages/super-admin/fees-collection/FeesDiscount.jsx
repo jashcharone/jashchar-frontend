@@ -341,6 +341,8 @@ const FeesDiscount = () => {
             discount_id: selectedDiscount.id,
             student_id,
             branch_id: selectedBranch.id,
+            organization_id: organizationId,
+            session_id: currentSessionId,
         }));
         
         if (assignments.length > 0) {

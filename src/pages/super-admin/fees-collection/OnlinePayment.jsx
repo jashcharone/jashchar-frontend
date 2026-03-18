@@ -162,7 +162,7 @@ const OnlinePayment = () => {
                             <div className="flex items-center justify-between">
                                 <div>
                                     <p className="text-sm text-muted-foreground">Successful</p>
-                                    <p className="text-2xl font-bold text-green-600">{stats.success}</p>
+                                    <p className="text-2xl font-bold text-green-600 dark:text-green-400">{stats.success}</p>
                                 </div>
                                 <CheckCircle className="w-8 h-8 text-green-500" />
                             </div>
@@ -173,7 +173,7 @@ const OnlinePayment = () => {
                             <div className="flex items-center justify-between">
                                 <div>
                                     <p className="text-sm text-muted-foreground">Pending</p>
-                                    <p className="text-2xl font-bold text-yellow-600">{stats.pending}</p>
+                                    <p className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">{stats.pending}</p>
                                 </div>
                                 <Clock className="w-8 h-8 text-yellow-500" />
                             </div>
@@ -184,7 +184,7 @@ const OnlinePayment = () => {
                             <div className="flex items-center justify-between">
                                 <div>
                                     <p className="text-sm text-muted-foreground">Failed</p>
-                                    <p className="text-2xl font-bold text-red-600">{stats.failed}</p>
+                                    <p className="text-2xl font-bold text-red-600 dark:text-red-400">{stats.failed}</p>
                                 </div>
                                 <XCircle className="w-8 h-8 text-red-500" />
                             </div>
@@ -366,7 +366,7 @@ const OnlinePayment = () => {
                                     </div>
                                     <div>
                                         <p className="text-sm text-muted-foreground">Amount Paid</p>
-                                        <p className="text-lg font-bold text-green-600">
+                                        <p className="text-lg font-bold text-green-600 dark:text-green-400">
                                             ₹{(selectedPayment.amount_paid || 0).toLocaleString('en-IN')}
                                         </p>
                                     </div>

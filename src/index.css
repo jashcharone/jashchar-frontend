@@ -93,6 +93,13 @@ html:not(.dark) {
   * {
     @apply border-border;
   }
+  
+  /* Ensure root element allows scrolling */
+  #root {
+    min-height: 100vh;
+    overflow-y: auto;
+  }
+  
   body {
     @apply bg-background text-foreground;
     font-family: var(--font-family);

@@ -206,7 +206,7 @@ const Homepage = () => {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.5 }}
-        className="bg-white dark:bg-[#0b1021] text-slate-900 dark:text-white relative overflow-hidden"
+        className="bg-white dark:bg-[#0b1021] text-slate-900 dark:text-white relative min-h-screen"
       >
         {/* World Best Visual Effects - Global Background */}
         <div className="fixed inset-0 pointer-events-none z-0">

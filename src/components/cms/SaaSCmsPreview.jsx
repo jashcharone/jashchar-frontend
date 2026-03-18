@@ -22,8 +22,8 @@ export const SaaSCmsPreview = ({ settings, activePlans = [], viewMode = 'desktop
   if (!settings) return <div className="p-4 text-center">Loading preview...</div>;
 
   const containerClass = viewMode === 'mobile' 
-    ? 'w-[375px] min-h-[667px] border-x border-b shadow-2xl mx-auto bg-white overflow-y-auto overflow-x-hidden h-[800px] scrollbar-hide' 
-    : 'w-full min-h-screen bg-white overflow-y-auto h-full scrollbar-hide';
+    ? 'w-[375px] min-h-[667px] border-x border-b shadow-2xl mx-auto bg-white overflow-y-auto overflow-x-hidden h-[800px]' 
+    : 'w-full min-h-screen bg-white overflow-y-auto';
 
   // Hardcoded sections from Homepage.jsx to match the exact look
   const QuickCTABanner = () => {

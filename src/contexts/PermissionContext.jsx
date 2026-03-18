@@ -790,6 +790,7 @@ export const PermissionProvider = ({ children }) => {
     detectedRole, // ? Expose detected role for sidebar
     canView: (slug) => checkAccess(slug, 'view'),
     canAdd: (slug) => checkAccess(slug, 'add'),
+    canCreate: (slug) => checkAccess(slug, 'add'), // Alias for canAdd
     canEdit: (slug) => checkAccess(slug, 'edit'),
     canDelete: (slug) => checkAccess(slug, 'delete'),
   }), [permissions, loading, detectedRole]);

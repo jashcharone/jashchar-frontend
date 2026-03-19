@@ -166,33 +166,35 @@ const Hero = ({ content, demoSettings }) => {
             initial={{ opacity: 0, scale: 0.8 }} 
             animate={{ opacity: 1, scale: 1 }} 
             transition={{ duration: 0.8, delay: 0.2, ease: 'easeOut' }} 
-            className="relative h-[300px] md:h-[400px] w-full"
+            className="relative min-h-[300px] md:min-h-[400px] lg:min-h-[450px] w-full flex items-center justify-center"
           >
             <div className="absolute -inset-6 bg-gradient-to-br from-primary/30 via-indigo-500/20 to-cyan-400/25 rounded-3xl blur-3xl animate-pulse"></div>
             
             {/* Video Display */}
             {videoEnabled && videoUrl ? (
-              <div className="absolute inset-0 w-full h-full rounded-3xl shadow-[0_20px_80px_rgba(0,0,0,0.15)] dark:shadow-[0_20px_80px_rgba(0,0,0,0.5)] overflow-hidden border border-slate-200 dark:border-white/10 bg-black">
+              <div className="relative w-full h-full min-h-[300px] md:min-h-[400px] lg:min-h-[450px] rounded-3xl shadow-[0_20px_80px_rgba(0,0,0,0.15)] dark:shadow-[0_20px_80px_rgba(0,0,0,0.5)] overflow-hidden border border-slate-200 dark:border-white/10 bg-slate-900">
                 {isDirectVideo ? (
-                  // Direct video file (MP4, WebM, etc.)
+                  // Direct video file (MP4, WebM, etc.) - Auto-fit any size
                   <video
-                    className="w-full h-full object-cover"
+                    className="w-full h-full object-contain"
                     src={videoUrl}
                     autoPlay={videoAutoplay}
                     muted={videoMuted}
                     loop={videoLoop}
                     controls={videoControls}
                     playsInline
+                    style={{ maxWidth: '100%', maxHeight: '100%' }}
                   />
                 ) : embedUrl ? (
-                  // YouTube/Vimeo embed
+                  // YouTube/Vimeo embed - Full container fit
                   <iframe
-                    className="w-full h-full scale-150 origin-center"
+                    className="w-full h-full"
                     src={embedUrl}
                     title="Hero Video"
                     frameBorder="0"
                     allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                     allowFullScreen
+                    style={{ aspectRatio: '16/9', minHeight: '300px' }}
                   />
                 ) : (
                   // Fallback if video URL is invalid
@@ -202,7 +204,7 @@ const Hero = ({ content, demoSettings }) => {
                 )}
               </div>
             ) : displayImages.length > 0 ? (
-              // Image Slider
+              // Image Slider - Auto-fit any uploaded size
               <AnimatePresence mode='wait'>
                 <motion.img 
                   key={currentSlide}
@@ -210,25 +212,26 @@ const Hero = ({ content, demoSettings }) => {
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: -20 }}
                   transition={{ duration: 0.5 }}
-                  className="absolute inset-0 w-full h-full rounded-3xl shadow-[0_20px_80px_rgba(0,0,0,0.15)] dark:shadow-[0_20px_80px_rgba(0,0,0,0.5)] object-cover border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-900/40 backdrop-blur" 
+                  className="relative w-full h-auto max-h-[450px] lg:max-h-[500px] rounded-3xl shadow-[0_20px_80px_rgba(0,0,0,0.15)] dark:shadow-[0_20px_80px_rgba(0,0,0,0.5)] object-contain border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-900/40 backdrop-blur" 
                   alt={`Jashchar ERP Slide ${currentSlide + 1}`} 
-                  src={displayImages[currentSlide]} 
+                  src={displayImages[currentSlide]}
+                  style={{ maxWidth: '100%', width: 'auto', margin: '0 auto' }}
                 />
               </AnimatePresence>
             ) : (
-               <div className="absolute inset-0 w-full h-full rounded-3xl bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 flex items-center justify-center text-slate-400">
+               <div className="relative w-full min-h-[300px] md:min-h-[400px] rounded-3xl bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 flex items-center justify-center text-slate-400">
                   No Image Uploaded
                </div>
             )}
 
             {/* Slide Indicators - Only show when images are displayed (not video) */}
             {!videoEnabled && displayImages.length > 1 && (
-              <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2 z-10">
+              <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex gap-2 z-10 bg-black/20 backdrop-blur-sm px-3 py-2 rounded-full">
                 {displayImages.map((_, idx) => (
                   <button
                     key={idx}
                     onClick={() => setCurrentSlide(idx)}
-                    className={`h-2 rounded-full transition-all duration-300 ${idx === currentSlide ? 'w-6 bg-primary' : 'w-2 bg-primary/30 hover:bg-primary/50'}`}
+                    className={`h-2 rounded-full transition-all duration-300 ${idx === currentSlide ? 'w-6 bg-white' : 'w-2 bg-white/50 hover:bg-white/70'}`}
                   />
                 ))}
               </div>

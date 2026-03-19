@@ -545,7 +545,7 @@ const PublicSchoolLogin = () => {
   ];
 
   return (
-    <div className="min-h-screen flex w-full overflow-hidden relative">
+    <div className="min-h-screen flex w-full overflow-x-hidden overflow-y-auto relative">
       <Helmet><title>{pageTitle} - Login</title></Helmet>
 
       {/* ===== LEFT SIDE - VISUAL SHOWCASE ===== */}

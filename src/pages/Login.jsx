@@ -495,7 +495,7 @@ const Login = () => {
         <title>Login | {config.title || "Master Admin"}</title>
       </Helmet>
       <div
-        className="min-h-screen w-full flex items-center justify-center p-4 relative overflow-hidden transition-all duration-500"
+        className="min-h-screen w-full flex items-center justify-center p-4 relative overflow-x-hidden overflow-y-auto transition-all duration-500"
         style={{ ...bgStyle, ...accentStyle }}
       >
         <div className="absolute inset-0 bg-black/30 backdrop-blur-[2px]" />

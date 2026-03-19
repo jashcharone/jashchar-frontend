@@ -5,25 +5,7 @@
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=5.0, user-scalable=yes, viewport-fit=cover" />
     
-    <!-- Critical CSS for Scroll - Load FIRST (highest priority) -->
-    <style>
-      html { 
-        overflow-y: scroll !important; 
-        overflow-x: hidden !important;
-        height: auto !important; 
-        min-height: 100% !important;
-      }
-      body, #root { 
-        overflow-y: auto !important; 
-        overflow-x: hidden !important;
-        height: auto !important; 
-        min-height: 100vh !important;
-        position: relative !important;
-      }
-      /* Override any h-screen overflow-hidden */
-      .h-screen { overflow-y: auto !important; }
-      main, [role="main"], #main-content { overflow-y: auto !important; }
-    </style>
+    <!-- Scroll handled by index.css - DashboardLayout uses #main-content, Public pages use .public-scroll-root -->
     
     <meta http-equiv="Content-Security-Policy" content="
       default-src 'self' http://localhost:* https://app.jashchar.local capacitor: https:; 

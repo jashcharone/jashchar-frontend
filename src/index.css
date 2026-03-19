@@ -128,6 +128,13 @@ html:not(.dark) {
     overflow-y: auto !important;
     overflow-x: hidden !important;
   }
+
+  /* Public pages scroll context - these pages don't use DashboardLayout/#main-content */
+  .public-scroll-root {
+    height: 100% !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+  }
   
   /* Prevent scroll on other containers */
   main:not(#main-content), [role="main"]:not(#main-content) {

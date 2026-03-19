@@ -5,7 +5,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Loader2, Plus, Trash2, Pencil, Eye, EyeOff, Key, CheckCircle, AlertCircle, Calendar, Building2 } from "lucide-react";
+import { Loader2, Plus, Trash2, Pencil, Eye, EyeOff, Key, CheckCircle, AlertCircle, Calendar, Building2, Globe } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import api from '@/lib/api';
 import { useToast } from "@/components/ui/use-toast";
 
@@ -23,6 +24,7 @@ const formatDate = (dateString) => {
 const WhatsAppAccounts = ({ onAccountsChange }) => {
   const { toast } = useToast();
   const [accounts, setAccounts] = useState([]);
+  const [organizations, setOrganizations] = useState([]);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
@@ -38,7 +40,8 @@ const WhatsAppAccounts = ({ onAccountsChange }) => {
     name: '',
     app_id: '',
     app_secret: '',
-    access_token: ''
+    access_token: '',
+    organization_id: ''
   });
 
   const [errors, setErrors] = useState({});
@@ -64,7 +67,19 @@ const WhatsAppAccounts = ({ onAccountsChange }) => {
 
   useEffect(() => {
     fetchAccounts();
+    fetchOrganizations();
   }, []);
+
+  const fetchOrganizations = async () => {
+    try {
+      const res = await api.get('/org/list-all');
+      if (res.data?.data) {
+        setOrganizations(res.data.data);
+      }
+    } catch (error) {
+      console.log('[WhatsAppAccounts] Could not fetch organizations:', error.message);
+    }
+  };
 
   const validateForm = (isEdit = false) => {
     const newErrors = {};
@@ -80,7 +95,7 @@ const WhatsAppAccounts = ({ onAccountsChange }) => {
   };
 
   const resetForm = () => {
-    setFormData({ waba_id: '', name: '', app_id: '', app_secret: '', access_token: '' });
+    setFormData({ waba_id: '', name: '', app_id: '', app_secret: '', access_token: '', organization_id: '' });
     setErrors({});
     setShowAddToken(false);
     setShowAddSecret(false);
@@ -92,7 +107,12 @@ const WhatsAppAccounts = ({ onAccountsChange }) => {
     if (!validateForm()) return;
     setSaving(true);
     try {
-      const res = await api.post('/whatsapp-manager/accounts', formData);
+      const payload = { ...formData };
+      // If empty string, send null for platform-wide
+      if (!payload.organization_id) {
+        delete payload.organization_id;
+      }
+      const res = await api.post('/whatsapp-manager/accounts', payload);
       if (res.data.success) {
         toast({ title: "✅ Success", description: "WABA Account added successfully" });
         setIsAddDialogOpen(false);
@@ -281,6 +301,27 @@ const WhatsAppAccounts = ({ onAccountsChange }) => {
                   </p>
                 )}
               </div>
+              <div className="grid gap-2">
+                <Label className="flex items-center gap-2">
+                  <Globe className="h-4 w-4 text-blue-500" />
+                  Assign to Organization (Optional)
+                </Label>
+                <Select
+                  value={formData.organization_id || 'platform'}
+                  onValueChange={(val) => setFormData({...formData, organization_id: val === 'platform' ? '' : val})}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select organization" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="platform">🌐 Platform-Wide (All Organizations)</SelectItem>
+                    {organizations.map((org) => (
+                      <SelectItem key={org.id} value={org.id}>{org.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">Leave as "Platform-Wide" to make this account available to all organizations.</p>
+              </div>
             </div>
             <DialogFooter className="gap-2">
               <Button variant="outline" onClick={closeAddDialog}>Cancel</Button>
@@ -304,6 +345,7 @@ const WhatsAppAccounts = ({ onAccountsChange }) => {
               <TableHeader>
                 <TableRow>
                   <TableHead className="whitespace-nowrap">Name</TableHead>
+                  <TableHead className="whitespace-nowrap">Scope</TableHead>
                   <TableHead className="whitespace-nowrap hidden sm:table-cell">WABA ID</TableHead>
                   <TableHead className="whitespace-nowrap hidden md:table-cell">App ID</TableHead>
                   <TableHead className="hidden lg:table-cell">
@@ -331,6 +373,19 @@ const WhatsAppAccounts = ({ onAccountsChange }) => {
                   accounts.map((acc) => (
                     <TableRow key={acc.id}>
                       <TableCell className="font-medium whitespace-nowrap">{acc.name}</TableCell>
+                      <TableCell>
+                        {acc.organization_id ? (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400">
+                            <Building2 className="h-3 w-3" />
+                            {acc.organizations?.name || 'Organization'}
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">
+                            <Globe className="h-3 w-3" />
+                            Platform-Wide
+                          </span>
+                        )}
+                      </TableCell>
                       <TableCell className="font-mono text-xs sm:text-sm hidden sm:table-cell">{acc.waba_id}</TableCell>
                       <TableCell className="font-mono text-xs sm:text-sm hidden md:table-cell">{acc.app_id}</TableCell>
                       <TableCell className="hidden lg:table-cell">{formatDate(acc.created_at)}</TableCell>

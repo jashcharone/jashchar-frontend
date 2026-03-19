@@ -895,7 +895,7 @@ const SchoolPublicHome = () => {
   }
 
   return (
-    <div className="min-h-screen flex flex-col font-sans">
+    <div className="public-scroll-root flex flex-col font-sans">
       <Helmet>
         <title>{settings.homepage_title || 'School Home'}</title>
         {settings.favicon_url && <link rel="icon" href={settings.favicon_url} />}

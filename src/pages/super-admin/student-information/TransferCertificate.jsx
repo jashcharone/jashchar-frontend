@@ -153,7 +153,7 @@ export default function TransferCertificate() {
 
   // ─── Load TCs ────────────────────
   const fetchTCs = async () => {
-    if (!selectedBranch?.id) return;
+    if (!selectedBranch?.id || !currentSessionId) return;  // Check both branch and session
     setLoading(true);
     try {
       const params = new URLSearchParams();
@@ -175,10 +175,20 @@ export default function TransferCertificate() {
     (async () => {
       const { data } = await supabase
         .from('schools')
-        .select('name, address, phone, email, logo, affiliation_no, school_code')
+        .select('name, address, contact_number, contact_email, logo_url')
         .eq('id', selectedBranch.id)
         .single();
-      if (data) setSchoolInfo(data);
+      if (data) {
+        // Map to expected property names
+        setSchoolInfo({
+          ...data,
+          phone: data.contact_number,
+          email: data.contact_email,
+          logo: data.logo_url,
+          affiliation_no: '', // Column doesn't exist in schools table
+          school_code: ''     // Column doesn't exist in schools table
+        });
+      }
     })();
   }, [selectedBranch?.id]);
 

@@ -619,6 +619,10 @@ const CreateEditTask = lazy(() => import('@/pages/super-admin/task-management/Cr
 const MyTasks = lazy(() => import('@/pages/super-admin/task-management/MyTasks'));
 const TaskCategories = lazy(() => import('@/pages/super-admin/task-management/TaskCategories'));
 const TaskPriorities = lazy(() => import('@/pages/super-admin/task-management/TaskPriorities'));
+const TaskNotificationSettings = lazy(() => import('@/pages/super-admin/task-management/NotificationSettings'));
+const AITaskGenerator = lazy(() => import('@/pages/super-admin/task-management/AITaskGenerator'));
+const AutomationRules = lazy(() => import('@/pages/super-admin/task-management/AutomationRules'));
+const TaskReports = lazy(() => import('@/pages/super-admin/task-management/TaskReports'));
 
 // User Management
 const UserMgmtDashboard = lazy(() => import('@/pages/super-admin/user-management/Dashboard'));
@@ -1619,6 +1623,10 @@ function App() {
             <Route path="/super-admin/task-management/my-tasks" element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'principal', 'vice_principal', 'coordinator', 'accountant', 'cashier', 'receptionist', 'teacher', 'class_teacher', 'subject_teacher', 'librarian', 'lab_assistant', 'driver', 'hostel_warden', 'sports_coach', 'security_guard', 'maintenance_staff', 'peon', 'employee', 'staff']} requiredModule="task_management.my_tasks"><MyTasks /></ProtectedRoute>} />
             <Route path="/super-admin/task-management/categories" element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'principal']} requiredModule="task_management.categories"><TaskCategories /></ProtectedRoute>} />
             <Route path="/super-admin/task-management/priorities" element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'principal']} requiredModule="task_management.priorities"><TaskPriorities /></ProtectedRoute>} />
+            <Route path="/super-admin/task-management/notification-settings" element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="task_management.settings"><TaskNotificationSettings /></ProtectedRoute>} />
+            <Route path="/super-admin/task-management/ai-generator" element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'principal', 'vice_principal']} requiredModule="task_management"><AITaskGenerator /></ProtectedRoute>} />
+            <Route path="/super-admin/task-management/automation-rules" element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="task_management.settings"><AutomationRules /></ProtectedRoute>} />
+            <Route path="/super-admin/task-management/reports" element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'principal', 'vice_principal']} requiredModule="task_management"><TaskReports /></ProtectedRoute>} />
 
             {/* 👤 User Management */}
             <Route path={ROUTES.SUPER_ADMIN.USER_MGMT_DASHBOARD} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']}><UserMgmtDashboard /></ProtectedRoute>} />

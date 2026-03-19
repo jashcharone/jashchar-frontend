@@ -20,6 +20,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { useEmailValidation } from '@/hooks/useEmailValidation';
 import { useAadharValidation } from '@/hooks/useAadharValidation';
+import { useSatsValidation } from '@/hooks/useSatsValidation';
 import AadharInput from '@/components/AadharInput';
 import DatePicker from '@/components/ui/DatePicker';
 import { format } from 'date-fns';
@@ -312,7 +313,9 @@ const initialFormData = {
   local_id_no: '',
   bank_account_no: '',
   bank_name: '',
-  ifsc_code: ''
+  ifsc_code: '',
+  // Academic Details - Government tracking
+  sats_no: ''  // Karnataka SATS Number (Student Achievement Tracking System)
 };
 
 const AddSiblingModal = ({ onSiblingAdd }) => {
@@ -459,6 +462,7 @@ const StudentAdmission = () => {
   const { isChecking: isStudentEmailChecking, error: studentEmailError, validateEmail: validateStudentEmail, resetValidation: resetStudentEmailValidation } = useEmailValidation();
   const { isChecking: isFatherEmailChecking, error: fatherEmailError, validateEmail: validateFatherEmail, resetValidation: resetFatherEmailValidation } = useEmailValidation();
   const { isChecking: isAadharChecking, error: aadharError, validateAadhar, resetValidation: resetAadharValidation } = useAadharValidation();
+  const { isChecking: isSatsChecking, error: satsError, validateSatsNo, clearError: clearSatsError } = useSatsValidation();
 
   const isStudentAdmissionAutoGenConfigValid = useCallback((settings) => {
     const prefix = (settings?.student_admission_no_prefix ?? '').trim();
@@ -1172,6 +1176,46 @@ const StudentAdmission = () => {
                   onBlur={() => handleBlur(field.field_name)}
                   className="h-11"
                 />
+              </SmartField>
+             );
+        // SATS Number - Karnataka Government Student Achievement Tracking System
+        case 'sats_no':
+             return (
+              <SmartField 
+                label={label || "SATS Number"} 
+                required={isRequired} 
+                error={satsError || errors[field.field_name]} 
+                touched={touched[field.field_name] || !!satsError} 
+                icon={Award} 
+                hint="Numbers only"
+              >
+                <div className="relative">
+                  <Input 
+                    value={formData[field.field_name]} 
+                    placeholder="Enter SATS Number"
+                    onChange={e => {
+                      // Allow only numbers - NO duplicate check here
+                      const sanitized = e.target.value.replace(/[^0-9]/g, '');
+                      handleChange(field.field_name, sanitized);
+                      // Clear any previous error when user starts typing
+                      if (satsError) clearSatsError();
+                    }}
+                    onBlur={() => {
+                      handleBlur(field.field_name);
+                      // Check for duplicates only when user leaves the field (on tab/blur)
+                      if (formData.sats_no) {
+                        validateSatsNo(formData.sats_no);
+                      }
+                    }}
+                    className={cn("h-11 font-mono tracking-wider", satsError && "border-red-500")}
+                  />
+                  {isSatsChecking && (
+                    <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-primary" />
+                  )}
+                  {!isSatsChecking && formData.sats_no && !satsError && (
+                    <CheckCircle2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-green-500" />
+                  )}
+                </div>
               </SmartField>
              );
       }
@@ -2324,12 +2368,30 @@ const StudentAdmission = () => {
       if (organizationId) {
         const { data: orgData } = await supabase
           .from('organizations')
-          .select('name, org_name, contact_phone, office_phone')
+          .select('name, org_name, contact_phone')
           .eq('id', organizationId)
           .single();
         if (orgData) {
           orgName = orgData.org_name || orgData.name || 'Educational Institution';
-          orgPhone = orgData.office_phone || orgData.contact_phone || '';
+          orgPhone = orgData.contact_phone || '';
+        }
+      }
+      
+      // Fetch print header settings for this branch (check fees_receipt or general_purpose)
+      let printHeaderSettings = null;
+      if (selectedBranch?.id) {
+        // First try fees_receipt (most common), then general_purpose as fallback
+        const { data: printSettings } = await supabase
+          .from('print_settings')
+          .select('header_image_url, type')
+          .eq('branch_id', selectedBranch.id)
+          .in('type', ['fees_receipt', 'general_purpose'])
+          .not('header_image_url', 'is', null)
+          .limit(1);
+        
+        if (printSettings && printSettings.length > 0 && printSettings[0].header_image_url) {
+          printHeaderSettings = { header_image_url: printSettings[0].header_image_url };
+          console.log('[StudentAdmission] Using custom header from print settings:', printSettings[0].type);
         }
       }
       
@@ -2355,6 +2417,8 @@ const StudentAdmission = () => {
         // AI Parameters - Dynamic field generation based on Form Settings
         allFields: allFields,       // All fields with is_enabled status
         formSections: formSections, // All sections with is_enabled status
+        // Print Header Settings - Custom header image from print_settings
+        printHeaderSettings: printHeaderSettings,
       });
       
       toast({
@@ -2694,112 +2758,101 @@ const StudentAdmission = () => {
       {/* ? WORLD-CLASS Premium Header */}
       <div className="relative mb-10">
         {/* Animated Background Effects */}
-        <div className="absolute inset-0 overflow-hidden rounded-3xl pointer-events-none">
-          <div className="absolute -top-24 -right-24 w-96 h-96 bg-gradient-to-br from-blue-500/30 via-purple-500/20 to-pink-500/10 rounded-full blur-3xl animate-pulse" />
-          <div className="absolute -bottom-24 -left-24 w-96 h-96 bg-gradient-to-br from-emerald-500/20 via-teal-500/10 to-cyan-500/5 rounded-full blur-3xl animate-pulse delay-700" />
+        <div className="absolute inset-0 overflow-hidden rounded-2xl pointer-events-none">
+          <div className="absolute -top-24 -right-24 w-64 h-64 bg-gradient-to-br from-blue-500/20 via-purple-500/15 to-pink-500/10 rounded-full blur-3xl" />
+          <div className="absolute -bottom-24 -left-24 w-64 h-64 bg-gradient-to-br from-emerald-500/15 via-teal-500/10 to-cyan-500/5 rounded-full blur-3xl" />
         </div>
         
-        <div className="relative bg-gradient-to-br from-card/95 via-card/90 to-card/80 backdrop-blur-xl rounded-3xl border border-border/50 overflow-hidden">
+        <div className="relative bg-gradient-to-br from-card/95 via-card/90 to-card/80 backdrop-blur-xl rounded-2xl border border-border/50 overflow-hidden">
           {/* Top Accent Line */}
-          <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 pointer-events-none" />
+          <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 pointer-events-none" />
           
-          <div className="p-4 sm:p-6 md:p-8">
-            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 sm:gap-6">
+          <div className="px-4 py-3">
+            <div className="flex items-center justify-between gap-4">
               {/* Left Side - Title & Info */}
-              <div className="flex items-start gap-3 sm:gap-5">
+              <div className="flex items-center gap-3">
                 {/* Premium Icon */}
                 <div className="relative flex-shrink-0">
-                  <div className="absolute inset-0 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl blur-xl opacity-50 animate-pulse pointer-events-none" />
-                  <div className="relative bg-gradient-to-br from-blue-500 via-indigo-500 to-purple-600 p-3 sm:p-5 rounded-2xl shadow-2xl">
-                    <GraduationCap className="h-7 w-7 sm:h-10 sm:w-10 text-white drop-shadow-lg" />
+                  <div className="absolute inset-0 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl blur-lg opacity-40 pointer-events-none" />
+                  <div className="relative bg-gradient-to-br from-blue-500 via-indigo-500 to-purple-600 p-2.5 rounded-xl shadow-lg">
+                    <GraduationCap className="h-6 w-6 text-white" />
                   </div>
                   {/* Live Indicator */}
-                  <div className="absolute -top-1 -right-1 pointer-events-none">
-                    <span className="relative flex h-5 w-5">
+                  <div className="absolute -top-0.5 -right-0.5 pointer-events-none">
+                    <span className="relative flex h-3 w-3">
                       <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-                      <span className="relative inline-flex rounded-full h-5 w-5 bg-gradient-to-r from-green-400 to-emerald-500 border-2 border-white shadow-lg"></span>
+                      <span className="relative inline-flex rounded-full h-3 w-3 bg-gradient-to-r from-green-400 to-emerald-500 border border-white shadow"></span>
                     </span>
                   </div>
                 </div>
                 
-                <div className="space-y-2">
-                  <div className="flex items-center gap-3 flex-wrap">
-                    <h1 className="text-3xl md:text-4xl font-black bg-gradient-to-r from-gray-900 via-gray-800 to-gray-700 dark:from-white dark:via-gray-100 dark:to-gray-200 bg-clip-text text-transparent">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h1 className="text-xl font-bold bg-gradient-to-r from-gray-900 via-gray-800 to-gray-700 dark:from-white dark:via-gray-100 dark:to-gray-200 bg-clip-text text-transparent">
                       Student Admission
                     </h1>
-                    <span className="px-3 py-1 bg-gradient-to-r from-emerald-500/20 to-green-500/20 text-emerald-700 dark:text-emerald-300 text-sm font-bold rounded-full border border-emerald-500/30 flex items-center gap-1.5">
-                      <Star className="h-3.5 w-3.5 fill-current" />
+                    <span className="px-2 py-0.5 bg-gradient-to-r from-emerald-500/20 to-green-500/20 text-emerald-700 dark:text-emerald-300 text-xs font-semibold rounded-full border border-emerald-500/30 flex items-center gap-1">
+                      <Star className="h-2.5 w-2.5 fill-current" />
                       New
                     </span>
                   </div>
-                  <div className="flex items-center gap-4 flex-wrap">
-                    <p className="text-muted-foreground flex items-center gap-2">
-                      <Building2 className="h-4 w-4" />
-                      <span className="font-medium">{selectedBranch?.branch_name || 'Select a branch'}</span>
-                    </p>
-                    <span className="text-muted-foreground/50">�</span>
-                    <p className="text-muted-foreground flex items-center gap-2">
-                      <CalendarDays className="h-4 w-4" />
-                      <span>{format(new Date(), 'dd MMM yyyy')}</span>
-                    </p>
+                  <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                    <span className="flex items-center gap-1">
+                      <Building2 className="h-3 w-3" />
+                      {selectedBranch?.branch_name || 'Select branch'}
+                    </span>
+                    <span>•</span>
+                    <span className="flex items-center gap-1">
+                      <CalendarDays className="h-3 w-3" />
+                      {format(new Date(), 'dd MMM yyyy')}
+                    </span>
                   </div>
                 </div>
               </div>
               
               {/* Right Side - Status Cards */}
-              <div className="flex items-center gap-3 flex-wrap">
+              <div className="flex items-center gap-2">
                 {/* 🤖 AI Download Form Button */}
                 <Button
                   onClick={handleDownloadAdmissionForm}
                   variant="outline"
-                  className="hidden sm:flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-purple-500/10 to-violet-500/10 hover:from-purple-500/20 hover:to-violet-500/20 border-purple-500/30 hover:border-purple-500/50 text-purple-700 dark:text-purple-300 rounded-xl shadow-lg shadow-purple-500/5 transition-all duration-300"
+                  size="sm"
+                  className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-purple-500/10 to-violet-500/10 hover:from-purple-500/20 hover:to-violet-500/20 border-purple-500/30 hover:border-purple-500/50 text-purple-700 dark:text-purple-300 rounded-lg text-xs transition-all duration-300"
                 >
-                  <FileDown className="h-4 w-4" />
-                  <span className="text-sm font-bold">🤖 AI Form</span>
+                  <FileDown className="h-3.5 w-3.5" />
+                  <span className="text-xs font-semibold">🤖 AI Form</span>
                 </Button>
                 
                 {/* Quick Fill Badge */}
-                <div className="hidden md:flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-blue-500/10 to-indigo-500/10 rounded-xl border border-blue-500/20 shadow-lg shadow-blue-500/5">
-                  <div className="relative">
-                    <Zap className="h-4 w-4 text-blue-500" />
-                    <div className="absolute inset-0 animate-ping">
-                      <Zap className="h-4 w-4 text-blue-500 opacity-50" />
-                    </div>
-                  </div>
-                  <span className="text-sm font-bold text-blue-700 dark:text-blue-300">Smart Auto-Fill</span>
+                <div className="hidden md:flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-blue-500/10 to-indigo-500/10 rounded-lg border border-blue-500/20">
+                  <Zap className="h-3.5 w-3.5 text-blue-500" />
+                  <span className="text-xs font-semibold text-blue-700 dark:text-blue-300">Smart Auto-Fill</span>
                 </div>
                 
                 {/* Form Status Card */}
                 <div className={cn(
-                  "flex items-center gap-3 px-5 py-3 rounded-2xl border shadow-lg transition-all duration-500",
+                  "flex items-center gap-2 px-3 py-1.5 rounded-lg border transition-all duration-300",
                   isFormValid 
-                    ? "bg-gradient-to-r from-emerald-500/10 to-green-500/10 border-emerald-500/30 shadow-emerald-500/10" 
-                    : "bg-gradient-to-r from-amber-500/10 to-orange-500/10 border-amber-500/30 shadow-amber-500/10"
+                    ? "bg-gradient-to-r from-emerald-500/10 to-green-500/10 border-emerald-500/30" 
+                    : "bg-gradient-to-r from-amber-500/10 to-orange-500/10 border-amber-500/30"
                 )}>
                   {isFormValid ? (
                     <>
-                      <div className="relative">
-                        <div className="absolute inset-0 bg-emerald-500 rounded-full blur-md opacity-30 animate-pulse" />
-                        <div className="relative bg-gradient-to-r from-emerald-500 to-green-500 p-2 rounded-full">
-                          <BadgeCheck className="h-5 w-5 text-white" />
-                        </div>
+                      <div className="bg-gradient-to-r from-emerald-500 to-green-500 p-1 rounded-md">
+                        <BadgeCheck className="h-3.5 w-3.5 text-white" />
                       </div>
                       <div>
-                        <p className="text-sm font-bold text-emerald-700 dark:text-emerald-300">Ready to Submit</p>
-                        <p className="text-xs text-emerald-600/70 dark:text-emerald-400/70">All fields validated</p>
+                        <p className="text-xs font-semibold text-emerald-700 dark:text-emerald-300">Ready to Submit</p>
                       </div>
                     </>
                   ) : (
                     <>
-                      <div className="relative">
-                        <div className="absolute inset-0 bg-amber-500 rounded-full blur-md opacity-30 animate-pulse" />
-                        <div className="relative bg-gradient-to-r from-amber-500 to-orange-500 p-2 rounded-full">
-                          <AlertTriangle className="h-5 w-5 text-white" />
-                        </div>
+                      <div className="bg-gradient-to-r from-amber-500 to-orange-500 p-1 rounded-md">
+                        <AlertTriangle className="h-3.5 w-3.5 text-white" />
                       </div>
                       <div>
-                        <p className="text-sm font-bold text-amber-700 dark:text-amber-300">Incomplete Form</p>
-                        <p className="text-xs text-amber-600/70 dark:text-amber-400/70">Fill required fields</p>
+                        <p className="text-xs font-semibold text-amber-700 dark:text-amber-300">Incomplete Form</p>
+                        <p className="text-[10px] text-amber-600/70 dark:text-amber-400/70">Fill required fields</p>
                       </div>
                     </>
                   )}
@@ -3433,69 +3486,62 @@ const StudentAdmission = () => {
           </div>
         </SectionBox>
 
-        {/* ? Premium Submit Section */}
-        <div className="sticky bottom-4 z-10">
-          <div className="relative overflow-hidden bg-card/95 backdrop-blur-xl rounded-3xl border border-border/50 shadow-2xl">
+        {/* ? Compact Submit Section */}
+        <div className="sticky bottom-3 z-10">
+          <div className="relative overflow-hidden bg-card/95 backdrop-blur-xl rounded-2xl border border-border/50 shadow-xl">
             {/* Gradient Background */}
             <div className="absolute inset-0 bg-gradient-to-r from-blue-500/5 via-purple-500/5 to-pink-500/5 pointer-events-none" />
             <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-primary/50 to-transparent pointer-events-none" />
             
-            <div className="relative p-5">
-              <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div className="relative px-4 py-2.5">
+              <div className="flex items-center justify-between gap-4">
                 {/* Status Info */}
                 <div className="flex items-center gap-4">
                   {isFormValid ? (
-                    <div className="flex items-center gap-3 px-4 py-2 bg-gradient-to-r from-emerald-500/10 to-green-500/10 rounded-xl border border-emerald-500/20">
-                      <div className="bg-gradient-to-r from-emerald-500 to-green-500 p-1.5 rounded-lg">
-                        <ShieldCheck className="h-4 w-4 text-white" />
+                    <div className="flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-emerald-500/10 to-green-500/10 rounded-lg border border-emerald-500/20">
+                      <div className="bg-gradient-to-r from-emerald-500 to-green-500 p-1 rounded-md">
+                        <ShieldCheck className="h-3.5 w-3.5 text-white" />
                       </div>
-                      <div>
-                        <p className="text-sm font-bold text-emerald-700 dark:text-emerald-300">Validation Passed</p>
-                        <p className="text-xs text-emerald-600/70 dark:text-emerald-400/70">All required fields are filled correctly</p>
-                      </div>
+                      <p className="text-xs font-semibold text-emerald-700 dark:text-emerald-300">Ready to Save</p>
                     </div>
                   ) : (
-                    <div className="flex items-center gap-3 px-4 py-2 bg-gradient-to-r from-amber-500/10 to-orange-500/10 rounded-xl border border-amber-500/20">
-                      <div className="bg-gradient-to-r from-amber-500 to-orange-500 p-1.5 rounded-lg">
-                        <AlertCircle className="h-4 w-4 text-white" />
+                    <div className="flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-amber-500/10 to-orange-500/10 rounded-lg border border-amber-500/20">
+                      <div className="bg-gradient-to-r from-amber-500 to-orange-500 p-1 rounded-md">
+                        <AlertCircle className="h-3.5 w-3.5 text-white" />
                       </div>
-                      <div>
-                        <p className="text-sm font-bold text-amber-700 dark:text-amber-300">Validation Required</p>
-                        <p className="text-xs text-amber-600/70 dark:text-amber-400/70">Please fill all fields marked with *</p>
-                      </div>
+                      <p className="text-xs font-semibold text-amber-700 dark:text-amber-300">Fill required fields *</p>
                     </div>
                   )}
                 </div>
                 
                 {/* Action Buttons */}
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2">
                   <Button 
                     variant="outline" 
                     onClick={resetForm}
-                    className="h-12 px-6 rounded-xl border-2 hover:bg-red-50 hover:border-red-200 hover:text-red-600 dark:hover:bg-red-950 dark:hover:border-red-800 dark:hover:text-red-400 transition-all duration-300"
+                    className="h-9 px-4 rounded-lg border hover:bg-red-50 hover:border-red-200 hover:text-red-600 dark:hover:bg-red-950 dark:hover:border-red-800 dark:hover:text-red-400 transition-all duration-300"
                   >
-                    <X className="mr-2 h-4 w-4" /> Reset
+                    <X className="mr-1.5 h-3.5 w-3.5" /> Reset
                   </Button>
                   
                   <Button 
                     onClick={handleSave} 
                     disabled={loading || isAadharChecking} 
-                    size="lg"
-                    className="h-12 px-8 rounded-xl font-bold text-base transition-all duration-500 relative overflow-hidden group bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-600 hover:from-blue-600 hover:via-indigo-600 hover:to-purple-700 shadow-xl shadow-blue-500/25 hover:shadow-2xl hover:shadow-blue-500/40 hover:scale-105"
+                    className="h-9 px-5 rounded-lg font-semibold text-sm transition-all duration-500 relative overflow-hidden group bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-600 hover:from-blue-600 hover:via-indigo-600 hover:to-purple-700 shadow-lg shadow-blue-500/20 hover:shadow-xl hover:shadow-blue-500/30"
                   >
                     {/* Button Shine Effect */}
                     <span className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
                     
                     {loading ? (
                       <>
-                        <Loader2 className="mr-2 h-5 w-5 animate-spin" /> 
-                        <span>Processing...</span>
+                        <Loader2 className="mr-1.5 h-4 w-4 animate-spin" /> 
+                        <span>Saving...</span>
                       </>
                     ) : (
                       <>
-                        <Save className="mr-2 h-5 w-5" />
+                        <Save className="mr-1.5 h-4 w-4" />
                         <span>Save Student</span>
-                        <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
+                        <ArrowRight className="ml-1.5 h-3.5 w-3.5 group-hover:translate-x-1 transition-transform" />
                       </>
                     )}
                   </Button>

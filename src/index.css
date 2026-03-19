@@ -95,43 +95,43 @@ html:not(.dark) {
   }
   
   /* ═══════════════════════════════════════════════════════════════════════════ */
-  /* GLOBAL SCROLL FIX - Ensure scroll works on ALL pages                       */
+  /* GLOBAL SCROLL FIX - Single scroll context (main content only)              */
   /* ═══════════════════════════════════════════════════════════════════════════ */
   
   html {
-    overflow-y: scroll !important;
-    overflow-x: hidden !important;
-    height: auto !important;
-    min-height: 100% !important;
+    overflow: hidden !important;
+    height: 100% !important;
   }
   
   body {
     @apply bg-background text-foreground;
     font-family: var(--font-family);
-    overflow-y: auto !important;
-    overflow-x: hidden !important;
-    height: auto !important;
-    min-height: 100vh !important;
-    position: relative !important;
+    overflow: hidden !important;
+    height: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
   }
   
-  /* Root element must allow scroll */
+  /* Root element - full height, no scroll */
   #root {
-    min-height: 100vh;
-    overflow-y: visible !important;
-    overflow-x: hidden !important;
-    height: auto !important;
-    position: relative !important;
+    height: 100% !important;
+    overflow: hidden !important;
   }
   
-  /* Override any h-screen with overflow-hidden patterns */
+  /* DashboardLayout container - full height */
   .h-screen {
-    overflow-y: auto !important;
+    overflow: hidden !important;
   }
   
-  /* Allow main content to scroll */
-  main, [role="main"], #main-content {
+  /* ONLY main content should scroll */
+  #main-content {
     overflow-y: auto !important;
+    overflow-x: hidden !important;
+  }
+  
+  /* Prevent scroll on other containers */
+  main:not(#main-content), [role="main"]:not(#main-content) {
+    overflow: visible !important;
   }
   
   .animated-gradient {

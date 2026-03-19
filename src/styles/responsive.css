@@ -54,56 +54,15 @@
    ───────────────────────────────────────────────────────────────────────────────── */
 
 /* ═══════════════════════════════════════════════════════════════════════════════ */
-/* CRITICAL SCROLL FIX - Force scroll to work everywhere                          */
+/* SCROLL SYSTEM - Single scroll context (main-content only)                      */
 /* ═══════════════════════════════════════════════════════════════════════════════ */
+/* NOTE: Main scroll rules are in index.css                                        */
+/* This file only adds scroll enhancements                                        */
 
-html {
-  overflow-y: scroll !important;
-  overflow-x: hidden !important;
-  height: auto !important;
-  min-height: 100% !important;
+/* Smooth scrolling on main content */
+#main-content {
   scroll-behavior: smooth;
-  -webkit-overflow-scrolling: touch !important;
-}
-
-body {
-  overflow-y: auto !important;
-  overflow-x: hidden !important;
-  height: auto !important;
-  min-height: 100vh !important;
-  max-width: 100vw;
-  touch-action: pan-y !important;
-  overscroll-behavior: auto !important;
-  position: relative !important;
-}
-
-/* Root element */
-#root {
-  overflow-y: visible !important;
-  overflow-x: hidden !important;
-  height: auto !important;
-  min-height: 100vh !important;
-  position: relative !important;
-}
-
-/* Override h-screen containers that block scroll */
-.h-screen {
-  overflow-y: auto !important;
-}
-
-/* Main content areas must scroll */
-main, 
-[role="main"], 
-#main-content,
-.main-content {
-  overflow-y: auto !important;
-}
-
-/* Force all direct children of body to not block scroll */
-body > div {
-  overflow-y: visible !important;
-  height: auto !important;
-  min-height: 100vh;
+  -webkit-overflow-scrolling: touch;
 }
 
 /* Base font size adjustment for mobile */
@@ -115,11 +74,6 @@ html {
   html {
     font-size: 14px;
   }
-}
-
-/* Smooth scrolling */
-html {
-  scroll-behavior: smooth;
 }
 
 /* Better box sizing */

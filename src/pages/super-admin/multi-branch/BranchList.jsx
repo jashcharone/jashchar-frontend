@@ -153,8 +153,14 @@ const BranchList = () => {
   const totalBranches = branches.length;
   const activeBranches = branches.filter(b => b.is_active !== false).length;
   const branchesWithPrincipal = branches.filter(b => b.principal || b.principal_user_id).length;
+  const [lastRefresh, setLastRefresh] = useState(null);
 
-  if (loading) {
+  const handleRefresh = () => {
+    setLastRefresh(new Date());
+    fetchBranches();
+  };
+
+  if (loading && branches.length === 0) {
     return <div className="flex justify-center items-center h-screen"><Loader2 className="h-8 w-8 animate-spin" /></div>;
   }
 
@@ -168,6 +174,17 @@ const BranchList = () => {
             <Building2 className="h-8 w-8" /> Multi-Branch Management
           </h1>
           <p className="text-muted-foreground mt-1">Manage all your school branches from one place</p>
+        </div>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" onClick={handleRefresh} disabled={loading} className="gap-2">
+            <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+            Refresh
+          </Button>
+          {canAddBranch && (
+            <Button onClick={handleAddBranch} className="bg-gradient-to-r from-primary to-indigo-500 hover:from-primary/90 hover:to-indigo-600">
+              <Plus className="mr-2 h-4 w-4" /> Add Branch
+            </Button>
+          )}
         </div>
       </div>
 
@@ -265,10 +282,10 @@ const BranchList = () => {
                               <AvatarFallback className="bg-primary/10 text-primary">{getInitials(branchName)}</AvatarFallback>
                             </Avatar>
                             <div>
-                              <p className="font-medium flex items-center gap-2">
+                              <div className="font-medium flex items-center gap-2">
                                 {branchName}
                                 {branch.is_main && <Badge variant="default" className="text-[10px] h-5 px-1.5 bg-yellow-500 hover:bg-yellow-600 text-white border-none"><Star className="h-3 w-3 mr-1 fill-current" /> Main</Badge>}
-                              </p>
+                              </div>
                               {branch.address && <p className="text-xs text-muted-foreground truncate max-w-[200px]">{branch.address}</p>}
                             </div>
                           </div>

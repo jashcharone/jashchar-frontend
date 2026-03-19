@@ -390,6 +390,9 @@ export const BASE_SIDEBAR = {
         { title: '➕ Create Task', path: ROUTES.SUPER_ADMIN.TASK_CREATE },
         { title: '🏷️ Categories', path: ROUTES.SUPER_ADMIN.TASK_CATEGORIES },
         { title: '⚡ Priorities', path: ROUTES.SUPER_ADMIN.TASK_PRIORITIES },
+        { title: '🧠 AI Generator', path: '/super-admin/task-management/ai-generator' },
+        { title: '⚙️ Automation', path: '/super-admin/task-management/automation-rules' },
+        { title: '📈 Reports', path: '/super-admin/task-management/reports' },
       ],
     },
      {
@@ -576,8 +579,7 @@ export const BASE_SIDEBAR = {
       title: 'Multi Branch',
       icon: GitBranch,
       submenu: [
-        { title: '📊 Branch Overview', path: ROUTES.SUPER_ADMIN.MULTI_BRANCH_OVERVIEW },
-        { title: '📜 Branch List', path: ROUTES.SUPER_ADMIN.BRANCH_LIST },
+        { title: ' Branch List', path: ROUTES.SUPER_ADMIN.BRANCH_LIST },
         { title: '➕ Add Branch', path: ROUTES.SUPER_ADMIN.ADD_BRANCH },
         { title: '⚙️ Branch Settings', path: ROUTES.SUPER_ADMIN.MULTI_BRANCH_SETTINGS },
         { title: '📊 Branch Reports', path: ROUTES.SUPER_ADMIN.MULTI_BRANCH_REPORTS },

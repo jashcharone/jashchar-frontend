@@ -12,6 +12,7 @@ import { useToast } from '@/components/ui/use-toast';
 import api from '@/lib/api';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { formatDate as formatDateUtil, formatDateTime as formatDateTimeUtil } from '@/utils/dateUtils';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Progress } from '@/components/ui/progress';
@@ -33,7 +34,8 @@ import {
   ClipboardList,
   UserCheck,
   Timer,
-  Activity
+  Activity,
+  Sparkles
 } from 'lucide-react';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
@@ -94,8 +96,7 @@ const TaskDashboard = () => {
       // Fetch stats
       const statsResponse = await api.get('/tasks/dashboard/stats', {
         params: { 
-          branch_id: branchId,
-          branch_id: selectedBranch?.id
+          branch_id: selectedBranch?.id || branchId
         }
       });
 
@@ -106,8 +107,7 @@ const TaskDashboard = () => {
       // Fetch recent tasks
       const recentResponse = await api.get('/tasks', {
         params: {
-          branch_id: branchId,
-          branch_id: selectedBranch?.id,
+          branch_id: selectedBranch?.id || branchId,
           limit: 5,
           sort_by: 'created_at',
           sort_order: 'desc'
@@ -130,8 +130,7 @@ const TaskDashboard = () => {
       // Fetch upcoming due tasks
       const upcomingResponse = await api.get('/tasks', {
         params: {
-          branch_id: branchId,
-          branch_id: selectedBranch?.id,
+          branch_id: selectedBranch?.id || branchId,
           status: 'pending,in_progress',
           due_date_start: new Date().toISOString().split('T')[0],
           due_date_end: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
@@ -188,11 +187,7 @@ const TaskDashboard = () => {
   // Format date
   const formatDate = (date) => {
     if (!date) return 'No due date';
-    return new Date(date).toLocaleDateString('en-IN', {
-      day: 'numeric',
-      month: 'short',
-      year: 'numeric'
-    });
+    return formatDateUtil(date);
   };
 
   // Days remaining calculation
@@ -551,6 +546,30 @@ const TaskDashboard = () => {
           >
             <Filter className="mr-2 h-4 w-4" />
             Categories
+          </Button>
+          <Button 
+            className="w-full justify-start" 
+            variant="outline"
+            onClick={() => navigate(`/${basePath}/task-management/notification-settings`)}
+          >
+            <Bell className="mr-2 h-4 w-4" />
+            Notification Settings
+          </Button>
+          <Button 
+            className="w-full justify-start bg-gradient-to-r from-purple-500/10 to-blue-500/10 border-purple-500/20 hover:from-purple-500/20 hover:to-blue-500/20" 
+            variant="outline"
+            onClick={() => navigate(`/${basePath}/task-management/ai-generator`)}
+          >
+            <Sparkles className="mr-2 h-4 w-4 text-purple-500" />
+            AI Task Generator
+          </Button>
+          <Button 
+            className="w-full justify-start bg-gradient-to-r from-orange-500/10 to-red-500/10 border-orange-500/20 hover:from-orange-500/20 hover:to-red-500/20" 
+            variant="outline"
+            onClick={() => navigate(`/${basePath}/task-management/automation-rules`)}
+          >
+            <Zap className="mr-2 h-4 w-4 text-orange-500" />
+            Automation Rules
           </Button>
         </div>
       </CardContent>

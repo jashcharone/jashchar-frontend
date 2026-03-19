@@ -16,6 +16,11 @@ const WhatsAppSender = ({ accounts = [] }) => {
     const [loadingTemplates, setLoadingTemplates] = useState(false);
     const [sending, setSending] = useState(false);
 
+    // Debug: Log accounts prop
+    useEffect(() => {
+        console.log('[WhatsAppSender] Received accounts prop:', accounts);
+    }, [accounts]);
+
     // Form State
     const [selectedTemplate, setSelectedTemplate] = useState(null);
     const [phoneNumber, setPhoneNumber] = useState('');
@@ -34,13 +39,17 @@ const WhatsAppSender = ({ accounts = [] }) => {
     const fetchTemplates = async (accountId) => {
         setLoadingTemplates(true);
         try {
+            console.log('[WhatsApp] Fetching templates for account:', accountId);
             const res = await api.get(`/whatsapp-manager/accounts/${accountId}/templates`);
+            console.log('[WhatsApp] Templates response:', res.data);
             if (res.data.success) {
                 // Filter approved only
                 const approved = res.data.data.filter(t => t.status === 'APPROVED');
+                console.log('[WhatsApp] Approved templates:', approved.length);
                 setTemplates(approved);
             }
         } catch (error) {
+            console.error('[WhatsApp] Error fetching templates:', error);
             toast({ variant: 'destructive', title: 'Error', description: 'Failed to fetch templates.' });
         } finally {
             setLoadingTemplates(false);
@@ -75,9 +84,10 @@ const WhatsAppSender = ({ accounts = [] }) => {
                 });
             });
 
+            // Use template_slug (lowercase_underscored) for Meta API, not display name
             const payload = {
                 account_id: selectedAccount,
-                template_name: selectedTemplate.name,
+                template_name: selectedTemplate.slug || selectedTemplate.template_slug || selectedTemplate.name.toLowerCase().replace(/\s+/g, '_'),
                 language_code: selectedTemplate.language,
                 recipient_phone: phoneNumber,
                 variables: componentBody.length > 0 ? [
@@ -88,6 +98,7 @@ const WhatsAppSender = ({ accounts = [] }) => {
                 ] : []
             };
 
+            console.log('[WhatsApp] Sending test message with payload:', payload);
             const res = await api.post('/whatsapp-manager/test-send', payload);
 
             if (res.data.success) {
@@ -169,36 +180,44 @@ const WhatsAppSender = ({ accounts = [] }) => {
                         
                         {/* 0. Select Account */}
                         <div className="space-y-2">
-                            <Label>Select WABA Account</Label>
-                            <Select onValueChange={setSelectedAccount} value={selectedAccount}>
-                                <SelectTrigger>
-                                    <SelectValue placeholder="Choose an account" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {accounts.map((acc) => (
-                                        <SelectItem key={acc.id} value={acc.id}>
-                                            {acc.name} ({acc.waba_id})
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
+                            <Label>Select WABA Account ({accounts.length} available)</Label>
+                            <select 
+                                className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                                value={selectedAccount || ""}
+                                onChange={(e) => {
+                                    console.log('[WhatsAppSender] Account selected:', e.target.value);
+                                    setSelectedAccount(e.target.value);
+                                }}
+                            >
+                                <option value="">Choose an account</option>
+                                {accounts.map((acc) => (
+                                    <option key={acc.id} value={acc.id}>
+                                        {acc.name} ({acc.waba_id})
+                                    </option>
+                                ))}
+                            </select>
                         </div>
 
                         {/* 1. Select Template */}
                         <div className="space-y-2">
-                            <Label>Select Template</Label>
-                            <Select onValueChange={handleTemplateChange} disabled={!selectedAccount || loadingTemplates}>
-                                <SelectTrigger>
-                                    <SelectValue placeholder={loadingTemplates ? "Loading templates..." : "Choose a template"} />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {templates.map((t) => (
-                                        <SelectItem key={t.id} value={t.id}>
-                                            {t.name} ({t.language})
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
+                            <Label>Select Template ({templates.length} available)</Label>
+                            <select 
+                                className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:opacity-50"
+                                value={selectedTemplate?.id || ""}
+                                disabled={!selectedAccount || loadingTemplates}
+                                onChange={(e) => {
+                                    const templateId = e.target.value;
+                                    console.log('[WhatsAppSender] Template selected:', templateId);
+                                    handleTemplateChange(templateId);
+                                }}
+                            >
+                                <option value="">{loadingTemplates ? "Loading templates..." : "Choose a template"}</option>
+                                {templates.map((t) => (
+                                    <option key={t.id} value={t.id}>
+                                        {t.name} ({t.language})
+                                    </option>
+                                ))}
+                            </select>
                         </div>
 
                         {/* 2. Variable Inputs */}

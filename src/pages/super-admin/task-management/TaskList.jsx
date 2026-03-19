@@ -10,6 +10,7 @@ import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { useBranch } from '@/contexts/BranchContext';
 import { useToast } from '@/components/ui/use-toast';
 import api from '@/lib/api';
+import { formatDate as formatDateUtil } from '@/utils/dateUtils';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -131,8 +132,7 @@ const TaskList = () => {
 
     try {
       const params = {
-        branch_id: branchId,
-        branch_id: selectedBranch?.id,
+        branch_id: selectedBranch?.id || branchId,
         page,
         limit: pagination.limit,
         sort_by: 'created_at',
@@ -247,26 +247,35 @@ const TaskList = () => {
     if (selectedTasks.length === 0) return;
 
     try {
-      // For now, just show notification
-      toast({
-        title: `Bulk ${action}`,
-        description: `${selectedTasks.length} tasks selected for ${action}`
+      const promises = selectedTasks.map(taskId => {
+        switch (action) {
+          case 'complete':
+            return api.put(`/tasks/${taskId}/status`, { status: 'completed' });
+          case 'delete':
+            return api.delete(`/tasks/${taskId}`);
+          case 'cancel':
+            return api.put(`/tasks/${taskId}/status`, { status: 'cancelled' });
+          default:
+            return Promise.resolve();
+        }
       });
-      // TODO: Implement bulk API calls
+
+      await Promise.all(promises);
+      toast({
+        title: 'Bulk action completed',
+        description: `${selectedTasks.length} tasks ${action === 'complete' ? 'completed' : action === 'delete' ? 'deleted' : 'cancelled'}`
+      });
       setSelectedTasks([]);
+      fetchTasks(pagination.page);
     } catch (error) {
-      toast({ variant: 'destructive', title: 'Bulk action failed' });
+      toast({ variant: 'destructive', title: 'Bulk action failed', description: error.response?.data?.message || 'Some tasks could not be updated' });
     }
   };
 
   // Format date
   const formatDate = (date) => {
     if (!date) return '-';
-    return new Date(date).toLocaleDateString('en-IN', {
-      day: 'numeric',
-      month: 'short',
-      year: 'numeric'
-    });
+    return formatDateUtil(date);
   };
 
   // Check if overdue

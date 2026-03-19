@@ -190,7 +190,6 @@ export const ROUTES = {
     SUBJECT_TEACHER: '/super-admin/academics/subject-teacher',
     ACADEMIC_ANALYSIS: '/super-admin/academics/academic-analysis',
     // Multi Branch
-    MULTI_BRANCH_OVERVIEW: '/super-admin/multi-branch/overview',
     BRANCH_LIST: '/super-admin/multi-branch/overview',
     ADD_BRANCH: '/super-admin/multi-branch/add',
     EDIT_BRANCH: '/super-admin/multi-branch/edit/:id',

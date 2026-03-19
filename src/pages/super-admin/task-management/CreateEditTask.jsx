@@ -4,7 +4,7 @@
  */
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import DashboardLayout from '@/components/DashboardLayout';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { useBranch } from '@/contexts/BranchContext';
@@ -32,6 +32,7 @@ import { format } from 'date-fns';
 const CreateEditTask = () => {
   const { id, roleSlug } = useParams();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const basePath = roleSlug || 'super-admin';
   const { user } = useAuth();
   const { selectedBranch } = useBranch();
@@ -112,6 +113,27 @@ const CreateEditTask = () => {
 
     fetchMetadata();
   }, [branchId, isEditing]);
+
+  // Pre-fill from URL params (AI Task Generator sends these)
+  useEffect(() => {
+    if (isEditing) return;
+    const title = searchParams.get('title');
+    const description = searchParams.get('description');
+    const due_date = searchParams.get('due_date');
+    const category_id = searchParams.get('category_id');
+    const priority_id = searchParams.get('priority_id');
+
+    if (title || description || due_date) {
+      setFormData(prev => ({
+        ...prev,
+        ...(title && { title }),
+        ...(description && { description }),
+        ...(due_date && { due_date: new Date(due_date) }),
+        ...(category_id && { category_id }),
+        ...(priority_id && { priority_id })
+      }));
+    }
+  }, [searchParams, isEditing]);
 
   // Fetch task data if editing
   useEffect(() => {
@@ -272,10 +294,9 @@ const CreateEditTask = () => {
         due_time: formData.due_time || null,
         start_date: formData.start_date ? format(formData.start_date, 'yyyy-MM-dd') : null,
         assignment_scope: formData.assignment_scope,
-        branch_id: branchId,
+        branch_id: formData.branch_scope === 'current' ? (selectedBranch?.id || branchId) : null,
         branch_scope: formData.branch_scope,
         branch_ids: branchIds,
-        branch_id: formData.branch_scope === 'current' ? (selectedBranch?.id || null) : null,
         organization_id: user?.profile?.organization_id || null,
         // Checklist items for creation
         checklist_items: checklist.map((item, index) => ({

@@ -298,54 +298,56 @@ const WhatsAppAccounts = ({ onAccountsChange }) => {
           <CardTitle>Connected Accounts</CardTitle>
           <CardDescription>List of all configured WhatsApp Business Accounts.</CardDescription>
         </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Name</TableHead>
-                <TableHead>WABA ID</TableHead>
-                <TableHead>App ID</TableHead>
-                <TableHead>
-                  <span className="flex items-center gap-1">
-                    <Calendar className="h-4 w-4" /> Created At
-                  </span>
-                </TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {loading ? (
+        <CardContent className="p-0 sm:p-6">
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
                 <TableRow>
-                  <TableCell colSpan={5} className="text-center py-8">
-                    <Loader2 className="h-6 w-6 animate-spin mx-auto" />
-                  </TableCell>
+                  <TableHead className="whitespace-nowrap">Name</TableHead>
+                  <TableHead className="whitespace-nowrap hidden sm:table-cell">WABA ID</TableHead>
+                  <TableHead className="whitespace-nowrap hidden md:table-cell">App ID</TableHead>
+                  <TableHead className="hidden lg:table-cell">
+                    <span className="flex items-center gap-1 whitespace-nowrap">
+                      <Calendar className="h-4 w-4" /> Created At
+                    </span>
+                  </TableHead>
+                  <TableHead className="text-right whitespace-nowrap">Actions</TableHead>
                 </TableRow>
-              ) : accounts.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
-                    No accounts found. Add one to get started.
-                  </TableCell>
-                </TableRow>
-              ) : (
-                accounts.map((acc) => (
-                  <TableRow key={acc.id}>
-                    <TableCell className="font-medium">{acc.name}</TableCell>
-                    <TableCell className="font-mono text-sm">{acc.waba_id}</TableCell>
-                    <TableCell className="font-mono text-sm">{acc.app_id}</TableCell>
-                    <TableCell>{formatDate(acc.created_at)}</TableCell>
-                    <TableCell className="text-right space-x-1">
-                      <Button variant="ghost" size="sm" onClick={() => handleEdit(acc)} title="Edit Account">
-                          <Pencil className="h-4 w-4 text-blue-500" />
-                      </Button>
-                      <Button variant="ghost" size="sm" onClick={() => handleDelete(acc.id, acc.name)} title="Delete Account">
-                          <Trash2 className="h-4 w-4 text-red-500" />
-                      </Button>
+              </TableHeader>
+              <TableBody>
+                {loading ? (
+                  <TableRow>
+                    <TableCell colSpan={5} className="text-center py-8">
+                      <Loader2 className="h-6 w-6 animate-spin mx-auto" />
                     </TableCell>
                   </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
+                ) : accounts.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
+                      No accounts found. Add one to get started.
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  accounts.map((acc) => (
+                    <TableRow key={acc.id}>
+                      <TableCell className="font-medium whitespace-nowrap">{acc.name}</TableCell>
+                      <TableCell className="font-mono text-xs sm:text-sm hidden sm:table-cell">{acc.waba_id}</TableCell>
+                      <TableCell className="font-mono text-xs sm:text-sm hidden md:table-cell">{acc.app_id}</TableCell>
+                      <TableCell className="hidden lg:table-cell">{formatDate(acc.created_at)}</TableCell>
+                      <TableCell className="text-right space-x-1">
+                        <Button variant="ghost" size="sm" onClick={() => handleEdit(acc)} title="Edit Account">
+                            <Pencil className="h-4 w-4 text-blue-500" />
+                        </Button>
+                        <Button variant="ghost" size="sm" onClick={() => handleDelete(acc.id, acc.name)} title="Delete Account">
+                            <Trash2 className="h-4 w-4 text-red-500" />
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </div>
         </CardContent>
       </Card>
 

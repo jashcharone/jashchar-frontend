@@ -406,6 +406,8 @@ export const generateAdmissionFormPDF = async ({
   // AI Engine Parameters - Dynamic field generation
   allFields = null,      // From backend form settings
   formSections = null,   // From backend section settings
+  // Print Settings - Header image from print_settings
+  printHeaderSettings = null,   // { header_image_url: string }
 }) => {
   
   // 🤖 AI ENGINE: Build sections dynamically from enabled fields
@@ -546,94 +548,154 @@ export const generateAdmissionFormPDF = async ({
     addText(`Page ${currentPage} | Downloaded: ${format(new Date(), 'dd-MMM-yyyy hh:mm a')} | Session: ${academicSession}`, pageWidth / 2, footerY, { fontSize: 5, color: COLORS.muted, align: 'center' });
   };
 
+  // ========== HELPER: Load Image as Base64 ==========
+  const loadImageAsBase64 = async (imageUrl) => {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        canvas.width = img.width;
+        canvas.height = img.height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0);
+        const dataURL = canvas.toDataURL('image/png');
+        resolve({ dataURL, width: img.width, height: img.height });
+      };
+      img.onerror = (err) => {
+        console.warn('[AdmissionFormPDF] Failed to load header image:', err);
+        resolve(null); // Return null on error, fallback to default header
+      };
+      img.src = imageUrl;
+    });
+  };
+
   // ========== PAGE 1: PROFESSIONAL HEADER ==========
   
-  // Top header background
-  pdf.setFillColor(...COLORS.primary);
-  pdf.rect(0, 0, pageWidth, 36, 'F');
+  // Check if we have a custom header image from print settings
+  const headerImageUrl = printHeaderSettings?.header_image_url;
+  let headerHeight = 36; // Default header height
   
-  // Light accent strip
-  pdf.setFillColor(30, 58, 138); // Darker blue
-  pdf.rect(0, 32, pageWidth, 4, 'F');
+  // Track if using custom header (photo will be in STUDENT DETAILS section)
+  let usingCustomHeader = false;
   
-  // Organization Logo Placeholder (Left side)
-  const logoX = margin + 2;
-  const logoY = 4;
-  const logoSize = 18;
-  pdf.setDrawColor(255, 255, 255);
-  pdf.setLineWidth(0.5);
-  pdf.circle(logoX + logoSize/2, logoY + logoSize/2, logoSize/2, 'S');
-  addText('LOGO', logoX + logoSize/2, logoY + logoSize/2 + 1, { 
-    fontSize: 5, color: COLORS.white, align: 'center' 
-  });
+  if (headerImageUrl) {
+    // Load and render custom header image
+    console.log('[AdmissionFormPDF] Using custom header from print settings');
+    const headerImageData = await loadImageAsBase64(headerImageUrl);
+    
+    if (headerImageData) {
+      // Calculate proper dimensions to fit full page width
+      // Standard header template is 2230x300, scale to fit A4 width (210mm with margins)
+      const targetWidth = pageWidth; // Full page width
+      const aspectRatio = headerImageData.height / headerImageData.width;
+      const scaledHeight = targetWidth * aspectRatio;
+      
+      // Add header image spanning full width (NO photo box overlay)
+      pdf.addImage(headerImageData.dataURL, 'PNG', 0, 0, targetWidth, scaledHeight);
+      
+      headerHeight = scaledHeight;
+      usingCustomHeader = true; // Photo will be added in STUDENT DETAILS section
+      
+    } else {
+      // Fallback to default header if image loading fails
+      console.log('[AdmissionFormPDF] Header image load failed, using default header');
+      renderDefaultHeader();
+    }
+  } else {
+    // Use default header design
+    renderDefaultHeader();
+  }
   
-  // Photo Box (Right side - inside header)
-  const photoBoxX = pageWidth - margin - 26;
-  const photoBoxY = 3;
-  const photoBoxW = 22;
-  const photoBoxH = 28;
-  
-  pdf.setFillColor(255, 255, 255);
-  pdf.roundedRect(photoBoxX, photoBoxY, photoBoxW, photoBoxH, 1.5, 1.5, 'F');
-  pdf.setDrawColor(...COLORS.primary);
-  pdf.setLineWidth(0.8);
-  pdf.roundedRect(photoBoxX, photoBoxY, photoBoxW, photoBoxH, 1.5, 1.5, 'S');
-  addText('Paste', photoBoxX + photoBoxW/2, photoBoxY + 10, { 
-    fontSize: 5, color: COLORS.muted, align: 'center' 
-  });
-  addText('Photo', photoBoxX + photoBoxW/2, photoBoxY + 14, { 
-    fontSize: 5, color: COLORS.muted, align: 'center' 
-  });
-  addText('(3.5×4.5cm)', photoBoxX + photoBoxW/2, photoBoxY + 18, { 
-    fontSize: 4.5, color: COLORS.muted, align: 'center' 
-  });
-  addText('Attested', photoBoxX + photoBoxW/2, photoBoxY + 24, { 
-    fontSize: 4, color: COLORS.danger, align: 'center' 
-  });
-  
-  // Organization Name (Center)
-  const headerCenterX = pageWidth / 2;
-  addText(organizationName.toUpperCase(), headerCenterX, 10, {
-    fontSize: FONTS.title + 1,
-    fontStyle: 'bold',
-    color: COLORS.white,
-    align: 'center'
-  });
-  
-  // Branch Name
-  if (branchName) {
-    addText(`( ${branchName} )`, headerCenterX, 16, {
-      fontSize: FONTS.small,
+  // ========== DEFAULT HEADER FUNCTION ==========
+  function renderDefaultHeader() {
+    // Top header background
+    pdf.setFillColor(...COLORS.primary);
+    pdf.rect(0, 0, pageWidth, 36, 'F');
+    
+    // Light accent strip
+    pdf.setFillColor(30, 58, 138); // Darker blue
+    pdf.rect(0, 32, pageWidth, 4, 'F');
+    
+    // Organization Logo Placeholder (Left side)
+    const logoX = margin + 2;
+    const logoY = 4;
+    const logoSize = 18;
+    pdf.setDrawColor(255, 255, 255);
+    pdf.setLineWidth(0.5);
+    pdf.circle(logoX + logoSize/2, logoY + logoSize/2, logoSize/2, 'S');
+    addText('LOGO', logoX + logoSize/2, logoY + logoSize/2 + 1, { 
+      fontSize: 5, color: COLORS.white, align: 'center' 
+    });
+    
+    // Photo Box (Right side - inside header)
+    const photoBoxX = pageWidth - margin - 26;
+    const photoBoxY = 3;
+    const photoBoxW = 22;
+    const photoBoxH = 28;
+    
+    pdf.setFillColor(255, 255, 255);
+    pdf.roundedRect(photoBoxX, photoBoxY, photoBoxW, photoBoxH, 1.5, 1.5, 'F');
+    pdf.setDrawColor(...COLORS.primary);
+    pdf.setLineWidth(0.8);
+    pdf.roundedRect(photoBoxX, photoBoxY, photoBoxW, photoBoxH, 1.5, 1.5, 'S');
+    addText('Paste', photoBoxX + photoBoxW/2, photoBoxY + 10, { 
+      fontSize: 5, color: COLORS.muted, align: 'center' 
+    });
+    addText('Photo', photoBoxX + photoBoxW/2, photoBoxY + 14, { 
+      fontSize: 5, color: COLORS.muted, align: 'center' 
+    });
+    addText('(3.5×4.5cm)', photoBoxX + photoBoxW/2, photoBoxY + 18, { 
+      fontSize: 4.5, color: COLORS.muted, align: 'center' 
+    });
+    addText('Attested', photoBoxX + photoBoxW/2, photoBoxY + 24, { 
+      fontSize: 4, color: COLORS.danger, align: 'center' 
+    });
+    
+    // Organization Name (Center)
+    const headerCenterX = pageWidth / 2;
+    addText(organizationName.toUpperCase(), headerCenterX, 10, {
+      fontSize: FONTS.title + 1,
       fontStyle: 'bold',
-      color: [191, 219, 254],
+      color: COLORS.white,
       align: 'center'
     });
-  }
-  
-  // Address line
-  if (branchAddress) {
-    addText(branchAddress, headerCenterX, 21, {
-      fontSize: 6,
-      color: [191, 219, 254],
-      align: 'center',
-      maxWidth: 140
-    });
-  }
-  
-  // Contact info line
-  let contactLine = '';
-  if (contactPhone) contactLine += `Ph: ${contactPhone}`;
-  if (officePhone && officePhone !== contactPhone) contactLine += (contactLine ? '  |  ' : '') + `Office: ${officePhone}`;
-  if (contactEmail) contactLine += (contactLine ? '  |  ' : '') + `Email: ${contactEmail}`;
-  if (contactLine) {
-    addText(contactLine, headerCenterX, 27, {
-      fontSize: 5.5,
-      color: [191, 219, 254],
-      align: 'center'
-    });
+    
+    // Branch Name
+    if (branchName) {
+      addText(`( ${branchName} )`, headerCenterX, 16, {
+        fontSize: FONTS.small,
+        fontStyle: 'bold',
+        color: [191, 219, 254],
+        align: 'center'
+      });
+    }
+    
+    // Address line
+    if (branchAddress) {
+      addText(branchAddress, headerCenterX, 21, {
+        fontSize: 6,
+        color: [191, 219, 254],
+        align: 'center',
+        maxWidth: 140
+      });
+    }
+    
+    // Contact info line
+    let contactLine = '';
+    if (contactPhone) contactLine += `Ph: ${contactPhone}`;
+    if (officePhone && officePhone !== contactPhone) contactLine += (contactLine ? '  |  ' : '') + `Office: ${officePhone}`;
+    if (contactEmail) contactLine += (contactLine ? '  |  ' : '') + `Email: ${contactEmail}`;
+    if (contactLine) {
+      addText(contactLine, headerCenterX, 27, {
+        fontSize: 5.5,
+        color: [191, 219, 254],
+        align: 'center'
+      });
+    }
   }
 
-  y = 40;
+  y = headerHeight + 4;
   
   // Form Title Bar
   pdf.setFillColor(...COLORS.dark);
@@ -726,13 +788,46 @@ export const generateAdmissionFormPDF = async ({
     
     const sectionColor = getSectionColor(section.color);
     
+    // For STUDENT DETAILS section with custom header, add photo box on right side
+    let photoBoxWidth = 0;
+    if (section.key === 'student_details' && usingCustomHeader) {
+      photoBoxWidth = 28; // Reserve space for photo box
+    }
+    
     // Section header (compact)
-    addRoundedRect(margin, y, contentWidth, 5, 1, { fill: sectionColor });
+    addRoundedRect(margin, y, contentWidth - photoBoxWidth, 5, 1, { fill: sectionColor });
     addText(section.title, margin + 3, y + 3.5, {
       fontSize: FONTS.label,
       fontStyle: 'bold',
       color: COLORS.white
     });
+    
+    // Draw photo box for STUDENT DETAILS when using custom header
+    if (section.key === 'student_details' && usingCustomHeader) {
+      const photoBoxX = pageWidth - margin - 26;
+      const photoBoxY = y - 1;
+      const photoBoxW = 24;
+      const photoBoxH = 32;
+      
+      pdf.setFillColor(255, 255, 255);
+      pdf.roundedRect(photoBoxX, photoBoxY, photoBoxW, photoBoxH, 1.5, 1.5, 'F');
+      pdf.setDrawColor(...COLORS.primary);
+      pdf.setLineWidth(0.8);
+      pdf.roundedRect(photoBoxX, photoBoxY, photoBoxW, photoBoxH, 1.5, 1.5, 'S');
+      addText('Paste', photoBoxX + photoBoxW/2, photoBoxY + 10, { 
+        fontSize: 5, color: COLORS.muted, align: 'center' 
+      });
+      addText('Photo', photoBoxX + photoBoxW/2, photoBoxY + 14, { 
+        fontSize: 5, color: COLORS.muted, align: 'center' 
+      });
+      addText('(3.5×4.5cm)', photoBoxX + photoBoxW/2, photoBoxY + 19, { 
+        fontSize: 4.5, color: COLORS.muted, align: 'center' 
+      });
+      addText('Attested', photoBoxX + photoBoxW/2, photoBoxY + 26, { 
+        fontSize: 4, color: COLORS.danger, align: 'center' 
+      });
+    }
+    
     y += 6;
 
     // Render fields in rows
@@ -740,11 +835,22 @@ export const generateAdmissionFormPDF = async ({
     let rowX = margin + 2;
     let rowHeight = 0;
     
+    // For STUDENT DETAILS with custom header, reduce available width for photo box area
+    const hasPhotoBox = section.key === 'student_details' && usingCustomHeader;
+    const photoBoxReserve = hasPhotoBox ? 30 : 0; // Reserve space for photo box
+    const sectionContentWidth = contentWidth - photoBoxReserve;
+    const photoBoxStartY = y - 7; // Where photo box starts
+    const photoBoxEndY = photoBoxStartY + 35; // Where photo box ends
+    
     section.fields.forEach((field, index) => {
+      // Check if we're still in the photo box zone
+      const inPhotoZone = hasPhotoBox && rowY < photoBoxEndY;
+      const effectiveWidth = inPhotoZone ? sectionContentWidth : contentWidth;
+      
       let fieldWidth;
       switch (field.width) {
         case 'full':
-          fieldWidth = contentWidth - 2;
+          fieldWidth = effectiveWidth - 2;
           if (rowX > margin + 5) {
             y = rowY + rowHeight + 1;
             rowY = y;
@@ -752,16 +858,17 @@ export const generateAdmissionFormPDF = async ({
           rowX = margin + 1;
           break;
         case 'half':
-          fieldWidth = (contentWidth - 4) / 2;
+          fieldWidth = (effectiveWidth - 4) / 2;
           break;
         case 'third':
         default:
-          fieldWidth = (contentWidth - 6) / 3;
+          fieldWidth = (effectiveWidth - 6) / 3;
           break;
       }
       
       // Check if field fits in current row
-      if (rowX + fieldWidth > pageWidth - margin && field.width !== 'full') {
+      const maxRowX = margin + effectiveWidth;
+      if (rowX + fieldWidth > maxRowX && field.width !== 'full') {
         y = rowY + rowHeight + 1;
         rowY = y;
         rowX = margin + 1;

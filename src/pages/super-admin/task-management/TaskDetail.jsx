@@ -9,6 +9,7 @@ import DashboardLayout from '@/components/DashboardLayout';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { useToast } from '@/components/ui/use-toast';
 import api from '@/lib/api';
+import { formatDate as formatDateUtil, formatDateTime as formatDateTimeUtil } from '@/utils/dateUtils';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -251,22 +252,12 @@ const TaskDetail = () => {
   // Format date
   const formatDate = (date) => {
     if (!date) return '-';
-    return new Date(date).toLocaleDateString('en-IN', {
-      day: 'numeric',
-      month: 'short',
-      year: 'numeric'
-    });
+    return formatDateUtil(date);
   };
 
   const formatDateTime = (date) => {
     if (!date) return '-';
-    return new Date(date).toLocaleString('en-IN', {
-      day: 'numeric',
-      month: 'short',
-      year: 'numeric',
-      hour: 'numeric',
-      minute: '2-digit'
-    });
+    return formatDateTimeUtil(date);
   };
 
   // Check if overdue

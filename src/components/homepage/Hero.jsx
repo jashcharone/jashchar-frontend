@@ -2,7 +2,290 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { ArrowRight, ExternalLink, ShieldCheck, Sparkles, Play, Pause, Volume2, VolumeX } from 'lucide-react';
+import { ArrowRight, ExternalLink, ShieldCheck, Sparkles, Play, Pause, Volume2, VolumeX, RefreshCw, Brain, FileCheck, ScanFace, Zap } from 'lucide-react';
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// AI FEATURES DATA - 4 Powerful AI Tools
+// ═══════════════════════════════════════════════════════════════════════════════
+const AI_FEATURES = [
+  { 
+    id: 'jashsync', 
+    name: 'JashSync', 
+    icon: RefreshCw, 
+    color: 'from-blue-500 to-cyan-400',
+    bgColor: 'bg-blue-500/10 dark:bg-blue-400/10',
+    borderColor: 'border-blue-500/30 dark:border-blue-400/30',
+    description: 'Real-time Data Sync',
+    stat: '99.9%',
+    statLabel: 'Uptime'
+  },
+  { 
+    id: 'cortex', 
+    name: 'Cortex AI', 
+    icon: Brain, 
+    color: 'from-purple-500 to-pink-400',
+    bgColor: 'bg-purple-500/10 dark:bg-purple-400/10',
+    borderColor: 'border-purple-500/30 dark:border-purple-400/30',
+    description: 'AI Assistant',
+    stat: '50ms',
+    statLabel: 'Response'
+  },
+  { 
+    id: 'evaluation', 
+    name: 'AI Evaluation', 
+    icon: FileCheck, 
+    color: 'from-emerald-500 to-teal-400',
+    bgColor: 'bg-emerald-500/10 dark:bg-emerald-400/10',
+    borderColor: 'border-emerald-500/30 dark:border-emerald-400/30',
+    description: 'Auto Paper Check',
+    stat: '94.2%',
+    statLabel: 'Accuracy'
+  },
+  { 
+    id: 'face', 
+    name: 'Face Attendance', 
+    icon: ScanFace, 
+    color: 'from-orange-500 to-yellow-400',
+    bgColor: 'bg-orange-500/10 dark:bg-orange-400/10',
+    borderColor: 'border-orange-500/30 dark:border-orange-400/30',
+    description: 'Face Recognition',
+    stat: '<1s',
+    statLabel: 'Detection'
+  }
+];
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// STYLE 1: Floating 4-Cards Grid
+// ═══════════════════════════════════════════════════════════════════════════════
+const AIStyleFloatingCards = () => (
+  <div className="grid grid-cols-2 gap-3 mt-6">
+    {AI_FEATURES.map((feature, index) => {
+      const Icon = feature.icon;
+      return (
+        <motion.div
+          key={feature.id}
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: index * 0.1, duration: 0.5 }}
+          whileHover={{ scale: 1.05, y: -5 }}
+          className={`relative p-3 rounded-xl ${feature.bgColor} border ${feature.borderColor} backdrop-blur-sm cursor-pointer group overflow-hidden`}
+        >
+          <div className={`absolute inset-0 bg-gradient-to-r ${feature.color} opacity-0 group-hover:opacity-10 transition-opacity duration-300`} />
+          <div className="flex items-center gap-2">
+            <div className={`p-1.5 rounded-lg bg-gradient-to-r ${feature.color}`}>
+              <Icon className="h-4 w-4 text-white" />
+            </div>
+            <div>
+              <p className="text-xs font-semibold text-slate-900 dark:text-white">{feature.name}</p>
+              <p className="text-[10px] text-slate-500 dark:text-slate-400">{feature.description}</p>
+            </div>
+          </div>
+        </motion.div>
+      );
+    })}
+  </div>
+);
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// STYLE 2: Scrolling Badge Marquee
+// ═══════════════════════════════════════════════════════════════════════════════
+const AIStyleScrollingBadge = () => (
+  <div className="mt-6 overflow-hidden rounded-full bg-slate-100/50 dark:bg-white/5 border border-slate-200 dark:border-white/10 backdrop-blur-sm">
+    <div className="flex animate-marquee-fast whitespace-nowrap py-2">
+      {[...AI_FEATURES, ...AI_FEATURES, ...AI_FEATURES].map((feature, index) => {
+        const Icon = feature.icon;
+        return (
+          <div key={`${feature.id}-${index}`} className="inline-flex items-center gap-2 mx-6">
+            <div className={`p-1 rounded-md bg-gradient-to-r ${feature.color}`}>
+              <Icon className="h-3 w-3 text-white" />
+            </div>
+            <span className={`text-sm font-medium bg-gradient-to-r ${feature.color} bg-clip-text text-transparent`}>
+              {feature.name}
+            </span>
+            <span className="text-slate-400 dark:text-slate-500">•</span>
+          </div>
+        );
+      })}
+    </div>
+  </div>
+);
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// STYLE 3: Rotating Showcase (One at a time)
+// ═══════════════════════════════════════════════════════════════════════════════
+const AIStyleRotatingShowcase = () => {
+  const [current, setCurrent] = useState(0);
+  
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrent(prev => (prev + 1) % AI_FEATURES.length);
+    }, 3000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const feature = AI_FEATURES[current];
+  const Icon = feature.icon;
+
+  return (
+    <div className="mt-6">
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={feature.id}
+          initial={{ opacity: 0, x: 30, scale: 0.95 }}
+          animate={{ opacity: 1, x: 0, scale: 1 }}
+          exit={{ opacity: 0, x: -30, scale: 0.95 }}
+          transition={{ duration: 0.4, ease: 'easeInOut' }}
+          className={`p-4 rounded-2xl ${feature.bgColor} border ${feature.borderColor} backdrop-blur-sm`}
+        >
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className={`p-2 rounded-xl bg-gradient-to-r ${feature.color} shadow-lg`}>
+                <Icon className="h-5 w-5 text-white" />
+              </div>
+              <div>
+                <p className="text-sm font-bold text-slate-900 dark:text-white">{feature.name}</p>
+                <p className="text-xs text-slate-500 dark:text-slate-400">{feature.description}</p>
+              </div>
+            </div>
+            <div className="text-right">
+              <p className={`text-lg font-bold bg-gradient-to-r ${feature.color} bg-clip-text text-transparent`}>{feature.stat}</p>
+              <p className="text-[10px] text-slate-400">{feature.statLabel}</p>
+            </div>
+          </div>
+        </motion.div>
+      </AnimatePresence>
+      {/* Progress Dots */}
+      <div className="flex justify-center gap-1.5 mt-3">
+        {AI_FEATURES.map((_, idx) => (
+          <button
+            key={idx}
+            onClick={() => setCurrent(idx)}
+            className={`h-1.5 rounded-full transition-all duration-300 ${idx === current ? 'w-6 bg-gradient-to-r from-primary to-indigo-500' : 'w-1.5 bg-slate-300 dark:bg-slate-600'}`}
+          />
+        ))}
+      </div>
+    </div>
+  );
+};
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// STYLE 4: Icon Row with Tooltips
+// ═══════════════════════════════════════════════════════════════════════════════
+const AIStyleIconRow = () => {
+  const [hoveredId, setHoveredId] = useState(null);
+
+  return (
+    <div className="mt-6">
+      <div className="flex items-center justify-center gap-4 p-3 rounded-2xl bg-slate-100/50 dark:bg-white/5 border border-slate-200 dark:border-white/10 backdrop-blur-sm">
+        <Zap className="h-4 w-4 text-yellow-500 animate-pulse" />
+        <span className="text-xs text-slate-500 dark:text-slate-400">Powered by</span>
+        {AI_FEATURES.map((feature) => {
+          const Icon = feature.icon;
+          return (
+            <div key={feature.id} className="relative">
+              <motion.div
+                whileHover={{ scale: 1.2, rotate: 10 }}
+                onHoverStart={() => setHoveredId(feature.id)}
+                onHoverEnd={() => setHoveredId(null)}
+                className={`p-2 rounded-xl bg-gradient-to-r ${feature.color} cursor-pointer shadow-lg`}
+              >
+                <Icon className="h-4 w-4 text-white" />
+              </motion.div>
+              <AnimatePresence>
+                {hoveredId === feature.id && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 10, scale: 0.9 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: 10, scale: 0.9 }}
+                    className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-1.5 rounded-lg bg-slate-900 dark:bg-white text-white dark:text-slate-900 text-xs font-medium whitespace-nowrap z-50 shadow-xl"
+                  >
+                    {feature.name}
+                    <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-slate-900 dark:border-t-white" />
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+};
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// STYLE 5: Stats Counter Combo
+// ═══════════════════════════════════════════════════════════════════════════════
+const AIStyleStatsCombo = () => (
+  <div className="mt-6 space-y-3">
+    {/* Scrolling Header */}
+    <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
+      <Zap className="h-3 w-3 text-yellow-500" />
+      <span>AI-Powered Features</span>
+      <div className="flex-1 h-px bg-gradient-to-r from-slate-200 to-transparent dark:from-slate-700" />
+    </div>
+    {/* Stats Grid */}
+    <div className="grid grid-cols-4 gap-2">
+      {AI_FEATURES.map((feature, index) => {
+        const Icon = feature.icon;
+        return (
+          <motion.div
+            key={feature.id}
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: index * 0.1 }}
+            whileHover={{ scale: 1.05 }}
+            className="text-center p-2 rounded-xl bg-slate-100/50 dark:bg-white/5 border border-slate-200 dark:border-white/10"
+          >
+            <div className={`mx-auto w-8 h-8 rounded-lg bg-gradient-to-r ${feature.color} flex items-center justify-center mb-1`}>
+              <Icon className="h-4 w-4 text-white" />
+            </div>
+            <p className={`text-sm font-bold bg-gradient-to-r ${feature.color} bg-clip-text text-transparent`}>{feature.stat}</p>
+            <p className="text-[9px] text-slate-400 truncate">{feature.name}</p>
+          </motion.div>
+        );
+      })}
+    </div>
+  </div>
+);
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// AI FEATURES SHOWCASE - Daily Rotation
+// ═══════════════════════════════════════════════════════════════════════════════
+const AIFeaturesShowcase = () => {
+  // Get day of year to determine which style to show (rotates every day)
+  const getDayOfYear = () => {
+    const now = new Date();
+    const start = new Date(now.getFullYear(), 0, 0);
+    const diff = now - start;
+    const oneDay = 1000 * 60 * 60 * 24;
+    return Math.floor(diff / oneDay);
+  };
+
+  // Check URL param for testing: ?aiStyle=0 to ?aiStyle=4
+  const getStyleFromUrl = () => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const style = params.get('aiStyle');
+      if (style !== null && !isNaN(parseInt(style))) {
+        return parseInt(style) % 5;
+      }
+    }
+    return null;
+  };
+
+  const urlStyle = getStyleFromUrl();
+  const styleIndex = urlStyle !== null ? urlStyle : (getDayOfYear() % 5);
+
+  const styles = [
+    <AIStyleFloatingCards key="cards" />,
+    <AIStyleScrollingBadge key="badge" />,
+    <AIStyleRotatingShowcase key="rotating" />,
+    <AIStyleIconRow key="icons" />,
+    <AIStyleStatsCombo key="stats" />
+  ];
+
+  return styles[styleIndex];
+};
 
 // Helper function to extract video ID from various URL formats
 const getVideoEmbedUrl = (url, autoplay = true, muted = true, loop = true) => {
@@ -117,7 +400,7 @@ const Hero = ({ content, demoSettings }) => {
               Premium SaaS ERP for modern schools
             </div>
             {title && (
-                <h1 className="mt-4 text-4xl md:text-5xl lg:text-6xl font-extrabold text-slate-900 dark:text-white tracking-tight leading-tight drop-shadow-sm">
+                <h1 className="mt-4 text-4xl md:text-5xl lg:text-6xl font-extrabold tracking-tight leading-tight drop-shadow-sm bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-500 dark:from-cyan-400 dark:via-emerald-400 dark:to-yellow-300 bg-clip-text text-transparent animate-gradient-x">
                 {title}
                 </h1>
             )}
@@ -145,6 +428,9 @@ const Hero = ({ content, demoSettings }) => {
                   1-click onboarding
                 </div>
               </div>
+
+              {/* AI Features Showcase - Rotates daily through 5 styles */}
+              <AIFeaturesShowcase />
             </div>
 
             {showDemoButton && (

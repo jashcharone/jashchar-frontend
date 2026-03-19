@@ -109,8 +109,8 @@ const DashboardLayout = ({ children }) => {
   const isExpanded = isSidebarOpen || (isSidebarHovered && !isMobile);
 
   return (
-    <div className="h-screen w-full bg-background text-foreground overflow-hidden">
-      <div className="relative h-full flex">
+    <div className="h-screen w-full bg-background text-foreground flex flex-col">
+      <div className="relative flex-1 flex min-h-0">
         {/* Mobile/Tablet overlay for sidebar drawer */}
         {isDrawerMode && isSidebarOpen && (
           <div
@@ -132,7 +132,7 @@ const DashboardLayout = ({ children }) => {
         
         <div
           className={cn(
-            "flex-1 flex flex-col transition-all duration-300 ease-out min-w-0 min-h-0 h-full",
+            "flex-1 flex flex-col transition-all duration-300 ease-out min-w-0 min-h-0",
             // Enhanced margin calculation:
             // - Drawer mode (mobile/tablet): No margin (sidebar is overlay)
             // - Fixed sidebar mode (desktop): Add margin based on sidebar state

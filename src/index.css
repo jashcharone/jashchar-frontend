@@ -94,15 +94,44 @@ html:not(.dark) {
     @apply border-border;
   }
   
-  /* Ensure root element allows scrolling */
-  #root {
-    min-height: 100vh;
-    overflow-y: auto;
+  /* ═══════════════════════════════════════════════════════════════════════════ */
+  /* GLOBAL SCROLL FIX - Ensure scroll works on ALL pages                       */
+  /* ═══════════════════════════════════════════════════════════════════════════ */
+  
+  html {
+    overflow-y: scroll !important;
+    overflow-x: hidden !important;
+    height: auto !important;
+    min-height: 100% !important;
   }
   
   body {
     @apply bg-background text-foreground;
     font-family: var(--font-family);
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    height: auto !important;
+    min-height: 100vh !important;
+    position: relative !important;
+  }
+  
+  /* Root element must allow scroll */
+  #root {
+    min-height: 100vh;
+    overflow-y: visible !important;
+    overflow-x: hidden !important;
+    height: auto !important;
+    position: relative !important;
+  }
+  
+  /* Override any h-screen with overflow-hidden patterns */
+  .h-screen {
+    overflow-y: auto !important;
+  }
+  
+  /* Allow main content to scroll */
+  main, [role="main"], #main-content {
+    overflow-y: auto !important;
   }
   
   .animated-gradient {

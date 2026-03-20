@@ -170,7 +170,7 @@ export const BASE_SIDEBAR = {
         { title: '🏗️ Fee Structures', path: ROUTES.SUPER_ADMIN.FEE_STRUCTURES },
         { title: '🧠 Smart Rules', path: ROUTES.SUPER_ADMIN.FEE_RULES },
         { title: '📝 Fees Type', path: ROUTES.SUPER_ADMIN.FEES_TYPE },
-        { title: 'Quick Fees', path: ROUTES.SUPER_ADMIN.QUICK_FEES },
+        { title: '⚡ Quick Fees', path: ROUTES.SUPER_ADMIN.QUICK_FEES },
         // ── Fee Management ──
         { title: '── Fee Management ──', path: '#fees-management', disabled: true },
         { title: '🔍 Search Fees Payment', path: ROUTES.SUPER_ADMIN.SEARCH_FEES_PAYMENT },

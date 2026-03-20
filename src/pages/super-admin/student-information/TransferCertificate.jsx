@@ -12,12 +12,13 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { FileText, Search, Plus, Printer, Copy, X, Eye, AlertTriangle, ChevronDown, ChevronUp, GraduationCap, Calendar } from 'lucide-react';
+import { FileText, Search, Plus, Printer, Copy, X, Eye, AlertTriangle, ChevronDown, ChevronUp, GraduationCap, Calendar, Loader2 } from 'lucide-react';
+import { sortClasses, sortSections } from '@/utils/classOrderUtils';
 
 const _apiBase = getApiBaseUrl();
 const BASE_URL = _apiBase ? `${_apiBase}/api` : '/api';
 
-const apiCall = async (endpoint, method = 'GET', body = null) => {
+const apiCall = async (endpoint, method = 'GET', body = null, branchId = null, sessionId = null) => {
   const { data: { session } } = await supabase.auth.getSession();
   const token = session?.access_token;
   const options = {
@@ -25,6 +26,8 @@ const apiCall = async (endpoint, method = 'GET', body = null) => {
     headers: {
       'Content-Type': 'application/json',
       ...(token && { Authorization: `Bearer ${token}` }),
+      ...(branchId && { 'x-school-id': branchId, 'X-Branch-ID': branchId }),
+      ...(sessionId && { 'X-Session-ID': sessionId }),
     },
   };
   if (body && method !== 'GET') options.body = JSON.stringify(body);
@@ -119,6 +122,14 @@ export default function TransferCertificate() {
   const [showGenerateModal, setShowGenerateModal] = useState(false);
   const [students, setStudents] = useState([]);
   const [studentSearch, setStudentSearch] = useState('');
+  
+  // Class and Section filter for modal
+  const [modalClasses, setModalClasses] = useState([]);
+  const [modalSections, setModalSections] = useState([]);
+  const [modalSelectedClass, setModalSelectedClass] = useState('');
+  const [modalSelectedSection, setModalSelectedSection] = useState('');
+  const [loadingClasses, setLoadingClasses] = useState(false);
+  const [loadingSections, setLoadingSections] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState(null);
   const [formData, setFormData] = useState({
     date_of_leaving: new Date().toISOString().split('T')[0],
@@ -159,7 +170,7 @@ export default function TransferCertificate() {
       const params = new URLSearchParams();
       if (search) params.set('search', search);
       if (statusFilter !== 'all') params.set('status', statusFilter);
-      const result = await apiCall(`/transfer-certificates?${params.toString()}`);
+      const result = await apiCall(`/transfer-certificates?${params.toString()}`, 'GET', null, selectedBranch?.id, currentSessionId);
       if (result.success) setTcs(result.data);
     } catch (e) {
       console.error('Error fetching TCs:', e);
@@ -192,12 +203,95 @@ export default function TransferCertificate() {
     })();
   }, [selectedBranch?.id]);
 
+  // ─── Fetch classes for modal ─────
+  const fetchModalClasses = async () => {
+    if (!selectedBranch?.id) return;
+    setLoadingClasses(true);
+    try {
+      const { data, error } = await supabase
+        .from('classes')
+        .select('id, name')
+        .eq('branch_id', selectedBranch.id);
+      if (!error) setModalClasses(sortClasses(data || []));
+    } catch (e) {
+      console.error('Error fetching classes:', e);
+    }
+    setLoadingClasses(false);
+  };
+
+  // ─── Fetch sections when class selected ─────
+  const fetchModalSections = async (classId) => {
+    if (!classId) {
+      setModalSections([]);
+      return;
+    }
+    setLoadingSections(true);
+    try {
+      const { data, error } = await supabase
+        .from('class_sections')
+        .select('sections(id, name)')
+        .eq('class_id', classId);
+      if (!error) {
+        const sectionsList = data ? data.map(item => item.sections).filter(Boolean) : [];
+        setModalSections(sortSections(sectionsList));
+      }
+    } catch (e) {
+      console.error('Error fetching sections:', e);
+    }
+    setLoadingSections(false);
+  };
+
+  // ─── Handle modal open ─────
+  useEffect(() => {
+    if (showGenerateModal) {
+      fetchModalClasses();
+      // Reset modal filters
+      setModalSelectedClass('');
+      setModalSelectedSection('');
+      setModalSections([]);
+      setStudents([]);
+      setStudentSearch('');
+      setSelectedStudent(null);
+    }
+  }, [showGenerateModal, selectedBranch?.id]);
+
+  // ─── Fetch sections when class changes ─────
+  useEffect(() => {
+    setModalSelectedSection('');
+    fetchModalSections(modalSelectedClass);
+  }, [modalSelectedClass]);
+
   // ─── Search students for TC ─────
   const searchStudents = async (query) => {
+    // If class is selected, filter by class (and optionally section)
+    if (modalSelectedClass) {
+      let qry = supabase
+        .from('student_profiles')
+        .select('id, full_name, father_name, mother_name, date_of_birth, school_code, admission_date, class_id, section_id, classes!student_profiles_class_id_fkey(name), sections!student_profiles_section_id_fkey(name), photo_url')
+        .eq('branch_id', selectedBranch.id)
+        .eq('session_id', currentSessionId)
+        .eq('is_disabled', false)
+        .eq('class_id', modalSelectedClass);
+      
+      if (modalSelectedSection) {
+        qry = qry.eq('section_id', modalSelectedSection);
+      }
+      
+      // If search query, filter by name/school_code
+      if (query && query.length >= 2) {
+        qry = qry.or(`full_name.ilike.%${query}%,school_code.ilike.%${query}%`);
+      }
+      
+      const { data } = await qry.order('full_name').limit(50);
+      setStudents(data || []);
+      return;
+    }
+    
+    // Otherwise, require search query
     if (!query || query.length < 2) { setStudents([]); return; }
     const { data } = await supabase
       .from('student_profiles')
-      .select('id, full_name, father_name, mother_name, date_of_birth, school_code, admission_date, class_id, classes!student_profiles_class_id_fkey(name), photo_url')
+      .select('id, full_name, father_name, mother_name, date_of_birth, school_code, admission_date, class_id, section_id, classes!student_profiles_class_id_fkey(name), sections!student_profiles_section_id_fkey(name), photo_url')
       .eq('branch_id', selectedBranch.id)
       .eq('session_id', currentSessionId)
       .eq('is_disabled', false)
@@ -209,7 +303,7 @@ export default function TransferCertificate() {
   useEffect(() => {
     const tid = setTimeout(() => searchStudents(studentSearch), 300);
     return () => clearTimeout(tid);
-  }, [studentSearch]);
+  }, [studentSearch, modalSelectedClass, modalSelectedSection]);
 
   // ─── Generate TC ────────────────
   const handleGenerateTC = async () => {
@@ -219,7 +313,7 @@ export default function TransferCertificate() {
       const result = await apiCall('/transfer-certificates', 'POST', {
         student_id: selectedStudent.id,
         ...formData,
-      });
+      }, selectedBranch?.id, currentSessionId);
       if (result.success) {
         setShowGenerateModal(false);
         setSelectedStudent(null);
@@ -255,7 +349,7 @@ export default function TransferCertificate() {
   // ─── Duplicate TC ───────────────
   const handleDuplicate = async (tcId) => {
     if (!confirm('Are you sure you want to generate a DUPLICATE TC?')) return;
-    const result = await apiCall(`/transfer-certificates/${tcId}/duplicate`, 'POST');
+    const result = await apiCall(`/transfer-certificates/${tcId}/duplicate`, 'POST', null, selectedBranch?.id, currentSessionId);
     if (result.success) fetchTCs();
     else alert(result.error || 'Failed to generate duplicate');
   };
@@ -263,7 +357,7 @@ export default function TransferCertificate() {
   // ─── Cancel TC ──────────────────
   const handleCancelTC = async () => {
     if (!cancelTC) return;
-    const result = await apiCall(`/transfer-certificates/${cancelTC.id}/cancel`, 'PUT', { reason: cancelReason });
+    const result = await apiCall(`/transfer-certificates/${cancelTC.id}/cancel`, 'PUT', { reason: cancelReason }, selectedBranch?.id, currentSessionId);
     if (result.success) {
       setShowCancelModal(false);
       setCancelTC(null);
@@ -490,13 +584,65 @@ export default function TransferCertificate() {
             </DialogHeader>
 
             <div className="space-y-4">
+              {/* Class and Section Selection */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="text-sm font-medium mb-1 block">Select Class *</label>
+                  <Select
+                    value={modalSelectedClass}
+                    onValueChange={(v) => {
+                      setModalSelectedClass(v);
+                      setSelectedStudent(null);
+                    }}
+                  >
+                    <SelectTrigger>
+                      {loadingClasses ? (
+                        <span className="flex items-center gap-2"><Loader2 className="h-4 w-4 animate-spin" /> Loading...</span>
+                      ) : (
+                        <SelectValue placeholder="Select Class" />
+                      )}
+                    </SelectTrigger>
+                    <SelectContent>
+                      {modalClasses.map((cls) => (
+                        <SelectItem key={cls.id} value={cls.id}>{cls.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <label className="text-sm font-medium mb-1 block">Select Section</label>
+                  <Select
+                    value={modalSelectedSection || 'all'}
+                    onValueChange={(v) => {
+                      setModalSelectedSection(v === 'all' ? '' : v);
+                      setSelectedStudent(null);
+                    }}
+                    disabled={!modalSelectedClass}
+                  >
+                    <SelectTrigger>
+                      {loadingSections ? (
+                        <span className="flex items-center gap-2"><Loader2 className="h-4 w-4 animate-spin" /> Loading...</span>
+                      ) : (
+                        <SelectValue placeholder="All Sections" />
+                      )}
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Sections</SelectItem>
+                      {modalSections.map((sec) => (
+                        <SelectItem key={sec.id} value={sec.id}>{sec.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
               {/* Student Search */}
               <div>
                 <label className="text-sm font-medium mb-1 block">Search Student</label>
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
-                    placeholder="Type student name or admission number..."
+                    placeholder={modalSelectedClass ? "Type name or admission number (or leave empty to see all)..." : "Select class first, or type student name or admission number..."}
                     value={studentSearch}
                     onChange={(e) => { setStudentSearch(e.target.value); setSelectedStudent(null); }}
                     className="pl-9"
@@ -518,7 +664,7 @@ export default function TransferCertificate() {
                         <div>
                           <p className="text-sm font-medium">{s.full_name}</p>
                           <p className="text-xs text-muted-foreground">
-                            {s.school_code} | {s.classes?.name || 'N/A'} | Father: {s.father_name}
+                            {s.school_code} | {s.classes?.name || 'N/A'}{s.sections?.name ? ` - ${s.sections.name}` : ''} | Father: {s.father_name}
                           </p>
                         </div>
                       </div>
@@ -536,7 +682,7 @@ export default function TransferCertificate() {
                       <div className="flex-1">
                         <p className="font-medium">{selectedStudent.full_name}</p>
                         <p className="text-xs text-muted-foreground">
-                          Adm: {selectedStudent.school_code} | Class: {selectedStudent.classes?.name} |
+                          Adm: {selectedStudent.school_code} | Class: {selectedStudent.classes?.name}{selectedStudent.sections?.name ? ` - ${selectedStudent.sections.name}` : ''} |
                           DOB: {formatDate(selectedStudent.date_of_birth)}
                         </p>
                       </div>

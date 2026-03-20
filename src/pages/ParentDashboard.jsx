@@ -11,6 +11,7 @@ import DashboardLayout from '@/components/DashboardLayout';
 import { useToast } from '@/components/ui/use-toast';
 import WelcomeMessage from '@/components/WelcomeMessage';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
+import { ParentSelectedChildProvider, useParentSelectedChild } from '@/contexts/ParentSelectedChildContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -125,13 +126,14 @@ const ChildDashboard = ({ child, onBack }) => {
 
         const paidFees = fees?.reduce((sum, f) => sum + (f.amount || 0), 0) || 0;
 
-        // Fetch fee allocations for total
-        const { data: allocs } = await supabase
+        // Fetch fee allocations for total (amount is in fee_masters table)
+        const { data: allocs, error: allocError } = await supabase
           .from('student_fee_allocations')
-          .select('total_amount')
+          .select('fee_master_id, fee_masters(amount)')
           .eq('student_id', child.id);
 
-        const totalFees = allocs?.reduce((sum, a) => sum + (a.total_amount || 0), 0) || 0;
+        // Calculate total fees from fee_masters
+        const totalFees = allocError ? 0 : (allocs || []).reduce((sum, a) => sum + (a.fee_masters?.amount || 0), 0);
 
         setFeeData({
           total: totalFees,
@@ -168,19 +170,18 @@ const ChildDashboard = ({ child, onBack }) => {
 
         setAttendanceData({ ...attCounts, todayStatus: todayRecord?.status || null });
 
-        // Fetch latest exam result
-        const { data: examMarks } = await supabase
-          .from('exam_marks_v2')
-          .select('total_marks, percentage, grade, exam_subjects(max_marks, exams(name, exam_date))')
+        // Fetch latest exam result (using exam_marks table)
+        const { data: examMarks, error: examError } = await supabase
+          .from('exam_marks')
+          .select('marks_obtained, marks_theory, marks_practical, exam_subject_id, exam_subjects(max_marks, subject_name, exams(name, exam_date))')
           .eq('student_id', child.id)
-          .in('status', ['submitted', 'verified', 'locked'])
           .order('created_at', { ascending: false })
           .limit(5);
 
-        if (examMarks?.length) {
+        if (!examError && examMarks?.length) {
           const latestExam = examMarks[0]?.exam_subjects?.exams?.name;
           const examGroup = examMarks.filter(m => m.exam_subjects?.exams?.name === latestExam);
-          const totalObtained = examGroup.reduce((s, m) => s + (m.total_marks || 0), 0);
+          const totalObtained = examGroup.reduce((s, m) => s + (m.marks_obtained || m.marks_theory || 0), 0);
           const totalMax = examGroup.reduce((s, m) => s + (m.exam_subjects?.max_marks || 100), 0);
           setRecentExam({
             name: latestExam,
@@ -385,13 +386,13 @@ const ChildDashboard = ({ child, onBack }) => {
   );
 };
 
-// Main Parent Dashboard Component
-const ParentDashboard = () => {
+// Main Parent Dashboard Component - Inner component that uses context
+const ParentDashboardInner = () => {
   const { toast } = useToast();
   const { user, school } = useAuth();
   const [children, setChildren] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [selectedChild, setSelectedChild] = useState(null);
+  const { selectedChild, setSelectedChild } = useParentSelectedChild();
 
   useEffect(() => {
     const fetchChildren = async () => {
@@ -421,13 +422,17 @@ const ParentDashboard = () => {
         }
 
         const result = await response.json();
-        console.log('[ParentDashboard] API response:', result);
+        console.log('[ParentDashboard] API response:', JSON.stringify(result, null, 2));
+        console.log('[ParentDashboard] Children count:', result.children?.length || 0);
 
         if (result.children && result.children.length > 0) {
+          console.log('[ParentDashboard] Setting children:', result.children.map(c => c.full_name));
           setChildren(result.children);
-          setSelectedChild(result.children[0]);
+          // Don't auto-select first child - show children list first
+          // setSelectedChild(result.children[0]);
         } else {
           // No children linked
+          console.log('[ParentDashboard] No children in response');
           setChildren([]);
         }
 
@@ -496,6 +501,15 @@ const ParentDashboard = () => {
         </div>
       </div>
     </DashboardLayout>
+  );
+};
+
+// Main wrapper component that provides the context
+const ParentDashboard = () => {
+  return (
+    <ParentSelectedChildProvider>
+      <ParentDashboardInner />
+    </ParentSelectedChildProvider>
   );
 };
 

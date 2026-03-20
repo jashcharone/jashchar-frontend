@@ -19,6 +19,7 @@ import { useTheme } from '@/contexts/ThemeContext';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useDynamicSidebar } from '@/hooks/useDynamicSidebar';
 import { useBranchAttendanceModules, PATH_TO_ATTENDANCE_MODULE } from '@/hooks/useBranchAttendanceModules';
+import { useParentSelectedChild } from '@/contexts/ParentSelectedChildContext';
 
 // --- CONFIGURATION ---
 const SIDEBAR_WIDTH_EXPANDED = "w-[270px]";
@@ -37,6 +38,9 @@ const Sidebar = ({ role, isSidebarOpen, isMobile, toggleSidebar, closeSidebar, o
   
   // ✅ BRANCH ATTENDANCE MODULES - Filter attendance based on master admin config
   const { isPathEnabled, hasConfig: hasAttendanceConfig } = useBranchAttendanceModules();
+  
+  // ✅ PARENT SELECTED CHILD - Show limited menu when no child selected
+  const { hasSelectedChild } = useParentSelectedChild();
   
   // Local state
   const [isHovered, setIsHovered] = useState(false);
@@ -121,6 +125,20 @@ const Sidebar = ({ role, isSidebarOpen, isMobile, toggleSidebar, closeSidebar, o
     // For master_admin, return all modules without filtering (platform-level)
     if (normalizedRole === 'master_admin') {
       return menuItems;
+    }
+    
+    // ✅ PARENT ROLE: Show limited menu when viewing children list (no child selected)
+    // When parent selects a child, show full menu; otherwise only Dashboard
+    if (normalizedRole === 'parent' && !hasSelectedChild) {
+      return menuItems.filter(item => 
+        item.title === 'Dashboard' || item.title === 'My Children'
+      );
+    }
+    
+    // ✅ PARENT ROLE with child selected: Show ALL parent modules (no permission filtering)
+    // Parents see modules defined in BASE_SIDEBAR.parent without checking canView()
+    if (normalizedRole === 'parent' && hasSelectedChild) {
+      return menuItems; // Return full parent menu from config
     }
     
     // For super_admin / school owner roles, apply ONLY attendance module filtering
@@ -242,7 +260,7 @@ const Sidebar = ({ role, isSidebarOpen, isMobile, toggleSidebar, closeSidebar, o
       
       return hasAccess;
     });
-  }, [role, canView, dynamicMenu, isPathEnabled, hasAttendanceConfig]);
+  }, [role, canView, dynamicMenu, isPathEnabled, hasAttendanceConfig, hasSelectedChild]);
 
   const filteredMenu = useMemo(() => {
     if (!searchTerm) return currentMenu;

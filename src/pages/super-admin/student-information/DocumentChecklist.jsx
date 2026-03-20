@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { useBranch } from '@/contexts/BranchContext';
+import DashboardLayout from '@/components/DashboardLayout';
 import { getApiBaseUrl } from '@/utils/platform';
 import { supabase } from '@/lib/supabaseClient';
 import {
@@ -57,6 +58,7 @@ export default function DocumentChecklist() {
       'Content-Type': 'application/json',
       'Authorization': `Bearer ${data?.session?.access_token}`,
       'x-branch-id': selectedBranch?.id,
+      'x-school-id': selectedBranch?.id,
     };
   }, [selectedBranch]);
 
@@ -163,14 +165,17 @@ export default function DocumentChecklist() {
 
   if (!selectedBranch?.id) {
     return (
-      <div className="flex items-center justify-center h-64 text-muted-foreground">
-        <AlertCircle className="mr-2 h-5 w-5" /> Please select a branch first
-      </div>
+      <DashboardLayout>
+        <div className="flex items-center justify-center h-64 text-muted-foreground">
+          <AlertCircle className="mr-2 h-5 w-5" /> Please select a branch first
+        </div>
+      </DashboardLayout>
     );
   }
 
   return (
-    <div className="space-y-6 p-4 md:p-6 max-w-5xl mx-auto">
+    <DashboardLayout>
+      <div className="space-y-6 p-4 md:p-6 max-w-5xl mx-auto">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
@@ -371,6 +376,7 @@ export default function DocumentChecklist() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </div>
+      </div>
+    </DashboardLayout>
   );
 }

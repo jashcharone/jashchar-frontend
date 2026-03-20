@@ -44,8 +44,8 @@ const QuickFees = () => {
         firstInstallment: '100',
         numInstallments: '9',
         monthlyDueDate: '10',
-        fineType: 'None',
-        fineValue: ''
+        fineType: 'none',
+        fineValue: '0'
     });
     const [installments, setInstallments] = useState([]);
     const [isAssigned, setIsAssigned] = useState(false);
@@ -158,7 +158,7 @@ const QuickFees = () => {
     }, [selectedStudentId, students]);
 
     const resetForm = () => {
-        setFeeData({ totalFees: '1000', firstInstallment: '100', numInstallments: '9', monthlyDueDate: '10', fineType: 'None', fineValue: '' });
+        setFeeData({ totalFees: '1000', firstInstallment: '100', numInstallments: '9', monthlyDueDate: '10', fineType: 'none', fineValue: '0' });
         setInstallments([]);
         setIsAssigned(false);
         setAssignedGroupId(null);
@@ -203,7 +203,7 @@ const QuickFees = () => {
                 fee_type: m.fee_types?.name,
                 fee_code: m.fee_types?.code,
                 due_date: m.due_date,
-                fine_type: m.fine_type || 'None',
+                fine_type: m.fine_type || 'none',
                 fine_value: m.fine_value,
                 amount: m.amount
             }));
@@ -231,8 +231,8 @@ const QuickFees = () => {
                 fee_type: 'Installment-1',
                 fee_code: `QF-${selectedStudent.school_code}-1`,
                 due_date: new Date().toISOString().split('T')[0], // Due today or configurable? Assuming today for 1st.
-                fine_type: feeData.fineType,
-                fine_value: feeData.fineValue || null,
+                fine_type: feeData.fineType || 'none',
+                fine_value: feeData.fineValue || 0,
                 amount: Number(feeData.firstInstallment).toFixed(2),
             });
         }
@@ -250,8 +250,8 @@ const QuickFees = () => {
                 fee_type: `Installment-${i + (Number(feeData.firstInstallment) > 0 ? 2 : 1)}`,
                 fee_code: `QF-${selectedStudent.school_code}-${i + (Number(feeData.firstInstallment) > 0 ? 2 : 1)}`,
                 due_date: dueDate.toISOString().split('T')[0],
-                fine_type: feeData.fineType,
-                fine_value: feeData.fineValue || null,
+                fine_type: feeData.fineType || 'none',
+                fine_value: feeData.fineValue || 0,
                 amount: installmentAmount.toFixed(2),
             });
         }
@@ -297,7 +297,7 @@ const QuickFees = () => {
                 ...prev,
                 numInstallments: String(plan.installments || 0),
                 monthlyDueDate: String(plan.due_day || 10),
-                fineType: plan.late_fee_type || 'None',
+                fineType: plan.late_fee_type || 'none',
                 fineValue: plan.late_fee_amount || ''
             }));
         }
@@ -492,8 +492,8 @@ const QuickFees = () => {
                 fee_type_id: feeType.id,
                 due_date: inst.due_date,
                 amount: inst.amount,
-                fine_type: feeData.fineType !== 'None' ? feeData.fineType : null,
-                fine_value: feeData.fineValue || null
+                fine_type: feeData.fineType || 'none',
+                fine_value: feeData.fineValue || 0
             });
         }
         
@@ -556,8 +556,8 @@ const QuickFees = () => {
                     fee_type_id: feeType.id,
                     due_date: inst.due_date,
                     amount: inst.amount,
-                    fine_type: inst.fine_type !== 'None' ? inst.fine_type : null,
-                    fine_value: inst.fine_value,
+                    fine_type: inst.fine_type || 'none',
+                    fine_value: inst.fine_value || 0,
                 });
             }
             
@@ -819,9 +819,9 @@ const QuickFees = () => {
                                         <Select value={feeData.fineType} onValueChange={v => setFeeData({...feeData, fineType: v})}>
                                             <SelectTrigger><SelectValue/></SelectTrigger>
                                             <SelectContent>
-                                                <SelectItem value="None">None</SelectItem>
-                                                <SelectItem value="Fixed">Fix Amount</SelectItem>
-                                                <SelectItem value="Percentage">Percentage</SelectItem>
+                                                <SelectItem value="none">None</SelectItem>
+                                                <SelectItem value="fixed">Fix Amount</SelectItem>
+                                                <SelectItem value="percentage">Percentage</SelectItem>
                                             </SelectContent>
                                         </Select>
                                     </div>
@@ -831,7 +831,7 @@ const QuickFees = () => {
                                             type="number" 
                                             value={feeData.fineValue} 
                                             onChange={e => setFeeData({...feeData, fineValue: e.target.value})} 
-                                            disabled={feeData.fineType === 'None'}
+                                            disabled={feeData.fineType === 'none'}
                                         />
                                     </div>
                                     <div>
@@ -895,7 +895,7 @@ const QuickFees = () => {
                                                     <td className="p-3">{inst.fee_type}</td>
                                                     <td className="p-3">{formatDate(inst.due_date)}</td>
                                                     <td className="p-3 text-right pr-12">
-                                                        {inst.fine_type === 'None' ? '0.00' : inst.fine_value}
+                                                        {inst.fine_type === 'none' ? '0.00' : inst.fine_value}
                                                     </td>
                                                     <td className="p-3 text-right font-medium">?{Number(inst.amount).toLocaleString()}</td>
                                                 </tr>
@@ -1171,10 +1171,10 @@ const QuickFees = () => {
                                             <span className="text-muted-foreground">Fine Type:</span>
                                             <span>{feeData.fineType}</span>
                                         </div>
-                                        {feeData.fineType !== 'None' && (
+                                        {feeData.fineType !== 'none' && (
                                             <div className="flex justify-between">
                                                 <span className="text-muted-foreground">Fine Value:</span>
-                                                <span>{feeData.fineType === 'Fixed' ? `?${feeData.fineValue}` : `${feeData.fineValue}%`}</span>
+                                                <span>{feeData.fineType === 'fixed' ? `₹${feeData.fineValue}` : `${feeData.fineValue}%`}</span>
                                             </div>
                                         )}
                                     </div>

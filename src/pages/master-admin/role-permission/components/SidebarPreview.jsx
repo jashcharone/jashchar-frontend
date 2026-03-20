@@ -33,7 +33,7 @@ const SIDEBAR_MODULES = [
     title: 'Student Information', 
     icon: Users,
     color: 'text-emerald-400',
-    subItems: ['Student Admission', 'Student Details', 'Online Admission', 'Bulk Upload', 'Promotion', 'ID Card', 'Disabled Students']
+    subItems: ['Student Admission', 'Student Details', 'Online Admission', 'Bulk Upload', 'ID Card', 'Disabled Students']
   },
   { 
     slug: 'human_resource', 

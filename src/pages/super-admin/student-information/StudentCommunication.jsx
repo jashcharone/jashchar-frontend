@@ -90,7 +90,7 @@ export default function StudentCommunication() {
 
   const headers = useCallback(async () => {
     const token = await getToken();
-    return { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json', 'x-branch-id': branchId };
+    return { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json', 'x-branch-id': branchId, 'x-school-id': branchId };
   }, [getToken, branchId]);
 
   // Load classes
@@ -102,7 +102,6 @@ export default function StudentCommunication() {
         .select('id, name')
         .eq('organization_id', organizationId)
         .eq('branch_id', branchId)
-        .eq('is_active', true)
         .order('display_order');
       setClasses(data || []);
     })();
@@ -116,7 +115,6 @@ export default function StudentCommunication() {
         .from('sections')
         .select('id, name')
         .eq('class_id', selectedClass)
-        .eq('is_active', true)
         .order('name');
       setSections(data || []);
     })();
@@ -347,10 +345,10 @@ export default function StudentCommunication() {
                       </div>
                       <div>
                         <Label>Section</Label>
-                        <Select value={selectedSection} onValueChange={v => { setSelectedSection(v); setSelectedStudents([]); }}>
+                        <Select value={selectedSection || 'all'} onValueChange={v => { setSelectedSection(v === 'all' ? '' : v); setSelectedStudents([]); }}>
                           <SelectTrigger className="mt-1"><SelectValue placeholder="All sections" /></SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="">All</SelectItem>
+                            <SelectItem value="all">All</SelectItem>
                             {sections.map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
                           </SelectContent>
                         </Select>

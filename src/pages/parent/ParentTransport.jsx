@@ -47,8 +47,11 @@ const ParentTransport = () => {
         .select(`
           transport_route_id,
           transport_pickup_point_id,
-          vehicle_id,
-          vehicle:transport_vehicles(id, vehicle_number, vehicle_type, capacity, last_latitude, last_longitude, last_speed, last_gps_time)
+          vehicle_number,
+          driver_name,
+          driver_contact,
+          pickup_time,
+          drop_time
         `)
         .eq('student_id', selectedChild.id)
         .eq('branch_id', selectedChild.branch_id)
@@ -64,7 +67,7 @@ const ParentTransport = () => {
       // Get route info
       const { data: routeData, error: routeError } = await supabase
         .from('transport_routes')
-        .select('route_title, start_point, end_point, distance_km, estimated_time')
+        .select('route_title, start_point, end_point, distance_km, estimated_time_minutes')
         .eq('id', transportData.transport_route_id)
         .single();
       if (routeError) throw routeError;
@@ -80,15 +83,12 @@ const ParentTransport = () => {
         .order('stop_order', { ascending: true });
       if (pointsError) throw pointsError;
 
-      // Get driver details
-      if (transportData.vehicle_id) {
-        const { data: driverData } = await supabase
-          .from('transport_drivers')
-          .select('name, phone, license_number, photo_url')
-          .eq('assigned_vehicle_id', transportData.vehicle_id)
-          .eq('is_active', true)
-          .single();
-        setDriverDetails(driverData);
+      // Use driver info from transport_details directly (stored at time of assignment)
+      if (transportData.driver_name || transportData.driver_contact) {
+        setDriverDetails({
+          name: transportData.driver_name,
+          phone: transportData.driver_contact
+        });
       }
 
       // Get today's boarding status
@@ -97,7 +97,8 @@ const ParentTransport = () => {
         .from('transport_boarding_attendance')
         .select('*')
         .eq('student_id', selectedChild.id)
-        .eq('boarding_date', today)
+        .gte('boarding_time', `${today}T00:00:00`)
+        .lte('boarding_time', `${today}T23:59:59`)
         .order('created_at', { ascending: false })
         .limit(1);
       setTodayBoarding(boardingData?.[0] || null);
@@ -105,22 +106,16 @@ const ParentTransport = () => {
       // Get boarding history (last 30 records)
       const { data: historyData } = await supabase
         .from('transport_boarding_attendance')
-        .select('boarding_date, boarding_time, boarding_status, trip_type')
+        .select('boarding_time, status, boarding_type')
         .eq('student_id', selectedChild.id)
         .eq('branch_id', selectedChild.branch_id)
-        .order('boarding_date', { ascending: false })
+        .order('boarding_time', { ascending: false })
         .limit(30);
       setBoardingHistory(historyData || []);
 
-      // Vehicle location
-      if (transportData.vehicle) {
-        setVehicleLocation({
-          lat: transportData.vehicle.last_latitude,
-          lng: transportData.vehicle.last_longitude,
-          speed: transportData.vehicle.last_speed,
-          lastTime: transportData.vehicle.last_gps_time
-        });
-      }
+      // Vehicle location - GPS tracking columns not yet implemented in transport_vehicles table
+      // Future: Add gps_latitude, gps_longitude, gps_speed, gps_last_update columns
+      // For now, live tracking is disabled
 
       setRouteDetails({
         ...routeData,
@@ -138,27 +133,15 @@ const ParentTransport = () => {
 
   useEffect(() => { fetchTransportDetails(); }, [fetchTransportDetails]);
 
-  // Auto-refresh vehicle location every 15s
-  useEffect(() => {
-    if (autoRefresh && routeDetails?.vehicle?.id) {
-      intervalRef.current = setInterval(async () => {
-        try {
-          const { data } = await supabase
-            .from('transport_vehicles')
-            .select('last_latitude, last_longitude, last_speed, last_gps_time')
-            .eq('id', routeDetails.vehicle.id)
-            .single();
-          if (data) {
-            setVehicleLocation({
-              lat: data.last_latitude, lng: data.last_longitude,
-              speed: data.last_speed, lastTime: data.last_gps_time
-            });
-          }
-        } catch {}
-      }, 15000);
-    }
-    return () => { if (intervalRef.current) clearInterval(intervalRef.current); };
-  }, [autoRefresh, routeDetails]);
+  // Auto-refresh vehicle location every 15s - DISABLED until GPS tracking columns are added
+  // useEffect(() => {
+  //   if (autoRefresh && routeDetails?.vehicle_number) {
+  //     intervalRef.current = setInterval(async () => {
+  //       // GPS tracking query - needs: gps_latitude, gps_longitude, gps_speed, gps_last_update columns
+  //     }, 15000);
+  //   }
+  //   return () => { if (intervalRef.current) clearInterval(intervalRef.current); };
+  // }, [autoRefresh, routeDetails]);
 
   const childName = selectedChild ? (selectedChild.full_name || `${selectedChild.first_name} ${selectedChild.last_name}`) : '';
   const childClass = selectedChild?.class_name ? `${selectedChild.class_name}${selectedChild.section_name ? `-${selectedChild.section_name}` : ''}` : '';

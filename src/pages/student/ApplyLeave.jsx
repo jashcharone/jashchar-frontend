@@ -4,26 +4,24 @@ import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { supabase } from '@/lib/customSupabaseClient';
 import { useToast } from '@/components/ui/use-toast';
 import { Button } from '@/components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Loader2, PlusCircle, Send } from 'lucide-react';
+import { Loader2, Send } from 'lucide-react';
 import DatePicker from '@/components/ui/DatePicker';
 import { format } from 'date-fns';
 
 const ApplyLeave = () => {
     const { user, currentSessionId, organizationId } = useAuth();
     const { toast } = useToast();
-    const [leaveTypes, setLeaveTypes] = useState([]);
+    const [studentProfile, setStudentProfile] = useState(null);
     const [pastRequests, setPastRequests] = useState([]);
     const [loading, setLoading] = useState(true);
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     const [formData, setFormData] = useState({
-        leave_type_id: '',
-        start_date: format(new Date(), 'yyyy-MM-dd'),
-        end_date: format(new Date(), 'yyyy-MM-dd'),
+        from_date: format(new Date(), 'yyyy-MM-dd'),
+        to_date: format(new Date(), 'yyyy-MM-dd'),
         reason: '',
     });
     
@@ -33,16 +31,25 @@ const ApplyLeave = () => {
         if (!branchId || !user) return;
         setLoading(true);
         try {
-            const [typesRes, requestsRes] = await Promise.all([
-                supabase.from('leave_types').select('id, name').eq('branch_id', branchId).eq('is_active', true),
-                supabase.from('leave_requests').select('*').eq('student_id', user.id).eq('branch_id', branchId).order('created_at', { ascending: false })
-            ]);
+            // Get student's class_id and section_id from student_profiles
+            const { data: profile } = await supabase
+                .from('student_profiles')
+                .select('id, class_id, section_id')
+                .eq('id', user.id)
+                .maybeSingle();
+            
+            setStudentProfile(profile);
 
-            if (typesRes.error) throw typesRes.error;
-            setLeaveTypes(typesRes.data);
+            // Fetch past leave requests from student_leaves table
+            const { data: requests, error } = await supabase
+                .from('student_leaves')
+                .select('*')
+                .eq('student_id', user.id)
+                .eq('branch_id', branchId)
+                .order('created_at', { ascending: false });
 
-            if (requestsRes.error) throw requestsRes.error;
-            setPastRequests(requestsRes.data);
+            if (error) throw error;
+            setPastRequests(requests || []);
 
         } catch (error) {
             toast({ variant: 'destructive', title: 'Error fetching data', description: error.message });
@@ -61,20 +68,26 @@ const ApplyLeave = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        if (!formData.leave_type_id || !formData.start_date || !formData.end_date || !formData.reason) {
+        if (!formData.from_date || !formData.to_date || !formData.reason) {
             toast({ variant: 'destructive', title: 'All fields are required.' });
+            return;
+        }
+        if (!studentProfile?.class_id || !studentProfile?.section_id) {
+            toast({ variant: 'destructive', title: 'Student profile incomplete. Please contact admin.' });
             return;
         }
         setIsSubmitting(true);
         try {
-            const { error } = await supabase.from('leave_requests').insert({
-                ...formData,
-                organization_id: organizationId,
+            const { error } = await supabase.from('student_leaves').insert({
                 branch_id: branchId,
-                session_id: currentSessionId,
                 student_id: user.id,
-                role: user.profile.role || 'student',
-                status: 'pending',
+                class_id: studentProfile.class_id,
+                section_id: studentProfile.section_id,
+                apply_date: format(new Date(), 'yyyy-MM-dd'),
+                from_date: formData.from_date,
+                to_date: formData.to_date,
+                reason: formData.reason,
+                status: 'Pending',
             });
 
             if (error) throw error;
@@ -82,9 +95,8 @@ const ApplyLeave = () => {
             toast({ title: 'Success', description: 'Leave request submitted successfully.' });
             // Reset form and refresh list
             setFormData({
-                leave_type_id: '',
-                start_date: format(new Date(), 'yyyy-MM-dd'),
-                end_date: format(new Date(), 'yyyy-MM-dd'),
+                from_date: format(new Date(), 'yyyy-MM-dd'),
+                to_date: format(new Date(), 'yyyy-MM-dd'),
                 reason: '',
             });
             fetchData();
@@ -97,7 +109,8 @@ const ApplyLeave = () => {
     
     const getStatusPill = (status) => {
         const baseClasses = 'px-2 py-0.5 text-xs font-medium rounded-full';
-        switch (status) {
+        const statusLower = status?.toLowerCase() || '';
+        switch (statusLower) {
             case 'approved': return `${baseClasses} bg-green-100 text-green-800`;
             case 'rejected': return `${baseClasses} bg-red-100 text-red-800`;
             case 'pending': return `${baseClasses} bg-yellow-100 text-yellow-800`;
@@ -113,16 +126,9 @@ const ApplyLeave = () => {
                     <CardHeader><CardTitle>New Leave Request</CardTitle></CardHeader>
                     <CardContent>
                         <form onSubmit={handleSubmit} className="space-y-4">
-                            <div>
-                                <Label htmlFor="leave_type_id">Leave Type</Label>
-                                <Select value={formData.leave_type_id} onValueChange={(v) => handleInputChange('leave_type_id', v)}>
-                                    <SelectTrigger><SelectValue placeholder="Select Type" /></SelectTrigger>
-                                    <SelectContent>{leaveTypes.map(lt => <SelectItem key={lt.id} value={lt.id}>{lt.name}</SelectItem>)}</SelectContent>
-                                </Select>
-                            </div>
                             <div className="grid grid-cols-2 gap-4">
-                                <DatePicker label="From Date" value={formData.start_date} onChange={(d) => handleInputChange('start_date', d)} />
-                                <DatePicker label="To Date" value={formData.end_date} onChange={(d) => handleInputChange('end_date', d)} />
+                                <DatePicker label="From Date" value={formData.from_date} onChange={(d) => handleInputChange('from_date', d)} />
+                                <DatePicker label="To Date" value={formData.to_date} onChange={(d) => handleInputChange('to_date', d)} />
                             </div>
                             <div>
                                 <Label htmlFor="reason">Reason</Label>
@@ -144,11 +150,11 @@ const ApplyLeave = () => {
                                 {pastRequests.map(req => (
                                     <li key={req.id} className="flex justify-between items-center p-3 bg-muted/30 rounded-lg">
                                         <div>
-                                            <p className="font-bold">{format(new Date(req.start_date), 'MMM d')} - {format(new Date(req.end_date), 'MMM d, yyyy')}</p>
+                                            <p className="font-bold">{format(new Date(req.from_date), 'MMM d')} - {format(new Date(req.to_date), 'MMM d, yyyy')}</p>
                                             <p className="text-xs text-gray-500 mt-1">{req.reason}</p>
                                         </div>
                                         <span className={getStatusPill(req.status)}>
-                                            {req.status.charAt(0).toUpperCase() + req.status.slice(1)}
+                                            {req.status}
                                         </span>
                                     </li>
                                 ))}

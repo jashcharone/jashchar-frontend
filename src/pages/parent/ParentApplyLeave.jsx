@@ -9,7 +9,6 @@ import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { supabase } from '@/lib/customSupabaseClient';
 import { useToast } from '@/components/ui/use-toast';
 import { Button } from '@/components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -23,15 +22,13 @@ const ParentApplyLeave = () => {
   const { user, currentSessionId, organizationId } = useAuth();
   const { selectedChild } = useParentChild();
   const { toast } = useToast();
-  const [leaveTypes, setLeaveTypes] = useState([]);
   const [pastRequests, setPastRequests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [formData, setFormData] = useState({
-    leave_type_id: '',
-    start_date: format(new Date(), 'yyyy-MM-dd'),
-    end_date: format(new Date(), 'yyyy-MM-dd'),
+    from_date: format(new Date(), 'yyyy-MM-dd'),
+    to_date: format(new Date(), 'yyyy-MM-dd'),
     reason: '',
   });
 
@@ -43,16 +40,16 @@ const ParentApplyLeave = () => {
 
     setLoading(true);
     try {
-      const [typesRes, requestsRes] = await Promise.all([
-        supabase.from('leave_types').select('id, name').eq('branch_id', selectedChild.branch_id).eq('is_active', true),
-        supabase.from('leave_requests').select('*').eq('student_id', selectedChild.id).eq('branch_id', selectedChild.branch_id).order('created_at', { ascending: false })
-      ]);
+      // Fetch past leave requests from student_leaves table
+      const { data: requests, error } = await supabase
+        .from('student_leaves')
+        .select('*')
+        .eq('student_id', selectedChild.id)
+        .eq('branch_id', selectedChild.branch_id)
+        .order('created_at', { ascending: false });
 
-      if (typesRes.error) throw typesRes.error;
-      setLeaveTypes(typesRes.data || []);
-
-      if (requestsRes.error) throw requestsRes.error;
-      setPastRequests(requestsRes.data || []);
+      if (error) throw error;
+      setPastRequests(requests || []);
     } catch (error) {
       toast({ variant: 'destructive', title: 'Error fetching data', description: error.message });
     } finally {
@@ -70,7 +67,7 @@ const ParentApplyLeave = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!formData.leave_type_id || !formData.start_date || !formData.end_date || !formData.reason) {
+    if (!formData.from_date || !formData.to_date || !formData.reason) {
       toast({ variant: 'destructive', title: 'All fields are required.' });
       return;
     }
@@ -78,23 +75,29 @@ const ParentApplyLeave = () => {
       toast({ variant: 'destructive', title: 'Please select a child first.' });
       return;
     }
+    if (!selectedChild?.class_id || !selectedChild?.section_id) {
+      toast({ variant: 'destructive', title: 'Child profile incomplete. Please contact school admin.' });
+      return;
+    }
 
     setIsSubmitting(true);
     try {
-      const { error } = await supabase.from('leave_requests').insert({
-        ...formData,
-        organization_id: organizationId,
+      const { error } = await supabase.from('student_leaves').insert({
         branch_id: selectedChild.branch_id,
-        session_id: currentSessionId,
         student_id: selectedChild.id,
-        role: 'parent',
-        status: 'pending',
+        class_id: selectedChild.class_id,
+        section_id: selectedChild.section_id,
+        apply_date: format(new Date(), 'yyyy-MM-dd'),
+        from_date: formData.from_date,
+        to_date: formData.to_date,
+        reason: formData.reason,
+        status: 'Pending',
       });
 
       if (error) throw error;
 
       toast({ title: 'Leave request submitted successfully!' });
-      setFormData({ leave_type_id: '', start_date: format(new Date(), 'yyyy-MM-dd'), end_date: format(new Date(), 'yyyy-MM-dd'), reason: '' });
+      setFormData({ from_date: format(new Date(), 'yyyy-MM-dd'), to_date: format(new Date(), 'yyyy-MM-dd'), reason: '' });
       fetchData();
     } catch (error) {
       toast({ variant: 'destructive', title: 'Failed to submit leave request', description: error.message });
@@ -104,7 +107,8 @@ const ParentApplyLeave = () => {
   };
 
   const getStatusBadge = (status) => {
-    switch (status) {
+    const statusLower = status?.toLowerCase() || '';
+    switch (statusLower) {
       case 'approved': return <Badge className="bg-green-500 hover:bg-green-600">Approved</Badge>;
       case 'rejected': return <Badge className="bg-red-500 hover:bg-red-600">Rejected</Badge>;
       default: return <Badge className="bg-yellow-500 hover:bg-yellow-600">Pending</Badge>;
@@ -138,32 +142,19 @@ const ParentApplyLeave = () => {
               </CardHeader>
               <CardContent>
                 <form onSubmit={handleSubmit} className="space-y-4">
-                  <div>
-                    <Label>Leave Type</Label>
-                    <Select value={formData.leave_type_id} onValueChange={(val) => handleInputChange('leave_type_id', val)}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select leave type" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {leaveTypes.map(lt => (
-                          <SelectItem key={lt.id} value={lt.id}>{lt.name}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <Label>Start Date</Label>
+                      <Label>From Date</Label>
                       <DatePicker
-                        value={formData.start_date}
-                        onChange={(val) => handleInputChange('start_date', val)}
+                        value={formData.from_date}
+                        onChange={(val) => handleInputChange('from_date', val)}
                       />
                     </div>
                     <div>
-                      <Label>End Date</Label>
+                      <Label>To Date</Label>
                       <DatePicker
-                        value={formData.end_date}
-                        onChange={(val) => handleInputChange('end_date', val)}
+                        value={formData.to_date}
+                        onChange={(val) => handleInputChange('to_date', val)}
                       />
                     </div>
                   </div>
@@ -204,8 +195,8 @@ const ParentApplyLeave = () => {
                       <TableBody>
                         {pastRequests.map(req => (
                           <TableRow key={req.id}>
-                            <TableCell>{req.start_date ? format(new Date(req.start_date), 'dd MMM yyyy') : '-'}</TableCell>
-                            <TableCell>{req.end_date ? format(new Date(req.end_date), 'dd MMM yyyy') : '-'}</TableCell>
+                            <TableCell>{req.from_date ? format(new Date(req.from_date), 'dd MMM yyyy') : '-'}</TableCell>
+                            <TableCell>{req.to_date ? format(new Date(req.to_date), 'dd MMM yyyy') : '-'}</TableCell>
                             <TableCell className="max-w-xs truncate">{req.reason || '-'}</TableCell>
                             <TableCell>{getStatusBadge(req.status)}</TableCell>
                           </TableRow>

@@ -4,6 +4,7 @@
 // ╚═══════════════════════════════════════════════════════════════════════════════════╝
 
 import React, { useState, useEffect, useCallback } from 'react';
+import DashboardLayout from '@/components/DashboardLayout';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { useBranch } from '@/contexts/BranchContext';
 import {
@@ -349,19 +350,20 @@ export default function FaceAttendanceAdminSettings() {
   const isReadyToLaunch = passedChecks === totalChecks;
 
   return (
-    <div className="p-6 space-y-6">
-      {/* ═══════ HEADER ═══════ */}
-      <div className="flex justify-between items-start">
-        <div>
-          <h1 className="text-2xl font-bold flex items-center gap-2">
-            <Settings className="w-7 h-7 text-blue-600" />
-            🎛️ Face Attendance Admin Settings
-          </h1>
-          <p className="text-gray-500 mt-1">
-            Master configuration, AI tuning, security settings & launch prep
-          </p>
-        </div>
-        <div className="flex gap-2">
+    <DashboardLayout>
+      <div className="p-6 space-y-6">
+        {/* ═══════ HEADER ═══════ */}
+        <div className="flex justify-between items-start">
+          <div>
+            <h1 className="text-2xl font-bold flex items-center gap-2">
+              <Settings className="w-7 h-7 text-blue-600" />
+              🎛️ Face Attendance Admin Settings
+            </h1>
+            <p className="text-gray-500 mt-1">
+              Master configuration, AI tuning, security settings & launch prep
+            </p>
+          </div>
+          <div className="flex gap-2">
           <Button variant="outline" onClick={resetDefaults}>
             <RotateCcw className="w-4 h-4 mr-2" /> Reset Defaults
           </Button>
@@ -930,6 +932,7 @@ export default function FaceAttendanceAdminSettings() {
           </Card>
         </TabsContent>
       </Tabs>
-    </div>
+      </div>
+    </DashboardLayout>
   );
 }

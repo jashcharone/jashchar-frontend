@@ -10,6 +10,17 @@ import { supabase } from '@/lib/customSupabaseClient';
 const _apiBase = getApiBaseUrl();
 const BASE_URL = _apiBase ? `${_apiBase}/api` : '/api';
 
+// Shared refresh lock to prevent multiple parallel refresh calls
+let _refreshPromise = null;
+
+const refreshTokenOnce = async () => {
+  if (_refreshPromise) return _refreshPromise;
+  _refreshPromise = supabase.auth.refreshSession().finally(() => {
+    _refreshPromise = null;
+  });
+  return _refreshPromise;
+};
+
 // Helper function to get auth token
 const getAuthToken = async () => {
   try {
@@ -31,7 +42,7 @@ const getUserContext = () => {
 };
 
 // Generic API call helper
-const apiCall = async (endpoint, method = 'GET', body = null) => {
+const apiCall = async (endpoint, method = 'GET', body = null, _retry = false) => {
   try {
     const token = await getAuthToken();
     const context = getUserContext();
@@ -64,6 +75,16 @@ const apiCall = async (endpoint, method = 'GET', body = null) => {
 
     const response = await fetch(`${BASE_URL}${endpoint}`, options);
     const data = await response.json();
+
+    // On 401, refresh session (deduplicated) and retry once
+    if (response.status === 401 && !_retry) {
+      try {
+        const { error } = await refreshTokenOnce();
+        if (!error) {
+          return apiCall(endpoint, method, body, true);
+        }
+      } catch (_) { /* fall through to throw */ }
+    }
 
     if (!response.ok) {
       throw new Error(data.message || data.error || 'AI Engine API error');
@@ -119,6 +140,9 @@ export const aiEngineApi = {
   
   // Check AI Engine health
   checkHealth: () => apiCall('/camera/ai/health'),
+
+  // Get detailed AI Engine status (proxied through backend)
+  getAIStatus: () => apiCall('/camera/ai/status'),
   
   // Detect faces in image (returns bounding boxes)
   detectFaces: (imageBase64) => apiCall('/camera/ai/detect', 'POST', { image: imageBase64 }),
@@ -141,7 +165,7 @@ export const aiEngineApi = {
   getIndexStatus: () => apiCall('/camera/ai/index/status'),
   
   // Rebuild FAISS index
-  rebuildIndex: () => apiCall('/camera/ai/index/rebuild', 'POST'),
+  rebuildIndex: (branchId) => apiCall('/camera/ai/index/rebuild', 'POST', { branch_id: branchId }),
 
   // ─────────────────────────────────────────────────────────────────────────────
   // ENROLLMENT APIs (Day 14)

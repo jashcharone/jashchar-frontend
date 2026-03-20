@@ -318,10 +318,14 @@ const IndexManagement = () => {
             try {
                 const health = await aiEngineApi.checkHealth();
                 if (health?.success) {
-                    // Get detailed status
-                    const statusResp = await fetch('http://localhost:8501/api/v1/status');
-                    const statusData = await statusResp.json();
-                    setAiEngineStatus(statusData.data);
+                    // Get detailed status via backend proxy
+                    try {
+                        const statusResp = await aiEngineApi.getAIStatus();
+                        setAiEngineStatus(statusResp?.data || null);
+                    } catch {
+                        // Fallback to health data
+                        setAiEngineStatus(health.data);
+                    }
                 } else {
                     setAiEngineStatus(null);
                 }

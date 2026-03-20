@@ -7,6 +7,7 @@
  */
 
 import React, { useState, useEffect, useCallback } from 'react';
+import DashboardLayout from '@/components/DashboardLayout';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -602,17 +603,22 @@ const FaceAttendanceDashboard = () => {
 
     if (!branchId) {
         return (
-            <Alert>
-                <AlertTriangle className="h-4 w-4" />
-                <AlertDescription>
-                    Please select a branch to view the Face Attendance Dashboard.
-                </AlertDescription>
-            </Alert>
+            <DashboardLayout>
+                <div className="p-6">
+                    <Alert>
+                        <AlertTriangle className="h-4 w-4" />
+                        <AlertDescription>
+                            Please select a branch to view the Face Attendance Dashboard.
+                        </AlertDescription>
+                    </Alert>
+                </div>
+            </DashboardLayout>
         );
     }
 
     return (
-        <div className="space-y-6 p-6">
+        <DashboardLayout>
+            <div className="space-y-6 p-6">
             {/* Header */}
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                 <div>
@@ -695,7 +701,8 @@ const FaceAttendanceDashboard = () => {
                     </Card>
                 </TabsContent>
             </Tabs>
-        </div>
+            </div>
+        </DashboardLayout>
     );
 };
 

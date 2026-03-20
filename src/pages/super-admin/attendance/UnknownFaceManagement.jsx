@@ -7,6 +7,7 @@
  */
 
 import React, { useState, useEffect, useCallback } from 'react';
+import DashboardLayout from '@/components/DashboardLayout';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -532,17 +533,22 @@ const UnknownFaceManagement = () => {
 
     if (!branchId) {
         return (
-            <Alert>
-                <Eye className="h-4 w-4" />
-                <AlertDescription>
-                    Please select a branch to manage unknown faces.
-                </AlertDescription>
-            </Alert>
+            <DashboardLayout>
+                <div className="p-6">
+                    <Alert>
+                        <Eye className="h-4 w-4" />
+                        <AlertDescription>
+                            Please select a branch to manage unknown faces.
+                        </AlertDescription>
+                    </Alert>
+                </div>
+            </DashboardLayout>
         );
     }
 
     return (
-        <div className="space-y-6 p-6">
+        <DashboardLayout>
+            <div className="space-y-6 p-6">
             {/* Header */}
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                 <div>
@@ -718,7 +724,8 @@ const UnknownFaceManagement = () => {
                 onClose={() => setDismissOpen(false)}
                 onConfirm={confirmDismiss}
             />
-        </div>
+            </div>
+        </DashboardLayout>
     );
 };
 

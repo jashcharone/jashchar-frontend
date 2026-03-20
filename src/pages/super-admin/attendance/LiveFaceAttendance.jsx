@@ -107,13 +107,14 @@ const LiveFaceAttendance = () => {
     // 🔴 WebSocket State (Real-time recognition - Day 21)
     const [useWebSocket, setUseWebSocket] = useState(true); // Prefer WebSocket for real-time
     const wsFrameIntervalRef = useRef(null);
+    const handleWebSocketResultRef = useRef(null);
     
     // WebSocket hook for real-time face recognition
     const ws = useFaceRecognitionWebSocket({
         branchId,
         clientId: `live_attendance_${branchId}`,
         autoConnect: false,
-        onResult: handleWebSocketResult,
+        onResult: (...args) => handleWebSocketResultRef.current?.(...args),
         onError: (error) => {
             console.error('WebSocket error:', error);
             toast({
@@ -187,6 +188,7 @@ const LiveFaceAttendance = () => {
             clearOverlay();
         }
     }, [registeredFaces, autoMark, matchThreshold, recentlyMarked]);
+    handleWebSocketResultRef.current = handleWebSocketResult;
     
     // Draw face boxes from WebSocket results
     const drawFaceBoxesFromWs = useCallback((faces) => {

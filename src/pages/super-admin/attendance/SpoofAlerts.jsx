@@ -61,14 +61,14 @@ const STATUS_INFO = {
     false_positive: { label: 'False Positive', color: 'text-gray-600 bg-gray-100 dark:text-gray-400 dark:bg-gray-800', icon: XOctagon }
 };
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5100';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════
 // MAIN COMPONENT
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════
 
 const SpoofAlerts = () => {
-    const { user, currentSessionId, organizationId } = useAuth();
+    const { user, session, currentSessionId, organizationId } = useAuth();
     const { selectedBranch } = useBranch();
     const { toast } = useToast();
     const { canView } = usePermissions();
@@ -120,7 +120,12 @@ const SpoofAlerts = () => {
             if (filterSeverity !== 'all') params.append('severity', filterSeverity);
             if (filterType !== 'all') params.append('spoof_type', filterType);
             
-            const response = await fetch(`${API_BASE_URL}/api/camera/spoof-alerts?${params.toString()}`);
+            const response = await fetch(`${API_BASE_URL}/api/camera/spoof-alerts?${params.toString()}`, {
+                headers: {
+                    'Authorization': `Bearer ${session?.access_token}`,
+                    'Content-Type': 'application/json'
+                }
+            });
             const data = await response.json();
             
             if (data.success) {
@@ -131,7 +136,7 @@ const SpoofAlerts = () => {
         } catch (error) {
             console.error('Error fetching alerts:', error);
         }
-    }, [branchId, organizationId, dateRange, filterStatus, filterSeverity, filterType]);
+    }, [branchId, organizationId, session, dateRange, filterStatus, filterSeverity, filterType]);
     
     const fetchSummary = useCallback(async () => {
         if (!branchId || !organizationId) return;
@@ -143,7 +148,12 @@ const SpoofAlerts = () => {
                 days: dateRange
             });
             
-            const response = await fetch(`${API_BASE_URL}/api/camera/spoof-alerts/summary?${params.toString()}`);
+            const response = await fetch(`${API_BASE_URL}/api/camera/spoof-alerts/summary?${params.toString()}`, {
+                headers: {
+                    'Authorization': `Bearer ${session?.access_token}`,
+                    'Content-Type': 'application/json'
+                }
+            });
             const data = await response.json();
             
             if (data.success) {
@@ -152,7 +162,7 @@ const SpoofAlerts = () => {
         } catch (error) {
             console.error('Error fetching summary:', error);
         }
-    }, [branchId, organizationId, dateRange]);
+    }, [branchId, organizationId, session, dateRange]);
     
     const refreshData = useCallback(async () => {
         setRefreshing(true);
@@ -191,7 +201,10 @@ const SpoofAlerts = () => {
         try {
             const response = await fetch(`${API_BASE_URL}/api/camera/spoof-alerts/${selectedAlert.id}/review`, {
                 method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                    'Authorization': `Bearer ${session?.access_token}`,
+                    'Content-Type': 'application/json'
+                },
                 body: JSON.stringify({
                     status: isFalsePositive ? 'false_positive' : reviewStatus,
                     review_notes: reviewNotes,

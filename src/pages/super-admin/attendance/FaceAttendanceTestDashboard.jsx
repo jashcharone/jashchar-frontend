@@ -4,6 +4,7 @@
 // ╚═══════════════════════════════════════════════════════════════════════════════════╝
 
 import React, { useState, useEffect, useCallback } from 'react';
+import DashboardLayout from '@/components/DashboardLayout';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { useBranch } from '@/contexts/BranchContext';
 import {
@@ -108,6 +109,18 @@ export default function FaceAttendanceTestDashboard() {
 
   // ═══════════════════ SYSTEM HEALTH CHECK ═══════════════════
   const checkSystemHealth = useCallback(async () => {
+    // Guard: Skip database queries if branchId is not available
+    if (!branchId) {
+      setSystemStatus({
+        aiEngine: 'checking',
+        database: 'warning',
+        faissIndex: 'checking',
+        cameras: 'warning',
+        notifications: 'warning',
+      });
+      return;
+    }
+
     setSystemStatus(prev => ({
       ...prev,
       aiEngine: 'checking',
@@ -456,22 +469,23 @@ export default function FaceAttendanceTestDashboard() {
   const warningCount = testResults.filter(t => t.status === 'warning').length;
 
   return (
-    <div className="p-6 space-y-6">
-      {/* ═══════ HEADER ═══════ */}
-      <div className="flex justify-between items-start">
-        <div>
-          <h1 className="text-2xl font-bold flex items-center gap-2">
-            <Activity className="w-7 h-7 text-blue-600" />
-            🧪 Face Attendance System Test Dashboard
-          </h1>
-          <p className="text-gray-500 mt-1">
-            System health monitoring, connectivity tests & diagnostics
-          </p>
-        </div>
-        <div className="flex gap-2">
-          <Button variant="outline" onClick={checkSystemHealth}>
-            <RefreshCw className="w-4 h-4 mr-2" /> Refresh Status
-          </Button>
+    <DashboardLayout>
+      <div className="p-6 space-y-6">
+        {/* ═══════ HEADER ═══════ */}
+        <div className="flex justify-between items-start">
+          <div>
+            <h1 className="text-2xl font-bold flex items-center gap-2">
+              <Activity className="w-7 h-7 text-blue-600" />
+              🧪 Face Attendance System Test Dashboard
+            </h1>
+            <p className="text-gray-500 mt-1">
+              System health monitoring, connectivity tests & diagnostics
+            </p>
+          </div>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={checkSystemHealth}>
+              <RefreshCw className="w-4 h-4 mr-2" /> Refresh Status
+            </Button>
           <Button onClick={runAllTests} disabled={isRunningAll}>
             {isRunningAll ? (
               <><Pause className="w-4 h-4 mr-2 animate-spin" /> Running Tests...</>
@@ -677,6 +691,7 @@ export default function FaceAttendanceTestDashboard() {
           </div>
         </CardContent>
       </Card>
-    </div>
+      </div>
+    </DashboardLayout>
   );
 }

@@ -7,6 +7,7 @@
  */
 
 import React, { useState, useCallback } from 'react';
+import DashboardLayout from '@/components/DashboardLayout';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -358,17 +359,22 @@ const FaceAttendanceReports = () => {
 
     if (!branchId) {
         return (
-            <Alert>
-                <FileText className="h-4 w-4" />
-                <AlertDescription>
-                    Please select a branch to generate reports.
-                </AlertDescription>
-            </Alert>
+            <DashboardLayout>
+                <div className="p-6">
+                    <Alert>
+                        <FileText className="h-4 w-4" />
+                        <AlertDescription>
+                            Please select a branch to generate reports.
+                        </AlertDescription>
+                    </Alert>
+                </div>
+            </DashboardLayout>
         );
     }
 
     return (
-        <div className="space-y-6 p-6">
+        <DashboardLayout>
+            <div className="space-y-6 p-6">
             {/* Header */}
             <div>
                 <h1 className="text-3xl font-bold flex items-center gap-3">
@@ -643,7 +649,8 @@ const FaceAttendanceReports = () => {
                 }}
                 onConfirm={handleGenerateReport}
             />
-        </div>
+            </div>
+        </DashboardLayout>
     );
 };
 

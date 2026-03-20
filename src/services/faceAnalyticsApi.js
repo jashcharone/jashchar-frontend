@@ -19,8 +19,7 @@ const FACE_ANALYTICS_BASE = '/face-analytics';
  * @param {Object} params - { branch_id, session_id?, date? }
  */
 export const getDailyStats = async (params) => {
-    const response = await api.get(`${FACE_ANALYTICS_BASE}/stats/daily`, { params });
-    return response.data;
+    return api.get(`${FACE_ANALYTICS_BASE}/stats/daily`, { params });
 };
 
 /**
@@ -28,8 +27,7 @@ export const getDailyStats = async (params) => {
  * @param {Object} params - { branch_id, session_id?, days? }
  */
 export const getWeeklyTrends = async (params) => {
-    const response = await api.get(`${FACE_ANALYTICS_BASE}/stats/weekly`, { params });
-    return response.data;
+    return api.get(`${FACE_ANALYTICS_BASE}/stats/weekly`, { params });
 };
 
 /**
@@ -37,8 +35,7 @@ export const getWeeklyTrends = async (params) => {
  * @param {Object} params - { branch_id, session_id?, date? }
  */
 export const getClassWiseStats = async (params) => {
-    const response = await api.get(`${FACE_ANALYTICS_BASE}/stats/class-wise`, { params });
-    return response.data;
+    return api.get(`${FACE_ANALYTICS_BASE}/stats/class-wise`, { params });
 };
 
 /**
@@ -46,8 +43,7 @@ export const getClassWiseStats = async (params) => {
  * @param {Object} params - { branch_id, days? }
  */
 export const getPerformanceStats = async (params) => {
-    const response = await api.get(`${FACE_ANALYTICS_BASE}/stats/performance`, { params });
-    return response.data;
+    return api.get(`${FACE_ANALYTICS_BASE}/stats/performance`, { params });
 };
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -59,8 +55,7 @@ export const getPerformanceStats = async (params) => {
  * @param {Object} params - { branch_id, days? }
  */
 export const getHourlyHeatmap = async (params) => {
-    const response = await api.get(`${FACE_ANALYTICS_BASE}/heatmap/hourly`, { params });
-    return response.data;
+    return api.get(`${FACE_ANALYTICS_BASE}/heatmap/hourly`, { params });
 };
 
 /**
@@ -68,8 +63,7 @@ export const getHourlyHeatmap = async (params) => {
  * @param {Object} params - { branch_id, date? }
  */
 export const getCameraHeatmap = async (params) => {
-    const response = await api.get(`${FACE_ANALYTICS_BASE}/heatmap/camera`, { params });
-    return response.data;
+    return api.get(`${FACE_ANALYTICS_BASE}/heatmap/camera`, { params });
 };
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -81,8 +75,7 @@ export const getCameraHeatmap = async (params) => {
  * @param {Object} params - { branch_id, session_id?, date?, limit? }
  */
 export const getLateArrivals = async (params) => {
-    const response = await api.get(`${FACE_ANALYTICS_BASE}/late-arrivals`, { params });
-    return response.data;
+    return api.get(`${FACE_ANALYTICS_BASE}/late-arrivals`, { params });
 };
 
 /**
@@ -90,8 +83,7 @@ export const getLateArrivals = async (params) => {
  * @param {Object} params - { branch_id, session_id?, date? }
  */
 export const getLateArrivalsSummary = async (params) => {
-    const response = await api.get(`${FACE_ANALYTICS_BASE}/late-arrivals/summary`, { params });
-    return response.data;
+    return api.get(`${FACE_ANALYTICS_BASE}/late-arrivals/summary`, { params });
 };
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -103,8 +95,7 @@ export const getLateArrivalsSummary = async (params) => {
  * @param {Object} params - { branch_id, date?, limit?, status? }
  */
 export const getUnknownFaces = async (params) => {
-    const response = await api.get(`${FACE_ANALYTICS_BASE}/unknown-faces`, { params });
-    return response.data;
+    return api.get(`${FACE_ANALYTICS_BASE}/unknown-faces`, { params });
 };
 
 /**
@@ -113,8 +104,7 @@ export const getUnknownFaces = async (params) => {
  * @param {Object} data - { person_id, person_type }
  */
 export const identifyUnknownFace = async (id, data) => {
-    const response = await api.post(`${FACE_ANALYTICS_BASE}/unknown-faces/${id}/identify`, data);
-    return response.data;
+    return api.post(`${FACE_ANALYTICS_BASE}/unknown-faces/${id}/identify`, data);
 };
 
 /**
@@ -123,8 +113,7 @@ export const identifyUnknownFace = async (id, data) => {
  * @param {Object} data - { reason? }
  */
 export const dismissUnknownFace = async (id, data = {}) => {
-    const response = await api.post(`${FACE_ANALYTICS_BASE}/unknown-faces/${id}/dismiss`, data);
-    return response.data;
+    return api.post(`${FACE_ANALYTICS_BASE}/unknown-faces/${id}/dismiss`, data);
 };
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -136,8 +125,7 @@ export const dismissUnknownFace = async (id, data = {}) => {
  * @param {Object} params - { branch_id, session_id?, start_date, end_date, class_id?, section_id? }
  */
 export const getAttendanceReport = async (params) => {
-    const response = await api.get(`${FACE_ANALYTICS_BASE}/reports/attendance`, { params });
-    return response.data;
+    return api.get(`${FACE_ANALYTICS_BASE}/reports/attendance`, { params });
 };
 
 /**
@@ -145,8 +133,7 @@ export const getAttendanceReport = async (params) => {
  * @param {Object} params - { branch_id, start_date, end_date, camera_id? }
  */
 export const getRecognitionReport = async (params) => {
-    const response = await api.get(`${FACE_ANALYTICS_BASE}/reports/recognition`, { params });
-    return response.data;
+    return api.get(`${FACE_ANALYTICS_BASE}/reports/recognition`, { params });
 };
 
 /**
@@ -171,8 +158,7 @@ export const exportAnalytics = async (type, params) => {
  * @param {Object} params - { branch_id, date? }
  */
 export const getSpoofStats = async (params) => {
-    const response = await api.get(`${FACE_ANALYTICS_BASE}/spoof-stats`, { params });
-    return response.data;
+    return api.get(`${FACE_ANALYTICS_BASE}/spoof-stats`, { params });
 };
 
 /**
@@ -180,8 +166,7 @@ export const getSpoofStats = async (params) => {
  * @param {Object} params - { branch_id, days? }
  */
 export const getSpoofTrends = async (params) => {
-    const response = await api.get(`${FACE_ANALYTICS_BASE}/spoof-stats/trends`, { params });
-    return response.data;
+    return api.get(`${FACE_ANALYTICS_BASE}/spoof-stats/trends`, { params });
 };
 
 // ═══════════════════════════════════════════════════════════════════════════════

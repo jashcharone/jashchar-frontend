@@ -777,11 +777,21 @@ const CameraManagement = () => {
     
     const fetchAIStatus = useCallback(async () => {
         try {
-            const [health, index] = await Promise.all([
+            const [healthRes, index] = await Promise.all([
                 aiEngineApi.checkHealth().catch(() => null),
                 aiEngineApi.getIndexStatus().catch(() => null)
             ]);
-            setAIHealth(health);
+            // Map backend response to expected frontend shape
+            if (healthRes) {
+                const models = healthRes.data?.models_ready || healthRes.models_ready || {};
+                setAIHealth({
+                    ...healthRes,
+                    detector_loaded: models.face_detector || false,
+                    recognizer_loaded: models.face_recognizer || false
+                });
+            } else {
+                setAIHealth(null);
+            }
             setIndexStatus(index);
         } catch (error) {
             console.error('Error fetching AI status:', error);
@@ -929,7 +939,7 @@ const CameraManagement = () => {
     
     const handleRebuildIndex = async () => {
         try {
-            await aiEngineApi.rebuildIndex();
+            await aiEngineApi.rebuildIndex(branchId);
             toast({ title: 'Success', description: 'Index rebuild started' });
             await fetchAIStatus();
         } catch (error) {

@@ -4,6 +4,7 @@
 // ╚═══════════════════════════════════════════════════════════════════════════════════╝
 
 import React, { useState } from 'react';
+import DashboardLayout from '@/components/DashboardLayout';
 import {
   Card, CardContent, CardDescription, CardHeader, CardTitle,
 } from '@/components/ui/card';
@@ -343,20 +344,21 @@ export default function FaceAttendanceHelp() {
     : faqData;
 
   return (
-    <div className="p-6 space-y-6">
-      {/* ═══════ HEADER ═══════ */}
-      <div>
-        <h1 className="text-2xl font-bold flex items-center gap-2">
-          <BookOpen className="w-7 h-7 text-blue-600" />
-          📖 Face Attendance Help & Documentation
-        </h1>
-        <p className="text-gray-500 mt-1">
-          Complete guide for AI Face Attendance System - Setup, Usage, FAQ & Troubleshooting
-        </p>
-      </div>
+    <DashboardLayout>
+      <div className="p-6 space-y-6">
+        {/* ═══════ HEADER ═══════ */}
+        <div>
+          <h1 className="text-2xl font-bold flex items-center gap-2">
+            <BookOpen className="w-7 h-7 text-blue-600" />
+            📖 Face Attendance Help & Documentation
+          </h1>
+          <p className="text-gray-500 mt-1">
+            Complete guide for AI Face Attendance System - Setup, Usage, FAQ & Troubleshooting
+          </p>
+        </div>
 
-      {/* ═══════ SEARCH ═══════ */}
-      <div className="relative">
+        {/* ═══════ SEARCH ═══════ */}
+        <div className="relative">
         <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
         <Input
           placeholder="Search help topics, FAQ, troubleshooting..."
@@ -620,6 +622,7 @@ export default function FaceAttendanceHelp() {
           </Card>
         </TabsContent>
       </Tabs>
-    </div>
+      </div>
+    </DashboardLayout>
   );
 }

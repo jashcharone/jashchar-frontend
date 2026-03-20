@@ -107,7 +107,16 @@ export const api = {
   collectFee: (data) => apiCall('/fees/collect', 'POST', data),
 
   // Generic
-  get: (url) => apiCall(url, 'GET'),
+  get: (url, options = {}) => {
+    // Handle params if provided
+    if (options.params) {
+      const queryString = new URLSearchParams(
+        Object.entries(options.params).filter(([_, v]) => v != null)
+      ).toString();
+      url = queryString ? `${url}?${queryString}` : url;
+    }
+    return apiCall(url, 'GET');
+  },
   post: (url, data) => apiCall(url, 'POST', data),
   put: (url, data) => apiCall(url, 'PUT', data),
   delete: (url) => apiCall(url, 'DELETE'),

@@ -11,7 +11,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { PlusCircle, Edit, Trash2, Loader2, Search, Copy, FileText, Download, Printer, Columns, AlertCircle } from 'lucide-react';
+import { PlusCircle, Edit, Trash2, Loader2, Search, Copy, FileText, Download, Printer, Columns, AlertCircle, Lock } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -33,7 +33,14 @@ import {
 // ============================================================================
 // FEES TYPE - SMART SCHOOL STYLE
 // Left Panel: Add Form | Right Panel: List with Search & Actions
+// System fee types (Hostel Fee, Transport Fee) are auto-created and non-deletable
 // ============================================================================
+
+// Default system fee types that must always exist
+const SYSTEM_FEE_TYPES = [
+    { name: 'Hostel Fee', code: 'hostel-fee', description: 'Fee for hostel accommodation', is_system: true },
+    { name: 'Transport Fee', code: 'transport-fee', description: 'Fee for transport facility', is_system: true },
+];
 
 const FeesType = () => {
     const { user, currentSessionId, organizationId } = useAuth();
@@ -51,16 +58,45 @@ const FeesType = () => {
     const [searchQuery, setSearchQuery] = useState('');
     const [pageSize, setPageSize] = useState(50);
 
+    // Auto-seed system fee types if they don't exist for this branch/session
+    const ensureSystemFeeTypes = async () => {
+        if (!selectedBranch?.id || !currentSessionId || !organizationId) return;
+
+        const { data: existing } = await supabase
+            .from('fee_types')
+            .select('code')
+            .eq('branch_id', selectedBranch.id)
+            .eq('session_id', currentSessionId)
+            .in('code', SYSTEM_FEE_TYPES.map(t => t.code));
+
+        const existingCodes = new Set((existing || []).map(e => e.code));
+        const missing = SYSTEM_FEE_TYPES.filter(t => !existingCodes.has(t.code));
+
+        if (missing.length > 0) {
+            const toInsert = missing.map(t => ({
+                ...t,
+                branch_id: selectedBranch.id,
+                session_id: currentSessionId,
+                organization_id: organizationId,
+            }));
+            await supabase.from('fee_types').insert(toInsert);
+        }
+    };
+
     const fetchFeesTypes = async () => {
         const branchId = user?.profile?.branch_id || user?.user_metadata?.branch_id;
         if (!branchId || !selectedBranch) return;
         setLoading(true);
+
+        // Ensure system fee types exist first
+        await ensureSystemFeeTypes();
         
         const { data, error } = await supabase
             .from('fee_types')
             .select('*')
             .eq('branch_id', selectedBranch.id)
             .eq('session_id', currentSessionId)
+            .order('is_system', { ascending: false })
             .order('name', { ascending: true });
         
         if (error) {
@@ -158,6 +194,17 @@ const FeesType = () => {
     };
 
     const handleDelete = async (id) => {
+        // Prevent deletion of system fee types
+        const feeType = feesTypes.find(t => t.id === id);
+        if (feeType?.is_system) {
+            toast({ 
+                variant: 'destructive', 
+                title: 'Cannot Delete', 
+                description: 'System fee types (Hostel Fee, Transport Fee) cannot be deleted.' 
+            });
+            return;
+        }
+
         // Check for dependencies
         const { data: masters, error: checkError } = await supabase
             .from('fee_masters')
@@ -362,11 +409,19 @@ const FeesType = () => {
                                                 </thead>
                                                 <tbody>
                                                     {filteredTypes.map(type => (
-                                                        <tr key={type.id} className="border-b hover:bg-muted/30 transition-colors">
+                                                        <tr key={type.id} className={`border-b hover:bg-muted/30 transition-colors ${type.is_system ? 'bg-blue-50/50 dark:bg-blue-950/20' : ''}`}>
                                                             <td className="p-3">
-                                                                <span className="text-primary hover:underline cursor-pointer font-medium">
-                                                                    {type.name}
-                                                                </span>
+                                                                <div className="flex items-center gap-2">
+                                                                    <span className="text-primary hover:underline cursor-pointer font-medium">
+                                                                        {type.name}
+                                                                    </span>
+                                                                    {type.is_system && (
+                                                                        <Badge variant="secondary" className="text-xs bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300">
+                                                                            <Lock className="h-3 w-3 mr-1" />
+                                                                            System
+                                                                        </Badge>
+                                                                    )}
+                                                                </div>
                                                             </td>
                                                             <td className="p-3">
                                                                 <Badge variant="outline" className="font-mono text-xs">
@@ -389,34 +444,45 @@ const FeesType = () => {
                                                                         <TooltipContent>Edit</TooltipContent>
                                                                     </Tooltip>
                                                                     
-                                                                    <AlertDialog>
-                                                                        <AlertDialogTrigger asChild>
-                                                                            <Button 
-                                                                                variant="ghost" 
-                                                                                size="icon"
-                                                                                className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50"
-                                                                            >
-                                                                                <Trash2 className="h-4 w-4" />
-                                                                            </Button>
-                                                                        </AlertDialogTrigger>
-                                                                        <AlertDialogContent>
-                                                                            <AlertDialogHeader>
-                                                                                <AlertDialogTitle>Delete Fee Type?</AlertDialogTitle>
-                                                                                <AlertDialogDescription>
-                                                                                    This will permanently delete "{type.name}". This action cannot be undone.
-                                                                                </AlertDialogDescription>
-                                                                            </AlertDialogHeader>
-                                                                            <AlertDialogFooter>
-                                                                                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                                                                <AlertDialogAction 
-                                                                                    onClick={() => handleDelete(type.id)}
-                                                                                    className="bg-red-600 hover:bg-red-700"
+                                                                    {type.is_system ? (
+                                                                        <Tooltip>
+                                                                            <TooltipTrigger asChild>
+                                                                                <span className="inline-flex items-center justify-center h-8 w-8 text-muted-foreground/40 cursor-not-allowed">
+                                                                                    <Lock className="h-4 w-4" />
+                                                                                </span>
+                                                                            </TooltipTrigger>
+                                                                            <TooltipContent>System fee type - cannot delete</TooltipContent>
+                                                                        </Tooltip>
+                                                                    ) : (
+                                                                        <AlertDialog>
+                                                                            <AlertDialogTrigger asChild>
+                                                                                <Button 
+                                                                                    variant="ghost" 
+                                                                                    size="icon"
+                                                                                    className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50"
                                                                                 >
-                                                                                    Delete
-                                                                                </AlertDialogAction>
-                                                                            </AlertDialogFooter>
-                                                                        </AlertDialogContent>
-                                                                    </AlertDialog>
+                                                                                    <Trash2 className="h-4 w-4" />
+                                                                                </Button>
+                                                                            </AlertDialogTrigger>
+                                                                            <AlertDialogContent>
+                                                                                <AlertDialogHeader>
+                                                                                    <AlertDialogTitle>Delete Fee Type?</AlertDialogTitle>
+                                                                                    <AlertDialogDescription>
+                                                                                        This will permanently delete "{type.name}". This action cannot be undone.
+                                                                                    </AlertDialogDescription>
+                                                                                </AlertDialogHeader>
+                                                                                <AlertDialogFooter>
+                                                                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                                                                    <AlertDialogAction 
+                                                                                        onClick={() => handleDelete(type.id)}
+                                                                                        className="bg-red-600 hover:bg-red-700"
+                                                                                    >
+                                                                                        Delete
+                                                                                    </AlertDialogAction>
+                                                                                </AlertDialogFooter>
+                                                                            </AlertDialogContent>
+                                                                        </AlertDialog>
+                                                                    )}
                                                                 </div>
                                                             </td>
                                                         </tr>

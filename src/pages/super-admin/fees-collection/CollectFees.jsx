@@ -357,19 +357,31 @@ const CollectFees = () => {
                     .in('student_id', studentIds)
                     .eq('branch_id', branchId)
                     .eq('status', 'approved'),
-                // Fee Engine 3.0: Student Fee Ledger
+                // Fee Engine 3.0: Student Fee Ledger (with fee_source, exclude cancelled)
                 supabase
                     .from('student_fee_ledger')
-                    .select('student_id, net_amount, paid_amount, discount_amount, fine_amount')
+                    .select('student_id, net_amount, paid_amount, discount_amount, fine_amount, fee_source')
                     .in('student_id', studentIds)
                     .eq('branch_id', branchId)
                     .eq('session_id', currentSessionId)
+                    .neq('status', 'cancelled')
             ]);
 
             const progressMap = {};
             studentIds.forEach(id => {
                 progressMap[id] = { total: 0, paid: 0, discount: 0, fine: 0, refunded: 0, balance: 0, progress: 0 };
             });
+
+            // Build sets of students who have hostel/transport in the unified ledger
+            // to avoid double counting with old tables
+            const studentsWithLedgerTransport = new Set();
+            const studentsWithLedgerHostel = new Set();
+            if (ledgerRes.data) {
+                ledgerRes.data.forEach(entry => {
+                    if (entry.fee_source === 'transport') studentsWithLedgerTransport.add(entry.student_id);
+                    if (entry.fee_source === 'hostel') studentsWithLedgerHostel.add(entry.student_id);
+                });
+            }
 
             // Add academic fee allocations
             if (allocRes.data) {
@@ -392,30 +404,30 @@ const CollectFees = () => {
                 });
             }
 
-            // Add transport fees (annual billing = transport_fee * 12 for monthly display, or direct for annual/one_time)
+            // Add transport fees ONLY for students NOT in unified ledger (avoid double counting)
             if (transportRes.data) {
                 transportRes.data.forEach(transport => {
+                    if (studentsWithLedgerTransport.has(transport.student_id)) return; // Skip - ledger handles this
                     const fee = parseFloat(transport.transport_fee || 0);
                     const billingCycle = transport.billing_cycle || 'monthly';
-                    // Calculate total based on billing cycle
                     let totalTransportFee = fee;
                     if (billingCycle === 'monthly') {
-                        totalTransportFee = fee * 12; // 12 months in session
+                        totalTransportFee = fee * 12;
                     } else if (billingCycle === 'quarterly') {
-                        totalTransportFee = fee * 4; // 4 quarters in session
+                        totalTransportFee = fee * 4;
                     } else if (billingCycle === 'half_yearly') {
-                        totalTransportFee = fee * 2; // 2 half-years in session
+                        totalTransportFee = fee * 2;
                     }
-                    // annual/one_time - use fee as is
                     if (progressMap[transport.student_id]) {
                         progressMap[transport.student_id].total += totalTransportFee;
                     }
                 });
             }
 
-            // Add transport fee payments (with discount and fine)
+            // Add transport fee payments ONLY for students NOT in unified ledger
             if (transportPayRes.data) {
                 transportPayRes.data.forEach(pay => {
+                    if (studentsWithLedgerTransport.has(pay.student_id)) return;
                     if (progressMap[pay.student_id]) {
                         progressMap[pay.student_id].paid += parseFloat(pay.amount || 0);
                         progressMap[pay.student_id].discount += parseFloat(pay.discount_amount || 0);
@@ -424,30 +436,30 @@ const CollectFees = () => {
                 });
             }
 
-            // Add hostel fees (similar calculation as transport)
+            // Add hostel fees ONLY for students NOT in unified ledger (avoid double counting)
             if (hostelRes.data) {
                 hostelRes.data.forEach(hostel => {
+                    if (studentsWithLedgerHostel.has(hostel.student_id)) return; // Skip - ledger handles this
                     const fee = parseFloat(hostel.hostel_fee || 0);
                     const billingCycle = hostel.billing_cycle || 'monthly';
-                    // Calculate total based on billing cycle
                     let totalHostelFee = fee;
                     if (billingCycle === 'monthly') {
-                        totalHostelFee = fee * 12; // 12 months in session
+                        totalHostelFee = fee * 12;
                     } else if (billingCycle === 'quarterly') {
-                        totalHostelFee = fee * 4; // 4 quarters in session
+                        totalHostelFee = fee * 4;
                     } else if (billingCycle === 'half_yearly') {
-                        totalHostelFee = fee * 2; // 2 half-years in session
+                        totalHostelFee = fee * 2;
                     }
-                    // annual/one_time - use fee as is
                     if (progressMap[hostel.student_id]) {
                         progressMap[hostel.student_id].total += totalHostelFee;
                     }
                 });
             }
 
-            // Add hostel fee payments (with discount and fine)
+            // Add hostel fee payments ONLY for students NOT in unified ledger
             if (hostelPayRes.data) {
                 hostelPayRes.data.forEach(pay => {
+                    if (studentsWithLedgerHostel.has(pay.student_id)) return;
                     if (progressMap[pay.student_id]) {
                         progressMap[pay.student_id].paid += parseFloat(pay.amount || 0);
                         progressMap[pay.student_id].discount += parseFloat(pay.discount_amount || 0);
@@ -465,7 +477,7 @@ const CollectFees = () => {
                 });
             }
 
-            // Fee Engine 3.0: Add student_fee_ledger entries
+            // Fee Engine 3.0: Add student_fee_ledger entries (includes academic + hostel + transport)
             if (ledgerRes.data) {
                 ledgerRes.data.forEach(entry => {
                     if (progressMap[entry.student_id]) {

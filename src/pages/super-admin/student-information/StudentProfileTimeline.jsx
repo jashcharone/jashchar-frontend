@@ -89,21 +89,21 @@ export default function StudentProfileTimeline({ studentId, student }) {
 
       // 4. Exam results
       const { data: marks } = await supabase
-        .from('exam_marks_v2')
-        .select('marks_obtained, total_marks, created_at, exam_subjects(subjects(name), exams(exam_name, exam_terms(name)))')
+        .from('exam_marks')
+        .select('marks, created_at, exam_subjects(max_marks, subjects(name), exams(name))')
         .eq('student_id', studentId)
-        .eq('branch_id', branchId)
         .order('created_at', { ascending: false })
         .limit(15);
       (marks || []).forEach(m => {
         const subName = m.exam_subjects?.subjects?.name || 'Subject';
-        const examName = m.exam_subjects?.exams?.exam_name || m.exam_subjects?.exams?.exam_terms?.name || 'Exam';
-        const pct = m.total_marks > 0 ? Math.round((m.marks_obtained / m.total_marks) * 100) : 0;
+        const examName = m.exam_subjects?.exams?.name || 'Exam';
+        const maxMarks = m.exam_subjects?.max_marks || 100;
+        const pct = maxMarks > 0 ? Math.round(((m.marks || 0) / maxMarks) * 100) : 0;
         allEvents.push({
           type: 'exam_result',
           date: m.created_at,
           title: `${examName} - ${subName}`,
-          description: `Scored ${m.marks_obtained}/${m.total_marks} (${pct}%)`,
+          description: `Scored ${m.marks || 0}/${maxMarks} (${pct}%)`,
         });
       });
 

@@ -104,6 +104,7 @@ const FeeStructures = () => {
         .from('fee_types')
         .select('id, name, code')
         .eq('branch_id', selectedBranch.id)
+        .eq('session_id', currentSessionId)
         .order('name'),
       supabase
         .from('classes')

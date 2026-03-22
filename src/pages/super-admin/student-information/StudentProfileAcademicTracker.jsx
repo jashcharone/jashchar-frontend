@@ -28,21 +28,16 @@ export default function StudentProfileAcademicTracker({ studentId }) {
     setLoading(true);
     try {
       const { data, error } = await supabase
-        .from('exam_marks_v2')
+        .from('exam_marks')
         .select(`
-          id, total_marks, percentage, grade, grade_point, is_absent,
-          status, marks_theory, marks_practical,
+          id, marks, is_absent,
           exam_subjects (
             id, max_marks, pass_marks,
             subjects ( id, name ),
-            exams ( id, name, exam_date, 
-              exam_terms ( id, name, display_order )
-            )
+            exams ( id, name, exam_date )
           )
         `)
-        .eq('student_id', studentId)
-        .eq('branch_id', selectedBranch.id)
-        .in('status', ['submitted', 'verified', 'locked']);
+        .eq('student_id', studentId);
 
       if (error) throw error;
       setMarks(data || []);
@@ -67,23 +62,23 @@ export default function StudentProfileAcademicTracker({ studentId }) {
       const es = m.exam_subjects;
       if (!es) return;
       const examName = es.exams?.name || 'Unknown';
-      const examTermOrder = es.exams?.exam_terms?.display_order || 0;
+      const examTermOrder = 0;
       const subjectName = es.subjects?.name || 'Unknown';
       const maxMarks = es.max_marks || 100;
       const passMarks = es.pass_marks || 35;
-      const pct = maxMarks > 0 ? ((m.total_marks || 0) / maxMarks) * 100 : 0;
-      const passed = (m.total_marks || 0) >= passMarks && !m.is_absent;
+      const pct = maxMarks > 0 ? ((m.marks || 0) / maxMarks) * 100 : 0;
+      const passed = (m.marks || 0) >= passMarks && !m.is_absent;
 
       if (!examMap[examName]) {
         examMap[examName] = { name: examName, order: examTermOrder, subjects: [], totalMarks: 0, totalMax: 0, passed: 0, failed: 0 };
       }
-      examMap[examName].subjects.push({ subject: subjectName, marks: m.total_marks || 0, max: maxMarks, pct, grade: m.grade, passed });
-      examMap[examName].totalMarks += (m.total_marks || 0);
+      examMap[examName].subjects.push({ subject: subjectName, marks: m.marks || 0, max: maxMarks, pct, grade: null, passed });
+      examMap[examName].totalMarks += (m.marks || 0);
       examMap[examName].totalMax += maxMarks;
       if (passed) examMap[examName].passed++; else examMap[examName].failed++;
 
       if (!subjectMap[subjectName]) subjectMap[subjectName] = [];
-      subjectMap[subjectName].push({ exam: examName, order: examTermOrder, marks: m.total_marks || 0, max: maxMarks, pct, grade: m.grade });
+      subjectMap[subjectName].push({ exam: examName, order: examTermOrder, marks: m.marks || 0, max: maxMarks, pct, grade: null });
     });
 
     // Sort exams by term order

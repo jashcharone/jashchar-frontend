@@ -288,6 +288,7 @@ const FeeDashboard = () => {
       let totalAllocated = 0, totalPaid = 0, totalDue = 0;
       let fullyPaid = 0, partialPaid = 0, unpaid = 0;
       let allPayments = [];
+      let allAllocations = [];
       
       if (usesNewArchitecture) {
         // NEW ARCHITECTURE: Use student_fee_ledger
@@ -297,7 +298,7 @@ const FeeDashboard = () => {
           const batch = studentIds.slice(i, i + batchSize);
           const { data } = await supabase
             .from('student_fee_ledger')
-            .select('student_id, net_amount, paid_amount, discount_amount')
+            .select('student_id, net_amount, paid_amount, discount_amount, due_date')
             .in('student_id', batch)
             .eq('branch_id', branchId)
             .eq('session_id', selectedSessionId);
@@ -335,9 +336,17 @@ const FeeDashboard = () => {
           else if (s.paid > 0) partialPaid++;
           else if (s.allocated > 0) unpaid++;
         });
+
+        // Map ledger entries to allAllocations-compatible format for alerts/defaulters
+        allAllocations = allLedgerEntries.map(l => ({
+          student_id: l.student_id,
+          amount: Number(l.net_amount || 0),
+          paid: Number(l.paid_amount || 0) + Number(l.discount_amount || 0),
+          balance: Math.max(0, Number(l.net_amount || 0) - Number(l.paid_amount || 0) - Number(l.discount_amount || 0)),
+          due_date: l.due_date,
+        }));
       } else {
         // OLD ARCHITECTURE: Use student_fee_allocations
-        let allAllocations = [];
         const batchSize = 100;
         for (let i = 0; i < studentIds.length; i += batchSize) {
           const batch = studentIds.slice(i, i + batchSize);

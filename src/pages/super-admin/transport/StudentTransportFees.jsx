@@ -12,6 +12,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { formatDate, formatDateForInput } from '@/utils/dateUtils';
 import { Search, Loader2, Bus, User, Users, IndianRupee, MapPin, Save, Clock, X, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, ArrowLeft, UserCheck, UserX, Calendar, Shield, Download } from 'lucide-react';
+import { refreshFeeLedger, getTransportFeeTypeId } from '@/utils/feeLedgerService';
 
 const StudentTransportFees = () => {
   const navigate = useNavigate();
@@ -356,6 +357,39 @@ const StudentTransportFees = () => {
     if (error) {
       toast({ variant: 'destructive', title: 'Error updating transport info', description: error.message });
     } else {
+      // Auto-write to unified fee ledger if transport_fee is set
+      if (transportPayload.transport_fee && transportPayload.transport_fee > 0) {
+        const transportFeeTypeId = await getTransportFeeTypeId(branchId, currentSessionId);
+        // Get the source reference ID (student_transport_details record)
+        const { data: transportRecord } = await supabase
+          .from('student_transport_details')
+          .select('id')
+          .eq('student_id', selectedStudent.id)
+          .eq('session_id', currentSessionId)
+          .eq('branch_id', branchId)
+          .maybeSingle();
+
+        const ledgerResult = await refreshFeeLedger({
+          studentId: selectedStudent.id,
+          feeSource: 'transport',
+          feeTypeId: transportFeeTypeId,
+          amount: transportPayload.transport_fee,
+          billingCycle: transportPayload.billing_cycle || 'monthly',
+          sessionId: currentSessionId,
+          branchId: branchId,
+          organizationId: organizationId,
+          sourceReferenceId: transportRecord?.id || null,
+          effectiveFrom: transportPayload.effective_from || null,
+        });
+
+        if (ledgerResult.success) {
+          console.log(`Transport fee ledger: ${ledgerResult.rowsCreated} entries created`);
+        } else {
+          console.error('Transport fee ledger error:', ledgerResult.error);
+          toast({ variant: 'destructive', title: 'Transport saved, but fee ledger failed', description: ledgerResult.error });
+        }
+      }
+
       toast({ title: 'Success!', description: 'Student transport information updated.' });
       setStudents(prev => prev.map(s => 
         s.id === selectedStudent.id 

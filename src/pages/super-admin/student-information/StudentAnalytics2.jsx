@@ -56,9 +56,9 @@ export default function StudentAnalytics2() {
         supabase.from('fee_payments')
           .select('student_id, amount')
           .eq('branch_id', branchId).eq('session_id', currentSessionId).eq('status', 'completed'),
-        supabase.from('exam_marks_v2')
-          .select('student_id, marks_obtained, total_marks, exam_subjects(subjects(name))')
-          .eq('branch_id', branchId).eq('session_id', currentSessionId),
+        supabase.from('exam_marks')
+          .select('student_id, marks, is_absent, exam_subjects(max_marks, subjects(name))')
+          .not('is_absent', 'eq', true),
         supabase.from('classes')
           .select('id, name').eq('branch_id', branchId).eq('is_active', true).order('display_order'),
       ]);
@@ -120,8 +120,8 @@ export default function StudentAnalytics2() {
     const map = {};
     examMarks.forEach(m => {
       if (!map[m.student_id]) map[m.student_id] = { totalObtained: 0, totalMax: 0 };
-      map[m.student_id].totalObtained += (m.marks_obtained || 0);
-      map[m.student_id].totalMax += (m.total_marks || 0);
+      map[m.student_id].totalObtained += (m.marks || 0);
+      map[m.student_id].totalMax += (m.exam_subjects?.max_marks || 100);
     });
     const result = {};
     Object.entries(map).forEach(([sid, d]) => {

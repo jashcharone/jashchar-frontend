@@ -47,7 +47,7 @@ export function JashSyncSocketProvider({ children }) {
     const hasLoggedDisabled = useRef(false);
     
     // Get socket URL from environment or default
-    const socketUrl = import.meta.env.VITE_JASHSYNC_URL || import.meta.env.VITE_API_URL || 'http://localhost:5000';
+    const socketUrl = import.meta.env.VITE_JASHSYNC_URL || import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
     
     // Check if JashSync is enabled - disable in production unless explicitly enabled
     const isJashSyncEnabled = (() => {

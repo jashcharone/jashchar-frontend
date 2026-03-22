@@ -810,15 +810,17 @@ const StudentProfile = () => {
         // 10. Fetch Exam Summary (average percentage from latest marks)
         try {
           const { data: examData } = await supabase
-            .from('exam_marks_v2')
-            .select('percentage, total_marks')
+            .from('exam_marks')
+            .select('marks, exam_subjects(max_marks)')
             .eq('student_id', targetId)
-            .eq('branch_id', branchId)
-            .in('status', ['submitted', 'verified', 'locked']);
+            .not('is_absent', 'eq', true);
           if (examData && examData.length > 0) {
-            const validMarks = examData.filter(e => e.percentage != null);
+            const validMarks = examData.filter(e => e.marks != null);
             const avgPercent = validMarks.length > 0
-              ? Math.round(validMarks.reduce((sum, e) => sum + Number(e.percentage), 0) / validMarks.length)
+              ? Math.round(validMarks.reduce((sum, e) => {
+                  const max = e.exam_subjects?.max_marks || 100;
+                  return sum + ((e.marks || 0) / max) * 100;
+                }, 0) / validMarks.length)
               : 0;
             setExamSummary({ avgPercent, rank: null, totalExams: validMarks.length });
           }

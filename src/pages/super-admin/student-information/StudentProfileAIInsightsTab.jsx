@@ -28,17 +28,17 @@ export default function StudentProfileAIInsightsTab({ studentId }) {
           .eq('branch_id', selectedBranch.id)
           .eq('session_id', currentSessionId),
         supabase
-          .from('fee_assignments')
-          .select('total_amount, paid_amount')
+          .from('fee_payments')
+          .select('amount')
           .eq('student_id', studentId)
           .eq('branch_id', selectedBranch.id)
-          .eq('session_id', currentSessionId),
+          .eq('session_id', currentSessionId)
+          .eq('status', 'completed'),
         supabase
-          .from('exam_marks_v2')
-          .select('total_marks, percentage, exam_subjects(max_marks, pass_marks, subjects(name), exams(name, exam_terms(display_order)))')
+          .from('exam_marks')
+          .select('marks, is_absent, exam_subjects(max_marks, pass_marks, subjects(name), exams(name))')
           .eq('student_id', studentId)
-          .eq('branch_id', selectedBranch.id)
-          .in('status', ['submitted', 'verified', 'locked']),
+          .not('is_absent', 'eq', true),
       ]);
 
       const att = attRes.data || [];
@@ -54,20 +54,20 @@ export default function StudentProfileAIInsightsTab({ studentId }) {
       let consecutiveAbsent = 0;
       for (const a of sorted) { if (a.status === 'absent') consecutiveAbsent++; else break; }
 
-      // Fees
-      const totalFee = fees.reduce((s, f) => s + (f.total_amount || 0), 0);
-      const paidFee = fees.reduce((s, f) => s + (f.paid_amount || 0), 0);
-      const feePct = totalFee > 0 ? Math.round((paidFee / totalFee) * 100) : null;
+      // Fees (from fee_payments — completed payments only)
+      const paidFee = fees.reduce((s, f) => s + (f.amount || 0), 0);
+      const totalFee = paidFee;
+      const feePct = null; // Total due not available from payments table
 
-      // Marks - subject performance
+      // Marks - subject performance (from exam_marks)
       const subjectMap = {};
       marks.forEach(m => {
         const name = m.exam_subjects?.subjects?.name || 'Unknown';
         const max = m.exam_subjects?.max_marks || 100;
         const pass = m.exam_subjects?.pass_marks || 35;
-        const pct = max > 0 ? ((m.total_marks || 0) / max) * 100 : 0;
+        const pct = max > 0 ? ((m.marks || 0) / max) * 100 : 0;
         if (!subjectMap[name]) subjectMap[name] = [];
-        subjectMap[name].push({ pct, passed: (m.total_marks || 0) >= pass });
+        subjectMap[name].push({ pct, passed: (m.marks || 0) >= pass });
       });
 
       const subjects = Object.entries(subjectMap).map(([name, entries]) => {
@@ -77,7 +77,10 @@ export default function StudentProfileAIInsightsTab({ studentId }) {
       }).sort((a, b) => b.avg - a.avg);
 
       const avgPct = marks.length > 0
-        ? Math.round(marks.reduce((s, m) => s + (m.percentage || 0), 0) / marks.length)
+        ? Math.round(marks.reduce((s, m) => {
+            const max = m.exam_subjects?.max_marks || 100;
+            return s + ((m.marks || 0) / max) * 100;
+          }, 0) / marks.length)
         : null;
 
       // Risk

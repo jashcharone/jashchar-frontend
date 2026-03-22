@@ -398,7 +398,7 @@ const StudentFees = () => {
                     .eq('branch_id', selectedBranch.id)
                     .eq('session_id', currentSessionId)
                     .order('payment_date', { ascending: false }),
-                // Fee Engine 3.0: Fetch student_fee_ledger entries
+                // Fee Engine 3.0: Fetch student_fee_ledger entries (exclude cancelled)
                 supabase
                     .from('student_fee_ledger')
                     .select(`
@@ -409,6 +409,7 @@ const StudentFees = () => {
                     .eq('student_id', studentId)
                     .eq('branch_id', selectedBranch.id)
                     .eq('session_id', currentSessionId)
+                    .neq('status', 'cancelled')
             ]);
 
             if (allocationsRes.error) throw allocationsRes.error;
@@ -483,11 +484,17 @@ const StudentFees = () => {
                     }
                 }
 
+                // Determine group label — for hostel/transport show billing period
+                const feeSource = entry.fee_source || 'academic';
+                let groupLabel = entry.fee_structure?.name || 'Fee Engine 3.0';
+                if (feeSource === 'hostel') groupLabel = `Hostel${entry.billing_period ? ' - ' + entry.billing_period : ''}`;
+                if (feeSource === 'transport') groupLabel = `Transport${entry.billing_period ? ' - ' + entry.billing_period : ''}`;
+
                 return {
                     id: entry.id,
                     ledgerId: entry.id,
                     masterId: null,
-                    group: entry.fee_structure?.name || 'Fee Engine 3.0',
+                    group: groupLabel,
                     type: entry.fee_type?.code || 'N/A',
                     typeName: entry.fee_type?.name || 'N/A',
                     dueDate: entry.due_date,
@@ -501,6 +508,8 @@ const StudentFees = () => {
                     isOverdue,
                     installment_number: entry.installment_number,
                     source: 'ledger', // Mark as new system
+                    fee_source: feeSource,
+                    billing_period: entry.billing_period,
                     fee_structure_id: entry.fee_structure_id,
                 };
             });
@@ -537,7 +546,7 @@ const StudentFees = () => {
                 .eq('branch_id', selectedBranch.id)
                 .maybeSingle();
 
-            if (transportData && transportData.transport_fee > 0) {
+            if (transportData) {
                 // Check for transport payments
                 const { data: transportPayments } = await supabase
                     .from('transport_fee_payments')
@@ -614,7 +623,7 @@ const StudentFees = () => {
                 .eq('branch_id', selectedBranch.id)
                 .maybeSingle();
 
-            if (hostelData && hostelData.hostel_fee > 0) {
+            if (hostelData) {
                 // Check for hostel payments
                 const { data: hostelPayments } = await supabase
                     .from('hostel_fee_payments')
@@ -724,6 +733,150 @@ const StudentFees = () => {
         }
     }, [fetchStudentAndFees, studentId, selectedBranch?.id]);
 
+    // ══════════════════════════════════════════════════════════════════
+    // UNIFIED FEE LEDGER: Auto-write hostel/transport fees to student_fee_ledger
+    // Per UNIFIED_FEE_LEDGER_MASTER_PLAN - "3 rivers, 1 ocean"
+    // ══════════════════════════════════════════════════════════════════
+    const writeFeesToLedger = useCallback(async ({ feeSource, feeTypeId, amount, billingCycle, sourceRefId }) => {
+        if (!studentId || !selectedBranch?.id || !currentSessionId || !organizationId) return;
+        if (!amount || amount <= 0) return; // No rows to write for zero-fee
+
+        // Get session dates to calculate billing periods
+        const { data: sessionData } = await supabase
+            .from('sessions')
+            .select('start_date, end_date')
+            .eq('id', currentSessionId)
+            .single();
+
+        if (!sessionData?.start_date || !sessionData?.end_date) return;
+
+        const rows = [];
+        const startDate = new Date(sessionData.start_date);
+        const endDate = new Date(sessionData.end_date);
+
+        if (billingCycle === 'annual' || billingCycle === 'one_time') {
+            // Single row for annual/one-time
+            rows.push({
+                student_id: studentId,
+                fee_source: feeSource,
+                fee_type_id: feeTypeId,
+                fee_structure_id: null,
+                original_amount: amount,
+                net_amount: amount,
+                paid_amount: 0,
+                discount_amount: 0,
+                concession_amount: 0,
+                fine_amount: 0,
+                installment_number: 1,
+                due_date: format(startDate, 'yyyy-MM-dd'),
+                billing_period: billingCycle === 'annual' ? 'Annual' : 'One-Time',
+                status: 'pending',
+                is_paid: false,
+                assigned_by: 'system',
+                source_reference_id: sourceRefId || null,
+                branch_id: selectedBranch.id,
+                session_id: currentSessionId,
+                organization_id: organizationId,
+            });
+        } else {
+            // Monthly / Quarterly / Half-yearly → generate rows per period
+            let current = startOfMonth(startDate);
+            const end = startOfMonth(endDate);
+            let installment = 0;
+            const monthInterval = billingCycle === 'quarterly' ? 3 : billingCycle === 'half_yearly' ? 6 : 1;
+
+            while (isBefore(current, end) || isSameMonth(current, end)) {
+                installment++;
+                rows.push({
+                    student_id: studentId,
+                    fee_source: feeSource,
+                    fee_type_id: feeTypeId,
+                    fee_structure_id: null,
+                    original_amount: amount,
+                    net_amount: amount,
+                    paid_amount: 0,
+                    discount_amount: 0,
+                    concession_amount: 0,
+                    fine_amount: 0,
+                    installment_number: installment,
+                    due_date: format(current, 'yyyy-MM-dd'),
+                    billing_period: format(current, 'MMMM yyyy'),
+                    status: 'pending',
+                    is_paid: false,
+                    assigned_by: 'system',
+                    source_reference_id: sourceRefId || null,
+                    branch_id: selectedBranch.id,
+                    session_id: currentSessionId,
+                    organization_id: organizationId,
+                });
+                current = addMonths(current, monthInterval);
+            }
+        }
+
+        if (rows.length > 0) {
+            const { error } = await supabase
+                .from('student_fee_ledger')
+                .insert(rows);
+            if (error) {
+                console.error(`Failed to write ${feeSource} ledger rows:`, error);
+            } else {
+                console.log(`✅ Written ${rows.length} ${feeSource} ledger rows for student`);
+            }
+        }
+    }, [studentId, selectedBranch?.id, currentSessionId, organizationId]);
+
+    // Cancel future unpaid ledger rows when hostel/transport is removed
+    const cancelLedgerRows = useCallback(async (feeSource, sourceRefId) => {
+        if (!studentId || !selectedBranch?.id || !currentSessionId) return;
+
+        const query = supabase
+            .from('student_fee_ledger')
+            .update({ status: 'cancelled', updated_at: new Date().toISOString() })
+            .eq('student_id', studentId)
+            .eq('branch_id', selectedBranch.id)
+            .eq('session_id', currentSessionId)
+            .eq('fee_source', feeSource)
+            .in('status', ['pending']); // Only cancel unpaid rows
+
+        if (sourceRefId) {
+            query.eq('source_reference_id', sourceRefId);
+        }
+
+        const { error } = await query;
+        if (error) {
+            console.error(`Failed to cancel ${feeSource} ledger rows:`, error);
+        } else {
+            console.log(`✅ Cancelled unpaid ${feeSource} ledger rows`);
+        }
+    }, [studentId, selectedBranch?.id, currentSessionId]);
+
+    // Update unpaid ledger rows when fee amount changes
+    const updateLedgerFeeAmount = useCallback(async (feeSource, newAmount, sourceRefId) => {
+        if (!studentId || !selectedBranch?.id || !currentSessionId) return;
+
+        const query = supabase
+            .from('student_fee_ledger')
+            .update({
+                original_amount: newAmount,
+                net_amount: newAmount,
+                updated_at: new Date().toISOString()
+            })
+            .eq('student_id', studentId)
+            .eq('branch_id', selectedBranch.id)
+            .eq('session_id', currentSessionId)
+            .eq('fee_source', feeSource)
+            .in('status', ['pending']); // Only update unpaid rows
+
+        if (sourceRefId) {
+            query.eq('source_reference_id', sourceRefId);
+        }
+
+        const { error } = await query;
+        if (error) {
+            console.error(`Failed to update ${feeSource} ledger amounts:`, error);
+        }
+    }, [studentId, selectedBranch?.id, currentSessionId]);
+
     // ── Transport Assignment Helpers ──
     const openTransportAssign = async () => {
         const bId = selectedBranch?.id;
@@ -807,18 +960,46 @@ const StudentFees = () => {
             driver_contact: transportForm.driver_contact || null,
             special_instructions: transportForm.special_instructions || null
         };
-        let error;
+        let error, savedId;
         if (transportDetails?.id) {
             const { error: e } = await supabase.from('student_transport_details').update(payload).eq('id', transportDetails.id);
             error = e;
+            savedId = transportDetails.id;
         } else {
-            const { error: e } = await supabase.from('student_transport_details').insert(payload);
+            const { data: inserted, error: e } = await supabase.from('student_transport_details').insert(payload).select('id').single();
             error = e;
+            savedId = inserted?.id;
         }
         if (error) {
             toast({ variant: 'destructive', title: 'Error saving transport', description: error.message });
         } else {
-            toast({ title: 'Transport assigned successfully!' });
+            const feeVal = parseFloat(transportForm.transport_fee) || 0;
+
+            // ── UNIFIED LEDGER: Auto-write transport fees ──
+            // Cancel any existing unpaid transport ledger rows first (handles updates)
+            await cancelLedgerRows('transport', null);
+
+            if (feeVal > 0) {
+                // Lookup transport fee type ID dynamically
+                const { data: feeType } = await supabase
+                    .from('fee_types')
+                    .select('id')
+                    .eq('branch_id', selectedBranch.id)
+                    .eq('code', 'transport-fee')
+                    .single();
+
+                await writeFeesToLedger({
+                    feeSource: 'transport',
+                    feeTypeId: feeType?.id || null,
+                    amount: feeVal,
+                    billingCycle: transportForm.billing_cycle || 'monthly',
+                    sourceRefId: savedId
+                });
+                toast({ title: 'Transport assigned successfully!', description: `₹${feeVal} per ${transportForm.billing_cycle || 'month'} written to fee ledger.` });
+            } else {
+                toast({ variant: 'default', title: 'Transport assigned (Fee ₹0)', description: '⚠️ Transport fee is ₹0. Edit the assignment to set the correct fee amount.' });
+            }
+
             setTransportAssignOpen(false);
             await fetchStudentAndFees();
         }
@@ -828,11 +1009,15 @@ const StudentFees = () => {
     const removeTransportAssignment = async () => {
         if (!transportDetails?.id) return;
         setAssignSaving(true);
+
+        // ── UNIFIED LEDGER: Cancel unpaid transport ledger rows first ──
+        await cancelLedgerRows('transport', null);
+
         const { error } = await supabase.from('student_transport_details').delete().eq('id', transportDetails.id);
         if (error) {
             toast({ variant: 'destructive', title: 'Error removing transport', description: error.message });
         } else {
-            toast({ title: 'Transport removed' });
+            toast({ title: 'Transport removed', description: 'Unpaid transport fee entries cancelled from ledger.' });
             setTransportAssignOpen(false);
             await fetchStudentAndFees();
         }
@@ -880,7 +1065,14 @@ const StudentFees = () => {
 
     const handleHostelRoomChange = async (roomId) => {
         const room = hostelRooms.find(r => r.id === roomId);
-        setHostelForm(prev => ({ ...prev, room_id: roomId, room_type_id: room?.room_type_id || '', bed_number: '' }));
+        setHostelForm(prev => ({
+            ...prev,
+            room_id: roomId,
+            room_type_id: room?.room_type_id || '',
+            bed_number: '',
+            // Auto-populate hostel_fee from room's cost_per_bed if available and not already set
+            hostel_fee: room?.cost_per_bed ? room.cost_per_bed : prev.hostel_fee
+        }));
         await loadAssignedBeds(roomId);
     };
 
@@ -911,18 +1103,46 @@ const StudentFees = () => {
             check_in_date: hostelForm.check_in_date || null,
             hostel_guardian_contact: hostelForm.hostel_guardian_contact || null
         };
-        let error;
+        let error, savedId;
         if (hostelDetails?.id) {
             const { error: e } = await supabase.from('student_hostel_details').update(payload).eq('id', hostelDetails.id);
             error = e;
+            savedId = hostelDetails.id;
         } else {
-            const { error: e } = await supabase.from('student_hostel_details').insert(payload);
+            const { data: inserted, error: e } = await supabase.from('student_hostel_details').insert(payload).select('id').single();
             error = e;
+            savedId = inserted?.id;
         }
         if (error) {
             toast({ variant: 'destructive', title: 'Error saving hostel', description: error.message });
         } else {
-            toast({ title: 'Hostel assigned successfully!' });
+            const feeVal = parseFloat(hostelForm.hostel_fee) || 0;
+
+            // ── UNIFIED LEDGER: Auto-write hostel fees ──
+            // Cancel any existing unpaid hostel ledger rows first (handles updates)
+            await cancelLedgerRows('hostel', null);
+
+            if (feeVal > 0) {
+                // Lookup hostel fee type ID dynamically
+                const { data: feeType } = await supabase
+                    .from('fee_types')
+                    .select('id')
+                    .eq('branch_id', selectedBranch.id)
+                    .eq('code', 'hostel-fee')
+                    .single();
+
+                await writeFeesToLedger({
+                    feeSource: 'hostel',
+                    feeTypeId: feeType?.id || null,
+                    amount: feeVal,
+                    billingCycle: hostelForm.billing_cycle || 'monthly',
+                    sourceRefId: savedId
+                });
+                toast({ title: 'Hostel assigned successfully!', description: `₹${feeVal} per ${hostelForm.billing_cycle || 'month'} written to fee ledger.` });
+            } else {
+                toast({ variant: 'default', title: 'Hostel assigned (Fee ₹0)', description: '⚠️ Hostel fee is ₹0. Edit the assignment to set the correct fee amount.' });
+            }
+
             setHostelAssignOpen(false);
             await fetchStudentAndFees();
         }
@@ -932,11 +1152,15 @@ const StudentFees = () => {
     const removeHostelAssignment = async () => {
         if (!hostelDetails?.id) return;
         setAssignSaving(true);
+
+        // ── UNIFIED LEDGER: Cancel unpaid hostel ledger rows first ──
+        await cancelLedgerRows('hostel', null);
+
         const { error } = await supabase.from('student_hostel_details').delete().eq('id', hostelDetails.id);
         if (error) {
             toast({ variant: 'destructive', title: 'Error removing hostel', description: error.message });
         } else {
-            toast({ title: 'Hostel removed' });
+            toast({ title: 'Hostel removed', description: 'Unpaid hostel fee entries cancelled from ledger.' });
             setHostelAssignOpen(false);
             await fetchStudentAndFees();
         }
@@ -1443,7 +1667,7 @@ const StudentFees = () => {
                     continue;
                 }
                 
-                // 📚 ACADEMIC FEE - Regular fee processing
+                // 📚 ACADEMIC FEE - Regular fee processing (includes ledger hostel/transport)
                 const receiptSnapshot = {
                     student: {
                         id: studentId,
@@ -1461,7 +1685,23 @@ const StudentFees = () => {
                         total_amount: fee.totalFee || fee.amount,
                         due_date: fee.dueDate,
                         source: fee.source || 'old',
+                        fee_source: fee.fee_source || null,
+                        billing_period: fee.billing_period || null,
                     },
+                    // Include hostel/transport context if applicable
+                    ...(fee.fee_source === 'hostel' && hostelDetails ? {
+                        hostel: {
+                            block: hostelDetails?.blockName,
+                            room: hostelDetails?.room?.room_number_name,
+                            total_fee: hostelDetails?.totalFee || 0,
+                        },
+                    } : {}),
+                    ...(fee.fee_source === 'transport' && transportDetails ? {
+                        transport: {
+                            route: transportDetails?.route?.route_title,
+                            total_fee: transportDetails?.totalFee || 0,
+                        },
+                    } : {}),
                     payment: {
                         amount: amountForThisFee,
                         discount: discountForThisFee,
@@ -2467,7 +2707,7 @@ const StudentFees = () => {
         const combined = [...fees];
         
         // Add transport as a fee row if exists and not already in ledger
-        const hasLedgerTransport = fees.some(f => f.source === 'ledger' && (f.typeName?.toLowerCase().includes('transport') || f.group?.toLowerCase().includes('transport')));
+        const hasLedgerTransport = fees.some(f => f.source === 'ledger' && (f.fee_source === 'transport' || f.typeName?.toLowerCase().includes('transport') || f.group?.toLowerCase().includes('transport')));
         if (transportDetails && !hasLedgerTransport) {
             combined.push({
                 id: `transport-${transportDetails.id || 'fee'}`,
@@ -2491,7 +2731,7 @@ const StudentFees = () => {
         }
         
         // Add hostel as a fee row if exists and not already in ledger
-        const hasLedgerHostel = fees.some(f => f.source === 'ledger' && (f.typeName?.toLowerCase().includes('hostel') || f.group?.toLowerCase().includes('hostel')));
+        const hasLedgerHostel = fees.some(f => f.source === 'ledger' && (f.fee_source === 'hostel' || f.typeName?.toLowerCase().includes('hostel') || f.group?.toLowerCase().includes('hostel')));
         if (hostelDetails && !hasLedgerHostel) {
             combined.push({
                 id: `hostel-${hostelDetails.id || 'fee'}`,
@@ -2680,9 +2920,15 @@ const StudentFees = () => {
                                             <Badge variant="outline" className="text-[10px] px-1.5 py-0">
                                                 {currencySymbol}{Number(transportDetails.transport_fee || 0).toLocaleString('en-IN')}/{transportDetails.billing_cycle || 'monthly'}
                                             </Badge>
-                                            <Badge variant={transportDetails.status === 'Paid' ? 'default' : 'destructive'} className="text-[10px] px-1.5 py-0">
-                                                {transportDetails.status}
-                                            </Badge>
+                                            {Number(transportDetails.transport_fee || 0) === 0 ? (
+                                                <Badge variant="destructive" className="text-[10px] px-1.5 py-0">
+                                                    ⚠️ Fee ₹0 - Edit to set fee
+                                                </Badge>
+                                            ) : (
+                                                <Badge variant={transportDetails.status === 'Paid' ? 'default' : 'destructive'} className="text-[10px] px-1.5 py-0">
+                                                    {transportDetails.status}
+                                                </Badge>
+                                            )}
                                         </div>
                                     </div>
                                 ) : (
@@ -2719,9 +2965,15 @@ const StudentFees = () => {
                                             <Badge variant="outline" className="text-[10px] px-1.5 py-0">
                                                 {currencySymbol}{Number(hostelDetails.hostel_fee || 0).toLocaleString('en-IN')}/{hostelDetails.billing_cycle || 'monthly'}
                                             </Badge>
-                                            <Badge variant={hostelDetails.status === 'Paid' ? 'default' : 'destructive'} className="text-[10px] px-1.5 py-0">
-                                                {hostelDetails.status}
-                                            </Badge>
+                                            {Number(hostelDetails.hostel_fee || 0) === 0 ? (
+                                                <Badge variant="destructive" className="text-[10px] px-1.5 py-0">
+                                                    ⚠️ Fee ₹0 - Edit to set fee
+                                                </Badge>
+                                            ) : (
+                                                <Badge variant={hostelDetails.status === 'Paid' ? 'default' : 'destructive'} className="text-[10px] px-1.5 py-0">
+                                                    {hostelDetails.status}
+                                                </Badge>
+                                            )}
                                         </div>
                                     </div>
                                 ) : (

@@ -67,15 +67,15 @@ export default function StudentAIInsights() {
           .eq('branch_id', branchId)
           .eq('session_id', currentSessionId),
         supabase
-          .from('fee_assignments')
-          .select('student_id, total_amount, paid_amount, status')
+          .from('fee_payments')
+          .select('student_id, amount, fee_master_id')
           .eq('branch_id', branchId)
-          .eq('session_id', currentSessionId),
+          .eq('session_id', currentSessionId)
+          .eq('status', 'completed'),
         supabase
-          .from('exam_marks_v2')
-          .select('student_id, total_marks, percentage, exam_subjects(max_marks, pass_marks)')
-          .eq('branch_id', branchId)
-          .in('status', ['submitted', 'verified', 'locked']),
+          .from('exam_marks')
+          .select('student_id, marks, is_absent, exam_subjects(max_marks, pass_marks)')
+          .not('is_absent', 'eq', true),
         supabase
           .from('classes')
           .select('id, name')
@@ -121,21 +121,24 @@ export default function StudentAIInsights() {
         else break;
       }
 
-      // Fees
+      // Fees (from fee_payments — tracks completed payments per student)
       const studentFees = feeData.filter(f => f.student_id === sid);
-      const totalFee = studentFees.reduce((s, f) => s + (f.total_amount || 0), 0);
-      const paidFee = studentFees.reduce((s, f) => s + (f.paid_amount || 0), 0);
-      const feePct = totalFee > 0 ? Math.round((paidFee / totalFee) * 100) : null;
-      const feeDefaulter = feePct !== null && feePct < 50;
+      const paidFee = studentFees.reduce((s, f) => s + (f.amount || 0), 0);
+      const totalFee = paidFee; // Total due not available from payments table
+      const feePct = null;
+      const feeDefaulter = false;
 
-      // Marks
+      // Marks (from exam_marks — calculate percentage from marks/max_marks)
       const studentMarks = marksData.filter(m => m.student_id === sid);
       const avgPct = studentMarks.length > 0
-        ? Math.round(studentMarks.reduce((s, m) => s + (m.percentage || 0), 0) / studentMarks.length)
+        ? Math.round(studentMarks.reduce((s, m) => {
+            const max = m.exam_subjects?.max_marks || 100;
+            return s + ((m.marks || 0) / max) * 100;
+          }, 0) / studentMarks.length)
         : null;
       const failedSubjects = studentMarks.filter(m => {
         const pass = m.exam_subjects?.pass_marks || 35;
-        return (m.total_marks || 0) < pass;
+        return (m.marks || 0) < pass;
       }).length;
 
       // Dropout Risk Score (0-100, higher = more risk)

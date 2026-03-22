@@ -102,12 +102,14 @@ const SearchDueFees = () => {
             // 2. Class and section names are now fetched with student data
 
             // 3. HYBRID: Check for NEW architecture first (student_fee_ledger)
+            //    Now includes fee_source for unified hostel/transport tracking
             const { data: ledgerData } = await supabase
                 .from('student_fee_ledger')
-                .select('student_id, net_amount, paid_amount, discount_amount, fine_amount')
+                .select('student_id, net_amount, paid_amount, discount_amount, fine_amount, fee_source, status')
                 .in('student_id', studentIds)
                 .eq('branch_id', branchId)
-                .eq('session_id', currentSessionId);
+                .eq('session_id', currentSessionId)
+                .neq('status', 'cancelled');
             
             const usesNewArchitecture = ledgerData && ledgerData.length > 0;
 
@@ -175,8 +177,8 @@ const SearchDueFees = () => {
                 let regularFine = 0;
                 
                 if (usesNewArchitecture) {
-                    // NEW ARCHITECTURE: Use student_fee_ledger
-                    const studentLedger = ledgerData?.filter(l => l.student_id === student.id) || [];
+                    // NEW ARCHITECTURE: Use student_fee_ledger, filter by fee_source='academic' (or null for old entries)
+                    const studentLedger = ledgerData?.filter(l => l.student_id === student.id && (!l.fee_source || l.fee_source === 'academic')) || [];
                     regularTotal = studentLedger.reduce((sum, l) => sum + Number(l.net_amount || 0), 0);
                     regularPaid = studentLedger.reduce((sum, l) => sum + Number(l.paid_amount || 0), 0);
                     regularDiscount = studentLedger.reduce((sum, l) => sum + Number(l.discount_amount || 0), 0);
@@ -193,24 +195,50 @@ const SearchDueFees = () => {
                 }
                 const regularDue = Math.max(0, regularTotal - regularPaid - regularDiscount + regularFine);
 
-                // Transport Fees
-                const studentTransport = transportDetails?.find(t => t.student_id === student.id);
-                const transportTotal = studentTransport ? Number(studentTransport.transport_fee || 0) : 0;
-                
-                const studentTransportPayments = transportPayments?.filter(p => p.student_id === student.id) || [];
-                const transportPaid = studentTransportPayments.reduce((sum, p) => sum + Number(p.amount || 0), 0);
-                const transportDiscount = studentTransportPayments.reduce((sum, p) => sum + Number(p.discount_amount || 0), 0);
-                const transportFine = studentTransportPayments.reduce((sum, p) => sum + Number(p.fine_paid || 0), 0);
+                // Transport Fees - UNIFIED: Check ledger first, then fallback to old tables
+                const studentTransportLedger = ledgerData?.filter(l => l.student_id === student.id && l.fee_source === 'transport') || [];
+                const hasTransportInLedger = studentTransportLedger.length > 0;
+
+                let transportTotal, transportPaid, transportDiscount, transportFine;
+                if (hasTransportInLedger) {
+                    // NEW: from unified ledger
+                    transportTotal = studentTransportLedger.reduce((sum, l) => sum + Number(l.net_amount || 0), 0);
+                    transportPaid = studentTransportLedger.reduce((sum, l) => sum + Number(l.paid_amount || 0), 0);
+                    transportDiscount = studentTransportLedger.reduce((sum, l) => sum + Number(l.discount_amount || 0), 0);
+                    transportFine = studentTransportLedger.reduce((sum, l) => sum + Number(l.fine_amount || 0), 0);
+                } else {
+                    // FALLBACK: old separate tables
+                    const studentTransport = transportDetails?.find(t => t.student_id === student.id);
+                    transportTotal = studentTransport ? Number(studentTransport.transport_fee || 0) : 0;
+                    
+                    const studentTransportPayments = transportPayments?.filter(p => p.student_id === student.id) || [];
+                    transportPaid = studentTransportPayments.reduce((sum, p) => sum + Number(p.amount || 0), 0);
+                    transportDiscount = studentTransportPayments.reduce((sum, p) => sum + Number(p.discount_amount || 0), 0);
+                    transportFine = studentTransportPayments.reduce((sum, p) => sum + Number(p.fine_paid || 0), 0);
+                }
                 const transportDue = Math.max(0, transportTotal - transportPaid - transportDiscount + transportFine);
 
-                // Hostel Fees
-                const studentHostel = hostelDetails?.find(h => h.student_id === student.id);
-                const hostelTotal = studentHostel ? Number(studentHostel.hostel_fee || 0) : 0;
-                
-                const studentHostelPayments = hostelPayments?.filter(p => p.student_id === student.id) || [];
-                const hostelPaid = studentHostelPayments.reduce((sum, p) => sum + Number(p.amount || 0), 0);
-                const hostelDiscount = studentHostelPayments.reduce((sum, p) => sum + Number(p.discount_amount || 0), 0);
-                const hostelFine = studentHostelPayments.reduce((sum, p) => sum + Number(p.fine_paid || 0), 0);
+                // Hostel Fees - UNIFIED: Check ledger first, then fallback to old tables
+                const studentHostelLedger = ledgerData?.filter(l => l.student_id === student.id && l.fee_source === 'hostel') || [];
+                const hasHostelInLedger = studentHostelLedger.length > 0;
+
+                let hostelTotal, hostelPaid, hostelDiscount, hostelFine;
+                if (hasHostelInLedger) {
+                    // NEW: from unified ledger
+                    hostelTotal = studentHostelLedger.reduce((sum, l) => sum + Number(l.net_amount || 0), 0);
+                    hostelPaid = studentHostelLedger.reduce((sum, l) => sum + Number(l.paid_amount || 0), 0);
+                    hostelDiscount = studentHostelLedger.reduce((sum, l) => sum + Number(l.discount_amount || 0), 0);
+                    hostelFine = studentHostelLedger.reduce((sum, l) => sum + Number(l.fine_amount || 0), 0);
+                } else {
+                    // FALLBACK: old separate tables
+                    const studentHostel = hostelDetails?.find(h => h.student_id === student.id);
+                    hostelTotal = studentHostel ? Number(studentHostel.hostel_fee || 0) : 0;
+                    
+                    const studentHostelPayments = hostelPayments?.filter(p => p.student_id === student.id) || [];
+                    hostelPaid = studentHostelPayments.reduce((sum, p) => sum + Number(p.amount || 0), 0);
+                    hostelDiscount = studentHostelPayments.reduce((sum, p) => sum + Number(p.discount_amount || 0), 0);
+                    hostelFine = studentHostelPayments.reduce((sum, p) => sum + Number(p.fine_paid || 0), 0);
+                }
                 const hostelDue = Math.max(0, hostelTotal - hostelPaid - hostelDiscount + hostelFine);
 
                 // Combined
@@ -233,14 +261,14 @@ const SearchDueFees = () => {
                     regular_fine: regularFine,
                     regular_due: regularDue,
                     // Transport
-                    has_transport: !!studentTransport,
+                    has_transport: hasTransportInLedger || !!transportDetails?.find(t => t.student_id === student.id),
                     transport_total: transportTotal,
                     transport_paid: transportPaid,
                     transport_discount: transportDiscount,
                     transport_fine: transportFine,
                     transport_due: transportDue,
                     // Hostel
-                    has_hostel: !!studentHostel,
+                    has_hostel: hasHostelInLedger || !!hostelDetails?.find(h => h.student_id === student.id),
                     hostel_total: hostelTotal,
                     hostel_paid: hostelPaid,
                     hostel_discount: hostelDiscount,

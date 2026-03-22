@@ -13,6 +13,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Search, Loader2, Building2, User, IndianRupee, DoorOpen, Save, Bed, Users, ArrowLeft } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from '@/components/ui/badge';
+import { refreshFeeLedger, getHostelFeeTypeId } from '@/utils/feeLedgerService';
 
 const HostelFee = () => {
   const navigate = useNavigate();
@@ -281,6 +282,38 @@ const HostelFee = () => {
     if (error) {
       toast({ variant: 'destructive', title: 'Error updating hostel info', description: error.message });
     } else {
+      // Auto-write to unified fee ledger if hostel_fee is set
+      if (hostelPayload.hostel_fee && hostelPayload.hostel_fee > 0) {
+        const hostelFeeTypeId = await getHostelFeeTypeId(branchId, currentSessionId);
+        // Get the source reference ID (student_hostel_details record)
+        const { data: hostelRecord } = await supabase
+          .from('student_hostel_details')
+          .select('id')
+          .eq('student_id', selectedStudent.id)
+          .eq('session_id', currentSessionId)
+          .eq('branch_id', branchId)
+          .maybeSingle();
+
+        const ledgerResult = await refreshFeeLedger({
+          studentId: selectedStudent.id,
+          feeSource: 'hostel',
+          feeTypeId: hostelFeeTypeId,
+          amount: hostelPayload.hostel_fee,
+          billingCycle: hostelPayload.billing_cycle || 'monthly',
+          sessionId: currentSessionId,
+          branchId: branchId,
+          organizationId: organizationId,
+          sourceReferenceId: hostelRecord?.id || null,
+        });
+
+        if (ledgerResult.success) {
+          console.log(`Hostel fee ledger: ${ledgerResult.rowsCreated} entries created`);
+        } else {
+          console.error('Hostel fee ledger error:', ledgerResult.error);
+          toast({ variant: 'destructive', title: 'Hostel saved, but fee ledger failed', description: ledgerResult.error });
+        }
+      }
+
       toast({ title: 'Success!', description: 'Student hostel information updated.' });
       setStudents(prev => prev.map(s => 
         s.id === selectedStudent.id 

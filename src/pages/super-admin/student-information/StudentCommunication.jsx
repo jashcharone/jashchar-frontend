@@ -90,8 +90,8 @@ export default function StudentCommunication() {
 
   const headers = useCallback(async () => {
     const token = await getToken();
-    return { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json', 'x-branch-id': branchId, 'x-school-id': branchId };
-  }, [getToken, branchId]);
+    return { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json', 'x-branch-id': branchId, 'x-school-id': branchId, 'x-organization-id': organizationId, 'x-session-id': currentSessionId };
+  }, [getToken, branchId, organizationId, currentSessionId]);
 
   // Load classes
   useEffect(() => {

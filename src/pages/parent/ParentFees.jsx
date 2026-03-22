@@ -19,6 +19,7 @@ const ParentFees = () => {
   const { toast } = useToast();
   const [student, setStudent] = useState(null);
   const [feeMasters, setFeeMasters] = useState([]);
+  const [ledgerEntries, setLedgerEntries] = useState([]);
   const [payments, setPayments] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -36,9 +37,16 @@ const ParentFees = () => {
         // Use selectedChild data instead of querying student_profiles (RLS blocks parent access)
         setStudent(selectedChild);
 
-        const [allocationsRes, paymentsRes] = await Promise.all([
+        const [allocationsRes, paymentsRes, ledgerRes] = await Promise.all([
           supabase.from('student_fee_allocations').select('fee_master_id').eq('student_id', studentId),
           supabase.from('fee_payments').select('*').eq('student_id', studentId).order('payment_date', { ascending: false }),
+          // Unified ledger: academic + hostel + transport fees
+          supabase
+            .from('student_fee_ledger')
+            .select('*, fee_type:fee_types(name, code)')
+            .eq('student_id', studentId)
+            .neq('status', 'cancelled')
+            .order('due_date'),
         ]);
 
         if (allocationsRes.data) {
@@ -51,6 +59,7 @@ const ParentFees = () => {
           }
         }
         setPayments(paymentsRes.data || []);
+        setLedgerEntries(ledgerRes.data || []);
       } catch (err) {
         console.error('Error:', err);
         toast({ variant: 'destructive', title: 'Error loading fee data' });
@@ -63,7 +72,8 @@ const ParentFees = () => {
   }, [selectedChild, toast]);
 
   const feeData = useMemo(() => {
-    return feeMasters.map(master => {
+    // Old system fees (fee_masters via student_fee_allocations)
+    const oldFees = feeMasters.map(master => {
       const masterPayments = payments.filter(p => p.fee_master_id === master.id && !p.reverted_at);
       const totalPaid = masterPayments.reduce((sum, p) => sum + Number(p.amount), 0);
       const totalDiscount = masterPayments.reduce((sum, p) => sum + Number(p.discount_amount || 0), 0);
@@ -81,6 +91,8 @@ const ParentFees = () => {
 
       return {
         ...master,
+        fee_group_name: master.fee_group?.name || '-',
+        fee_type_name: master.fee_type?.name || '-',
         totalPaid,
         totalDiscount,
         balance: Math.max(0, balance),
@@ -88,7 +100,43 @@ const ParentFees = () => {
         statusClass,
       };
     });
-  }, [feeMasters, payments]);
+
+    // Unified ledger fees (hostel, transport, academic via Fee Engine 3.0)
+    const ledgerFees = ledgerEntries.map(entry => {
+      const netAmount = Number(entry.net_amount) || 0;
+      const paidAmount = Number(entry.paid_amount) || 0;
+      const discountAmount = Number(entry.discount_amount) || 0;
+      const balance = Math.max(0, netAmount - paidAmount - discountAmount);
+
+      const feeSource = entry.fee_source || 'academic';
+      const sourceLabels = { academic: 'Academic', hostel: 'Hostel', transport: 'Transport', other: 'Other' };
+
+      let status = 'Unpaid';
+      let statusClass = 'bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300';
+      if (entry.status === 'paid' || balance <= 0) {
+        status = 'Paid';
+        statusClass = 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300';
+      } else if (paidAmount > 0 || discountAmount > 0) {
+        status = 'Partial';
+        statusClass = 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-300';
+      }
+
+      return {
+        id: entry.id,
+        amount: netAmount,
+        fee_group_name: sourceLabels[feeSource] || feeSource,
+        fee_type_name: entry.fee_type?.name || (entry.billing_period || '-'),
+        due_date: entry.due_date,
+        totalPaid: paidAmount,
+        totalDiscount: discountAmount,
+        balance,
+        status,
+        statusClass,
+      };
+    });
+
+    return [...oldFees, ...ledgerFees];
+  }, [feeMasters, payments, ledgerEntries]);
 
   const totalAmount = feeData.reduce((sum, f) => sum + Number(f.amount), 0);
   const totalPaid = feeData.reduce((sum, f) => sum + f.totalPaid, 0);
@@ -161,8 +209,8 @@ const ParentFees = () => {
                       <TableBody>
                         {feeData.map(fee => (
                           <TableRow key={fee.id}>
-                            <TableCell>{fee.fee_group?.name || '-'}</TableCell>
-                            <TableCell>{fee.fee_type?.name || '-'}</TableCell>
+                            <TableCell>{fee.fee_group_name}</TableCell>
+                            <TableCell>{fee.fee_type_name}</TableCell>
                             <TableCell>{fee.due_date ? format(new Date(fee.due_date), 'dd MMM yyyy') : '-'}</TableCell>
                             <TableCell className="text-right font-medium">₹{Number(fee.amount).toLocaleString()}</TableCell>
                             <TableCell className="text-right text-green-600">₹{fee.totalPaid.toLocaleString()}</TableCell>

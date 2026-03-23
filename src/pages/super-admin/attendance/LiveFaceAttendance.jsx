@@ -1,4 +1,4 @@
-// ═══════════════════════════════════════════════════════════════════════════════════════════════════
+﻿// ═══════════════════════════════════════════════════════════════════════════════════════════════════
 // JASHCHAR ERP - LIVE FACE ATTENDANCE (ENHANCED VERSION)
 // Big School Features: Class Mode, Multi-face detection, Real-time stats, Queue management
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════
@@ -52,14 +52,14 @@ import {
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════
 
 const COOLDOWN_MS = 30000; // 30 second cooldown before re-checking same person
-const SCAN_INTERVAL_MS = 200; // Check faces every 200ms
+const SCAN_INTERVAL_MS = 2000; // Check faces every 2s (HTTP mode needs time for AI processing)
 
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════
 // MAIN COMPONENT
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════
 
 const LiveFaceAttendance = () => {
-    const { user, currentSessionId, organizationId } = useAuth();
+    const { user, currentSessionId, currentSessionName, organizationId } = useAuth();
     const { selectedBranch } = useBranch();
     const { toast } = useToast();
     const { canView } = usePermissions();
@@ -71,6 +71,7 @@ const LiveFaceAttendance = () => {
     const canvasRef = useRef(null);
     const overlayCanvasRef = useRef(null);
     const scanLoopRef = useRef(null);
+    const aiEngineFailuresRef = useRef(0); // consecutive AI engine failures → auto-fallback
     
     // Camera & AI State
     const [stream, setStream] = useState(null);
@@ -105,7 +106,9 @@ const LiveFaceAttendance = () => {
     const [aiEngineChecking, setAIEngineChecking] = useState(true);
     
     // 🔴 WebSocket State (Real-time recognition - Day 21)
-    const [useWebSocket, setUseWebSocket] = useState(true); // Prefer WebSocket for real-time
+    const [useWebSocket, setUseWebSocket] = useState(false); // Default HTTP polling (more reliable)
+    const useWebSocketRef = useRef(false); // Ref so startFaceLoop always reads latest value
+    useWebSocketRef.current = useWebSocket;
     const wsFrameIntervalRef = useRef(null);
     const handleWebSocketResultRef = useRef(null);
     
@@ -117,11 +120,20 @@ const LiveFaceAttendance = () => {
         onResult: (...args) => handleWebSocketResultRef.current?.(...args),
         onError: (error) => {
             console.error('WebSocket error:', error);
-            toast({
-                variant: 'destructive',
-                title: 'Recognition Error',
-                description: 'WebSocket connection error'
-            });
+        },
+        onDisconnect: () => {
+            // If WS disconnects while actively scanning, fall back to HTTP polling
+            if (isScanning) {
+                console.warn('[LiveFace] WebSocket disconnected during scan — falling back to HTTP polling');
+                useWebSocketRef.current = false; // Immediately switch ref so startFaceLoop uses HTTP
+                setUseWebSocket(false);
+                // Clear WS interval and restart in HTTP mode
+                if (wsFrameIntervalRef.current) {
+                    clearInterval(wsFrameIntervalRef.current);
+                    wsFrameIntervalRef.current = null;
+                }
+                startFaceLoop();
+            }
         }
     });
     
@@ -240,9 +252,15 @@ const LiveFaceAttendance = () => {
                 setAIEngineChecking(true);
                 try {
                     const health = await aiEngineApi.checkHealth();
-                    if (health && health.detector_loaded && health.recognizer_loaded) {
+                    // Health response: { success, data: { status, models_ready: { face_detector, face_recognizer } } }
+                    const modelsReady = health?.data?.models_ready || health?.models_ready;
+                    const isHealthy = health?.success && (
+                        (modelsReady?.face_detector && modelsReady?.face_recognizer) ||
+                        health?.data?.status === 'healthy'
+                    );
+                    if (isHealthy) {
                         setAIEngineAvailable(true);
-                        console.log('✅ AI Engine available (ArcFace 512D)');
+                        console.log('✅ AI Engine available (ArcFace 512D - RetinaFace + ArcFace R100)');
                     }
                 } catch (aiError) {
                     console.log('⚠️ AI Engine not available, using browser AI');
@@ -317,20 +335,33 @@ const LiveFaceAttendance = () => {
         }
         
         // Parse encoding vectors for comparison
-        const parsedFaces = (data || []).map(face => ({
-            ...face,
-            descriptor: face.encoding_vector ? Array.isArray(face.encoding_vector) ? face.encoding_vector : null : null
-        })).filter(f => f.descriptor);
+        // encoding_vector is stored as JSON string "[0.1, 0.2, ...]" - must be parsed
+        const parsedFaces = (data || []).map(face => {
+            let descriptor = null;
+            try {
+                if (face.encoding_vector) {
+                    const parsed = typeof face.encoding_vector === 'string'
+                        ? JSON.parse(face.encoding_vector)
+                        : face.encoding_vector;
+                    descriptor = Array.isArray(parsed) ? parsed : null;
+                }
+            } catch (e) {
+                // Invalid encoding, skip
+            }
+            return { ...face, descriptor };
+        }); // Keep all faces (AI Engine uses person_id, browser uses descriptor)
         
         setRegisteredFaces(parsedFaces);
+        console.log(`[LiveFace] Loaded ${parsedFaces.length} registered faces (${parsedFaces.filter(f => f.descriptor).length} with descriptors)`);
     };
     
     const fetchClasses = async () => {
-        const { data } = await supabase
+        let query = supabase
             .from('classes')
             .select('id, name')
-            .eq('branch_id', branchId)
-            .order('name');
+            .eq('branch_id', branchId);
+        if (currentSessionId) query = query.eq('session_id', currentSessionId);
+        const { data } = await query.order('name');
         
         setClasses((data || []).map(c => ({ ...c, class_name: c.name })));
     };
@@ -350,15 +381,16 @@ const LiveFaceAttendance = () => {
     const fetchClassStudents = async () => {
         if (!selectedClass || !selectedSection) return;
         
-        // Get students directly by class_id and section_id
-        const { data } = await supabase
+        // Get students directly by class_id and section_id (session-wise)
+        let query = supabase
             .from('student_profiles')
             .select('id, full_name, admission_number, photo_url')
             .eq('branch_id', branchId)
             .eq('class_id', selectedClass)
             .eq('section_id', selectedSection)
-            .eq('is_disabled', false)
-            .order('full_name');
+            .eq('is_disabled', false);
+        if (currentSessionId) query = query.eq('session_id', currentSessionId);
+        const { data } = await query.order('full_name');
         
         setClassStudents(data || []);
         
@@ -369,25 +401,96 @@ const LiveFaceAttendance = () => {
     const fetchTodayStats = async () => {
         const today = new Date().toISOString().split('T')[0];
         
-        const { data, error } = await supabase
+        // Fetch student attendance
+        const { data: studentData, error: studentError } = await supabase
             .from('student_attendance')
-            .select('id, status, student_id')
+            .select('id')
             .eq('branch_id', branchId)
             .eq('session_id', currentSessionId)
             .eq('date', today)
             .eq('status', 'present');
         
-        if (!error) {
-            setTodayStats(prev => ({
-                ...prev,
-                present: (data || []).length,
-                students: (data || []).length
-            }));
-        }
+        // Fetch staff attendance
+        const { data: staffData, error: staffError } = await supabase
+            .from('staff_attendance')
+            .select('id')
+            .eq('branch_id', branchId)
+            .eq('session_id', currentSessionId)
+            .eq('attendance_date', today)
+            .eq('status', 'present');
+        
+        const studentCount = (!studentError && studentData) ? studentData.length : 0;
+        const staffCount = (!staffError && staffData) ? staffData.length : 0;
+        
+        setTodayStats({
+            total: studentCount + staffCount,
+            present: studentCount + staffCount,
+            students: studentCount,
+            staff: staffCount
+        });
     };
     
-    const updateClassProgress = async () => {
-        if (!selectedClass || !selectedSection) return;
+    // ═══════════════════════════════════════════════════════════════════════════════════════════════
+    // SYNC FACES TO AI ENGINE (Enroll existing face_encodings into FAISS index)
+    // ═══════════════════════════════════════════════════════════════════════════════════════════════
+    const [syncing, setSyncing] = useState(false);
+    
+    const syncFacesToAIEngine = async () => {
+        if (!branchId) return;
+        setSyncing(true);
+        
+        try {
+            // Fetch all registered faces with photos
+            const { data, error } = await supabase
+                .from('face_encodings')
+                .select('person_id, person_name, person_type, photo_url')
+                .eq('branch_id', branchId)
+                .eq('is_active', true)
+                .not('photo_url', 'is', null);
+            
+            if (error) throw error;
+            
+            const faces = data || [];
+            if (faces.length === 0) {
+                toast({ title: '⚠️ No faces to sync', description: 'Register faces first before syncing.' });
+                setSyncing(false);
+                return;
+            }
+            
+            let successCount = 0;
+            let failCount = 0;
+            
+            for (const face of faces) {
+                try {
+                    await aiEngineApi.enrollFace(
+                        face.person_id,
+                        face.person_type || 'student',
+                        face.person_name,
+                        face.photo_url, // base64 image stored in DB
+                        branchId
+                    );
+                    successCount++;
+                } catch (err) {
+                    console.warn(`[Sync] Failed for ${face.person_name}:`, err.message);
+                    failCount++;
+                }
+            }
+            
+            toast({
+                title: `✅ Sync Complete`,
+                description: `${successCount} faces synced to AI Engine${failCount > 0 ? `, ${failCount} failed` : ''}`
+            });
+            
+            // Refresh registered faces
+            await fetchRegisteredFaces();
+        } catch (err) {
+            toast({ variant: 'destructive', title: 'Sync failed', description: err.message });
+        }
+        
+        setSyncing(false);
+    };
+    
+    const updateClassProgress = async () => {        if (!selectedClass || !selectedSection) return;
         
         const today = new Date().toISOString().split('T')[0];
         
@@ -471,16 +574,17 @@ const LiveFaceAttendance = () => {
         if (wsFrameIntervalRef.current) clearInterval(wsFrameIntervalRef.current);
         
         // 🔴 WebSocket Mode (Real-time, most efficient) - Day 21
-        if (useWebSocket && aiEngineAvailable) {
+        // Read from ref (not state) so we always see the latest value, even in callbacks
+        if (useWebSocketRef.current && aiEngineAvailable) {
             // Connect to WebSocket if not already connected
             if (!ws.isConnected) {
                 ws.connect();
             }
             
             // Send frames at ~5 FPS via WebSocket
+            // Note: don't check ws.isConnected here (stale closure) — sendFrame() does the readyState check
             wsFrameIntervalRef.current = setInterval(() => {
-                if (!videoRef.current || !ws.isConnected) return;
-                
+                if (!videoRef.current) return;
                 const imageBase64 = captureVideoFrame(videoRef.current);
                 if (imageBase64) {
                     ws.sendFrame(imageBase64, matchThreshold);
@@ -491,38 +595,72 @@ const LiveFaceAttendance = () => {
         }
         
         // 🚀 HTTP Polling Mode (Fallback when WebSocket not available)
+        const isRecognizingRef = { current: false };
         scanLoopRef.current = setInterval(async () => {
             if (!videoRef.current) return;
+            
+            // Skip if a previous recognize request is still in-flight (prevent pile-up)
+            if (isRecognizingRef.current) return;
             
             // Skip if models not ready (for browser mode)
             if (!useAIEngine && !aiEngineAvailable && !areModelsLoaded()) return;
             
+            isRecognizingRef.current = true;
             try {
                 // 🚀 USE AI ENGINE (Python ArcFace 512D) if available
                 if (useAIEngine && aiEngineAvailable) {
                     // Capture frame
-                    const imageBase64 = aiEngineApi.captureVideoFrame(videoRef.current);
+                    const imageBase64 = captureVideoFrame(videoRef.current);
+                    if (!imageBase64) { isRecognizingRef.current = false; return; }
                     
-                    // Call AI Engine recognize endpoint
-                    const result = await aiEngineApi.recognizeFace(imageBase64, matchThreshold);
+                    // Call AI Engine recognize endpoint (branch_id sent via context header + body)
+                    const result = await aiEngineApi.recognizeFace(imageBase64, matchThreshold, branchId);
                     
                     if (result.success) {
-                        // Convert AI Engine results to display format
-                        const detectionCount = result.faces_detected || 0;
+                        aiEngineFailuresRef.current = 0; // reset on success
+                        // Node.js proxy wraps response as { success, data: {...} }
+                        // Python response: { faces_detected, results: [{ status, bbox, confidence, match: { person_id, similarity } }] }
+                        const aiData = result.data || result;
+                        
+                        const detectionCount = aiData.faces_detected || 0;
                         setDetectedFaces(Array(detectionCount).fill({ bbox: null }));
                         
-                        const matches = (result.matches || []).map(match => ({
-                            detection: { detection: { box: { x: 0, y: 0, width: 100, height: 100 } } },
-                            quality: { isGood: true, score: match.confidence },
-                            match: {
-                                person_id: match.person_id,
-                                person_name: match.person_name,
-                                person_type: match.person_type
-                            },
-                            confidence: match.confidence
-                        }));
+                        // Map Python 'results' array (not 'matches') to display format
+                        const allFaceResults = (aiData.results || aiData.matches || []);
+                        const matches = allFaceResults.map(result => {
+                            // Look up name from local registeredFaces using person_id
+                            const localFace = result.match?.person_id
+                                ? registeredFaces.find(f => f.person_id === result.match.person_id)
+                                : null;
+                            const resolvedName = result.match?.person_name
+                                || localFace?.person_name
+                                || localFace?.name
+                                || result.match?.person_id;
+                            const resolvedType = result.match?.person_type
+                                || localFace?.person_type
+                                || 'student';
+                            return {
+                                detection: { 
+                                    detection: { 
+                                        box: { 
+                                            x: result.bbox?.x || 0, 
+                                            y: result.bbox?.y || 0, 
+                                            width: result.bbox?.width || 100, 
+                                            height: result.bbox?.height || 100 
+                                        } 
+                                    } 
+                                },
+                                quality: { isGood: true, score: result.confidence || 0.9 },
+                                match: (result.status === 'recognized' && result.match) ? {
+                                    person_id: result.match.person_id,
+                                    person_name: resolvedName,
+                                    person_type: resolvedType
+                                } : null,
+                                confidence: result.status === 'recognized' ? (result.match?.similarity || result.match?.confidence || 0) : 0
+                            };
+                        });
                         
-                        setMatchedPersons(matches);
+                        setMatchedPersons(matches.filter(m => m.match));
                         
                         // Auto-mark if enabled & matched
                         for (const m of matches) {
@@ -536,6 +674,13 @@ const LiveFaceAttendance = () => {
                         
                         drawFaceBoxes(matches);
                     } else {
+                        aiEngineFailuresRef.current++;
+                        if (aiEngineFailuresRef.current >= 3) {
+                            console.warn('[LiveFace] AI engine failed 3 times — switching to browser mode');
+                            setAIEngineAvailable(false);
+                            aiEngineFailuresRef.current = 0;
+                        }
+                        setDetectedFaces([]);
                         setMatchedPersons([]);
                         clearOverlay();
                     }
@@ -555,10 +700,13 @@ const LiveFaceAttendance = () => {
                             let bestConfidence = 0;
                             
                             // Compare with registered faces
+                            // compareFaces returns Euclidean DISTANCE (lower = more similar)
+                            // Convert to confidence: distance 0 = 100%, distance 0.6 = ~50%, distance 1.2+ = 0%
                             for (const regFace of registeredFaces) {
                                 if (!regFace.descriptor) continue;
                                 
-                                const confidence = compareFaces(descriptor, regFace.descriptor);
+                                const distance = compareFaces(descriptor, regFace.descriptor);
+                                const confidence = Math.max(0, 1 - (distance / 1.2)); // 0.0 - 1.0
                                 if (confidence > matchThreshold && confidence > bestConfidence) {
                                     bestMatch = regFace;
                                     bestConfidence = confidence;
@@ -589,7 +737,20 @@ const LiveFaceAttendance = () => {
                     }
                 }
             } catch (error) {
-                console.error('Face detection error:', error);
+                // AI engine timeout or error — count consecutive failures
+                if (useAIEngine && aiEngineAvailable) {
+                    aiEngineFailuresRef.current++;
+                    if (aiEngineFailuresRef.current >= 3) {
+                        console.warn('[LiveFace] AI engine timed out 3 times — switching to browser mode');
+                        setAIEngineAvailable(false);
+                        aiEngineFailuresRef.current = 0;
+                    }
+                }
+                setDetectedFaces([]);
+                setMatchedPersons([]);
+                clearOverlay();
+            } finally {
+                isRecognizingRef.current = false;
             }
         }, SCAN_INTERVAL_MS);
     };
@@ -706,12 +867,13 @@ const LiveFaceAttendance = () => {
     
     const markAttendance = async (person, confidence) => {
         if (!person || !branchId) return;
-        
+
         const personId = person.person_id || person.user_id;
         const today = new Date().toISOString().split('T')[0];
         const now = new Date();
-        
-        // Add to cooldown
+        const isStaff = person.person_type === 'staff';
+
+        // Cooldown guard
         setRecentlyMarked(prev => new Set([...prev, personId]));
         setTimeout(() => {
             setRecentlyMarked(prev => {
@@ -720,99 +882,142 @@ const LiveFaceAttendance = () => {
                 return next;
             });
         }, COOLDOWN_MS);
-        
+
         try {
-            // Check if already marked
-            const { data: existing } = await supabase
+            if (isStaff) {
+                // STAFF path - uses staff_attendance (no class_id needed)
+                const { data: existingStaff } = await supabase
+                    .from('staff_attendance')
+                    .select('id')
+                    .eq('branch_id', branchId)
+                    .eq('session_id', currentSessionId)
+                    .eq('staff_id', personId)
+                    .eq('attendance_date', today)
+                    .maybeSingle();
+
+                if (existingStaff) { addToLog(person, 'already', confidence); return; }
+
+                const { error: staffError } = await supabase.from('staff_attendance').insert({
+                    branch_id: branchId,
+                    organization_id: organizationId,
+                    session_id: currentSessionId,
+                    staff_id: personId,
+                    attendance_date: today,
+                    status: 'present',
+                    source: 'face_recognition',
+                    note: `AI Face Recognition (${Math.round(confidence * 100)}%)`,
+                });
+
+                if (staffError) {
+                    console.error('[LiveFace] Staff attendance insert error:', staffError);
+                    addToLog(person, 'error', confidence);
+                } else {
+                    addToLog(person, 'success', confidence);
+                    if (soundEnabled) playSuccessSound();
+                    setTodayStats(prev => ({ ...prev, present: prev.present + 1, staff: prev.staff + 1 }));
+                    toast({ title: 'Attendance Marked', description: `${person.person_name} (Staff) - Present` });
+                }
+                return;
+            }
+
+            // STUDENT path - uses student_attendance (class_id NOT NULL)
+            const { data: existingStudent } = await supabase
                 .from('student_attendance')
                 .select('id')
                 .eq('branch_id', branchId)
+                .eq('session_id', currentSessionId)
                 .eq('student_id', personId)
                 .eq('date', today)
                 .maybeSingle();
-            
-            if (existing) {
-                addToLog(person, 'already', confidence);
-                return;
-            }
-            
-            // Get student details for class_id and section_id
-            let classId = null;
-            let sectionId = null;
-            
-            if (person.person_type === 'student') {
-                // First try session assignment
-                if (currentSessionId) {
-                    const { data: assignment } = await supabase
-                        .from('student_session_assignments')
-                        .select('class_id, section_id')
-                        .eq('student_id', personId)
+
+            if (existingStudent) { addToLog(person, 'already', confidence); return; }
+
+            // Fetch class_id and section_id - required by DB NOT NULL constraint
+            const { data: studentProfile } = await supabase
+                .from('student_profiles')
+                .select('class_id, section_id')
+                .eq('id', personId)
+                .maybeSingle();
+
+            if (!studentProfile?.class_id) {
+                // Graceful fallback: person may be registered as student but is actually staff
+                // Check employee_profiles — if found, insert into staff_attendance instead
+                const { data: empProfile } = await supabase
+                    .from('employee_profiles')
+                    .select('id, full_name')
+                    .eq('id', personId)
+                    .maybeSingle();
+
+                if (empProfile) {
+                    // Found in employee_profiles — treat as staff
+                    const { data: existingEmp } = await supabase
+                        .from('staff_attendance')
+                        .select('id')
+                        .eq('branch_id', branchId)
                         .eq('session_id', currentSessionId)
+                        .eq('staff_id', personId)
+                        .eq('attendance_date', today)
                         .maybeSingle();
-                    
-                    if (assignment) {
-                        classId = assignment.class_id;
-                        sectionId = assignment.section_id;
+
+                    if (existingEmp) { addToLog(person, 'already', confidence); return; }
+
+                    const { error: empError } = await supabase.from('staff_attendance').insert({
+                        branch_id: branchId,
+                        organization_id: organizationId,
+                        session_id: currentSessionId,
+                        staff_id: personId,
+                        attendance_date: today,
+                        status: 'present',
+                        source: 'face_recognition',
+                        note: `AI Face Recognition (${Math.round(confidence * 100)}%) [auto-routed from student]`,
+                    });
+
+                    if (empError) {
+                        console.error('[LiveFace] Staff fallback insert error:', empError);
+                        addToLog(person, 'error', confidence);
+                    } else {
+                        addToLog({ ...person, person_type: 'staff' }, 'success', confidence);
+                        if (soundEnabled) playSuccessSound();
+                        setTodayStats(prev => ({ ...prev, present: prev.present + 1, staff: prev.staff + 1 }));
+                        toast({ title: 'Attendance Marked', description: `${empProfile.full_name || person.person_name} (Staff) - Present` });
                     }
+                    return;
                 }
-                
-                // Fallback to student profile
-                if (!classId) {
-                    const { data: student } = await supabase
-                        .from('student_profiles')
-                        .select('class_id, section_id')
-                        .eq('id', personId)
-                        .maybeSingle();
-                    
-                    if (student) {
-                        classId = student.class_id;
-                        sectionId = student.section_id;
-                    }
-                }
-            }
-            
-            if (!classId && person.person_type === 'student') {
-                console.error('Missing class_id for student:', personId);
+
+                // No employee record either — truly unassigned
+                console.warn('[LiveFace] No class_id for student and not in employee_profiles:', personId);
+                toast({ title: 'Attendance Skipped', description: `${person.person_name} has no class assigned`, variant: 'destructive' });
                 addToLog(person, 'error', confidence);
                 return;
             }
-            
+
             const timeString = now.toTimeString().split(' ')[0];
-            
-            const attendanceData = {
+            const isLate = now.getHours() > 9 || (now.getHours() === 9 && now.getMinutes() > 30);
+
+            const { error: studentError } = await supabase.from('student_attendance').insert({
                 branch_id: branchId,
                 organization_id: organizationId,
                 session_id: currentSessionId,
                 student_id: personId,
-                class_id: classId,
-                section_id: sectionId,
+                class_id: studentProfile.class_id,
+                section_id: studentProfile.section_id || null,
                 date: today,
                 status: 'present',
                 check_in_time: timeString,
                 marked_by: user?.id || null,
                 marked_at: now.toISOString(),
                 remark: `AI Face Recognition (${Math.round(confidence * 100)}%)`,
-                is_late: now.getHours() >= 9 && now.getMinutes() > 30,
-                late_minutes: now.getHours() >= 9 ? Math.max(0, (now.getHours() - 9) * 60 + now.getMinutes() - 30) : 0
-            };
-            
-            const { error } = await supabase.from('student_attendance').insert(attendanceData);
-            
-            if (error) {
-                console.error('Attendance error:', error);
+                is_late: isLate,
+                late_minutes: isLate ? Math.max(0, (now.getHours() - 9) * 60 + now.getMinutes() - 30) : 0,
+            });
+
+            if (studentError) {
+                console.error('[LiveFace] Student attendance insert error:', studentError);
                 addToLog(person, 'error', confidence);
             } else {
                 addToLog(person, 'success', confidence);
-                
                 if (soundEnabled) playSuccessSound();
-                
-                setTodayStats(prev => ({
-                    ...prev,
-                    present: prev.present + 1,
-                    students: prev.students + 1
-                }));
-                
-                // Update class progress if in class mode
+                setTodayStats(prev => ({ ...prev, present: prev.present + 1, students: prev.students + 1 }));
                 if (classMode) {
                     setClassProgress(prev => ({
                         ...prev,
@@ -820,17 +1025,14 @@ const LiveFaceAttendance = () => {
                         percent: prev.total > 0 ? Math.round(((prev.present + 1) / prev.total) * 100) : 0
                     }));
                 }
-                
-                toast({
-                    title: '✅ Attendance Marked',
-                    description: `${person.person_name} - Present`,
-                });
+                toast({ title: 'Attendance Marked', description: `${person.person_name} - Present` });
             }
         } catch (error) {
-            console.error('Mark attendance error:', error);
+            console.error('[LiveFace] Mark attendance error:', error);
             addToLog(person, 'error', confidence);
         }
     };
+            
     
     const addToLog = (person, status, confidence) => {
         const logEntry = {
@@ -846,9 +1048,20 @@ const LiveFaceAttendance = () => {
     
     const playSuccessSound = () => {
         try {
-            const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2teleR0tX4na/9OJEwwySJ3f/+SgEAAcPIne//WrCwASM4/d//W7CAAOLone//bDCQAMKYjc//fLCgAKJofc//nRDAAIJIba//jWDQAGIoXa//rbDwAFIITZ//vfEQAEHoPY//zjEwADHILX//3nFQACGoHW//7qFwABGYDV//7tGQAAF3/U///wGwAAFn7T///zHQAAFX3S///2HwAAFHzR///4IQAAE3vQ///6IwAAEnrP///8JQAAEXLO///+JwAAEHHN////KQAAD3DM////KwAADm/L////LQAADW7K////LwAADG3J////MQAAC2zI////MwAACmvH////NQAACWrG////NwAACGnF////OQAABmjE////OwAABWfD////PQAABGXC////PwAAA2TB////QQAAAma/////QwAAAWW+////RQAAAGe8////Rg==');
-            audio.volume = 0.5;
-            audio.play().catch(() => {});
+            // Use Web Audio API to generate beep — avoids CSP data: URI restriction
+            const ctx = new (window.AudioContext || window.webkitAudioContext)();
+            const oscillator = ctx.createOscillator();
+            const gain = ctx.createGain();
+            oscillator.connect(gain);
+            gain.connect(ctx.destination);
+            oscillator.type = 'sine';
+            oscillator.frequency.setValueAtTime(880, ctx.currentTime);          // A5
+            oscillator.frequency.setValueAtTime(1100, ctx.currentTime + 0.08);  // ~C#6
+            gain.gain.setValueAtTime(0.4, ctx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.25);
+            oscillator.start(ctx.currentTime);
+            oscillator.stop(ctx.currentTime + 0.25);
+            oscillator.onended = () => ctx.close();
         } catch {}
     };
     
@@ -859,6 +1072,19 @@ const LiveFaceAttendance = () => {
     const markedStudentIds = useMemo(() => {
         return new Set(attendanceLog.filter(l => l.status === 'success').map(l => l.person_name));
     }, [attendanceLog]);
+    
+    // Deduplicate matched persons by person_id (AI may detect same face multiple times in frame)
+    const uniqueMatchedPersons = useMemo(() => {
+        const seen = new Map();
+        for (const m of matchedPersons) {
+            if (!m.match) continue;
+            const pid = m.match.person_id;
+            if (!seen.has(pid) || m.confidence > seen.get(pid).confidence) {
+                seen.set(pid, m);
+            }
+        }
+        return Array.from(seen.values());
+    }, [matchedPersons]);
     
     // ═══════════════════════════════════════════════════════════════════════════════════════════════
     // RENDER
@@ -881,6 +1107,22 @@ const LiveFaceAttendance = () => {
     const selectedClassName = classes.find(c => c.id === selectedClass)?.class_name || '';
     const selectedSectionName = sections.find(s => s.id === selectedSection)?.section_name || '';
     
+    if (!branchId || !currentSessionId) {
+        return (
+            <DashboardLayout>
+                <div className="flex items-center justify-center h-96">
+                    <div className="text-center">
+                        <AlertTriangle className="w-16 h-16 mx-auto text-yellow-500 mb-4" />
+                        <h2 className="text-xl font-semibold">Branch & Session Required</h2>
+                        <p className="text-muted-foreground mt-2">
+                            {!branchId ? 'Please select a branch first.' : 'Please select an academic session first.'}
+                        </p>
+                    </div>
+                </div>
+            </DashboardLayout>
+        );
+    }
+    
     return (
         <DashboardLayout>
             <div className="p-4 md:p-6 space-y-4">
@@ -894,6 +1136,20 @@ const LiveFaceAttendance = () => {
                         <p className="text-muted-foreground mt-1">
                             🤖 Real AI face recognition • Multi-face detection
                         </p>
+                        <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+                            {selectedBranch?.name && (
+                                <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700 border-blue-200">
+                                    <School className="w-3 h-3 mr-1" />
+                                    {selectedBranch.name}
+                                </Badge>
+                            )}
+                            {currentSessionName && (
+                                <Badge variant="outline" className="text-xs bg-purple-50 text-purple-700 border-purple-200">
+                                    <Calendar className="w-3 h-3 mr-1" />
+                                    {currentSessionName}
+                                </Badge>
+                            )}
+                        </div>
                     </div>
                     
                     <div className="flex items-center gap-2 flex-wrap">
@@ -901,6 +1157,18 @@ const LiveFaceAttendance = () => {
                             <Users className="w-3 h-3 mr-1" />
                             {registeredFaces.length} registered
                         </Badge>
+                        {aiEngineAvailable && (
+                            <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={syncFacesToAIEngine}
+                                disabled={syncing}
+                                className="h-7 text-xs border-blue-400 text-blue-600 hover:bg-blue-50"
+                            >
+                                {syncing ? <Loader2 className="w-3 h-3 mr-1 animate-spin" /> : <RefreshCw className="w-3 h-3 mr-1" />}
+                                {syncing ? 'Syncing...' : 'Sync to AI'}
+                            </Button>
+                        )}
                         <Badge 
                             variant={isScanning ? "default" : "secondary"} 
                             className={isScanning ? "bg-green-500 animate-pulse" : ""}
@@ -936,7 +1204,7 @@ const LiveFaceAttendance = () => {
                                 </div>
                                 <div>
                                     <p className="text-lg sm:text-2xl font-bold text-green-700">{todayStats.present}</p>
-                                    <p className="text-xs text-green-600/80">Present Today</p>
+                                    <p className="text-xs text-green-600/80">Present Today{todayStats.staff > 0 ? ` (${todayStats.students}S + ${todayStats.staff}T)` : ''}</p>
                                 </div>
                             </div>
                         </CardContent>
@@ -963,7 +1231,7 @@ const LiveFaceAttendance = () => {
                                     <Target className="h-5 w-5 text-blue-600" />
                                 </div>
                                 <div>
-                                    <p className="text-lg sm:text-2xl font-bold">{matchedPersons.filter(m => m.match).length}</p>
+                                    <p className="text-lg sm:text-2xl font-bold">{uniqueMatchedPersons.length}</p>
                                     <p className="text-xs text-muted-foreground">Recognized</p>
                                 </div>
                             </div>
@@ -1057,24 +1325,24 @@ const LiveFaceAttendance = () => {
                                                 style={{ transform: 'scaleX(-1)' }}
                                             />
                                             
-                                            {/* Multi-face match overlay */}
+                                            {/* Multi-face match overlay - deduplicated by person_id */}
                                             <AnimatePresence>
-                                                {matchedPersons.filter(p => p.match).length > 0 && (
+                                                {uniqueMatchedPersons.length > 0 && (
                                                     <motion.div
                                                         initial={{ opacity: 0, y: 20 }}
                                                         animate={{ opacity: 1, y: 0 }}
                                                         exit={{ opacity: 0, y: 20 }}
                                                         className="absolute bottom-4 left-4 right-4 bg-green-500/95 text-white p-4 rounded-xl shadow-lg"
                                                     >
-                                                        {matchedPersons.filter(p => p.match).length === 1 ? (
+                                                        {uniqueMatchedPersons.length === 1 ? (
                                                             <div className="flex items-center gap-4">
                                                                 <CheckCircle2 className="w-10 h-10 flex-shrink-0" />
                                                                 <div className="flex-1 min-w-0">
                                                                     <p className="text-xl font-bold truncate">
-                                                                        {matchedPersons.find(p => p.match)?.match?.person_name}
+                                                                        {uniqueMatchedPersons[0]?.match?.person_name}
                                                                     </p>
                                                                     <p className="text-sm opacity-90">
-                                                                        {Math.round((matchedPersons.find(p => p.match)?.confidence || 0) * 100)}% confidence
+                                                                        {Math.round((uniqueMatchedPersons[0]?.confidence || 0) * 100)}% confidence
                                                                     </p>
                                                                 </div>
                                                                 <Badge className="bg-white text-green-600 text-lg px-4 py-2 flex-shrink-0">
@@ -1086,11 +1354,11 @@ const LiveFaceAttendance = () => {
                                                                 <div className="flex items-center gap-2">
                                                                     <Users className="w-6 h-6" />
                                                                     <span className="font-bold">
-                                                                        {matchedPersons.filter(p => p.match).length} People Recognized
+                                                                        {uniqueMatchedPersons.length} People Recognized
                                                                     </span>
                                                                 </div>
                                                                 <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                                                                    {matchedPersons.filter(p => p.match).slice(0, 6).map((p, idx) => (
+                                                                    {uniqueMatchedPersons.slice(0, 6).map((p, idx) => (
                                                                         <div key={idx} className="flex items-center gap-2 bg-white/20 rounded-lg p-2">
                                                                             <CheckCircle2 className="w-4 h-4 flex-shrink-0" />
                                                                             <span className="text-sm truncate">{p.match.person_name}</span>

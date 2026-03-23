@@ -51,6 +51,16 @@ export const useFaceRecognitionWebSocket = ({
     const reconnectTimeoutRef = useRef(null);
     const processingRef = useRef(false);
     
+    // Callback refs — always up-to-date without causing connect() to recreate
+    const onResultRef = useRef(onResult);
+    const onErrorRef = useRef(onError);
+    const onConnectRef = useRef(onConnect);
+    const onDisconnectRef = useRef(onDisconnect);
+    onResultRef.current = onResult;
+    onErrorRef.current = onError;
+    onConnectRef.current = onConnect;
+    onDisconnectRef.current = onDisconnect;
+    
     // Get WebSocket URL
     const getWsUrl = useCallback(() => {
         // AI Engine WebSocket endpoint
@@ -86,8 +96,8 @@ export const useFaceRecognitionWebSocket = ({
                 setIsConnecting(false);
                 reconnectAttemptsRef.current = 0;
                 
-                if (onConnect) {
-                    onConnect();
+                if (onConnectRef.current) {
+                    onConnectRef.current();
                 }
             };
             
@@ -115,8 +125,8 @@ export const useFaceRecognitionWebSocket = ({
                         });
                     }
                     
-                    if (onResult) {
-                        onResult(data);
+                    if (onResultRef.current) {
+                        onResultRef.current(data);
                     }
                 } catch (e) {
                     console.error('❌ Failed to parse WebSocket message:', e);
@@ -128,8 +138,8 @@ export const useFaceRecognitionWebSocket = ({
                 setLastError('WebSocket connection error');
                 processingRef.current = false;
                 
-                if (onError) {
-                    onError(error);
+                if (onErrorRef.current) {
+                    onErrorRef.current(error);
                 }
             };
             
@@ -139,8 +149,8 @@ export const useFaceRecognitionWebSocket = ({
                 setIsConnecting(false);
                 processingRef.current = false;
                 
-                if (onDisconnect) {
-                    onDisconnect(event);
+                if (onDisconnectRef.current) {
+                    onDisconnectRef.current(event);
                 }
                 
                 // Auto-reconnect logic
@@ -161,7 +171,7 @@ export const useFaceRecognitionWebSocket = ({
             setIsConnecting(false);
             setLastError(error.message);
         }
-    }, [branchId, clientId, getWsUrl, maxReconnectAttempts, reconnectInterval, onConnect, onDisconnect, onError, onResult]);
+    }, [branchId, clientId, getWsUrl, maxReconnectAttempts, reconnectInterval]);
     
     // Disconnect from WebSocket
     const disconnect = useCallback(() => {
@@ -176,6 +186,7 @@ export const useFaceRecognitionWebSocket = ({
         
         if (wsRef.current) {
             console.log('🔌 Disconnecting WebSocket...');
+            console.trace('disconnect() called from:');
             wsRef.current.close(1000, 'Client disconnect');
             wsRef.current = null;
         }
@@ -225,17 +236,25 @@ export const useFaceRecognitionWebSocket = ({
         });
     }, []);
     
-    // Auto-connect on mount if enabled
+    // Auto-connect on mount if enabled — only re-run when branchId/autoConnect changes,
+    // NOT when connect/disconnect callbacks recreate (they are stable now)
     useEffect(() => {
         if (autoConnect && branchId) {
             connect();
         }
         
-        // Cleanup on unmount
+        // Cleanup on unmount only
         return () => {
-            disconnect();
+            if (wsRef.current) {
+                wsRef.current.close(1000, 'Component unmount');
+                wsRef.current = null;
+            }
+            if (reconnectTimeoutRef.current) {
+                clearTimeout(reconnectTimeoutRef.current);
+            }
         };
-    }, [autoConnect, branchId, connect, disconnect]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [autoConnect, branchId]);
     
     return {
         // State

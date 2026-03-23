@@ -393,10 +393,12 @@ const ExamGroupManagement = () => {
                         Create exam groups linking terms, exam types, classes and subjects
                     </p>
                 </div>
-                <Button onClick={fetchExamGroups} variant="outline" size="sm">
-                    <RefreshCw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
-                    Refresh
-                </Button>
+                <div className="flex gap-2">
+                    <Button onClick={fetchExamGroups} variant="outline" size="sm">
+                        <RefreshCw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+                        Refresh
+                    </Button>
+                </div>
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

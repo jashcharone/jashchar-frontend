@@ -27,7 +27,7 @@ const getAuthToken = async () => {
     const { data: { session } } = await supabase.auth.getSession();
     return session?.access_token || null;
   } catch (error) {
-    console.error('[AI Engine API] Error getting auth token:', error);
+    console.warn('[AI Engine API] Error getting auth token:', error);
     return null;
   }
 };
@@ -92,7 +92,9 @@ const apiCall = async (endpoint, method = 'GET', body = null, _retry = false) =>
 
     return data;
   } catch (error) {
-    console.error('[AI Engine API] Error:', error);
+    // Use warn (not error) so the global error handler doesn't send these to the backend.
+    // AI engine being offline is expected and should not pollute the error log.
+    console.warn('[AI Engine API] Error:', error);
     throw error;
   }
 };
@@ -148,18 +150,28 @@ export const aiEngineApi = {
   detectFaces: (imageBase64) => apiCall('/camera/ai/detect', 'POST', { image: imageBase64 }),
   
   // Recognize face (search in FAISS index)
-  recognizeFace: (imageBase64, threshold = 0.6) => apiCall('/camera/ai/recognize', 'POST', { 
-    image: imageBase64, 
-    threshold 
-  }),
+  recognizeFace: (imageBase64, threshold = 0.6, branchId = null) => {
+    const context = getUserContext();
+    const branch_id = branchId || context.branchId;
+    return apiCall('/camera/ai/recognize', 'POST', {
+      image: imageBase64,
+      threshold,
+      branch_id,
+    });
+  },
   
   // Enroll new face (add to FAISS index)
-  enrollFace: (personId, personType, personName, imageBase64) => apiCall('/camera/ai/enroll', 'POST', {
-    person_id: personId,
-    person_type: personType,
-    person_name: personName,
-    image: imageBase64
-  }),
+  enrollFace: (personId, personType, personName, imageBase64, branchId = null) => {
+    const context = getUserContext();
+    const branch_id = branchId || context.branchId;
+    return apiCall('/camera/ai/enroll', 'POST', {
+      person_id: personId,
+      person_type: personType,
+      person_name: personName,
+      image: imageBase64,
+      branch_id,
+    });
+  },
   
   // Get FAISS index status
   getIndexStatus: () => apiCall('/camera/ai/index/status'),

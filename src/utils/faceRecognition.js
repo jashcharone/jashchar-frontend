@@ -9,8 +9,8 @@ import * as faceapi from 'face-api.js';
 let modelsLoaded = false;
 let loadingPromise = null;
 
-// CDN URL for face-api models (faster than local)
-const MODEL_URL = 'https://cdn.jsdelivr.net/npm/@vladmandic/face-api/model';
+// CDN URL for face-api models - MUST match face-api.js@0.22.2 (justadudewhohacks)
+const MODEL_URL = 'https://cdn.jsdelivr.net/gh/justadudewhohacks/face-api.js@0.22.2/weights';
 
 /**
  * Load all required face-api.js models
@@ -104,11 +104,13 @@ export const detectSingleFace = async (input) => {
     }
 
     // Try multiple input sizes and thresholds for robustness
-    // Smaller inputSize works better for passport-sized / small images
+    // Larger inputSize works better for webcam, smaller for passport photos
     const attempts = [
-        { inputSize: 416, scoreThreshold: 0.3 },
-        { inputSize: 320, scoreThreshold: 0.25 },
-        { inputSize: 224, scoreThreshold: 0.2 },
+        { inputSize: 512, scoreThreshold: 0.3 },
+        { inputSize: 416, scoreThreshold: 0.2 },
+        { inputSize: 320, scoreThreshold: 0.15 },
+        { inputSize: 224, scoreThreshold: 0.1 },
+        { inputSize: 160, scoreThreshold: 0.1 },
     ];
 
     for (const { inputSize, scoreThreshold } of attempts) {
@@ -345,17 +347,17 @@ export const analyzeFaceQuality = (detection) => {
 
     const { detection: det, landmarks, expressions } = detection;
 
-    // Check detection confidence
-    if (det.score < 0.7) {
+    // Check detection confidence - only penalize very low scores
+    if (det.score < 0.15) {
         issues.push('Low detection confidence');
-        score -= 0.2;
+        score -= 0.1;
     }
 
-    // Check face size (should be at least 100x100 pixels)
+    // Check face size (should be at least 40x40 pixels)
     const box = det.box;
-    if (box.width < 100 || box.height < 100) {
+    if (box.width < 40 || box.height < 40) {
         issues.push('Face too small - move closer');
-        score -= 0.3;
+        score -= 0.15;
     }
 
     // Check if face is centered (rough check)
@@ -373,7 +375,7 @@ export const analyzeFaceQuality = (detection) => {
     return {
         score: Math.max(0, Math.min(1, score)),
         issues,
-        isGood: score >= 0.7
+        isGood: score >= 0.3
     };
 };
 

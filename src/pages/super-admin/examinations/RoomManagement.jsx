@@ -222,10 +222,12 @@ const RoomManagement = () => {
                             Manage exam rooms for seating arrangements
                         </p>
                     </div>
-                    <Button onClick={() => openDialog()}>
-                        <Plus className="h-4 w-4 mr-2" />
-                        Add Room
-                    </Button>
+                    <div className="flex gap-2">
+                        <Button onClick={() => openDialog()}>
+                            <Plus className="h-4 w-4 mr-2" />
+                            Add Room
+                        </Button>
+                    </div>
                 </div>
 
                 {/* Stats Cards */}

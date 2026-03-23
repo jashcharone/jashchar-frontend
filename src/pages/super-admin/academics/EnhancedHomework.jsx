@@ -31,11 +31,13 @@ import {
   Plus, Search, Filter, Eye, Edit, Trash2, Send, Download, Upload,
   Users, UserCheck, Star, RefreshCw, ChevronRight, BarChart3,
   ClipboardCheck, FileQuestion, Timer, Zap, Award, AlertTriangle,
-  GraduationCap, TrendingUp, TrendingDown, ArrowRight
+  GraduationCap, TrendingUp, TrendingDown, ArrowRight, ArrowLeft
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import api from '@/services/api';
 import { formatDate, formatDateTime } from '@/utils/dateUtils';
+import DashboardLayout from '@/components/DashboardLayout';
+import { useNavigate } from 'react-router-dom';
 
 const HOMEWORK_TYPES = [
   { value: 'assignment', label: 'Assignment', icon: FileText },
@@ -56,6 +58,7 @@ const STATUS_COLORS = {
 export default function EnhancedHomework() {
   const { user, currentSessionId, organizationId } = useAuth();
   const { selectedBranch } = useBranch();
+  const navigate = useNavigate();
 
   // Tab state
   const [activeTab, setActiveTab] = useState('homework');
@@ -75,10 +78,10 @@ export default function EnhancedHomework() {
   const [teachers, setTeachers] = useState([]);
 
   // Filters
-  const [selectedClass, setSelectedClass] = useState('');
+  const [selectedClass, setSelectedClass] = useState('all');
   const [selectedSection, setSelectedSection] = useState('');
-  const [selectedSubject, setSelectedSubject] = useState('');
-  const [statusFilter, setStatusFilter] = useState('');
+  const [selectedSubject, setSelectedSubject] = useState('all');
+  const [statusFilter, setStatusFilter] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
 
   // Pagination
@@ -98,9 +101,9 @@ export default function EnhancedHomework() {
     instructions: '',
     homework_type: 'assignment',
     class_id: '',
-    section_id: '',
+    section_id: 'all',
     subject_id: '',
-    chapter_id: '',
+    chapter_id: 'all',
     assigned_date: new Date().toISOString().split('T')[0],
     due_date: '',
     due_time: '23:59',
@@ -129,12 +132,12 @@ export default function EnhancedHomework() {
   const fetchStats = useCallback(async () => {
     try {
       const params = {};
-      if (selectedClass) params.class_id = selectedClass;
-      if (selectedSubject) params.subject_id = selectedSubject;
+      if (selectedClass && selectedClass !== 'all') params.class_id = selectedClass;
+      if (selectedSubject && selectedSubject !== 'all') params.subject_id = selectedSubject;
 
-      const { data } = await api.get('/enhanced-homework/analytics/dashboard', { params });
-      if (data.success) {
-        setStats(data.data);
+      const response = await api.get('/enhanced-homework/analytics/dashboard', { params });
+      if (response?.success) {
+        setStats(response.data);
       }
     } catch (error) {
       console.error('Failed to fetch stats:', error);
@@ -148,16 +151,16 @@ export default function EnhancedHomework() {
         page: pagination.page,
         limit: pagination.limit
       };
-      if (selectedClass) params.class_id = selectedClass;
+      if (selectedClass && selectedClass !== 'all') params.class_id = selectedClass;
       if (selectedSection) params.section_id = selectedSection;
-      if (selectedSubject) params.subject_id = selectedSubject;
-      if (statusFilter) params.status = statusFilter;
+      if (selectedSubject && selectedSubject !== 'all') params.subject_id = selectedSubject;
+      if (statusFilter && statusFilter !== 'all') params.status = statusFilter;
       if (searchQuery) params.search = searchQuery;
 
-      const { data } = await api.get('/enhanced-homework', { params });
-      if (data.success) {
-        setHomework(data.data || []);
-        setPagination(prev => ({ ...prev, ...data.pagination }));
+      const response = await api.get('/enhanced-homework', { params });
+      if (response?.success) {
+        setHomework(response.data || []);
+        if (response.pagination) setPagination(prev => ({ ...prev, ...response.pagination }));
       }
     } catch (error) {
       console.error('Failed to fetch homework:', error);
@@ -169,9 +172,9 @@ export default function EnhancedHomework() {
 
   const fetchTemplates = useCallback(async () => {
     try {
-      const { data } = await api.get('/enhanced-homework/templates');
-      if (data.success) {
-        setTemplates(data.data || []);
+      const response = await api.get('/enhanced-homework/templates');
+      if (response?.success) {
+        setTemplates(response.data || []);
       }
     } catch (error) {
       console.error('Failed to fetch templates:', error);
@@ -180,9 +183,11 @@ export default function EnhancedHomework() {
 
   const fetchClasses = useCallback(async () => {
     try {
-      const { data } = await api.get('/academics/classes');
-      if (data.success) {
-        setClasses(data.data || []);
+      const response = await api.get('/academics/classes');
+      if (Array.isArray(response)) {
+        setClasses(response);
+      } else if (response?.success) {
+        setClasses(response.data || []);
       }
     } catch (error) {
       console.error('Failed to fetch classes:', error);
@@ -191,9 +196,11 @@ export default function EnhancedHomework() {
 
   const fetchSections = useCallback(async (classId) => {
     try {
-      const { data } = await api.get('/academics/sections', { params: { class_id: classId } });
-      if (data.success) {
-        setSections(data.data || []);
+      const response = await api.get('/academics/sections', { params: { class_id: classId } });
+      if (Array.isArray(response)) {
+        setSections(response);
+      } else if (response?.success) {
+        setSections(response.data || []);
       }
     } catch (error) {
       console.error('Failed to fetch sections:', error);
@@ -202,9 +209,11 @@ export default function EnhancedHomework() {
 
   const fetchSubjects = useCallback(async (classId) => {
     try {
-      const { data } = await api.get('/academics/subjects', { params: { class_id: classId } });
-      if (data.success) {
-        setSubjects(data.data || []);
+      const response = await api.get('/academics/subjects', { params: { class_id: classId } });
+      if (Array.isArray(response)) {
+        setSubjects(response);
+      } else if (response?.success) {
+        setSubjects(response.data || []);
       }
     } catch (error) {
       console.error('Failed to fetch subjects:', error);
@@ -213,9 +222,11 @@ export default function EnhancedHomework() {
 
   const fetchChapters = useCallback(async (subjectId) => {
     try {
-      const { data } = await api.get('/curriculum/chapters', { params: { subject_id: subjectId } });
-      if (data.success) {
-        setChapters(data.data || []);
+      const response = await api.get('/curriculum/chapters', { params: { subject_id: subjectId } });
+      if (Array.isArray(response)) {
+        setChapters(response);
+      } else if (response?.success) {
+        setChapters(response.data || []);
       }
     } catch (error) {
       console.error('Failed to fetch chapters:', error);
@@ -224,9 +235,9 @@ export default function EnhancedHomework() {
 
   const fetchSubmissions = useCallback(async (homeworkId) => {
     try {
-      const { data } = await api.get(`/enhanced-homework/${homeworkId}/submissions`);
-      if (data.success) {
-        setSubmissions(data.data);
+      const response = await api.get(`/enhanced-homework/${homeworkId}/submissions`);
+      if (response?.success) {
+        setSubmissions(response.data);
       }
     } catch (error) {
       console.error('Failed to fetch submissions:', error);
@@ -250,7 +261,7 @@ export default function EnhancedHomework() {
   }, [selectedBranch?.id, selectedClass, selectedSubject, statusFilter, searchQuery, pagination.page, fetchHomework]);
 
   useEffect(() => {
-    if (selectedClass) {
+    if (selectedClass && selectedClass !== 'all') {
       fetchSections(selectedClass);
       fetchSubjects(selectedClass);
     } else {
@@ -260,7 +271,7 @@ export default function EnhancedHomework() {
   }, [selectedClass, fetchSections, fetchSubjects]);
 
   useEffect(() => {
-    if (selectedSubject) {
+    if (selectedSubject && selectedSubject !== 'all') {
       fetchChapters(selectedSubject);
     } else {
       setChapters([]);
@@ -281,11 +292,13 @@ export default function EnhancedHomework() {
       setLoading(true);
       const payload = {
         ...newHomework,
+        section_id: newHomework.section_id === 'all' ? null : newHomework.section_id,
+        chapter_id: newHomework.chapter_id === 'all' ? null : newHomework.chapter_id,
         questions: questions.length > 0 ? questions : undefined
       };
 
-      const { data } = await api.post('/enhanced-homework', payload);
-      if (data.success) {
+      const response = await api.post('/enhanced-homework', payload);
+      if (response?.success) {
         toast.success('Homework created successfully');
         setShowCreateDialog(false);
         resetForm();
@@ -304,9 +317,9 @@ export default function EnhancedHomework() {
     if (!confirm('Are you sure you want to delete this homework?')) return;
 
     try {
-      const { data } = await api.delete(`/enhanced-homework/${id}`);
-      if (data.success) {
-        toast.success(data.message);
+      const response = await api.delete(`/enhanced-homework/${id}`);
+      if (response?.success) {
+        toast.success(response.message);
         fetchHomework();
         fetchStats();
       }
@@ -339,8 +352,8 @@ export default function EnhancedHomework() {
         return;
       }
 
-      const { data } = await api.put(`/enhanced-homework/submissions/${selectedSubmission.id}/grade`, gradeForm);
-      if (data.success) {
+      const response = await api.put(`/enhanced-homework/submissions/${selectedSubmission.id}/grade`, gradeForm);
+      if (response?.success) {
         toast.success('Submission graded successfully');
         setShowGradeDialog(false);
         fetchSubmissions(selectedHomework.id);
@@ -495,7 +508,7 @@ export default function EnhancedHomework() {
           <SelectValue placeholder="All Classes" />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="">All Classes</SelectItem>
+          <SelectItem value="all">All Classes</SelectItem>
           {classes.map(cls => (
             <SelectItem key={cls.id} value={cls.id}>
               {cls.name || cls.class_name}
@@ -509,7 +522,7 @@ export default function EnhancedHomework() {
           <SelectValue placeholder="All Subjects" />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="">All Subjects</SelectItem>
+          <SelectItem value="all">All Subjects</SelectItem>
           {subjects.map(sub => (
             <SelectItem key={sub.id} value={sub.id}>
               {sub.name || sub.subject_name}
@@ -523,7 +536,7 @@ export default function EnhancedHomework() {
           <SelectValue placeholder="All Status" />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="">All Status</SelectItem>
+          <SelectItem value="all">All Status</SelectItem>
           <SelectItem value="published">Published</SelectItem>
           <SelectItem value="draft">Draft</SelectItem>
           <SelectItem value="closed">Closed</SelectItem>
@@ -766,7 +779,7 @@ export default function EnhancedHomework() {
                   <SelectValue placeholder="All Sections" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All Sections</SelectItem>
+                  <SelectItem value="all">All Sections</SelectItem>
                   {sections.map(sec => (
                     <SelectItem key={sec.id} value={sec.id}>
                       {sec.name || sec.section_name}
@@ -811,7 +824,7 @@ export default function EnhancedHomework() {
                   <SelectValue placeholder="Select Chapter" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All Chapters</SelectItem>
+                  <SelectItem value="all">All Chapters</SelectItem>
                   {chapters.map(ch => (
                     <SelectItem key={ch.id} value={ch.id}>
                       {ch.name || ch.chapter_name}
@@ -1202,19 +1215,25 @@ export default function EnhancedHomework() {
   // ===========================
 
   return (
-    <div className="p-6 space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold flex items-center gap-2">
-            <FileText className="w-7 h-7 text-primary" />
-            Enhanced Homework System
-          </h1>
-          <p className="text-muted-foreground">
-            Assign, track, and grade homework with auto-grading support
-          </p>
+    <DashboardLayout>
+      <div className="p-6 space-y-6">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <Button variant="ghost" size="icon" onClick={() => navigate(-1)} className="rounded-full">
+              <ArrowLeft className="h-5 w-5" />
+            </Button>
+            <div>
+              <h1 className="text-2xl font-bold flex items-center gap-2">
+                <FileText className="w-7 h-7 text-primary" />
+                Enhanced Homework System
+              </h1>
+              <p className="text-muted-foreground">
+                Assign, track, and grade homework with auto-grading support
+              </p>
+            </div>
+          </div>
         </div>
-      </div>
 
       {/* Stats */}
       {renderStatsCards()}
@@ -1260,5 +1279,6 @@ export default function EnhancedHomework() {
       {renderSubmissionsDialog()}
       {renderGradeDialog()}
     </div>
+    </DashboardLayout>
   );
 }

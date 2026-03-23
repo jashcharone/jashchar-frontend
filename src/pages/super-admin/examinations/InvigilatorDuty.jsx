@@ -313,10 +313,12 @@ const InvigilatorDuty = () => {
                             Assign staff to exam invigilation duties
                         </p>
                     </div>
-                    <Button onClick={() => openDialog()}>
-                        <Plus className="h-4 w-4 mr-2" />
-                        Assign Duty
-                    </Button>
+                    <div className="flex gap-2">
+                        <Button onClick={() => openDialog()}>
+                            <Plus className="h-4 w-4 mr-2" />
+                            Assign Duty
+                        </Button>
+                    </div>
                 </div>
 
                 {/* Filter Card */}

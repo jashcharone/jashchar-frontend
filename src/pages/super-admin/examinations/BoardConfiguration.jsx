@@ -197,10 +197,12 @@ const BoardConfiguration = () => {
             <h1 className="text-2xl font-bold text-foreground">Board Configuration</h1>
             <p className="text-muted-foreground">Configure examination boards (CBSE, ICSE, State Board, etc.)</p>
           </div>
-          <Button variant="outline" onClick={fetchBoards} disabled={loading}>
-            <RefreshCw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
-            Refresh
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={fetchBoards} disabled={loading}>
+              <RefreshCw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+              Refresh
+            </Button>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

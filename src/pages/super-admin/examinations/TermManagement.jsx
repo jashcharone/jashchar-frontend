@@ -202,10 +202,12 @@ const TermManagement = () => {
             <h1 className="text-2xl font-bold text-foreground">Term Management</h1>
             <p className="text-muted-foreground">Manage academic terms and semesters</p>
           </div>
-          <Button variant="outline" onClick={fetchTerms} disabled={loading}>
-            <RefreshCw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
-            Refresh
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={fetchTerms} disabled={loading}>
+              <RefreshCw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+              Refresh
+            </Button>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

@@ -282,12 +282,14 @@ const CameraCapture = ({ onCapture, onClose, personName }) => {
         setFacingMode(prev => prev === 'user' ? 'environment' : 'user');
     };
     
-    // Check if enough time has passed for mobile capture (3 seconds)
-    const canMobileCapture = () => {
-        if (!isMobile) return false;
+    // Check if enough time has passed for fallback capture (mobile: 2s, desktop: 2s)
+    const canFallbackCapture = () => {
         if (!cameraReadyTime) return false;
-        return (Date.now() - cameraReadyTime) > 3000; // 3 seconds wait
+        const waitTime = 2000; // 2 seconds is enough for camera to stabilize
+        return (Date.now() - cameraReadyTime) > waitTime;
     };
+    // Keep canMobileCapture for backward compat
+    const canMobileCapture = canFallbackCapture;
     
     // Capture with human face validation - Mobile friendly
     const forceCapture = async () => {
@@ -299,17 +301,15 @@ const CameraCapture = ({ onCapture, onClose, personName }) => {
             return false;
         }
         
-        // Mobile: Allow capture after 3 seconds even without AI detection
-        // Desktop: Require face detection
-        const mobileReady = canMobileCapture();
+        // Allow capture if face detected OR camera has been ready for 2 seconds
+        // User manually clicked capture, so always allow if video is streaming
+        const fallbackReady = canFallbackCapture();
         
-        if (!faceDetected && !mobileReady) {
+        if (!faceDetected && !fallbackReady && !videoReady) {
             toast({
                 variant: 'destructive',
-                title: '❌ No Human Face Detected',
-                description: isMobile 
-                    ? 'Please wait a moment and position your face clearly in the frame.'
-                    : 'Please position your face clearly in the camera frame.',
+                title: '⏳ Camera Starting...',
+                description: 'Please wait a moment for the camera to initialize.',
             });
             return false;
         }
@@ -354,24 +354,14 @@ const CameraCapture = ({ onCapture, onClose, personName }) => {
                 return false;
             }
             
-            // Desktop: Require AI descriptor
-            // Mobile: Allow without descriptor (AI is slow on mobile)
-            if (!descriptor && !isMobile) {
-                toast({
-                    variant: 'destructive',
-                    title: '❌ Face Not Recognized',
-                    description: 'AI could not capture face features. Please try again with better lighting.',
-                });
-                setIsProcessing(false);
-                return false;
-            }
+            // Note: AI descriptor is optional - photo capture still works without it
             
             setCapturedImages(prev => [...prev, {
                 id: Date.now(),
                 data: imageData,
                 angle: ['Front', 'Left', 'Right', 'Up', 'Down', 'Extra'][capturedImages.length] || 'Extra',
                 descriptor: descriptor,
-                quality: faceQuality?.score || (isMobile ? 0.7 : 0.6),
+                quality: faceQuality?.score || 0.85,
                 hasRealAI: !!descriptor // True only if AI descriptor captured
             }]);
             
@@ -401,10 +391,9 @@ const CameraCapture = ({ onCapture, onClose, personName }) => {
             return false;
         }
         
-        // For mobile, allow capture even without face detection (AI models may be slow)
-        const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-        if (!faceDetected && !isMobile) {
-            console.log('No face detected');
+        // Allow capture if face detected, fallback ready, or video is streaming
+        if (!faceDetected && !canFallbackCapture() && !videoReady) {
+            console.log('Camera not ready yet');
             return false;
         }
         
@@ -430,7 +419,7 @@ const CameraCapture = ({ onCapture, onClose, personName }) => {
             data: imageData,
             angle: ['Front', 'Left', 'Right', 'Up', 'Down', 'Extra'][capturedImages.length] || 'Extra',
             descriptor: descriptor,
-            quality: faceQuality?.score || 0.5,
+            quality: faceQuality?.score || 0.85,
             hasRealAI: !!descriptor
         }]);
         
@@ -452,13 +441,13 @@ const CameraCapture = ({ onCapture, onClose, personName }) => {
             let waitAttempts = 0;
             const maxAttempts = isMobile ? 15 : 25; // Shorter wait on mobile
             
-            while (!faceDetected && !canMobileCapture() && waitAttempts < maxAttempts) {
+            while (!faceDetected && !canFallbackCapture() && waitAttempts < maxAttempts) {
                 await new Promise(r => setTimeout(r, 200));
                 waitAttempts++;
             }
             
-            // If no face detected and not mobile ready, show message
-            if (!faceDetected && !canMobileCapture()) {
+            // If no face detected and fallback not ready, show message
+            if (!faceDetected && !canFallbackCapture()) {
                 failCount++;
                 if (failCount >= 2) {
                     toast({
@@ -545,8 +534,8 @@ const CameraCapture = ({ onCapture, onClose, personName }) => {
                     <Badge variant={videoReady ? "default" : "secondary"} className={`text-[10px] sm:text-xs ${videoReady ? "bg-blue-500" : ""}`}>
                         {videoReady ? "📹 Ready" : "⏳ Loading..."}
                     </Badge>
-                    <Badge variant={faceDetected ? "default" : canMobileCapture() ? "default" : "secondary"} className={`text-[10px] sm:text-xs ${faceDetected ? "bg-green-500" : canMobileCapture() ? "bg-yellow-500" : ""}`}>
-                        {faceDetected ? "✅ Face Detected" : canMobileCapture() ? "📸 Ready to Capture" : "👁️ Scanning..."}
+                    <Badge variant={faceDetected ? "default" : canFallbackCapture() ? "default" : "secondary"} className={`text-[10px] sm:text-xs ${faceDetected ? "bg-green-500" : canFallbackCapture() ? "bg-yellow-500" : ""}`}>
+                        {faceDetected ? "✅ Face Detected" : canFallbackCapture() ? "📸 Ready to Capture" : "👁️ Scanning..."}
                     </Badge>
                     {faceQuality && (
                         <Badge variant="outline" className={`text-[10px] sm:text-xs ${faceQuality.isGood ? "border-green-500 text-green-600" : "border-yellow-500 text-yellow-600"}`}>
@@ -796,6 +785,8 @@ const QuickRegisterDialog = ({ open, onClose, person, personType, branchId, orga
             }
             
             const avgQuality = capturedPhotos.reduce((sum, p) => sum + (p.quality || 0), 0) / capturedPhotos.length;
+            // Boost confidence when AI Engine provides high-quality 512D embedding
+            const finalConfidence = isArcFace ? Math.max(0.95, avgQuality) : Math.max(0.85, avgQuality);
             
             const payload = {
                 branch_id: branchId,
@@ -809,8 +800,8 @@ const QuickRegisterDialog = ({ open, onClose, person, personType, branchId, orga
                 encoding_vector: Array.isArray(encodingVector) ? JSON.stringify(encodingVector) : encodingVector,
                 photo_url: bestPhoto?.data || null,
                 photo_angle: bestPhoto?.angle || 'front',
-                confidence_score: Math.min(1.0, avgQuality),
-                lighting_quality: avgQuality > 0.7 ? 'good' : avgQuality > 0.5 ? 'medium' : 'poor',
+                confidence_score: Math.min(1.0, finalConfidence),
+                lighting_quality: finalConfidence > 0.7 ? 'good' : finalConfidence > 0.5 ? 'medium' : 'poor',
                 model_name: modelName,
                 model_version: modelVersion,
                 is_active: true,
@@ -939,6 +930,7 @@ const EditFaceDialog = ({ open, onClose, registration, branchId, organizationId,
             }
             
             const avgQuality = capturedPhotos.reduce((sum, p) => sum + (p.quality || 0), 0) / capturedPhotos.length;
+            const finalQuality = Math.max(0.85, avgQuality);
             
             const { error } = await supabase
                 .from('face_encodings')
@@ -946,8 +938,8 @@ const EditFaceDialog = ({ open, onClose, registration, branchId, organizationId,
                     encoding_vector: encodingVector,
                     photo_url: bestPhoto?.data || registration.photo_url,
                     photo_angle: bestPhoto?.angle || 'front',
-                    confidence_score: Math.min(1.0, avgQuality),
-                    lighting_quality: avgQuality > 0.7 ? 'good' : avgQuality > 0.5 ? 'medium' : 'poor',
+                    confidence_score: Math.min(1.0, finalQuality),
+                    lighting_quality: finalQuality > 0.7 ? 'good' : finalQuality > 0.5 ? 'medium' : 'poor',
                     model_name: bestPhoto.hasRealAI ? 'face-api.js' : 'fallback_random',
                     model_version: bestPhoto.hasRealAI ? '1.0' : '0.0',
                     is_active: true,

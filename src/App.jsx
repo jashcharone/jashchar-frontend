@@ -464,6 +464,7 @@ const RevaluationRequestPage = lazy(() => import('@/pages/super-admin/examinatio
 const RevaluationProcessPage = lazy(() => import('@/pages/super-admin/examinations/RevaluationProcessPage'));
 const ExamArchivePage = lazy(() => import('@/pages/super-admin/examinations/ExamArchivePage'));
 const ComplianceReportsPage = lazy(() => import('@/pages/super-admin/examinations/ComplianceReportsPage'));
+const ExaminationGuide = lazy(() => import('@/pages/super-admin/examinations/ExaminationGuide'));
 
 // Library
 const LibraryBooks = lazy(() => import('@/pages/super-admin/library/LibraryBooks'));
@@ -1728,6 +1729,7 @@ function App() {
             <Route path={ROUTES.SUPER_ADMIN.REVALUATION_PROCESS} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'organization_owner', 'school_owner']} requiredModule="examinations"><RevaluationProcessPage /></ProtectedRoute>} />
             <Route path={ROUTES.SUPER_ADMIN.EXAM_ARCHIVE} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'organization_owner', 'school_owner']} requiredModule="examinations"><ExamArchivePage /></ProtectedRoute>} />
             <Route path={ROUTES.SUPER_ADMIN.COMPLIANCE_REPORTS} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'organization_owner', 'school_owner']} requiredModule="examinations"><ComplianceReportsPage /></ProtectedRoute>} />
+            <Route path="/super-admin/examinations/examination-guide" element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'organization_owner', 'school_owner']} requiredModule="examinations"><ExaminationGuide /></ProtectedRoute>} />
 
             {/* ? Library */}
             <Route path={ROUTES.SUPER_ADMIN.LIBRARY_BOOKS} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'librarian']} requiredModule="library"><LibraryBooks /></ProtectedRoute>} />
@@ -1943,6 +1945,7 @@ function App() {
             <Route path="/:roleSlug/examinations/general-exam-result" element={<StaffModuleRoute requiredModule="examinations"><ResultCalculationPage /></StaffModuleRoute>} />
             <Route path="/:roleSlug/examinations/marks-entry" element={<StaffModuleRoute requiredModule="examinations"><MarksEntryPageNew /></StaffModuleRoute>} />
             <Route path="/:roleSlug/examinations/report-card" element={<StaffModuleRoute requiredModule="examinations"><ReportCardDesignerPage /></StaffModuleRoute>} />
+            <Route path="/:roleSlug/examinations/examination-guide" element={<StaffModuleRoute requiredModule="examinations"><ExaminationGuide /></StaffModuleRoute>} />
             
             {/* Behaviour Records */}
             <Route path="/:roleSlug/behaviour-records/assign-incident" element={<StaffModuleRoute requiredModule="behaviour_records"><AssignIncident /></StaffModuleRoute>} />

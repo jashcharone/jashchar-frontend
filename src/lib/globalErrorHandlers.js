@@ -49,8 +49,32 @@ export const initGlobalErrorHandlers = () => {
 
   // 3. Intercept console.error (to catch handled but logged errors)
   const originalConsoleError = console.error;
+  const originalConsoleWarn = console.warn;
   console.error = (...args) => {
-    // Call original first so we see it in DevTools
+    // ── AI Engine offline errors: downgrade to warn (not red error) ──────────────
+    // Python AI engine being offline is expected during dev. Don't show red errors.
+    const isAIEngineError =
+      (args[0] && typeof args[0] === 'string' && (
+        args[0].includes('[AI Engine API]') ||
+        args[0].includes('AI Engine is not available') ||
+        args[0].includes('ai/health') ||
+        args[0].includes('ai/index/status') ||
+        args[0].includes('Fetch error from') ||
+        args[0].includes('Face recognition failed')
+      )) ||
+      args.some(arg => arg instanceof Error && (
+        arg.message.includes('AI Engine is not available') ||
+        arg.message.includes('Failed to get index status') ||
+        arg.message.includes('Face recognition failed')
+      ));
+
+    if (isAIEngineError) {
+      // Show as yellow warning instead of red error — still visible but not alarming
+      originalConsoleWarn.apply(console, ['[AI Engine offline]', ...args]);
+      return; // Skip backend logging
+    }
+
+    // ── Call original console.error for all other real errors ───────────────────
     originalConsoleError.apply(console, args);
 
     // Prevent infinite loops: Don't log errors from the logger itself

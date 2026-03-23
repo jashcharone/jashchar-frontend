@@ -13,6 +13,8 @@
  */
 
 import React, { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
+import DashboardLayout from '@/components/DashboardLayout';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -33,7 +35,7 @@ import {
   ChevronRight, Plus, Save, Trash2, Download, Upload, CheckCircle,
   XCircle, RefreshCw, Play, Pause, Eye, EyeOff, Building2, GraduationCap,
   Layers, Grid, List, Zap, Sparkles, Copy, History, MousePointer,
-  ArrowRight, Check
+  ArrowRight, Check, ArrowLeft
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import api from '@/services/api';
@@ -61,6 +63,7 @@ const BREAK_STYLE = 'bg-gray-100 text-gray-600 border-gray-300 dark:bg-gray-800 
 const LUNCH_STYLE = 'bg-amber-100 text-amber-700 border-amber-300 dark:bg-amber-900/30 dark:text-amber-400 dark:border-amber-700';
 
 export default function EnhancedTimetable() {
+  const navigate = useNavigate();
   const { user, currentSessionId, organizationId } = useAuth();
   const { selectedBranch } = useBranch();
 
@@ -136,9 +139,9 @@ export default function EnhancedTimetable() {
 
   const fetchSettings = useCallback(async () => {
     try {
-      const { data } = await api.get('/enhanced-timetable/settings');
-      if (data.success && data.data) {
-        setSettings(prev => ({ ...prev, ...data.data }));
+      const response = await api.get('/enhanced-timetable/settings');
+      if (response?.success && response.data) {
+        setSettings(prev => ({ ...prev, ...response.data }));
       }
     } catch (error) {
       console.error('Failed to fetch settings:', error);
@@ -152,9 +155,9 @@ export default function EnhancedTimetable() {
       if (selectedClass) params.class_id = selectedClass;
       if (selectedSection) params.section_id = selectedSection;
 
-      const { data } = await api.get('/enhanced-timetable', { params });
-      if (data.success) {
-        setTimetables(data.data || []);
+      const response = await api.get('/enhanced-timetable', { params });
+      if (response?.success) {
+        setTimetables(response.data || []);
       }
     } catch (error) {
       console.error('Failed to fetch timetables:', error);
@@ -167,15 +170,15 @@ export default function EnhancedTimetable() {
   const fetchTimetableDetails = useCallback(async (id) => {
     try {
       setLoading(true);
-      const { data } = await api.get(`/enhanced-timetable/${id}`);
-      if (data.success) {
-        setSelectedTimetable(data.data.timetable);
-        setTimetableSlots(data.data.slots || []);
+      const response = await api.get(`/enhanced-timetable/${id}`);
+      if (response?.success) {
+        setSelectedTimetable(response.data.timetable);
+        setTimetableSlots(response.data.slots || []);
 
         // Build subject color map
         const colorMap = {};
         let colorIndex = 0;
-        (data.data.slots || []).forEach(slot => {
+        (response.data.slots || []).forEach(slot => {
           if (slot.subject_id && !colorMap[slot.subject_id]) {
             colorMap[slot.subject_id] = SUBJECT_COLORS[colorIndex % SUBJECT_COLORS.length];
             colorIndex++;
@@ -193,10 +196,9 @@ export default function EnhancedTimetable() {
 
   const fetchClasses = useCallback(async () => {
     try {
-      const { data } = await api.get('/academics/classes');
-      if (data.success) {
-        setClasses(data.data || []);
-      }
+      const response = await api.get('/academics/classes');
+      const items = response?.data || (Array.isArray(response) ? response : []);
+      setClasses(items);
     } catch (error) {
       console.error('Failed to fetch classes:', error);
     }
@@ -204,10 +206,9 @@ export default function EnhancedTimetable() {
 
   const fetchSections = useCallback(async (classId) => {
     try {
-      const { data } = await api.get('/academics/sections', { params: { class_id: classId } });
-      if (data.success) {
-        setSections(data.data || []);
-      }
+      const response = await api.get('/academics/sections', { params: { class_id: classId } });
+      const items = response?.data || (Array.isArray(response) ? response : []);
+      setSections(items);
     } catch (error) {
       console.error('Failed to fetch sections:', error);
     }
@@ -215,10 +216,9 @@ export default function EnhancedTimetable() {
 
   const fetchSubjects = useCallback(async (classId) => {
     try {
-      const { data } = await api.get('/academics/subjects', { params: { class_id: classId } });
-      if (data.success) {
-        setSubjects(data.data || []);
-      }
+      const response = await api.get('/academics/subjects', { params: { class_id: classId } });
+      const items = response?.data || (Array.isArray(response) ? response : []);
+      setSubjects(items);
     } catch (error) {
       console.error('Failed to fetch subjects:', error);
     }
@@ -226,10 +226,9 @@ export default function EnhancedTimetable() {
 
   const fetchTeachers = useCallback(async () => {
     try {
-      const { data } = await api.get('/staff', { params: { role: 'teacher', limit: 500 } });
-      if (data.success) {
-        setTeachers(data.data?.staff || data.data || []);
-      }
+      const response = await api.get('/staff', { params: { role: 'teacher', limit: 500 } });
+      const items = response?.data?.staff || response?.data || (Array.isArray(response) ? response : []);
+      setTeachers(items);
     } catch (error) {
       console.error('Failed to fetch teachers:', error);
     }
@@ -237,9 +236,9 @@ export default function EnhancedTimetable() {
 
   const fetchRooms = useCallback(async () => {
     try {
-      const { data } = await api.get('/enhanced-timetable/rooms');
-      if (data.success) {
-        setRooms(data.data || []);
+      const response = await api.get('/enhanced-timetable/rooms');
+      if (response?.success) {
+        setRooms(response.data || []);
       }
     } catch (error) {
       console.error('Failed to fetch rooms:', error);
@@ -252,9 +251,9 @@ export default function EnhancedTimetable() {
       if (selectedClass) params.class_id = selectedClass;
       if (selectedSection) params.section_id = selectedSection;
 
-      const { data } = await api.get('/enhanced-timetable/requirements', { params });
-      if (data.success) {
-        setRequirements(data.data || []);
+      const response = await api.get('/enhanced-timetable/requirements', { params });
+      if (response?.success) {
+        setRequirements(response.data || []);
       }
     } catch (error) {
       console.error('Failed to fetch requirements:', error);
@@ -266,9 +265,9 @@ export default function EnhancedTimetable() {
       const params = {};
       if (selectedTeacher) params.teacher_id = selectedTeacher;
 
-      const { data } = await api.get('/enhanced-timetable/availability', { params });
-      if (data.success) {
-        setTeacherAvailability(data.data || []);
+      const response = await api.get('/enhanced-timetable/availability', { params });
+      if (response?.success) {
+        setTeacherAvailability(response.data || []);
       }
     } catch (error) {
       console.error('Failed to fetch teacher availability:', error);
@@ -280,9 +279,9 @@ export default function EnhancedTimetable() {
       const params = { status: 'detected' };
       if (selectedTimetable) params.timetable_id = selectedTimetable.id;
 
-      const { data } = await api.get('/enhanced-timetable/conflicts', { params });
-      if (data.success) {
-        setConflicts(data.data || []);
+      const response = await api.get('/enhanced-timetable/conflicts', { params });
+      if (response?.success) {
+        setConflicts(response.data || []);
       }
     } catch (error) {
       console.error('Failed to fetch conflicts:', error);
@@ -291,9 +290,9 @@ export default function EnhancedTimetable() {
 
   const fetchStats = useCallback(async () => {
     try {
-      const { data } = await api.get('/enhanced-timetable/stats');
-      if (data.success) {
-        setStats(data.data);
+      const response = await api.get('/enhanced-timetable/stats');
+      if (response?.success) {
+        setStats(response.data);
       }
     } catch (error) {
       console.error('Failed to fetch stats:', error);
@@ -347,10 +346,8 @@ export default function EnhancedTimetable() {
   const handleSaveSettings = async () => {
     try {
       setLoading(true);
-      const { data } = await api.post('/enhanced-timetable/settings', settings);
-      if (data.success) {
-        toast.success('Settings saved successfully');
-      }
+      const response = await api.post('/enhanced-timetable/settings', settings);
+      toast.success('Settings saved successfully');
     } catch (error) {
       console.error('Failed to save settings:', error);
       toast.error('Failed to save settings');
@@ -367,19 +364,17 @@ export default function EnhancedTimetable() {
       }
 
       setLoading(true);
-      const { data } = await api.post('/enhanced-timetable', newTimetable);
-      if (data.success) {
-        toast.success('Timetable created successfully');
-        setShowCreateDialog(false);
-        setNewTimetable({
-          name: '',
-          class_id: '',
-          section_id: '',
-          effective_from: new Date().toISOString().split('T')[0],
-          effective_to: '',
-        });
-        fetchTimetables();
-      }
+      const response = await api.post('/enhanced-timetable', newTimetable);
+      toast.success('Timetable created successfully');
+      setShowCreateDialog(false);
+      setNewTimetable({
+        name: '',
+        class_id: '',
+        section_id: '',
+        effective_from: new Date().toISOString().split('T')[0],
+        effective_to: '',
+      });
+      fetchTimetables();
     } catch (error) {
       console.error('Failed to create timetable:', error);
       toast.error('Failed to create timetable');
@@ -406,7 +401,7 @@ export default function EnhancedTimetable() {
         });
       }, 500);
 
-      const { data } = await api.post('/enhanced-timetable/generate', {
+      const response = await api.post('/enhanced-timetable/generate', {
         class_id: selectedClass,
         section_id: selectedSection,
       });
@@ -414,17 +409,16 @@ export default function EnhancedTimetable() {
       clearInterval(progressInterval);
       setGenerationProgress(100);
 
-      if (data.success) {
-        setTimeout(() => {
-          setGenerating(false);
-          setGenerationProgress(0);
-          toast.success(`Timetable generated! Quality Score: ${data.data.quality_score}%`);
-          fetchTimetables();
-          if (data.data.timetable_id) {
-            fetchTimetableDetails(data.data.timetable_id);
-          }
-        }, 500);
-      }
+      setTimeout(() => {
+        setGenerating(false);
+        setGenerationProgress(0);
+        toast.success(`Timetable generated! Quality Score: ${response?.quality_score || response?.data?.quality_score || 0}%`);
+        fetchTimetables();
+        const ttId = response?.timetable?.id || response?.data?.timetable_id;
+        if (ttId) {
+          fetchTimetableDetails(ttId);
+        }
+      }, 500);
     } catch (error) {
       console.error('Failed to generate timetable:', error);
       toast.error(error.response?.data?.error || 'Failed to generate timetable');
@@ -436,12 +430,10 @@ export default function EnhancedTimetable() {
   const handleActivateTimetable = async (id) => {
     try {
       setLoading(true);
-      const { data } = await api.post(`/enhanced-timetable/${id}/activate`);
-      if (data.success) {
-        toast.success('Timetable activated successfully');
-        fetchTimetables();
-        fetchTimetableDetails(id);
-      }
+      const response = await api.post(`/enhanced-timetable/${id}/activate`);
+      toast.success('Timetable activated successfully');
+      fetchTimetables();
+      fetchTimetableDetails(id);
     } catch (error) {
       console.error('Failed to activate timetable:', error);
       toast.error('Failed to activate timetable');
@@ -455,13 +447,11 @@ export default function EnhancedTimetable() {
 
     try {
       setLoading(true);
-      const { data } = await api.delete(`/enhanced-timetable/${id}`);
-      if (data.success) {
-        toast.success('Timetable deleted successfully');
-        setSelectedTimetable(null);
-        setTimetableSlots([]);
-        fetchTimetables();
-      }
+      const response = await api.delete(`/enhanced-timetable/${id}`);
+      toast.success('Timetable deleted successfully');
+      setSelectedTimetable(null);
+      setTimetableSlots([]);
+      fetchTimetables();
     } catch (error) {
       console.error('Failed to delete timetable:', error);
       toast.error('Failed to delete timetable');
@@ -495,17 +485,15 @@ export default function EnhancedTimetable() {
   const handleSaveSlot = async () => {
     try {
       setLoading(true);
-      const { data } = await api.post('/enhanced-timetable/slots', {
+      const response = await api.post('/enhanced-timetable/slots', {
         timetable_id: selectedTimetable.id,
         ...selectedSlot,
       });
 
-      if (data.success) {
-        toast.success('Slot saved successfully');
-        setShowSlotDialog(false);
-        fetchTimetableDetails(selectedTimetable.id);
-        fetchConflicts();
-      }
+      toast.success('Slot saved successfully');
+      setShowSlotDialog(false);
+      fetchTimetableDetails(selectedTimetable.id);
+      fetchConflicts();
     } catch (error) {
       console.error('Failed to save slot:', error);
       toast.error('Failed to save slot');
@@ -517,7 +505,7 @@ export default function EnhancedTimetable() {
   const handleClearSlot = async () => {
     try {
       setLoading(true);
-      const { data } = await api.delete('/enhanced-timetable/slots/clear', {
+      const response = await api.delete('/enhanced-timetable/slots/clear', {
         data: {
           timetable_id: selectedTimetable.id,
           day_of_week: selectedSlot.day_of_week,
@@ -525,11 +513,9 @@ export default function EnhancedTimetable() {
         }
       });
 
-      if (data.success) {
-        toast.success('Slot cleared');
-        setShowSlotDialog(false);
-        fetchTimetableDetails(selectedTimetable.id);
-      }
+      toast.success('Slot cleared');
+      setShowSlotDialog(false);
+      fetchTimetableDetails(selectedTimetable.id);
     } catch (error) {
       console.error('Failed to clear slot:', error);
       toast.error('Failed to clear slot');
@@ -540,11 +526,9 @@ export default function EnhancedTimetable() {
 
   const handleSaveRequirement = async (requirement) => {
     try {
-      const { data } = await api.post('/enhanced-timetable/requirements', requirement);
-      if (data.success) {
-        toast.success('Requirement saved');
-        fetchRequirements();
-      }
+      const response = await api.post('/enhanced-timetable/requirements', requirement);
+      toast.success('Requirement saved');
+      fetchRequirements();
     } catch (error) {
       console.error('Failed to save requirement:', error);
       toast.error('Failed to save requirement');
@@ -553,11 +537,9 @@ export default function EnhancedTimetable() {
 
   const handleSaveAvailability = async (availability) => {
     try {
-      const { data } = await api.post('/enhanced-timetable/availability', availability);
-      if (data.success) {
-        toast.success('Availability saved');
-        fetchTeacherAvailability();
-      }
+      const response = await api.post('/enhanced-timetable/availability', availability);
+      toast.success('Availability saved');
+      fetchTeacherAvailability();
     } catch (error) {
       console.error('Failed to save availability:', error);
       toast.error('Failed to save availability');
@@ -566,11 +548,9 @@ export default function EnhancedTimetable() {
 
   const handleResolveConflict = async (conflictId) => {
     try {
-      const { data } = await api.patch(`/enhanced-timetable/conflicts/${conflictId}/resolve`);
-      if (data.success) {
-        toast.success('Conflict resolved');
-        fetchConflicts();
-      }
+      const response = await api.patch(`/enhanced-timetable/conflicts/${conflictId}/resolve`);
+      toast.success('Conflict resolved');
+      fetchConflicts();
     } catch (error) {
       console.error('Failed to resolve conflict:', error);
       toast.error('Failed to resolve conflict');
@@ -896,12 +876,12 @@ export default function EnhancedTimetable() {
       </CardHeader>
       <CardContent>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-          <Select value={selectedClass} onValueChange={setSelectedClass}>
+          <Select value={selectedClass || '__all__'} onValueChange={(v) => setSelectedClass(v === '__all__' ? '' : v)}>
             <SelectTrigger>
               <SelectValue placeholder="Filter by Class" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All Classes</SelectItem>
+              <SelectItem value="__all__">All Classes</SelectItem>
               {classes.map(cls => (
                 <SelectItem key={cls.id} value={cls.id}>
                   {cls.name || cls.class_name}
@@ -911,15 +891,15 @@ export default function EnhancedTimetable() {
           </Select>
 
           <Select 
-            value={selectedSection} 
-            onValueChange={setSelectedSection}
+            value={selectedSection || '__all__'} 
+            onValueChange={(v) => setSelectedSection(v === '__all__' ? '' : v)}
             disabled={!selectedClass}
           >
             <SelectTrigger>
               <SelectValue placeholder="Filter by Section" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All Sections</SelectItem>
+              <SelectItem value="__all__">All Sections</SelectItem>
               {sections.map(sec => (
                 <SelectItem key={sec.id} value={sec.id}>
                   {sec.name || sec.section_name}
@@ -1252,20 +1232,20 @@ export default function EnhancedTimetable() {
                       </td>
                       <td className="p-2">
                         <Select
-                          value={req.preferred_time || ''}
+                          value={req.preferred_time || '__any__'}
                           onValueChange={(value) => handleSaveRequirement({
                             ...req,
                             subject_id: subject.id,
                             class_id: selectedClass,
                             section_id: selectedSection,
-                            preferred_time: value || null
+                            preferred_time: value === '__any__' ? null : value
                           })}
                         >
                           <SelectTrigger className="w-32 mx-auto">
                             <SelectValue placeholder="Any" />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="">Any</SelectItem>
+                            <SelectItem value="__any__">Any</SelectItem>
                             <SelectItem value="morning">Morning</SelectItem>
                             <SelectItem value="afternoon">Afternoon</SelectItem>
                           </SelectContent>
@@ -1670,14 +1650,14 @@ export default function EnhancedTimetable() {
               <div className="space-y-2">
                 <Label>Room (Optional)</Label>
                 <Select
-                  value={selectedSlot?.room_id || ''}
-                  onValueChange={(value) => setSelectedSlot(prev => ({ ...prev, room_id: value || null }))}
+                  value={selectedSlot?.room_id || '__none__'}
+                  onValueChange={(value) => setSelectedSlot(prev => ({ ...prev, room_id: value === '__none__' ? null : value }))}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select Room" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">No Room</SelectItem>
+                    <SelectItem value="__none__">No Room</SelectItem>
                     {rooms.map(room => (
                       <SelectItem key={room.id} value={room.id}>
                         {room.name || room.room_number}
@@ -1714,7 +1694,13 @@ export default function EnhancedTimetable() {
   // ===========================
 
   return (
+    <DashboardLayout>
     <div className="p-6 space-y-6">
+      {/* Back Button */}
+      <Button variant="ghost" size="sm" onClick={() => navigate(-1)} className="mb-2 gap-2 text-muted-foreground hover:text-foreground">
+        <ArrowLeft className="h-4 w-4" /> Back
+      </Button>
+
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -1799,5 +1785,6 @@ export default function EnhancedTimetable() {
       {renderCreateDialog()}
       {renderSlotDialog()}
     </div>
+    </DashboardLayout>
   );
 }

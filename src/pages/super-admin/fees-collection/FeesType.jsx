@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
 import { supabase } from '@/lib/customSupabaseClient';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { useBranch } from '@/contexts/BranchContext';
 import { useToast } from '@/components/ui/use-toast';
@@ -11,7 +12,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { PlusCircle, Edit, Trash2, Loader2, Search, Copy, FileText, Download, Printer, Columns, AlertCircle, Lock } from 'lucide-react';
+import { PlusCircle, Edit, Trash2, Loader2, Search, Copy, FileText, Download, Printer, Columns, AlertCircle, Lock, BookOpenText } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -43,9 +44,15 @@ const SYSTEM_FEE_TYPES = [
 ];
 
 const FeesType = () => {
+    const navigate = useNavigate();
+    const location = useLocation();
     const { user, currentSessionId, organizationId } = useAuth();
     const { selectedBranch } = useBranch();
     const { toast } = useToast();
+
+    const roleSlug = useMemo(() => {
+        return location.pathname.split('/').filter(Boolean)[0] || 'super-admin';
+    }, [location.pathname]);
     
     // Data States
     const [feesTypes, setFeesTypes] = useState([]);
@@ -235,12 +242,27 @@ const FeesType = () => {
         }
     };
 
+    const openGuidePage = () => {
+        navigate(`/${roleSlug}/fees-collection/fees-type-guide`);
+    };
+
     return (
         <DashboardLayout>
             <TooltipProvider>
                 <div className="space-y-6">
                     {/* Header */}
-                    <h1 className="text-2xl font-bold">Fees Type</h1>
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                        <h1 className="text-2xl font-bold">Fees Type</h1>
+                        <Button
+                            type="button"
+                            variant="outline"
+                            onClick={openGuidePage}
+                            className="w-full sm:w-auto"
+                        >
+                            <BookOpenText className="h-4 w-4 mr-2" />
+                            Guide (English + Kannada)
+                        </Button>
+                    </div>
 
                     {/* Main Content - Split Layout */}
                     <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">

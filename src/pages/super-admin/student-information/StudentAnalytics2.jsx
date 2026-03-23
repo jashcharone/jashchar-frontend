@@ -45,22 +45,22 @@ export default function StudentAnalytics2() {
     try {
       const [studRes, attRes, allocRes, payRes, markRes, classRes] = await Promise.all([
         supabase.from('student_profiles')
-          .select('id, full_name, class_id, section_id, gender, admission_date, category_id, status, classes(name), sections(name), student_categories(name)')
-          .eq('branch_id', branchId).eq('session_id', currentSessionId).eq('status', 'active'),
+          .select('id, full_name, class_id, section_id, gender, admission_date, category_id, is_disabled, classes(name), sections(name), student_categories(name)')
+          .eq('branch_id', branchId).eq('session_id', currentSessionId).or('is_disabled.is.null,is_disabled.eq.false'),
         supabase.from('student_attendance')
           .select('student_id, status, date')
           .eq('branch_id', branchId).eq('session_id', currentSessionId),
         supabase.from('student_fee_allocations')
-          .select('student_id, net_amount')
-          .eq('branch_id', branchId).eq('session_id', currentSessionId).eq('status', 'active'),
+          .select('student_id, fee_master:fee_masters(amount)')
+          .eq('branch_id', branchId).eq('session_id', currentSessionId),
         supabase.from('fee_payments')
           .select('student_id, amount')
-          .eq('branch_id', branchId).eq('session_id', currentSessionId).eq('status', 'completed'),
+          .eq('branch_id', branchId).eq('session_id', currentSessionId).is('reverted_at', null),
         supabase.from('exam_marks')
           .select('student_id, marks, is_absent, exam_subjects(max_marks, subjects(name))')
           .not('is_absent', 'eq', true),
         supabase.from('classes')
-          .select('id, name').eq('branch_id', branchId).eq('is_active', true).order('display_order'),
+          .select('id, name').eq('branch_id', branchId).or(`session_id.eq.${currentSessionId},session_id.is.null`).order('display_order'),
       ]);
 
       setStudents(studRes.data || []);
@@ -100,7 +100,7 @@ export default function StudentAnalytics2() {
   const studentFees = useMemo(() => {
     const allocated = {};
     feeAllocations.forEach(a => {
-      allocated[a.student_id] = (allocated[a.student_id] || 0) + (a.net_amount || 0);
+      allocated[a.student_id] = (allocated[a.student_id] || 0) + parseFloat(a.fee_master?.amount || 0);
     });
     const paid = {};
     feePayments.forEach(p => {

@@ -388,7 +388,9 @@ const WearableDevices = lazy(() => import('@/pages/super-admin/attendance/Wearab
 const FeesGroup = lazy(() => import('@/pages/super-admin/fees-collection/FeesGroup'));
 const FeeStructures = lazy(() => import('@/pages/super-admin/fees-collection/FeeStructures'));
 const FeeRules = lazy(() => import('@/pages/super-admin/fees-collection/FeeRules'));
+const FeeRulesGuide = lazy(() => import('@/pages/super-admin/fees-collection/FeeRulesGuide.jsx'));
 const FeesType = lazy(() => import('@/pages/super-admin/fees-collection/FeesType'));
+const FeesTypeGuide = lazy(() => import('@/pages/super-admin/fees-collection/FeesTypeGuide.jsx'));
 const FeesMaster = lazy(() => import('@/pages/super-admin/fees-collection/FeesMaster'));
 const AssignFeeGroup = lazy(() => import('@/pages/super-admin/fees-collection/AssignFeeGroup'));
 const StudentFees = lazy(() => import('@/pages/super-admin/fees-collection/StudentFees'));
@@ -1646,8 +1648,10 @@ function App() {
             <Route path={ROUTES.SUPER_ADMIN.COLLECT_FEES} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'accountant']}><CollectFees /></ProtectedRoute>} />
             <Route path="/super-admin/fees-collection/fee-structures" element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'accountant']}><FeeStructures /></ProtectedRoute>} />
             <Route path="/super-admin/fees-collection/fee-rules" element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'accountant']}><FeeRules /></ProtectedRoute>} />
+            <Route path="/super-admin/fees-collection/fee-rules-guide" element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'accountant']}><FeeRulesGuide /></ProtectedRoute>} />
             <Route path={ROUTES.SUPER_ADMIN.FEES_GROUP} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'accountant']}><FeesGroup /></ProtectedRoute>} />
             <Route path={ROUTES.SUPER_ADMIN.FEES_TYPE} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'accountant']}><FeesType /></ProtectedRoute>} />
+            <Route path="/super-admin/fees-collection/fees-type-guide" element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'accountant']}><FeesTypeGuide /></ProtectedRoute>} />
             <Route path={ROUTES.SUPER_ADMIN.FEES_MASTER} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'accountant']}><FeesMaster /></ProtectedRoute>} />
             <Route path={ROUTES.SUPER_ADMIN.ASSIGN_FEE_MASTER} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'accountant']}><AssignFeeGroup /></ProtectedRoute>} />
             <Route path={ROUTES.SUPER_ADMIN.ASSIGN_FEE_GROUP} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'accountant']}><AssignFeeGroup /></ProtectedRoute>} />
@@ -1949,11 +1953,13 @@ function App() {
             <Route path="/:roleSlug/fees-collection/collect-fees" element={<StaffModuleRoute requiredModule="fees_collection"><CollectFees /></StaffModuleRoute>} />
             <Route path="/:roleSlug/fees-collection/fee-structures" element={<StaffModuleRoute requiredModule="fees_collection"><FeeStructures /></StaffModuleRoute>} />
             <Route path="/:roleSlug/fees-collection/fee-rules" element={<StaffModuleRoute requiredModule="fees_collection"><FeeRules /></StaffModuleRoute>} />
+            <Route path="/:roleSlug/fees-collection/fee-rules-guide" element={<StaffModuleRoute requiredModule="fees_collection"><FeeRulesGuide /></StaffModuleRoute>} />
             <Route path="/:roleSlug/fees-collection/search-fees-payment" element={<StaffModuleRoute requiredModule="fees_collection"><SearchFeesPayment /></StaffModuleRoute>} />
             <Route path="/:roleSlug/fees-collection/search-due-fees" element={<StaffModuleRoute requiredModule="fees_collection"><SearchDueFees /></StaffModuleRoute>} />
             <Route path="/:roleSlug/fees-collection/fees-master" element={<StaffModuleRoute requiredModule="fees_collection"><FeesMaster /></StaffModuleRoute>} />
             <Route path="/:roleSlug/fees-collection/fees-group" element={<StaffModuleRoute requiredModule="fees_collection"><FeesGroup /></StaffModuleRoute>} />
             <Route path="/:roleSlug/fees-collection/fees-type" element={<StaffModuleRoute requiredModule="fees_collection"><FeesType /></StaffModuleRoute>} />
+            <Route path="/:roleSlug/fees-collection/fees-type-guide" element={<StaffModuleRoute requiredModule="fees_collection"><FeesTypeGuide /></StaffModuleRoute>} />
             <Route path="/:roleSlug/fees-collection/fees-discount" element={<StaffModuleRoute requiredModule="fees_collection"><FeesDiscount /></StaffModuleRoute>} />
             <Route path="/:roleSlug/fees-collection/fees-reminder" element={<StaffModuleRoute requiredModule="fees_collection"><FeesReminder /></StaffModuleRoute>} />
             <Route path="/:roleSlug/fees-collection/quick-fees" element={<StaffModuleRoute requiredModule="fees_collection"><QuickFees /></StaffModuleRoute>} />

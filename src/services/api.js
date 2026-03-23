@@ -119,6 +119,7 @@ export const api = {
   },
   post: (url, data) => apiCall(url, 'POST', data),
   put: (url, data) => apiCall(url, 'PUT', data),
+  patch: (url, data) => apiCall(url, 'PATCH', data),
   delete: (url) => apiCall(url, 'DELETE'),
 };
 

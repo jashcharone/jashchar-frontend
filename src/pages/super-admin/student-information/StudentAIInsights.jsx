@@ -60,7 +60,7 @@ export default function StudentAIInsights() {
           .select('id, full_name, admission_number, school_code, photo_url, class_id, section_id, category_id, classes(id, name), sections(id, name)')
           .eq('branch_id', branchId)
           .eq('session_id', currentSessionId)
-          .eq('status', 'active'),
+          .or('is_disabled.is.null,is_disabled.eq.false'),
         supabase
           .from('student_attendance')
           .select('student_id, status, date')
@@ -71,10 +71,10 @@ export default function StudentAIInsights() {
           .select('student_id, amount, fee_master_id')
           .eq('branch_id', branchId)
           .eq('session_id', currentSessionId)
-          .eq('status', 'completed'),
+          .is('reverted_at', null),
         supabase
           .from('exam_marks')
-          .select('student_id, marks, is_absent, exam_subjects(max_marks, pass_marks)')
+          .select('student_id, marks, is_absent, exam_subjects(max_marks, min_marks)')
           .not('is_absent', 'eq', true),
         supabase
           .from('classes')
@@ -137,7 +137,7 @@ export default function StudentAIInsights() {
           }, 0) / studentMarks.length)
         : null;
       const failedSubjects = studentMarks.filter(m => {
-        const pass = m.exam_subjects?.pass_marks || 35;
+        const pass = m.exam_subjects?.min_marks || 35;
         return (m.marks || 0) < pass;
       }).length;
 

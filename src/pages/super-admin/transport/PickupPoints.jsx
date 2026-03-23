@@ -103,9 +103,7 @@ const PickupPoints = () => {
         name: formData.name.trim(),
         latitude: formData.latitude?.trim() || null,
         longitude: formData.longitude?.trim() || null,
-        branch_id: branchId,
-        organization_id: organizationId,
-        session_id: currentSessionId
+        branch_id: branchId
       };
       
       console.log('[PickupPoints] Inserting new point:', insertData);

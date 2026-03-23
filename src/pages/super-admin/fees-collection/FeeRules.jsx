@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
 import { supabase } from '@/lib/customSupabaseClient';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { useBranch } from '@/contexts/BranchContext';
 import { useToast } from '@/components/ui/use-toast';
@@ -25,7 +26,7 @@ import {
 } from '@/components/ui/tooltip';
 import {
   PlusCircle, Edit, Trash2, Loader2, Brain, Play, Plus, X,
-  ArrowUp, ArrowDown, Zap, Users, Eye, CheckCircle2, AlertCircle,
+  ArrowUp, ArrowDown, Zap, Users, Eye, CheckCircle2, AlertCircle, BookOpenText,
 } from 'lucide-react';
 
 // ============================================================================
@@ -81,9 +82,15 @@ const TRIGGERS = [
 ];
 
 const FeeRules = () => {
+  const navigate = useNavigate();
+  const location = useLocation();
   const { user, currentSessionId, organizationId } = useAuth();
   const { selectedBranch } = useBranch();
   const { toast } = useToast();
+
+  const roleSlug = useMemo(() => {
+    return location.pathname.split('/').filter(Boolean)[0] || 'super-admin';
+  }, [location.pathname]);
 
   // Data
   const [rules, setRules] = useState([]);
@@ -711,6 +718,13 @@ const FeeRules = () => {
               </p>
             </div>
             <div className="flex gap-2">
+              <Button
+                variant="outline"
+                onClick={() => navigate(`/${roleSlug}/fees-collection/fee-rules-guide`)}
+              >
+                <BookOpenText className="h-4 w-4 mr-2" />
+                Guide (English + Kannada)
+              </Button>
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>

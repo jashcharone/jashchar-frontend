@@ -451,7 +451,7 @@ const LiveAttendanceDashboard = () => {
                 .from('employee_profiles')
                 .select('id', { count: 'exact' })
                 .eq('branch_id', branchId)
-                .eq('is_active', true);
+                .or('is_disabled.is.null,is_disabled.eq.false');
             
             // Fetch staff attendance for today
             const { data: staffAttendance } = await supabase
@@ -482,18 +482,28 @@ const LiveAttendanceDashboard = () => {
                 lateStaff,
             });
             
-            // Fetch class breakdown
-            const { data: classData } = await supabase
-                .from('student_attendance')
-                .select(`
-                    class_id,
-                    section_id,
-                    status,
-                    classes:classes!student_profiles_class_id_fkey(name),
-                    sections:sections!student_profiles_section_id_fkey(name)
-                `)
-                .eq('branch_id', branchId)
-                .eq('date', today);
+            // Fetch class breakdown — attendance + class/section names separately
+            const [attByClassRes, classListRes, sectionListRes] = await Promise.all([
+                supabase
+                    .from('student_attendance')
+                    .select('class_id, section_id, status')
+                    .eq('branch_id', branchId)
+                    .eq('date', today),
+                supabase
+                    .from('classes')
+                    .select('id, name')
+                    .eq('branch_id', branchId),
+                supabase
+                    .from('sections')
+                    .select('id, name')
+                    .eq('branch_id', branchId),
+            ]);
+            
+            const classMap = {};
+            (classListRes.data || []).forEach(c => { classMap[c.id] = c.name; });
+            const sectionMap = {};
+            (sectionListRes.data || []).forEach(s => { sectionMap[s.id] = s.name; });
+            const classData = attByClassRes.data;
             
             // Process class breakdown
             const breakdown = {};
@@ -503,8 +513,8 @@ const LiveAttendanceDashboard = () => {
                     breakdown[key] = {
                         class_id: record.class_id,
                         section_id: record.section_id,
-                        class_name: record.classes?.name || 'Unknown',
-                        section_name: record.sections?.name || '',
+                        class_name: classMap[record.class_id] || 'Unknown',
+                        section_name: sectionMap[record.section_id] || '',
                         total: 0,
                         present: 0,
                     };

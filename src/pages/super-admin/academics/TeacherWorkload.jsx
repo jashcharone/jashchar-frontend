@@ -39,6 +39,9 @@ const STATUS_COLORS = {
   overloaded: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400'
 };
 
+const getTeacherName = (t) => t?.full_name || [t?.first_name, t?.last_name].filter(Boolean).join(' ') || 'Unknown';
+const getDesignation = (t) => (typeof t?.designation === 'object' ? t?.designation?.name : t?.designation) || '-';
+
 const TeacherWorkload = () => {
   const { toast } = useToast();
   const { user, currentSessionId } = useAuth();
@@ -355,13 +358,13 @@ const TeacherWorkload = () => {
                     {workloadSummary.length > 0 ? workloadSummary.map((teacher, idx) => (
                       <TableRow key={teacher.id}>
                         <TableCell className="font-medium">
-                          {teacher.first_name} {teacher.last_name}
+                          {getTeacherName(teacher)}
                           {teacher.is_class_teacher && (
                             <Badge variant="outline" className="ml-2 text-xs">CT</Badge>
                           )}
                         </TableCell>
                         <TableCell className="text-muted-foreground text-sm">
-                          {teacher.designation || '-'}
+                          {getDesignation(teacher)}
                         </TableCell>
                         <TableCell className="text-center">{teacher.teaching_periods}</TableCell>
                         <TableCell className="text-center">{teacher.duty_periods}</TableCell>
@@ -407,7 +410,7 @@ const TeacherWorkload = () => {
                   <div key={teacher.id} className="border-b last:border-0 py-3">
                     <div className="flex items-center justify-between mb-2">
                       <div className="flex items-center gap-2">
-                        <span className="font-medium">{teacher.first_name} {teacher.last_name}</span>
+                        <span className="font-medium">{getTeacherName(teacher)}</span>
                         <Badge variant="outline">{teacher.total_periods} periods/week</Badge>
                       </div>
                       <Button
@@ -553,7 +556,7 @@ const AllocationDialog = ({ open, onOpenChange, teachers, classes, subjects, sel
               <SelectContent>
                 {teachers.map(t => (
                   <SelectItem key={t.id} value={t.id}>
-                    {t.first_name} {t.last_name}
+                    {getTeacherName(t)}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -785,7 +788,7 @@ const DutyDialog = ({ open, onOpenChange, teachers, onSave }) => {
               <SelectContent>
                 {teachers.map(t => (
                   <SelectItem key={t.id} value={t.id}>
-                    {t.first_name} {t.last_name}
+                    {getTeacherName(t)}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -891,7 +894,7 @@ const SubstitutionDialog = ({ open, onOpenChange, teachers, classes, subjects, o
               <SelectContent>
                 {teachers.map(t => (
                   <SelectItem key={t.id} value={t.id}>
-                    {t.first_name} {t.last_name}
+                    {getTeacherName(t)}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -905,7 +908,7 @@ const SubstitutionDialog = ({ open, onOpenChange, teachers, classes, subjects, o
               <SelectContent>
                 {teachers.filter(t => t.id !== formData.absent_teacher_id).map(t => (
                   <SelectItem key={t.id} value={t.id}>
-                    {t.first_name} {t.last_name}
+                    {getTeacherName(t)}
                   </SelectItem>
                 ))}
               </SelectContent>

@@ -321,12 +321,12 @@ const LessonPlans = () => {
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <div className="space-y-2">
                 <Label>Class</Label>
-                <Select value={selectedClass} onValueChange={setSelectedClass}>
+                <Select value={selectedClass || '__all__'} onValueChange={(v) => setSelectedClass(v === '__all__' ? '' : v)}>
                   <SelectTrigger>
                     <SelectValue placeholder="All classes" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">All Classes</SelectItem>
+                    <SelectItem value="__all__">All Classes</SelectItem>
                     {classes.map(cls => (
                       <SelectItem key={cls.id} value={cls.id}>{cls.name}</SelectItem>
                     ))}
@@ -335,12 +335,12 @@ const LessonPlans = () => {
               </div>
               <div className="space-y-2">
                 <Label>Subject</Label>
-                <Select value={selectedSubject} onValueChange={setSelectedSubject}>
+                <Select value={selectedSubject || '__all__'} onValueChange={(v) => setSelectedSubject(v === '__all__' ? '' : v)}>
                   <SelectTrigger>
                     <SelectValue placeholder="All subjects" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">All Subjects</SelectItem>
+                    <SelectItem value="__all__">All Subjects</SelectItem>
                     {subjects.map(subj => (
                       <SelectItem key={subj.id} value={subj.id}>{subj.name}</SelectItem>
                     ))}
@@ -349,12 +349,12 @@ const LessonPlans = () => {
               </div>
               <div className="space-y-2">
                 <Label>Status</Label>
-                <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <Select value={statusFilter || '__all__'} onValueChange={(v) => setStatusFilter(v === '__all__' ? '' : v)}>
                   <SelectTrigger>
                     <SelectValue placeholder="All statuses" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">All Statuses</SelectItem>
+                    <SelectItem value="__all__">All Statuses</SelectItem>
                     {Object.entries(STATUS_CONFIG).map(([key, config]) => (
                       <SelectItem key={key} value={key}>{config.label}</SelectItem>
                     ))}
@@ -732,10 +732,10 @@ const LessonPlanDialog = ({ open, onOpenChange, plan, classes, subjects, templat
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label>Chapter</Label>
-                  <Select value={formData.chapter_id || ''} onValueChange={handleChapterChange}>
+                  <Select value={formData.chapter_id || '__none__'} onValueChange={(v) => handleChapterChange(v === '__none__' ? '' : v)}>
                     <SelectTrigger><SelectValue placeholder="Select chapter" /></SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">No chapter</SelectItem>
+                      <SelectItem value="__none__">No chapter</SelectItem>
                       {chapters.map(ch => (
                         <SelectItem key={ch.id} value={ch.id}>Ch {ch.chapter_number}: {ch.chapter_name}</SelectItem>
                       ))}
@@ -744,10 +744,10 @@ const LessonPlanDialog = ({ open, onOpenChange, plan, classes, subjects, templat
                 </div>
                 <div className="space-y-2">
                   <Label>Topic</Label>
-                  <Select value={formData.topic_id || ''} onValueChange={(v) => setFormData(prev => ({ ...prev, topic_id: v }))}>
+                  <Select value={formData.topic_id || '__none__'} onValueChange={(v) => setFormData(prev => ({ ...prev, topic_id: v === '__none__' ? '' : v }))}>
                     <SelectTrigger><SelectValue placeholder="Select topic" /></SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">No topic</SelectItem>
+                      <SelectItem value="__none__">No topic</SelectItem>
                       {topics.map(t => (
                         <SelectItem key={t.id} value={t.id}>{t.topic_number}. {t.topic_name}</SelectItem>
                       ))}

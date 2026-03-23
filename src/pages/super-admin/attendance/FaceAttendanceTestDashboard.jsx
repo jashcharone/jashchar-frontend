@@ -132,7 +132,7 @@ export default function FaceAttendanceTestDashboard() {
 
     // Check AI Engine
     try {
-      const res = await fetch(`${AI_ENGINE_URL}/api/v1/health`, { signal: AbortSignal.timeout(5000) });
+      const res = await fetch(`${AI_ENGINE_URL}/health`, { signal: AbortSignal.timeout(5000) });
       if (res.ok) {
         const data = await res.json();
         setAiEngineInfo(data);
@@ -222,7 +222,7 @@ export default function FaceAttendanceTestDashboard() {
       category: 'connectivity',
       run: async () => {
         const start = Date.now();
-        const res = await fetch(`${AI_ENGINE_URL}/api/v1/health`, { signal: AbortSignal.timeout(10000) });
+        const res = await fetch(`${AI_ENGINE_URL}/health`, { signal: AbortSignal.timeout(10000) });
         const duration = Date.now() - start;
         if (res.ok) {
           return { status: 'passed', message: `AI Engine responding in ${duration}ms`, duration };
@@ -340,7 +340,7 @@ export default function FaceAttendanceTestDashboard() {
       category: 'ai',
       run: async () => {
         const start = Date.now();
-        const res = await fetch(`${AI_ENGINE_URL}/api/v1/health`, { signal: AbortSignal.timeout(10000) });
+        const res = await fetch(`${AI_ENGINE_URL}/health`, { signal: AbortSignal.timeout(10000) });
         const duration = Date.now() - start;
         if (res.ok) {
           const data = await res.json();
@@ -360,7 +360,7 @@ export default function FaceAttendanceTestDashboard() {
       category: 'ai',
       run: async () => {
         const start = Date.now();
-        const res = await fetch(`${AI_ENGINE_URL}/api/v1/health`, { signal: AbortSignal.timeout(10000) });
+        const res = await fetch(`${AI_ENGINE_URL}/health`, { signal: AbortSignal.timeout(10000) });
         const duration = Date.now() - start;
         if (res.ok) {
           const data = await res.json();
@@ -382,7 +382,7 @@ export default function FaceAttendanceTestDashboard() {
         for (let i = 0; i < 3; i++) {
           const start = Date.now();
           try {
-            await fetch(`${AI_ENGINE_URL}/api/v1/health`, { signal: AbortSignal.timeout(5000) });
+            await fetch(`${AI_ENGINE_URL}/health`, { signal: AbortSignal.timeout(5000) });
             times.push(Date.now() - start);
           } catch {
             times.push(5000);

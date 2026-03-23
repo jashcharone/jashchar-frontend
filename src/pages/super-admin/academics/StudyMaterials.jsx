@@ -11,6 +11,8 @@
  */
 
 import React, { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
+import DashboardLayout from '@/components/DashboardLayout';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -31,7 +33,7 @@ import {
   Star, StarHalf, Bookmark, BookmarkCheck, Play, Pause, Clock,
   FolderOpen, ChevronRight, RefreshCw, Share2, Edit, MoreVertical,
   BarChart3, Users, Calendar, Globe, Lock, CheckCircle, AlertCircle,
-  Youtube, Layers, Heart
+  Youtube, Layers, Heart, ArrowLeft
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import api from '@/services/api';
@@ -58,6 +60,7 @@ const VISIBILITY_OPTIONS = [
 ];
 
 export default function StudyMaterials() {
+  const navigate = useNavigate();
   const { user, currentSessionId, organizationId } = useAuth();
   const { selectedBranch } = useBranch();
 
@@ -154,8 +157,8 @@ export default function StudyMaterials() {
       if (selectedClass) params.class_id = selectedClass;
       if (selectedSubject) params.subject_id = selectedSubject;
 
-      const { data } = await api.get('/study-materials/stats', { params });
-      if (data.success) {
+      const data = await api.get('/study-materials/stats', { params });
+      if (data?.success) {
         setStats(data.data);
       }
     } catch (error) {
@@ -178,8 +181,8 @@ export default function StudyMaterials() {
       if (statusFilter) params.status = statusFilter;
       if (searchQuery) params.search = searchQuery;
 
-      const { data } = await api.get('/study-materials', { params });
-      if (data.success) {
+      const data = await api.get('/study-materials', { params });
+      if (data?.success) {
         setMaterials(data.data || []);
         setPagination(prev => ({ ...prev, ...data.pagination }));
       }
@@ -199,8 +202,8 @@ export default function StudyMaterials() {
       if (selectedChapter) params.chapter_id = selectedChapter;
       if (searchQuery) params.search = searchQuery;
 
-      const { data } = await api.get('/study-materials/videos', { params });
-      if (data.success) {
+      const data = await api.get('/study-materials/videos', { params });
+      if (data?.success) {
         setVideos(data.data || []);
       }
     } catch (error) {
@@ -215,8 +218,8 @@ export default function StudyMaterials() {
       if (selectedSubject) params.subject_id = selectedSubject;
       if (searchQuery) params.search = searchQuery;
 
-      const { data } = await api.get('/study-materials/ebooks', { params });
-      if (data.success) {
+      const data = await api.get('/study-materials/ebooks', { params });
+      if (data?.success) {
         setEbooks(data.data || []);
       }
     } catch (error) {
@@ -226,8 +229,8 @@ export default function StudyMaterials() {
 
   const fetchCategories = useCallback(async () => {
     try {
-      const { data } = await api.get('/study-materials/categories');
-      if (data.success) {
+      const data = await api.get('/study-materials/categories');
+      if (data?.success) {
         setCategories(data.data || []);
       }
     } catch (error) {
@@ -242,8 +245,8 @@ export default function StudyMaterials() {
       if (selectedSubject) params.subject_id = selectedSubject;
       if (selectedChapter) params.chapter_id = selectedChapter;
 
-      const { data } = await api.get('/study-materials/playlists', { params });
-      if (data.success) {
+      const data = await api.get('/study-materials/playlists', { params });
+      if (data?.success) {
         setPlaylists(data.data || []);
       }
     } catch (error) {
@@ -253,8 +256,8 @@ export default function StudyMaterials() {
 
   const fetchClasses = useCallback(async () => {
     try {
-      const { data } = await api.get('/academics/classes');
-      if (data.success) {
+      const data = await api.get('/academics/classes');
+      if (data?.success) {
         setClasses(data.data || []);
       }
     } catch (error) {
@@ -264,8 +267,8 @@ export default function StudyMaterials() {
 
   const fetchSections = useCallback(async (classId) => {
     try {
-      const { data } = await api.get('/academics/sections', { params: { class_id: classId } });
-      if (data.success) {
+      const data = await api.get('/academics/sections', { params: { class_id: classId } });
+      if (data?.success) {
         setSections(data.data || []);
       }
     } catch (error) {
@@ -275,8 +278,8 @@ export default function StudyMaterials() {
 
   const fetchSubjects = useCallback(async (classId) => {
     try {
-      const { data } = await api.get('/academics/subjects', { params: { class_id: classId } });
-      if (data.success) {
+      const data = await api.get('/academics/subjects', { params: { class_id: classId } });
+      if (data?.success) {
         setSubjects(data.data || []);
       }
     } catch (error) {
@@ -286,8 +289,8 @@ export default function StudyMaterials() {
 
   const fetchChapters = useCallback(async (subjectId) => {
     try {
-      const { data } = await api.get('/curriculum/chapters', { params: { subject_id: subjectId } });
-      if (data.success) {
+      const data = await api.get('/curriculum/chapters', { params: { subject_id: subjectId } });
+      if (data?.success) {
         setChapters(data.data || []);
       }
     } catch (error) {
@@ -297,8 +300,8 @@ export default function StudyMaterials() {
 
   const fetchTeachers = useCallback(async () => {
     try {
-      const { data } = await api.get('/staff', { params: { role: 'teacher', limit: 500 } });
-      if (data.success) {
+      const data = await api.get('/staff', { params: { role: 'teacher', limit: 500 } });
+      if (data?.success) {
         setTeachers(data.data?.staff || data.data || []);
       }
     } catch (error) {
@@ -355,8 +358,8 @@ export default function StudyMaterials() {
       }
 
       setLoading(true);
-      const { data } = await api.post('/study-materials', newMaterial);
-      if (data.success) {
+      const data = await api.post('/study-materials', newMaterial);
+      if (data?.success) {
         toast.success('Material created successfully');
         setShowUploadDialog(false);
         setNewMaterial({
@@ -400,8 +403,8 @@ export default function StudyMaterials() {
       }
 
       setLoading(true);
-      const { data } = await api.post('/study-materials/videos', newVideo);
-      if (data.success) {
+      const data = await api.post('/study-materials/videos', newVideo);
+      if (data?.success) {
         toast.success('Video added successfully');
         setShowVideoDialog(false);
         setNewVideo({
@@ -436,8 +439,8 @@ export default function StudyMaterials() {
       }
 
       setLoading(true);
-      const { data } = await api.post('/study-materials/ebooks', newEbook);
-      if (data.success) {
+      const data = await api.post('/study-materials/ebooks', newEbook);
+      if (data?.success) {
         toast.success('E-book added successfully');
         setShowEbookDialog(false);
         setNewEbook({
@@ -468,8 +471,8 @@ export default function StudyMaterials() {
     if (!confirm('Are you sure you want to delete this material?')) return;
 
     try {
-      const { data } = await api.delete(`/study-materials/${id}`);
-      if (data.success) {
+      const data = await api.delete(`/study-materials/${id}`);
+      if (data?.success) {
         toast.success('Material deleted');
         fetchMaterials();
         fetchStats();
@@ -484,8 +487,8 @@ export default function StudyMaterials() {
     if (!confirm('Are you sure you want to delete this video?')) return;
 
     try {
-      const { data } = await api.delete(`/study-materials/videos/${id}`);
-      if (data.success) {
+      const data = await api.delete(`/study-materials/videos/${id}`);
+      if (data?.success) {
         toast.success('Video deleted');
         fetchVideos();
         fetchStats();
@@ -500,8 +503,8 @@ export default function StudyMaterials() {
     if (!confirm('Are you sure you want to delete this e-book?')) return;
 
     try {
-      const { data } = await api.delete(`/study-materials/ebooks/${id}`);
-      if (data.success) {
+      const data = await api.delete(`/study-materials/ebooks/${id}`);
+      if (data?.success) {
         toast.success('E-book deleted');
         fetchEbooks();
         fetchStats();
@@ -622,12 +625,12 @@ export default function StudyMaterials() {
 
   const renderFilters = () => (
     <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
-      <Select value={selectedClass} onValueChange={setSelectedClass}>
+      <Select value={selectedClass || '__all__'} onValueChange={(v) => setSelectedClass(v === '__all__' ? '' : v)}>
         <SelectTrigger>
           <SelectValue placeholder="All Classes" />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="">All Classes</SelectItem>
+          <SelectItem value="__all__">All Classes</SelectItem>
           {classes.map(cls => (
             <SelectItem key={cls.id} value={cls.id}>
               {cls.name || cls.class_name}
@@ -636,12 +639,12 @@ export default function StudyMaterials() {
         </SelectContent>
       </Select>
 
-      <Select value={selectedSubject} onValueChange={setSelectedSubject} disabled={!selectedClass}>
+      <Select value={selectedSubject || '__all__'} onValueChange={(v) => setSelectedSubject(v === '__all__' ? '' : v)} disabled={!selectedClass}>
         <SelectTrigger>
           <SelectValue placeholder="All Subjects" />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="">All Subjects</SelectItem>
+          <SelectItem value="__all__">All Subjects</SelectItem>
           {subjects.map(sub => (
             <SelectItem key={sub.id} value={sub.id}>
               {sub.name || sub.subject_name}
@@ -650,12 +653,12 @@ export default function StudyMaterials() {
         </SelectContent>
       </Select>
 
-      <Select value={selectedChapter} onValueChange={setSelectedChapter} disabled={!selectedSubject}>
+      <Select value={selectedChapter || '__all__'} onValueChange={(v) => setSelectedChapter(v === '__all__' ? '' : v)} disabled={!selectedSubject}>
         <SelectTrigger>
           <SelectValue placeholder="All Chapters" />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="">All Chapters</SelectItem>
+          <SelectItem value="__all__">All Chapters</SelectItem>
           {chapters.map(ch => (
             <SelectItem key={ch.id} value={ch.id}>
               {ch.name || ch.chapter_name}
@@ -664,12 +667,12 @@ export default function StudyMaterials() {
         </SelectContent>
       </Select>
 
-      <Select value={materialType} onValueChange={setMaterialType}>
+      <Select value={materialType || '__all__'} onValueChange={(v) => setMaterialType(v === '__all__' ? '' : v)}>
         <SelectTrigger>
           <SelectValue placeholder="All Types" />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="">All Types</SelectItem>
+          <SelectItem value="__all__">All Types</SelectItem>
           {Object.entries(MATERIAL_TYPES).map(([key, { label }]) => (
             <SelectItem key={key} value={key}>{label}</SelectItem>
           ))}
@@ -1083,14 +1086,14 @@ export default function StudyMaterials() {
             <div className="space-y-2">
               <Label>Class</Label>
               <Select 
-                value={newMaterial.class_id}
-                onValueChange={(value) => setNewMaterial(prev => ({ ...prev, class_id: value, subject_id: '', chapter_id: '' }))}
+                value={newMaterial.class_id || '__all__'}
+                onValueChange={(value) => setNewMaterial(prev => ({ ...prev, class_id: value === '__all__' ? '' : value, subject_id: '', chapter_id: '' }))}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Select Class" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All Classes</SelectItem>
+                  <SelectItem value="__all__">All Classes</SelectItem>
                   {classes.map(cls => (
                     <SelectItem key={cls.id} value={cls.id}>
                       {cls.name || cls.class_name}
@@ -1102,15 +1105,15 @@ export default function StudyMaterials() {
             <div className="space-y-2">
               <Label>Subject</Label>
               <Select 
-                value={newMaterial.subject_id}
-                onValueChange={(value) => setNewMaterial(prev => ({ ...prev, subject_id: value, chapter_id: '' }))}
+                value={newMaterial.subject_id || '__all__'}
+                onValueChange={(value) => setNewMaterial(prev => ({ ...prev, subject_id: value === '__all__' ? '' : value, chapter_id: '' }))}
                 disabled={!newMaterial.class_id}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Select Subject" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All Subjects</SelectItem>
+                  <SelectItem value="__all__">All Subjects</SelectItem>
                   {subjects.map(sub => (
                     <SelectItem key={sub.id} value={sub.id}>
                       {sub.name || sub.subject_name}
@@ -1447,14 +1450,20 @@ export default function StudyMaterials() {
   // ===========================
 
   return (
+    <DashboardLayout>
     <div className="p-6 space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold flex items-center gap-2">
-            <BookOpen className="w-7 h-7 text-primary" />
-            Study Materials Hub
-          </h1>
+          <div className="flex items-center gap-3 mb-1">
+            <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
+              <ArrowLeft className="w-5 h-5" />
+            </Button>
+            <h1 className="text-2xl font-bold flex items-center gap-2">
+              <BookOpen className="w-7 h-7 text-primary" />
+              Study Materials Hub
+            </h1>
+          </div>
           <p className="text-muted-foreground">
             Digital resources library for students and teachers
           </p>
@@ -1531,5 +1540,7 @@ export default function StudyMaterials() {
       {renderVideoDialog()}
       {renderEbookDialog()}
     </div>
+    </DashboardLayout>
   );
 }
+

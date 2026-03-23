@@ -180,13 +180,14 @@ export default function FaceAttendanceAdminSettings() {
 
   // ═══════════════════ LOAD SETTINGS ═══════════════════
   const loadSettings = useCallback(async () => {
+    if (!branchId || !organizationId) return;
     try {
       const { data, error } = await supabase
         .from('face_attendance_settings')
         .select('*')
         .eq('branch_id', branchId)
         .eq('organization_id', organizationId)
-        .single();
+        .maybeSingle();
 
       if (data && !error) {
         setSettings(prev => ({ ...prev, ...data.settings }));
@@ -246,7 +247,7 @@ export default function FaceAttendanceAdminSettings() {
     try {
       switch (checkKey) {
         case 'aiEngine': {
-          const res = await fetch(`${AI_ENGINE_URL}/api/v1/health`, { signal: AbortSignal.timeout(5000) });
+          const res = await fetch(`${AI_ENGINE_URL}/health`, { signal: AbortSignal.timeout(5000) });
           setLaunchChecklist(prev => ({
             ...prev,
             aiEngine: res.ok ? 'passed' : 'failed',
@@ -310,7 +311,7 @@ export default function FaceAttendanceAdminSettings() {
           // Quick health + index check
           try {
             const [h, i] = await Promise.all([
-              fetch(`${AI_ENGINE_URL}/api/v1/health`, { signal: AbortSignal.timeout(5000) }),
+              fetch(`${AI_ENGINE_URL}/health`, { signal: AbortSignal.timeout(5000) }),
               fetch(`${AI_ENGINE_URL}/api/v1/index/status`, { signal: AbortSignal.timeout(5000) }),
             ]);
             setLaunchChecklist(prev => ({

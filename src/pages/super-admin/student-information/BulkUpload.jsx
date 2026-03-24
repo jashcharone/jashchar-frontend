@@ -2000,7 +2000,7 @@ const BulkUpload = () => {
             <div className="container mx-auto py-6 space-y-6 max-w-6xl">
                 {/* Header */}
                 <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-700 p-8 text-white">
-                    <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-10" />
+                    <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'linear-gradient(to right, rgba(255,255,255,0.3) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,255,255,0.3) 1px, transparent 1px)', backgroundSize: '24px 24px' }} />
                     <div className="relative z-10 flex items-center justify-between flex-wrap gap-4">
                         <div className="flex items-center gap-4">
                             <div className="p-4 bg-white/20 rounded-2xl backdrop-blur-sm">

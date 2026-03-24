@@ -783,16 +783,16 @@ const AcademicSetup = () => {
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ delay: index * 0.05 }}
                         className={`flex items-center gap-4 p-4 rounded-lg border ${
-                          period.period_type === 'break' ? 'bg-amber-50 border-amber-200' :
-                          period.period_type === 'lunch' ? 'bg-orange-50 border-orange-200' :
-                          period.period_type === 'assembly' ? 'bg-blue-50 border-blue-200' :
-                          'bg-background'
+                          period.period_type === 'break' ? 'bg-amber-50 dark:bg-amber-950/40 border-amber-200 dark:border-amber-800' :
+                          period.period_type === 'lunch' ? 'bg-orange-50 dark:bg-orange-950/40 border-orange-200 dark:border-orange-800' :
+                          period.period_type === 'assembly' ? 'bg-blue-50 dark:bg-blue-950/40 border-blue-200 dark:border-blue-800' :
+                          'bg-card border-border'
                         }`}
                       >
                         <div className="flex items-center gap-2 min-w-[140px]">
-                          {period.period_type === 'break' && <Coffee className="h-5 w-5 text-amber-600" />}
-                          {period.period_type === 'lunch' && <Utensils className="h-5 w-5 text-orange-600" />}
-                          {period.period_type === 'assembly' && <GraduationCap className="h-5 w-5 text-blue-600" />}
+                          {period.period_type === 'break' && <Coffee className="h-5 w-5 text-amber-600 dark:text-amber-400" />}
+                          {period.period_type === 'lunch' && <Utensils className="h-5 w-5 text-orange-600 dark:text-orange-400" />}
+                          {period.period_type === 'assembly' && <GraduationCap className="h-5 w-5 text-blue-600 dark:text-blue-400" />}
                           {period.period_type === 'class' && <BookOpen className="h-5 w-5 text-primary" />}
                           <span className="font-medium">{period.period_name}</span>
                         </div>

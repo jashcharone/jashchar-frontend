@@ -31,7 +31,7 @@ import {
 
 const SubjectGroup = () => {
     const { toast } = useToast();
-    const { user } = useAuth();
+    const { user, currentSessionId, organizationId } = useAuth();
     const { selectedBranch } = useBranch();
     const [subjectGroups, setSubjectGroups] = useState([]);
     const [classes, setClasses] = useState([]);
@@ -178,7 +178,9 @@ const SubjectGroup = () => {
             class_ids: [formData.class_id],
             section_ids: formData.section_ids,
             subject_ids: formData.subject_ids,
-            branch_id: branchId
+            branch_id: branchId,
+            session_id: currentSessionId,
+            organization_id: organizationId
         };
         try {
             if (isEditing) {

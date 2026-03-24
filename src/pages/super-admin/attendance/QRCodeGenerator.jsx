@@ -353,67 +353,79 @@ const QRCodeGenerator = () => {
     
     const fetchStudents = async () => {
         setLoading(true);
-        let query = supabase
-            .from('student_profiles')
-            .select(`
-                id, full_name, school_code, roll_number, photo_url,
-                class:classes!student_profiles_class_id_fkey(id, name),
-                section:sections!student_profiles_section_id_fkey(id, name)
-            `)
-            .eq('branch_id', branchId)
-            .or('status.eq.active,status.is.null');
-        
-        if (selectedClass && selectedClass !== 'all') {
-            query = query.eq('class_id', selectedClass);
+        try {
+            let query = supabase
+                .from('student_profiles')
+                .select(`
+                    id, full_name, school_code, roll_number, photo_url,
+                    class:classes!student_profiles_class_id_fkey(id, name),
+                    section:sections!student_profiles_section_id_fkey(id, name)
+                `)
+                .eq('branch_id', branchId)
+                .or('status.eq.Active,status.is.null');
+            
+            if (selectedClass && selectedClass !== 'all') {
+                query = query.eq('class_id', selectedClass);
+            }
+            if (selectedSection && selectedSection !== 'all') {
+                query = query.eq('section_id', selectedSection);
+            }
+            
+            const { data, error } = await query.order('full_name');
+            
+            if (error) {
+                toast({ variant: 'destructive', title: 'Error fetching students', description: error.message });
+            } else {
+                const formattedData = data?.map(s => ({
+                    ...s,
+                    class_name: s.class?.name,
+                    section_name: s.section?.name
+                })) || [];
+                setStudents(formattedData);
+            }
+        } catch (err) {
+            console.error('fetchStudents error:', err);
+            toast({ variant: 'destructive', title: 'Error', description: 'Failed to fetch students' });
+        } finally {
+            setLoading(false);
         }
-        if (selectedSection && selectedSection !== 'all') {
-            query = query.eq('section_id', selectedSection);
-        }
-        
-        const { data, error } = await query.order('full_name');
-        
-        if (error) {
-            toast({ variant: 'destructive', title: 'Error fetching students', description: error.message });
-        } else {
-            const formattedData = data?.map(s => ({
-                ...s,
-                class_name: s.class?.name,
-                section_name: s.section?.name
-            })) || [];
-            setStudents(formattedData);
-        }
-        setLoading(false);
     };
     
     const fetchStaff = async () => {
         setLoading(true);
-        let query = supabase
-            .from('employee_profiles')
-            .select(`
-                id, full_name, school_code, staff_id, photo_url,
-                department:department_id(id, name),
-                designation:designation_id(id, name)
-            `)
-            .eq('branch_id', branchId)
-            .eq('is_active', true);
-        
-        if (selectedDepartment && selectedDepartment !== 'all') {
-            query = query.eq('department_id', selectedDepartment);
+        try {
+            let query = supabase
+                .from('employee_profiles')
+                .select(`
+                    id, full_name, school_code, staff_id, photo_url,
+                    department:department_id(id, name),
+                    designation:designation_id(id, name)
+                `)
+                .eq('branch_id', branchId)
+                .eq('is_active', true);
+            
+            if (selectedDepartment && selectedDepartment !== 'all') {
+                query = query.eq('department_id', selectedDepartment);
+            }
+            
+            const { data, error } = await query.order('full_name');
+            
+            if (error) {
+                toast({ variant: 'destructive', title: 'Error fetching staff', description: error.message });
+            } else {
+                const formattedData = data?.map(s => ({
+                    ...s,
+                    department_name: s.department?.name,
+                    designation_name: s.designation?.name
+                })) || [];
+                setStaff(formattedData);
+            }
+        } catch (err) {
+            console.error('fetchStaff error:', err);
+            toast({ variant: 'destructive', title: 'Error', description: 'Failed to fetch staff' });
+        } finally {
+            setLoading(false);
         }
-        
-        const { data, error } = await query.order('full_name');
-        
-        if (error) {
-            toast({ variant: 'destructive', title: 'Error fetching staff', description: error.message });
-        } else {
-            const formattedData = data?.map(s => ({
-                ...s,
-                department_name: s.department?.name,
-                designation_name: s.designation?.name
-            })) || [];
-            setStaff(formattedData);
-        }
-        setLoading(false);
     };
     
     // Filter items based on search

@@ -259,8 +259,30 @@ const LiveFaceAttendance = () => {
                         health?.data?.status === 'healthy'
                     );
                     if (isHealthy) {
-                        setAIEngineAvailable(true);
-                        console.log('✅ AI Engine available (ArcFace 512D - RetinaFace + ArcFace R100)');
+                        // Check if FAISS index has any faces enrolled
+                        try {
+                            const indexRes = await fetch(
+                                `${import.meta.env.VITE_AI_ENGINE_URL || 'http://localhost:8501'}/api/v1/index/status`,
+                                { signal: AbortSignal.timeout(5000) }
+                            );
+                            if (indexRes.ok) {
+                                const indexData = await indexRes.json();
+                                if ((indexData.total_faces || 0) === 0) {
+                                    console.log('⚠️ AI Engine healthy but FAISS index empty — using browser AI (click "Sync to AI" to use AI Engine)');
+                                    setAIEngineAvailable(false);
+                                } else {
+                                    setAIEngineAvailable(true);
+                                    console.log(`✅ AI Engine available (ArcFace 512D) — ${indexData.total_faces} faces in FAISS index`);
+                                }
+                            } else {
+                                setAIEngineAvailable(true);
+                                console.log('✅ AI Engine available (ArcFace 512D - RetinaFace + ArcFace R100)');
+                            }
+                        } catch {
+                            // FAISS status check failed, still use AI engine
+                            setAIEngineAvailable(true);
+                            console.log('✅ AI Engine available (ArcFace 512D - RetinaFace + ArcFace R100)');
+                        }
                     }
                 } catch (aiError) {
                     console.log('⚠️ AI Engine not available, using browser AI');

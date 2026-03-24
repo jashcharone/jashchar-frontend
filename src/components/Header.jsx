@@ -20,7 +20,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
-const Header = ({ toggleSidebar, onThemeSettingsClick, onChatbotToggle }) => {
+const Header = ({ toggleSidebar, onThemeSettingsClick, onChatbotToggle, isDrawerMode }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, signOut, school } = useAuth();
@@ -224,7 +224,7 @@ const Header = ({ toggleSidebar, onThemeSettingsClick, onChatbotToggle }) => {
           <Button 
             variant="ghost" 
             size="icon" 
-            className="lg:hidden rounded-xl h-9 w-9"
+            className={cn(isDrawerMode ? "flex" : "lg:hidden", "rounded-xl h-9 w-9")}
             onClick={toggleSidebar}
           >
             <Menu className="h-5 w-5" />

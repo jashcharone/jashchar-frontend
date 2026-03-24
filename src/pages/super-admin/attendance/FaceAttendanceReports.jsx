@@ -298,12 +298,25 @@ const FaceAttendanceReports = () => {
     // GENERATE REPORT
     // ═══════════════════════════════════════════════════════════════════════════
 
+    // Map frontend report IDs to backend export types
+    const REPORT_TO_BACKEND_TYPE = {
+        'daily_attendance': 'attendance',
+        'weekly_summary': 'attendance',
+        'monthly_analysis': 'attendance',
+        'late_arrivals': 'attendance',
+        'recognition_performance': 'recognition',
+        'spoof_attempts': 'recognition',
+        'unknown_faces': 'recognition',
+        'camera_activity': 'recognition',
+    };
+
     const handleGenerateReport = async () => {
         if (!selectedReport || !branchId) return;
 
         setGenerating(true);
         try {
-            const response = await faceAnalyticsApi.exportAnalytics(selectedReport, {
+            const backendType = REPORT_TO_BACKEND_TYPE[selectedReport] || 'attendance';
+            const response = await faceAnalyticsApi.exportAnalytics(backendType, {
                 branch_id: branchId,
                 start_date: formatDateForInput(startDate),
                 end_date: formatDateForInput(endDate),

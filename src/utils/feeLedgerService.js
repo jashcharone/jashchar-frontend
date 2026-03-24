@@ -92,8 +92,11 @@ async function getFeeTypeId(code, branchId, sessionId) {
 
   // Auto-seed if not found (same logic as FeesType.jsx SYSTEM_FEE_TYPES)
   const systemTypes = {
-    'hostel-fee': { name: 'Hostel Fee', description: 'Fee for hostel accommodation' },
-    'transport-fee': { name: 'Transport Fee', description: 'Fee for transport facility' },
+    'HOSTEL': { name: 'Hostel Fee', description: 'Boarding/hostel accommodation fee' },
+    'TRANSPORT': { name: 'Transport Fee', description: 'School bus/van transport fee' },
+    // Legacy codes (backward compatibility)
+    'hostel-fee': { name: 'Hostel Fee', description: 'Boarding/hostel accommodation fee' },
+    'transport-fee': { name: 'Transport Fee', description: 'School bus/van transport fee' },
   };
 
   const meta = systemTypes[code];
@@ -298,12 +301,12 @@ export async function refreshFeeLedger(params) {
  * Get fee_type_id for hostel fee (creates if not exists via FeesType auto-seed)
  */
 export async function getHostelFeeTypeId(branchId, sessionId) {
-  return getFeeTypeId('hostel-fee', branchId, sessionId);
+  return getFeeTypeId('HOSTEL', branchId, sessionId);
 }
 
 /**
  * Get fee_type_id for transport fee
  */
 export async function getTransportFeeTypeId(branchId, sessionId) {
-  return getFeeTypeId('transport-fee', branchId, sessionId);
+  return getFeeTypeId('TRANSPORT', branchId, sessionId);
 }

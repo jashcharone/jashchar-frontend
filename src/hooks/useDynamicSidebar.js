@@ -142,6 +142,7 @@ const ALREADY_IN_SIDEBAR_ALIASES = new Set([
 const FULLY_STATIC_PARENT_SLUGS = new Set([
   'attendance',     // All 16 attendance submodules are in sidebarConfig.js
   'examinations',   // All Phase 1-8 examination modules are in sidebarConfig.js
+  'academics',      // All 27 academics submodules are in sidebarConfig.js
 ]);
 
 /**

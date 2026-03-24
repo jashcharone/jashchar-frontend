@@ -138,7 +138,7 @@ const DashboardLayout = ({ children }) => {
             // - Fixed sidebar mode (desktop): Add margin based on sidebar state
             // Desktop sidebar has left-3 (12px) offset, so add extra margin
             !isCapacitorApp && !isDrawerMode && isExpanded 
-              ? "ml-[285px]" 
+              ? "ml-[315px]" 
               : !isCapacitorApp && !isDrawerMode 
               ? "ml-[95px]" 
               : ""
@@ -150,6 +150,7 @@ const DashboardLayout = ({ children }) => {
               toggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
               onThemeSettingsClick={() => setIsCustomizerOpen(true)}
               onChatbotToggle={() => setIsChatbotOpen(!isChatbotOpen)}
+              isDrawerMode={isDrawerMode}
             />
           ) : (
             <MobileCompactHeader 

@@ -6,24 +6,26 @@
  * Unified dashboard connecting all academic modules
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import {
     Brain, BookOpen, GraduationCap, Users, ClipboardList, Calendar,
     BarChart2, Sparkles, TrendingUp, AlertTriangle, CheckCircle,
     Clock, Award, FileText, Activity, Loader2, RefreshCw, ChevronRight,
     Zap, Target, Bell, Shield, Star, ArrowRight, BookMarked, Briefcase,
-    PieChart, LineChart as LineChartIcon, Grid3X3
+    PieChart, LineChart as LineChartIcon, Grid3X3, ArrowLeft, ArrowUp, Home
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
+import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import axios from 'axios';
+import api from '@/lib/api';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { useBranch } from '@/contexts/BranchContext';
+import DashboardLayout from '@/components/DashboardLayout';
 import { toast } from 'sonner';
 import { formatDate, formatDateTime } from '@/utils/dateUtils';
 import {
@@ -52,12 +54,27 @@ const MODULES = [
 ];
 
 export default function AcademicIntelligenceHub() {
+    const navigate = useNavigate();
     const { currentSessionId, organizationId, user } = useAuth();
     const { selectedBranch } = useBranch();
 
     // State
     const [loading, setLoading] = useState(true);
     const [activeTab, setActiveTab] = useState('overview');
+    const [showScrollTop, setShowScrollTop] = useState(false);
+
+    // Scroll-to-top listener
+    useEffect(() => {
+        const handleScroll = () => {
+            setShowScrollTop(window.scrollY > 300);
+        };
+        window.addEventListener('scroll', handleScroll);
+        return () => window.removeEventListener('scroll', handleScroll);
+    }, []);
+
+    const scrollToTop = useCallback(() => {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }, []);
 
     // Data states
     const [overview, setOverview] = useState(null);
@@ -81,13 +98,14 @@ export default function AcademicIntelligenceHub() {
 
     const loadData = async () => {
         setLoading(true);
+        const params = `branchId=${selectedBranch.id}&sessionId=${currentSessionId}`;
         try {
             const [overviewRes, statsRes, trendsRes, feedRes, alertsRes] = await Promise.all([
-                axios.get('/api/academic-hub/overview'),
-                axios.get('/api/academic-hub/quick-stats'),
-                axios.get('/api/academic-hub/trends'),
-                axios.get('/api/academic-hub/activity-feed'),
-                axios.get('/api/academic-hub/alerts')
+                api.get(`/academic-hub/overview?${params}`),
+                api.get(`/academic-hub/quick-stats?${params}`),
+                api.get(`/academic-hub/trends?${params}`),
+                api.get(`/academic-hub/activity-feed?${params}`),
+                api.get(`/academic-hub/alerts?${params}`)
             ]);
 
             setOverview(overviewRes.data.data);
@@ -105,7 +123,7 @@ export default function AcademicIntelligenceHub() {
 
     const loadClassPerformance = async () => {
         try {
-            const res = await axios.get('/api/academic-hub/class-performance');
+            const res = await api.get(`/academic-hub/class-performance?branchId=${selectedBranch.id}&sessionId=${currentSessionId}`);
             setClassPerformance(res.data.data || []);
         } catch (error) {
             console.error('Load class performance error:', error);
@@ -114,7 +132,7 @@ export default function AcademicIntelligenceHub() {
 
     const loadTeacherDashboard = async () => {
         try {
-            const res = await axios.get('/api/academic-hub/teacher-dashboard');
+            const res = await api.get(`/academic-hub/teacher-dashboard?branchId=${selectedBranch.id}&sessionId=${currentSessionId}`);
             setTeacherDashboard(res.data.data || []);
         } catch (error) {
             console.error('Load teacher dashboard error:', error);
@@ -123,7 +141,7 @@ export default function AcademicIntelligenceHub() {
 
     const loadModuleHealth = async () => {
         try {
-            const res = await axios.get('/api/academic-hub/module-health');
+            const res = await api.get(`/academic-hub/module-health?branchId=${selectedBranch.id}&sessionId=${currentSessionId}`);
             setModuleHealth(res.data.data);
         } catch (error) {
             console.error('Load module health error:', error);
@@ -225,7 +243,7 @@ export default function AcademicIntelligenceHub() {
             <motion.div
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
-                className="flex items-start gap-3 p-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800"
+                className="flex items-start gap-3 p-3 rounded-lg hover:bg-muted/50 transition-colors"
             >
                 <div className="p-2 bg-primary/10 rounded-lg">
                     <Icon className="h-4 w-4 text-primary" />
@@ -247,17 +265,36 @@ export default function AcademicIntelligenceHub() {
 
     if (loading) {
         return (
-            <div className="flex items-center justify-center h-96">
-                <div className="text-center">
-                    <motion.div
-                        animate={{ rotate: 360 }}
-                        transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
-                    >
-                        <Brain className="h-16 w-16 text-primary mx-auto mb-4" />
-                    </motion.div>
-                    <p className="text-muted-foreground">Loading Academic Intelligence Hub...</p>
+            <DashboardLayout>
+            <div className="space-y-6 p-6">
+                {/* Skeleton back button */}
+                <Skeleton className="h-8 w-24" />
+                {/* Skeleton header */}
+                <div className="flex justify-between items-center">
+                    <div className="space-y-2">
+                        <Skeleton className="h-10 w-80" />
+                        <Skeleton className="h-4 w-96" />
+                    </div>
+                    <Skeleton className="h-10 w-28" />
+                </div>
+                {/* Skeleton stat cards */}
+                <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+                    {[...Array(5)].map((_, i) => <Skeleton key={i} className="h-24 rounded-xl" />)}
+                </div>
+                {/* Skeleton tabs */}
+                <Skeleton className="h-10 w-96" />
+                {/* Skeleton module grid */}
+                <div className="grid lg:grid-cols-3 gap-6">
+                    <div className="lg:col-span-2">
+                        <Skeleton className="h-96 rounded-xl" />
+                    </div>
+                    <div className="space-y-6">
+                        <Skeleton className="h-44 rounded-xl" />
+                        <Skeleton className="h-80 rounded-xl" />
+                    </div>
                 </div>
             </div>
+            </DashboardLayout>
         );
     }
 
@@ -266,13 +303,34 @@ export default function AcademicIntelligenceHub() {
     // ═══════════════════════════════════════════════════════════════════════════
 
     return (
+        <DashboardLayout>
         <div className="p-6 space-y-6">
+            {/* Back Button & Breadcrumbs */}
+            <div className="flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                    <Button variant="ghost" size="sm" onClick={() => navigate(-1)} className="gap-2 text-muted-foreground hover:text-foreground">
+                        <ArrowLeft className="h-4 w-4" /> Back
+                    </Button>
+                    <nav className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                        <Link to="/super-admin/dashboard" className="hover:text-foreground transition-colors flex items-center gap-1">
+                            <Home className="h-3.5 w-3.5" />
+                        </Link>
+                        <ChevronRight className="h-3.5 w-3.5" />
+                        <Link to="/super-admin/academics/dashboard" className="hover:text-foreground transition-colors">
+                            Academics
+                        </Link>
+                        <ChevronRight className="h-3.5 w-3.5" />
+                        <span className="text-foreground font-medium">Intelligence Hub</span>
+                    </nav>
+                </div>
+            </div>
+
             {/* Header */}
-            <div className="flex justify-between items-start">
+            <div className="flex flex-col sm:flex-row justify-between items-start gap-4">
                 <div>
-                    <h1 className="text-3xl font-bold flex items-center gap-3">
+                    <h1 className="text-2xl sm:text-3xl font-bold flex items-center gap-3">
                         <div className="p-2 bg-gradient-to-br from-primary to-purple-600 rounded-xl">
-                            <Brain className="h-8 w-8 text-white" />
+                            <Brain className="h-7 w-7 sm:h-8 sm:w-8 text-white" />
                         </div>
                         Academic Intelligence Hub
                     </h1>
@@ -282,7 +340,7 @@ export default function AcademicIntelligenceHub() {
                 </div>
 
                 <div className="flex gap-2">
-                    <Button variant="outline" onClick={loadData}>
+                    <Button variant="outline" size="sm" onClick={loadData}>
                         <RefreshCw className="h-4 w-4 mr-2" />
                         Refresh
                     </Button>
@@ -382,34 +440,34 @@ export default function AcademicIntelligenceHub() {
                         {/* Activity Feed & Alerts */}
                         <div className="space-y-6">
                             {/* Alerts Summary */}
-                            <Card className="border-orange-200 bg-orange-50/50">
+                            <Card className="border-orange-200 dark:border-orange-800 bg-orange-50/50 dark:bg-orange-950/30">
                                 <CardHeader className="pb-3">
                                     <CardTitle className="text-lg flex items-center gap-2">
-                                        <Bell className="h-5 w-5 text-orange-600" />
+                                        <Bell className="h-5 w-5 text-orange-600 dark:text-orange-400" />
                                         Active Alerts
                                     </CardTitle>
                                 </CardHeader>
                                 <CardContent className="space-y-2">
                                     {alerts?.overdue_homeworks > 0 && (
-                                        <div className="flex items-center justify-between p-2 bg-white rounded-lg">
+                                        <div className="flex items-center justify-between p-2 bg-white dark:bg-background rounded-lg border dark:border-border">
                                             <span className="text-sm">Overdue Homework</span>
                                             <Badge variant="destructive">{alerts.overdue_homeworks}</Badge>
                                         </div>
                                     )}
                                     {alerts?.pending_lesson_approvals > 0 && (
-                                        <div className="flex items-center justify-between p-2 bg-white rounded-lg">
+                                        <div className="flex items-center justify-between p-2 bg-white dark:bg-background rounded-lg border dark:border-border">
                                             <span className="text-sm">Pending Approvals</span>
                                             <Badge variant="secondary">{alerts.pending_lesson_approvals}</Badge>
                                         </div>
                                     )}
                                     {alerts?.low_progress_syllabi > 0 && (
-                                        <div className="flex items-center justify-between p-2 bg-white rounded-lg">
+                                        <div className="flex items-center justify-between p-2 bg-white dark:bg-background rounded-lg border dark:border-border">
                                             <span className="text-sm">Low Syllabus Progress</span>
                                             <Badge className="bg-yellow-500">{alerts.low_progress_syllabi}</Badge>
                                         </div>
                                     )}
                                     {alerts?.teachers_overloaded > 0 && (
-                                        <div className="flex items-center justify-between p-2 bg-white rounded-lg">
+                                        <div className="flex items-center justify-between p-2 bg-white dark:bg-background rounded-lg border dark:border-border">
                                             <span className="text-sm">Overloaded Teachers</span>
                                             <Badge variant="destructive">{alerts.teachers_overloaded}</Badge>
                                         </div>
@@ -570,7 +628,7 @@ export default function AcademicIntelligenceHub() {
                                         </thead>
                                         <tbody>
                                             {teacherDashboard.map(teacher => (
-                                                <tr key={teacher.employee_id} className="border-b hover:bg-gray-50">
+                                                <tr key={teacher.employee_id} className="border-b hover:bg-muted/50 transition-colors">
                                                     <td className="p-3 font-medium">{teacher.teacher_name}</td>
                                                     <td className="p-3 text-center">
                                                         <Badge variant={teacher.total_periods > 35 ? 'destructive' : 'outline'}>
@@ -619,7 +677,7 @@ export default function AcademicIntelligenceHub() {
                             ) : (
                                 <>
                                     {/* Overall Health */}
-                                    <div className="mb-6 p-4 bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg border border-green-200">
+                                    <div className="mb-6 p-4 bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-950/40 dark:to-emerald-950/40 rounded-lg border border-green-200 dark:border-green-800">
                                         <div className="flex items-center justify-between">
                                             <div>
                                                 <h3 className="font-semibold text-lg">Overall System Health</h3>
@@ -628,7 +686,7 @@ export default function AcademicIntelligenceHub() {
                                                 </p>
                                             </div>
                                             <div className="text-right">
-                                                <span className="text-4xl font-bold text-green-600">
+                                                <span className="text-4xl font-bold text-green-600 dark:text-green-400">
                                                     {moduleHealth.overall_health.toFixed(0)}%
                                                 </span>
                                             </div>
@@ -643,7 +701,7 @@ export default function AcademicIntelligenceHub() {
                                                 key={mod.module}
                                                 initial={{ opacity: 0 }}
                                                 animate={{ opacity: 1 }}
-                                                className={`p-4 rounded-lg border ${mod.status === 'healthy' ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'}`}
+                                                className={`p-4 rounded-lg border ${mod.status === 'healthy' ? 'bg-green-50 dark:bg-green-950/30 border-green-200 dark:border-green-800' : 'bg-red-50 dark:bg-red-950/30 border-red-200 dark:border-red-800'}`}
                                             >
                                                 <div className="flex items-center justify-between mb-2">
                                                     <span className="font-medium">{mod.module}</span>
@@ -675,14 +733,14 @@ export default function AcademicIntelligenceHub() {
                 animate={{ opacity: 1, y: 0 }}
                 className="bg-gradient-to-r from-primary to-purple-600 rounded-xl p-6 text-white"
             >
-                <div className="flex items-center justify-between">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                     <div>
-                        <h3 className="text-xl font-bold flex items-center gap-2">
-                            <Sparkles className="h-6 w-6" />
-                            21-Day Academic Intelligence Plan Complete!
+                        <h3 className="text-lg sm:text-xl font-bold flex items-center gap-2">
+                            <Sparkles className="h-5 w-5 sm:h-6 sm:w-6" />
+                            Academic Intelligence Platform
                         </h3>
-                        <p className="text-white/80 mt-1">
-                            13 integrated modules • Unified dashboard • AI-powered insights • World-class academic management
+                        <p className="text-white/80 mt-1 text-sm">
+                            13 integrated modules • Unified dashboard • AI-powered insights
                         </p>
                     </div>
                     <div className="flex gap-2">
@@ -692,6 +750,23 @@ export default function AcademicIntelligenceHub() {
                     </div>
                 </div>
             </motion.div>
+
+            {/* Scroll to Top Button */}
+            <AnimatePresence>
+                {showScrollTop && (
+                    <motion.button
+                        initial={{ opacity: 0, scale: 0.8 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.8 }}
+                        onClick={scrollToTop}
+                        className="fixed bottom-6 right-6 z-50 p-3 bg-primary text-white rounded-full shadow-lg hover:shadow-xl hover:scale-105 transition-all"
+                        title="Scroll to top"
+                    >
+                        <ArrowUp className="h-5 w-5" />
+                    </motion.button>
+                )}
+            </AnimatePresence>
         </div>
+        </DashboardLayout>
     );
 }

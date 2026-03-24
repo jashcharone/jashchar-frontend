@@ -101,6 +101,9 @@ const CurriculumMaster = () => {
   useEffect(() => {
     if (branchId && selectedClass && selectedSubject) {
       fetchChapters();
+    }
+    // Always fetch stats (aggregates when no class/subject selected)
+    if (branchId) {
       fetchStats();
     }
   }, [branchId, selectedClass, selectedSubject, currentSessionId]);
@@ -109,6 +112,7 @@ const CurriculumMaster = () => {
   useEffect(() => {
     if (branchId) {
       fetchSubjectProgress();
+      fetchStats();
     }
   }, [branchId, currentSessionId]);
 
@@ -341,8 +345,8 @@ const CurriculumMaster = () => {
                 <Card>
                   <CardContent className="pt-6">
                     <div className="flex items-center gap-4">
-                      <div className="p-3 rounded-xl bg-blue-100">
-                        <BookMarked className="h-6 w-6 text-blue-600" />
+                      <div className="p-3 rounded-xl bg-blue-100 dark:bg-blue-900/40">
+                        <BookMarked className="h-6 w-6 text-blue-600 dark:text-blue-400" />
                       </div>
                       <div>
                         <p className="text-sm text-muted-foreground">Total Chapters</p>
@@ -354,8 +358,8 @@ const CurriculumMaster = () => {
                 <Card>
                   <CardContent className="pt-6">
                     <div className="flex items-center gap-4">
-                      <div className="p-3 rounded-xl bg-green-100">
-                        <CheckCircle2 className="h-6 w-6 text-green-600" />
+                      <div className="p-3 rounded-xl bg-green-100 dark:bg-green-900/40">
+                        <CheckCircle2 className="h-6 w-6 text-green-600 dark:text-green-400" />
                       </div>
                       <div>
                         <p className="text-sm text-muted-foreground">Completed</p>
@@ -367,8 +371,8 @@ const CurriculumMaster = () => {
                 <Card>
                   <CardContent className="pt-6">
                     <div className="flex items-center gap-4">
-                      <div className="p-3 rounded-xl bg-purple-100">
-                        <FileText className="h-6 w-6 text-purple-600" />
+                      <div className="p-3 rounded-xl bg-purple-100 dark:bg-purple-900/40">
+                        <FileText className="h-6 w-6 text-purple-600 dark:text-purple-400" />
                       </div>
                       <div>
                         <p className="text-sm text-muted-foreground">Total Topics</p>
@@ -380,8 +384,8 @@ const CurriculumMaster = () => {
                 <Card>
                   <CardContent className="pt-6">
                     <div className="flex items-center gap-4">
-                      <div className="p-3 rounded-xl bg-orange-100">
-                        <Clock className="h-6 w-6 text-orange-600" />
+                      <div className="p-3 rounded-xl bg-orange-100 dark:bg-orange-900/40">
+                        <Clock className="h-6 w-6 text-orange-600 dark:text-orange-400" />
                       </div>
                       <div>
                         <p className="text-sm text-muted-foreground">Periods Used</p>
@@ -402,10 +406,13 @@ const CurriculumMaster = () => {
                   {subjectProgress.length > 0 ? (
                     <ResponsiveContainer width="100%" height={300}>
                       <BarChart data={subjectProgress}>
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis dataKey="subject_name" fontSize={12} />
-                        <YAxis domain={[0, 100]} />
-                        <Tooltip formatter={(value) => `${value}%`} />
+                        <CartesianGrid strokeDasharray="3 3" stroke="currentColor" opacity={0.1} />
+                        <XAxis dataKey="subject_name" fontSize={12} tick={{ fill: 'currentColor', opacity: 0.7 }} />
+                        <YAxis domain={[0, 100]} tick={{ fill: 'currentColor', opacity: 0.7 }} />
+                        <Tooltip 
+                          formatter={(value) => `${value}%`}
+                          contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: '8px', color: 'hsl(var(--foreground))' }}
+                        />
                         <Bar dataKey="progress_percentage" fill="#3b82f6" radius={[4, 4, 0, 0]} name="Progress %" />
                       </BarChart>
                     </ResponsiveContainer>
@@ -477,7 +484,7 @@ const CurriculumMaster = () => {
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: index * 0.05 }}
                       >
-                        <Card className={chapter.is_completed ? 'border-green-200 bg-green-50/50' : ''}>
+                        <Card className={chapter.is_completed ? 'border-green-200 bg-green-50/50 dark:border-green-800 dark:bg-green-950/30' : ''}>
                           <Collapsible
                             open={expandedChapters[chapter.id]}
                             onOpenChange={() => toggleChapter(chapter.id)}
@@ -585,7 +592,7 @@ const CurriculumMaster = () => {
                                         <div
                                           key={topic.id}
                                           className={`flex items-center justify-between p-3 rounded-lg border ${
-                                            topic.is_completed ? 'bg-green-50 border-green-200' : 'bg-background'
+                                            topic.is_completed ? 'bg-green-50 border-green-200 dark:bg-green-950/30 dark:border-green-800' : 'bg-background'
                                           }`}
                                         >
                                           <div className="flex items-center gap-3">
@@ -603,11 +610,11 @@ const CurriculumMaster = () => {
                                               <p className={`font-medium ${topic.is_completed ? 'line-through text-muted-foreground' : ''}`}>
                                                 {topic.topic_number}. {topic.topic_name}
                                               </p>
-                                              <p className="text-xs text-muted-foreground">
+                                              <span className="text-xs text-muted-foreground flex items-center gap-1">
                                                 {topic.estimated_periods} period(s)
                                                 {topic.is_important && <Badge variant="secondary" className="ml-2 text-xs">Important</Badge>}
                                                 {topic.is_exam_focused && <Badge variant="secondary" className="ml-1 text-xs">Exam</Badge>}
-                                              </p>
+                                              </span>
                                             </div>
                                           </div>
                                           <div className="flex items-center gap-1">

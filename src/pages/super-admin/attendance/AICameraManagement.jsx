@@ -366,11 +366,11 @@ const RecognitionSettings = ({ settings, onSave }) => {
                 <div className="space-y-3">
                     <div className="flex items-center justify-between">
                         <Label>Match Threshold</Label>
-                        <span className="text-sm font-medium">{(localSettings.match_threshold || 0.6).toFixed(2)}</span>
+                        <span className="text-sm font-medium">{(localSettings.recognition_threshold || 0.6).toFixed(2)}</span>
                     </div>
                     <Slider
-                        value={[localSettings.match_threshold || 0.6]}
-                        onValueChange={([value]) => setLocalSettings(prev => ({ ...prev, match_threshold: value }))}
+                        value={[localSettings.recognition_threshold || 0.6]}
+                        onValueChange={([value]) => setLocalSettings(prev => ({ ...prev, recognition_threshold: value }))}
                         min={0.3}
                         max={0.9}
                         step={0.05}
@@ -387,8 +387,8 @@ const RecognitionSettings = ({ settings, onSave }) => {
                         <p className="text-xs text-muted-foreground">Anti-spoofing check</p>
                     </div>
                     <Switch
-                        checked={localSettings.liveness_enabled || false}
-                        onCheckedChange={(checked) => setLocalSettings(prev => ({ ...prev, liveness_enabled: checked }))}
+                        checked={localSettings.liveness_check_enabled || false}
+                        onCheckedChange={(checked) => setLocalSettings(prev => ({ ...prev, liveness_check_enabled: checked }))}
                     />
                 </div>
                 
@@ -399,20 +399,20 @@ const RecognitionSettings = ({ settings, onSave }) => {
                         <p className="text-xs text-muted-foreground">Automatically mark when recognized</p>
                     </div>
                     <Switch
-                        checked={localSettings.auto_attendance || true}
-                        onCheckedChange={(checked) => setLocalSettings(prev => ({ ...prev, auto_attendance: checked }))}
+                        checked={localSettings.auto_mark_attendance || true}
+                        onCheckedChange={(checked) => setLocalSettings(prev => ({ ...prev, auto_mark_attendance: checked }))}
                     />
                 </div>
                 
                 {/* Cooldown Period */}
                 <div className="space-y-2">
-                    <Label>Cooldown Period (seconds)</Label>
+                    <Label>Cooldown Period (minutes)</Label>
                     <Input
                         type="number"
-                        value={localSettings.cooldown_seconds || 30}
-                        onChange={(e) => setLocalSettings(prev => ({ ...prev, cooldown_seconds: parseInt(e.target.value) }))}
-                        min={10}
-                        max={300}
+                        value={localSettings.duplicate_check_minutes || 5}
+                        onChange={(e) => setLocalSettings(prev => ({ ...prev, duplicate_check_minutes: parseInt(e.target.value) }))}
+                        min={1}
+                        max={60}
                     />
                     <p className="text-xs text-muted-foreground">
                         Time before same person can be re-recognized
@@ -800,8 +800,8 @@ const CameraManagement = () => {
     
     const fetchSettings = useCallback(async () => {
         try {
-            const data = await aiEngineApi.getRecognitionSettings();
-            setRecognitionSettings(data.settings || {});
+            const response = await aiEngineApi.getRecognitionSettings();
+            setRecognitionSettings(response.data || response.settings || {});
         } catch (error) {
             console.error('Error fetching settings:', error);
         }

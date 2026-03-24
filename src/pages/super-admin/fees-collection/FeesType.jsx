@@ -37,10 +37,34 @@ import {
 // System fee types (Hostel Fee, Transport Fee) are auto-created and non-deletable
 // ============================================================================
 
-// Default system fee types that must always exist
+// Default system fee types that must always exist for every Indian school
+// These are auto-created and CANNOT be edited or deleted
 const SYSTEM_FEE_TYPES = [
-    { name: 'Hostel Fee', code: 'hostel-fee', description: 'Fee for hostel accommodation', is_system: true },
-    { name: 'Transport Fee', code: 'transport-fee', description: 'Fee for transport facility', is_system: true },
+    // Core Fees
+    { name: 'Admission Fee',     code: 'ADMISSION',       description: 'One-time admission/registration fee' },
+    { name: 'Tuition Fee',       code: 'TUITION',         description: 'Core academic tuition fee' },
+    { name: 'Annual Fee',        code: 'ANNUAL',          description: 'Annual maintenance and development charges' },
+    { name: 'Registration Fee',  code: 'REGISTRATION',    description: 'New student registration fee' },
+    // Academic Fees
+    { name: 'Exam Fee',          code: 'EXAM',            description: 'Examination and assessment fee' },
+    { name: 'Lab Fee',           code: 'LAB',             description: 'Science/Computer laboratory fee' },
+    { name: 'Library Fee',       code: 'LIBRARY',         description: 'Library and reading room fee' },
+    { name: 'Computer Fee',      code: 'COMPUTER',        description: 'Computer lab and IT infrastructure fee' },
+    { name: 'Smart Class Fee',   code: 'SMART-CLASS',     description: 'Digital/Smart classroom learning fee' },
+    // Extra-Curricular
+    { name: 'Sports Fee',        code: 'SPORTS',          description: 'Sports, games and physical education fee' },
+    { name: 'Activity Fee',      code: 'ACTIVITY',        description: 'Co-curricular and extra-curricular activity fee' },
+    // Facility Fees
+    { name: 'Transport Fee',     code: 'TRANSPORT',       description: 'School bus/van transport fee' },
+    { name: 'Hostel Fee',        code: 'HOSTEL',          description: 'Boarding/hostel accommodation fee' },
+    { name: 'Uniform Fee',       code: 'UNIFORM',         description: 'School uniform and dress code fee' },
+    { name: 'Stationery Fee',    code: 'STATIONERY',      description: 'Books, notebooks and stationery fee' },
+    // Infrastructure & Others
+    { name: 'Development Fee',   code: 'DEVELOPMENT',     description: 'Infrastructure development and building fund' },
+    { name: 'Caution Deposit',   code: 'CAUTION-DEPOSIT', description: 'Refundable security/caution deposit' },
+    { name: 'Medical Fee',       code: 'MEDICAL',         description: 'Health check-up and medical facility fee' },
+    { name: 'Late Fee',          code: 'LATE-FEE',        description: 'Late payment penalty charge' },
+    { name: 'Miscellaneous Fee', code: 'MISCELLANEOUS',   description: 'Other miscellaneous charges' },
 ];
 
 const FeesType = () => {
@@ -81,13 +105,23 @@ const FeesType = () => {
 
         if (missing.length > 0) {
             const toInsert = missing.map(t => ({
-                ...t,
+                name: t.name,
+                code: t.code,
+                description: t.description,
+                is_system: true,
                 branch_id: selectedBranch.id,
                 session_id: currentSessionId,
                 organization_id: organizationId,
             }));
             await supabase.from('fee_types').insert(toInsert);
         }
+
+        // Ensure all system codes are marked is_system = true
+        await supabase.from('fee_types')
+            .update({ is_system: true })
+            .eq('branch_id', selectedBranch.id)
+            .eq('session_id', currentSessionId)
+            .in('code', SYSTEM_FEE_TYPES.map(t => t.code));
     };
 
     const fetchFeesTypes = async () => {
@@ -211,6 +245,14 @@ const FeesType = () => {
     };
 
     const handleEdit = (type) => {
+        if (type.is_system) {
+            toast({ 
+                variant: 'destructive', 
+                title: 'Cannot Edit', 
+                description: 'System fee types are protected and cannot be modified.' 
+            });
+            return;
+        }
         setFormData({ id: type.id, name: type.name, code: type.code || '', description: type.description || '' });
         setIsEditing(true);
         window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -442,6 +484,7 @@ const FeesType = () => {
                                                     <tr className="border-b bg-muted/50">
                                                         <th className="text-left p-3 font-medium">Name</th>
                                                         <th className="text-left p-3 font-medium">Fees Code</th>
+                                                        <th className="text-left p-3 font-medium hidden md:table-cell">Description</th>
                                                         <th className="text-center p-3 font-medium w-32">Action</th>
                                                     </tr>
                                                 </thead>
@@ -466,21 +509,37 @@ const FeesType = () => {
                                                                     {type.code || '-'}
                                                                 </Badge>
                                                             </td>
+                                                            <td className="p-3 hidden md:table-cell">
+                                                                <span className="text-xs text-muted-foreground">
+                                                                    {type.description || '-'}
+                                                                </span>
+                                                            </td>
                                                             <td className="p-3">
                                                                 <div className="flex items-center justify-center gap-1">
-                                                                    <Tooltip>
-                                                                        <TooltipTrigger asChild>
-                                                                            <Button 
-                                                                                variant="ghost" 
-                                                                                size="icon"
-                                                                                className="h-8 w-8 text-amber-600 hover:text-amber-700 hover:bg-amber-50"
-                                                                                onClick={() => handleEdit(type)}
-                                                                            >
-                                                                                <Edit className="h-4 w-4" />
-                                                                            </Button>
-                                                                        </TooltipTrigger>
-                                                                        <TooltipContent>Edit</TooltipContent>
-                                                                    </Tooltip>
+                                                                    {type.is_system ? (
+                                                                        <Tooltip>
+                                                                            <TooltipTrigger asChild>
+                                                                                <span className="inline-flex items-center justify-center h-8 w-8 text-muted-foreground/40 cursor-not-allowed">
+                                                                                    <Lock className="h-4 w-4" />
+                                                                                </span>
+                                                                            </TooltipTrigger>
+                                                                            <TooltipContent>System fee type - cannot edit</TooltipContent>
+                                                                        </Tooltip>
+                                                                    ) : (
+                                                                        <Tooltip>
+                                                                            <TooltipTrigger asChild>
+                                                                                <Button 
+                                                                                    variant="ghost" 
+                                                                                    size="icon"
+                                                                                    className="h-8 w-8 text-amber-600 hover:text-amber-700 hover:bg-amber-50"
+                                                                                    onClick={() => handleEdit(type)}
+                                                                                >
+                                                                                    <Edit className="h-4 w-4" />
+                                                                                </Button>
+                                                                            </TooltipTrigger>
+                                                                            <TooltipContent>Edit</TooltipContent>
+                                                                        </Tooltip>
+                                                                    )}
                                                                     
                                                                     {type.is_system ? (
                                                                         <Tooltip>

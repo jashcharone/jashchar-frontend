@@ -43,7 +43,7 @@ export default function StudentAttendanceDashboard() {
   const [students, setStudents] = useState([]);
   const [threshold, setThreshold] = useState(75);
 
-  // Fetch classes
+  // Fetch classes — auto-select first class to avoid full-table scan on initial load
   useEffect(() => {
     if (!selectedBranch?.id) return;
     (async () => {
@@ -53,6 +53,9 @@ export default function StudentAttendanceDashboard() {
         .eq('branch_id', selectedBranch.id)
         .order('display_order');
       setClasses(data || []);
+      if (data?.length && selectedClass === 'all') {
+        setSelectedClass(data[0].id);
+      }
     })();
   }, [selectedBranch]);
 
@@ -64,36 +67,49 @@ export default function StudentAttendanceDashboard() {
       const monthStart = format(startOfMonth(currentMonth), 'yyyy-MM-dd');
       const monthEnd = format(endOfMonth(currentMonth), 'yyyy-MM-dd');
 
-      let query = supabase
-        .from('student_attendance')
-        .select('student_id, date, status, is_late, class_id, section_id')
-        .eq('branch_id', selectedBranch.id)
-        .eq('session_id', currentSessionId)
-        .gte('date', monthStart)
-        .lte('date', monthEnd);
+      let attendance = [];
+      let studentsList = [];
 
       if (selectedClass !== 'all') {
-        query = query.eq('class_id', selectedClass);
+        // Single class — RPC bypasses expensive RLS
+        const { data } = await supabase.rpc('get_attendance_records', {
+          p_branch_id: selectedBranch.id,
+          p_session_id: currentSessionId,
+          p_class_id: selectedClass,
+          p_date_from: monthStart,
+          p_date_to: monthEnd,
+        });
+        attendance = data || [];
+
+        const { data: sList } = await supabase
+          .from('student_profiles')
+          .select('id, full_name, class_id, section_id, classes(name), sections(name), photo_url')
+          .eq('branch_id', selectedBranch.id)
+          .eq('session_id', currentSessionId)
+          .eq('class_id', selectedClass)
+          .eq('status', 'active');
+        studentsList = sList || [];
+      } else {
+        // All classes — single RPC call (no batching needed)
+        const { data } = await supabase.rpc('get_attendance_records', {
+          p_branch_id: selectedBranch.id,
+          p_session_id: currentSessionId,
+          p_date_from: monthStart,
+          p_date_to: monthEnd,
+        });
+        attendance = data || [];
+
+        const { data: sList } = await supabase
+          .from('student_profiles')
+          .select('id, full_name, class_id, section_id, classes(name), sections(name), photo_url')
+          .eq('branch_id', selectedBranch.id)
+          .eq('session_id', currentSessionId)
+          .eq('status', 'active');
+        studentsList = sList || [];
       }
 
-      const { data: attendance } = await query;
-
-      // Fetch student list for the same filter
-      let studentQuery = supabase
-        .from('student_profiles')
-        .select('id, full_name, class_id, section_id, classes(name), sections(name), photo_url')
-        .eq('branch_id', selectedBranch.id)
-        .eq('session_id', currentSessionId)
-        .eq('status', 'active');
-
-      if (selectedClass !== 'all') {
-        studentQuery = studentQuery.eq('class_id', selectedClass);
-      }
-
-      const { data: studentsList } = await studentQuery;
-
-      setAttendanceData(attendance || []);
-      setStudents(studentsList || []);
+      setAttendanceData(attendance);
+      setStudents(studentsList);
     } catch (err) {
       console.error('Error fetching attendance:', err);
     } finally {

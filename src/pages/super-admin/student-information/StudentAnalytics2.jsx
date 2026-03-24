@@ -38,18 +38,23 @@ export default function StudentAnalytics2() {
 
   const branchId = selectedBranch?.id;
 
-  // Fetch all data
+  // Fetch all data — attendance batched per class to avoid statement timeout
   const fetchData = useCallback(async () => {
     if (!branchId || !currentSessionId) return;
     setLoading(true);
     try {
-      const [studRes, attRes, allocRes, payRes, markRes, classRes] = await Promise.all([
+      // Step 1: Fetch classes first (needed for batching attendance)
+      const classRes = await supabase
+        .from('classes')
+        .select('id, name').eq('branch_id', branchId).or(`session_id.eq.${currentSessionId},session_id.is.null`).order('display_order');
+      const classList = classRes.data || [];
+      setClasses(classList);
+
+      // Step 2: Fetch non-attendance data in parallel
+      const [studRes, allocRes, payRes, markRes] = await Promise.all([
         supabase.from('student_profiles')
           .select('id, full_name, class_id, section_id, gender, admission_date, category_id, is_disabled, classes(name), sections(name), student_categories(name)')
           .eq('branch_id', branchId).eq('session_id', currentSessionId).or('is_disabled.is.null,is_disabled.eq.false'),
-        supabase.from('student_attendance')
-          .select('student_id, status, date')
-          .eq('branch_id', branchId).eq('session_id', currentSessionId),
         supabase.from('student_fee_allocations')
           .select('student_id, fee_master:fee_masters(amount)')
           .eq('branch_id', branchId).eq('session_id', currentSessionId),
@@ -59,16 +64,24 @@ export default function StudentAnalytics2() {
         supabase.from('exam_marks')
           .select('student_id, marks, is_absent, exam_subjects(max_marks, subjects(name))')
           .not('is_absent', 'eq', true),
-        supabase.from('classes')
-          .select('id, name').eq('branch_id', branchId).or(`session_id.eq.${currentSessionId},session_id.is.null`).order('display_order'),
       ]);
 
+      // Step 3: Use RPC to get attendance summary (bypasses expensive RLS)
+      const threeMonthsAgo = new Date();
+      threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
+      const dateFrom = threeMonthsAgo.toISOString().split('T')[0];
+
+      const { data: attendanceSummary } = await supabase.rpc('get_student_attendance_summary', {
+        p_branch_id: branchId,
+        p_session_id: currentSessionId,
+        p_date_from: dateFrom,
+      });
+
       setStudents(studRes.data || []);
-      setAttendance(attRes.data || []);
+      setAttendance(attendanceSummary || []);
       setFeeAllocations(allocRes.data || []);
       setFeePayments(payRes.data || []);
       setExamMarks(markRes.data || []);
-      setClasses(classRes.data || []);
     } catch (err) {
       console.error('Analytics fetch error:', err);
     }
@@ -81,17 +94,13 @@ export default function StudentAnalytics2() {
   // COMPUTED ANALYTICS
   // ═══════════════════════════════════════════
 
-  // Per-student attendance %
+  // Per-student attendance % (from RPC summary)
   const studentAttendance = useMemo(() => {
-    const map = {};
-    attendance.forEach(a => {
-      if (!map[a.student_id]) map[a.student_id] = { total: 0, present: 0 };
-      map[a.student_id].total++;
-      if (['present', 'late', 'half_day'].includes(a.status)) map[a.student_id].present++;
-    });
     const result = {};
-    Object.entries(map).forEach(([sid, d]) => {
-      result[sid] = d.total > 0 ? Math.round((d.present / d.total) * 100) : null;
+    attendance.forEach(a => {
+      if (a.total_days > 0) {
+        result[a.student_id] = Math.round((a.present_days / a.total_days) * 100);
+      }
     });
     return result;
   }, [attendance]);

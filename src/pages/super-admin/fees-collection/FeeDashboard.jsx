@@ -346,29 +346,51 @@ const FeeDashboard = () => {
           due_date: l.due_date,
         }));
       } else {
-        // OLD ARCHITECTURE: Use student_fee_allocations
+        // OLD ARCHITECTURE: Use student_fee_allocations + fee_masters join
         const batchSize = 100;
+        let rawAllocations = [];
         for (let i = 0; i < studentIds.length; i += batchSize) {
           const batch = studentIds.slice(i, i + batchSize);
           const { data } = await supabase
             .from('student_fee_allocations')
-            .select('id, student_id, amount, paid, balance, due_date')
+            .select('id, student_id, fee_master_id, fee_masters(amount, due_date)')
             .in('student_id', batch)
             .eq('branch_id', branchId)
             .eq('session_id', selectedSessionId);
-          if (data) allAllocations.push(...data);
+          if (data) rawAllocations.push(...data);
         }
 
         for (let i = 0; i < studentIds.length; i += batchSize) {
           const batch = studentIds.slice(i, i + batchSize);
           const { data } = await supabase
             .from('fee_payments')
-            .select('id, student_id, amount, payment_date, payment_mode, created_at')
+            .select('id, student_id, fee_master_id, amount, payment_date, payment_mode, created_at')
             .in('student_id', batch)
             .eq('branch_id', branchId)
             .eq('session_id', selectedSessionId);
           if (data) allPayments.push(...data);
         }
+
+        // Build paid map per (student_id, fee_master_id) from payments
+        const paidMap = {};
+        allPayments.forEach(p => {
+          const key = `${p.student_id}_${p.fee_master_id}`;
+          paidMap[key] = (paidMap[key] || 0) + Number(p.amount || 0);
+        });
+
+        // Map to expected allAllocations format with computed paid/balance
+        allAllocations = rawAllocations.map(a => {
+          const amt = Number(a.fee_masters?.amount || 0);
+          const key = `${a.student_id}_${a.fee_master_id}`;
+          const paid = paidMap[key] || 0;
+          return {
+            student_id: a.student_id,
+            amount: amt,
+            paid: paid,
+            balance: Math.max(0, amt - paid),
+            due_date: a.fee_masters?.due_date,
+          };
+        });
 
         totalAllocated = allAllocations.reduce((sum, a) => sum + (a.amount || 0), 0);
         totalPaid = allAllocations.reduce((sum, a) => sum + (a.paid || 0), 0);

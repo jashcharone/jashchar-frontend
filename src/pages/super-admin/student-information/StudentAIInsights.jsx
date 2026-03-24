@@ -49,23 +49,28 @@ export default function StudentAIInsights() {
 
   const branchId = selectedBranch?.id;
 
-  // ─── Fetch All Data ───
+  // ─── Fetch All Data ─── (attendance batched per class to avoid timeout)
   const fetchData = useCallback(async () => {
     if (!branchId || !currentSessionId) return;
     setLoading(true);
     try {
-      const [studentsRes, attendanceRes, feeRes, marksRes, classesRes] = await Promise.all([
+      // Step 1: Fetch classes first (needed for batching attendance)
+      const classesRes = await supabase
+        .from('classes')
+        .select('id, name')
+        .eq('branch_id', branchId)
+        .order('display_order');
+      const classList = classesRes.data || [];
+      setClasses(classList);
+
+      // Step 2: Fetch non-attendance data in parallel
+      const [studentsRes, feeRes, marksRes] = await Promise.all([
         supabase
           .from('student_profiles')
           .select('id, full_name, admission_number, school_code, photo_url, class_id, section_id, category_id, classes(id, name), sections(id, name)')
           .eq('branch_id', branchId)
           .eq('session_id', currentSessionId)
           .or('is_disabled.is.null,is_disabled.eq.false'),
-        supabase
-          .from('student_attendance')
-          .select('student_id, status, date')
-          .eq('branch_id', branchId)
-          .eq('session_id', currentSessionId),
         supabase
           .from('fee_payments')
           .select('student_id, amount, fee_master_id')
@@ -76,18 +81,23 @@ export default function StudentAIInsights() {
           .from('exam_marks')
           .select('student_id, marks, is_absent, exam_subjects(max_marks, min_marks)')
           .not('is_absent', 'eq', true),
-        supabase
-          .from('classes')
-          .select('id, name')
-          .eq('branch_id', branchId)
-          .order('display_order'),
       ]);
 
+      // Step 3: Use RPC to get attendance summary (bypasses expensive RLS)
+      const threeMonthsAgo = new Date();
+      threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
+      const dateFrom = threeMonthsAgo.toISOString().split('T')[0];
+
+      const { data: attendanceSummary } = await supabase.rpc('get_student_attendance_summary', {
+        p_branch_id: branchId,
+        p_session_id: currentSessionId,
+        p_date_from: dateFrom,
+      });
+
       setStudents(studentsRes.data || []);
-      setAttendanceData(attendanceRes.data || []);
+      setAttendanceData(attendanceSummary || []);
       setFeeData(feeRes.data || []);
       setMarksData(marksRes.data || []);
-      setClasses(classesRes.data || []);
     } catch (err) {
       console.error('Error fetching AI insights data:', err);
       toast.error('Failed to load data');
@@ -102,24 +112,21 @@ export default function StudentAIInsights() {
   const insights = useMemo(() => {
     if (!students.length) return null;
 
+    // Build attendance lookup from RPC summary
+    const attMap = {};
+    attendanceData.forEach(a => { attMap[a.student_id] = a; });
+
     // Build per-student insight
     const studentInsights = students.map(student => {
       const sid = student.id;
+      const att = attMap[sid];
 
-      // Attendance
-      const studentAtt = attendanceData.filter(a => a.student_id === sid);
-      const totalDays = studentAtt.length;
-      const presentDays = studentAtt.filter(a => a.status === 'present' || a.status === 'late').length;
-      const absentDays = studentAtt.filter(a => a.status === 'absent').length;
+      // Attendance (from RPC summary)
+      const totalDays = att?.total_days || 0;
+      const presentDays = att?.present_days || 0;
+      const absentDays = att?.absent_days || 0;
       const attendancePct = totalDays > 0 ? Math.round((presentDays / totalDays) * 100) : null;
-
-      // Consecutive absences (recent)
-      const sorted = [...studentAtt].sort((a, b) => new Date(b.date) - new Date(a.date));
-      let consecutiveAbsent = 0;
-      for (const a of sorted) {
-        if (a.status === 'absent') consecutiveAbsent++;
-        else break;
-      }
+      const consecutiveAbsent = att?.recent_consecutive_absences || 0;
 
       // Fees (from fee_payments — tracks completed payments per student)
       const studentFees = feeData.filter(f => f.student_id === sid);

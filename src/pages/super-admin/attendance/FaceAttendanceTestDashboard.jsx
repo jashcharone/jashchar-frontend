@@ -163,7 +163,7 @@ export default function FaceAttendanceTestDashboard() {
     // Check Database
     try {
       const { count, error } = await supabase
-        .from('face_embeddings')
+        .from('face_embeddings_v2')
         .select('id', { count: 'exact', head: true })
         .eq('branch_id', branchId);
 
@@ -180,12 +180,12 @@ export default function FaceAttendanceTestDashboard() {
     // Check Cameras
     try {
       const { data: cameras, error } = await supabase
-        .from('ai_cameras')
-        .select('id, status')
+        .from('camera_devices')
+        .select('id, is_active')
         .eq('branch_id', branchId);
 
       if (!error && cameras) {
-        const activeCameras = cameras.filter(c => c.status === 'active').length;
+        const activeCameras = cameras.filter(c => c.is_active).length;
         setSystemStatus(prev => ({
           ...prev,
           cameras: activeCameras > 0 ? 'online' : cameras.length > 0 ? 'warning' : 'offline',
@@ -255,7 +255,7 @@ export default function FaceAttendanceTestDashboard() {
       run: async () => {
         const start = Date.now();
         const { count, error } = await supabase
-          .from('face_embeddings')
+          .from('face_embeddings_v2')
           .select('id', { count: 'exact', head: true })
           .eq('branch_id', branchId);
         const duration = Date.now() - start;
@@ -289,7 +289,7 @@ export default function FaceAttendanceTestDashboard() {
       run: async () => {
         const start = Date.now();
         const { count, error } = await supabase
-          .from('face_attendance_records')
+          .from('face_attendance_logs')
           .select('id', { count: 'exact', head: true })
           .eq('branch_id', branchId);
         const duration = Date.now() - start;
@@ -306,12 +306,12 @@ export default function FaceAttendanceTestDashboard() {
       run: async () => {
         const start = Date.now();
         const { data, error } = await supabase
-          .from('ai_cameras')
-          .select('id, status')
+          .from('camera_devices')
+          .select('id, is_active')
           .eq('branch_id', branchId);
         const duration = Date.now() - start;
         if (!error) {
-          const active = data?.filter(c => c.status === 'active').length || 0;
+          const active = data?.filter(c => c.is_active).length || 0;
           return { status: 'passed', message: `${data?.length || 0} cameras (${active} active)`, duration };
         }
         return { status: 'failed', message: error.message, duration };
@@ -324,7 +324,7 @@ export default function FaceAttendanceTestDashboard() {
       run: async () => {
         const start = Date.now();
         const { count, error } = await supabase
-          .from('spoof_attempts')
+          .from('anti_spoofing_alerts')
           .select('id', { count: 'exact', head: true })
           .eq('branch_id', branchId);
         const duration = Date.now() - start;

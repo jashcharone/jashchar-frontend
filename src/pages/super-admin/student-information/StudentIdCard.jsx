@@ -13,8 +13,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { CreditCard, Printer, Search, Eye, Download, Loader2 } from 'lucide-react';
-import { format } from 'date-fns';
 import { sortClasses, sortSections } from '@/utils/classOrderUtils';
+import { formatDate } from '@/utils/dateUtils';
 
 const StudentIdCard = () => {
     const { user, currentSessionId } = useAuth();
@@ -135,6 +135,7 @@ const StudentIdCard = () => {
                     sections:sections!student_profiles_section_id_fkey(id, name)
                 `)
                 .eq('branch_id', branchId)
+                .eq('session_id', currentSessionId)
                 .eq('class_id', filters.class_id)
                 .or('status.is.null,status.eq.active');
             
@@ -300,7 +301,7 @@ const StudentIdCard = () => {
                         </div>
                         <div className="info-row">
                             <span className="info-label">DOB:</span>
-                            <span className="info-value">{student.date_of_birth ? format(new Date(student.date_of_birth), 'dd/MM/yyyy') : 'N/A'}</span>
+                            <span className="info-value">{student.date_of_birth ? formatDate(student.date_of_birth, 'N/A') : 'N/A'}</span>
                         </div>
                         <div className="info-row">
                             <span className="info-label">Blood:</span>

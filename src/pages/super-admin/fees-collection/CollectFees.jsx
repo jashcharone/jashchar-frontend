@@ -14,6 +14,16 @@ import { Search, Loader2, IndianRupee, Users, AlertCircle, CheckCircle2, Clock, 
 import { sortClasses, sortSections } from '@/utils/classOrderUtils';
 
 
+// Helper: chunk an array into smaller batches to avoid URL length limits
+const BATCH_SIZE = 50; // 50 UUIDs per batch (~1800 chars, well within Supabase URL limits)
+const chunkArray = (arr, size) => {
+    const chunks = [];
+    for (let i = 0; i < arr.length; i += size) {
+        chunks.push(arr.slice(i, i + size));
+    }
+    return chunks;
+};
+
 const CollectFees = () => {
     const navigate = useNavigate();
     const { roleSlug } = useParams();
@@ -307,65 +317,75 @@ const CollectFees = () => {
     // Fetch fee allocations and payments for fee progress display (including transport & hostel & ledger)
     const fetchFeesProgress = async (studentIds) => {
         try {
-            const [allocRes, payRes, transportRes, transportPayRes, hostelRes, hostelPayRes, refundsRes, ledgerRes] = await Promise.all([
-                // Academic fee allocations
-                supabase
-                    .from('student_fee_allocations')
-                    .select('student_id, fee_master:fee_masters(amount)')
-                    .in('student_id', studentIds)
-                    .eq('branch_id', branchId)
-                    .eq('session_id', currentSessionId),
-                // Academic fee payments (with discount and fine) - exclude ledger-linked payments
-                supabase
-                    .from('fee_payments')
-                    .select('student_id, amount, discount_amount, fine_paid')
-                    .in('student_id', studentIds)
-                    .eq('branch_id', branchId)
-                    .eq('session_id', currentSessionId)
-                    .is('reverted_at', null)
-                    .is('ledger_id', null),
-                // Transport fee details
-                supabase
-                    .from('student_transport_details')
-                    .select('student_id, transport_fee, billing_cycle')
-                    .in('student_id', studentIds)
-                    .eq('branch_id', branchId),
-                // Transport fee payments (with discount and fine)
-                supabase
-                    .from('transport_fee_payments')
-                    .select('student_id, amount, discount_amount, fine_paid')
-                    .in('student_id', studentIds)
-                    .eq('branch_id', branchId)
-                    .is('reverted_at', null),
-                // Hostel fee details
-                supabase
-                    .from('student_hostel_details')
-                    .select('student_id, hostel_fee, billing_cycle')
-                    .in('student_id', studentIds)
-                    .eq('branch_id', branchId),
-                // Hostel fee payments (with discount and fine)
-                supabase
-                    .from('hostel_fee_payments')
-                    .select('student_id, amount, discount_amount, fine_paid')
-                    .in('student_id', studentIds)
-                    .eq('branch_id', branchId)
-                    .is('reverted_at', null),
-                // Fee refunds (approved only - money returned to student)
-                supabase
-                    .from('fee_refunds')
-                    .select('student_id, refund_amount')
-                    .in('student_id', studentIds)
-                    .eq('branch_id', branchId)
-                    .eq('status', 'approved'),
-                // Fee Engine 3.0: Student Fee Ledger (with fee_source, exclude cancelled)
-                supabase
-                    .from('student_fee_ledger')
-                    .select('student_id, net_amount, paid_amount, discount_amount, fine_amount, fee_source')
-                    .in('student_id', studentIds)
-                    .eq('branch_id', branchId)
-                    .eq('session_id', currentSessionId)
-                    .neq('status', 'cancelled')
-            ]);
+            // Batch student IDs into chunks to avoid URL length limits (600 UUIDs = ~22KB URL → 500 error)
+            const chunks = chunkArray(studentIds, BATCH_SIZE);
+            
+            // Run all chunks in parallel, each chunk runs 8 queries in parallel
+            const chunkResults = await Promise.all(chunks.map(async (chunk) => {
+                const [allocRes, payRes, transportRes, transportPayRes, hostelRes, hostelPayRes, refundsRes, ledgerRes] = await Promise.all([
+                    supabase
+                        .from('student_fee_allocations')
+                        .select('student_id, fee_master:fee_masters(amount)')
+                        .in('student_id', chunk)
+                        .eq('branch_id', branchId)
+                        .eq('session_id', currentSessionId),
+                    supabase
+                        .from('fee_payments')
+                        .select('student_id, amount, discount_amount, fine_paid')
+                        .in('student_id', chunk)
+                        .eq('branch_id', branchId)
+                        .eq('session_id', currentSessionId)
+                        .is('reverted_at', null)
+                        .is('ledger_id', null),
+                    supabase
+                        .from('student_transport_details')
+                        .select('student_id, transport_fee, billing_cycle')
+                        .in('student_id', chunk)
+                        .eq('branch_id', branchId),
+                    supabase
+                        .from('transport_fee_payments')
+                        .select('student_id, amount, discount_amount, fine_paid')
+                        .in('student_id', chunk)
+                        .eq('branch_id', branchId)
+                        .is('reverted_at', null),
+                    supabase
+                        .from('student_hostel_details')
+                        .select('student_id, hostel_fee, billing_cycle')
+                        .in('student_id', chunk)
+                        .eq('branch_id', branchId),
+                    supabase
+                        .from('hostel_fee_payments')
+                        .select('student_id, amount, discount_amount, fine_paid')
+                        .in('student_id', chunk)
+                        .eq('branch_id', branchId)
+                        .is('reverted_at', null),
+                    supabase
+                        .from('fee_refunds')
+                        .select('student_id, refund_amount')
+                        .in('student_id', chunk)
+                        .eq('branch_id', branchId)
+                        .eq('status', 'approved'),
+                    supabase
+                        .from('student_fee_ledger')
+                        .select('student_id, net_amount, paid_amount, discount_amount, fine_amount, fee_source')
+                        .in('student_id', chunk)
+                        .eq('branch_id', branchId)
+                        .eq('session_id', currentSessionId)
+                        .neq('status', 'cancelled')
+                ]);
+                return { allocRes, payRes, transportRes, transportPayRes, hostelRes, hostelPayRes, refundsRes, ledgerRes };
+            }));
+
+            // Merge all chunk results into single arrays
+            const mergeData = (key) => chunkResults.flatMap(r => r[key]?.data || []);
+            const allocData = mergeData('allocRes');
+            const payData = mergeData('payRes');
+            const transportData = mergeData('transportRes');
+            const transportPayData = mergeData('transportPayRes');
+            const hostelData = mergeData('hostelRes');
+            const hostelPayData = mergeData('hostelPayRes');
+            const refundsData = mergeData('refundsRes');
+            const ledgerData = mergeData('ledgerRes');
 
             const progressMap = {};
             studentIds.forEach(id => {
@@ -376,16 +396,16 @@ const CollectFees = () => {
             // to avoid double counting with old tables
             const studentsWithLedgerTransport = new Set();
             const studentsWithLedgerHostel = new Set();
-            if (ledgerRes.data) {
-                ledgerRes.data.forEach(entry => {
+            if (ledgerData.length > 0) {
+                ledgerData.forEach(entry => {
                     if (entry.fee_source === 'transport') studentsWithLedgerTransport.add(entry.student_id);
                     if (entry.fee_source === 'hostel') studentsWithLedgerHostel.add(entry.student_id);
                 });
             }
 
             // Add academic fee allocations
-            if (allocRes.data) {
-                allocRes.data.forEach(alloc => {
+            if (allocData.length > 0) {
+                allocData.forEach(alloc => {
                     const amount = parseFloat(alloc.fee_master?.amount || 0);
                     if (progressMap[alloc.student_id]) {
                         progressMap[alloc.student_id].total += amount;
@@ -394,8 +414,8 @@ const CollectFees = () => {
             }
 
             // Add academic fee payments (with discount and fine)
-            if (payRes.data) {
-                payRes.data.forEach(pay => {
+            if (payData.length > 0) {
+                payData.forEach(pay => {
                     if (progressMap[pay.student_id]) {
                         progressMap[pay.student_id].paid += parseFloat(pay.amount || 0);
                         progressMap[pay.student_id].discount += parseFloat(pay.discount_amount || 0);
@@ -405,8 +425,8 @@ const CollectFees = () => {
             }
 
             // Add transport fees ONLY for students NOT in unified ledger (avoid double counting)
-            if (transportRes.data) {
-                transportRes.data.forEach(transport => {
+            if (transportData.length > 0) {
+                transportData.forEach(transport => {
                     if (studentsWithLedgerTransport.has(transport.student_id)) return; // Skip - ledger handles this
                     const fee = parseFloat(transport.transport_fee || 0);
                     const billingCycle = transport.billing_cycle || 'monthly';
@@ -425,8 +445,8 @@ const CollectFees = () => {
             }
 
             // Add transport fee payments ONLY for students NOT in unified ledger
-            if (transportPayRes.data) {
-                transportPayRes.data.forEach(pay => {
+            if (transportPayData.length > 0) {
+                transportPayData.forEach(pay => {
                     if (studentsWithLedgerTransport.has(pay.student_id)) return;
                     if (progressMap[pay.student_id]) {
                         progressMap[pay.student_id].paid += parseFloat(pay.amount || 0);
@@ -437,8 +457,8 @@ const CollectFees = () => {
             }
 
             // Add hostel fees ONLY for students NOT in unified ledger (avoid double counting)
-            if (hostelRes.data) {
-                hostelRes.data.forEach(hostel => {
+            if (hostelData.length > 0) {
+                hostelData.forEach(hostel => {
                     if (studentsWithLedgerHostel.has(hostel.student_id)) return; // Skip - ledger handles this
                     const fee = parseFloat(hostel.hostel_fee || 0);
                     const billingCycle = hostel.billing_cycle || 'monthly';
@@ -457,8 +477,8 @@ const CollectFees = () => {
             }
 
             // Add hostel fee payments ONLY for students NOT in unified ledger
-            if (hostelPayRes.data) {
-                hostelPayRes.data.forEach(pay => {
+            if (hostelPayData.length > 0) {
+                hostelPayData.forEach(pay => {
                     if (studentsWithLedgerHostel.has(pay.student_id)) return;
                     if (progressMap[pay.student_id]) {
                         progressMap[pay.student_id].paid += parseFloat(pay.amount || 0);
@@ -469,8 +489,8 @@ const CollectFees = () => {
             }
 
             // Add approved refunds (money returned to student, increases their balance)
-            if (refundsRes.data) {
-                refundsRes.data.forEach(refund => {
+            if (refundsData.length > 0) {
+                refundsData.forEach(refund => {
                     if (progressMap[refund.student_id]) {
                         progressMap[refund.student_id].refunded += parseFloat(refund.refund_amount || 0);
                     }
@@ -478,8 +498,8 @@ const CollectFees = () => {
             }
 
             // Fee Engine 3.0: Add student_fee_ledger entries (includes academic + hostel + transport)
-            if (ledgerRes.data) {
-                ledgerRes.data.forEach(entry => {
+            if (ledgerData.length > 0) {
+                ledgerData.forEach(entry => {
                     if (progressMap[entry.student_id]) {
                         progressMap[entry.student_id].total += parseFloat(entry.net_amount || 0);
                         progressMap[entry.student_id].paid += parseFloat(entry.paid_amount || 0);
@@ -506,14 +526,18 @@ const CollectFees = () => {
     // Fetch hostel assignments for students
     const fetchHostelAssignments = async (studentIds) => {
         try {
-            const { data: hostelData } = await supabase
-                .from('student_hostel_details')
-                .select('student_id, hostel:hostels(name), room:room_id(room_number_name)')
-                .in('student_id', studentIds);
+            const chunks = chunkArray(studentIds, BATCH_SIZE);
+            const allHostelData = (await Promise.all(chunks.map(async (chunk) => {
+                const { data } = await supabase
+                    .from('student_hostel_details')
+                    .select('student_id, hostel:hostels(name), room:room_id(room_number_name)')
+                    .in('student_id', chunk);
+                return data || [];
+            }))).flat();
             
             const hostelMap = {};
-            if (hostelData) {
-                hostelData.forEach(h => {
+            if (allHostelData.length > 0) {
+                allHostelData.forEach(h => {
                     hostelMap[h.student_id] = {
                         hostel_name: h.hostel?.name || 'Hostel',
                         room_no: h.room?.room_number_name || '-'
@@ -529,14 +553,18 @@ const CollectFees = () => {
     // Fetch transport assignments for students
     const fetchTransportAssignments = async (studentIds) => {
         try {
-            const { data: transportData } = await supabase
-                .from('student_transport_details')
-                .select('student_id, route:transport_routes(route_title), pickup:transport_pickup_points(name)')
-                .in('student_id', studentIds);
+            const chunks = chunkArray(studentIds, BATCH_SIZE);
+            const allTransportData = (await Promise.all(chunks.map(async (chunk) => {
+                const { data } = await supabase
+                    .from('student_transport_details')
+                    .select('student_id, route:transport_routes(route_title), pickup:transport_pickup_points(name)')
+                    .in('student_id', chunk);
+                return data || [];
+            }))).flat();
             
             const transportMap = {};
-            if (transportData) {
-                transportData.forEach(t => {
+            if (allTransportData.length > 0) {
+                allTransportData.forEach(t => {
                     transportMap[t.student_id] = {
                         route: t.route?.route_title || 'Transport',
                         pickup_point: t.pickup?.name || '-'

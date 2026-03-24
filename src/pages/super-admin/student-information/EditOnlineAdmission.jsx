@@ -93,7 +93,8 @@ const EditOnlineAdmission = () => {
             ...formData,
             updated_at: new Date()
         })
-        .eq('id', id);
+        .eq('id', id)
+        .eq('branch_id', selectedBranch?.id || user?.profile?.branch_id);
 
       if (error) throw error;
       toast({ title: 'Saved successfully' });
@@ -148,7 +149,8 @@ const EditOnlineAdmission = () => {
         await supabase
             .from('online_admissions')
             .update({ enrolled_status: 'Enrolled' })
-            .eq('id', id);
+            .eq('id', id)
+            .eq('branch_id', selectedBranch?.id || user?.profile?.branch_id);
             
         setFormData(prev => ({ ...prev, enrolled_status: 'Enrolled' }));
         setSuccessCredentials({ username: tempUsername, password: tempPassword });

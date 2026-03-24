@@ -39,6 +39,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format, parseISO, differenceInYears, differenceInMonths } from 'date-fns';
+import { formatDate, formatDateTime } from '@/utils/dateUtils';
 import StudentProfileFeesTab from './StudentProfileFeesTab';
 import StudentProfileAttendanceTab from './StudentProfileAttendanceTab';
 import StudentProfileHealthTab from './StudentProfileHealthTab';
@@ -953,7 +954,7 @@ const StudentProfile = () => {
                 </div>
                 <div className="flex items-center gap-2 bg-white/10 px-4 py-2 rounded-full">
                   <Calendar className="h-4 w-4" />
-                  <span className="font-semibold">{student.date_of_birth ? format(parseISO(student.date_of_birth), 'dd MMM yyyy') : 'N/A'}</span>
+                  <span className="font-semibold">{student.date_of_birth ? formatDate(student.date_of_birth, 'N/A') : 'N/A'}</span>
                   <span className="text-white/60">DOB</span>
                 </div>
               </div>
@@ -1155,7 +1156,7 @@ const StudentProfile = () => {
                     <InfoItem icon={User} label="Full Name" value={student.full_name} />
                     <InfoItem icon={Hash} label="Admission No" value={student.school_code} copyable />
                     <InfoItem icon={GraduationCap} label="Roll Number" value={student.roll_number} />
-                    <InfoItem icon={Calendar} label="Date of Birth" value={student.date_of_birth ? format(parseISO(student.date_of_birth), 'dd MMMM yyyy') : null} />
+                    <InfoItem icon={Calendar} label="Date of Birth" value={student.date_of_birth ? formatDate(student.date_of_birth) : null} />
                     <InfoItem icon={User} label="Gender" value={student.gender?.charAt(0).toUpperCase() + student.gender?.slice(1)} />
                     <InfoItem icon={Heart} label="Blood Group" value={student.blood_group} />
                     <InfoItem icon={Phone} label="Phone" value={student.phone} copyable />
@@ -1270,7 +1271,7 @@ const StudentProfile = () => {
                 <InfoItem icon={User} label="Last Name" value={student.last_name} />
                 <InfoItem icon={User} label="First Name (Kannada)" value={student.first_name_kannada} />
                 <InfoItem icon={User} label="Last Name (Kannada)" value={student.last_name_kannada} />
-                <InfoItem icon={Calendar} label="Date of Birth" value={student.date_of_birth ? format(parseISO(student.date_of_birth), 'dd MMMM yyyy') : null} />
+                <InfoItem icon={Calendar} label="Date of Birth" value={student.date_of_birth ? formatDate(student.date_of_birth) : null} />
                 <InfoItem icon={Clock} label="Age" value={calculateAge(student.date_of_birth)} />
                 <InfoItem icon={User} label="Gender" value={student.gender} />
                 <InfoItem icon={Heart} label="Blood Group" value={student.blood_group} />
@@ -1322,7 +1323,7 @@ const StudentProfile = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 <InfoItem icon={Hash} label="Admission Number" value={student.school_code} copyable />
                 <InfoItem icon={GraduationCap} label="Roll Number" value={student.roll_number} />
-                <InfoItem icon={Calendar} label="Admission Date" value={student.admission_date ? format(parseISO(student.admission_date), 'dd MMM yyyy') : null} />
+                <InfoItem icon={Calendar} label="Admission Date" value={student.admission_date ? formatDate(student.admission_date) : null} />
                 <InfoItem icon={School} label="Class" value={student.class?.name} />
                 <InfoItem icon={Users} label="Section" value={student.section?.name} />
                 <InfoItem icon={CalendarDays} label="Session" value={student.session?.name} />
@@ -1338,7 +1339,7 @@ const StudentProfile = () => {
                 <InfoItem icon={School} label="Previous School Name" value={student.previous_school_name} />
                 <InfoItem icon={GraduationCap} label="Previous Class" value={student.previous_class} />
                 <InfoItem icon={FileText} label="TC Number" value={student.tc_number} />
-                <InfoItem icon={Calendar} label="TC Date" value={student.tc_date ? format(parseISO(student.tc_date), 'dd MMM yyyy') : null} />
+                <InfoItem icon={Calendar} label="TC Date" value={student.tc_date ? formatDate(student.tc_date) : null} />
               </div>
             </GlassCard>
 
@@ -1503,8 +1504,8 @@ const StudentProfile = () => {
                   <InfoItem icon={BedDouble} label="Room Type" value={student.hostel?.room_type} />
                   <InfoItem icon={Hash} label="Room Number" value={student.hostel?.room_number} />
                   <InfoItem icon={Hash} label="Bed Number" value={student.hostel?.bed_number} />
-                  <InfoItem icon={Calendar} label="Check-in Date" value={student.hostel?.check_in_date ? format(parseISO(student.hostel.check_in_date), 'dd MMM yyyy') : null} />
-                  <InfoItem icon={Calendar} label="Check-out Date" value={student.hostel?.check_out_date ? format(parseISO(student.hostel.check_out_date), 'dd MMM yyyy') : null} />
+                  <InfoItem icon={Calendar} label="Check-in Date" value={student.hostel?.check_in_date ? formatDate(student.hostel.check_in_date) : null} />
+                  <InfoItem icon={Calendar} label="Check-out Date" value={student.hostel?.check_out_date ? formatDate(student.hostel.check_out_date) : null} />
                   <InfoItem icon={IndianRupee} label="Hostel Fee" value={student.hostel?.hostel_fee ? `₹${student.hostel.hostel_fee}` : null} />
                   <InfoItem icon={Phone} label="Guardian Contact" value={student.hostel?.guardian_contact} copyable />
                   <InfoItem icon={Phone} label="Emergency Contact" value={student.hostel?.emergency_contact} copyable />
@@ -1607,7 +1608,7 @@ const StudentProfile = () => {
                             <p className="text-sm font-medium">{doc.name}</p>
                             {doc.uploaded_at && (
                               <p className="text-xs text-muted-foreground">
-                                Uploaded: {format(parseISO(doc.uploaded_at), 'dd MMM yyyy, hh:mm a')}
+                                Uploaded: {formatDateTime(doc.uploaded_at)}
                               </p>
                             )}
                           </div>

@@ -24,6 +24,7 @@ import {
   Flame, Sparkles, Eye, Filter
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { formatDate } from '@/utils/dateUtils';
 import { 
   format, parseISO, startOfMonth, endOfMonth, eachDayOfInterval, 
   isSameMonth, isToday, isSunday, getDay, subMonths, addMonths,
@@ -429,7 +430,7 @@ const RecentAttendanceList = ({ attendanceData }) => {
               </div>
               <div>
                 <p className="font-medium">{format(parseISO(record.date), 'EEEE')}</p>
-                <p className="text-xs text-muted-foreground">{format(parseISO(record.date), 'dd MMM yyyy')}</p>
+                <p className="text-xs text-muted-foreground">{formatDate(record.date)}</p>
               </div>
             </div>
             <div className="flex items-center gap-4">

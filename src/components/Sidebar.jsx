@@ -154,7 +154,7 @@ const Sidebar = ({ role, isSidebarOpen, isMobile, toggleSidebar, closeSidebar, o
         if (!isAttendanceModule || !item.submenu) return item;
         
         const filteredSubmenu = item.submenu.filter(sub => {
-          if (sub.disabled) return false; // Remove separators like "── Advanced ──"
+          if (sub.disabled) return true; // Keep section dividers like "── Advanced ──"
           return isPathEnabled(sub.path);
         });
         
@@ -192,8 +192,8 @@ const Sidebar = ({ role, isSidebarOpen, isMobile, toggleSidebar, closeSidebar, o
       
       if (item.submenu && item.submenu.length > 0) {
         const visibleSubmenu = item.submenu.filter(sub => {
-          // Skip disabled items (separators like "── Advanced ──")
-          if (sub.disabled) return false;
+          // Keep section dividers like "── Advanced ──"
+          if (sub.disabled) return true;
           
           // ✅ ATTENDANCE MODULE FILTERING - Check if path is enabled by Master Admin
           if (isAttendanceModule && hasAttendanceConfig) {
@@ -452,7 +452,20 @@ const Sidebar = ({ role, isSidebarOpen, isMobile, toggleSidebar, closeSidebar, o
     }
 
     // Handle divider items - render as non-clickable separator
-    if (item.divider || item.path?.startsWith('#')) {
+    if (item.disabled || item.divider || item.path?.startsWith('#')) {
+      // Section header dividers: show title text if available
+      const label = item.title?.replace(/^──\s*/, '').replace(/\s*──$/, '').trim();
+      if (label && label !== '---') {
+        return (
+          <div className="flex items-center gap-2 px-4 py-1.5 mt-3 mb-1 mx-3 select-none">
+            <div className="h-[1px] w-3 opacity-20" style={{ backgroundColor: settings.colors.sidebarMutedForeground }} />
+            <span className="text-[10px] font-semibold uppercase tracking-widest opacity-40 whitespace-nowrap" style={{ color: settings.colors.sidebarMutedForeground }}>
+              {label}
+            </span>
+            <div className="h-[1px] flex-1 opacity-20" style={{ backgroundColor: settings.colors.sidebarMutedForeground }} />
+          </div>
+        );
+      }
       return (
         <div className="flex items-center justify-center px-4 py-1 my-1 mx-3 opacity-30">
           <div className="h-[1px] flex-1" style={{ backgroundColor: settings.colors.sidebarMutedForeground }} />

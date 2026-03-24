@@ -90,13 +90,19 @@ export const BASE_SIDEBAR = {
       badge: 'NEW',
       badgeColor: 'purple',
       submenu: [
+        // ── Workflow ──
+        { title: '── Workflow ──', path: '#ai-eval-workflow', disabled: true },
         { title: 'Dashboard', path: ROUTES.SUPER_ADMIN.AI_EVALUATION_DASHBOARD },
         { title: 'Evaluation Sessions', path: ROUTES.SUPER_ADMIN.AI_EVALUATION_SESSIONS },
         { title: 'Create Session', path: ROUTES.SUPER_ADMIN.AI_EVALUATION_CREATE },
         { title: 'Upload Papers', path: ROUTES.SUPER_ADMIN.AI_EVALUATION_UPLOAD },
         { title: 'Question Mapping', path: ROUTES.SUPER_ADMIN.AI_EVALUATION_QUESTION_MAPPING },
+        // ── Review & Results ──
+        { title: '── Review & Results ──', path: '#ai-eval-review', disabled: true },
         { title: 'Teacher Review', path: ROUTES.SUPER_ADMIN.AI_EVALUATION_REVIEW },
         { title: 'Final Marks', path: ROUTES.SUPER_ADMIN.AI_EVALUATION_FINAL_MARKS },
+        // ── Analytics & Settings ──
+        { title: '── Analytics & Settings ──', path: '#ai-eval-analytics', disabled: true },
         { title: 'Analytics', path: ROUTES.SUPER_ADMIN.AI_EVALUATION_ANALYTICS },
         { title: 'Settings', path: ROUTES.SUPER_ADMIN.AI_EVALUATION_SETTINGS },
       ]
@@ -107,12 +113,18 @@ export const BASE_SIDEBAR = {
       title: 'Front Office',
       icon: Building,
       submenu: [
+        // ── Enquiry & Visitors ──
+        { title: '── Enquiry & Visitors ──', path: '#fo-enquiry', disabled: true },
         { title: '📋 Admission Enquiry', path: ROUTES.SUPER_ADMIN.ADMISSION_ENQUIRY },
         { title: '📖 Visitor Book', path: ROUTES.SUPER_ADMIN.VISITOR_BOOK },
         { title: '📞 Phone Call Log', path: ROUTES.SUPER_ADMIN.PHONE_CALL_LOG },
+        // ── Postal & Complaints ──
+        { title: '── Postal & Complaints ──', path: '#fo-postal', disabled: true },
         { title: '📤 Postal Dispatch', path: ROUTES.SUPER_ADMIN.POSTAL_DISPATCH },
         { title: '📥 Postal Receive', path: ROUTES.SUPER_ADMIN.POSTAL_RECEIVE },
         { title: '⚠️ Complain', path: ROUTES.SUPER_ADMIN.COMPLAIN },
+        // ── Settings ──
+        { title: '── Settings ──', path: '#fo-settings', disabled: true },
         { title: '⚙️ Setup Front Office', path: ROUTES.SUPER_ADMIN.SETUP_FRONT_OFFICE },
       ]
     },
@@ -120,27 +132,35 @@ export const BASE_SIDEBAR = {
       title: 'Student Information',
       icon: Users,
       submenu: [
-        // ── Core ──
+        // ── Dashboard ──
         { title: '📊 Dashboard', path: ROUTES.SUPER_ADMIN.STUDENT_DASHBOARD },
+        // ── Admission & Enrollment ──
+        { title: '── Admission & Enrollment ──', path: '#student-admission', disabled: true },
         { title: '📝 Student Admission', path: ROUTES.SUPER_ADMIN.STUDENT_ADMISSION },
         { title: '⚙️ Admission Form Settings', path: ROUTES.SUPER_ADMIN.ADMISSION_FORM_SETTINGS },
-        { title: '👨‍🎓 Student Details', path: ROUTES.SUPER_ADMIN.STUDENT_DETAILS },
         { title: '🌐 Online Admission', path: ROUTES.SUPER_ADMIN.ONLINE_ADMISSION_LIST },
-        // ── Documents & Certificates ──
-        { title: '📜 Transfer Certificate', path: ROUTES.SUPER_ADMIN.TRANSFER_CERTIFICATE },
-        { title: '📋 Document Checklist', path: ROUTES.SUPER_ADMIN.DOCUMENT_CHECKLIST },
-        // ── Tools ──
+        // ── Student Records ──
+        { title: '── Student Records ──', path: '#student-records', disabled: true },
+        { title: '👨‍🎓 Student Details', path: ROUTES.SUPER_ADMIN.STUDENT_DETAILS },
+        { title: '👥 Multi Class Student', path: ROUTES.SUPER_ADMIN.MULTI_CLASS_STUDENT },
         { title: '📤 Bulk Upload', path: ROUTES.SUPER_ADMIN.STUDENT_BULK_UPLOAD },
+        // ── Identity & Documents ──
+        { title: '── Identity & Documents ──', path: '#student-identity', disabled: true },
         { title: '🪪 ID Card', path: ROUTES.SUPER_ADMIN.STUDENT_ID_CARD },
         { title: '🆔 ID Card Designer', path: ROUTES.SUPER_ADMIN.STUDENT_ID_CARD_DESIGNER },
+        { title: '📜 Transfer Certificate', path: ROUTES.SUPER_ADMIN.TRANSFER_CERTIFICATE },
+        { title: '📋 Document Checklist', path: ROUTES.SUPER_ADMIN.DOCUMENT_CHECKLIST },
+        // ── Attendance & Communication ──
+        { title: '── Attendance & Communication ──', path: '#student-attendance', disabled: true },
+        { title: '📅 Attendance Dashboard', path: ROUTES.SUPER_ADMIN.STUDENT_ATTENDANCE_DASHBOARD },
         { title: '📨 Communication', path: ROUTES.SUPER_ADMIN.STUDENT_COMMUNICATION },
         // ── Analytics & AI ──
-        { title: '📅 Attendance Dashboard', path: ROUTES.SUPER_ADMIN.STUDENT_ATTENDANCE_DASHBOARD },
+        { title: '── Analytics & AI ──', path: '#student-analytics', disabled: true },
         { title: '📊 Student Analysis', path: ROUTES.SUPER_ADMIN.STUDENT_ANALYSIS },
         { title: '🧠 Advanced Analytics', path: ROUTES.SUPER_ADMIN.STUDENT_ANALYTICS_2 },
         { title: '🤖 AI Insights', path: ROUTES.SUPER_ADMIN.STUDENT_AI_INSIGHTS },
-        // ── Management ──
-        { title: '👥 Multi Class Student', path: ROUTES.SUPER_ADMIN.MULTI_CLASS_STUDENT },
+        // ── Student Status Management ──
+        { title: '── Status Management ──', path: '#student-status', disabled: true },
         { title: '🚫 Disabled Students', path: ROUTES.SUPER_ADMIN.DISABLED_STUDENTS },
         { title: '❌ Disable Reason', path: ROUTES.SUPER_ADMIN.DISABLE_REASON },
         { title: '🗑️ Bulk Delete', path: ROUTES.SUPER_ADMIN.BULK_DELETE },
@@ -150,8 +170,12 @@ export const BASE_SIDEBAR = {
       title: 'Behaviour Records',
       icon: AlertTriangle,
       submenu: [
+        // ── Incidents ──
+        { title: '── Incidents ──', path: '#beh-incidents', disabled: true },
         { title: '📌 Assign Incident', path: ROUTES.SUPER_ADMIN.ASSIGN_INCIDENT },
         { title: '⚠️ Incidents', path: ROUTES.SUPER_ADMIN.INCIDENTS },
+        // ── Reports & Settings ──
+        { title: '── Reports & Settings ──', path: '#beh-reports', disabled: true },
         { title: '📊 Reports', path: ROUTES.SUPER_ADMIN.BEHAVIOUR_REPORTS },
         { title: '⚙️ Setting', path: ROUTES.SUPER_ADMIN.BEHAVIOUR_SETTING },
       ]
@@ -189,6 +213,8 @@ export const BASE_SIDEBAR = {
       title: 'Income',
       icon: IndianRupee,
       submenu: [
+         // ── Income Management ──
+         { title: '── Income Management ──', path: '#income-mgmt', disabled: true },
          { title: '💰 Income', path: ROUTES.SUPER_ADMIN.INCOME },
          { title: '➕ Add Income', path: ROUTES.SUPER_ADMIN.ADD_INCOME },
          { title: '📂 Income Head', path: ROUTES.SUPER_ADMIN.INCOME_HEAD },
@@ -198,6 +224,8 @@ export const BASE_SIDEBAR = {
       title: 'Expenses',
       icon: IndianRupee,
       submenu: [
+         // ── Expense Management ──
+         { title: '── Expense Management ──', path: '#expense-mgmt', disabled: true },
          { title: '💸 Expense', path: ROUTES.SUPER_ADMIN.EXPENSE },
          { title: '➕ Add Expense', path: ROUTES.SUPER_ADMIN.ADD_EXPENSE },
          { title: '📂 Expense Head', path: ROUTES.SUPER_ADMIN.EXPENSE_HEAD },
@@ -207,12 +235,15 @@ export const BASE_SIDEBAR = {
       title: 'Attendance',
       icon: Calendar,
       submenu: [
+        // ── Manual Attendance ──
+        { title: '── Manual Attendance ──', path: '#att-manual', disabled: true },
         { title: '👨‍🎓 Student Attendance', path: ROUTES.SUPER_ADMIN.STUDENT_ATTENDANCE },
         { title: '📅 Attendance By Date', path: ROUTES.SUPER_ADMIN.ATTENDANCE_BY_DATE },
         { title: '✅ Approve Leave', path: ROUTES.SUPER_ADMIN.APPROVE_LEAVE },
         { title: '👨‍💼 Staff Attendance', path: ROUTES.SUPER_ADMIN.STAFF_ATTENDANCE },
         { title: '📊 Attendance Report', path: ROUTES.SUPER_ADMIN.ATTENDANCE_REPORT },
-        { title: '── Advanced ──', path: '#hostel-advanced', disabled: true },
+        // ── Smart Attendance ──
+        { title: '── Smart Attendance ──', path: '#att-smart', disabled: true },
         { title: '📊 Live Dashboard', path: ROUTES.SUPER_ADMIN.LIVE_ATTENDANCE_DASHBOARD },
         { title: '📱 QR Code Generator', path: ROUTES.SUPER_ADMIN.QR_CODE_GENERATOR },
         { title: '🔌 Device Management', path: ROUTES.SUPER_ADMIN.DEVICE_MANAGEMENT },
@@ -222,11 +253,15 @@ export const BASE_SIDEBAR = {
         { title: '📹 AI Camera Management', path: ROUTES.SUPER_ADMIN.AI_CAMERA_MANAGEMENT },
         { title: '🧠 FAISS Index Management', path: ROUTES.SUPER_ADMIN.FAISS_INDEX_MANAGEMENT },
         { title: '🛡️ Spoof Alerts', path: ROUTES.SUPER_ADMIN.SPOOF_ALERTS },
+        // ── Face Analytics ──
+        { title: '── Face Analytics ──', path: '#att-face-analytics', disabled: true },
         { title: '📊 Face Analytics Dashboard', path: ROUTES.SUPER_ADMIN.FACE_ATTENDANCE_DASHBOARD },
         { title: '🔥 Recognition Heatmap', path: ROUTES.SUPER_ADMIN.ATTENDANCE_HEATMAP },
         { title: '⏰ Late Arrivals', path: ROUTES.SUPER_ADMIN.LATE_ARRIVAL_TRACKING },
         { title: '👁️ Unknown Faces', path: ROUTES.SUPER_ADMIN.UNKNOWN_FACE_MANAGEMENT },
         { title: '📄 Attendance Reports', path: ROUTES.SUPER_ADMIN.FACE_ATTENDANCE_REPORTS },
+        // ── Settings & Tools ──
+        { title: '── Settings & Tools ──', path: '#att-settings', disabled: true },
         { title: '🔔 Notification Settings', path: ROUTES.SUPER_ADMIN.ATTENDANCE_NOTIFICATION_SETTINGS },
         { title: '🧪 System Test Dashboard', path: ROUTES.SUPER_ADMIN.FACE_ATTENDANCE_TEST_DASHBOARD },
         { title: '📖 Help & Documentation', path: ROUTES.SUPER_ADMIN.FACE_ATTENDANCE_HELP },
@@ -241,54 +276,55 @@ export const BASE_SIDEBAR = {
       title: 'Examinations',
       icon: FileText,
       submenu: [
-        // Foundation (Phase 1)
+        // ── Foundation & Setup ──
+        { title: '── Foundation & Setup ──', path: '#exam-foundation', disabled: true },
         { title: '🏫 Board Configuration', path: ROUTES.SUPER_ADMIN.BOARD_CONFIGURATION },
         { title: '📆 Term Management', path: ROUTES.SUPER_ADMIN.TERM_MANAGEMENT },
         { title: '📝 Exam Type Master', path: ROUTES.SUPER_ADMIN.EXAM_TYPE_MASTER },
         { title: '⚖️ Grade Scale Builder', path: ROUTES.SUPER_ADMIN.GRADE_SCALE_BUILDER },
         { title: '📂 Exam Group Setup', path: ROUTES.SUPER_ADMIN.EXAM_GROUP_MANAGEMENT },
-        { title: '---', path: '#phase2-divider', divider: true },
-        // Exam Planning (Phase 2)
+        // ── Exam Planning ──
+        { title: '── Exam Planning ──', path: '#exam-planning', disabled: true },
         { title: '📋 Exam Management', path: ROUTES.SUPER_ADMIN.EXAM_MANAGEMENT },
         { title: '👥 Student Assignment', path: ROUTES.SUPER_ADMIN.STUDENT_ASSIGNMENT },
-        { title: '---', path: '#phase3-divider', divider: true },
-        // Scheduling Engine (Phase 3)
+        // ── Scheduling & Logistics ──
+        { title: '── Scheduling & Logistics ──', path: '#exam-scheduling', disabled: true },
         { title: '🏛️ Room Management', path: ROUTES.SUPER_ADMIN.ROOM_MANAGEMENT },
         { title: '👨‍🏫 Invigilator Duty', path: ROUTES.SUPER_ADMIN.INVIGILATOR_DUTY },
         { title: '💺 Seating Arrangement', path: ROUTES.SUPER_ADMIN.SEATING_ARRANGEMENT },
         { title: '📅 Exam Calendar', path: ROUTES.SUPER_ADMIN.EXAM_CALENDAR },
-        { title: '---', path: '#phase4-divider', divider: true },
-        // Evaluation Engine (Phase 4)
+        // ── Evaluation Engine ──
+        { title: '── Evaluation Engine ──', path: '#exam-evaluation', disabled: true },
         { title: '✍️ Marks Entry (New)', path: ROUTES.SUPER_ADMIN.MARKS_ENTRY_NEW },
         { title: '📊 Internal Assessment', path: ROUTES.SUPER_ADMIN.INTERNAL_ASSESSMENT },
         { title: '🧪 Practical Marks', path: ROUTES.SUPER_ADMIN.PRACTICAL_MARKS },
         { title: '📤 Bulk Upload', path: ROUTES.SUPER_ADMIN.BULK_UPLOAD_MARKS },
-        { title: '---', path: '#phase5-divider', divider: true },
-        // Moderation & Results (Phase 5)
+        // ── Results & Moderation ──
+        { title: '── Results & Moderation ──', path: '#exam-results', disabled: true },
         { title: '🎁 Grace Marks', path: ROUTES.SUPER_ADMIN.GRACE_MARKS },
         { title: '⚖️ Moderation Engine', path: ROUTES.SUPER_ADMIN.MODERATION_ENGINE },
         { title: '📋 Result Calculation', path: ROUTES.SUPER_ADMIN.RESULT_CALCULATION },
         { title: '🏆 Rank Generation', path: ROUTES.SUPER_ADMIN.RANK_GENERATION },
-        { title: '---', path: '#phase6-divider', divider: true },
-        // Documents (Phase 6)
+        // ── Documents & Print ──
+        { title: '── Documents & Print ──', path: '#exam-documents', disabled: true },
         { title: '🪪 Admit Card Designer', path: ROUTES.SUPER_ADMIN.ADMIT_CARD_DESIGNER },
         { title: '📜 Marksheet Designer', path: ROUTES.SUPER_ADMIN.MARKSHEET_DESIGNER },
         { title: '📁 Report Card Designer', path: ROUTES.SUPER_ADMIN.REPORT_CARD_DESIGNER },
         { title: '🖨️ Bulk Document Generator', path: ROUTES.SUPER_ADMIN.BULK_DOCUMENT_GENERATOR },
-        { title: '---', path: '#phase7-divider', divider: true },
-        // Analytics & Online Exam (Phase 7)
+        // ── Analytics & Online ──
+        { title: '── Analytics & Online ──', path: '#exam-analytics', disabled: true },
         { title: '📊 Performance Dashboard', path: ROUTES.SUPER_ADMIN.PERFORMANCE_DASHBOARD },
         { title: '📚 Question Bank', path: ROUTES.SUPER_ADMIN.QUESTION_BANK },
         { title: '💻 Online Exam', path: ROUTES.SUPER_ADMIN.ONLINE_EXAM },
-        { title: '---', path: '#phase8-divider', divider: true },
-        // Advanced Configuration (Phase 8)
+        // ── Advanced Configuration ──
+        { title: '── Advanced Configuration ──', path: '#exam-advanced', disabled: true },
         { title: '🏅 Division Config', path: ROUTES.SUPER_ADMIN.DIVISION_CONFIG },
         { title: '⚖️ Subject Weightage', path: ROUTES.SUPER_ADMIN.SUBJECT_WEIGHTAGE },
         { title: '📐 Assessment Pattern', path: ROUTES.SUPER_ADMIN.ASSESSMENT_PATTERN },
         { title: '🔗 Exam Linking', path: ROUTES.SUPER_ADMIN.EXAM_LINKING },
         { title: '📝 Question Blueprint', path: ROUTES.SUPER_ADMIN.QUESTION_BLUEPRINT },
-        { title: '---', path: '#phase8b-divider', divider: true },
-        // Verification & Revaluation (Phase 8)
+        // ── Verification & Revaluation ──
+        { title: '── Verification & Revaluation ──', path: '#exam-verification', disabled: true },
         { title: '✅ Verification Dashboard', path: ROUTES.SUPER_ADMIN.VERIFICATION_DASHBOARD },
         { title: '📩 Revaluation Request', path: ROUTES.SUPER_ADMIN.REVALUATION_REQUEST },
         { title: '🔄 Revaluation Process', path: ROUTES.SUPER_ADMIN.REVALUATION_PROCESS },
@@ -300,9 +336,13 @@ export const BASE_SIDEBAR = {
       title: 'Lesson Plan',
       icon: BookOpen,
       submenu: [
+        // ── Homework ──
+        { title: '── Homework ──', path: '#lp-homework', disabled: true },
         { title: '➕ Add Homework', path: ROUTES.SUPER_ADMIN.ADD_HOMEWORK },
         { title: '📝 Homework List', path: ROUTES.SUPER_ADMIN.HOMEWORK },
         { title: '✅ Evaluate Homework', path: ROUTES.SUPER_ADMIN.EVALUATE_HOMEWORK },
+        // ── Lessons & Syllabus ──
+        { title: '── Lessons & Syllabus ──', path: '#lp-lessons', disabled: true },
         { title: '📖 Manage Lessons', path: ROUTES.SUPER_ADMIN.MANAGE_LESSONS },
         { title: '📊 Syllabus Status', path: ROUTES.SUPER_ADMIN.SYLLABUS_STATUS },
       ]
@@ -359,9 +399,10 @@ export const BASE_SIDEBAR = {
       title: 'Human Resource',
       icon: Briefcase,
       submenu: [
+        // ── Dashboard ──
         { title: '📊 HR Dashboard', path: ROUTES.SUPER_ADMIN.HR_DASHBOARD },
-        { title: '---', type: 'divider' },
-        { title: '👥 Staff Management', type: 'header' },
+        // ── Staff Management ──
+        { title: '── Staff Management ──', path: '#hr-staff', disabled: true },
         { title: '👥 Staff Directory', path: ROUTES.SUPER_ADMIN.STAFF_DIRECTORY },
         { title: '➕ Add Staff', path: ROUTES.SUPER_ADMIN.ADD_EMPLOYEE },
         { title: '🏛️ Department', path: ROUTES.SUPER_ADMIN.DEPARTMENTS },
@@ -370,25 +411,25 @@ export const BASE_SIDEBAR = {
         { title: '📊 Performance', path: ROUTES.SUPER_ADMIN.EMPLOYEE_PERFORMANCE },
         { title: '📄 Documents', path: ROUTES.SUPER_ADMIN.EMPLOYEE_DOCUMENTS },
         { title: '🪪 Staff ID Card', path: ROUTES.SUPER_ADMIN.HR_STAFF_ID_CARD },
-        { title: '---', type: 'divider' },
-        { title: '🎯 Recruitment', type: 'header' },
+        // ── Recruitment ──
+        { title: '── Recruitment ──', path: '#hr-recruitment', disabled: true },
         { title: '📢 Job Postings', path: ROUTES.SUPER_ADMIN.HR_JOB_POSTINGS },
         { title: '📋 Applications', path: ROUTES.SUPER_ADMIN.HR_APPLICATIONS },
         { title: '🗓️ Interviews', path: ROUTES.SUPER_ADMIN.HR_INTERVIEWS },
-        { title: '---', type: 'divider' },
-        { title: '🚀 Onboarding', type: 'header' },
+        // ── Onboarding ──
+        { title: '── Onboarding ──', path: '#hr-onboarding', disabled: true },
         { title: '✅ Checklists', path: ROUTES.SUPER_ADMIN.HR_ONBOARDING_CHECKLISTS },
         { title: '👤 Employee Onboarding', path: ROUTES.SUPER_ADMIN.HR_ONBOARDING_EMPLOYEE },
-        { title: '---', type: 'divider' },
-        { title: '📅 Leave Management', type: 'header' },
+        // ── Leave Management ──
+        { title: '── Leave Management ──', path: '#hr-leave', disabled: true },
         { title: '✅ Approve Leave Request', path: ROUTES.SUPER_ADMIN.APPROVE_STAFF_LEAVE },
         { title: '📝 Apply Leave', path: ROUTES.SUPER_ADMIN.STAFF_APPLY_LEAVE },
         { title: '🏷️ Leave Type', path: ROUTES.SUPER_ADMIN.STAFF_LEAVE_TYPE },
         { title: '💳 Leave Balances', path: ROUTES.SUPER_ADMIN.HR_LEAVE_BALANCES },
         { title: '📜 Leave Policies', path: ROUTES.SUPER_ADMIN.HR_LEAVE_POLICIES },
         { title: '📆 Leave Calendar', path: ROUTES.SUPER_ADMIN.HR_LEAVE_CALENDAR },
-        { title: '---', type: 'divider' },
-        { title: '💵 Payroll System', type: 'header' },
+        // ── Payroll System ──
+        { title: '── Payroll System ──', path: '#hr-payroll', disabled: true },
         { title: '🏗️ Salary Structure', path: ROUTES.SUPER_ADMIN.HR_SALARY_STRUCTURE },
         { title: '▶️ Payroll Run', path: ROUTES.SUPER_ADMIN.HR_PAYROLL_RUN },
         { title: '📃 Payslips', path: ROUTES.SUPER_ADMIN.HR_PAYSLIPS },
@@ -399,12 +440,18 @@ export const BASE_SIDEBAR = {
       title: 'Task Management',
       icon: CheckSquare,
       submenu: [
+        // ── Tasks ──
+        { title: '── Tasks ──', path: '#task-tasks', disabled: true },
         { title: '📊 Dashboard', path: ROUTES.SUPER_ADMIN.TASK_DASHBOARD },
         { title: '📋 All Tasks', path: ROUTES.SUPER_ADMIN.TASK_ALL },
         { title: '👤 My Tasks', path: ROUTES.SUPER_ADMIN.TASK_MY },
         { title: '➕ Create Task', path: ROUTES.SUPER_ADMIN.TASK_CREATE },
+        // ── Configuration ──
+        { title: '── Configuration ──', path: '#task-config', disabled: true },
         { title: '🏷️ Categories', path: ROUTES.SUPER_ADMIN.TASK_CATEGORIES },
         { title: '⚡ Priorities', path: ROUTES.SUPER_ADMIN.TASK_PRIORITIES },
+        // ── AI & Reports ──
+        { title: '── AI & Reports ──', path: '#task-ai', disabled: true },
         { title: '🧠 AI Generator', path: '/super-admin/task-management/ai-generator' },
         { title: '⚙️ Automation', path: '/super-admin/task-management/automation-rules' },
         { title: '📈 Reports', path: '/super-admin/task-management/reports' },
@@ -414,11 +461,15 @@ export const BASE_SIDEBAR = {
       title: 'Communicate',
       icon: MessageSquare,
       submenu: [
+        // ── Messaging ──
+        { title: '── Messaging ──', path: '#comm-messaging', disabled: true },
         { title: '📋 Notice Board', path: ROUTES.SUPER_ADMIN.NOTICE_BOARD },
         { title: '📧 Send Email', path: ROUTES.SUPER_ADMIN.SEND_EMAIL },
         { title: '📱 Send SMS', path: ROUTES.SUPER_ADMIN.SEND_SMS },
         { title: '💬 WhatsApp', path: ROUTES.SUPER_ADMIN.WHATSAPP },
         { title: '🔔 Push Notification', path: ROUTES.SUPER_ADMIN.PUSH_NOTIFICATION },
+        // ── Logs ──
+        { title: '── Logs ──', path: '#comm-logs', disabled: true },
         { title: '📂 Email / SMS Log', path: ROUTES.SUPER_ADMIN.EMAIL_SMS_LOG },
       ],
     },
@@ -426,8 +477,12 @@ export const BASE_SIDEBAR = {
       title: 'Online Course',
       icon: MonitorPlay,
       submenu: [
+        // ── Course & Payment ──
+        { title: '── Course & Payment ──', path: '#oc-course', disabled: true },
         { title: '📺 Online Course', path: ROUTES.SUPER_ADMIN.ONLINE_COURSE },
         { title: '💳 Offline Payment', path: ROUTES.SUPER_ADMIN.OFFLINE_PAYMENT },
+        // ── Reports & Settings ──
+        { title: '── Reports & Settings ──', path: '#oc-reports', disabled: true },
         { title: '📊 Online Course Report', path: ROUTES.SUPER_ADMIN.ONLINE_COURSE_REPORT },
         { title: '⚙️ Setting', path: ROUTES.SUPER_ADMIN.ONLINE_COURSE_SETTING },
       ]
@@ -436,8 +491,12 @@ export const BASE_SIDEBAR = {
       title: 'Gmeet Live Classes',
       icon: Video,
       submenu: [
+        // ── Classes & Meetings ──
+        { title: '── Classes & Meetings ──', path: '#gmeet-classes', disabled: true },
         { title: '🎥 Live Classes', path: ROUTES.SUPER_ADMIN.LIVE_CLASSES },
         { title: '👥 Live Meeting', path: ROUTES.SUPER_ADMIN.LIVE_MEETING },
+        // ── Reports & Settings ──
+        { title: '── Reports & Settings ──', path: '#gmeet-reports', disabled: true },
         { title: '📊 Live Classes Report', path: ROUTES.SUPER_ADMIN.LIVE_CLASSES_REPORT },
         { title: '📊 Live Meeting Report', path: ROUTES.SUPER_ADMIN.LIVE_MEETING_REPORT },
         { title: '⚙️ Setting', path: ROUTES.SUPER_ADMIN.GMEET_SETTING },
@@ -447,9 +506,13 @@ export const BASE_SIDEBAR = {
       title: 'Library',
       icon: Library,
       submenu: [
+        // ── Books ──
+        { title: '── Books ──', path: '#lib-books', disabled: true },
         { title: '📚 Book List', path: ROUTES.SUPER_ADMIN.LIBRARY_BOOK_LIST },
         { title: '➕ Add Book', path: ROUTES.SUPER_ADMIN.LIBRARY_ADD_BOOK },
         { title: '📖 Books', path: ROUTES.SUPER_ADMIN.LIBRARY_BOOKS },
+        // ── Issue & Members ──
+        { title: '── Issue & Members ──', path: '#lib-issue', disabled: true },
         { title: '📤 Book Issued', path: ROUTES.SUPER_ADMIN.LIBRARY_BOOK_ISSUED },
         { title: '👥 Book Members', path: ROUTES.SUPER_ADMIN.LIBRARY_MEMBERS },
         { title: '🔄 Issue/Return', path: ROUTES.SUPER_ADMIN.LIBRARY_ISSUE_RETURN },
@@ -460,9 +523,13 @@ export const BASE_SIDEBAR = {
       title: 'Inventory',
       icon: Package,
       submenu: [
+        // ── Stock Management ──
+        { title: '── Stock Management ──', path: '#inv-stock', disabled: true },
         { title: '📤 Issue Item', path: ROUTES.SUPER_ADMIN.INV_ISSUE_ITEM },
         { title: '➕ Add Item Stock', path: ROUTES.SUPER_ADMIN.INV_ADD_STOCK },
         { title: '📦 Item Stock', path: ROUTES.SUPER_ADMIN.INV_ITEM_STOCK },
+        // ── Master Data ──
+        { title: '── Master Data ──', path: '#inv-master', disabled: true },
         { title: '📦 Add Item', path: ROUTES.SUPER_ADMIN.INV_ADD_ITEM },
         { title: '🏷️ Item Category', path: ROUTES.SUPER_ADMIN.INV_CATEGORY },
         { title: '🏬 Item Store', path: ROUTES.SUPER_ADMIN.INV_STORE },
@@ -473,26 +540,36 @@ export const BASE_SIDEBAR = {
       title: 'Transport',
       icon: Bus,
       submenu: [
-        { title: '� Dashboard', path: ROUTES.SUPER_ADMIN.TRANSPORT_DASHBOARD },
-        { title: '�💰 Fees Master', path: ROUTES.SUPER_ADMIN.TRANSPORT_FEES_MASTER },
+        // ── Dashboard & Setup ──
+        { title: '── Dashboard & Setup ──', path: '#tr-dashboard', disabled: true },
+        { title: '🚌 Dashboard', path: ROUTES.SUPER_ADMIN.TRANSPORT_DASHBOARD },
+        { title: '💰 Fees Master', path: ROUTES.SUPER_ADMIN.TRANSPORT_FEES_MASTER },
         { title: '📍 Pickup Points', path: ROUTES.SUPER_ADMIN.PICKUP_POINTS },
         { title: '🚌 Routes', path: ROUTES.SUPER_ADMIN.TRANSPORT_ROUTES },
         { title: '🚗 Vehicles', path: ROUTES.SUPER_ADMIN.TRANSPORT_VEHICLES },
-        { title: '�‍✈️ Drivers', path: ROUTES.SUPER_ADMIN.TRANSPORT_DRIVERS },
-        { title: '�📝 Assign Vehicle', path: ROUTES.SUPER_ADMIN.ASSIGN_VEHICLE },
+        { title: '👨‍✈️ Drivers', path: ROUTES.SUPER_ADMIN.TRANSPORT_DRIVERS },
+        // ── Assignment & Fees ──
+        { title: '── Assignment & Fees ──', path: '#tr-assignment', disabled: true },
+        { title: '📝 Assign Vehicle', path: ROUTES.SUPER_ADMIN.ASSIGN_VEHICLE },
         { title: '🚏 Route Pickup Points', path: ROUTES.SUPER_ADMIN.ROUTE_PICKUP_POINT },
         { title: '💳 Student Transport Fees', path: ROUTES.SUPER_ADMIN.STUDENT_TRANSPORT_FEES },
+        // ── Operations ──
+        { title: '── Operations ──', path: '#tr-operations', disabled: true },
         { title: '📊 Transport Analysis', path: ROUTES.SUPER_ADMIN.TRANSPORT_ANALYSIS },
         { title: '📋 Trip Management', path: ROUTES.SUPER_ADMIN.TRANSPORT_TRIPS },
         { title: '🚌 Boarding Attendance', path: ROUTES.SUPER_ADMIN.TRANSPORT_BOARDING },
         { title: '🔧 Vehicle Maintenance', path: ROUTES.SUPER_ADMIN.TRANSPORT_MAINTENANCE },
         { title: '⛽ Fuel Management', path: ROUTES.SUPER_ADMIN.TRANSPORT_FUEL },
         { title: '⚠️ Incident Management', path: ROUTES.SUPER_ADMIN.TRANSPORT_INCIDENTS },
+        // ── Tracking & Safety ──
+        { title: '── Tracking & Safety ──', path: '#tr-tracking', disabled: true },
         { title: '📍 Live Tracking', path: ROUTES.SUPER_ADMIN.TRANSPORT_LIVE_TRACKING },
         { title: '🛡️ Geofencing', path: ROUTES.SUPER_ADMIN.TRANSPORT_GEOFENCING },
         { title: '🔔 Notification Settings', path: ROUTES.SUPER_ADMIN.TRANSPORT_NOTIFICATIONS },
         { title: '🆘 SOS Alerts', path: ROUTES.SUPER_ADMIN.TRANSPORT_SOS },
         { title: '📋 Vehicle Checklist', path: ROUTES.SUPER_ADMIN.TRANSPORT_CHECKLIST },
+        // ── Communication & Reports ──
+        { title: '── Communication & Reports ──', path: '#tr-reports', disabled: true },
         { title: '💬 Communication', path: ROUTES.SUPER_ADMIN.TRANSPORT_COMMUNICATION },
         { title: '📊 Reports', path: ROUTES.SUPER_ADMIN.TRANSPORT_REPORTS },
         { title: '🪪 ID Cards', path: ROUTES.SUPER_ADMIN.TRANSPORT_ID_CARDS },
@@ -502,11 +579,15 @@ export const BASE_SIDEBAR = {
       title: 'Hostel',
       icon: Building,
       submenu: [
+        // ── Room & Setup ──
+        { title: '── Room & Setup ──', path: '#hostel-setup', disabled: true },
         { title: '🛏️ Hostel Rooms', path: ROUTES.SUPER_ADMIN.HOSTEL_ROOMS },
-        { title: '🛌 Room Type', path: ROUTES.SUPER_ADMIN.ROOM_TYPES },
+        { title: '🛋 Room Type', path: ROUTES.SUPER_ADMIN.ROOM_TYPES },
         { title: '🏨 Hostel', path: ROUTES.SUPER_ADMIN.HOSTELS },
         { title: '💰 Hostel Fee', path: ROUTES.SUPER_ADMIN.HOSTEL_FEE },
         { title: '📊 Hostel Analysis', path: ROUTES.SUPER_ADMIN.HOSTEL_ANALYSIS },
+        // ── Attendance ──
+        { title: '── Attendance ──', path: '#hostel-attendance', disabled: true },
         { title: '📋 Attendance', path: ROUTES.SUPER_ADMIN.HOSTEL_ATTENDANCE },
         { title: '✅ Mark Attendance', path: ROUTES.SUPER_ADMIN.HOSTEL_MARK_ATTENDANCE },
         { title: '🌙 Night Roll Call', path: ROUTES.SUPER_ADMIN.HOSTEL_NIGHT_ROLL_CALL },
@@ -514,31 +595,43 @@ export const BASE_SIDEBAR = {
         { title: '⏰ Curfew Settings', path: ROUTES.SUPER_ADMIN.HOSTEL_CURFEW_SETTINGS },
         { title: '📊 Attendance Report', path: ROUTES.SUPER_ADMIN.HOSTEL_ATTENDANCE_REPORT },
         { title: '🚨 Curfew Violations', path: ROUTES.SUPER_ADMIN.HOSTEL_CURFEW_VIOLATIONS },
+        // ── Visitor Management ──
+        { title: '── Visitor Management ──', path: '#hostel-visitors', disabled: true },
         { title: '🚪 Visitor Log', path: ROUTES.SUPER_ADMIN.HOSTEL_VISITOR_MANAGEMENT },
         { title: '👤 Register Visitor', path: ROUTES.SUPER_ADMIN.HOSTEL_REGISTER_VISITOR },
         { title: '🟢 In-Premises', path: ROUTES.SUPER_ADMIN.HOSTEL_IN_PREMISES_VISITORS },
         { title: '⏳ Visitor Approvals', path: ROUTES.SUPER_ADMIN.HOSTEL_VISITOR_APPROVALS },
         { title: '🔒 Visitor Restrictions', path: ROUTES.SUPER_ADMIN.HOSTEL_VISITOR_RESTRICTIONS },
         { title: '🚫 Visitor Blacklist', path: ROUTES.SUPER_ADMIN.HOSTEL_VISITOR_BLACKLIST },
+        // ── Mess Management ──
+        { title: '── Mess Management ──', path: '#hostel-mess', disabled: true },
         { title: '🍽️ Mess Dashboard', path: ROUTES.SUPER_ADMIN.HOSTEL_MESS_MANAGEMENT },
         { title: '📅 Weekly Menu', path: ROUTES.SUPER_ADMIN.HOSTEL_WEEKLY_MENU },
         { title: '☕ Today Menu', path: ROUTES.SUPER_ADMIN.HOSTEL_TODAY_MENU },
         { title: '🍽 Mess Attendance', path: ROUTES.SUPER_ADMIN.HOSTEL_MESS_ATTENDANCE },
         { title: '💬 Mess Feedback', path: ROUTES.SUPER_ADMIN.HOSTEL_MESS_FEEDBACK },
         { title: '📦 Mess Inventory', path: ROUTES.SUPER_ADMIN.HOSTEL_MESS_INVENTORY },
+        // ── Complaints & Assets ──
+        { title: '── Complaints & Assets ──', path: '#hostel-complaints', disabled: true },
         { title: '📢 Complaints', path: ROUTES.SUPER_ADMIN.HOSTEL_COMPLAINTS },
         { title: '📊 Complaint Analytics', path: ROUTES.SUPER_ADMIN.HOSTEL_COMPLAINT_ANALYTICS },
         { title: '🏗️ Assets', path: ROUTES.SUPER_ADMIN.HOSTEL_ASSETS },
         { title: '📊 Asset Report', path: ROUTES.SUPER_ADMIN.HOSTEL_ASSET_REPORT },
+        // ── Leave & Room Change ──
+        { title: '── Leave & Room Change ──', path: '#hostel-leave', disabled: true },
         { title: '🏠 Leave Management', path: ROUTES.SUPER_ADMIN.HOSTEL_LEAVE },
         { title: '✅ Leave Approvals', path: ROUTES.SUPER_ADMIN.HOSTEL_LEAVE_APPROVALS },
         { title: '📋 On Leave Today', path: ROUTES.SUPER_ADMIN.HOSTEL_ON_LEAVE_TODAY },
         { title: '🔄 Room Change', path: ROUTES.SUPER_ADMIN.HOSTEL_ROOM_CHANGE },
+        // ── Security & Safety ──
+        { title: '── Security & Safety ──', path: '#hostel-security', disabled: true },
         { title: '🛡️ Security Dashboard', path: ROUTES.SUPER_ADMIN.HOSTEL_SECURITY_DASHBOARD },
         { title: '🚨 Security Alerts', path: ROUTES.SUPER_ADMIN.HOSTEL_ALERTS_LIST },
         { title: '🆘 SOS Alerts', path: ROUTES.SUPER_ADMIN.HOSTEL_SOS_ALERTS },
         { title: '⏰ Curfew Monitor', path: ROUTES.SUPER_ADMIN.HOSTEL_CURFEW_MONITOR },
         { title: '🔒 Girls Safety', path: ROUTES.SUPER_ADMIN.HOSTEL_GIRLS_HOSTEL_SAFETY },
+        // ── AI & Analytics ──
+        { title: '── AI & Analytics ──', path: '#hostel-ai', disabled: true },
         { title: '🤖 AI Insights', path: ROUTES.SUPER_ADMIN.HOSTEL_AI_INSIGHTS },
         { title: '📈 Occupancy Prediction', path: ROUTES.SUPER_ADMIN.HOSTEL_OCCUPANCY_PREDICTION },
         { title: '⚠️ Attendance Anomalies', path: ROUTES.SUPER_ADMIN.HOSTEL_ATTENDANCE_ANOMALIES },
@@ -550,10 +643,14 @@ export const BASE_SIDEBAR = {
       title: 'Certificate',
       icon: Award,
       submenu: [
+        // ── Student Certificates ──
+        { title: '── Student Certificates ──', path: '#cert-student', disabled: true },
         { title: '🏆 Student Certificate', path: ROUTES.SUPER_ADMIN.CERT_STUDENT },
         { title: '📜 Generate Certificate', path: ROUTES.SUPER_ADMIN.CERT_GENERATE },
         { title: '🪪 Student ID Card', path: ROUTES.SUPER_ADMIN.CERT_STUDENT_ID },
         { title: '📝 Generate ID Card', path: ROUTES.SUPER_ADMIN.CERT_GENERATE_ID },
+        // ── Staff ID Cards ──
+        { title: '── Staff ID Cards ──', path: '#cert-staff', disabled: true },
         { title: '👨‍💼 Staff ID Card', path: ROUTES.SUPER_ADMIN.CERT_STAFF_ID },
         { title: '📝 Generate Staff ID Card', path: ROUTES.SUPER_ADMIN.CERT_GENERATE_STAFF_ID },
       ]
@@ -562,13 +659,19 @@ export const BASE_SIDEBAR = {
       title: 'Front CMS',
       icon: Layout,
       submenu: [
+        // ── Settings ──
+        { title: '── Settings ──', path: '#cms-settings', disabled: true },
         { title: '⚙️ Website Settings', path: ROUTES.SUPER_ADMIN.CMS_SETTING },
         { title: '🔐 Branch Login Settings', path: ROUTES.SUPER_ADMIN.FRONT_CMS_LOGIN_SETTINGS },
+        // ── Content ──
+        { title: '── Content ──', path: '#cms-content', disabled: true },
         { title: '📄 Menus', path: ROUTES.SUPER_ADMIN.MENUS },
         { title: '📃 Pages', path: ROUTES.SUPER_ADMIN.PAGES },
         { title: '🎉 Events', path: ROUTES.SUPER_ADMIN.EVENTS },
         { title: '🖼️ Gallery', path: ROUTES.SUPER_ADMIN.GALLERY },
         { title: '📰 News', path: ROUTES.SUPER_ADMIN.NEWS },
+        // ── Media & Showcase ──
+        { title: '── Media & Showcase ──', path: '#cms-media', disabled: true },
         { title: '💾 Media Manager', path: ROUTES.SUPER_ADMIN.MEDIA_MANAGER },
         { title: '🏆 Achievements', path: ROUTES.SUPER_ADMIN.FRONT_CMS_ACHIEVEMENTS },
         { title: '🖼️ Banner Images', path: ROUTES.SUPER_ADMIN.BANNER_IMAGES },
@@ -578,6 +681,8 @@ export const BASE_SIDEBAR = {
       title: 'Alumni',
       icon: GraduationCap,
       submenu: [
+        // ── Alumni Management ──
+        { title: '── Alumni Management ──', path: '#alumni-mgmt', disabled: true },
         { title: '👥 Alumni List', path: ROUTES.SUPER_ADMIN.ALUMNI_LIST },
         { title: '🎉 Alumni Events', path: ROUTES.SUPER_ADMIN.ALUMNI_EVENTS },
       ]
@@ -586,6 +691,8 @@ export const BASE_SIDEBAR = {
       title: 'QR Code Attendance',
       icon: QrCode,
       submenu: [
+        // ── QR Attendance ──
+        { title: '── QR Attendance ──', path: '#qr-att', disabled: true },
         { title: '⚙️ Setting', path: ROUTES.SUPER_ADMIN.QR_ATTENDANCE_SETTING },
         { title: '📷 Scan', path: ROUTES.SUPER_ADMIN.QR_ATTENDANCE_SCAN },
       ]
@@ -594,6 +701,8 @@ export const BASE_SIDEBAR = {
       title: 'Multi Branch',
       icon: GitBranch,
       submenu: [
+        // ── Branch Management ──
+        { title: '── Branch Management ──', path: '#mb-mgmt', disabled: true },
         { title: ' Branch List', path: ROUTES.SUPER_ADMIN.BRANCH_LIST },
         { title: '➕ Add Branch', path: ROUTES.SUPER_ADMIN.ADD_BRANCH },
         { title: '⚙️ Branch Settings', path: ROUTES.SUPER_ADMIN.MULTI_BRANCH_SETTINGS },
@@ -604,8 +713,12 @@ export const BASE_SIDEBAR = {
       title: 'Zoom Live Classes',
       icon: Video,
       submenu: [
+        // ── Classes & Meetings ──
+        { title: '── Classes & Meetings ──', path: '#zoom-classes', disabled: true },
         { title: '🎥 Zoom Classes', path: ROUTES.SUPER_ADMIN.ZOOM_CLASSES },
         { title: '👥 Zoom Meeting', path: ROUTES.SUPER_ADMIN.ZOOM_MEETING },
+        // ── Reports & Settings ──
+        { title: '── Reports & Settings ──', path: '#zoom-reports', disabled: true },
         { title: '📊 Zoom Reports', path: ROUTES.SUPER_ADMIN.ZOOM_REPORTS },
         { title: '⚙️ Zoom Settings', path: ROUTES.SUPER_ADMIN.ZOOM_SETTINGS },
       ]
@@ -619,9 +732,13 @@ export const BASE_SIDEBAR = {
       title: 'Reports',
       icon: FileText,
       submenu: [
+          // ── Dashboard & Scheduling ──
+          { title: '── Dashboard & Scheduling ──', path: '#rpt-dashboard', disabled: true },
           { title: '📊 Dashboard', path: ROUTES.SUPER_ADMIN.REPORTS_DASHBOARD },
           { title: '📅 Scheduled Reports', path: ROUTES.SUPER_ADMIN.REPORTS_SCHEDULES },
           { title: '📜 Report History', path: ROUTES.SUPER_ADMIN.REPORTS_HISTORY },
+          // ── Module Reports ──
+          { title: '── Module Reports ──', path: '#rpt-modules', disabled: true },
           { title: '👨‍🎓 Student Information', path: ROUTES.SUPER_ADMIN.REPORTS_STUDENT_INFO },
           { title: '💰 Finance', path: ROUTES.SUPER_ADMIN.REPORTS_FINANCE },
           { title: '✅ Attendance', path: ROUTES.SUPER_ADMIN.REPORTS_ATTENDANCE },
@@ -634,6 +751,8 @@ export const BASE_SIDEBAR = {
           { title: '📓 Homework', path: ROUTES.SUPER_ADMIN.REPORTS_HOMEWORK },
           { title: '✅ Homework Evaluation', path: ROUTES.SUPER_ADMIN.REPORTS_HOMEWORK_EVALUATION },
           { title: '💻 Online Exam Reports', path: ROUTES.SUPER_ADMIN.REPORTS_ONLINE_EXAM },
+          // ── Custom ──
+          { title: '── Custom ──', path: '#rpt-custom', disabled: true },
           { title: '🛠️ Custom Builder', path: ROUTES.SUPER_ADMIN.REPORTS_CUSTOM_BUILDER },
       ]
     },
@@ -642,11 +761,17 @@ export const BASE_SIDEBAR = {
       icon: KeyRound,
       badge: 'NEW',
       submenu: [
+        // ── Overview ──
+        { title: '── Overview ──', path: '#um-overview', disabled: true },
         { title: '📊 Dashboard', path: ROUTES.SUPER_ADMIN.USER_MGMT_DASHBOARD },
         { title: '👥 All Users', path: ROUTES.SUPER_ADMIN.USER_MGMT_ALL_USERS },
+        // ── User Types ──
+        { title: '── User Types ──', path: '#um-types', disabled: true },
         { title: '👨‍🎓 Student Users', path: ROUTES.SUPER_ADMIN.USER_MGMT_STUDENTS },
         { title: '👨‍💼 Staff Users', path: ROUTES.SUPER_ADMIN.USER_MGMT_STAFF },
         { title: '👨‍👩‍👧 Parent Users', path: ROUTES.SUPER_ADMIN.USER_MGMT_PARENTS },
+        // ── Transfer ──
+        { title: '── Transfer ──', path: '#um-transfer', disabled: true },
         { title: '🔄 Transfer Staff', path: ROUTES.SUPER_ADMIN.USER_MGMT_TRANSFER_STAFF },
       ]
     },
@@ -654,13 +779,19 @@ export const BASE_SIDEBAR = {
       title: 'System Settings',
       icon: Settings,
       submenu: [
+        // ── General ──
+        { title: '── General ──', path: '#ss-general', disabled: true },
         { title: '⚙️ General Setting', path: ROUTES.SUPER_ADMIN.SETTINGS_GENERAL },
         { title: '📅 Session Setting', path: ROUTES.SUPER_ADMIN.SETTINGS_SESSION },
         { title: '🔐 Roles Permissions', path: ROUTES.SUPER_ADMIN.SETTINGS_ROLE_PERMISSION },
         { title: '🖨️ Print Header Footer', path: ROUTES.SUPER_ADMIN.SETTINGS_PRINT_HEADER },
+        // ── Communication ──
+        { title: '── Communication ──', path: '#ss-comm', disabled: true },
         { title: '📧 Email Setting', path: ROUTES.SUPER_ADMIN.SETTINGS_EMAIL },
         { title: '📱 SMS Setting', path: ROUTES.SUPER_ADMIN.SETTINGS_SMS },
         { title: '🔔 Notification Setting', path: ROUTES.SUPER_ADMIN.SETTINGS_NOTIFICATION },
+        // ── Payment & Backup ──
+        { title: '── Payment & Backup ──', path: '#ss-payment', disabled: true },
         { title: '💳 Payment Gateway', path: ROUTES.SUPER_ADMIN.SETTINGS_PAYMENT_GATEWAY },
         { title: '💾 Backup & Restore', path: ROUTES.SUPER_ADMIN.SETTINGS_BACKUP },
       ],

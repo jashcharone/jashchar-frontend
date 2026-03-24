@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'; // Added DialogTrigger
 import { Loader2, Info } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
+import { formatDate } from '@/utils/dateUtils';
 
 const StudentProfileFeesTab = ({ studentId }) => {
     const { user, currentSessionId } = useAuth();
@@ -126,7 +127,7 @@ const StudentProfileFeesTab = ({ studentId }) => {
                                 <tr key={fee.id} className="border-b dark:border-slate-700 hover:bg-muted/50">
                                     <td className="p-2">{fee.group}</td>
                                     <td className="p-2">{fee.type}</td>
-                                    <td className="p-2">{fee.dueDate ? format(parseISO(fee.dueDate), 'dd-MM-yyyy') : 'N/A'}</td>
+                                    <td className="p-2">{fee.dueDate ? formatDate(fee.dueDate, 'N/A') : 'N/A'}</td>
                                     <td className="p-2 text-right">{fee.amount.toFixed(2)}</td>
                                     <td className="p-2 text-right">{fee.totalPaid.toFixed(2)}</td>
                                     <td className="p-2 text-right">{fee.totalDiscount.toFixed(2)}</td>
@@ -147,7 +148,7 @@ const StudentProfileFeesTab = ({ studentId }) => {
                                                         <tbody>
                                                             {fee.payments.map(p => (
                                                                 <tr key={p.id} className={`border-b dark:border-slate-700 ${p.reverted_at ? 'bg-red-50 dark:bg-red-950/20 text-muted-foreground line-through' : ''}`}>
-                                                                    <td className="p-2">{format(parseISO(p.payment_date), 'dd-MM-yyyy')}</td>
+                                                                    <td className="p-2">{formatDate(p.payment_date)}</td>
                                                                     <td className="p-2">{p.payment_mode}</td>
                                                                     <td className="p-2 text-right">{(Number(p.amount) || 0).toFixed(2)}</td>
                                                                     <td className="p-2 text-right">{(Number(p.discount_amount) || 0).toFixed(2)}</td>

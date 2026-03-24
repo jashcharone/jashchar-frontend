@@ -26,6 +26,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useNavigate, useParams } from 'react-router-dom';
 import { format, differenceInYears } from 'date-fns';
+import { formatDate } from '@/utils/dateUtils';
 import { ROUTES } from '@/registry/routeRegistry';
 
 const StudentDetails = () => {
@@ -818,7 +819,7 @@ const StudentDetails = () => {
                                             <td className="p-3">
                                                 <div>
                                                     <span className="font-medium">{highlightText(s.school_code, filters.keyword)}</span>
-                                                    <div className="text-xs text-muted-foreground">{s.admission_date ? format(new Date(s.admission_date), 'dd MMM yyyy') : ''}</div>
+                                                    <div className="text-xs text-muted-foreground">{s.admission_date ? formatDate(s.admission_date) : ''}</div>
                                                 </div>
                                             </td>
                                             <td className="p-3">{highlightText(s.roll_number, filters.keyword) || '-'}</td>

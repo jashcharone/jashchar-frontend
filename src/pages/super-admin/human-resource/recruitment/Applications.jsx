@@ -18,7 +18,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { formatDate } from '@/utils/dateUtils';
 import { 
     Loader2, Plus, Edit, Trash2, Eye, MoreHorizontal, Users, UserPlus,
     Calendar, Mail, Phone, FileText, Star, StarHalf, Download, ExternalLink,

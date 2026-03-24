@@ -277,6 +277,7 @@ const LoginV2Page = () => {
             </Helmet>
             
             <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 
+                          dark:from-gray-950 dark:via-gray-900 dark:to-gray-950
                           flex items-center justify-center p-4">
                 <div className="w-full max-w-md">
                     
@@ -292,10 +293,10 @@ const LoginV2Page = () => {
                                         className="h-20 w-auto mx-auto mb-4"
                                     />
                                 )}
-                                <h1 className="text-3xl font-bold text-gray-900 mb-2">
+                                <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
                                     🔐 ಲಾಗಿನ್ ಮಾಡಿ
                                 </h1>
-                                <p className="text-gray-600">
+                                <p className="text-gray-600 dark:text-gray-400">
                                     {school?.name || 'Jashchar ERP'}
                                 </p>
                             </div>
@@ -305,8 +306,8 @@ const LoginV2Page = () => {
                                 {/* OTP Login */}
                                 <button
                                     onClick={() => handleMethodSelect(LOGIN_METHODS.OTP)}
-                                    className="w-full p-4 bg-white rounded-xl border-2 border-gray-200 
-                                             hover:border-blue-400 hover:bg-blue-50 transition-all
+                                    className="w-full p-4 bg-white dark:bg-gray-800 rounded-xl border-2 border-gray-200 dark:border-gray-700
+                                             hover:border-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/30 dark:hover:border-blue-500 transition-all
                                              flex items-center gap-4 text-left group"
                                 >
                                     <div className="p-3 bg-blue-500 rounded-xl text-white 
@@ -314,10 +315,10 @@ const LoginV2Page = () => {
                                         <Smartphone className="h-6 w-6" />
                                     </div>
                                     <div className="flex-1">
-                                        <span className="font-semibold text-gray-900 block">
+                                        <span className="font-semibold text-gray-900 dark:text-white block">
                                             📱 Mobile OTP
                                         </span>
-                                        <span className="text-sm text-gray-500">
+                                        <span className="text-sm text-gray-500 dark:text-gray-400">
                                             WhatsApp/SMS ಮೂಲಕ OTP ಪಡೆಯಿರಿ
                                         </span>
                                     </div>
@@ -327,8 +328,8 @@ const LoginV2Page = () => {
                                 {/* Face Login */}
                                 <button
                                     onClick={() => handleMethodSelect(LOGIN_METHODS.FACE)}
-                                    className="w-full p-4 bg-white rounded-xl border-2 border-gray-200 
-                                             hover:border-purple-400 hover:bg-purple-50 transition-all
+                                    className="w-full p-4 bg-white dark:bg-gray-800 rounded-xl border-2 border-gray-200 dark:border-gray-700
+                                             hover:border-purple-400 hover:bg-purple-50 dark:hover:bg-purple-950/30 dark:hover:border-purple-500 transition-all
                                              flex items-center gap-4 text-left group"
                                 >
                                     <div className="p-3 bg-purple-500 rounded-xl text-white
@@ -336,10 +337,10 @@ const LoginV2Page = () => {
                                         <Scan className="h-6 w-6" />
                                     </div>
                                     <div className="flex-1">
-                                        <span className="font-semibold text-gray-900 block">
+                                        <span className="font-semibold text-gray-900 dark:text-white block">
                                             🤳 Face Scan
                                         </span>
-                                        <span className="text-sm text-gray-500">
+                                        <span className="text-sm text-gray-500 dark:text-gray-400">
                                             ಮುಖ ಗುರುತಿಸಿ ಲಾಗಿನ್ ಮಾಡಿ
                                         </span>
                                     </div>
@@ -349,8 +350,8 @@ const LoginV2Page = () => {
                                 {/* PIN Login */}
                                 <button
                                     onClick={() => handleMethodSelect(LOGIN_METHODS.PIN)}
-                                    className="w-full p-4 bg-white rounded-xl border-2 border-gray-200 
-                                             hover:border-green-400 hover:bg-green-50 transition-all
+                                    className="w-full p-4 bg-white dark:bg-gray-800 rounded-xl border-2 border-gray-200 dark:border-gray-700
+                                             hover:border-green-400 hover:bg-green-50 dark:hover:bg-green-950/30 dark:hover:border-green-500 transition-all
                                              flex items-center gap-4 text-left group"
                                 >
                                     <div className="p-3 bg-green-500 rounded-xl text-white
@@ -358,10 +359,10 @@ const LoginV2Page = () => {
                                         <KeyRound className="h-6 w-6" />
                                     </div>
                                     <div className="flex-1">
-                                        <span className="font-semibold text-gray-900 block">
+                                        <span className="font-semibold text-gray-900 dark:text-white block">
                                             🔢 PIN Login
                                         </span>
-                                        <span className="text-sm text-gray-500">
+                                        <span className="text-sm text-gray-500 dark:text-gray-400">
                                             6-ಅಂಕಿಯ PIN ಬಳಸಿ ಲಾಗಿನ್ ಮಾಡಿ
                                         </span>
                                     </div>
@@ -370,7 +371,7 @@ const LoginV2Page = () => {
                             </div>
                             
                             {/* Security Note */}
-                            <p className="text-xs text-center text-gray-400 mt-6">
+                            <p className="text-xs text-center text-gray-400 dark:text-gray-500 mt-6">
                                 🔒 ನಿಮ್ಮ ಡೇಟಾ ಸುರಕ್ಷಿತವಾಗಿದೆ • 256-bit SSL ಎನ್‌ಕ್ರಿಪ್ಶನ್
                             </p>
                         </div>

@@ -15,6 +15,7 @@
  */
 
 import React, { useState, useEffect, useCallback } from 'react';
+import { formatDate, formatDateTime } from '@/utils/dateUtils';
 import {
     ArrowRight, ArrowLeftRight, Search, Building2, User, Briefcase, Shield, FileText,
     CheckCircle2, Loader2, History, AlertTriangle, ChevronDown, Eye
@@ -355,7 +356,7 @@ const TransferStaff = () => {
                                                     className={`flex items-center gap-3 p-3 rounded-lg border-2 cursor-pointer transition-all hover:shadow-md ${
                                                         selectedEmployee?.id === emp.id 
                                                             ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20 shadow-md' 
-                                                            : 'border-transparent bg-muted/30 hover:border-gray-300'
+                                                            : 'border-transparent bg-muted/30 hover:border-gray-300 dark:hover:border-gray-600'
                                                     }`}
                                                 >
                                                     <Avatar className="w-10 h-10">
@@ -587,13 +588,13 @@ const TransferStaff = () => {
                                                             <Badge variant="outline" className="capitalize text-xs">{record.transfer_type}</Badge>
                                                         </TableCell>
                                                         <TableCell className="text-sm">
-                                                            {new Date(record.transfer_date).toLocaleDateString('en-IN')}
+                                                            {formatDate(record.transfer_date)}
                                                         </TableCell>
                                                         <TableCell>
                                                             <Badge className={`text-xs ${
-                                                                record.status === 'completed' ? 'bg-green-100 text-green-800' :
-                                                                record.status === 'pending' ? 'bg-amber-100 text-amber-800' :
-                                                                'bg-gray-100 text-gray-800'
+                                                                record.status === 'completed' ? 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-400' :
+                                                                record.status === 'pending' ? 'bg-amber-100 text-amber-800 dark:bg-amber-900/50 dark:text-amber-400' :
+                                                                'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-400'
                                                             }`}>
                                                                 {record.status}
                                                             </Badge>
@@ -710,14 +711,14 @@ const TransferStaff = () => {
                                     <div><span className="text-muted-foreground">To:</span> {detailRecord.to_branch?.branch_name}</div>
                                     <div><span className="text-muted-foreground">Type:</span> <span className="capitalize">{detailRecord.transfer_type}</span></div>
                                     <div><span className="text-muted-foreground">Status:</span> <span className="capitalize">{detailRecord.status}</span></div>
-                                    <div><span className="text-muted-foreground">Transfer Date:</span> {new Date(detailRecord.transfer_date).toLocaleDateString('en-IN')}</div>
-                                    <div><span className="text-muted-foreground">Effective Date:</span> {new Date(detailRecord.effective_date).toLocaleDateString('en-IN')}</div>
+                                    <div><span className="text-muted-foreground">Transfer Date:</span> {formatDate(detailRecord.transfer_date)}</div>
+                                    <div><span className="text-muted-foreground">Effective Date:</span> {formatDate(detailRecord.effective_date)}</div>
                                     {detailRecord.order_number && <div><span className="text-muted-foreground">Order No:</span> {detailRecord.order_number}</div>}
                                 </div>
                                 {detailRecord.reason && <div><span className="text-muted-foreground">Reason:</span> {detailRecord.reason}</div>}
                                 {detailRecord.remarks && <div><span className="text-muted-foreground">Remarks:</span> {detailRecord.remarks}</div>}
                                 <div className="text-xs text-muted-foreground pt-2 border-t">
-                                    Created: {new Date(detailRecord.created_at).toLocaleString('en-IN')}
+                                    Created: {formatDateTime(detailRecord.created_at)}
                                 </div>
                             </div>
                         )}

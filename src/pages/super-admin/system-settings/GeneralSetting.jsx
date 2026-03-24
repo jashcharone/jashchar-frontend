@@ -583,7 +583,7 @@ const FeesSettings = ({ settings, handleChange, handleQuillChange }) => (
                                 <p className="text-sm font-medium mb-2">Preview:</p>
                                 <div className="flex items-center gap-3">
                                     <div className="w-16 h-16 bg-white rounded-lg flex items-center justify-center border">
-                                        <QrCode className="h-10 w-10 text-gray-400" />
+                                        <QrCode className="h-10 w-10 text-muted-foreground" />
                                     </div>
                                     <div className="text-sm">
                                         <p className="font-medium">{settings.upi_merchant_name || 'Your School'}</p>

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { formatDate } from '@/utils/dateUtils';
 import DashboardLayout from '@/components/DashboardLayout';
 import { useToast } from '@/components/ui/use-toast';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
@@ -269,7 +270,7 @@ const Applications = () => {
         try {
             const update = { 
                 status: newStatus,
-                notes: statusNotes ? `${statusApp.notes || ''}\n[${new Date().toLocaleDateString()}] Status: ${newStatus} - ${statusNotes}` : statusApp.notes
+                notes: statusNotes ? `${statusApp.notes || ''}\n[${formatDate(new Date())}] Status: ${newStatus} - ${statusNotes}` : statusApp.notes
             };
             
             const { error } = await supabase.from('job_applications').update(update).eq('id', statusApp.id);

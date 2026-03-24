@@ -10,6 +10,7 @@
  */
 
 import React, { useState, useEffect, useCallback } from 'react';
+import { formatDate, formatDateTime } from '@/utils/dateUtils';
 import api from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -298,7 +299,7 @@ const FileManager = () => {
                     `"${s.address || ''}"`,
                     s.status,
                     s.domain_type,
-                    new Date(s.created_at).toLocaleDateString()
+                    formatDate(s.created_at)
                 ]);
                 
                 const csvContent = [
@@ -987,7 +988,7 @@ const FileManager = () => {
                                         <div className="space-y-4 border rounded-xl p-4 bg-slate-50 dark:bg-slate-900/50">
                                             <div className="grid grid-cols-2 gap-4 text-sm">
                                                 <div><p className="text-slate-500">Size</p><p className="font-medium">{formatFileSize(selectedFile.file_size_bytes)}</p></div>
-                                                <div><p className="text-slate-500">Created</p><p className="font-medium">{new Date(selectedFile.created_at).toLocaleDateString()}</p></div>
+                                                <div><p className="text-slate-500">Created</p><p className="font-medium">{formatDate(selectedFile.created_at)}</p></div>
                                                 <div><p className="text-slate-500">Uploaded By</p><p className="font-medium">Master Admin</p></div>
                                                 <div><p className="text-slate-500">Status</p><p className="font-medium capitalize">{selectedFile.status}</p></div>
                                             </div>
@@ -1021,7 +1022,7 @@ const FileManager = () => {
                                                 <div key={v.id} className="mb-3 p-3 border rounded-lg hover:bg-slate-50">
                                                     <div className="flex justify-between items-center mb-1">
                                                         <span className="font-bold text-sm">v{v.version_number}</span>
-                                                        <span className="text-xs text-muted-foreground">{new Date(v.uploaded_at).toLocaleDateString()}</span>
+                                                        <span className="text-xs text-muted-foreground">{formatDate(v.uploaded_at)}</span>
                                                     </div>
                                                     <p className="text-xs">{formatFileSize(v.file_size_bytes)}</p>
                                                 </div>
@@ -1035,7 +1036,7 @@ const FileManager = () => {
                                                 <div key={logs.id} className="mb-3 p-3 border rounded-lg text-sm border-l-4 border-l-primary">
                                                     <div className="flex justify-between">
                                                         <span className="font-semibold capitalize">{logs.action}</span>
-                                                        <span className="text-xs text-slate-400">{new Date(logs.performed_at).toLocaleString()}</span>
+                                                        <span className="text-xs text-slate-400">{formatDateTime(logs.performed_at)}</span>
                                                     </div>
                                                     <p className="text-xs text-slate-500 mt-1">{logs.performer_ip_address || 'System'}</p>
                                                 </div>

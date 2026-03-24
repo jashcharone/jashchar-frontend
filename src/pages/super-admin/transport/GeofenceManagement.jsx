@@ -6,6 +6,7 @@ import DashboardLayout from '@/components/DashboardLayout';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { useBranch } from '@/contexts/BranchContext';
 import api from '@/services/api';
+import { formatDateTime } from '@/utils/dateUtils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -528,7 +529,7 @@ export default function GeofenceManagement() {
                                                 {alert.speed && <span>⚡ {alert.speed} km/h</span>}
                                                 <span className="flex items-center gap-1">
                                                     <Clock className="h-3 w-3" />
-                                                    {new Date(alert.created_at).toLocaleString('en-IN')}
+                                                    {formatDateTime(alert.created_at)}
                                                 </span>
                                                 {alert.is_resolved && (
                                                     <span className="text-green-600 font-medium">✅ Resolved</span>

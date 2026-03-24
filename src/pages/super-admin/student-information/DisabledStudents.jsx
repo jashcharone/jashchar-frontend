@@ -399,14 +399,14 @@ const DisabledStudents = () => {
 
       {/* Stats Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-        <Card className="bg-red-50 dark:bg-red-950 border-red-200">
+        <Card className="bg-red-50 dark:bg-red-950 border-red-200 dark:border-red-800">
           <CardContent className="pt-4">
-            <div className="text-2xl font-bold text-red-600">{students.length}</div>
-            <div className="text-sm text-red-700">Total Disabled</div>
+            <div className="text-2xl font-bold text-red-600 dark:text-red-400">{students.length}</div>
+            <div className="text-sm text-red-700 dark:text-red-400">Total Disabled</div>
           </CardContent>
         </Card>
         {Object.entries(reasonCounts).slice(0, 3).map(([reason, count]) => (
-          <Card key={reason} className="border-gray-200">
+          <Card key={reason} className="border-gray-200 dark:border-gray-800">
             <CardContent className="pt-4">
               <div className="text-2xl font-bold">{count}</div>
               <div className="text-sm text-muted-foreground truncate" title={reason}>{reason}</div>
@@ -510,7 +510,7 @@ const DisabledStudents = () => {
                     <td className="p-3">
                       <Avatar className="h-10 w-10">
                         <AvatarImage src={s.photo_url} alt={s.full_name} className="object-cover grayscale" />
-                        <AvatarFallback className="bg-red-100 text-red-600 font-semibold">
+                        <AvatarFallback className="bg-red-100 dark:bg-red-900/50 text-red-600 dark:text-red-400 font-semibold">
                           {s.first_name?.charAt(0)}{s.last_name?.charAt(0) || s.full_name?.charAt(0)}
                         </AvatarFallback>
                       </Avatar>

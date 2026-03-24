@@ -196,15 +196,15 @@ const ParentUsers = () => {
             </div>
 
             {/* Info Card */}
-            <Card className="border-emerald-200 bg-emerald-50">
+            <Card className="border-emerald-200 bg-emerald-50 dark:border-emerald-800 dark:bg-emerald-950/30">
                 <CardContent className="py-4">
                     <div className="flex items-start gap-3">
-                        <div className="bg-emerald-100 p-2 rounded-full">
-                            <Phone className="h-5 w-5 text-emerald-600" />
+                        <div className="bg-emerald-100 dark:bg-emerald-900/50 p-2 rounded-full">
+                            <Phone className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
                         </div>
                         <div>
-                            <p className="font-medium text-emerald-800">Parent Login = Father/Mother Phone</p>
-                            <p className="text-emerald-600 text-sm">
+                            <p className="font-medium text-emerald-800 dark:text-emerald-400">Parent Login = Father/Mother Phone</p>
+                            <p className="text-emerald-600 dark:text-emerald-300 text-sm">
                                 Parent accounts are created using the father_phone or mother_phone from student records.
                                 Username will be the phone number.
                             </p>
@@ -282,10 +282,10 @@ const ParentUsers = () => {
 
             {/* Actions Bar */}
             {selectedStudents.length > 0 && (
-                <Card className="border-emerald-200 bg-emerald-50">
+                <Card className="border-emerald-200 bg-emerald-50 dark:border-emerald-800 dark:bg-emerald-950/30">
                     <CardContent className="py-3">
                         <div className="flex items-center justify-between">
-                            <span className="text-emerald-700 font-medium">
+                            <span className="text-emerald-700 dark:text-emerald-400 font-medium">
                                 {selectedStudents.length} students selected
                                 {studentsWithParentPhone > 0 && ` (${studentsWithParentPhone} with parent phone)`}
                             </span>
@@ -431,7 +431,7 @@ const ParentUsers = () => {
 
                     {/* Pagination */}
                     <div className="flex items-center justify-between p-4 border-t">
-                        <div className="text-sm text-gray-500">
+                        <div className="text-sm text-muted-foreground">
                             Showing {((pagination.page - 1) * pagination.limit) + 1} to {Math.min(pagination.page * pagination.limit, pagination.total)} of {pagination.total}
                         </div>
                         <div className="flex gap-2">
@@ -471,9 +471,9 @@ const ParentUsers = () => {
                         </DialogDescription>
                     </DialogHeader>
                     <div className="space-y-4 py-4">
-                        <div className="bg-emerald-50 p-3 rounded-lg text-sm">
-                            <p className="font-medium text-emerald-700">How it works:</p>
-                            <ul className="list-disc list-inside text-emerald-600 mt-1 space-y-1">
+                        <div className="bg-emerald-50 dark:bg-emerald-950/30 p-3 rounded-lg text-sm border border-emerald-200 dark:border-emerald-800">
+                            <p className="font-medium text-emerald-700 dark:text-emerald-400">How it works:</p>
+                            <ul className="list-disc list-inside text-emerald-600 dark:text-emerald-300 mt-1 space-y-1">
                                 <li>Username = Father phone (or Mother phone if father's not available)</li>
                                 <li>Parent can login and see linked student(s)</li>
                                 <li>Multiple students with same parent phone will be linked</li>
@@ -487,15 +487,15 @@ const ParentUsers = () => {
                                 onChange={(e) => setDefaultPassword(e.target.value)}
                                 placeholder="Enter default password"
                             />
-                            <p className="text-xs text-gray-500">
+                            <p className="text-xs text-muted-foreground">
                                 Parents will use this password for first login.
                             </p>
                         </div>
 
-                        <div className="bg-blue-50 p-3 rounded-lg text-sm">
-                            <p className="font-medium text-blue-700">Login Credentials:</p>
-                            <p className="text-blue-600">Username: Parent Phone Number</p>
-                            <p className="text-blue-600">Password: {defaultPassword}</p>
+                        <div className="bg-blue-50 dark:bg-blue-950/30 p-3 rounded-lg text-sm border border-blue-200 dark:border-blue-800">
+                            <p className="font-medium text-blue-700 dark:text-blue-400">Login Credentials:</p>
+                            <p className="text-blue-600 dark:text-blue-300">Username: Parent Phone Number</p>
+                            <p className="text-blue-600 dark:text-blue-300">Password: {defaultPassword}</p>
                         </div>
                     </div>
                     <DialogFooter>

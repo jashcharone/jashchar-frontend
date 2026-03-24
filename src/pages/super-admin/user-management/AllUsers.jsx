@@ -19,6 +19,7 @@
  */
 
 import React, { useState, useEffect, useCallback } from 'react';
+import { formatDate } from '@/utils/dateUtils';
 import { useSearchParams } from 'react-router-dom';
 import { 
     Users, RefreshCw, Search, 
@@ -108,11 +109,11 @@ const AllUsers = () => {
     // Get user type badge color
     const getUserTypeBadgeClass = (type) => {
         switch (type) {
-            case 'student': return 'bg-blue-100 text-blue-700';
-            case 'staff': return 'bg-purple-100 text-purple-700';
-            case 'parent': return 'bg-emerald-100 text-emerald-700';
-            case 'super_admin': return 'bg-red-100 text-red-700';
-            default: return 'bg-gray-100 text-gray-700';
+            case 'student': return 'bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-400';
+            case 'staff': return 'bg-purple-100 text-purple-700 dark:bg-purple-900/50 dark:text-purple-400';
+            case 'parent': return 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-400';
+            case 'super_admin': return 'bg-red-100 text-red-700 dark:bg-red-900/50 dark:text-red-400';
+            default: return 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-400';
         }
     };
 
@@ -159,7 +160,7 @@ const AllUsers = () => {
         if (days === 1) return 'Yesterday';
         if (days < 7) return `${days} days ago`;
         if (days < 30) return `${Math.floor(days / 7)} weeks ago`;
-        return date.toLocaleDateString();
+        return formatDate(date);
     };
 
     return (
@@ -174,7 +175,19 @@ const AllUsers = () => {
                     </h1>
                     <p className="text-muted-foreground">Unified view of all system users</p>
                 </div>
-                <Button variant="outline" onClick={() => {}}>
+                <Button variant="outline" onClick={() => {
+                    if (users.length === 0) return;
+                    const csvContent = 'Name,Type,Email,Branch,Status,Last Login\n' + users.map(u => 
+                        `"${u.full_name || ''}","${u.user_type || ''}","${u.email || ''}","${u.branch_name || ''}","${u.is_active ? 'Active' : 'Disabled'}","${u.last_login_at ? formatLastLogin(u.last_login_at) : 'Never'}"`
+                    ).join('\n');
+                    const blob = new Blob([csvContent], { type: 'text/csv' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = 'all-users.csv';
+                    a.click();
+                    URL.revokeObjectURL(url);
+                }}>
                     <Download className="h-4 w-4 mr-2" />
                     Export
                 </Button>
@@ -229,7 +242,7 @@ const AllUsers = () => {
                         </Select>
 
                         <div className="relative">
-                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                             <Input
                                 placeholder="Search name, email..."
                                 value={filters.search}
@@ -405,11 +418,11 @@ const AllUsers = () => {
                     {selectedUser && (
                         <div className="space-y-4 py-4">
                             <div className="flex items-center gap-3">
-                                <div className="w-16 h-16 rounded-full bg-gray-200 overflow-hidden flex items-center justify-center">
+                                <div className="w-16 h-16 rounded-full bg-muted overflow-hidden flex items-center justify-center">
                                     {selectedUser.photo_url ? (
                                         <img src={selectedUser.photo_url} alt="" className="w-full h-full object-cover" />
                                     ) : (
-                                        <div className="text-gray-400">
+                                        <div className="text-muted-foreground">
                                             {getUserTypeIcon(selectedUser.user_type)}
                                         </div>
                                     )}
@@ -424,31 +437,31 @@ const AllUsers = () => {
 
                             <div className="grid grid-cols-2 gap-4 text-sm">
                                 <div>
-                                    <span className="text-gray-500">Email</span>
+                                    <span className="text-muted-foreground">Email</span>
                                     <p className="font-medium">{selectedUser.email || '-'}</p>
                                 </div>
                                 <div>
-                                    <span className="text-gray-500">Phone</span>
+                                    <span className="text-muted-foreground">Phone</span>
                                     <p className="font-medium">{selectedUser.phone || '-'}</p>
                                 </div>
                                 <div>
-                                    <span className="text-gray-500">Branch</span>
+                                    <span className="text-muted-foreground">Branch</span>
                                     <p className="font-medium">{selectedUser.branch_name || 'All'}</p>
                                 </div>
                                 <div>
-                                    <span className="text-gray-500">Status</span>
+                                    <span className="text-muted-foreground">Status</span>
                                     <p className={`font-medium ${selectedUser.is_active ? 'text-green-600' : 'text-red-600'}`}>
                                         {selectedUser.is_active ? 'Active' : 'Disabled'}
                                     </p>
                                 </div>
                                 <div>
-                                    <span className="text-gray-500">Last Login</span>
+                                    <span className="text-muted-foreground">Last Login</span>
                                     <p className="font-medium">{formatLastLogin(selectedUser.last_login_at)}</p>
                                 </div>
                                 <div>
-                                    <span className="text-gray-500">Created</span>
+                                    <span className="text-muted-foreground">Created</span>
                                     <p className="font-medium">
-                                        {selectedUser.created_at ? new Date(selectedUser.created_at).toLocaleDateString() : '-'}
+                                        {selectedUser.created_at ? formatDate(selectedUser.created_at) : '-'}
                                     </p>
                                 </div>
                             </div>

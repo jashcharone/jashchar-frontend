@@ -4,6 +4,7 @@
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════
 
 import React, { useState, useEffect, useCallback } from 'react';
+import { formatDate } from '@/utils/dateUtils';
 import DashboardLayout from '@/components/DashboardLayout';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { useBranch } from '@/contexts/BranchContext';
@@ -831,13 +832,13 @@ const CardManagement = () => {
                                                 </TableCell>
                                                 <TableCell>
                                                     {card.valid_until 
-                                                        ? new Date(card.valid_until).toLocaleDateString()
+                                                        ? formatDate(card.valid_until)
                                                         : <span className="text-muted-foreground">No expiry</span>
                                                     }
                                                 </TableCell>
                                                 <TableCell>
                                                     {card.last_used_at 
-                                                        ? new Date(card.last_used_at).toLocaleDateString()
+                                                        ? formatDate(card.last_used_at)
                                                         : <span className="text-muted-foreground">Never</span>
                                                     }
                                                 </TableCell>

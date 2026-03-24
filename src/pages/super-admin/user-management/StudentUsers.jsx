@@ -315,7 +315,7 @@ const StudentUsers = () => {
                         </Select>
 
                         <div className="relative">
-                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                             <Input
                                 placeholder="Search..."
                                 value={filters.search}
@@ -334,10 +334,10 @@ const StudentUsers = () => {
 
             {/* Actions Bar */}
             {selectedStudents.length > 0 && (
-                <Card className="border-blue-200 bg-blue-50">
+                <Card className="border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-950/30">
                     <CardContent className="py-3">
                         <div className="flex items-center justify-between">
-                            <span className="text-blue-700 font-medium">
+                            <span className="text-blue-700 dark:text-blue-400 font-medium">
                                 {selectedStudents.length} students selected
                                 {studentsWithoutLogin > 0 && ` (${studentsWithoutLogin} without login)`}
                             </span>
@@ -468,7 +468,7 @@ const StudentUsers = () => {
 
                     {/* Pagination */}
                     <div className="flex items-center justify-between p-4 border-t">
-                        <div className="text-sm text-gray-500">
+                        <div className="text-sm text-muted-foreground">
                             Showing {((pagination.page - 1) * pagination.limit) + 1} to {Math.min(pagination.page * pagination.limit, pagination.total)} of {pagination.total}
                         </div>
                         <div className="flex gap-2">
@@ -515,14 +515,14 @@ const StudentUsers = () => {
                                 onChange={(e) => setDefaultPassword(e.target.value)}
                                 placeholder="Enter default password"
                             />
-                            <p className="text-xs text-gray-500">
+                            <p className="text-xs text-muted-foreground">
                                 This password will be set for all new accounts. Students can change it after login.
                             </p>
                         </div>
-                        <div className="bg-blue-50 p-3 rounded-lg text-sm">
-                            <p className="font-medium text-blue-700">Login Credentials:</p>
-                            <p className="text-blue-600">Username: Admission Number (e.g., SSVK-2026-00001)</p>
-                            <p className="text-blue-600">Password: {defaultPassword}</p>
+                        <div className="bg-blue-50 dark:bg-blue-950/30 p-3 rounded-lg text-sm border border-blue-200 dark:border-blue-800">
+                            <p className="font-medium text-blue-700 dark:text-blue-400">Login Credentials:</p>
+                            <p className="text-blue-600 dark:text-blue-300">Username: Admission Number (e.g., SSVK-2026-00001)</p>
+                            <p className="text-blue-600 dark:text-blue-300">Password: {defaultPassword}</p>
                         </div>
                     </div>
                     <DialogFooter>
@@ -566,8 +566,8 @@ const StudentUsers = () => {
                                 placeholder="Enter new password"
                             />
                         </div>
-                        <div className="bg-orange-50 p-3 rounded-lg text-sm">
-                            <p className="text-orange-700">
+                        <div className="bg-orange-50 dark:bg-orange-950/30 p-3 rounded-lg text-sm border border-orange-200 dark:border-orange-800">
+                            <p className="text-orange-700 dark:text-orange-400">
                                 All selected students' passwords will be reset to: <strong>{defaultPassword}</strong>
                             </p>
                         </div>

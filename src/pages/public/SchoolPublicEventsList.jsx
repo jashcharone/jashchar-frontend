@@ -1,4 +1,5 @@
 ﻿import React, { useState, useEffect } from 'react';
+import { formatDate } from '@/utils/dateUtils';
 import { useParams, Link } from 'react-router-dom';
 import publicCmsService from '@/services/publicCmsService';
 import { Loader2, Calendar, MapPin } from 'lucide-react';
@@ -55,7 +56,7 @@ const SchoolPublicEventsList = () => {
               <div className="p-5 flex-grow">
                 <div className="flex items-center text-primary font-semibold mb-2 text-sm">
                   <Calendar className="w-4 h-4 mr-1" />
-                  {new Date(event.start_date).toLocaleDateString()}
+                  {formatDate(event.start_date)}
                 </div>
                 <h3 className="text-xl font-bold mb-2">{event.title}</h3>
                 {event.location && (

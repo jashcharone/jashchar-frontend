@@ -939,6 +939,15 @@ const StudentDetails = () => {
                 </Card>
             )}
 
+            {loading && (
+                <Card className="p-10">
+                    <div className="flex flex-col items-center justify-center text-muted-foreground">
+                        <Loader2 className="h-10 w-10 animate-spin mb-4" />
+                        <p className="text-sm">Loading students...</p>
+                    </div>
+                </Card>
+            )}
+
             {students.length === 0 && !loading && allStudents.length === 0 && (
                 <Card className="p-10">
                     <div className="text-center text-muted-foreground">

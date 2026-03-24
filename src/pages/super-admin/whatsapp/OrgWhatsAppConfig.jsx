@@ -7,6 +7,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
+import { formatDateTime } from '@/utils/dateUtils';
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -129,7 +130,7 @@ const OrgWhatsAppConfig = () => {
     try {
       const res = await api.post('/whatsapp/test', { 
         phone: testPhone,
-        message: `🔔 Test from Your Organization\n\n✅ WhatsApp integration working!\n\n📅 ${new Date().toLocaleString('en-IN')}`
+        message: `🔔 Test from Your Organization\n\n✅ WhatsApp integration working!\n\n📅 ${formatDateTime(new Date())}`
       });
       
       if (res.data.success) {

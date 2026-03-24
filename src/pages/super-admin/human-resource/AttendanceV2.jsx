@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { formatLongDate } from '@/utils/dateUtils';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
@@ -315,7 +316,7 @@ const AttendanceV2 = () => {
             {/* Attendance Table */}
             <Card>
                 <CardHeader>
-                    <CardTitle>Employee Attendance - {new Date(filters.date).toLocaleDateString('en-IN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</CardTitle>
+                    <CardTitle>Employee Attendance - {formatLongDate(new Date(filters.date))}</CardTitle>
                 </CardHeader>
                 <CardContent>
                     <Table>

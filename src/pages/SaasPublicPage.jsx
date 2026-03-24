@@ -101,7 +101,7 @@ const SaasPublicPage = ({ slug }) => {
   if (error) return (
       <div className="min-h-screen flex flex-col items-center justify-center p-4">
           <h1 className="text-2xl font-bold text-red-600 mb-4">Error Loading Page</h1>
-          <p className="text-gray-700 mb-4">{error}</p>
+          <p className="text-gray-700 dark:text-gray-300 mb-4">{error}</p>
           <button onClick={() => window.location.reload()} className="px-4 py-2 bg-blue-600 text-white rounded">Retry</button>
       </div>
   );
@@ -110,7 +110,7 @@ const SaasPublicPage = ({ slug }) => {
       <div className="min-h-screen flex flex-col items-center justify-center">
           <h1 className="text-2xl font-bold mb-2">Page Not Found</h1>
           <p>Could not find content for: {activeSlug}</p>
-          <p className="text-sm text-gray-500 mt-4">Check console for details.</p>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-4">Check console for details.</p>
       </div>
   );
 

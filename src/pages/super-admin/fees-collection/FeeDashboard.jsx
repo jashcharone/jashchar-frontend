@@ -750,7 +750,7 @@ const FeeDashboard = () => {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                <div className="flex justify-between items-center p-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
                   <div>
                     <p className="text-sm text-muted-foreground">This Week</p>
                     <p className="text-xl font-bold">{formatCompactCurrency(weekStats.collectedThisWeek)}</p>
@@ -759,7 +759,7 @@ const FeeDashboard = () => {
                     {weekStats.weekTrend >= 0 ? '+' : ''}{weekStats.weekTrend.toFixed(1)}%
                   </Badge>
                 </div>
-                <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                <div className="flex justify-between items-center p-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
                   <div>
                     <p className="text-sm text-muted-foreground">This Month</p>
                     <p className="text-xl font-bold">{formatCompactCurrency(monthStats.collectedThisMonth)}</p>
@@ -792,7 +792,7 @@ const FeeDashboard = () => {
                       <p className="text-center text-muted-foreground py-8">No payments today</p>
                     ) : (
                       recentPayments.map((payment, idx) => (
-                        <div key={payment.id || idx} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg hover:bg-gray-100 transition-colors">
+                        <div key={payment.id || idx} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700/50 transition-colors">
                           <div className="flex items-center gap-3">
                             <div className="p-2 bg-green-100 dark:bg-green-900/30 rounded-full">
                               <IndianRupee className="h-4 w-4 text-green-600 dark:text-green-400" />

@@ -4,6 +4,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
+import { formatDateTime } from '@/utils/dateUtils';
 import { useNavigate } from 'react-router-dom';
 import {
   ArrowLeft,
@@ -430,7 +431,7 @@ const SyncCenter = () => {
                                <span className="font-mono">{log.modules_synced || 0}</span> updates
                             </td>
                             <td className="px-6 py-4 text-right text-gray-500 font-mono text-xs">
-                               {new Date(log.created_at).toLocaleString()}
+                               {formatDateTime(log.created_at)}
                             </td>
                          </tr>
                       ))

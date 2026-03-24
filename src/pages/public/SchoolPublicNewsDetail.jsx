@@ -1,4 +1,5 @@
 ﻿import React, { useState, useEffect } from 'react';
+import { formatDate } from '@/utils/dateUtils';
 import { useParams, Link } from 'react-router-dom';
 import publicCmsService from '@/services/publicCmsService';
 import { Loader2, ArrowLeft, Calendar, User } from 'lucide-react';
@@ -55,7 +56,7 @@ const SchoolPublicNewsDetail = () => {
           <h1 className="text-3xl md:text-4xl font-bold mb-4">{newsItem.title}</h1>
           
           <div className="flex items-center text-gray-500 text-sm mb-8 space-x-4">
-            <div className="flex items-center"><Calendar className="w-4 h-4 mr-1" /> {new Date(newsItem.date).toLocaleDateString()}</div>
+            <div className="flex items-center"><Calendar className="w-4 h-4 mr-1" /> {formatDate(newsItem.date)}</div>
             {newsItem.author && <div className="flex items-center"><User className="w-4 h-4 mr-1" /> {newsItem.author}</div>}
           </div>
 

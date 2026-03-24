@@ -368,12 +368,12 @@ function SchoolLogin() {
           </CardHeader>
           <CardContent>
             {/* Login Method Tabs */}
-            <div className="flex gap-1 mb-4 p-1 bg-gray-100 rounded-lg">
+            <div className="flex gap-1 mb-4 p-1 bg-gray-100 dark:bg-gray-800 rounded-lg">
               <button
                 type="button"
                 onClick={() => { setLoginMethod('traditional'); resetV2State(); }}
                 className={`flex-1 py-2 px-2 text-xs rounded-md flex items-center justify-center gap-1 transition-all ${
-                  loginMethod === 'traditional' ? 'bg-white shadow text-gray-900' : 'text-gray-600 hover:text-gray-900'
+                  loginMethod === 'traditional' ? 'bg-white dark:bg-gray-700 shadow text-gray-900 dark:text-white' : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
                 }`}
               >
                 <User size={14} />
@@ -383,7 +383,7 @@ function SchoolLogin() {
                 type="button"
                 onClick={() => { setLoginMethod('mobile'); resetV2State(); }}
                 className={`flex-1 py-2 px-2 text-xs rounded-md flex items-center justify-center gap-1 transition-all ${
-                  loginMethod === 'mobile' ? 'bg-white shadow text-gray-900' : 'text-gray-600 hover:text-gray-900'
+                  loginMethod === 'mobile' ? 'bg-white dark:bg-gray-700 shadow text-gray-900 dark:text-white' : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
                 }`}
               >
                 <Smartphone size={14} />
@@ -393,7 +393,7 @@ function SchoolLogin() {
                 type="button"
                 onClick={() => { setLoginMethod('face'); resetV2State(); }}
                 className={`flex-1 py-2 px-2 text-xs rounded-md flex items-center justify-center gap-1 transition-all ${
-                  loginMethod === 'face' ? 'bg-white shadow text-gray-900' : 'text-gray-600 hover:text-gray-900'
+                  loginMethod === 'face' ? 'bg-white dark:bg-gray-700 shadow text-gray-900 dark:text-white' : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
                 }`}
               >
                 <ScanFace size={14} />
@@ -403,7 +403,7 @@ function SchoolLogin() {
                 type="button"
                 onClick={() => { setLoginMethod('pin'); resetV2State(); }}
                 className={`flex-1 py-2 px-2 text-xs rounded-md flex items-center justify-center gap-1 transition-all ${
-                  loginMethod === 'pin' ? 'bg-white shadow text-gray-900' : 'text-gray-600 hover:text-gray-900'
+                  loginMethod === 'pin' ? 'bg-white dark:bg-gray-700 shadow text-gray-900 dark:text-white' : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
                 }`}
               >
                 <KeyRound size={14} />
@@ -445,7 +445,7 @@ function SchoolLogin() {
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-9 text-gray-500"
+                    className="absolute right-3 top-9 text-gray-500 dark:text-gray-400"
                   >
                     {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
                   </button>
@@ -464,7 +464,7 @@ function SchoolLogin() {
                     <div className="space-y-2">
                       <Label style={{ color: cardStyle.color }}>Mobile Number</Label>
                       <div className="flex gap-2">
-                        <div className="flex items-center px-3 bg-gray-100 rounded-md text-sm font-medium text-gray-700">
+                        <div className="flex items-center px-3 bg-gray-100 dark:bg-gray-800 rounded-md text-sm font-medium text-gray-700 dark:text-gray-300">
                           +91
                         </div>
                         <Input
@@ -484,7 +484,7 @@ function SchoolLogin() {
                           type="button"
                           onClick={() => setOtpChannel('whatsapp')}
                           className={`flex-1 py-2 px-3 rounded-md text-sm border transition-all ${
-                            otpChannel === 'whatsapp' ? 'border-green-500 bg-green-50 text-green-700' : 'border-gray-200 hover:border-gray-300'
+                            otpChannel === 'whatsapp' ? 'border-green-500 bg-green-50 dark:bg-green-950/30 text-green-700 dark:text-green-400' : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
                           }`}
                         >
                           WhatsApp
@@ -493,7 +493,7 @@ function SchoolLogin() {
                           type="button"
                           onClick={() => setOtpChannel('sms')}
                           className={`flex-1 py-2 px-3 rounded-md text-sm border transition-all ${
-                            otpChannel === 'sms' ? 'border-blue-500 bg-blue-50 text-blue-700' : 'border-gray-200 hover:border-gray-300'
+                            otpChannel === 'sms' ? 'border-blue-500 bg-blue-50 dark:bg-blue-950/30 text-blue-700 dark:text-blue-400' : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
                           }`}
                         >
                           SMS
@@ -511,12 +511,12 @@ function SchoolLogin() {
                     <button
                       type="button"
                       onClick={() => setOtpStep('mobile')}
-                      className="flex items-center gap-1 text-sm text-gray-600 hover:text-gray-900 mb-2"
+                      className="flex items-center gap-1 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white mb-2"
                     >
                       <ArrowLeft size={16} /> Change Number
                     </button>
                     <div className="text-center mb-4">
-                      <p className="text-sm text-gray-600">OTP ಕಳುಹಿಸಲಾಗಿದೆ</p>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">OTP ಕಳುಹಿಸಲಾಗಿದೆ</p>
                       <p className="font-medium">+91 {mobileNumber}</p>
                     </div>
                     <div className="space-y-2">
@@ -543,7 +543,7 @@ function SchoolLogin() {
                     </Button>
                     <div className="text-center">
                       {otpCountdown > 0 ? (
-                        <p className="text-sm text-gray-500">Resend OTP in {otpCountdown}s</p>
+                        <p className="text-sm text-gray-500 dark:text-gray-400">Resend OTP in {otpCountdown}s</p>
                       ) : (
                         <button type="button" onClick={handleSendOTP} className="text-sm text-blue-600 hover:underline">
                           Resend OTP
@@ -556,7 +556,7 @@ function SchoolLogin() {
                 {otpStep === 'role' && (
                   <>
                     <div className="text-center mb-4">
-                      <p className="text-sm text-gray-600">ಯಾವ role ಆಗಿ ಲಾಗಿನ್ ಆಗಬೇಕು?</p>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">ಯಾವ role ಆಗಿ ಲಾಗಿನ್ ಆಗಬೇಕು?</p>
                     </div>
                     <div className="space-y-2">
                       {userRoles.map((role) => (
@@ -564,19 +564,19 @@ function SchoolLogin() {
                           key={role.id}
                           onClick={() => handleRoleSelect(role)}
                           disabled={otpLoading}
-                          className="w-full p-3 border rounded-lg hover:bg-gray-50 transition-all flex items-center gap-3 text-left"
+                          className="w-full p-3 border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-all flex items-center gap-3 text-left"
                         >
                           <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                            role.role_type === 'parent' ? 'bg-blue-100 text-blue-600' :
-                            role.role_type === 'student' ? 'bg-green-100 text-green-600' :
-                            role.role_type === 'teacher' ? 'bg-purple-100 text-purple-600' :
-                            'bg-gray-100 text-gray-600'
+                            role.role_type === 'parent' ? 'bg-blue-100 dark:bg-blue-900/50 text-blue-600 dark:text-blue-400' :
+                            role.role_type === 'student' ? 'bg-green-100 dark:bg-green-900/50 text-green-600 dark:text-green-400' :
+                            role.role_type === 'teacher' ? 'bg-purple-100 dark:bg-purple-900/50 text-purple-600 dark:text-purple-400' :
+                            'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400'
                           }`}>
                             <User size={20} />
                           </div>
                           <div>
                             <p className="font-medium capitalize">{role.role_type}</p>
-                            <p className="text-xs text-gray-500">{role.branch_name || 'Main Branch'}</p>
+                            <p className="text-xs text-gray-500 dark:text-gray-400">{role.branch_name || 'Main Branch'}</p>
                           </div>
                         </button>
                       ))}
@@ -591,10 +591,10 @@ function SchoolLogin() {
               <div className="space-y-4">
                 {!faceScanning ? (
                   <div className="text-center">
-                    <div className="w-24 h-24 mx-auto mb-4 rounded-full bg-purple-100 flex items-center justify-center">
-                      <ScanFace size={48} className="text-purple-600" />
+                    <div className="w-24 h-24 mx-auto mb-4 rounded-full bg-purple-100 dark:bg-purple-900/50 flex items-center justify-center">
+                      <ScanFace size={48} className="text-purple-600 dark:text-purple-400" />
                     </div>
-                    <p className="text-sm text-gray-600 mb-4">ಕ್ಯಾಮರಾ ಬಳಸಿ ಮುಖ ಸ್ಕ್ಯಾನ್ ಮಾಡಿ</p>
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">ಕ್ಯಾಮರಾ ಬಳಸಿ ಮುಖ ಸ್ಕ್ಯಾನ್ ಮಾಡಿ</p>
                     <Button onClick={startFaceScan} className="w-full hover-bg-dynamic" style={buttonStyle}>
                       Start Face Scan
                     </Button>
@@ -632,7 +632,7 @@ function SchoolLogin() {
                 <div className="space-y-2">
                   <Label style={{ color: cardStyle.color }}>Mobile Number</Label>
                   <div className="flex gap-2">
-                    <div className="flex items-center px-3 bg-gray-100 rounded-md text-sm font-medium text-gray-700">
+                    <div className="flex items-center px-3 bg-gray-100 dark:bg-gray-800 rounded-md text-sm font-medium text-gray-700 dark:text-gray-300">
                       +91
                     </div>
                     <Input

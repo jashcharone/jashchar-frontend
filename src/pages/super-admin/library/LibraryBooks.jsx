@@ -242,7 +242,7 @@ const LibraryBooks = () => {
                         <TableCell>{book.author}</TableCell>
                         <TableCell>{book.subject}</TableCell>
                         <TableCell>{book.rack_number}</TableCell>
-                        <TableCell>{book.qty} <span className="text-xs text-gray-500">(Avl: {book.available})</span></TableCell>
+                        <TableCell>{book.qty} <span className="text-xs text-muted-foreground">(Avl: {book.available})</span></TableCell>
                         <TableCell>{book.book_price}</TableCell>
                         <TableCell>{book.post_date}</TableCell>
                         <TableCell className="text-right">

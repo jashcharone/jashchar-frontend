@@ -6,7 +6,7 @@ import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { useBranch } from '@/contexts/BranchContext';
 import { useToast } from '@/components/ui/use-toast';
 import { Button } from '@/components/ui/button';
-import { formatDate } from '@/utils/dateUtils';
+import { formatDate, getMonthShortName } from '@/utils/dateUtils';
 import { ROUTES } from '@/registry/routeRegistry';
 import {
   Loader2, Bus, Route, Users, UserCheck, AlertTriangle, Wrench, Fuel, Clock,
@@ -133,7 +133,7 @@ const TransportDashboard = () => {
       .sort((a, b) => a[0].localeCompare(b[0]))
       .slice(-6)
       .map(([month, cost]) => ({
-        month: new Date(month + '-01').toLocaleDateString('en-IN', { month: 'short' }),
+        month: getMonthShortName(month + '-01'),
         cost: Math.round(cost)
       }));
   }, [data]);
@@ -152,7 +152,7 @@ const TransportDashboard = () => {
       .sort((a, b) => a[0].localeCompare(b[0]))
       .slice(-6)
       .map(([month, cost]) => ({
-        month: new Date(month + '-01').toLocaleDateString('en-IN', { month: 'short' }),
+        month: getMonthShortName(month + '-01'),
         cost: Math.round(cost)
       }));
   }, [data]);
@@ -363,7 +363,7 @@ const TransportDashboard = () => {
                       <span className="text-xs text-muted-foreground">{v.vehicle_type}</span>
                     </div>
                     <span className={`text-xs px-2 py-0.5 rounded ${
-                      v.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
+                      v.status === 'active' ? 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-400' : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-400'
                     }`}>{v.status}</span>
                   </div>
                 );

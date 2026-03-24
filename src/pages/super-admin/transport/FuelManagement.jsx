@@ -10,7 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { formatDate } from '@/utils/dateUtils';
+import { formatDate, getMonthShortName } from '@/utils/dateUtils';
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger
@@ -126,7 +126,7 @@ const FuelManagement = () => {
       .slice(-6)
       .map(d => ({
         ...d,
-        month: new Date(d.month + '-01').toLocaleDateString('en-IN', { month: 'short', year: '2-digit' }),
+        month: getMonthShortName(d.month + '-01') + ' ' + new Date(d.month + '-01').getFullYear().toString().slice(-2),
         cost: Math.round(d.cost),
         liters: Math.round(d.liters)
       }));

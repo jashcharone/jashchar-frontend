@@ -216,36 +216,36 @@ const LibraryIssueReturn = () => {
                 <Card>
                   <CardContent className="pt-6">
                     <div className="flex flex-col items-center text-center mb-4">
-                      <div className="h-24 w-24 bg-gray-100 rounded-full flex items-center justify-center mb-2">
-                        <span className="text-2xl font-bold text-gray-400">
+                      <div className="h-24 w-24 bg-muted rounded-full flex items-center justify-center mb-2">
+                        <span className="text-2xl font-bold text-muted-foreground">
                           {(member.member_type === 'student' ? member.student?.full_name : member.staff?.full_name)?.charAt(0)}
                         </span>
                       </div>
                       <h3 className="text-lg font-bold">
                         {member.member_type === 'student' ? member.student?.full_name : member.staff?.full_name}
                       </h3>
-                      <p className="text-sm text-gray-500 capitalize">{member.member_type}</p>
+                      <p className="text-sm text-muted-foreground capitalize">{member.member_type}</p>
                     </div>
                     
                     <div className="space-y-2 text-sm">
                       <div className="flex justify-between border-b pb-1">
-                        <span className="text-gray-500">Card No</span>
+                        <span className="text-muted-foreground">Card No</span>
                         <span className="font-medium">{member.library_card_no}</span>
                       </div>
                       {member.member_type === 'student' && (
                         <>
                           <div className="flex justify-between border-b pb-1">
-                            <span className="text-gray-500">Admission No</span>
+                            <span className="text-muted-foreground">Admission No</span>
                             <span className="font-medium">{member.student?.school_code}</span>
                           </div>
                           <div className="flex justify-between border-b pb-1">
-                            <span className="text-gray-500">Class</span>
+                            <span className="text-muted-foreground">Class</span>
                             <span className="font-medium">{member.student?.class?.name} ({member.student?.section?.name})</span>
                           </div>
                         </>
                       )}
                       <div className="flex justify-between border-b pb-1">
-                        <span className="text-gray-500">Phone</span>
+                        <span className="text-muted-foreground">Phone</span>
                         <span className="font-medium">{member.member_type === 'student' ? member.student?.phone : member.staff?.phone}</span>
                       </div>
                     </div>

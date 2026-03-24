@@ -3,6 +3,7 @@
  * Platform-wide analytics for JASH ERP platform owner
  */
 import React, { useState, useEffect } from 'react';
+import { formatDate } from '@/utils/dateUtils';
 import DashboardLayout from '@/components/DashboardLayout';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -502,7 +503,7 @@ const MasterAdminAnalytics = () => {
                       </div>
                       <div className="text-right">
                         <Badge variant="outline">
-                          {new Date(org.created_at).toLocaleDateString()}
+                          {formatDate(org.created_at)}
                         </Badge>
                       </div>
                     </div>

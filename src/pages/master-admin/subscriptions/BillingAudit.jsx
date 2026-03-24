@@ -1,4 +1,5 @@
 ﻿import React, { useState, useEffect } from 'react';
+import { formatDateTime } from '@/utils/dateUtils';
 import { supabase } from '@/lib/customSupabaseClient';
 import DashboardLayout from '@/components/DashboardLayout';
 import { useToast } from '@/components/ui/use-toast';
@@ -78,7 +79,7 @@ const BillingAudit = () => {
                             <tbody>
                                 {audits.map((audit) => (
                                     <tr key={audit.id} className="bg-card border-b hover:bg-muted/50">
-                                        <td className="px-6 py-4">{new Date(audit.created_at).toLocaleString()}</td>
+                                        <td className="px-6 py-4">{formatDateTime(audit.created_at)}</td>
                                         <td className="px-6 py-4">{audit.school?.name || 'N/A'}</td>
                                         <td className="px-6 py-4 font-medium">{audit.action_type}</td>
                                         <td className="px-6 py-4">{audit.description}</td>

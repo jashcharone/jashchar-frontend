@@ -8,6 +8,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { formatDateWithMonthName as formatDate } from '@/utils/dateUtils';
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Progress } from "@/components/ui/progress";
 import {
@@ -156,16 +157,6 @@ const WalletDashboard = ({
             currency: 'INR',
             minimumFractionDigits: 2
         }).format(amount);
-    };
-    
-    // Format date
-    const formatDate = (dateStr) => {
-        const date = new Date(dateStr);
-        return date.toLocaleDateString('en-IN', { 
-            day: '2-digit', 
-            month: 'short',
-            year: 'numeric'
-        });
     };
     
     // Get max daily usage for chart

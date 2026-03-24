@@ -1,4 +1,5 @@
 ﻿import React, { useState, useEffect } from 'react';
+import { formatDate } from '@/utils/dateUtils';
 import { useParams, Link } from 'react-router-dom';
 import publicCmsService from '@/services/publicCmsService';
 import { Loader2, ArrowLeft, Calendar, MapPin, Clock, ChevronRight } from 'lucide-react';
@@ -77,8 +78,8 @@ const SchoolPublicEventDetail = () => {
                     <div>
                       <div className="text-xs text-gray-500 uppercase font-bold">Date</div>
                       <div className="font-medium">
-                        {new Date(event.start_date).toLocaleDateString()} 
-                        {event.end_date && ` - ${new Date(event.end_date).toLocaleDateString()}`}
+                        {formatDate(event.start_date)} 
+                        {event.end_date && ` - ${formatDate(event.end_date)}`}
                       </div>
                     </div>
                   </div>
@@ -111,7 +112,7 @@ const SchoolPublicEventDetail = () => {
                   {recentEvents && recentEvents.length > 0 ? (
                     recentEvents.map(re => (
                       <Link key={re.id} to={`/school/${schoolSlug}/events/${re.id}`} className="block group">
-                        <div className="text-sm text-gray-500 mb-1">{new Date(re.start_date).toLocaleDateString()}</div>
+                        <div className="text-sm text-gray-500 mb-1">{formatDate(re.start_date)}</div>
                         <div className="font-medium group-hover:text-primary transition-colors line-clamp-2">
                           {re.title}
                         </div>

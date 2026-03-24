@@ -1,4 +1,5 @@
 ﻿import React, { useState, useEffect } from 'react';
+import { formatDate } from '@/utils/dateUtils';
 import { useNavigate, Link } from 'react-router-dom';
 import DashboardLayout from '@/components/DashboardLayout';
 import { supabase } from '@/lib/customSupabaseClient';
@@ -118,7 +119,7 @@ const ManageSchools = () => {
                         {school.status}
                       </Badge>
                     </TableCell>
-                    <TableCell>{new Date(school.created_at).toLocaleDateString()}</TableCell>
+                    <TableCell>{formatDate(school.created_at)}</TableCell>
                     <TableCell className="text-right">
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild><Button variant="ghost" size="icon"><MoreHorizontal className="h-4 w-4" /></Button></DropdownMenuTrigger>

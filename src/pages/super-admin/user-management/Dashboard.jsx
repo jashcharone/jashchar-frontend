@@ -57,12 +57,12 @@ const UserManagementDashboard = () => {
     const StatCard = ({ title, icon: Icon, value, subValue, color, onClick }) => (
         <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={onClick}>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium text-gray-600">{title}</CardTitle>
+                <CardTitle className="text-sm font-medium text-muted-foreground">{title}</CardTitle>
                 <Icon className={`h-5 w-5 ${color}`} />
             </CardHeader>
             <CardContent>
                 <div className="text-3xl font-bold">{value}</div>
-                {subValue && <p className="text-xs text-gray-500 mt-1">{subValue}</p>}
+                {subValue && <p className="text-xs text-muted-foreground mt-1">{subValue}</p>}
             </CardContent>
         </Card>
     );
@@ -75,7 +75,7 @@ const UserManagementDashboard = () => {
                 </div>
                 <div>
                     <h3 className="font-semibold">{title}</h3>
-                    <p className="text-sm text-gray-500">{description}</p>
+                    <p className="text-sm text-muted-foreground">{description}</p>
                 </div>
             </CardContent>
         </Card>
@@ -98,7 +98,7 @@ const UserManagementDashboard = () => {
             <div className="flex justify-between items-center">
                 <div>
                     <h1 className="text-2xl font-bold">User Management</h1>
-                    <p className="text-gray-500">Manage logins for Students, Parents, and Staff</p>
+                    <p className="text-muted-foreground">Manage logins for Students, Parents, and Staff</p>
                 </div>
                 <div className="flex gap-3">
                     <Select value={selectedBranchFilter} onValueChange={setSelectedBranchFilter}>
@@ -168,7 +168,7 @@ const UserManagementDashboard = () => {
                     </CardHeader>
                     <CardContent>
                         <div className="text-2xl font-bold text-green-600">{stats?.logins?.today || 0}</div>
-                        <p className="text-xs text-gray-500">Successful logins today</p>
+                        <p className="text-xs text-muted-foreground">Successful logins today</p>
                     </CardContent>
                 </Card>
                 <Card>
@@ -180,7 +180,7 @@ const UserManagementDashboard = () => {
                     </CardHeader>
                     <CardContent>
                         <div className="text-2xl font-bold text-red-600">{stats?.logins?.failedToday || 0}</div>
-                        <p className="text-xs text-gray-500">Failed attempts today</p>
+                        <p className="text-xs text-muted-foreground">Failed attempts today</p>
                     </CardContent>
                 </Card>
                 <Card>
@@ -194,7 +194,7 @@ const UserManagementDashboard = () => {
                         <div className="text-2xl font-bold text-blue-600">
                             {(stats?.students?.withoutLogin || 0) + (stats?.staff?.withoutLogin || 0)}
                         </div>
-                        <p className="text-xs text-gray-500">Users without login</p>
+                        <p className="text-xs text-muted-foreground">Users without login</p>
                     </CardContent>
                 </Card>
             </div>
@@ -250,9 +250,9 @@ const UserManagementDashboard = () => {
 
             {/* Users Without Login Summary */}
             {((stats?.students?.withoutLogin || 0) > 0 || (stats?.staff?.withoutLogin || 0) > 0) && (
-                <Card className="border-yellow-200 bg-yellow-50">
+                <Card className="border-yellow-200 bg-yellow-50 dark:border-yellow-800 dark:bg-yellow-950/30">
                     <CardHeader>
-                        <CardTitle className="text-yellow-800 flex items-center gap-2">
+                        <CardTitle className="text-yellow-800 dark:text-yellow-400 flex items-center gap-2">
                             <Clock className="h-5 w-5" />
                             Action Required: Users Without Login
                         </CardTitle>
@@ -262,7 +262,7 @@ const UserManagementDashboard = () => {
                             {stats?.students?.withoutLogin > 0 && (
                                 <Button 
                                     variant="outline" 
-                                    className="border-yellow-500 text-yellow-700 hover:bg-yellow-100"
+                                    className="border-yellow-500 text-yellow-700 hover:bg-yellow-100 dark:border-yellow-600 dark:text-yellow-400 dark:hover:bg-yellow-900/30"
                                     onClick={() => navigate(`/${basePath}/user-management/student-users?has_login=false`)}
                                 >
                                     <GraduationCap className="h-4 w-4 mr-2" />
@@ -272,7 +272,7 @@ const UserManagementDashboard = () => {
                             {stats?.staff?.withoutLogin > 0 && (
                                 <Button 
                                     variant="outline"
-                                    className="border-yellow-500 text-yellow-700 hover:bg-yellow-100"
+                                    className="border-yellow-500 text-yellow-700 hover:bg-yellow-100 dark:border-yellow-600 dark:text-yellow-400 dark:hover:bg-yellow-900/30"
                                     onClick={() => navigate(`/${basePath}/user-management/staff-users?has_login=false`)}
                                 >
                                     <Briefcase className="h-4 w-4 mr-2" />
@@ -282,7 +282,7 @@ const UserManagementDashboard = () => {
                             {stats?.parents?.withoutLogin > 0 && (
                                 <Button 
                                     variant="outline"
-                                    className="border-yellow-500 text-yellow-700 hover:bg-yellow-100"
+                                    className="border-yellow-500 text-yellow-700 hover:bg-yellow-100 dark:border-yellow-600 dark:text-yellow-400 dark:hover:bg-yellow-900/30"
                                     onClick={() => navigate(`/${basePath}/user-management/parent-users?has_login=false`)}
                                 >
                                     <UserPlus className="h-4 w-4 mr-2" />

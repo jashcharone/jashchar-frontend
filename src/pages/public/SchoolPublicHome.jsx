@@ -1,4 +1,5 @@
 ﻿import React, { useState, useEffect } from 'react';
+import { formatDate, getMonthShortName } from '@/utils/dateUtils';
 import { useParams, Link } from 'react-router-dom';
 import publicCmsService from '@/services/publicCmsService';
 import { 
@@ -655,7 +656,7 @@ const NewsSection = ({ news, slug, primaryColor = DEFAULT_PRIMARY }) => {
               <div className="p-5">
                 <div className="flex items-center gap-2 text-sm text-gray-500 mb-2">
                   <Calendar size={12} style={{ color: primaryColor }} />
-                  {new Date(item.published_at).toLocaleDateString()}
+                  {formatDate(item.published_at)}
                 </div>
                 <h3 className="text-xl font-bold mb-2 text-gray-900 transition-colors line-clamp-2 hover:opacity-80">
                   <Link to={`/${slug}/news/${item.id}`} style={{ color: primaryColor }}>{item.title}</Link>
@@ -717,7 +718,7 @@ const EventsSection = ({ events, slug, primaryColor = DEFAULT_PRIMARY }) => {
                 />
                 <div className="absolute top-2 left-2 bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm p-1.5 rounded text-center min-w-[50px] shadow-sm">
                   <span className="block text-xl font-bold" style={{ color: primaryColor }}>{new Date(event.start_date).getDate()}</span>
-                  <span className="block text-xs font-bold text-gray-800 dark:text-gray-200 uppercase">{new Date(event.start_date).toLocaleString('default', { month: 'short' })}</span>
+                  <span className="block text-xs font-bold text-gray-800 dark:text-gray-200 uppercase">{getMonthShortName(event.start_date)}</span>
                 </div>
               </div>
               <div className="sm:w-2/3 flex flex-col justify-center">

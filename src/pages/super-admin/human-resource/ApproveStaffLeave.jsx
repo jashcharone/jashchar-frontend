@@ -252,6 +252,8 @@ const ApproveStaffLeave = () => {
                             <tbody>
                                 {loading ? (
                                     <tr><td colSpan="7" className="text-center p-4"><Loader2 className="animate-spin mx-auto"/></td></tr>
+                                ) : leaves.length === 0 ? (
+                                    <tr><td colSpan="7" className="text-center p-8 text-muted-foreground">No leave requests found</td></tr>
                                 ) : leaves.map(leave => (
                                     <tr key={leave.id} className="border-b hover:bg-muted/30">
                                         <td className="px-6 py-4 font-medium">{leave.staff?.full_name}</td>

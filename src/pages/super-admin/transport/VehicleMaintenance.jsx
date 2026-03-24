@@ -215,9 +215,9 @@ const VehicleMaintenance = () => {
 
   const getTypeBadge = (type) => {
     const styles = {
-      routine: 'bg-blue-100 text-blue-800', repair: 'bg-orange-100 text-orange-800',
-      emergency: 'bg-red-100 text-red-800', inspection: 'bg-purple-100 text-purple-800',
-      tire: 'bg-green-100 text-green-800', oil_change: 'bg-yellow-100 text-yellow-800'
+      routine: 'bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-400', repair: 'bg-orange-100 text-orange-800 dark:bg-orange-900/50 dark:text-orange-400',
+      emergency: 'bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-400', inspection: 'bg-purple-100 text-purple-800 dark:bg-purple-900/50 dark:text-purple-400',
+      tire: 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-400', oil_change: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-400'
     };
     return <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${styles[type] || styles.routine}`}>{type?.replace('_', ' ')}</span>;
   };

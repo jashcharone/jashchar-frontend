@@ -440,10 +440,10 @@ const LiveFaceAttendance = () => {
         setSyncing(true);
         
         try {
-            // Fetch all registered faces with photos
+            // Fetch all registered faces with photos (include class_id for sub-index enrollment)
             const { data, error } = await supabase
                 .from('face_encodings')
-                .select('person_id, person_name, person_type, photo_url')
+                .select('person_id, person_name, person_type, photo_url, user_id')
                 .eq('branch_id', branchId)
                 .eq('is_active', true)
                 .not('photo_url', 'is', null);
@@ -460,14 +460,30 @@ const LiveFaceAttendance = () => {
             let successCount = 0;
             let failCount = 0;
             
+            // Batch lookup class_id for students from student_profiles
+            const studentFaces = faces.filter(f => (f.person_type || 'student') === 'student');
+            let classMap = {};
+            if (studentFaces.length > 0) {
+                const studentIds = studentFaces.map(f => f.user_id || f.person_id).filter(Boolean);
+                const { data: profiles } = await supabase
+                    .from('student_profiles')
+                    .select('id, class_id, section_id')
+                    .in('id', studentIds);
+                if (profiles) {
+                    profiles.forEach(p => { classMap[p.id] = { class_id: p.class_id, section_id: p.section_id }; });
+                }
+            }
+
             for (const face of faces) {
                 try {
+                    const studentInfo = classMap[face.user_id || face.person_id] || {};
                     await aiEngineApi.enrollFace(
                         face.person_id,
                         face.person_type || 'student',
                         face.person_name,
                         face.photo_url, // base64 image stored in DB
-                        branchId
+                        branchId,
+                        { classId: studentInfo.class_id, sectionId: studentInfo.section_id }
                     );
                     successCount++;
                 } catch (err) {
@@ -587,7 +603,8 @@ const LiveFaceAttendance = () => {
                 if (!videoRef.current) return;
                 const imageBase64 = captureVideoFrame(videoRef.current);
                 if (imageBase64) {
-                    ws.sendFrame(imageBase64, matchThreshold);
+                    const wsClassId = classMode && selectedClass ? selectedClass : null;
+                    ws.sendFrame(imageBase64, matchThreshold, wsClassId);
                 }
             }, 200); // 5 FPS
             
@@ -614,7 +631,13 @@ const LiveFaceAttendance = () => {
                     if (!imageBase64) { isRecognizingRef.current = false; return; }
                     
                     // Call AI Engine recognize endpoint (branch_id sent via context header + body)
-                    const result = await aiEngineApi.recognizeFace(imageBase64, matchThreshold, branchId);
+                    // Class Mode: pass class_id for class-filtered sub-index search (faster, safer at scale)
+                    const classFilterOpts = classMode && selectedClass ? {
+                        classId: selectedClass,
+                        sectionId: selectedSection || undefined,
+                        recognitionMode: 'class'
+                    } : { recognitionMode: 'gate' };
+                    const result = await aiEngineApi.recognizeFace(imageBase64, matchThreshold, branchId, classFilterOpts);
                     
                     if (result.success) {
                         aiEngineFailuresRef.current = 0; // reset on success

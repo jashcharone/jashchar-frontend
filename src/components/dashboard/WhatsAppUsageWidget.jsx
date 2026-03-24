@@ -1,4 +1,5 @@
 ﻿import React, { useState, useEffect } from 'react';
+import { formatDate } from '@/utils/dateUtils';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
@@ -68,7 +69,7 @@ const WhatsAppUsageWidget = () => {
         {data.last_message_date && (
             <div className="mt-4 pt-2 border-t text-[10px] text-muted-foreground flex items-center gap-1">
                 <CheckCircle className="h-3 w-3" />
-                Last sent: {new Date(data.last_message_date).toLocaleDateString()}
+                Last sent: {formatDate(data.last_message_date)}
             </div>
         )}
       </CardContent>

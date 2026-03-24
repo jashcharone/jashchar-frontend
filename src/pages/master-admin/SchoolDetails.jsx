@@ -37,12 +37,7 @@ import {
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { v4 as uuidv4 } from 'uuid';
-
-const formatDate = (dateString) => {
-  if (!dateString) return 'N/A';
-  const options = { day: '2-digit', month: 'short', year: 'numeric' };
-  return new Date(dateString).toLocaleDateString('en-GB', options);
-};
+import { formatDateWithMonthName as formatDate } from '@/utils/dateUtils';
 
 const calculateExpiryDate = (startDate, plan) => {
   if (!plan || !startDate) return 'N/A';

@@ -8,6 +8,7 @@ import DashboardLayout from '@/components/DashboardLayout';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { useBranch } from '@/contexts/BranchContext';
 import { supabase } from '@/lib/supabaseClient';
+import { formatDateTime } from '@/utils/dateUtils';
 import { useToast } from '@/components/ui/use-toast';
 import { usePermissions } from '@/contexts/PermissionContext';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
@@ -272,7 +273,7 @@ const WearableCard = ({ wearable, onEdit, onUnpair, onViewHistory, onPing }) => 
                         <span className="flex items-center gap-1">
                             <Clock className="w-3 h-3" />
                             Last seen: {wearable.last_seen 
-                                ? new Date(wearable.last_seen).toLocaleString('en-IN')
+                                ? formatDateTime(wearable.last_seen)
                                 : 'Never'
                             }
                         </span>
@@ -880,7 +881,7 @@ const AttendanceHistoryDialog = ({ open, onClose, wearable }) => {
                                     <div className="flex-1">
                                         <p className="font-medium capitalize">{record.attendance_type?.replace('_', ' ')}</p>
                                         <p className="text-xs text-muted-foreground">
-                                            {new Date(record.recorded_at).toLocaleString('en-IN')}
+                                            {formatDateTime(record.recorded_at)}
                                         </p>
                                     </div>
                                     <Badge variant="outline">{record.source || 'wearable'}</Badge>

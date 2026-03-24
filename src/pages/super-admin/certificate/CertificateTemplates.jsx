@@ -1,4 +1,5 @@
 ﻿import React, { useState, useEffect } from 'react';
+import { formatDate } from '@/utils/dateUtils';
 import DashboardLayout from '@/components/DashboardLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -86,7 +87,6 @@ const CertificateTemplates = () => {
     try {
       const payload = {
         ...formData,
-        branch_id: user.branch_id,
         branch_id: selectedBranch?.id,
       };
 
@@ -277,7 +277,7 @@ const CertificateTemplates = () => {
                     <TableRow key={template.id}>
                       <TableCell className="font-medium">{template.name}</TableCell>
                       <TableCell>{template.description}</TableCell>
-                      <TableCell>{new Date(template.created_at).toLocaleDateString()}</TableCell>
+                      <TableCell>{formatDate(template.created_at)}</TableCell>
                       <TableCell className="text-right space-x-2">
                         <Button variant="ghost" size="icon" onClick={() => handlePreview(template)}>
                           <Eye className="h-4 w-4" />
@@ -317,7 +317,7 @@ const CertificateTemplates = () => {
                   __html: currentTemplate?.template_html
                     ?.replace(/{student_name}/g, 'John Doe')
                     ?.replace(/{class}/g, 'X-A')
-                    ?.replace(/{date}/g, new Date().toLocaleDateString())
+                    ?.replace(/{date}/g, formatDate(new Date()))
                     || '' 
                 }} 
               />

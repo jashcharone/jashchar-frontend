@@ -8,6 +8,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import DashboardLayout from '@/components/DashboardLayout';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { useToast } from '@/components/ui/use-toast';
+import { formatDateWithMonthName } from '@/utils/dateUtils';
 import api from '@/lib/api';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -156,14 +157,10 @@ const MyTasks = () => {
     }
   };
 
-  // Format date
+  // Format date - uses centralized dateUtils
   const formatDate = (date) => {
     if (!date) return '-';
-    return new Date(date).toLocaleDateString('en-IN', {
-      day: 'numeric',
-      month: 'short',
-      year: 'numeric'
-    });
+    return formatDateWithMonthName(date, '-');
   };
 
   // Check if overdue

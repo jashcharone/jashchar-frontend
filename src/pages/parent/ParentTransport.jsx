@@ -8,6 +8,7 @@ import { useParentChild } from '@/contexts/ParentChildContext';
 import { supabase } from '@/lib/customSupabaseClient';
 import { useToast } from '@/components/ui/use-toast';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { formatDateWithMonthName } from '@/utils/dateUtils';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -420,7 +421,7 @@ const ParentTransport = () => {
                             }>
                               {b.boarding_status === 'boarded' ? '✅' : b.boarding_status === 'absent' ? '❌' : '⚪'}
                             </span>
-                            <span>{new Date(b.boarding_date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}</span>
+                            <span>{formatDateWithMonthName(b.boarding_date)}</span>
                           </div>
                           <div className="flex items-center gap-2 text-gray-500 text-xs">
                             <span className="capitalize">{b.trip_type}</span>

@@ -102,7 +102,7 @@ const MessManagement = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <Card>
             <CardContent className="p-4 flex items-center gap-3">
-              <div className="p-3 bg-blue-100 rounded-lg"><CalendarDays className="h-5 w-5 text-blue-600" /></div>
+              <div className="p-3 bg-blue-100 dark:bg-blue-900/50 rounded-lg"><CalendarDays className="h-5 w-5 text-blue-600 dark:text-blue-400" /></div>
               <div>
                 <p className="text-sm text-muted-foreground">Today's Meals</p>
                 <p className="text-2xl font-bold">{todayMenu.length}</p>
@@ -111,7 +111,7 @@ const MessManagement = () => {
           </Card>
           <Card>
             <CardContent className="p-4 flex items-center gap-3">
-              <div className="p-3 bg-green-100 rounded-lg"><ClipboardList className="h-5 w-5 text-green-600" /></div>
+              <div className="p-3 bg-green-100 dark:bg-green-900/50 rounded-lg"><ClipboardList className="h-5 w-5 text-green-600 dark:text-green-400" /></div>
               <div>
                 <p className="text-sm text-muted-foreground">Today Present</p>
                 <p className="text-2xl font-bold text-green-600">{totals.present}</p>
@@ -120,7 +120,7 @@ const MessManagement = () => {
           </Card>
           <Card>
             <CardContent className="p-4 flex items-center gap-3">
-              <div className="p-3 bg-yellow-100 rounded-lg"><Star className="h-5 w-5 text-yellow-600" /></div>
+              <div className="p-3 bg-yellow-100 dark:bg-yellow-900/50 rounded-lg"><Star className="h-5 w-5 text-yellow-600 dark:text-yellow-400" /></div>
               <div>
                 <p className="text-sm text-muted-foreground">Avg Rating</p>
                 <p className="text-2xl font-bold">
@@ -131,8 +131,8 @@ const MessManagement = () => {
           </Card>
           <Card>
             <CardContent className="p-4 flex items-center gap-3">
-              <div className={`p-3 rounded-lg ${lowStockItems.length > 0 ? 'bg-red-100' : 'bg-gray-100'}`}>
-                <AlertTriangle className={`h-5 w-5 ${lowStockItems.length > 0 ? 'text-red-600' : 'text-gray-400'}`} />
+              <div className={`p-3 rounded-lg ${lowStockItems.length > 0 ? 'bg-red-100 dark:bg-red-900/50' : 'bg-gray-100 dark:bg-gray-800'}`}>
+                <AlertTriangle className={`h-5 w-5 ${lowStockItems.length > 0 ? 'text-red-600 dark:text-red-400' : 'text-gray-400'}`} />
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Low Stock</p>
@@ -180,7 +180,7 @@ const MessManagement = () => {
                               ))}
                             </div>
                             {meal.special_item && (
-                              <Badge variant="outline" className="mt-2 bg-amber-50 text-amber-700">⭐ {meal.special_item}</Badge>
+                              <Badge variant="outline" className="mt-2 bg-amber-50 text-amber-700 dark:bg-amber-900/50 dark:text-amber-400">⭐ {meal.special_item}</Badge>
                             )}
                           </CardContent>
                         </Card>
@@ -193,7 +193,7 @@ const MessManagement = () => {
 
             {/* Low Stock Alerts */}
             {lowStockItems.length > 0 && (
-              <Card className="border-red-200 bg-red-50">
+              <Card className="border-red-200 bg-red-50 dark:border-red-800 dark:bg-red-950/50">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2 text-red-600">
                     <AlertTriangle className="h-5 w-5" /> Low Stock Alerts ({lowStockItems.length})

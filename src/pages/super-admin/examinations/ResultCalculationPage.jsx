@@ -616,14 +616,14 @@ const ResultCalculationPage = () => {
                                                     {result.is_verified ? (
                                                         <CheckCircle className="w-5 h-5 text-green-500" />
                                                     ) : (
-                                                        <XCircle className="w-5 h-5 text-gray-300" />
+                                                        <XCircle className="w-5 h-5 text-muted-foreground" />
                                                     )}
                                                 </TableCell>
                                                 <TableCell>
                                                     {result.is_published ? (
                                                         <CheckCircle className="w-5 h-5 text-blue-500" />
                                                     ) : (
-                                                        <XCircle className="w-5 h-5 text-gray-300" />
+                                                        <XCircle className="w-5 h-5 text-muted-foreground" />
                                                     )}
                                                 </TableCell>
                                                 <TableCell>

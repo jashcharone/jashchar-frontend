@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { formatDate } from '@/utils/dateUtils';
 import DashboardLayout from '@/components/DashboardLayout';
 import { supabase } from '@/lib/customSupabaseClient';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
@@ -188,6 +189,23 @@ const FeesMaster = () => {
             )
         })).filter(group => group.items.length > 0);
     }, [groupedFeeMasters, searchQuery]);
+
+    // Export Handlers
+    const handleCopy = () => {
+        const header = 'Group\tFee Type\tCode\tAmount\tDue Date';
+        const rows = filteredGroups.flatMap(g => g.items.map(i => `${g.name}\t${i.fee_types?.name || ''}\t${i.fee_types?.code || ''}\t${i.amount || ''}\t${i.due_date || ''}`));
+        navigator.clipboard.writeText(`${header}\n${rows.join('\n')}`);
+        toast({ title: 'Copied to clipboard' });
+    };
+    const handleCSV = () => {
+        const rows = [['Group', 'Fee Type', 'Code', 'Amount', 'Due Date'], ...filteredGroups.flatMap(g => g.items.map(i => [g.name, i.fee_types?.name || '', i.fee_types?.code || '', i.amount || '', i.due_date || '']))];
+        const csv = rows.map(r => r.map(c => `"${String(c || '').replace(/"/g, '""')}"`).join(',')).join('\n');
+        const blob = new Blob([csv], { type: 'text/csv' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a'); a.href = url; a.download = 'fees_master.csv'; a.click();
+        URL.revokeObjectURL(url);
+    };
+    const handlePrint = () => window.print();
 
     // Reset Form
     const resetForm = () => {
@@ -501,12 +519,6 @@ const FeesMaster = () => {
         }
     };
 
-    // Format date
-    const formatDate = (dateStr) => {
-        if (!dateStr) return '-';
-        return new Date(dateStr).toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit', year: 'numeric' });
-    };
-
     // Get fine type display
     const getFineTypeDisplay = (master) => {
         if (master.fine_type === 'none' || !master.fine_type) return 'None';
@@ -771,7 +783,7 @@ const FeesMaster = () => {
                                             <div className="flex items-center gap-1 border rounded-md">
                                                 <Tooltip>
                                                     <TooltipTrigger asChild>
-                                                        <Button variant="ghost" size="icon" className="h-9 w-9">
+                                                        <Button variant="ghost" size="icon" className="h-9 w-9" onClick={handleCopy}>
                                                             <Copy className="h-4 w-4" />
                                                         </Button>
                                                     </TooltipTrigger>
@@ -779,7 +791,7 @@ const FeesMaster = () => {
                                                 </Tooltip>
                                                 <Tooltip>
                                                     <TooltipTrigger asChild>
-                                                        <Button variant="ghost" size="icon" className="h-9 w-9">
+                                                        <Button variant="ghost" size="icon" className="h-9 w-9" onClick={handleCSV}>
                                                             <FileText className="h-4 w-4" />
                                                         </Button>
                                                     </TooltipTrigger>
@@ -787,7 +799,7 @@ const FeesMaster = () => {
                                                 </Tooltip>
                                                 <Tooltip>
                                                     <TooltipTrigger asChild>
-                                                        <Button variant="ghost" size="icon" className="h-9 w-9">
+                                                        <Button variant="ghost" size="icon" className="h-9 w-9" onClick={handleCSV}>
                                                             <Download className="h-4 w-4" />
                                                         </Button>
                                                     </TooltipTrigger>
@@ -795,7 +807,7 @@ const FeesMaster = () => {
                                                 </Tooltip>
                                                 <Tooltip>
                                                     <TooltipTrigger asChild>
-                                                        <Button variant="ghost" size="icon" className="h-9 w-9">
+                                                        <Button variant="ghost" size="icon" className="h-9 w-9" onClick={handlePrint}>
                                                             <Printer className="h-4 w-4" />
                                                         </Button>
                                                     </TooltipTrigger>

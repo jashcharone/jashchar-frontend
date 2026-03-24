@@ -197,7 +197,7 @@ export const useFaceRecognitionWebSocket = ({
     }, [maxReconnectAttempts]);
     
     // Send frame for recognition
-    const sendFrame = useCallback((base64Image, threshold = 0.5) => {
+    const sendFrame = useCallback((base64Image, threshold = 0.5, classId = null) => {
         if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) {
             console.warn('⚠️ WebSocket not connected');
             return false;
@@ -211,10 +211,13 @@ export const useFaceRecognitionWebSocket = ({
         processingRef.current = true;
         
         try {
-            const payload = JSON.stringify({
+            const msg = {
                 image: base64Image,
                 threshold
-            });
+            };
+            if (classId) msg.class_id = classId;
+            
+            const payload = JSON.stringify(msg);
             
             wsRef.current.send(payload);
             return true;

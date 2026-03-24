@@ -1,4 +1,5 @@
 ﻿import React, { useState, useEffect } from 'react';
+import { formatDate } from '@/utils/dateUtils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -102,7 +103,7 @@ const NewsTab = ({ branchId }) => {
                   <h4 className="font-medium dark:text-white">{item.title || 'Untitled'}</h4>
                   <p className="text-sm text-muted-foreground line-clamp-1">{item.summary}</p>
                   <div className="text-xs text-slate-400 dark:text-slate-500 mt-1">
-                    {item.published_at ? new Date(item.published_at).toLocaleDateString() : 'No Date'} • {item.is_published ? 'Published' : 'Draft'}
+                    {item.published_at ? formatDate(item.published_at) : 'No Date'} • {item.is_published ? 'Published' : 'Draft'}
                   </div>
                 </div>
               </div>

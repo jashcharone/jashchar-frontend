@@ -6,6 +6,7 @@ import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { useBranch } from '@/contexts/BranchContext';
 import { supabase } from '@/lib/customSupabaseClient';
 import { ROUTES } from '@/registry/routeRegistry';
+import { formatDayMonth } from '@/utils/dateUtils';
 import {
   Users, Briefcase, UserCheck, BookOpen, CalendarCheck,
   TrendingUp, TrendingDown, ArrowRight, Clock,
@@ -431,7 +432,7 @@ const PrincipalDashboard = () => {
                         <span className="text-sm font-medium">{notice.title}</span>
                       </div>
                       <span className="text-xs text-muted-foreground">
-                        {notice.notice_date ? new Date(notice.notice_date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' }) : ''}
+                        {notice.notice_date ? formatDayMonth(notice.notice_date, '') : ''}
                       </span>
                     </div>
                   ))}

@@ -1,4 +1,5 @@
 ﻿import React, { useState, useEffect, useCallback } from 'react';
+import { formatDateTime } from '@/utils/dateUtils';
 import { useNavigate, useParams, Link } from 'react-router-dom';
 import DashboardLayout from '@/components/DashboardLayout';
 import { supabase } from '@/lib/customSupabaseClient';
@@ -203,7 +204,7 @@ const EditArticle = () => {
                                 </div>
                                 <div>
                                     <Label>Last Updated</Label>
-                                    <Input value={new Date(article.updated_at).toLocaleString()} disabled />
+                                    <Input value={formatDateTime(article.updated_at)} disabled />
                                 </div>
                             </CardContent>
                         </Card>

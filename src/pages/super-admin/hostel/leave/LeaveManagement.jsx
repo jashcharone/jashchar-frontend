@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useNavigate, useLocation } from 'react-router-dom';
 import { formatDate } from '@/utils/dateUtils';
 
-const statusColors = { pending: 'bg-yellow-100 text-yellow-700', approved: 'bg-green-100 text-green-700', rejected: 'bg-red-100 text-red-700', cancelled: 'bg-gray-100 text-gray-700', checked_out: 'bg-blue-100 text-blue-700', checked_in: 'bg-purple-100 text-purple-700' };
+const statusColors = { pending: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/50 dark:text-yellow-400', approved: 'bg-green-100 text-green-700 dark:bg-green-900/50 dark:text-green-400', rejected: 'bg-red-100 text-red-700 dark:bg-red-900/50 dark:text-red-400', cancelled: 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-400', checked_out: 'bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-400', checked_in: 'bg-purple-100 text-purple-700 dark:bg-purple-900/50 dark:text-purple-400' };
 const leaveTypes = { home_visit: '🏠 Home Visit', medical: '🏥 Medical', emergency: '🚨 Emergency', festival: '🎉 Festival', personal: '👤 Personal', other: '📋 Other' };
 
 export default function LeaveManagement() {
@@ -77,11 +77,11 @@ export default function LeaveManagement() {
             {/* Stats */}
             {stats && (
                 <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-                    <Card><CardContent className="p-4 text-center"><p className="text-3xl font-bold">{stats.total}</p><p className="text-sm text-gray-500">Total</p></CardContent></Card>
-                    <Card className="border-yellow-200 bg-yellow-50"><CardContent className="p-4 text-center"><p className="text-3xl font-bold text-yellow-700">{stats.byStatus?.pending || 0}</p><p className="text-sm text-yellow-600">Pending</p></CardContent></Card>
-                    <Card className="border-green-200 bg-green-50"><CardContent className="p-4 text-center"><p className="text-3xl font-bold text-green-700">{stats.byStatus?.approved || 0}</p><p className="text-sm text-green-600">Approved</p></CardContent></Card>
-                    <Card className="border-blue-200 bg-blue-50"><CardContent className="p-4 text-center"><p className="text-3xl font-bold text-blue-700">{stats.byStatus?.checked_out || 0}</p><p className="text-sm text-blue-600">Checked Out</p></CardContent></Card>
-                    <Card className="border-purple-200 bg-purple-50"><CardContent className="p-4 text-center"><p className="text-3xl font-bold text-purple-700">{stats.onLeaveToday}</p><p className="text-sm text-purple-600">On Leave Today</p></CardContent></Card>
+                    <Card><CardContent className="p-4 text-center"><p className="text-3xl font-bold">{stats.total}</p><p className="text-sm text-muted-foreground">Total</p></CardContent></Card>
+                    <Card className="border-yellow-200 bg-yellow-50 dark:border-yellow-800 dark:bg-yellow-950/50"><CardContent className="p-4 text-center"><p className="text-3xl font-bold text-yellow-700 dark:text-yellow-400">{stats.byStatus?.pending || 0}</p><p className="text-sm text-yellow-600 dark:text-yellow-400">Pending</p></CardContent></Card>
+                    <Card className="border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-950/50"><CardContent className="p-4 text-center"><p className="text-3xl font-bold text-green-700 dark:text-green-400">{stats.byStatus?.approved || 0}</p><p className="text-sm text-green-600 dark:text-green-400">Approved</p></CardContent></Card>
+                    <Card className="border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-950/50"><CardContent className="p-4 text-center"><p className="text-3xl font-bold text-blue-700 dark:text-blue-400">{stats.byStatus?.checked_out || 0}</p><p className="text-sm text-blue-600 dark:text-blue-400">Checked Out</p></CardContent></Card>
+                    <Card className="border-purple-200 bg-purple-50 dark:border-purple-800 dark:bg-purple-950/50"><CardContent className="p-4 text-center"><p className="text-3xl font-bold text-purple-700 dark:text-purple-400">{stats.onLeaveToday}</p><p className="text-sm text-purple-600 dark:text-purple-400">On Leave Today</p></CardContent></Card>
                 </div>
             )}
 
@@ -113,7 +113,7 @@ export default function LeaveManagement() {
             {/* Table */}
             <div className="border rounded-lg overflow-hidden">
                 <table className="w-full text-sm">
-                    <thead className="bg-gray-50 border-b">
+                    <thead className="bg-muted/50 border-b">
                         <tr>
                             <th className="text-left p-3">Student</th>
                             <th className="text-left p-3">Hostel</th>
@@ -126,18 +126,18 @@ export default function LeaveManagement() {
                     </thead>
                     <tbody>
                         {loading ? (
-                            <tr><td colSpan={7} className="p-8 text-center text-gray-500">Loading...</td></tr>
+                            <tr><td colSpan={7} className="p-8 text-center text-muted-foreground">Loading...</td></tr>
                         ) : leaves.length === 0 ? (
-                            <tr><td colSpan={7} className="p-8 text-center text-gray-500">No leave requests found</td></tr>
+                            <tr><td colSpan={7} className="p-8 text-center text-muted-foreground">No leave requests found</td></tr>
                         ) : leaves.map(l => (
-                            <tr key={l.id} className="border-b hover:bg-gray-50 cursor-pointer" onClick={() => navigate(`${basePath}/${l.id}`)}>
+                            <tr key={l.id} className="border-b hover:bg-muted/50 cursor-pointer" onClick={() => navigate(`${basePath}/${l.id}`)}>
                                 <td className="p-3 font-medium">{l.students?.first_name} {l.students?.last_name}</td>
                                 <td className="p-3">{l.hostels?.name || '-'}</td>
                                 <td className="p-3">{leaveTypes[l.leave_type] || l.leave_type}</td>
                                 <td className="p-3">{formatDate(l.from_date)}</td>
                                 <td className="p-3">{formatDate(l.to_date)}</td>
                                 <td className="p-3"><Badge className={statusColors[l.status]}>{l.status.replace(/_/g, ' ')}</Badge></td>
-                                <td className="p-3 text-gray-500">{formatDate(l.created_at)}</td>
+                                <td className="p-3 text-muted-foreground">{formatDate(l.created_at)}</td>
                             </tr>
                         ))}
                     </tbody>
@@ -146,7 +146,7 @@ export default function LeaveManagement() {
 
             {totalPages > 1 && (
                 <div className="flex justify-between items-center">
-                    <p className="text-sm text-gray-500">Showing {((page-1)*limit)+1}-{Math.min(page*limit, total)} of {total}</p>
+                    <p className="text-sm text-muted-foreground">Showing {((page-1)*limit)+1}-{Math.min(page*limit, total)} of {total}</p>
                     <div className="flex gap-2">
                         <Button variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage(p => p - 1)}>Previous</Button>
                         <Button variant="outline" size="sm" disabled={page >= totalPages} onClick={() => setPage(p => p + 1)}>Next</Button>

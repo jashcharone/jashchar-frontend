@@ -1,4 +1,5 @@
 ﻿import React, { useState, useEffect } from 'react';
+import { formatDate } from '@/utils/dateUtils';
 import { Link } from 'react-router-dom';
 import { useSchoolSlug } from '@/hooks/useSchoolSlug';
 import publicCmsService from '@/services/publicCmsService';
@@ -62,7 +63,7 @@ const PublicNews = () => {
             <div key={item.id} className="bg-white border border-gray-100 rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow">
               {item.image_url && <img src={item.image_url} alt={item.title} className="w-full h-48 object-cover" />}
               <div className="p-5">
-                <div className="text-xs text-primary font-semibold mb-2">{new Date(item.date).toLocaleDateString()}</div>
+                <div className="text-xs text-primary font-semibold mb-2">{formatDate(item.date)}</div>
                 <h3 className="text-xl font-bold mb-2 line-clamp-2">{item.title}</h3>
                 <p className="text-gray-600 text-sm line-clamp-3 mb-4">{item.summary}</p>
                 <Link to={`/${schoolSlug}/news/${item.id}`} className="text-primary text-sm font-medium hover:underline">Read More &rarr;</Link>

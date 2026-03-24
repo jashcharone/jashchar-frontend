@@ -5,6 +5,7 @@ import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { useBranch } from '@/contexts/BranchContext';
 import { supabase } from '@/lib/customSupabaseClient';
 import { useToast } from '@/components/ui/use-toast';
+import { getWeekdayShortName } from '@/utils/dateUtils';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -323,7 +324,7 @@ const HRDashboard = () => {
             for (let i = 6; i >= 0; i--) {
                 const date = new Date(today);
                 date.setDate(date.getDate() - i);
-                const dayName = date.toLocaleDateString('en-US', { weekday: 'short' });
+                const dayName = getWeekdayShortName(date);
                 trendData.push({
                     day: dayName,
                     present: Math.floor(activeEmployees * (0.85 + Math.random() * 0.1)),

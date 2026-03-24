@@ -1,60 +1,26 @@
 ﻿import React from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
-import { Button } from '@/components/ui/button';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { Label } from '@/components/ui/label';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { AlertTriangle } from 'lucide-react';
+import { Card } from '@/components/ui/card';
+import { AlertTriangle, Construction } from 'lucide-react';
 
 const BulkDelete = () => {
   return (
     <DashboardLayout>
       <div className="p-6">
-        <h1 className="text-2xl font-bold mb-6">Bulk Delete Students</h1>
+        <h1 className="text-2xl font-bold mb-6 flex items-center gap-2">
+          <AlertTriangle className="h-6 w-6 text-red-500" />
+          Bulk Delete Students
+        </h1>
 
-        <Alert variant="destructive" className="mb-6">
-          <AlertTriangle className="h-4 w-4" />
-          <AlertTitle>Warning</AlertTitle>
-          <AlertDescription>
-            Deleting students will remove all their associated data (fees, attendance, exam results) permanently. This action cannot be undone.
-          </AlertDescription>
-        </Alert>
-
-        <div className="bg-card rounded-lg shadow p-6 border">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-            <div className="space-y-2">
-              <Label>Class</Label>
-              <Select>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select Class" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="1">Class 1</SelectItem>
-                  <SelectItem value="2">Class 2</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label>Section</Label>
-              <Select>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select Section" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="A">A</SelectItem>
-                  <SelectItem value="B">B</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+        <Card className="p-10">
+          <div className="flex flex-col items-center justify-center text-muted-foreground">
+            <Construction className="h-16 w-16 mb-4 opacity-30" />
+            <p className="text-xl font-semibold">Coming Soon</p>
+            <p className="text-sm mt-2 max-w-md text-center">
+              Bulk student deletion with safety checks, confirmation workflows, and audit logging is under development.
+            </p>
           </div>
-          <Button variant="destructive">Search & Delete</Button>
-        </div>
+        </Card>
       </div>
     </DashboardLayout>
   );

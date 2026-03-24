@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { formatDateTime as formatDate } from '@/utils/dateUtils';
 import {
     Dialog,
     DialogContent,
@@ -255,18 +256,6 @@ const TransactionHistory = ({
             currency: 'INR',
             minimumFractionDigits: 2
         }).format(Math.abs(amount));
-    };
-    
-    // Format date
-    const formatDate = (dateStr) => {
-        const date = new Date(dateStr);
-        return date.toLocaleDateString('en-IN', { 
-            day: '2-digit', 
-            month: 'short',
-            year: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit'
-        });
     };
     
     // Export transactions

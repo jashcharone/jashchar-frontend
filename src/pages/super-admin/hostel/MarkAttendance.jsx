@@ -231,16 +231,16 @@ const MarkAttendance = () => {
 
         {/* Summary badges */}
         <div className="flex gap-3 flex-wrap">
-          <Badge className="bg-green-100 text-green-800 px-3 py-1">
+          <Badge className="bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-400 px-3 py-1">
             <CheckCircle className="w-3 h-3 mr-1" /> Present: {counts.present}
           </Badge>
-          <Badge className="bg-red-100 text-red-800 px-3 py-1">
+          <Badge className="bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-400 px-3 py-1">
             <XCircle className="w-3 h-3 mr-1" /> Absent: {counts.absent}
           </Badge>
-          <Badge className="bg-yellow-100 text-yellow-800 px-3 py-1">
+          <Badge className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-400 px-3 py-1">
             <Clock className="w-3 h-3 mr-1" /> Late: {counts.late}
           </Badge>
-          <Badge className="bg-blue-100 text-blue-800 px-3 py-1">
+          <Badge className="bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-400 px-3 py-1">
             <Users className="w-3 h-3 mr-1" /> Leave: {counts.onLeave}
           </Badge>
         </div>
@@ -277,7 +277,7 @@ const MarkAttendance = () => {
                   </TableHeader>
                   <TableBody>
                     {students.map((s, idx) => (
-                      <TableRow key={s.studentId} className={attendanceMap[s.studentId] === 'absent' ? 'bg-red-50' : ''}>
+                      <TableRow key={s.studentId} className={attendanceMap[s.studentId] === 'absent' ? 'bg-red-50 dark:bg-red-950/30' : ''}>
                         <TableCell className="font-medium">{idx + 1}</TableCell>
                         <TableCell>{s.student?.full_name || s.student?.first_name || '-'}</TableCell>
                         <TableCell>{s.student?.admission_number || '-'}</TableCell>
@@ -296,7 +296,7 @@ const MarkAttendance = () => {
                                 className={`px-2 py-1 rounded text-xs font-medium text-white transition-all ${
                                   attendanceMap[s.studentId] === status
                                     ? statusColors[status]
-                                    : 'bg-gray-200 text-gray-600 hover:bg-gray-300'
+                                    : 'bg-gray-200 text-gray-600 hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600'
                                 }`}
                               >
                                 {status === 'present' ? 'P' : status === 'absent' ? 'A' : status === 'late' ? 'L' : 'LV'}

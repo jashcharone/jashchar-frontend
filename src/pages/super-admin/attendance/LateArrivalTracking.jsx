@@ -574,7 +574,7 @@ const LateArrivalTracking = () => {
                         Refresh
                     </Button>
 
-                    <Button variant="outline">
+                    <Button variant="outline" onClick={() => window.print()}>
                         <Download className="h-4 w-4 mr-2" />
                         Export
                     </Button>

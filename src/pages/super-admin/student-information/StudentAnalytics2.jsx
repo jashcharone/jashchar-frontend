@@ -238,7 +238,7 @@ export default function StudentAnalytics2() {
   }, [riskStudents]);
 
   const riskBadge = (level) => {
-    const styles = { high: 'bg-red-100 text-red-700', medium: 'bg-yellow-100 text-yellow-700', low: 'bg-green-100 text-green-700' };
+    const styles = { high: 'bg-red-100 text-red-700 dark:bg-red-900/50 dark:text-red-400', medium: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/50 dark:text-yellow-400', low: 'bg-green-100 text-green-700 dark:bg-green-900/50 dark:text-green-400' };
     return <Badge className={cn('text-xs', styles[level])}>{level.toUpperCase()}</Badge>;
   };
 
@@ -349,7 +349,7 @@ export default function StudentAnalytics2() {
                         </thead>
                         <tbody>
                           {highRisk.slice(0, 20).map(s => (
-                            <tr key={s.id} className="border-b hover:bg-red-50/30">
+                            <tr key={s.id} className="border-b hover:bg-red-50/30 dark:hover:bg-red-950/30">
                               <td className="py-2 px-3 font-medium">{s.full_name}</td>
                               <td className="py-2 px-3">{s.classes?.name} {s.sections?.name}</td>
                               <td className="py-2 px-3 text-center">
@@ -393,7 +393,7 @@ export default function StudentAnalytics2() {
                           <tr key={s.id} className="border-b">
                             <td className="py-2 px-3 font-medium">{s.full_name}</td>
                             <td className="py-2 px-3">{s.classes?.name} {s.sections?.name}</td>
-                            <td className="py-2 px-3 text-center"><Badge className="text-xs bg-yellow-100 text-yellow-700">{s.riskScore}%</Badge></td>
+                            <td className="py-2 px-3 text-center"><Badge className="text-xs bg-yellow-100 text-yellow-700 dark:bg-yellow-900/50 dark:text-yellow-400">{s.riskScore}%</Badge></td>
                             <td className="py-2 px-3 text-xs text-muted-foreground">{s.factors.join(', ')}</td>
                           </tr>
                         ))}
@@ -490,7 +490,7 @@ export default function StudentAnalytics2() {
                           </div>
                         </td>
                         <td className="py-2 px-3 text-center">
-                          <Badge className={cn('text-xs', c.health >= 70 ? 'bg-green-100 text-green-700' : c.health >= 50 ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700')}>
+                          <Badge className={cn('text-xs', c.health >= 70 ? 'bg-green-100 text-green-700 dark:bg-green-900/50 dark:text-green-400' : c.health >= 50 ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/50 dark:text-yellow-400' : 'bg-red-100 text-red-700 dark:bg-red-900/50 dark:text-red-400')}>
                             {c.health}%
                           </Badge>
                         </td>

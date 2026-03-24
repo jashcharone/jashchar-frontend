@@ -5,6 +5,7 @@ import SmartInsights from '@/components/dashboard/SmartInsights';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { useBranch } from '@/contexts/BranchContext';
 import { supabase } from '@/lib/customSupabaseClient';
+import { formatLongDate, formatMonthYear } from '@/utils/dateUtils';
 import { 
   Users, ArrowRight, TrendingUp, TrendingDown, UserPlus, Wallet, Receipt, 
   Contact, CalendarCheck, Clipboard, GraduationCap, BookOpen, Bell, 
@@ -899,7 +900,7 @@ const SchoolOwnerDashboard = () => {
                 {currentTime.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}
               </div>
               <div className="text-white/70 text-sm">
-                {currentTime.toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+                {formatLongDate(currentTime)}
               </div>
               <Badge variant="outline" className="bg-green-500/20 text-green-200 border-green-400/30 mt-2">
                 <Circle className="h-2 w-2 mr-1 fill-green-400 text-green-400 animate-pulse" />
@@ -1005,7 +1006,7 @@ const SchoolOwnerDashboard = () => {
           {/* Fee Collection Chart - 2 columns */}
           <div className="lg:col-span-2">
             <FuturisticChartCard 
-              title={`Fees Collection & Expenses For ${new Date().toLocaleString('en-IN', { month: 'long', year: 'numeric' })}`}
+              title={`Fees Collection & Expenses For ${formatMonthYear(new Date())}`}
               subtitle="Daily collection trend"
               gradient="primary"
               icon={BarChart3}
@@ -1033,7 +1034,7 @@ const SchoolOwnerDashboard = () => {
 
           {/* Income Pie Chart */}
           <FuturisticChartCard 
-            title={`Income - ${new Date().toLocaleString('en-IN', { month: 'long', year: 'numeric' })}`}
+            title={`Income - ${formatMonthYear(new Date())}`}
             subtitle="By category"
             gradient="success"
             icon={PieChart}
@@ -1112,7 +1113,7 @@ const SchoolOwnerDashboard = () => {
 
           {/* Expense Pie Chart */}
           <FuturisticChartCard 
-            title={`Expense - ${new Date().toLocaleString('en-IN', { month: 'long', year: 'numeric' })}`}
+            title={`Expense - ${formatMonthYear(new Date())}`}
             subtitle="By category"
             gradient="warning"
             icon={PieChart}

@@ -753,7 +753,9 @@ const QuickRegisterDialog = ({ open, onClose, person, personType, branchId, orga
                         person.id,
                         personType,
                         person.full_name,
-                        imageBase64
+                        imageBase64,
+                        null,
+                        { classId: person.class_id, sectionId: person.section_id }
                     );
                     
                     if (enrollResult.success && enrollResult.embedding) {

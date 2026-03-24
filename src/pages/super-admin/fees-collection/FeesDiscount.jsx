@@ -370,6 +370,23 @@ const FeesDiscount = () => {
         d.discount_code?.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
+    // Export Handlers
+    const handleCopy = () => {
+        const header = 'Name\tDiscount Code\tType\tAmount\tUsed/Limit\tExpiry Date';
+        const rows = filteredDiscounts.map(d => `${d.name}\t${d.discount_code || ''}\t${d.discount_type}\t${d.amount}\t${d.used_count || 0}/${d.use_count || '∞'}\t${d.expire_date || ''}`);
+        navigator.clipboard.writeText(`${header}\n${rows.join('\n')}`);
+        toast({ title: 'Copied to clipboard' });
+    };
+    const handleCSV = () => {
+        const rows = [['Name', 'Discount Code', 'Type', 'Amount', 'Used', 'Limit', 'Expiry Date'], ...filteredDiscounts.map(d => [d.name, d.discount_code || '', d.discount_type, d.amount, d.used_count || 0, d.use_count || '', d.expire_date || ''])];
+        const csv = rows.map(r => r.map(c => `"${String(c || '').replace(/"/g, '""')}"`).join(',')).join('\n');
+        const blob = new Blob([csv], { type: 'text/csv' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a'); a.href = url; a.download = 'fees_discounts.csv'; a.click();
+        URL.revokeObjectURL(url);
+    };
+    const handlePrint = () => window.print();
+
     return (
         <DashboardLayout>
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
@@ -560,13 +577,13 @@ const FeesDiscount = () => {
                                             <SelectItem value="100">100</SelectItem>
                                         </SelectContent>
                                     </Select>
-                                    <Button variant="outline" size="icon" title="Copy">
+                                    <Button variant="outline" size="icon" title="Copy" onClick={handleCopy}>
                                         <Copy className="h-4 w-4" />
                                     </Button>
-                                    <Button variant="outline" size="icon" title="Excel">
+                                    <Button variant="outline" size="icon" title="Excel" onClick={handleCSV}>
                                         <FileDown className="h-4 w-4" />
                                     </Button>
-                                    <Button variant="outline" size="icon" title="Print">
+                                    <Button variant="outline" size="icon" title="Print" onClick={handlePrint}>
                                         <Printer className="h-4 w-4" />
                                     </Button>
                                     <Button variant="outline" size="icon" title="Columns">

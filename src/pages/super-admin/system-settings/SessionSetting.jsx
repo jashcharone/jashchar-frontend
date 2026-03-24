@@ -606,7 +606,7 @@ const SessionSetting = () => {
                                                                                             size="sm" 
                                                                                             onClick={handleUpdateSession}
                                                                                             disabled={updating}
-                                                                                            className="text-green-600 hover:text-green-800 hover:bg-green-50"
+                                                                                            className="text-green-600 hover:text-green-800 hover:bg-green-50 dark:hover:bg-green-950/30"
                                                                                         >
                                                                                             {updating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
                                                                                         </Button>
@@ -615,7 +615,7 @@ const SessionSetting = () => {
                                                                                             size="sm" 
                                                                                             onClick={cancelEditing}
                                                                                             disabled={updating}
-                                                                                            className="text-gray-500"
+                                                                                            className="text-muted-foreground"
                                                                                         >
                                                                                             <X className="h-4 w-4" />
                                                                                         </Button>
@@ -626,7 +626,7 @@ const SessionSetting = () => {
                                                                                             variant="ghost" 
                                                                                             size="sm" 
                                                                                             onClick={() => startEditing(session)}
-                                                                                            className="text-blue-500 hover:text-blue-700 hover:bg-blue-50"
+                                                                                            className="text-blue-500 hover:text-blue-700 hover:bg-blue-50 dark:hover:bg-blue-950/30"
                                                                                         >
                                                                                             <Edit2 className="h-4 w-4" />
                                                                                         </Button>
@@ -652,7 +652,7 @@ const SessionSetting = () => {
                                                                                                     variant="ghost" 
                                                                                                     size="sm" 
                                                                                                     onClick={() => setDeleteConfirm(session)}
-                                                                                                    className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                                                                                                    className="text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/30"
                                                                                                 >
                                                                                                     <Trash2 className="h-4 w-4" />
                                                                                                 </Button>

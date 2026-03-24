@@ -1,4 +1,5 @@
 ﻿import React, { useState, useEffect } from 'react';
+import { formatDateTime } from '@/utils/dateUtils';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
@@ -67,7 +68,7 @@ const WhatsAppLogs = () => {
                 ) : (
                   logs.map((log) => (
                     <TableRow key={log.id}>
-                      <TableCell className="whitespace-nowrap text-xs sm:text-sm">{new Date(log.created_at).toLocaleString()}</TableCell>
+                      <TableCell className="whitespace-nowrap text-xs sm:text-sm">{formatDateTime(log.created_at)}</TableCell>
                       <TableCell className="hidden sm:table-cell">{log.schools?.name || 'N/A'}</TableCell>
                       <TableCell className="hidden md:table-cell">{log.whatsapp_templates?.name || 'N/A'}</TableCell>
                       <TableCell className="whitespace-nowrap">{log.recipient_phone}</TableCell>

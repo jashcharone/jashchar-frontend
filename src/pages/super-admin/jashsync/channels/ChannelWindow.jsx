@@ -4,6 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
+import { formatDateWithMonthName } from '@/utils/dateUtils';
 import { 
     Hash, Users, Settings, Pin, ArrowLeft, Send, Smile, 
     Paperclip, MoreVertical, Search, Bell, BellOff, 
@@ -190,9 +191,7 @@ const ChannelWindow = ({
         const groups = {};
         messages.forEach(msg => {
             const msgTime = msg.timestamp || msg.created_at;
-            const date = new Date(msgTime).toLocaleDateString('en-IN', {
-                day: 'numeric', month: 'short', year: 'numeric'
-            });
+            const date = formatDateWithMonthName(msgTime);
             if (!groups[date]) groups[date] = [];
             groups[date].push(msg);
         });

@@ -133,7 +133,7 @@ const SchoolHomepage = () => {
                 </section>
 
                 {/* Final CTA */}
-                <section className="py-16 bg-gray-200">
+                <section className="py-16 bg-gray-200 dark:bg-gray-900">
                     <div className="container mx-auto px-4 flex justify-between items-center bg-gray-700 text-white p-12 rounded-lg">
                         <div>
                             <h3 className="text-2xl font-bold">Request for a free Education Class</h3>

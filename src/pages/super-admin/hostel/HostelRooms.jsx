@@ -190,7 +190,7 @@ const HostelRooms = () => {
   const getStatusBadge = (status, capacity, occupied) => {
     if (status === 'Maintenance') return <Badge variant="destructive">Maintenance</Badge>;
     if (occupied >= capacity) return <Badge variant="secondary">Full</Badge>;
-    if (occupied > 0) return <Badge className="bg-yellow-500">Partial</Badge>;
+    if (occupied > 0) return <Badge className="bg-yellow-500 dark:bg-yellow-600">Partial</Badge>;
     return <Badge variant="default">Available</Badge>;
   };
 
@@ -217,21 +217,21 @@ const HostelRooms = () => {
 
         {/* Stats Cards at Top */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <Card className="bg-gradient-to-r from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 border-blue-200">
+          <Card className="bg-gradient-to-r from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 border-blue-200 dark:border-blue-800">
             <CardContent className="flex items-center p-4">
-              <DoorOpen className="h-10 w-10 text-blue-600 mr-4" />
+              <DoorOpen className="h-10 w-10 text-blue-600 dark:text-blue-400 mr-4" />
               <div>
-                <p className="text-2xl font-bold text-blue-700">{filteredRooms.length}</p>
-                <p className="text-sm text-blue-600">Total Rooms</p>
+                <p className="text-2xl font-bold text-blue-700 dark:text-blue-400">{filteredRooms.length}</p>
+                <p className="text-sm text-blue-600 dark:text-blue-400">Total Rooms</p>
               </div>
             </CardContent>
           </Card>
-          <Card className="bg-gradient-to-r from-purple-50 to-purple-100 dark:from-purple-900/20 dark:to-purple-800/20 border-purple-200">
+          <Card className="bg-gradient-to-r from-purple-50 to-purple-100 dark:from-purple-900/20 dark:to-purple-800/20 border-purple-200 dark:border-purple-800">
             <CardContent className="flex items-center p-4">
-              <Bed className="h-10 w-10 text-purple-600 mr-4" />
+              <Bed className="h-10 w-10 text-purple-600 dark:text-purple-400 mr-4" />
               <div>
-                <p className="text-2xl font-bold text-purple-700">{totalBeds}</p>
-                <p className="text-sm text-purple-600">Total Beds</p>
+                <p className="text-2xl font-bold text-purple-700 dark:text-purple-400">{totalBeds}</p>
+                <p className="text-sm text-purple-600 dark:text-purple-400">Total Beds</p>
               </div>
             </CardContent>
           </Card>

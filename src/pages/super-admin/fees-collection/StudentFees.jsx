@@ -3299,7 +3299,7 @@ const StudentFees = () => {
                                                                     type="checkbox" 
                                                                     checked={selectedFees.includes(fee.id)} 
                                                                     onChange={() => handleFeeSelection(fee.id)} 
-                                                                    className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+                                                                    className="h-4 w-4 rounded border-gray-300 dark:border-gray-600 text-primary focus:ring-primary"
                                                                 />
                                                             )}
                                                         </td>
@@ -4053,7 +4053,7 @@ const StudentFees = () => {
                     </DialogHeader>
                     <div className="flex flex-col items-center space-y-4 py-4">
                         {qrCodeDataUrl && (
-                            <div className="bg-white p-4 rounded-xl shadow-lg border-2 border-purple-200">
+                            <div className="bg-white dark:bg-gray-100 p-4 rounded-xl shadow-lg border-2 border-purple-200">
                                 <img src={qrCodeDataUrl} alt="UPI QR Code" className="w-64 h-64" />
                             </div>
                         )}

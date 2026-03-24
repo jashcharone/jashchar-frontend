@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { formatDateTime } from '@/utils/dateUtils';
 import { 
     FileText, Sparkles, Copy, Check, RefreshCw, Loader2,
     MessageSquare, Clock, Users, AlertCircle, ChevronDown,
@@ -149,7 +150,7 @@ const SummarizeView = ({
         const content = `
 CONVERSATION SUMMARY
 ====================
-Generated: ${new Date().toLocaleString()}
+Generated: ${formatDateTime(new Date())}
 Conversation: ${conversation?.name || 'Unknown'}
 
 BRIEF SUMMARY

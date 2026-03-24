@@ -9,17 +9,7 @@ import { Loader2, Plus, Trash2, Pencil, Eye, EyeOff, Key, CheckCircle, AlertCirc
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import api from '@/lib/api';
 import { useToast } from "@/components/ui/use-toast";
-
-// Date formatter helper
-const formatDate = (dateString) => {
-  if (!dateString) return '-';
-  const date = new Date(dateString);
-  return date.toLocaleDateString('en-IN', {
-    day: '2-digit',
-    month: 'short',
-    year: 'numeric'
-  });
-};
+import { formatDateWithMonthName as formatDate } from '@/utils/dateUtils';
 
 const WhatsAppAccounts = ({ onAccountsChange }) => {
   const { toast } = useToast();

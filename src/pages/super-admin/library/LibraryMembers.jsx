@@ -233,7 +233,9 @@ const LibraryMembers = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredMembers.map((m) => (
+                  {filteredMembers.length === 0 ? (
+                    <TableRow><TableCell colSpan={6} className="text-center py-8 text-muted-foreground">No members found</TableCell></TableRow>
+                  ) : filteredMembers.map((m) => (
                     <TableRow key={m.id}>
                       <TableCell>{m.library_card_no}</TableCell>
                       <TableCell className="font-medium">

@@ -160,7 +160,7 @@ const CurfewSettings = () => {
                 </Select>
               </div>
               {settings && (
-                <Badge className={settings.is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}>
+                <Badge className={settings.is_active ? 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-400' : 'bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-400'}>
                   {settings.is_active ? '✅ Active' : '❌ Inactive'}
                 </Badge>
               )}
@@ -231,7 +231,7 @@ const CurfewSettings = () => {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-6">
-                <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
+                <div className="flex items-center justify-between p-3 bg-blue-50 dark:bg-blue-950/30 rounded-lg">
                   <div>
                     <Label className="text-sm font-medium">Auto Notify Parent</Label>
                     <p className="text-xs text-muted-foreground">Send notification to parent on curfew violation</p>
@@ -242,7 +242,7 @@ const CurfewSettings = () => {
                   />
                 </div>
 
-                <div className="flex items-center justify-between p-3 bg-yellow-50 rounded-lg">
+                <div className="flex items-center justify-between p-3 bg-yellow-50 dark:bg-yellow-950/30 rounded-lg">
                   <div>
                     <Label className="text-sm font-medium">Auto Notify Warden</Label>
                     <p className="text-xs text-muted-foreground">Alert warden when student violates curfew</p>
@@ -253,7 +253,7 @@ const CurfewSettings = () => {
                   />
                 </div>
 
-                <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
+                <div className="flex items-center justify-between p-3 bg-green-50 dark:bg-green-950/30 rounded-lg">
                   <div>
                     <Label className="text-sm font-medium">Active</Label>
                     <p className="text-xs text-muted-foreground">Enable/disable curfew enforcement</p>
@@ -265,7 +265,7 @@ const CurfewSettings = () => {
                 </div>
 
                 {/* Visual Summary */}
-                <div className="mt-4 p-4 bg-gray-50 rounded-lg">
+                <div className="mt-4 p-4 bg-muted/50 rounded-lg">
                   <h4 className="font-medium text-sm mb-2">📋 Settings Summary</h4>
                   <div className="text-xs space-y-1 text-muted-foreground">
                     <p>🏨 Hostel: <strong>{hostelObj?.name || 'Not selected'}</strong></p>

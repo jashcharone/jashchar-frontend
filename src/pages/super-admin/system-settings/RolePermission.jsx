@@ -324,7 +324,7 @@ const RolePermissionSchool = () => {
                                                                 <Button 
                                                                     variant="ghost" 
                                                                     size="icon" 
-                                                                    className="hover:bg-blue-100"
+                                                                    className="hover:bg-blue-100 dark:hover:bg-blue-900/30"
                                                                     onClick={() => openEditDialog(role)}
                                                                     title="Edit Role Name"
                                                                 >

@@ -211,7 +211,7 @@ const PerformanceDashboard = () => {
     const getTrendIcon = (trend) => {
         if (trend === 'improving') return <TrendingUp className="w-4 h-4 text-green-500" />;
         if (trend === 'declining') return <TrendingDown className="w-4 h-4 text-red-500" />;
-        return <Minus className="w-4 h-4 text-gray-500" />;
+        return <Minus className="w-4 h-4 text-muted-foreground" />;
     };
 
     const StatCard = ({ title, value, subtitle, icon: Icon, trend, trendValue, color = 'blue' }) => (
@@ -318,7 +318,7 @@ const PerformanceDashboard = () => {
                         </div>
                         <div className="space-y-2">
                             <Label>&nbsp;</Label>
-                            <Button variant="outline" className="w-full">
+                            <Button variant="outline" className="w-full" onClick={() => window.print()}>
                                 <Download className="w-4 h-4 mr-2" /> Export Report
                             </Button>
                         </div>

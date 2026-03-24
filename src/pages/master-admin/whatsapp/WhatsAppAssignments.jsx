@@ -1,4 +1,5 @@
 ﻿import React, { useState, useEffect } from 'react';
+import { formatDate } from '@/utils/dateUtils';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -151,7 +152,7 @@ const WhatsAppAssignments = ({ accounts = [] }) => {
                       {a.whatsapp_templates?.name} <Badge variant="outline" className="ml-2">{a.whatsapp_templates?.language}</Badge>
                     </TableCell>
                     <TableCell>{a.schools?.name}</TableCell>
-                    <TableCell>{new Date(a.assigned_at).toLocaleDateString()}</TableCell>
+                    <TableCell>{formatDate(a.assigned_at)}</TableCell>
                     <TableCell className="text-right">
                       <Button variant="ghost" size="sm"><Trash2 className="h-4 w-4 text-red-500" /></Button>
                     </TableCell>

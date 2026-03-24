@@ -1,4 +1,5 @@
 ﻿import React, { useState, useEffect, useCallback } from 'react';
+import { formatDate } from '@/utils/dateUtils';
 import { supabase } from '@/lib/customSupabaseClient';
 import { Loader2 } from 'lucide-react';
 
@@ -137,7 +138,7 @@ const MarksheetPDF = React.forwardRef(({ studentId, templateId, branchId }, ref)
                 </div>
 
                 {template.footer_content && <div className="mt-4 text-center text-xs" dangerouslySetInnerHTML={{ __html: template.footer_content }} />}
-                 {template.printing_date && <p className="text-xs text-right mt-2">Printed on: {new Date(template.printing_date).toLocaleDateString()}</p>}
+                 {template.printing_date && <p className="text-xs text-right mt-2">Printed on: {formatDate(template.printing_date)}</p>}
             </div>
         </div>
     );

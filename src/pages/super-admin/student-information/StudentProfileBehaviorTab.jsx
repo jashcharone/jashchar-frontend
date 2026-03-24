@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { useBranch } from '@/contexts/BranchContext';
 import { supabase } from '@/lib/customSupabaseClient';
-import { formatDate } from '@/utils/dateUtils';
+import { formatDate, formatMonthYear } from '@/utils/dateUtils';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -189,7 +189,7 @@ export default function StudentProfileBehaviorTab({ studentId }) {
               {monthlyGroups.map(([month, items]) => (
                 <div key={month}>
                   <p className="text-xs font-semibold text-muted-foreground uppercase mb-2">
-                    {month !== 'Unknown' ? new Date(month + '-01').toLocaleDateString('en-IN', { month: 'long', year: 'numeric' }) : 'Unknown Date'}
+                    {month !== 'Unknown' ? formatMonthYear(month + '-01') : 'Unknown Date'}
                   </p>
                   <div className="space-y-2 pl-3 border-l-2 border-muted">
                     {items.map((item) => {

@@ -7,6 +7,7 @@ import { useToast } from '@/components/ui/use-toast';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import WelcomeMessage from '@/components/WelcomeMessage';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
+import { getMonthShortName } from '@/utils/dateUtils';
 
 const MasterAdminDashboard = () => {
   const { toast } = useToast();
@@ -42,7 +43,7 @@ const MasterAdminDashboard = () => {
         toast({ variant: 'destructive', title: 'Failed to load transaction data.' });
       } else {
         const monthlyData = transactionData.reduce((acc, { generated_date, total_amount }) => {
-            const month = new Date(generated_date).toLocaleString('default', { month: 'short', year: '2-digit' });
+            const month = getMonthShortName(generated_date) + ' ' + new Date(generated_date).getFullYear().toString().slice(-2);
             if (!acc[month]) {
                 acc[month] = { name: month, revenue: 0 };
             }

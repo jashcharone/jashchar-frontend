@@ -1,4 +1,5 @@
 ﻿import React, { useState, useEffect } from 'react';
+import { formatDate } from '@/utils/dateUtils';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -124,7 +125,7 @@ const ViewAssignedIncidentsModal = ({ isOpen, onClose, student, onUpdate }) => {
                               {record.incident?.point}
                             </span>
                           </TableCell>
-                          <TableCell>{new Date(record.assigned_date).toLocaleDateString()}</TableCell>
+                          <TableCell>{formatDate(record.assigned_date)}</TableCell>
                           <TableCell className="max-w-xs truncate">{record.incident?.description}</TableCell>
                           <TableCell className="text-right">
                             <Button

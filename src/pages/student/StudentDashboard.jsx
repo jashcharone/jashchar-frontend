@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '../../contexts/SupabaseAuthContext';
 import api from '@/lib/api';
 import { ROUTES } from '@/registry/routeRegistry';
+import { formatLongDate } from '@/utils/dateUtils';
 import { Calendar, User, Book, Clock, AlertCircle } from 'lucide-react';
 import DashboardLayout from '@/components/DashboardLayout';
 
@@ -91,7 +92,7 @@ const StudentDashboard = () => {
         </div>
         <div className="text-right hidden md:block">
             <div className="text-sm text-muted-foreground">Current Date</div>
-            <div className="text-lg font-bold text-foreground">{new Date().toLocaleDateString('en-GB', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</div>
+            <div className="text-lg font-bold text-foreground">{formatLongDate(new Date())}</div>
         </div>
       </div>
 

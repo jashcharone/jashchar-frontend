@@ -1,5 +1,6 @@
 import React, { useState, useRef, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
+import { formatDate as formatDateUtil } from '@/utils/dateUtils';
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -185,7 +186,7 @@ const DataTableExport = ({
       // Add date
       doc.setFontSize(10);
       doc.setTextColor(108, 117, 125);
-      doc.text(`Generated: ${new Date().toLocaleDateString('en-IN')}`, doc.internal.pageSize.getWidth() / 2, title ? 22 : 15, { align: 'center' });
+      doc.text(`Generated: ${formatDateUtil(new Date())}`, doc.internal.pageSize.getWidth() / 2, title ? 22 : 15, { align: 'center' });
 
       // Prepare table data
       const headers = visibleColumns.map(col => col.label);

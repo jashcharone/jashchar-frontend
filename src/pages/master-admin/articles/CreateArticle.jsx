@@ -1,4 +1,5 @@
 ﻿import React, { useState, useEffect } from 'react';
+import { formatDate } from '@/utils/dateUtils';
 import { useNavigate } from 'react-router-dom';
 import DashboardLayout from '@/components/DashboardLayout';
 import { supabase } from '@/lib/customSupabaseClient';
@@ -167,7 +168,7 @@ const CreateArticle = () => {
                                 </div>
                                 <div>
                                     <Label>Created Date</Label>
-                                    <Input value={new Date().toLocaleDateString()} disabled />
+                                    <Input value={formatDate(new Date())} disabled />
                                 </div>
                             </CardContent>
                         </Card>

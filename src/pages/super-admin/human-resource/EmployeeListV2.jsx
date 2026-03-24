@@ -1,9 +1,10 @@
-/**
+﻿/**
  * Employee List V2 - Using new employees table
  * Complete HR employee management with salary, attendance, leave integration
  */
 
 import React, { useState, useEffect } from 'react';
+import { formatDate } from '@/utils/dateUtils';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -115,7 +116,7 @@ const EmployeeListV2 = () => {
             <div className="flex justify-between items-center">
                 <div>
                     <h1 className="text-2xl font-bold">Employee Directory</h1>
-                    <p className="text-gray-500">Manage all employees in your organization</p>
+                    <p className="text-muted-foreground">Manage all employees in your organization</p>
                 </div>
                 <Button onClick={() => navigate(`/${basePath}/human-resource/add-employee-v2`)}>
                     <Plus className="w-4 h-4 mr-2" /> Add Employee
@@ -128,7 +129,7 @@ const EmployeeListV2 = () => {
                     <CardContent className="pt-6">
                         <div className="flex items-center justify-between">
                             <div>
-                                <p className="text-sm text-gray-500">Total Employees</p>
+                                <p className="text-sm text-muted-foreground">Total Employees</p>
                                 <p className="text-2xl font-bold">{stats.total}</p>
                             </div>
                             <Users className="w-8 h-8 text-blue-500" />
@@ -139,7 +140,7 @@ const EmployeeListV2 = () => {
                     <CardContent className="pt-6">
                         <div className="flex items-center justify-between">
                             <div>
-                                <p className="text-sm text-gray-500">Active</p>
+                                <p className="text-sm text-muted-foreground">Active</p>
                                 <p className="text-2xl font-bold text-green-600">{stats.active}</p>
                             </div>
                             <Briefcase className="w-8 h-8 text-green-500" />
@@ -150,7 +151,7 @@ const EmployeeListV2 = () => {
                     <CardContent className="pt-6">
                         <div className="flex items-center justify-between">
                             <div>
-                                <p className="text-sm text-gray-500">On Leave</p>
+                                <p className="text-sm text-muted-foreground">On Leave</p>
                                 <p className="text-2xl font-bold text-yellow-600">{stats.onLeave}</p>
                             </div>
                             <Calendar className="w-8 h-8 text-yellow-500" />
@@ -161,7 +162,7 @@ const EmployeeListV2 = () => {
                     <CardContent className="pt-6">
                         <div className="flex items-center justify-between">
                             <div>
-                                <p className="text-sm text-gray-500">Resigned</p>
+                                <p className="text-sm text-muted-foreground">Resigned</p>
                                 <p className="text-2xl font-bold text-red-600">{stats.resigned}</p>
                             </div>
                             <FileText className="w-8 h-8 text-red-500" />
@@ -176,7 +177,7 @@ const EmployeeListV2 = () => {
                     <div className="flex flex-wrap gap-4">
                         <div className="flex-1 min-w-[200px]">
                             <div className="relative">
-                                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
                                 <Input
                                     placeholder="Search by name, code, email, phone..."
                                     value={searchTerm}
@@ -222,7 +223,7 @@ const EmployeeListV2 = () => {
                             <RefreshCw className="w-6 h-6 animate-spin" />
                         </div>
                     ) : filteredEmployees.length === 0 ? (
-                        <div className="flex flex-col items-center justify-center h-64 text-gray-500">
+                        <div className="flex flex-col items-center justify-center h-64 text-muted-foreground">
                             <Users className="w-12 h-12 mb-4" />
                             <p>No employees found</p>
                             <Button variant="link" onClick={() => navigate(`/${basePath}/human-resource/add-employee-v2`)}>
@@ -256,7 +257,7 @@ const EmployeeListV2 = () => {
                                                 </Avatar>
                                                 <div>
                                                     <p className="font-medium">{emp.first_name} {emp.last_name}</p>
-                                                    <p className="text-sm text-gray-500">{emp.email}</p>
+                                                    <p className="text-sm text-muted-foreground">{emp.email}</p>
                                                 </div>
                                             </div>
                                         </TableCell>
@@ -267,12 +268,12 @@ const EmployeeListV2 = () => {
                                         <TableCell>{emp.designation?.name || '-'}</TableCell>
                                         <TableCell>
                                             <div className="flex items-center gap-2">
-                                                <Phone className="w-3 h-3 text-gray-400" />
+                                                <Phone className="w-3 h-3 text-muted-foreground" />
                                                 <span className="text-sm">{emp.mobile || '-'}</span>
                                             </div>
                                         </TableCell>
                                         <TableCell>
-                                            {emp.joining_date ? new Date(emp.joining_date).toLocaleDateString('en-IN') : '-'}
+                                            {emp.joining_date ? formatDate(emp.joining_date) : '-'}
                                         </TableCell>
                                         <TableCell>{getStatusBadge(emp.status)}</TableCell>
                                         <TableCell className="text-right">
@@ -336,43 +337,43 @@ const EmployeeListV2 = () => {
                                     </Avatar>
                                     <div>
                                         <h3 className="text-xl font-bold">{selectedEmployee.first_name} {selectedEmployee.last_name}</h3>
-                                        <p className="text-gray-500">{selectedEmployee.emp_code}</p>
+                                        <p className="text-muted-foreground">{selectedEmployee.emp_code}</p>
                                     </div>
                                 </div>
                                 <div className="grid grid-cols-2 gap-4">
-                                    <div><span className="text-gray-500">Email:</span> {selectedEmployee.email || '-'}</div>
-                                    <div><span className="text-gray-500">Mobile:</span> {selectedEmployee.mobile || '-'}</div>
-                                    <div><span className="text-gray-500">Gender:</span> {selectedEmployee.gender || '-'}</div>
-                                    <div><span className="text-gray-500">DOB:</span> {selectedEmployee.dob ? new Date(selectedEmployee.dob).toLocaleDateString() : '-'}</div>
-                                    <div><span className="text-gray-500">Blood Group:</span> {selectedEmployee.blood_group || '-'}</div>
-                                    <div><span className="text-gray-500">Emergency Contact:</span> {selectedEmployee.emergency_contact || '-'}</div>
-                                    <div className="col-span-2"><span className="text-gray-500">Address:</span> {selectedEmployee.current_address || '-'}</div>
+                                    <div><span className="text-muted-foreground">Email:</span> {selectedEmployee.email || '-'}</div>
+                                    <div><span className="text-muted-foreground">Mobile:</span> {selectedEmployee.mobile || '-'}</div>
+                                    <div><span className="text-muted-foreground">Gender:</span> {selectedEmployee.gender || '-'}</div>
+                                    <div><span className="text-muted-foreground">DOB:</span> {selectedEmployee.dob ? formatDate(selectedEmployee.dob) : '-'}</div>
+                                    <div><span className="text-muted-foreground">Blood Group:</span> {selectedEmployee.blood_group || '-'}</div>
+                                    <div><span className="text-muted-foreground">Emergency Contact:</span> {selectedEmployee.emergency_contact || '-'}</div>
+                                    <div className="col-span-2"><span className="text-muted-foreground">Address:</span> {selectedEmployee.current_address || '-'}</div>
                                 </div>
                             </TabsContent>
                             <TabsContent value="employment" className="space-y-4 mt-4">
                                 <div className="grid grid-cols-2 gap-4">
-                                    <div><span className="text-gray-500">Department:</span> {selectedEmployee.department?.name || '-'}</div>
-                                    <div><span className="text-gray-500">Designation:</span> {selectedEmployee.designation?.name || '-'}</div>
-                                    <div><span className="text-gray-500">Employment Type:</span> {selectedEmployee.employment_type || '-'}</div>
-                                    <div><span className="text-gray-500">Joining Date:</span> {selectedEmployee.joining_date ? new Date(selectedEmployee.joining_date).toLocaleDateString() : '-'}</div>
-                                    <div><span className="text-gray-500">Confirmation Date:</span> {selectedEmployee.confirmation_date ? new Date(selectedEmployee.confirmation_date).toLocaleDateString() : '-'}</div>
-                                    <div><span className="text-gray-500">Status:</span> {getStatusBadge(selectedEmployee.status)}</div>
-                                    <div><span className="text-gray-500">Reports To:</span> {selectedEmployee.reporting_manager ? `${selectedEmployee.reporting_manager.first_name} ${selectedEmployee.reporting_manager.last_name}` : '-'}</div>
+                                    <div><span className="text-muted-foreground">Department:</span> {selectedEmployee.department?.name || '-'}</div>
+                                    <div><span className="text-muted-foreground">Designation:</span> {selectedEmployee.designation?.name || '-'}</div>
+                                    <div><span className="text-muted-foreground">Employment Type:</span> {selectedEmployee.employment_type || '-'}</div>
+                                    <div><span className="text-muted-foreground">Joining Date:</span> {selectedEmployee.joining_date ? formatDate(selectedEmployee.joining_date) : '-'}</div>
+                                    <div><span className="text-muted-foreground">Confirmation Date:</span> {selectedEmployee.confirmation_date ? formatDate(selectedEmployee.confirmation_date) : '-'}</div>
+                                    <div><span className="text-muted-foreground">Status:</span> {getStatusBadge(selectedEmployee.status)}</div>
+                                    <div><span className="text-muted-foreground">Reports To:</span> {selectedEmployee.reporting_manager ? `${selectedEmployee.reporting_manager.first_name} ${selectedEmployee.reporting_manager.last_name}` : '-'}</div>
                                 </div>
                             </TabsContent>
                             <TabsContent value="bank" className="space-y-4 mt-4">
                                 <div className="grid grid-cols-2 gap-4">
-                                    <div><span className="text-gray-500">Bank Name:</span> {selectedEmployee.bank_name || '-'}</div>
-                                    <div><span className="text-gray-500">Account No:</span> {selectedEmployee.bank_account_no || '-'}</div>
-                                    <div><span className="text-gray-500">IFSC Code:</span> {selectedEmployee.ifsc_code || '-'}</div>
+                                    <div><span className="text-muted-foreground">Bank Name:</span> {selectedEmployee.bank_name || '-'}</div>
+                                    <div><span className="text-muted-foreground">Account No:</span> {selectedEmployee.bank_account_no || '-'}</div>
+                                    <div><span className="text-muted-foreground">IFSC Code:</span> {selectedEmployee.ifsc_code || '-'}</div>
                                 </div>
                             </TabsContent>
                             <TabsContent value="compliance" className="space-y-4 mt-4">
                                 <div className="grid grid-cols-2 gap-4">
-                                    <div><span className="text-gray-500">PAN Number:</span> {selectedEmployee.pan_number || '-'}</div>
-                                    <div><span className="text-gray-500">Aadhaar:</span> {selectedEmployee.aadhaar_number || '-'}</div>
-                                    <div><span className="text-gray-500">UAN (PF):</span> {selectedEmployee.uan_number || '-'}</div>
-                                    <div><span className="text-gray-500">ESI Number:</span> {selectedEmployee.esi_number || '-'}</div>
+                                    <div><span className="text-muted-foreground">PAN Number:</span> {selectedEmployee.pan_number || '-'}</div>
+                                    <div><span className="text-muted-foreground">Aadhaar:</span> {selectedEmployee.aadhaar_number || '-'}</div>
+                                    <div><span className="text-muted-foreground">UAN (PF):</span> {selectedEmployee.uan_number || '-'}</div>
+                                    <div><span className="text-muted-foreground">ESI Number:</span> {selectedEmployee.esi_number || '-'}</div>
                                 </div>
                             </TabsContent>
                         </Tabs>

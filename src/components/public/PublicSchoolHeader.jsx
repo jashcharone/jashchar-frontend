@@ -4,6 +4,7 @@ import { Menu, X, Phone, Mail, LogIn, ChevronDown, MapPin, Clock, Facebook, Twit
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/lib/customSupabaseClient';
 import { getSubdomain } from '@/utils/subdomain';
+import { formatDayMonth } from '@/utils/dateUtils';
 
 const PublicSchoolHeader = ({ school, settings, alias }) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -93,8 +94,7 @@ const PublicSchoolHeader = ({ school, settings, alias }) => {
 
   const formatDate = (dateStr) => {
     if (!dateStr) return '';
-    const date = new Date(dateStr);
-    return date.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
+    return formatDayMonth(dateStr, '');
   };
 
   return (

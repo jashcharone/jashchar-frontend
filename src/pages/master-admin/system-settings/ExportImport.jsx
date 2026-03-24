@@ -1,4 +1,5 @@
 ﻿import React, { useState, useRef } from 'react';
+import { formatDateTime } from '@/utils/dateUtils';
 import DashboardLayout from '@/components/DashboardLayout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -380,7 +381,7 @@ const ExportImport = () => {
                             <h3 className="font-semibold">{importFile?.name}</h3>
                             <p className="text-sm text-muted-foreground">
                               Version: {importPreview.version} | 
-                              Exported: {new Date(importPreview.exportedAt).toLocaleString()}
+                              Exported: {formatDateTime(importPreview.exportedAt)}
                             </p>
                           </div>
                           <Button variant="ghost" size="sm" onClick={resetImport}>

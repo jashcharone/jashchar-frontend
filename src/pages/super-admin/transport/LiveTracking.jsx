@@ -208,7 +208,7 @@ export default function LiveTracking() {
                     </div>
                     <div className="flex items-center gap-2">
                         {lastRefresh && (
-                            <span className="text-xs text-gray-500">
+                            <span className="text-xs text-muted-foreground">
                                 Updated: {lastRefresh.toLocaleTimeString('en-IN')}
                             </span>
                         )}
@@ -243,7 +243,7 @@ export default function LiveTracking() {
                         {/* Search */}
                         <div className="p-3 border-b">
                             <div className="relative">
-                                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-400" />
+                                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                                 <Input
                                     placeholder="Search vehicle..."
                                     value={searchTerm}
@@ -268,7 +268,7 @@ export default function LiveTracking() {
                                     className={`flex items-center gap-1 px-2 py-1 rounded text-xs font-medium transition
                                         ${statusFilter === f.key
                                             ? 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300'
-                                            : 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400 hover:bg-gray-200'
+                                            : 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-muted-foreground hover:bg-muted'
                                         }`}
                                 >
                                     {f.label} {f.count}
@@ -279,7 +279,7 @@ export default function LiveTracking() {
                         {/* Vehicle List */}
                         <div className="flex-1 overflow-y-auto">
                             {filteredVehicles.length === 0 ? (
-                                <div className="p-4 text-center text-gray-500 text-sm">
+                                <div className="p-4 text-center text-muted-foreground text-sm">
                                     {vehicles.length === 0
                                         ? 'No vehicles with GPS data'
                                         : 'No vehicles match filter'}
@@ -309,7 +309,7 @@ export default function LiveTracking() {
                                                 {STATUS_LABELS[v.movement_status]}
                                             </span>
                                         </div>
-                                        <div className="flex items-center gap-3 mt-1 text-xs text-gray-500">
+                                        <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
                                             {v.last_speed != null && (
                                                 <span className="flex items-center gap-0.5">
                                                     <Gauge className="h-3 w-3" />
@@ -325,7 +325,7 @@ export default function LiveTracking() {
                                                     : 'N/A'}
                                             </span>
                                         </div>
-                                        <div className="text-xs text-gray-400 mt-0.5 capitalize">
+                                        <div className="text-xs text-muted-foreground mt-0.5 capitalize">
                                             {v.vehicle_type} • {v.capacity} seats
                                         </div>
                                     </button>
@@ -340,11 +340,11 @@ export default function LiveTracking() {
                                     { label: 'Move', count: statusCounts.moving || 0, color: 'text-green-600' },
                                     { label: 'Stop', count: statusCounts.stopped || 0, color: 'text-yellow-600' },
                                     { label: 'Idle', count: statusCounts.idle || 0, color: 'text-orange-600' },
-                                    { label: 'Off', count: statusCounts.offline || 0, color: 'text-gray-500' }
+                                    { label: 'Off', count: statusCounts.offline || 0, color: 'text-muted-foreground' }
                                 ].map(s => (
                                     <div key={s.label}>
                                         <div className={`font-bold ${s.color}`}>{s.count}</div>
-                                        <div className="text-gray-400">{s.label}</div>
+                                        <div className="text-muted-foreground">{s.label}</div>
                                     </div>
                                 ))}
                             </div>
@@ -382,7 +382,7 @@ export default function LiveTracking() {
                                                     <Bus className="h-4 w-4" />
                                                     {v.vehicle_number}
                                                 </div>
-                                                <div className="mt-1 space-y-0.5 text-xs text-gray-600">
+                                                <div className="mt-1 space-y-0.5 text-xs text-muted-foreground">
                                                     <div className="flex justify-between">
                                                         <span>Status</span>
                                                         <span className="font-medium" style={{ color: STATUS_COLORS[v.movement_status] }}>
@@ -447,7 +447,7 @@ export default function LiveTracking() {
                                             <div className="font-bold text-sm text-gray-900 dark:text-white">
                                                 {selectedVehicle.vehicle_number}
                                             </div>
-                                            <div className="text-xs text-gray-500 capitalize">
+                                            <div className="text-xs text-muted-foreground capitalize">
                                                 {selectedVehicle.vehicle_type} • {selectedVehicle.capacity} seats
                                             </div>
                                         </div>
@@ -457,7 +457,7 @@ export default function LiveTracking() {
                                             <div className="font-bold text-lg text-gray-900 dark:text-white">
                                                 {selectedVehicle.last_speed?.toFixed(0) || 0}
                                             </div>
-                                            <div className="text-gray-500">km/h</div>
+                                            <div className="text-muted-foreground">km/h</div>
                                         </div>
                                         <div className="text-center">
                                             <div
@@ -466,13 +466,13 @@ export default function LiveTracking() {
                                             >
                                                 {STATUS_LABELS[selectedVehicle.movement_status]}
                                             </div>
-                                            <div className="text-gray-500">Status</div>
+                                            <div className="text-muted-foreground">Status</div>
                                         </div>
                                         <div className="text-center">
                                             <div className="font-bold text-sm text-gray-900 dark:text-white">
                                                 {vehicleTrail.length}
                                             </div>
-                                            <div className="text-gray-500">Trail pts</div>
+                                            <div className="text-muted-foreground">Trail pts</div>
                                         </div>
                                         <Button
                                             variant="ghost"
@@ -497,7 +497,7 @@ export default function LiveTracking() {
                                     <h3 className="font-semibold text-gray-700 dark:text-gray-200">
                                         No GPS Data Available
                                     </h3>
-                                    <p className="text-sm text-gray-500 mt-1">
+                                    <p className="text-sm text-muted-foreground mt-1">
                                         Vehicle GPS tracking data will appear here once devices start reporting.
                                     </p>
                                     <Button

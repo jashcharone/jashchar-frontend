@@ -6,6 +6,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
+import { formatDateTime } from '@/utils/dateUtils';
 import {
   X,
   Edit3,
@@ -306,7 +307,7 @@ const MarksOverrideModal = ({
                     <div key={idx} className="text-xs border-b border-gray-700 pb-2 last:border-0">
                       <div className="flex justify-between text-gray-400">
                         <span>{entry.teacher_name}</span>
-                        <span>{new Date(entry.timestamp).toLocaleString()}</span>
+                        <span>{formatDateTime(entry.timestamp)}</span>
                       </div>
                       <div className="text-white mt-1">
                         {entry.old_marks} → {entry.new_marks} ({entry.reason})

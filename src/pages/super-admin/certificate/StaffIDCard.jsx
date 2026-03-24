@@ -1,4 +1,5 @@
 ﻿import React, { useState, useEffect } from 'react';
+import { formatDate } from '@/utils/dateUtils';
 import DashboardLayout from '@/components/DashboardLayout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -131,7 +132,7 @@ const StaffIDCard = () => {
                       <TableCell className="font-medium">{card.staff_id_cards?.id_card_title || 'Staff ID Card'}</TableCell>
                       <TableCell>{card.employee_profiles?.full_name}</TableCell>
                       <TableCell>{card.employee_profiles?.phone}</TableCell>
-                      <TableCell>{new Date(card.generated_date).toLocaleDateString()}</TableCell>
+                      <TableCell>{formatDate(card.generated_date)}</TableCell>
                       <TableCell className="text-right space-x-2">
                         <Button variant="ghost" size="icon" onClick={() => setViewCard(card)}>
                           <Eye className="h-4 w-4" />
@@ -163,9 +164,9 @@ const StaffIDCard = () => {
                          <div className="relative z-10 p-4 text-center">
                              <h3 className="font-bold text-lg">{viewCard?.staff_id_cards?.id_card_title || 'Staff ID Card'}</h3>
                              <div className="my-4">
-                                 <div className="w-24 h-24 bg-gray-200 rounded-full mx-auto mb-2"></div>
+                                 <div className="w-24 h-24 bg-gray-200 dark:bg-gray-700 rounded-full mx-auto mb-2"></div>
                                  <h4 className="font-bold">{viewCard?.employee_profiles?.full_name}</h4>
-                                 <p className="text-sm text-gray-600">Phone: {viewCard?.employee_profiles?.phone}</p>
+                                 <p className="text-sm text-gray-600 dark:text-gray-400">Phone: {viewCard?.employee_profiles?.phone}</p>
                              </div>
                          </div>
                     </div>

@@ -386,30 +386,30 @@ const HostelFee = () => {
         {/* Stats Cards */}
         {hasSearched && students.length > 0 && (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <Card className="bg-gradient-to-r from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 border-blue-200">
+            <Card className="bg-gradient-to-r from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 border-blue-200 dark:border-blue-800">
               <CardContent className="flex items-center p-4">
-                <Users className="h-10 w-10 text-blue-600 mr-4" />
+                <Users className="h-10 w-10 text-blue-600 dark:text-blue-400 mr-4" />
                 <div>
-                  <p className="text-2xl font-bold text-blue-700">{students.length}</p>
-                  <p className="text-sm text-blue-600">Total Students</p>
+                  <p className="text-2xl font-bold text-blue-700 dark:text-blue-400">{students.length}</p>
+                  <p className="text-sm text-blue-600 dark:text-blue-400">Total Students</p>
                 </div>
               </CardContent>
             </Card>
-            <Card className="bg-gradient-to-r from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20 border-green-200">
+            <Card className="bg-gradient-to-r from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20 border-green-200 dark:border-green-800">
               <CardContent className="flex items-center p-4">
-                <Building2 className="h-10 w-10 text-green-600 mr-4" />
+                <Building2 className="h-10 w-10 text-green-600 dark:text-green-400 mr-4" />
                 <div>
-                  <p className="text-2xl font-bold text-green-700">{assignedCount}</p>
-                  <p className="text-sm text-green-600">Hostel Assigned</p>
+                  <p className="text-2xl font-bold text-green-700 dark:text-green-400">{assignedCount}</p>
+                  <p className="text-sm text-green-600 dark:text-green-400">Hostel Assigned</p>
                 </div>
               </CardContent>
             </Card>
-            <Card className="bg-gradient-to-r from-purple-50 to-purple-100 dark:from-purple-900/20 dark:to-purple-800/20 border-purple-200">
+            <Card className="bg-gradient-to-r from-purple-50 to-purple-100 dark:from-purple-900/20 dark:to-purple-800/20 border-purple-200 dark:border-purple-800">
               <CardContent className="flex items-center p-4">
-                <User className="h-10 w-10 text-purple-600 mr-4" />
+                <User className="h-10 w-10 text-purple-600 dark:text-purple-400 mr-4" />
                 <div>
-                  <p className="text-2xl font-bold text-purple-700">{students.length - assignedCount}</p>
-                  <p className="text-sm text-purple-600">Not Assigned</p>
+                  <p className="text-2xl font-bold text-purple-700 dark:text-purple-400">{students.length - assignedCount}</p>
+                  <p className="text-sm text-purple-600 dark:text-purple-400">Not Assigned</p>
                 </div>
               </CardContent>
             </Card>

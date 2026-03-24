@@ -295,10 +295,10 @@ const StaffUsers = () => {
 
             {/* Actions Bar */}
             {selectedStaff.length > 0 && (
-                <Card className="border-purple-200 bg-purple-50">
+                <Card className="border-purple-200 bg-purple-50 dark:border-purple-800 dark:bg-purple-950/30">
                     <CardContent className="py-3">
                         <div className="flex items-center justify-between">
-                            <span className="text-purple-700 font-medium">
+                            <span className="text-purple-700 dark:text-purple-400 font-medium">
                                 {selectedStaff.length} staff selected
                                 {staffWithoutLogin > 0 && ` (${staffWithoutLogin} without login)`}
                             </span>
@@ -419,13 +419,13 @@ const StaffUsers = () => {
                                             <td className="p-3">
                                                 <div className="text-sm">
                                                     {member.email && (
-                                                        <div className="flex items-center gap-1 text-gray-600">
+                                                        <div className="flex items-center gap-1 text-muted-foreground">
                                                             <Mail className="h-3 w-3" />
                                                             {member.email}
                                                         </div>
                                                     )}
                                                     {member.phone && (
-                                                        <div className="flex items-center gap-1 text-gray-600">
+                                                        <div className="flex items-center gap-1 text-muted-foreground">
                                                             <Phone className="h-3 w-3" />
                                                             {member.phone}
                                                         </div>
@@ -441,7 +441,7 @@ const StaffUsers = () => {
 
                     {/* Pagination */}
                     <div className="flex items-center justify-between p-4 border-t">
-                        <div className="text-sm text-gray-500">
+                        <div className="text-sm text-muted-foreground">
                             Showing {((pagination.page - 1) * pagination.limit) + 1} to {Math.min(pagination.page * pagination.limit, pagination.total)} of {pagination.total}
                         </div>
                         <div className="flex gap-2">
@@ -503,7 +503,7 @@ const StaffUsers = () => {
                                 onChange={(e) => setDefaultPassword(e.target.value)}
                                 placeholder="Enter default password"
                             />
-                            <p className="text-xs text-gray-500 dark:text-gray-400">
+                            <p className="text-xs text-muted-foreground">
                                 This password will be set for all new accounts.
                             </p>
                         </div>
@@ -560,8 +560,8 @@ const StaffUsers = () => {
                                 placeholder="Enter new password"
                             />
                         </div>
-                        <div className="bg-orange-50 p-3 rounded-lg text-sm">
-                            <p className="text-orange-700">
+                        <div className="bg-orange-50 dark:bg-orange-950/30 p-3 rounded-lg text-sm border border-orange-200 dark:border-orange-800">
+                            <p className="text-orange-700 dark:text-orange-400">
                                 All selected staff passwords will be reset to: <strong>{defaultPassword}</strong>
                             </p>
                         </div>

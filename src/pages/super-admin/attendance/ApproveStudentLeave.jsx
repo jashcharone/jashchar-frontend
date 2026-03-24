@@ -112,10 +112,10 @@ const ApproveStudentLeave = () => {
 
     const getStatusColor = (status) => {
         switch (status) {
-            case 'approved': return 'bg-green-100 text-green-800';
-            case 'rejected': return 'bg-red-100 text-red-800';
+            case 'approved': return 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-400';
+            case 'rejected': return 'bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-400';
             case 'pending':
-            default: return 'bg-yellow-100 text-yellow-800';
+            default: return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-400';
         }
     };
 
@@ -152,7 +152,7 @@ const ApproveStudentLeave = () => {
                                     <tr key={req.id} className="border-b hover:bg-muted/30">
                                         <td className="px-6 py-4">
                                             <div className="font-bold">{req.applicant_name}</div>
-                                            <div className="text-xs text-gray-500">{req.class_name} - {req.section_name}</div>
+                                            <div className="text-xs text-muted-foreground">{req.class_name} - {req.section_name}</div>
                                         </td>
                                         <td className="px-6 py-4">{req.leave_type?.name || 'N/A'}</td>
                                         <td className="px-6 py-4">{format(new Date(req.start_date), 'dd/MM/yy')} - {format(new Date(req.end_date), 'dd/MM/yy')}</td>

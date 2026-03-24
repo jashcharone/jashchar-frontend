@@ -1,4 +1,5 @@
 ﻿import React from 'react';
+import { formatDate } from '@/utils/dateUtils';
 import { Star, Clock, BookOpen, ShoppingCart, Play, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -56,7 +57,7 @@ const CourseListItem = ({ course, onAddToCart, onStartLesson }) => {
              )}
              <span className="flex items-center gap-1"><BookOpen className="h-3 w-3" /> {course.lesson_count || 0} Lessons</span>
              <span className="hidden sm:flex items-center gap-1"><Clock className="h-3 w-3" /> {course.total_duration || '0h 0m'}</span>
-             <span>Updated {new Date(course.updated_at).toLocaleDateString()}</span>
+             <span>Updated {formatDate(course.updated_at)}</span>
           </div>
         </div>
 

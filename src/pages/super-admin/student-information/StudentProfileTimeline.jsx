@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { supabase } from '@/lib/customSupabaseClient';
 import { useBranch } from '@/contexts/BranchContext';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
-import { formatDate, formatDateTime } from '@/utils/dateUtils';
+import { formatDate, formatDateTime, formatMonthYear } from '@/utils/dateUtils';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -187,7 +187,7 @@ export default function StudentProfileTimeline({ studentId, student }) {
     filteredEvents.forEach(e => {
       const d = new Date(e.date);
       const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-      const label = d.toLocaleDateString('en-IN', { month: 'long', year: 'numeric' });
+      const label = formatMonthYear(d);
       if (!groups[key]) groups[key] = { label, events: [] };
       groups[key].events.push(e);
     });

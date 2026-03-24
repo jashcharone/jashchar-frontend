@@ -1,5 +1,6 @@
 import React from 'react';
 import { cn } from "@/lib/utils";
+import { formatDayMonth, getWeekdayShortName } from '@/utils/dateUtils';
 
 /**
  * TypingIndicator - Animated typing dots
@@ -105,7 +106,7 @@ export const OnlineStatus = ({
         }
         
         // Show date
-        return date.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
+        return formatDayMonth(date, '');
     };
     
     if (showText) {
@@ -318,14 +319,11 @@ export const TimeAgo = ({ timestamp, className }) => {
         
         // Less than a week
         if (diff < 604800000) {
-            return then.toLocaleDateString('en-US', { weekday: 'short' });
+            return getWeekdayShortName(then);
         }
         
         // Show date
-        return then.toLocaleDateString('en-IN', { 
-            day: 'numeric', 
-            month: 'short'
-        });
+        return formatDayMonth(then, '');
     };
     
     return (

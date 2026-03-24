@@ -256,8 +256,8 @@ const ForgotPassword = () => {
             <div className="flex justify-center">
                 <CheckCircle className="h-16 w-16 text-green-500" />
             </div>
-            <h3 className="text-xl font-semibold text-gray-900">Check your Email</h3>
-            <p className="text-gray-600">
+            <h3 className="text-xl font-semibold text-gray-900 dark:text-white">Check your Email</h3>
+            <p className="text-gray-600 dark:text-gray-400">
                 We have sent a password reset link to <strong>{identifier}</strong>. 
                 Please check your inbox (and spam folder).
             </p>

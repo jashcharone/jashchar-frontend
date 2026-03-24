@@ -212,6 +212,97 @@ export const formatDateRange = (startDate, endDate) => {
   return `${start} to ${end}`;
 };
 
+/**
+ * Format long date with weekday (e.g., "Wednesday, 24 March 2026")
+ * Used for dashboard headers
+ * @param {string|Date} date - Date to format
+ * @param {string} fallback - Fallback value
+ * @returns {string} Formatted long date
+ */
+export const formatLongDate = (date, fallback = '-') => {
+  if (!date) return fallback;
+  
+  const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+  const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+  
+  try {
+    const d = new Date(date);
+    if (isNaN(d.getTime())) return fallback;
+    
+    return `${days[d.getDay()]}, ${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear()}`;
+  } catch (error) {
+    return fallback;
+  }
+};
+
+/**
+ * Format day and month only (e.g., "10 Feb")
+ * Used for notices, events without year
+ * @param {string|Date} date - Date to format
+ * @param {string} fallback - Fallback value
+ * @returns {string} Formatted day-month
+ */
+export const formatDayMonth = (date, fallback = '-') => {
+  if (!date) return fallback;
+  
+  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  
+  try {
+    const d = new Date(date);
+    if (isNaN(d.getTime())) return fallback;
+    
+    return `${d.getDate()} ${months[d.getMonth()]}`;
+  } catch (error) {
+    return fallback;
+  }
+};
+
+/**
+ * Format month and year (e.g., "March 2026")
+ * Used for timeline group headers
+ * @param {string|Date} date - Date to format
+ * @param {string} fallback - Fallback value
+ * @returns {string} Formatted month-year
+ */
+export const formatMonthYear = (date, fallback = '-') => {
+  if (!date) return fallback;
+  
+  const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+  
+  try {
+    const d = new Date(date);
+    if (isNaN(d.getTime())) return fallback;
+    
+    return `${months[d.getMonth()]} ${d.getFullYear()}`;
+  } catch (error) {
+    return fallback;
+  }
+};
+
+/**
+ * Get short month name (e.g., "Jan", "Feb")
+ * Used for chart axis labels
+ * @param {string|Date} date - Date to extract month from
+ * @returns {string} Short month name
+ */
+export const getMonthShortName = (date) => {
+  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  const d = new Date(date);
+  return months[d.getMonth()] || '';
+};
+
+/**
+ * Get short weekday name (e.g., "Mon", "Tue")
+ * Used for chart axis labels
+ * @param {string|Date} date - Date to extract weekday from
+ * @returns {string} Short weekday name
+ */
+export const getWeekdayShortName = (date) => {
+  const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  const d = new Date(date);
+  return days[d.getDay()] || '';
+};
+
 // Default export for convenience
 export default {
   formatDate,
@@ -221,5 +312,10 @@ export default {
   parseDDMMYYYY,
   getRelativeDate,
   formatDateWithMonthName,
-  formatDateRange
+  formatDateRange,
+  formatLongDate,
+  formatDayMonth,
+  formatMonthYear,
+  getMonthShortName,
+  getWeekdayShortName
 };

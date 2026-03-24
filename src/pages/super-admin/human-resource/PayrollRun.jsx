@@ -4,6 +4,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
+import { formatDate } from '@/utils/dateUtils';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -257,7 +258,7 @@ const PayrollRun = () => {
                                             {getMonthName(run.month)} {run.year}
                                         </TableCell>
                                         <TableCell>
-                                            {new Date(run.run_date).toLocaleDateString('en-IN')}
+                                            {formatDate(run.run_date)}
                                         </TableCell>
                                         <TableCell>
                                             <Badge variant="outline">

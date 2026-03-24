@@ -855,7 +855,7 @@ const QuickFees = () => {
                                         {isAssigned && (
                                             <AlertDialog>
                                                 <AlertDialogTrigger asChild>
-                                                    <Button variant="destructive" className="bg-black hover:bg-gray-800 text-white">
+                                                    <Button variant="destructive">
                                                         <Trash2 className="mr-2 h-4 w-4" />
                                                         Unassign Fees
                                                     </Button>

@@ -1,4 +1,4 @@
-﻿import React, { useState } from 'react';
+import React, { useState } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
@@ -54,8 +54,8 @@ const ImportBook = () => {
           </Button>
         </div>
 
-        <div className="bg-white p-6 rounded-lg shadow space-y-4">
-          <div className="bg-blue-50 p-4 rounded-md border border-blue-200 text-sm text-blue-800">
+        <div className="bg-card p-6 rounded-lg shadow space-y-4">
+          <div className="bg-blue-50 p-4 rounded-md border border-blue-200 text-sm text-blue-800 dark:text-blue-400">
             <p className="font-semibold mb-2">Instructions:</p>
             <ol className="list-decimal pl-5 space-y-1">
               <li>Your CSV data should be in the format of the sample file.</li>
@@ -65,7 +65,7 @@ const ImportBook = () => {
             </ol>
           </div>
 
-          <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
+          <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-8 text-center">
             <input
               type="file"
               accept=".csv"
@@ -74,9 +74,9 @@ const ImportBook = () => {
               id="file-upload"
             />
             <label htmlFor="file-upload" className="cursor-pointer flex flex-col items-center">
-              <Upload className="h-12 w-12 text-gray-400 mb-2" />
-              <span className="text-lg font-medium text-gray-900">Drop CSV file here or click to upload</span>
-              <span className="text-sm text-gray-500 mt-1">{file ? file.name : 'No file selected'}</span>
+              <Upload className="h-12 w-12 text-muted-foreground mb-2" />
+              <span className="text-lg font-medium text-foreground">Drop CSV file here or click to upload</span>
+              <span className="text-sm text-muted-foreground mt-1">{file ? file.name : 'No file selected'}</span>
             </label>
           </div>
 
@@ -86,11 +86,11 @@ const ImportBook = () => {
         </div>
 
         {importedData.length > 0 && (
-          <div className="bg-white p-6 rounded-lg shadow">
+          <div className="bg-card p-6 rounded-lg shadow">
             <h3 className="text-lg font-semibold mb-4">Imported Data Preview</h3>
             <div className="overflow-x-auto">
-              <table className="w-full text-sm text-left text-gray-500">
-                <thead className="text-xs text-gray-700 uppercase bg-gray-50">
+              <table className="w-full text-sm text-left text-muted-foreground">
+                <thead className="text-xs text-foreground uppercase bg-muted/50">
                   <tr>
                     <th className="px-6 py-3">Book Title</th>
                     <th className="px-6 py-3">Book Number</th>
@@ -102,8 +102,8 @@ const ImportBook = () => {
                 </thead>
                 <tbody>
                   {importedData.map((row, index) => (
-                    <tr key={index} className="bg-white border-b hover:bg-gray-50">
-                      <td className="px-6 py-4 font-medium text-gray-900">{row.title}</td>
+                    <tr key={index} className="bg-card border-b hover:bg-muted/50">
+                      <td className="px-6 py-4 font-medium text-foreground">{row.title}</td>
                       <td className="px-6 py-4">{row.number}</td>
                       <td className="px-6 py-4">{row.isbn}</td>
                       <td className="px-6 py-4">{row.publisher}</td>

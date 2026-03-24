@@ -1,4 +1,5 @@
 ﻿import React, { useState, useEffect } from 'react';
+import { formatDate } from '@/utils/dateUtils';
 import { useParams, Link } from 'react-router-dom';
 import { supabase } from '@/lib/customSupabaseClient';
 import DashboardLayout from '@/components/DashboardLayout';
@@ -210,7 +211,7 @@ const StaffProfile = () => {
                            <Download className="w-3 h-3" />
                        </Button>
                    </div>
-                   <div className="bg-white p-2 rounded border">
+                   <div className="bg-white dark:bg-gray-100 p-2 rounded border">
                       {staff.staff_id ? (
                           <img 
                             src={`https://bwipjs-api.metafloor.com/?bcid=code128&text=${staff.staff_id}&scale=2&height=8&incltext=true`} 
@@ -232,7 +233,7 @@ const StaffProfile = () => {
                            <Download className="w-3 h-3" />
                        </Button>
                    </div>
-                   <div className="bg-white p-2 rounded border shadow-sm">
+                   <div className="bg-white dark:bg-gray-100 p-2 rounded border shadow-sm">
                       {staff.staff_id ? (
                           <img 
                             src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(`Name: ${staff.full_name}\nID: ${staff.staff_id}\nRole: ${staff.role?.name}\nPhone: ${staff.phone}`)}`} 
@@ -440,7 +441,7 @@ const StaffProfile = () => {
                                         <TableRow key={p.id}>
                                             <TableCell className="font-medium">{p.id.slice(0, 8)}</TableCell>
                                             <TableCell>{p.month} - {p.year}</TableCell>
-                                            <TableCell>{new Date(p.created_at).toLocaleDateString()}</TableCell>
+                                            <TableCell>{formatDate(p.created_at)}</TableCell>
                                             <TableCell>{p.payment_mode || 'Bank Transfer'}</TableCell>
                                             <TableCell><Badge variant={p.status === 'paid' ? 'success' : 'warning'} className={p.status === 'paid' ? 'bg-green-500 dark:bg-green-600' : 'bg-yellow-500 dark:bg-yellow-600'}>{p.status}</Badge></TableCell>
                                             <TableCell className="text-right font-bold">₹{p.net_salary}</TableCell>
@@ -508,7 +509,7 @@ const StaffProfile = () => {
                                             <TableCell className="font-medium">{l.leave_type}</TableCell>
                                             <TableCell>{l.start_date} - {l.end_date}</TableCell>
                                             <TableCell>{l.days || 1}</TableCell>
-                                            <TableCell>{new Date(l.created_at).toLocaleDateString()}</TableCell>
+                                            <TableCell>{formatDate(l.created_at)}</TableCell>
                                             <TableCell>
                                                 <Badge className={
                                                     l.status === 'approved' ? 'bg-green-500 dark:bg-green-600' : 
@@ -574,7 +575,7 @@ const StaffProfile = () => {
                             <div className="flex items-center justify-center w-10 h-10 rounded-full border border-white bg-slate-300 group-[.is-active]:bg-emerald-500 text-slate-500 group-[.is-active]:text-emerald-50 shadow shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2">
                                 <Clock className="w-5 h-5" />
                             </div>
-                            <div className="w-[calc(100%-4rem)] md:w-[calc(50%-2.5rem)] bg-white p-4 rounded border shadow-sm">
+                            <div className="w-[calc(100%-4rem)] md:w-[calc(50%-2.5rem)] bg-white dark:bg-slate-800 p-4 rounded border shadow-sm">
                                 <div className="flex items-center justify-between space-x-2 mb-1">
                                     <div className="font-bold text-slate-900">Joined the School</div>
                                     <time className="font-caveat font-medium text-indigo-500">{staff.date_of_joining}</time>

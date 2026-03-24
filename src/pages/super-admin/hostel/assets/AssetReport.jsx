@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { formatDateWithMonthName } from '@/utils/dateUtils';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { useBranch } from '@/contexts/BranchContext';
 import api from '@/lib/api';
@@ -143,7 +144,7 @@ export default function AssetReport() {
                                                     </td>
                                                     <td className="p-3">{a.hostels?.name} {a.hostel_rooms?.room_number ? `- ${a.hostel_rooms.room_number}` : ''}</td>
                                                     <td className="p-3"><Badge className={conditionColors[a.condition]}>{a.condition}</Badge></td>
-                                                    <td className="p-3">{a.next_maintenance_date ? new Date(a.next_maintenance_date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : '-'}</td>
+                                                    <td className="p-3">{a.next_maintenance_date ? formatDateWithMonthName(a.next_maintenance_date) : '-'}</td>
                                                 </tr>
                                             ))}
                                         </tbody>

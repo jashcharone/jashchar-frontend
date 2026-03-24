@@ -9,7 +9,7 @@ import {
     Check, CheckCheck, Clock, MessageCircle, Bell, BellOff
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { formatDate, getRelativeDate } from "@/utils/dateUtils";
+import { formatDate, getRelativeDate, getWeekdayShortName } from "@/utils/dateUtils";
 import api from "@/services/api";
 import { useJashSyncSocket } from "@/contexts/JashSyncSocketContext";
 
@@ -161,7 +161,7 @@ const ChatList = ({
         }
         // Less than a week
         if (diff < 604800000) {
-            return date.toLocaleDateString('en-US', { weekday: 'short' });
+            return getWeekdayShortName(date);
         }
         // Otherwise show date
         return formatDate(dateStr);

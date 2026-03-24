@@ -194,10 +194,10 @@ const Login = () => {
   // If user is already logged in, show a different UI instead of auto-redirecting
   if (!authLoading && user) {
       return (
-          <div className="min-h-screen flex items-center justify-center bg-gray-100">
-              <div className="bg-white p-8 rounded-lg shadow-md text-center max-w-md w-full">
+          <div className="min-h-screen flex items-center justify-center bg-gray-100 dark:bg-gray-950">
+              <div className="bg-white dark:bg-gray-900 p-8 rounded-lg shadow-md text-center max-w-md w-full">
                   <h2 className="text-2xl font-bold mb-4">You are already logged in</h2>
-                  <p className="mb-6 text-gray-600">You are currently logged in as <strong>{user.email}</strong>.</p>
+                  <p className="mb-6 text-gray-600 dark:text-gray-400">You are currently logged in as <strong>{user.email}</strong>.</p>
                   <div className="flex flex-col gap-3">
                       <Button onClick={async () => {
                           let role = user.user_metadata?.role;

@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Employee Loans Management
  * Using employee_loans table
  */
@@ -165,10 +165,10 @@ const LoansManagement = () => {
     
     const getStatusBadge = (status) => {
         const variants = {
-            pending: { color: 'bg-yellow-100 text-yellow-800', label: 'Pending' },
-            active: { color: 'bg-green-100 text-green-800', label: 'Active' },
-            completed: { color: 'bg-blue-100 text-blue-800', label: 'Completed' },
-            rejected: { color: 'bg-red-100 text-red-800', label: 'Rejected' }
+            pending: { color: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-400', label: 'Pending' },
+            active: { color: 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-400', label: 'Active' },
+            completed: { color: 'bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-400', label: 'Completed' },
+            rejected: { color: 'bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-400', label: 'Rejected' }
         };
         const config = variants[status] || variants.pending;
         return <Badge className={config.color}>{config.label}</Badge>;
@@ -196,7 +196,7 @@ const LoansManagement = () => {
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                 <div>
                     <h1 className="text-2xl font-bold">Employee Loans</h1>
-                    <p className="text-gray-500">Manage employee loans and advances</p>
+                    <p className="text-muted-foreground">Manage employee loans and advances</p>
                 </div>
                 <Button onClick={() => setAddDialogOpen(true)}>
                     <Plus className="w-4 h-4 mr-2" />
@@ -210,10 +210,10 @@ const LoansManagement = () => {
                     <CardContent className="pt-4">
                         <div className="flex items-center justify-between">
                             <div>
-                                <p className="text-sm text-gray-500">Total Loans</p>
+                                <p className="text-sm text-muted-foreground">Total Loans</p>
                                 <p className="text-2xl font-bold">{stats.totalLoans}</p>
                             </div>
-                            <FileText className="w-8 h-8 text-gray-400" />
+                            <FileText className="w-8 h-8 text-muted-foreground" />
                         </div>
                     </CardContent>
                 </Card>
@@ -221,7 +221,7 @@ const LoansManagement = () => {
                     <CardContent className="pt-4">
                         <div className="flex items-center justify-between">
                             <div>
-                                <p className="text-sm text-gray-500">Active Loans</p>
+                                <p className="text-sm text-muted-foreground">Active Loans</p>
                                 <p className="text-2xl font-bold text-green-600">{stats.active}</p>
                             </div>
                             <CheckCircle className="w-8 h-8 text-green-400" />
@@ -232,7 +232,7 @@ const LoansManagement = () => {
                     <CardContent className="pt-4">
                         <div className="flex items-center justify-between">
                             <div>
-                                <p className="text-sm text-gray-500">Total Disbursed</p>
+                                <p className="text-sm text-muted-foreground">Total Disbursed</p>
                                 <p className="text-xl font-bold text-blue-600">{formatCurrency(stats.totalDisbursed)}</p>
                             </div>
                             <IndianRupee className="w-8 h-8 text-blue-400" />
@@ -243,7 +243,7 @@ const LoansManagement = () => {
                     <CardContent className="pt-4">
                         <div className="flex items-center justify-between">
                             <div>
-                                <p className="text-sm text-gray-500">Outstanding</p>
+                                <p className="text-sm text-muted-foreground">Outstanding</p>
                                 <p className="text-xl font-bold text-orange-600">{formatCurrency(stats.totalOutstanding)}</p>
                             </div>
                             <Calculator className="w-8 h-8 text-orange-400" />
@@ -261,7 +261,7 @@ const LoansManagement = () => {
                 <CardContent>
                     {loading ? (
                         <div className="flex items-center justify-center py-8">
-                            <Loader2 className="w-8 h-8 animate-spin text-gray-400" />
+                            <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
                         </div>
                     ) : (
                         <Table>
@@ -285,7 +285,7 @@ const LoansManagement = () => {
                                                 <p className="font-medium">
                                                     {loan.employees?.first_name} {loan.employees?.last_name}
                                                 </p>
-                                                <p className="text-sm text-gray-500">{loan.employees?.emp_code}</p>
+                                                <p className="text-sm text-muted-foreground">{loan.employees?.emp_code}</p>
                                             </div>
                                         </TableCell>
                                         <TableCell className="capitalize">{loan.loan_type?.replace('_', ' ')}</TableCell>
@@ -332,7 +332,7 @@ const LoansManagement = () => {
                                 ))}
                                 {loans.length === 0 && (
                                     <TableRow>
-                                        <TableCell colSpan={8} className="text-center py-8 text-gray-500">
+                                        <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
                                             No loans found
                                         </TableCell>
                                     </TableRow>
@@ -454,43 +454,43 @@ const LoansManagement = () => {
                         <div className="space-y-4 py-4">
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
-                                    <p className="text-sm text-gray-500">Employee</p>
+                                    <p className="text-sm text-muted-foreground">Employee</p>
                                     <p className="font-medium">
                                         {selectedLoan.employees?.first_name} {selectedLoan.employees?.last_name}
                                     </p>
                                 </div>
                                 <div>
-                                    <p className="text-sm text-gray-500">Loan Type</p>
+                                    <p className="text-sm text-muted-foreground">Loan Type</p>
                                     <p className="font-medium capitalize">{selectedLoan.loan_type?.replace('_', ' ')}</p>
                                 </div>
                                 <div>
-                                    <p className="text-sm text-gray-500">Principal Amount</p>
+                                    <p className="text-sm text-muted-foreground">Principal Amount</p>
                                     <p className="font-medium">{formatCurrency(selectedLoan.principal_amount)}</p>
                                 </div>
                                 <div>
-                                    <p className="text-sm text-gray-500">Interest Rate</p>
+                                    <p className="text-sm text-muted-foreground">Interest Rate</p>
                                     <p className="font-medium">{selectedLoan.interest_rate}% p.a.</p>
                                 </div>
                                 <div>
-                                    <p className="text-sm text-gray-500">EMI Amount</p>
+                                    <p className="text-sm text-muted-foreground">EMI Amount</p>
                                     <p className="font-medium">{formatCurrency(selectedLoan.emi_amount)}</p>
                                 </div>
                                 <div>
-                                    <p className="text-sm text-gray-500">Tenure</p>
+                                    <p className="text-sm text-muted-foreground">Tenure</p>
                                     <p className="font-medium">{selectedLoan.tenure_months} months</p>
                                 </div>
                                 <div>
-                                    <p className="text-sm text-gray-500">Outstanding Balance</p>
+                                    <p className="text-sm text-muted-foreground">Outstanding Balance</p>
                                     <p className="font-medium text-orange-600">{formatCurrency(selectedLoan.outstanding_balance)}</p>
                                 </div>
                                 <div>
-                                    <p className="text-sm text-gray-500">Status</p>
+                                    <p className="text-sm text-muted-foreground">Status</p>
                                     {getStatusBadge(selectedLoan.status)}
                                 </div>
                             </div>
                             {selectedLoan.remarks && (
                                 <div>
-                                    <p className="text-sm text-gray-500">Remarks</p>
+                                    <p className="text-sm text-muted-foreground">Remarks</p>
                                     <p>{selectedLoan.remarks}</p>
                                 </div>
                             )}

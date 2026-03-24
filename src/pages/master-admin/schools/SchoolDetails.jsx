@@ -1,4 +1,5 @@
 ﻿import React, { useState, useEffect } from 'react';
+import { formatDate } from '@/utils/dateUtils';
 import { useParams, useNavigate } from 'react-router-dom';
 import DashboardLayout from '@/components/DashboardLayout';
 import { supabase } from '@/lib/customSupabaseClient';
@@ -86,7 +87,7 @@ const SchoolDetails = () => {
             <CardContent className="space-y-4">
               <div><div className="text-sm font-medium">Current Plan</div><Badge variant="outline">{school.subscription_plans?.name || 'No Plan'}</Badge></div>
               <div><div className="text-sm font-medium">Board Type</div><div className="text-sm text-muted-foreground">{school.site_board_type || 'N/A'}</div></div>
-              <div><div className="text-sm font-medium">Joined Date</div><div className="text-sm text-muted-foreground">{new Date(school.created_at).toLocaleDateString()}</div></div>
+              <div><div className="text-sm font-medium">Joined Date</div><div className="text-sm text-muted-foreground">{formatDate(school.created_at)}</div></div>
               <div><div className="text-sm font-medium">School ID</div><div className="text-xs font-mono bg-slate-100 p-1 rounded">{school.id}</div></div>
             </CardContent>
           </Card>

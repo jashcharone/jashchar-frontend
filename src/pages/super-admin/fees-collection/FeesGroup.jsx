@@ -85,6 +85,22 @@ const FeesGroup = () => {
         );
     }, [feesGroups, searchQuery]);
 
+    // Export Handlers
+    const handleCopy = () => {
+        const text = filteredGroups.map(g => `${g.name}\t${g.description || ''}`).join('\n');
+        navigator.clipboard.writeText(`Name\tDescription\n${text}`);
+        toast({ title: 'Copied to clipboard' });
+    };
+    const handleCSV = () => {
+        const rows = [['Name', 'Description'], ...filteredGroups.map(g => [g.name, g.description || ''])];
+        const csv = rows.map(r => r.map(c => `"${(c || '').replace(/"/g, '""')}"`).join(',')).join('\n');
+        const blob = new Blob([csv], { type: 'text/csv' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a'); a.href = url; a.download = 'fees_groups.csv'; a.click();
+        URL.revokeObjectURL(url);
+    };
+    const handlePrint = () => window.print();
+
     const resetForm = () => {
         setFormData({ id: null, name: '', description: '' });
         setIsEditing(false);
@@ -273,25 +289,25 @@ const FeesGroup = () => {
                                             <div className="flex items-center gap-1 border rounded-md">
                                                 <Tooltip>
                                                     <TooltipTrigger asChild>
-                                                        <Button variant="ghost" size="icon" className="h-9 w-9"><Copy className="h-4 w-4" /></Button>
+                                                        <Button variant="ghost" size="icon" className="h-9 w-9" onClick={handleCopy}><Copy className="h-4 w-4" /></Button>
                                                     </TooltipTrigger>
                                                     <TooltipContent>Copy</TooltipContent>
                                                 </Tooltip>
                                                 <Tooltip>
                                                     <TooltipTrigger asChild>
-                                                        <Button variant="ghost" size="icon" className="h-9 w-9"><FileText className="h-4 w-4" /></Button>
+                                                        <Button variant="ghost" size="icon" className="h-9 w-9" onClick={handleCSV}><FileText className="h-4 w-4" /></Button>
                                                     </TooltipTrigger>
                                                     <TooltipContent>Excel</TooltipContent>
                                                 </Tooltip>
                                                 <Tooltip>
                                                     <TooltipTrigger asChild>
-                                                        <Button variant="ghost" size="icon" className="h-9 w-9"><Download className="h-4 w-4" /></Button>
+                                                        <Button variant="ghost" size="icon" className="h-9 w-9" onClick={handleCSV}><Download className="h-4 w-4" /></Button>
                                                     </TooltipTrigger>
                                                     <TooltipContent>CSV</TooltipContent>
                                                 </Tooltip>
                                                 <Tooltip>
                                                     <TooltipTrigger asChild>
-                                                        <Button variant="ghost" size="icon" className="h-9 w-9"><Printer className="h-4 w-4" /></Button>
+                                                        <Button variant="ghost" size="icon" className="h-9 w-9" onClick={handlePrint}><Printer className="h-4 w-4" /></Button>
                                                     </TooltipTrigger>
                                                     <TooltipContent>Print</TooltipContent>
                                                 </Tooltip>

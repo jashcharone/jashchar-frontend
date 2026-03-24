@@ -125,16 +125,16 @@ const LibraryBookIssued = () => {
                           {item.member?.member_type === 'student' 
                             ? item.member?.student?.full_name 
                             : item.member?.staff?.full_name} 
-                          <span className="text-xs text-gray-500 ml-1">({item.member?.library_card_no})</span>
+                          <span className="text-xs text-muted-foreground ml-1">({item.member?.library_card_no})</span>
                         </TableCell>
                         <TableCell>{item.issue_date}</TableCell>
                         <TableCell>{item.due_date}</TableCell>
                         <TableCell>{item.return_date || '-'}</TableCell>
                         <TableCell>
                           {item.is_returned ? (
-                            <Badge variant="success" className="bg-green-100 text-green-800">Returned</Badge>
+                            <Badge variant="success" className="bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-400">Returned</Badge>
                           ) : (
-                            <Badge variant="destructive" className="bg-red-100 text-red-800">Issued</Badge>
+                            <Badge variant="destructive" className="bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-400">Issued</Badge>
                           )}
                         </TableCell>
                       </TableRow>

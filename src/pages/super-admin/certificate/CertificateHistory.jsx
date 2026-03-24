@@ -1,4 +1,5 @@
 ﻿import React, { useState, useEffect } from 'react';
+import { formatDate } from '@/utils/dateUtils';
 import DashboardLayout from '@/components/DashboardLayout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -160,7 +161,7 @@ const CertificateHistory = () => {
                       <TableCell>{cert.student_profiles?.full_name}</TableCell>
                       <TableCell>{cert.student_profiles?.admission_no}</TableCell>
                       <TableCell>{cert.student_profiles?.classes?.name}</TableCell>
-                      <TableCell>{new Date(cert.generated_date).toLocaleDateString()}</TableCell>
+                      <TableCell>{formatDate(cert.generated_date)}</TableCell>
                       <TableCell className="text-right space-x-2">
                         <Button variant="ghost" size="icon" onClick={() => setViewCertificate(cert)}>
                           <Eye className="h-4 w-4" />
@@ -197,7 +198,7 @@ const CertificateHistory = () => {
                         __html: viewCertificate?.certificate_templates?.template_html
                             ?.replace(/{student_name}/g, viewCertificate.student_profiles?.full_name || '')
                             ?.replace(/{class}/g, viewCertificate.student_profiles?.classes?.name || '')
-                            ?.replace(/{date}/g, new Date(viewCertificate.generated_date).toLocaleDateString())
+                            ?.replace(/{date}/g, formatDate(viewCertificate.generated_date))
                             || '' 
                         }} 
                     />

@@ -1,6 +1,7 @@
 ﻿import React, { useState, useEffect } from 'react';
 import { useSchoolSlug } from '@/hooks/useSchoolSlug';
 import publicCmsService from '@/services/publicCmsService';
+import { getMonthShortName } from '@/utils/dateUtils';
 import { Loader2, Calendar, MapPin, Clock } from 'lucide-react';
 import { Helmet } from 'react-helmet';
 import { PublicHeader, PublicFooter, TopBar } from '@/components/public/PublicLayoutComponents';
@@ -61,7 +62,7 @@ const PublicEvents = () => {
             <div key={event.id} className="bg-white border border-gray-100 rounded-xl shadow-sm hover:shadow-md transition-shadow p-6 flex flex-col md:flex-row gap-6">
               <div className="bg-primary/10 text-primary rounded-lg p-4 text-center min-w-[100px] flex flex-col justify-center">
                 <span className="block text-3xl font-bold">{new Date(event.start_date).getDate()}</span>
-                <span className="block text-sm font-bold uppercase">{new Date(event.start_date).toLocaleString('default', { month: 'short' })}</span>
+                <span className="block text-sm font-bold uppercase">{getMonthShortName(event.start_date)}</span>
               </div>
               <div className="flex-grow">
                 <h3 className="text-xl font-bold text-gray-900 mb-2">{event.title}</h3>

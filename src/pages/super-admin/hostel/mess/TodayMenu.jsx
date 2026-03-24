@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { formatDateWithMonthName } from '@/utils/dateUtils';
 import DashboardLayout from '@/components/DashboardLayout';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { useBranch } from '@/contexts/BranchContext';
@@ -66,7 +67,7 @@ const TodayMenu = () => {
             <h1 className="text-2xl font-bold flex items-center gap-2">
               <UtensilsCrossed className="h-6 w-6 text-orange-600" /> Today's Menu
             </h1>
-            <p className="text-muted-foreground mt-1">{dayName} — {new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}</p>
+            <p className="text-muted-foreground mt-1">{dayName} — {formatDateWithMonthName(new Date())}</p>
           </div>
           <div className="flex items-center gap-3">
             <Select value={selectedHostel} onValueChange={setSelectedHostel}>

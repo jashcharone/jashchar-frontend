@@ -1,4 +1,5 @@
 ﻿import React, { useState, useEffect } from 'react';
+import { formatDate } from '@/utils/dateUtils';
 import { supabase } from '@/lib/customSupabaseClient';
 import DashboardLayout from '@/components/DashboardLayout';
 import { Button } from '@/components/ui/button';
@@ -316,7 +317,7 @@ const SubscriptionInvoices = () => {
                                         {invoice.school?.name || 'Unknown School'}
                                     </td>
                                     <td className="px-6 py-4 font-semibold">₹{(invoice.total_amount || invoice.amount || 0).toFixed(2)}</td>
-                                    <td className="px-6 py-4">{invoice.due_date ? new Date(invoice.due_date).toLocaleDateString() : 'N/A'}</td>
+                                    <td className="px-6 py-4">{invoice.due_date ? formatDate(invoice.due_date) : 'N/A'}</td>
                                     <td className="px-6 py-4"><Badge className={getStatusBadge(invoice.payment_status)}>{invoice.payment_status || 'Pending'}</Badge></td>
                                     <td className="px-6 py-4 text-center space-x-2">
                                         {(invoice.payment_status !== 'paid' && invoice.status !== 'paid') && <RazorpayButton invoice={invoice} onPaymentSuccess={fetchInvoices} />}

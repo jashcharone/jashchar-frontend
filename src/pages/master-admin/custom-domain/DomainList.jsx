@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { formatDate } from '@/utils/dateUtils';
 import { Link } from 'react-router-dom';
 import { 
   Search, Copy, Sheet, FileText, Printer, Trash2, HelpCircle, ChevronLeft, ChevronRight, Loader2 
@@ -152,8 +153,8 @@ const DomainList = () => {
                     </TableCell>
                     <TableCell>{domain.domain_url}</TableCell>
                     <TableCell>{domain.domain_type}</TableCell>
-                    <TableCell>{new Date(domain.request_date).toLocaleDateString()}</TableCell>
-                    <TableCell>{domain.approved_date ? new Date(domain.approved_date).toLocaleDateString() : '-'}</TableCell>
+                    <TableCell>{formatDate(domain.request_date)}</TableCell>
+                    <TableCell>{domain.approved_date ? formatDate(domain.approved_date) : '-'}</TableCell>
                     <TableCell>
                       <Badge className={
                           domain.status === 'Approved' ? "bg-green-100 text-green-800 hover:bg-green-200 border-green-200" :

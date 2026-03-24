@@ -150,27 +150,35 @@ export const aiEngineApi = {
   detectFaces: (imageBase64) => apiCall('/camera/ai/detect', 'POST', { image: imageBase64 }),
   
   // Recognize face (search in FAISS index)
-  recognizeFace: (imageBase64, threshold = 0.6, branchId = null) => {
+  // Supports class-filtered search via optional classId/recognitionMode params
+  recognizeFace: (imageBase64, threshold = 0.6, branchId = null, { classId, sectionId, recognitionMode } = {}) => {
     const context = getUserContext();
     const branch_id = branchId || context.branchId;
-    return apiCall('/camera/ai/recognize', 'POST', {
+    const payload = {
       image: imageBase64,
       threshold,
       branch_id,
-    });
+    };
+    if (classId) payload.class_id = classId;
+    if (sectionId) payload.section_id = sectionId;
+    if (recognitionMode) payload.recognition_mode = recognitionMode;
+    return apiCall('/camera/ai/recognize', 'POST', payload);
   },
   
-  // Enroll new face (add to FAISS index)
-  enrollFace: (personId, personType, personName, imageBase64, branchId = null) => {
+  // Enroll new face (add to FAISS index + class sub-index if classId provided)
+  enrollFace: (personId, personType, personName, imageBase64, branchId = null, { classId, sectionId } = {}) => {
     const context = getUserContext();
     const branch_id = branchId || context.branchId;
-    return apiCall('/camera/ai/enroll', 'POST', {
+    const payload = {
       person_id: personId,
       person_type: personType,
       person_name: personName,
       image: imageBase64,
       branch_id,
-    });
+    };
+    if (classId) payload.class_id = classId;
+    if (sectionId) payload.section_id = sectionId;
+    return apiCall('/camera/ai/enroll', 'POST', payload);
   },
   
   // Get FAISS index status

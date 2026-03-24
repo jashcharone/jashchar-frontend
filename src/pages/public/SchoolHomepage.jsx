@@ -1,4 +1,5 @@
 ﻿import React, { useState, useEffect } from 'react';
+import { formatDate, getMonthShortName } from '@/utils/dateUtils';
 import { motion } from 'framer-motion';
 import { Helmet } from 'react-helmet';
 import {
@@ -289,7 +290,7 @@ const LatestNewsSection = ({ news, slug }) => {
               <div className="p-6">
                 <div className="flex items-center gap-2 text-sm text-gray-500 mb-3">
                   <Calendar className="h-4 w-4" />
-                  <span>{new Date(item.date || item.published_at).toLocaleDateString()}</span>
+                  <span>{formatDate(item.date || item.published_at)}</span>
                 </div>
                 <h3 className="text-xl font-bold mb-3 line-clamp-2">{item.title}</h3>
                 <p className="text-gray-600 text-sm line-clamp-3 mb-4">{item.summary || item.description?.replace(/<[^>]*>/g, '').substring(0, 100)}...</p>
@@ -320,7 +321,7 @@ const UpcomingEventsSection = ({ events, slug }) => {
             <div key={event.id} className="flex bg-gray-50 rounded-lg overflow-hidden border border-gray-100 hover:shadow-md transition-shadow">
               <div className="bg-primary text-white p-4 flex flex-col items-center justify-center min-w-[80px]">
                 <span className="text-2xl font-bold">{new Date(event.start_date).getDate()}</span>
-                <span className="text-xs uppercase font-bold">{new Date(event.start_date).toLocaleString('default', { month: 'short' })}</span>
+                <span className="text-xs uppercase font-bold">{getMonthShortName(event.start_date)}</span>
               </div>
               <div className="p-4 flex-grow">
                 <div className="flex items-center gap-2 text-xs text-gray-500 mb-2">

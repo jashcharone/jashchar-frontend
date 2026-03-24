@@ -1,4 +1,5 @@
 ﻿import React, { useState, useEffect } from 'react';
+import { formatDate } from '@/utils/dateUtils';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
@@ -118,7 +119,7 @@ const WhatsAppBillingDashboard = () => {
                         </Badge>
                       </TableCell>
                       <TableCell>
-                        {row.last_message_sent ? new Date(row.last_message_sent).toLocaleDateString() : '-'}
+                        {row.last_message_sent ? formatDate(row.last_message_sent) : '-'}
                       </TableCell>
                     </TableRow>
                   ))

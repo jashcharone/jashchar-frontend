@@ -80,11 +80,11 @@ const HostelAttendance = () => {
 
   const statusBadge = (status) => {
     const map = {
-      present: { color: 'bg-green-100 text-green-800', icon: <CheckCircle className="w-3 h-3" /> },
-      absent: { color: 'bg-red-100 text-red-800', icon: <XCircle className="w-3 h-3" /> },
-      late: { color: 'bg-yellow-100 text-yellow-800', icon: <Clock className="w-3 h-3" /> },
-      on_leave: { color: 'bg-blue-100 text-blue-800', icon: <Calendar className="w-3 h-3" /> },
-      medical_leave: { color: 'bg-purple-100 text-purple-800', icon: <AlertTriangle className="w-3 h-3" /> }
+      present: { color: 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-400', icon: <CheckCircle className="w-3 h-3" /> },
+      absent: { color: 'bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-400', icon: <XCircle className="w-3 h-3" /> },
+      late: { color: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-400', icon: <Clock className="w-3 h-3" /> },
+      on_leave: { color: 'bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-400', icon: <Calendar className="w-3 h-3" /> },
+      medical_leave: { color: 'bg-purple-100 text-purple-800 dark:bg-purple-900/50 dark:text-purple-400', icon: <AlertTriangle className="w-3 h-3" /> }
     };
     const s = map[status] || map.absent;
     return (

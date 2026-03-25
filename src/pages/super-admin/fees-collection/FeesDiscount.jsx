@@ -36,7 +36,7 @@ const toValidDate = (date) => {
 };
 
 const FeesDiscount = () => {
-    const { user, currentSessionId, organizationId } = useAuth();
+    const { user } = useAuth();
     const { selectedBranch } = useBranch();
     const { toast } = useToast();
     const [discounts, setDiscounts] = useState([]);
@@ -106,26 +106,32 @@ const FeesDiscount = () => {
         
         // Fetch usage count for each discount
         if (data && data.length > 0) {
-            const discountIds = data.map(d => d.id);
-            const { data: usageData, error: usageError } = await supabase
-                .from('student_fee_discounts')
-                .select('discount_id')
-                .in('discount_id', discountIds);
-            
-            if (!usageError && usageData) {
-                // Count usage per discount
-                const usageMap = {};
-                usageData.forEach(item => {
-                    usageMap[item.discount_id] = (usageMap[item.discount_id] || 0) + 1;
-                });
+            try {
+                const discountIds = data.map(d => d.id);
+                const { data: usageData, error: usageError } = await supabase
+                    .from('student_fee_discounts')
+                    .select('discount_id')
+                    .in('discount_id', discountIds);
                 
-                // Add used_count to each discount
-                const discountsWithUsage = data.map(d => ({
-                    ...d,
-                    used_count: usageMap[d.id] || 0
-                }));
-                setDiscounts(discountsWithUsage);
-            } else {
+                if (!usageError && usageData) {
+                    // Count usage per discount
+                    const usageMap = {};
+                    usageData.forEach(item => {
+                        usageMap[item.discount_id] = (usageMap[item.discount_id] || 0) + 1;
+                    });
+                    
+                    // Add used_count to each discount
+                    const discountsWithUsage = data.map(d => ({
+                        ...d,
+                        used_count: usageMap[d.id] || 0
+                    }));
+                    setDiscounts(discountsWithUsage);
+                } else {
+                    // Table may not exist yet or query failed - show discounts without usage count
+                    setDiscounts(data.map(d => ({ ...d, used_count: 0 })));
+                }
+            } catch {
+                // Gracefully handle if student_fee_discounts table doesn't exist
                 setDiscounts(data.map(d => ({ ...d, used_count: 0 })));
             }
         } else {
@@ -252,17 +258,26 @@ const FeesDiscount = () => {
         setFilters({ class_id: '', section_id: '', category_id: '', gender: '', rte: '' });
         setFilteredSections([]);
         
-        const { data, error } = await supabase
-            .from('student_fee_discounts')
-            .select('student_id')
-            .eq('discount_id', discount.id);
-            
-        if(error) {
-            toast({ variant: 'destructive', title: 'Error fetching assigned students', description: error.message });
-            return;
-        }
+        try {
+            const { data, error } = await supabase
+                .from('student_fee_discounts')
+                .select('student_id')
+                .eq('discount_id', discount.id)
+                .eq('branch_id', selectedBranch.id);
+                
+            if(error) {
+                console.warn('student_fee_discounts query failed:', error.message);
+                // Still open the modal with empty selections
+                setSelectedStudents(new Set());
+                setAssignModalOpen(true);
+                return;
+            }
 
-        setSelectedStudents(new Set(data.map(item => item.student_id)));
+            setSelectedStudents(new Set((data || []).map(item => item.student_id)));
+        } catch {
+            // Table may not exist - open modal with empty selections
+            setSelectedStudents(new Set());
+        }
         setAssignModalOpen(true);
     };
 
@@ -312,7 +327,7 @@ const FeesDiscount = () => {
     };
     
     const handleAssignSave = async () => {
-        if (!selectedDiscount) return;
+        if (!selectedDiscount || !selectedBranch) return;
         
         // Validate use_count limit
         if (selectedDiscount.use_count && selectedStudents.size > selectedDiscount.use_count) {
@@ -326,41 +341,46 @@ const FeesDiscount = () => {
         
         setIsSubmitting(true);
         
-        const { error: deleteError } = await supabase
-            .from('student_fee_discounts')
-            .delete()
-            .eq('discount_id', selectedDiscount.id);
-
-        if (deleteError) {
-             toast({ variant: 'destructive', title: 'Error updating assignments', description: deleteError.message });
-             setIsSubmitting(false);
-             return;
-        }
-
-        const assignments = Array.from(selectedStudents).map(student_id => ({
-            discount_id: selectedDiscount.id,
-            student_id,
-            branch_id: selectedBranch.id,
-            organization_id: organizationId,
-            session_id: currentSessionId,
-        }));
-        
-        if (assignments.length > 0) {
-            const { error: insertError } = await supabase
+        try {
+            // Delete existing assignments for this discount in this branch
+            const { error: deleteError } = await supabase
                 .from('student_fee_discounts')
-                .insert(assignments);
+                .delete()
+                .eq('discount_id', selectedDiscount.id)
+                .eq('branch_id', selectedBranch.id);
 
-            if (insertError) {
-                toast({ variant: 'destructive', title: 'Error saving assignments', description: insertError.message });
+            if (deleteError) {
+                toast({ variant: 'destructive', title: 'Error updating assignments', description: deleteError.message });
                 setIsSubmitting(false);
                 return;
             }
+
+            const assignments = Array.from(selectedStudents).map(student_id => ({
+                discount_id: selectedDiscount.id,
+                student_id,
+                branch_id: selectedBranch.id,
+            }));
+            
+            if (assignments.length > 0) {
+                const { error: insertError } = await supabase
+                    .from('student_fee_discounts')
+                    .insert(assignments);
+
+                if (insertError) {
+                    toast({ variant: 'destructive', title: 'Error saving assignments', description: insertError.message });
+                    setIsSubmitting(false);
+                    return;
+                }
+            }
+            
+            toast({ title: 'Success!', description: 'Student assignments updated.' });
+            setAssignModalOpen(false);
+            fetchDiscounts(); // Refresh to update used_count
+        } catch (err) {
+            toast({ variant: 'destructive', title: 'Error', description: err?.message || 'Failed to save assignments. Please try again.' });
+        } finally {
+            setIsSubmitting(false);
         }
-        
-        toast({ title: 'Success!', description: 'Student assignments updated.' });
-        setIsSubmitting(false);
-        setAssignModalOpen(false);
-        fetchDiscounts(); // Refresh to update used_count
     };
 
 
@@ -637,7 +657,7 @@ const FeesDiscount = () => {
                                                         )}
                                                     </td>
                                                     <td className="p-3">
-                                                        {toValidDate(d.expire_date) ? format(toValidDate(d.expire_date), 'MM/dd/yyyy') : ''}
+                                                        {toValidDate(d.expire_date) ? format(toValidDate(d.expire_date), 'dd-MM-yyyy') : ''}
                                                     </td>
                                                     <td className="p-3">
                                                         <div className="flex justify-center gap-1">

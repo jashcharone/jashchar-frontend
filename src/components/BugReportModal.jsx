@@ -372,13 +372,19 @@ const BugReportModal = ({ isOpen, onClose }) => {
 
     // Validate form
     const isFormValid = () => {
-        return formData.category && formData.title && formData.description;
+        return formData.category && formData.title && formData.description && consoleLogsCaptured;
     };
 
     // Submit bug report
     const handleSubmit = async () => {
         if (!isFormValid()) {
-            toast({ variant: 'destructive', title: 'Missing Fields', description: 'Please fill in all required fields' });
+            const missing = [];
+            if (!formData.category) missing.push('Category');
+            if (!formData.title) missing.push('Bug Title');
+            if (!formData.description) missing.push('Description');
+            if (!consoleLogsCaptured) missing.push('Console Logs (click "Capture Console" button)');
+            toast({ variant: 'destructive', title: 'Missing Fields', description: `Please fill: ${missing.join(', ')}` });
+            if (!consoleLogsCaptured) setActiveTab('basic');
             return;
         }
 
@@ -611,7 +617,7 @@ const BugReportModal = ({ isOpen, onClose }) => {
                                 <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:justify-between">
                                     <div className="flex items-center gap-2">
                                         <Terminal className="h-4 w-4 text-orange-500 shrink-0" />
-                                        <Label className="text-xs sm:text-sm font-medium">Console Logs (F12)</Label>
+                                        <Label className="text-xs sm:text-sm font-medium">Console Logs (F12) <span className="text-red-500">*</span></Label>
                                     </div>
                                     <Button
                                         type="button"
@@ -639,6 +645,11 @@ const BugReportModal = ({ isOpen, onClose }) => {
                                 <p className="text-[10px] sm:text-xs text-muted-foreground">
                                     Captures browser performance, errors, and page timing info to help debug issues.
                                 </p>
+                                {!consoleLogsCaptured && (
+                                    <p className="text-[10px] sm:text-xs text-red-500 font-medium">
+                                        ⚠️ Required — Please click "Capture Console" before submitting.
+                                    </p>
+                                )}
                                 {consoleLogsCaptured && consoleLogs.length > 0 && (
                                     <div className="max-h-24 sm:max-h-32 overflow-x-auto overflow-y-auto bg-gray-900 text-green-400 text-[10px] sm:text-xs p-2 rounded font-mono">
                                         {consoleLogs.slice(0, 10).map((log, idx) => (

@@ -426,6 +426,7 @@ export const ROUTES = {
     HOSTEL_ROOMS: '/super-admin/hostel/hostel-rooms',
     ROOM_TYPES: '/super-admin/hostel/room-types',
     HOSTEL_FEE: '/super-admin/hostel/hostel-fee',
+    HOSTEL_FEES_MASTER: '/super-admin/hostel/hostel-fees-master',
     HOSTEL_ANALYSIS: '/super-admin/hostel/hostel-analysis',
     HOSTEL_ATTENDANCE: '/super-admin/hostel/attendance',
     HOSTEL_MARK_ATTENDANCE: '/super-admin/hostel/mark-attendance',

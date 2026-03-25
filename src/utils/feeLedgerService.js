@@ -310,3 +310,200 @@ export async function getHostelFeeTypeId(branchId, sessionId) {
 export async function getTransportFeeTypeId(branchId, sessionId) {
   return getFeeTypeId('TRANSPORT', branchId, sessionId);
 }
+
+// ═══════════════════════════════════════════════════════════════
+// UNIVERSAL INSTALLMENT-BASED LEDGER ENGINE (v2)
+// "Annual Fee is the Truth" — billing_mode splits into installments
+// ═══════════════════════════════════════════════════════════════
+
+/**
+ * Fetch installment config from transport or hostel installment table
+ * @param {'transport'|'hostel'} source
+ * @param {string} branchId
+ * @param {string} sessionId
+ * @returns {Array} installment configs sorted by installment_number
+ */
+async function fetchInstallmentConfig(source, branchId, sessionId) {
+  const table = source === 'transport'
+    ? 'transport_fee_installment_config'
+    : 'hostel_fee_installment_config';
+
+  const { data } = await supabase
+    .from(table)
+    .select('*')
+    .eq('branch_id', branchId)
+    .eq('session_id', sessionId)
+    .order('installment_number');
+
+  return data || [];
+}
+
+/**
+ * Fetch billing master config (billing_mode, working_months, prorate, etc.)
+ * @param {'transport'|'hostel'} source
+ * @param {string} branchId
+ * @param {string} sessionId
+ */
+export async function fetchBillingConfig(source, branchId, sessionId) {
+  const table = source === 'transport' ? 'transport_fees_master' : 'hostel_fees_master';
+
+  const { data } = await supabase
+    .from(table)
+    .select('*')
+    .eq('branch_id', branchId)
+    .eq('session_id', sessionId)
+    .maybeSingle();
+
+  return data || null;
+}
+
+/**
+ * Write installment-based ledger entries for Transport / Hostel fees.
+ *
+ * @param {Object} params
+ * @param {string} params.studentId
+ * @param {'transport'|'hostel'} params.feeSource
+ * @param {string} params.feeTypeId - UUID from fee_types
+ * @param {number} params.annualFee - Total annual fee (the Truth)
+ * @param {string} params.sessionId
+ * @param {string} params.branchId
+ * @param {string} params.organizationId
+ * @param {string} params.sourceReferenceId
+ * @param {string} [params.effectiveFrom] - For pro-rata calculation
+ * @returns {{ success: boolean, rowsCreated: number, error?: string }}
+ */
+export async function writeInstallmentsToLedger({
+  studentId,
+  feeSource,
+  feeTypeId,
+  annualFee,
+  sessionId,
+  branchId,
+  organizationId,
+  sourceReferenceId,
+  effectiveFrom = null,
+}) {
+  if (!studentId || !feeSource || !annualFee || annualFee <= 0) {
+    return { success: false, rowsCreated: 0, error: 'Missing required parameters' };
+  }
+
+  // 1. Fetch billing config
+  const config = await fetchBillingConfig(feeSource, branchId, sessionId);
+  const billingMode = config?.billing_mode || 'annual';
+  const workingMonths = config?.working_months || 10;
+  const prorateMidYear = config?.prorate_mid_year !== false;
+
+  // 2. Fetch installment config (due dates + fines)
+  const installments = await fetchInstallmentConfig(feeSource, branchId, sessionId);
+
+  // 3. Calculate per-installment amount
+  let numInstallments;
+  switch (billingMode) {
+    case 'monthly': numInstallments = workingMonths; break;
+    case 'quarterly': numInstallments = 4; break;
+    case 'half_yearly': numInstallments = 2; break;
+    case 'term_wise': numInstallments = config?.num_terms || 3; break;
+    default: numInstallments = 1; // annual
+  }
+
+  // Pro-rata: if mid-year join and prorate is ON, reduce total
+  let effectiveAnnualFee = annualFee;
+  let startInstallment = 1;
+
+  if (effectiveFrom && prorateMidYear && billingMode !== 'annual') {
+    const sessionDates = await getSessionDates(sessionId);
+    if (sessionDates?.start_date) {
+      const sessionStart = new Date(sessionDates.start_date);
+      const joinDate = new Date(effectiveFrom);
+
+      if (joinDate > sessionStart) {
+        // Calculate which installment the student starts from
+        const totalMonths = workingMonths;
+        const monthsElapsed = (joinDate.getFullYear() - sessionStart.getFullYear()) * 12
+          + (joinDate.getMonth() - sessionStart.getMonth());
+
+        if (billingMode === 'monthly') {
+          startInstallment = Math.max(1, monthsElapsed + 1);
+        } else {
+          const monthsPerInstallment = Math.ceil(totalMonths / numInstallments);
+          startInstallment = Math.max(1, Math.floor(monthsElapsed / monthsPerInstallment) + 1);
+        }
+
+        const remainingInstallments = numInstallments - startInstallment + 1;
+        effectiveAnnualFee = Math.round((annualFee / numInstallments) * remainingInstallments);
+      }
+    }
+  }
+
+  const perInstallment = Math.round((effectiveAnnualFee / (numInstallments - startInstallment + 1)) * 100) / 100;
+
+  // 4. Build ledger rows
+  const ledgerRows = [];
+  for (let i = startInstallment; i <= numInstallments; i++) {
+    const configRow = installments.find(c => c.installment_number === i);
+    const label = configRow?.installment_label || `Installment ${i}`;
+    const dueDate = configRow?.due_date || null;
+    const fineType = configRow?.fine_type || 'none';
+    const fineValue = configRow?.fine_value || 0;
+
+    // Calculate fine amount if applicable
+    let fineAmount = 0;
+    if (fineType === 'fixed') {
+      fineAmount = fineValue;
+    } else if (fineType === 'percentage') {
+      fineAmount = Math.round((perInstallment * fineValue / 100) * 100) / 100;
+    }
+
+    ledgerRows.push({
+      student_id: studentId,
+      fee_source: feeSource,
+      fee_type_id: feeTypeId || null,
+      fee_structure_id: null,
+      source_reference_id: sourceReferenceId || null,
+      original_amount: perInstallment,
+      discount_amount: 0,
+      concession_amount: 0,
+      net_amount: perInstallment,
+      paid_amount: 0,
+      fine_amount: 0, // Fine applied only after due date passes — not at generation time
+      installment_number: i,
+      due_date: dueDate,
+      billing_period: label,
+      status: 'pending',
+      is_paid: false,
+      assigned_by: 'system',
+      branch_id: branchId,
+      session_id: sessionId,
+      organization_id: organizationId,
+    });
+  }
+
+  if (ledgerRows.length === 0) {
+    return { success: false, rowsCreated: 0, error: 'No installments generated' };
+  }
+
+  const { error } = await supabase
+    .from('student_fee_ledger')
+    .insert(ledgerRows);
+
+  if (error) {
+    console.error('writeInstallmentsToLedger error:', error);
+    return { success: false, rowsCreated: 0, error: error.message };
+  }
+
+  return { success: true, rowsCreated: ledgerRows.length };
+}
+
+/**
+ * Refresh installment ledger: cancel old unpaid + write new installments
+ */
+export async function refreshInstallmentLedger(params) {
+  await cancelUnpaidLedgerEntries({
+    studentId: params.studentId,
+    feeSource: params.feeSource,
+    sourceReferenceId: params.sourceReferenceId,
+    sessionId: params.sessionId,
+  });
+
+  return await writeInstallmentsToLedger(params);
+}

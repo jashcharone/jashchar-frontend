@@ -585,6 +585,7 @@ export const BASE_SIDEBAR = {
         { title: '🛋 Room Type', path: ROUTES.SUPER_ADMIN.ROOM_TYPES },
         { title: '🏨 Hostel', path: ROUTES.SUPER_ADMIN.HOSTELS },
         { title: '💰 Hostel Fee', path: ROUTES.SUPER_ADMIN.HOSTEL_FEE },
+        { title: '🏠 Hostel Fees Master', path: ROUTES.SUPER_ADMIN.HOSTEL_FEES_MASTER },
         { title: '📊 Hostel Analysis', path: ROUTES.SUPER_ADMIN.HOSTEL_ANALYSIS },
         // ── Attendance ──
         { title: '── Attendance ──', path: '#hostel-attendance', disabled: true },

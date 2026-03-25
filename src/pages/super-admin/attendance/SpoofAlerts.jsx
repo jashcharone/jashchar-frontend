@@ -24,6 +24,7 @@ import { Separator } from '@/components/ui/separator';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { motion, AnimatePresence } from 'framer-motion';
 import { formatDate, formatDateTime } from '@/utils/dateUtils';
+import { aiEngineApi } from '@/services/aiEngineApi';
 
 import {
     Shield, ShieldAlert, ShieldX, ShieldCheck, AlertTriangle, AlertCircle, AlertOctagon,
@@ -61,14 +62,14 @@ const STATUS_INFO = {
     false_positive: { label: 'False Positive', color: 'text-gray-600 bg-gray-100 dark:text-gray-400 dark:bg-gray-800', icon: XOctagon }
 };
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+// API calls go through aiEngineApi service (proxied via backend)
 
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════
 // MAIN COMPONENT
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════
 
 const SpoofAlerts = () => {
-    const { user, session, currentSessionId, organizationId } = useAuth();
+    const { user, currentSessionId, organizationId } = useAuth();
     const { selectedBranch } = useBranch();
     const { toast } = useToast();
     const { canView } = usePermissions();
@@ -110,59 +111,45 @@ const SpoofAlerts = () => {
         if (!branchId || !organizationId) return;
         
         try {
-            const params = new URLSearchParams({
+            const params = {
                 branch_id: branchId,
                 organization_id: organizationId,
                 days: dateRange
-            });
+            };
             
-            if (filterStatus !== 'all') params.append('status', filterStatus);
-            if (filterSeverity !== 'all') params.append('severity', filterSeverity);
-            if (filterType !== 'all') params.append('spoof_type', filterType);
+            if (filterStatus !== 'all') params.status = filterStatus;
+            if (filterSeverity !== 'all') params.severity = filterSeverity;
+            if (filterType !== 'all') params.spoofType = filterType;
             
-            const response = await fetch(`${API_BASE_URL}/api/camera/spoof-alerts?${params.toString()}`, {
-                headers: {
-                    'Authorization': `Bearer ${session?.access_token}`,
-                    'Content-Type': 'application/json'
-                }
-            });
-            const data = await response.json();
+            const data = await aiEngineApi.getSpoofAlerts(params);
             
             if (data.success) {
                 setAlerts(data.data || []);
             } else {
-                console.error('Failed to fetch alerts:', data.message);
+                console.warn('No spoof alerts data:', data.message);
             }
         } catch (error) {
-            console.error('Error fetching alerts:', error);
+            console.warn('Error fetching spoof alerts:', error.message);
         }
-    }, [branchId, organizationId, session, dateRange, filterStatus, filterSeverity, filterType]);
+    }, [branchId, organizationId, dateRange, filterStatus, filterSeverity, filterType]);
     
     const fetchSummary = useCallback(async () => {
         if (!branchId || !organizationId) return;
         
         try {
-            const params = new URLSearchParams({
+            const data = await aiEngineApi.getSpoofAlertsSummary({
                 branch_id: branchId,
                 organization_id: organizationId,
                 days: dateRange
             });
             
-            const response = await fetch(`${API_BASE_URL}/api/camera/spoof-alerts/summary?${params.toString()}`, {
-                headers: {
-                    'Authorization': `Bearer ${session?.access_token}`,
-                    'Content-Type': 'application/json'
-                }
-            });
-            const data = await response.json();
-            
             if (data.success) {
                 setSummary(data.data);
             }
         } catch (error) {
-            console.error('Error fetching summary:', error);
+            console.warn('Error fetching spoof summary:', error.message);
         }
-    }, [branchId, organizationId, session, dateRange]);
+    }, [branchId, organizationId, dateRange]);
     
     const refreshData = useCallback(async () => {
         setRefreshing(true);
@@ -199,21 +186,11 @@ const SpoofAlerts = () => {
         
         setSubmitting(true);
         try {
-            const response = await fetch(`${API_BASE_URL}/api/camera/spoof-alerts/${selectedAlert.id}/review`, {
-                method: 'PUT',
-                headers: {
-                    'Authorization': `Bearer ${session?.access_token}`,
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    status: isFalsePositive ? 'false_positive' : reviewStatus,
-                    review_notes: reviewNotes,
-                    is_false_positive: isFalsePositive,
-                    reviewed_by: user?.id
-                })
+            const data = await aiEngineApi.reviewSpoofAlert(selectedAlert.id, {
+                status: isFalsePositive ? 'false_positive' : reviewStatus,
+                review_notes: reviewNotes,
+                is_false_positive: isFalsePositive
             });
-            
-            const data = await response.json();
             
             if (data.success) {
                 toast({

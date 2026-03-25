@@ -239,8 +239,8 @@ const Header = ({ toggleSidebar, onThemeSettingsClick, onChatbotToggle, isDrawer
                 </span>
              </div>
              
-             {/* Session Switcher - Only for super_admin & school_owner roles */}
-             {(role === 'super_admin' || role === 'school_owner' || role === 'organization_owner' || role === 'master_admin') && (
+             {/* Session Switcher - Only for branch-level roles (NOT master_admin) */}
+             {(role === 'super_admin' || role === 'school_owner' || role === 'organization_owner') && role !== 'master_admin' && (
                <SessionSwitcher />
              )}
           </div>

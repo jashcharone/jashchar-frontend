@@ -122,7 +122,8 @@ const QueriesFinder = () => {
         isFetchingRef.current = true;
         setLoading(true);
         try {
-            const data = await errorLoggerService.getErrors(filters);
+            const response = await errorLoggerService.getErrors(filters);
+            const data = response?.data || response || [];
             
             if (!mountedRef.current) return;
             
@@ -163,7 +164,8 @@ const QueriesFinder = () => {
         
         try {
             // Fetch fresh data first
-            const freshData = await errorLoggerService.getErrors({});
+            const freshResponse = await errorLoggerService.getErrors({});
+            const freshData = freshResponse?.data || freshResponse || [];
             const now = new Date();
             
             // Find stale errors (24+ hours old and not fixed/ignored)

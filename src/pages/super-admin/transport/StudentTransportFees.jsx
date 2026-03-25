@@ -12,7 +12,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { formatDate, formatDateForInput } from '@/utils/dateUtils';
 import { Search, Loader2, Bus, User, Users, IndianRupee, MapPin, Save, Clock, X, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, ArrowLeft, UserCheck, UserX, Calendar, Shield, Download } from 'lucide-react';
-import { refreshFeeLedger, getTransportFeeTypeId } from '@/utils/feeLedgerService';
+import { refreshFeeLedger, getTransportFeeTypeId, refreshInstallmentLedger, fetchBillingConfig } from '@/utils/feeLedgerService';
 
 const StudentTransportFees = () => {
   const navigate = useNavigate();
@@ -33,6 +33,7 @@ const StudentTransportFees = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [statusFilter, setStatusFilter] = useState('all');
+  const [billingConfig, setBillingConfig] = useState(null);
   
   const [searchFilters, setSearchFilters] = useState({
     class_id: '',
@@ -43,6 +44,7 @@ const StudentTransportFees = () => {
     transport_route_id: '',
     transport_pickup_point_id: '',
     transport_fee: '',
+    annual_fee: '',
     billing_cycle: 'monthly',
     pickup_time: '',
     drop_time: '',
@@ -56,7 +58,8 @@ const StudentTransportFees = () => {
     parent_tracking_enabled: true,
     effective_from: '',
     effective_to: '',
-    is_active: true
+    is_active: true,
+    fee_override_reason: ''
   });
 
   const branchId = selectedBranch?.id || user?.profile?.branch_id;
@@ -64,18 +67,20 @@ const StudentTransportFees = () => {
   const fetchInitialData = useCallback(async () => {
     if (!branchId) return;
 
-    const [routesRes, pickupRes, classesRes, vehiclesRes] = await Promise.all([
+    const [routesRes, pickupRes, classesRes, vehiclesRes, billingCfg] = await Promise.all([
       supabase.from('transport_routes').select('*').eq('branch_id', branchId),
       supabase.from('transport_pickup_points').select('*').eq('branch_id', branchId),
       supabase.from('classes').select('id, name').eq('branch_id', branchId).order('name'),
-      supabase.from('transport_vehicles').select('*').eq('branch_id', branchId)
+      supabase.from('transport_vehicles').select('*').eq('branch_id', branchId),
+      fetchBillingConfig('transport', branchId, currentSessionId)
     ]);
 
     setRoutes(routesRes.data || []);
     setPickupPoints(pickupRes.data || []);
     setClasses(classesRes.data || []);
     setVehicles(vehiclesRes.data || []);
-  }, [branchId]);
+    setBillingConfig(billingCfg);
+  }, [branchId, currentSessionId]);
 
   useEffect(() => {
     fetchInitialData();
@@ -165,6 +170,7 @@ const StudentTransportFees = () => {
       transport_route_id: transport?.transport_route_id || '',
       transport_pickup_point_id: transport?.transport_pickup_point_id || '',
       transport_fee: transport?.transport_fee || '',
+      annual_fee: transport?.annual_fee || '',
       billing_cycle: transport?.billing_cycle || 'monthly',
       pickup_time: transport?.pickup_time || '',
       drop_time: transport?.drop_time || '',
@@ -178,7 +184,8 @@ const StudentTransportFees = () => {
       parent_tracking_enabled: transport?.parent_tracking_enabled !== false,
       effective_from: transport?.effective_from ? formatDateForInput(transport.effective_from) : '',
       effective_to: transport?.effective_to ? formatDateForInput(transport.effective_to) : '',
-      is_active: transport?.is_active !== false
+      is_active: transport?.is_active !== false,
+      fee_override_reason: transport?.fee_override_reason || ''
     });
     
     if (transport?.transport_route_id) {
@@ -214,10 +221,11 @@ const StudentTransportFees = () => {
     setRouteVehicles([]);
     setFormData({
       transport_route_id: '', transport_pickup_point_id: '', transport_fee: '',
-      billing_cycle: 'monthly', pickup_time: '', drop_time: '', vehicle_number: '',
+      annual_fee: '', billing_cycle: 'monthly', pickup_time: '', drop_time: '', vehicle_number: '',
       driver_name: '', driver_contact: '', special_instructions: '',
       pickup_type: 'both', seat_number: '', emergency_contact: '',
-      parent_tracking_enabled: true, effective_from: '', effective_to: '', is_active: true
+      parent_tracking_enabled: true, effective_from: '', effective_to: '', is_active: true,
+      fee_override_reason: ''
     });
   };
 
@@ -260,15 +268,20 @@ const StudentTransportFees = () => {
     if (formData.transport_route_id && pickupPointId) {
       const { data } = await supabase
         .from('route_pickup_point_mappings')
-        .select('monthly_fees, pickup_time')
+        .select('monthly_fees, annual_fee, pickup_time')
         .eq('route_id', formData.transport_route_id)
         .eq('pickup_point_id', pickupPointId)
         .single();
       
+      const annualFee = data?.annual_fee || (data?.monthly_fees ? data.monthly_fees * 12 : 0);
+      const workingMonths = billingConfig?.working_months || 10;
+      const monthlyCalc = workingMonths > 0 ? Math.round(annualFee / workingMonths) : 0;
+
       setFormData(prev => ({
         ...prev,
         transport_pickup_point_id: pickupPointId,
-        transport_fee: data?.monthly_fees || prev.transport_fee,
+        annual_fee: annualFee || prev.annual_fee,
+        transport_fee: monthlyCalc || data?.monthly_fees || prev.transport_fee,
         pickup_time: data?.pickup_time || prev.pickup_time
       }));
     } else {
@@ -315,6 +328,12 @@ const StudentTransportFees = () => {
 
     setIsSubmitting(true);
 
+    // Calculate final annual fee with one-way adjustment
+    let finalAnnualFee = formData.annual_fee ? parseFloat(formData.annual_fee) : 0;
+    if (formData.pickup_type !== 'both' && billingConfig?.one_way_percentage) {
+      finalAnnualFee = Math.round(finalAnnualFee * (billingConfig.one_way_percentage / 100));
+    }
+
     const transportPayload = {
       student_id: selectedStudent.id,
       branch_id: branchId,
@@ -323,7 +342,8 @@ const StudentTransportFees = () => {
       transport_route_id: formData.transport_route_id || null,
       transport_pickup_point_id: formData.transport_pickup_point_id || null,
       transport_fee: formData.transport_fee ? parseFloat(formData.transport_fee) : null,
-      billing_cycle: formData.billing_cycle || 'monthly',
+      annual_fee: finalAnnualFee || null,
+      billing_cycle: billingConfig?.billing_mode || formData.billing_cycle || 'monthly',
       pickup_time: formData.pickup_time || null,
       drop_time: formData.drop_time || null,
       vehicle_number: formData.vehicle_number || null,
@@ -336,7 +356,8 @@ const StudentTransportFees = () => {
       parent_tracking_enabled: formData.parent_tracking_enabled,
       effective_from: formData.effective_from || null,
       effective_to: formData.effective_to || null,
-      is_active: formData.is_active
+      is_active: formData.is_active,
+      fee_override_reason: formData.fee_override_reason || null
     };
 
     let error;
@@ -357,10 +378,9 @@ const StudentTransportFees = () => {
     if (error) {
       toast({ variant: 'destructive', title: 'Error updating transport info', description: error.message });
     } else {
-      // Auto-write to unified fee ledger if transport_fee is set
-      if (transportPayload.transport_fee && transportPayload.transport_fee > 0) {
+      // Auto-write to unified fee ledger if fee is set
+      if (finalAnnualFee && finalAnnualFee > 0) {
         const transportFeeTypeId = await getTransportFeeTypeId(branchId, currentSessionId);
-        // Get the source reference ID (student_transport_details record)
         const { data: transportRecord } = await supabase
           .from('student_transport_details')
           .select('id')
@@ -369,12 +389,11 @@ const StudentTransportFees = () => {
           .eq('branch_id', branchId)
           .maybeSingle();
 
-        const ledgerResult = await refreshFeeLedger({
+        const ledgerResult = await refreshInstallmentLedger({
           studentId: selectedStudent.id,
           feeSource: 'transport',
           feeTypeId: transportFeeTypeId,
-          amount: transportPayload.transport_fee,
-          billingCycle: transportPayload.billing_cycle || 'monthly',
+          annualFee: finalAnnualFee,
           sessionId: currentSessionId,
           branchId: branchId,
           organizationId: organizationId,
@@ -383,7 +402,7 @@ const StudentTransportFees = () => {
         });
 
         if (ledgerResult.success) {
-          console.log(`Transport fee ledger: ${ledgerResult.rowsCreated} entries created`);
+          console.log(`Transport fee ledger: ${ledgerResult.rowsCreated} installments created`);
         } else {
           console.error('Transport fee ledger error:', ledgerResult.error);
           toast({ variant: 'destructive', title: 'Transport saved, but fee ledger failed', description: ledgerResult.error });
@@ -573,12 +592,37 @@ const StudentTransportFees = () => {
                     </Select>
                   </div>
 
-                  {/* Fee & Times */}
-                  <div className="grid grid-cols-3 gap-2">
-                    <div className="space-y-1">
-                      <Label className="text-xs">Fee (₹)</Label>
-                      <Input type="number" value={formData.transport_fee} onChange={(e) => setFormData({...formData, transport_fee: e.target.value})} placeholder="Fee" />
+                  {/* Fee Section */}
+                  <div className="space-y-2 p-2 bg-muted/30 rounded-lg">
+                    <div className="grid grid-cols-2 gap-2">
+                      <div className="space-y-1">
+                        <Label className="text-xs font-semibold">Annual Fee (₹)</Label>
+                        <Input type="number" value={formData.annual_fee} onChange={(e) => {
+                          const annual = e.target.value;
+                          const wm = billingConfig?.working_months || 10;
+                          setFormData({...formData, annual_fee: annual, transport_fee: annual ? Math.round(parseFloat(annual) / wm) : ''});
+                        }} placeholder="Annual" />
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-xs">Monthly (auto)</Label>
+                        <Input type="number" value={formData.transport_fee} disabled className="bg-muted" />
+                      </div>
                     </div>
+                    {formData.pickup_type !== 'both' && billingConfig?.one_way_percentage && (
+                      <p className="text-xs text-amber-600 dark:text-amber-400">
+                        ⚠ One-way: {billingConfig.one_way_percentage}% of annual fee = ₹{Math.round((formData.annual_fee || 0) * billingConfig.one_way_percentage / 100).toLocaleString('en-IN')}
+                      </p>
+                    )}
+                    {billingConfig && (
+                      <p className="text-xs text-muted-foreground">
+                        Billing: <strong className="capitalize">{(billingConfig.billing_mode || 'monthly').replace('_', ' ')}</strong>
+                        {billingConfig.billing_mode === 'monthly' && ` • ${billingConfig.working_months || 10} months`}
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Times */}
+                  <div className="grid grid-cols-2 gap-2">
                     <div className="space-y-1">
                       <Label className="text-xs">Pickup</Label>
                       <Input type="time" value={formData.pickup_time} onChange={(e) => setFormData({...formData, pickup_time: e.target.value})} />
@@ -709,7 +753,12 @@ const StudentTransportFees = () => {
                               <td className="px-3 py-3">{getPickupPointName(student.transport?.transport_pickup_point_id)}</td>
                               <td className="px-3 py-3">{student.transport ? getPickupTypeBadge(student.transport.pickup_type) : '-'}</td>
                               <td className="px-3 py-3">
-                                {student.transport?.transport_fee ? (
+                                {student.transport?.annual_fee ? (
+                                  <div>
+                                    <span className="flex items-center gap-1 font-medium"><IndianRupee className="h-3 w-3" />{Number(student.transport.annual_fee).toLocaleString('en-IN')}</span>
+                                    <span className="text-[10px] text-muted-foreground">annual</span>
+                                  </div>
+                                ) : student.transport?.transport_fee ? (
                                   <span className="flex items-center gap-1 font-medium"><IndianRupee className="h-3 w-3" />{student.transport.transport_fee}</span>
                                 ) : '-'}
                               </td>

@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useCallback, useMemo } from 'react';
+﻿import React, { useState, useEffect, useCallback } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
 import { supabase } from '@/lib/customSupabaseClient';
 import api from '@/lib/api';
@@ -14,7 +14,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Progress } from '@/components/ui/progress';
-import { Search, Eye, Edit, Trash2, Users, Copy, FileDown, Printer, LayoutGrid, ChevronLeft, ChevronRight, UserX, Loader2, RefreshCcw, Bus, Home } from 'lucide-react';
+import { Search, Eye, Edit, Trash2, Users, Copy, FileDown, Printer, LayoutGrid, ChevronLeft, ChevronRight, UserX, Loader2, RefreshCcw, Bus, Home, CalendarDays } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -43,13 +43,13 @@ const StudentDetails = () => {
     const [students, setStudents] = useState([]);
     const [classes, setClasses] = useState([]);
     const [sections, setSections] = useState([]);
-    const [filters, setFilters] = useState({ class_id: 'all', section_id: '', keyword: '', status: 'active' });
+    const [filters, setFilters] = useState({ class_id: 'all', section_id: '', keyword: '', status: 'active', dateFilter: 'all', dateFrom: '', dateTo: '' });
     const [selectedStudents, setSelectedStudents] = useState([]);
     const [currentPage, setCurrentPage] = useState(1);
     const [pageSize, setPageSize] = useState(25);
     const [feesData, setFeesData] = useState({}); // { studentId: { total, paid, progress } }
     const [initialLoadDone, setInitialLoadDone] = useState(false); // For auto-load on page open
-    const [allStudents, setAllStudents] = useState([]); // Store all fetched students for client-side filtering
+    const [totalCount, setTotalCount] = useState(0); // Total students count from server
     const [hostelAssignments, setHostelAssignments] = useState({}); // { studentId: { hostel_name, room_no } }
     const [transportAssignments, setTransportAssignments] = useState({}); // { studentId: { route, pickup_point } }
     const [visibleColumns, setVisibleColumns] = useState({
@@ -253,36 +253,28 @@ const StudentDetails = () => {
         }
     }, [filters.class_id]);
 
-    // Client-side instant search filter
-    const filteredStudents = useMemo(() => {
-        if (!filters.keyword || !filters.keyword.trim()) {
-            return allStudents;
+    // Date range helper for admission date filter
+    const getDateRange = (dateFilter, dateFrom, dateTo) => {
+        const now = new Date();
+        const toISO = (d) => d.toISOString().split('T')[0];
+        switch(dateFilter) {
+            case 'today': return { from: toISO(now), to: toISO(now) };
+            case 'last7days': { const d = new Date(now); d.setDate(d.getDate() - 7); return { from: toISO(d), to: toISO(now) }; }
+            case 'last30days': { const d = new Date(now); d.setDate(d.getDate() - 30); return { from: toISO(d), to: toISO(now) }; }
+            case 'thisMonth': return { from: toISO(new Date(now.getFullYear(), now.getMonth(), 1)), to: toISO(now) };
+            case 'custom': return { from: dateFrom || null, to: dateTo || null };
+            default: return { from: null, to: null };
         }
-        const keyword = filters.keyword.toLowerCase().trim();
-        return allStudents.filter(s => {
-            const fullName = (s.full_name || `${s.first_name || ''} ${s.last_name || ''}`).toLowerCase();
-            const schoolCode = (s.school_code || '').toLowerCase();
-            const rollNumber = (s.roll_number || '').toLowerCase();
-            const phone = (s.phone || '').toLowerCase();
-            const fatherName = (s.father_name || '').toLowerCase();
-            return fullName.includes(keyword) || 
-                   schoolCode.includes(keyword) || 
-                   rollNumber.includes(keyword) || 
-                   phone.includes(keyword) ||
-                   fatherName.includes(keyword);
-        });
-    }, [allStudents, filters.keyword]);
+    };
 
-    // Update students display when filtered results change
-    useEffect(() => {
-        setStudents(filteredStudents);
-    }, [filteredStudents]);
-
-    const handleSearch = async () => {
+    // Server-side paginated search
+    const handleSearch = async (page = 1) => {
+        if (!branchId) return;
         setLoading(true);
         
-        // Use session from header dropdown (currentSessionId) — this respects user's session selection
         const activeSessionId = currentSessionId;
+        const from = (page - 1) * pageSize;
+        const to = from + pageSize - 1;
 
         let studentQuery = supabase.from('student_profiles').select(`
             id, full_name, first_name, last_name, school_code, roll_number, gender, date_of_birth, phone, photo_url,
@@ -291,22 +283,20 @@ const StudentDetails = () => {
             section:sections!student_profiles_section_id_fkey( name )
         `, { count: 'exact' })
         .eq('branch_id', branchId)
-        .order('roll_number', { ascending: true, nullsFirst: false });
+        .order('roll_number', { ascending: true, nullsFirst: false })
+        .range(from, to);
         
-        // Apply status filter (Active/Inactive/All)
+        // Apply status filter
         if (filters.status === 'active') {
             studentQuery = studentQuery.or('is_disabled.is.null,is_disabled.eq.false');
         } else if (filters.status === 'inactive') {
             studentQuery = studentQuery.eq('is_disabled', true);
         }
-        // If status is 'all', no filter applied
         
-        // Filter by branch's active session (not user's session)
         if (activeSessionId) {
             studentQuery = studentQuery.eq('session_id', activeSessionId);
         }
         
-        // Only add class filter if specific class selected (not 'all')
         if (filters.class_id && filters.class_id !== 'all') {
             studentQuery = studentQuery.eq('class_id', filters.class_id);
         }
@@ -315,8 +305,20 @@ const StudentDetails = () => {
             studentQuery = studentQuery.eq('section_id', filters.section_id);
         }
 
-        // NOTE: Keyword search is done client-side for instant results
-        // No server-side keyword filter needed
+        // Server-side keyword search
+        if (filters.keyword && filters.keyword.trim()) {
+            const kw = filters.keyword.trim();
+            studentQuery = studentQuery.or(`full_name.ilike.%${kw}%,school_code.ilike.%${kw}%,roll_number.ilike.%${kw}%,phone.ilike.%${kw}%,father_name.ilike.%${kw}%`);
+        }
+        
+        // Admission date filter
+        const dateRange = getDateRange(filters.dateFilter, filters.dateFrom, filters.dateTo);
+        if (dateRange.from) {
+            studentQuery = studentQuery.gte('admission_date', dateRange.from);
+        }
+        if (dateRange.to) {
+            studentQuery = studentQuery.lte('admission_date', dateRange.to);
+        }
 
         const { data: studentsData, error: studentsError, count } = await studentQuery;
 
@@ -324,14 +326,15 @@ const StudentDetails = () => {
             toast({ variant: 'destructive', title: 'Error fetching students', description: studentsError.message });
             setLoading(false);
             setStudents([]);
+            setTotalCount(0);
             return;
         }
         
+        setTotalCount(count || 0);
+        setCurrentPage(page);
+        
         if (studentsData && studentsData.length > 0) {
-            toast({ title: `${count || 0} students found.`});
-            
             // TC-32 FIX: Derive first_name and last_name from full_name if not present
-            // This handles cases where older student records may not have these fields populated separately
             studentsData.forEach(s => {
                 if (!s.first_name && s.full_name) {
                     const nameParts = s.full_name.trim().split(/\s+/);
@@ -340,35 +343,33 @@ const StudentDetails = () => {
                 }
             });
             
-            // Fetch fees progress for all students
+            // Fetch enrichment data only for current page (parallel)
             const studentIds = studentsData.map(s => s.id);
-            await fetchFeesProgress(studentIds);
-            await fetchHostelAssignments(studentIds);
-            await fetchTransportAssignments(studentIds);
-        } else {
-            toast({ title: "No students found." });
+            await Promise.all([
+                fetchFeesProgress(studentIds),
+                fetchHostelAssignments(studentIds),
+                fetchTransportAssignments(studentIds)
+            ]);
         }
         
-        // Store all students for client-side instant search
-        setAllStudents(studentsData || []);
         setStudents(studentsData || []);
         setSelectedStudents([]);
         setLoading(false);
     };
 
-    // Auto-search: Trigger search automatically on page load (with 'all' classes default)
+    // Auto-search when filters change (class/section/status/date/pageSize/session)
     useEffect(() => {
-        if (initialLoadDone && filters.class_id === 'all' && students.length === 0 && !loading) {
-            handleSearch();
+        if (initialLoadDone && branchId && currentSessionId) {
+            handleSearch(1);
         }
-    }, [initialLoadDone]);
+    }, [initialLoadDone, filters.class_id, filters.section_id, filters.status, filters.dateFilter, filters.dateFrom, filters.dateTo, pageSize, currentSessionId]);
 
-    // Re-fetch when session changes from header dropdown
+    // Debounced server-side keyword search (500ms)
     useEffect(() => {
-        if (currentSessionId && initialLoadDone && filters.class_id) {
-            handleSearch();
-        }
-    }, [currentSessionId]);
+        if (!initialLoadDone || !branchId || !currentSessionId) return;
+        const timer = setTimeout(() => handleSearch(1), 500);
+        return () => clearTimeout(timer);
+    }, [filters.keyword]);
 
     // Fetch fees progress for students
     const fetchFeesProgress = async (studentIds) => {
@@ -567,9 +568,7 @@ const StudentDetails = () => {
 
     const handleFilterChange = (key, value) => {
         setFilters(prev => ({ ...prev, [key]: value }));
-        if(key === 'class_id') setFilters(prev => ({ ...prev, section_id: ''}));
-        // Reset to page 1 when search keyword changes for instant search
-        if(key === 'keyword') setCurrentPage(1);
+        if(key === 'class_id') setFilters(prev => ({ ...prev, section_id: '' }));
     };
 
     const toggleSelectAll = () => {
@@ -661,8 +660,7 @@ const StudentDetails = () => {
         return { name, phone };
     };
 
-    const paginatedStudents = students.slice((currentPage - 1) * pageSize, currentPage * pageSize);
-    const totalPages = Math.ceil(students.length / pageSize);
+    const totalPages = Math.ceil(totalCount / pageSize);
 
     return (
         <DashboardLayout>
@@ -680,7 +678,7 @@ const StudentDetails = () => {
 
             <Card className="mb-6">
                 <CardContent className="pt-6">
-                    <div className="grid grid-cols-1 md:grid-cols-6 gap-4 items-end">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
                         <div>
                             <label className="text-sm font-medium mb-1 block">Class</label>
                             <Select value={filters.class_id} onValueChange={v => handleFilterChange('class_id', v)}>
@@ -724,35 +722,62 @@ const StudentDetails = () => {
                                 </SelectContent>
                             </Select>
                         </div>
-                        <div className="md:col-span-2">
-                            <label className="text-sm font-medium mb-1 block">Instant Search</label>
-                            <Input placeholder="Type any letter to search..." value={filters.keyword} onChange={e => handleFilterChange('keyword', e.target.value)} />
+                        <div>
+                            <label className="text-sm font-medium mb-1 block flex items-center gap-1">
+                                <CalendarDays className="h-3.5 w-3.5" /> Admission Period
+                            </label>
+                            <Select value={filters.dateFilter} onValueChange={v => handleFilterChange('dateFilter', v)}>
+                                <SelectTrigger><SelectValue placeholder="Select Period" /></SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="all">All Time</SelectItem>
+                                    <SelectItem value="today">Today</SelectItem>
+                                    <SelectItem value="last7days">Last 7 Days</SelectItem>
+                                    <SelectItem value="last30days">Last 30 Days</SelectItem>
+                                    <SelectItem value="thisMonth">This Month</SelectItem>
+                                    <SelectItem value="custom">Custom Range</SelectItem>
+                                </SelectContent>
+                            </Select>
                         </div>
-                        <Button onClick={handleSearch} disabled={loading} className="h-10">
-                            <RefreshCcw className="mr-2 h-4 w-4" />{loading ? 'Loading...' : 'Refresh'}
+                    </div>
+                    {filters.dateFilter === 'custom' && (
+                        <div className="grid grid-cols-2 gap-4 mt-3">
+                            <div>
+                                <label className="text-sm font-medium mb-1 block">From Date</label>
+                                <Input type="date" value={filters.dateFrom} onChange={e => handleFilterChange('dateFrom', e.target.value)} />
+                            </div>
+                            <div>
+                                <label className="text-sm font-medium mb-1 block">To Date</label>
+                                <Input type="date" value={filters.dateTo} onChange={e => handleFilterChange('dateTo', e.target.value)} />
+                            </div>
+                        </div>
+                    )}
+                    <div className="flex gap-4 mt-3 items-end">
+                        <div className="flex-1">
+                            <label className="text-sm font-medium mb-1 block">Search</label>
+                            <Input placeholder="Search by name, admission no, phone, father name..." value={filters.keyword} onChange={e => handleFilterChange('keyword', e.target.value)} />
+                        </div>
+                        <Button onClick={() => handleSearch(currentPage)} disabled={loading} className="h-10">
+                            <RefreshCcw className={`mr-2 h-4 w-4 ${loading ? 'animate-spin' : ''}`} />{loading ? 'Loading...' : 'Refresh'}
                         </Button>
                     </div>
                 </CardContent>
             </Card>
 
-            {allStudents.length > 0 && (
+            {(totalCount > 0 || students.length > 0) && (
                 <Card>
                     <div className="flex items-center justify-between p-4 border-b">
                         <div className="flex items-center gap-2">
-                            {/* TC-11 FIX: Added onClick handlers for export icons */}
                             <Button variant="outline" size="sm" title="Copy" onClick={handleCopyToClipboard}><Copy className="h-4 w-4" /></Button>
                             <Button variant="outline" size="sm" title="Excel" onClick={handleExportExcel}><FileDown className="h-4 w-4" /></Button>
                             <Button variant="outline" size="sm" title="Print" onClick={handlePrint}><Printer className="h-4 w-4" /></Button>
                             <Button variant="outline" size="sm" title="Columns"><LayoutGrid className="h-4 w-4" /></Button>
                             <span className="text-sm text-muted-foreground ml-2">
-                                {filters.keyword 
-                                    ? `Showing ${students.length} of ${allStudents.length} students` 
-                                    : `Total: ${allStudents.length} students`}
+                                Total: {totalCount} students | Page {currentPage} of {totalPages || 1}
                             </span>
                         </div>
                         <div className="flex items-center gap-2">
                             <Input 
-                                placeholder="Type to search instantly..." 
+                                placeholder="Quick search..." 
                                 className="w-64 h-8" 
                                 value={filters.keyword} 
                                 onChange={e => handleFilterChange('keyword', e.target.value)} 
@@ -787,7 +812,7 @@ const StudentDetails = () => {
                                 </tr>
                             </thead>
                             <tbody>
-                                {paginatedStudents.map((s) => {
+                                {students.map((s) => {
                                     const guardian = getGuardianInfo(s);
                                     const age = calculateAge(s.date_of_birth);
                                     const studentFees = feesData[s.id] || { total: 0, paid: 0, discount: 0, fine: 0, refunded: 0, balance: 0, progress: 0 };
@@ -916,11 +941,11 @@ const StudentDetails = () => {
                         </table>
                     </div>
 
-                    {students.length > 0 && (
+                    {totalCount > 0 && (
                         <div className="flex items-center justify-between p-4 border-t">
-                            <span className="text-sm text-muted-foreground">Showing {((currentPage - 1) * pageSize) + 1} to {Math.min(currentPage * pageSize, students.length)} of {students.length} entries</span>
+                            <span className="text-sm text-muted-foreground">Showing {((currentPage - 1) * pageSize) + 1} to {Math.min(currentPage * pageSize, totalCount)} of {totalCount} entries</span>
                             <div className="flex items-center gap-2">
-                                <Select value={pageSize.toString()} onValueChange={v => { setPageSize(Number(v)); setCurrentPage(1); }}>
+                                <Select value={pageSize.toString()} onValueChange={v => { setPageSize(Number(v)); }}>
                                     <SelectTrigger className="w-20 h-8"><SelectValue /></SelectTrigger>
                                     <SelectContent>
                                         <SelectItem value="10">10</SelectItem>
@@ -930,9 +955,9 @@ const StudentDetails = () => {
                                     </SelectContent>
                             </Select>
                             <div className="flex items-center gap-1">
-                                <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1}><ChevronLeft className="h-4 w-4" /></Button>
-                                <span className="px-3 py-1 bg-primary text-primary-foreground rounded text-sm font-medium">{currentPage}</span>
-                                <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages}><ChevronRight className="h-4 w-4" /></Button>
+                                <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => handleSearch(Math.max(1, currentPage - 1))} disabled={currentPage === 1 || loading}><ChevronLeft className="h-4 w-4" /></Button>
+                                <span className="px-3 py-1 bg-primary text-primary-foreground rounded text-sm font-medium">{currentPage}/{totalPages || 1}</span>
+                                <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => handleSearch(Math.min(totalPages, currentPage + 1))} disabled={currentPage === totalPages || loading}><ChevronRight className="h-4 w-4" /></Button>
                             </div>
                         </div>
                         </div>
@@ -940,7 +965,7 @@ const StudentDetails = () => {
                 </Card>
             )}
 
-            {loading && (
+            {loading && students.length === 0 && (
                 <Card className="p-10">
                     <div className="flex flex-col items-center justify-center text-muted-foreground">
                         <Loader2 className="h-10 w-10 animate-spin mb-4" />
@@ -949,23 +974,31 @@ const StudentDetails = () => {
                 </Card>
             )}
 
-            {students.length === 0 && !loading && allStudents.length === 0 && (
+            {students.length === 0 && !loading && (
                 <Card className="p-10">
                     <div className="text-center text-muted-foreground">
-                        <Users className="h-12 w-12 mx-auto mb-4 opacity-30" />
-                        <p>No students found. Click Refresh to load students.</p>
-                    </div>
-                </Card>
-            )}
-
-            {students.length === 0 && !loading && allStudents.length > 0 && filters.keyword && (
-                <Card className="p-10">
-                    <div className="text-center text-muted-foreground">
-                        <Search className="h-12 w-12 mx-auto mb-4 opacity-30" />
-                        <p>No students match "{filters.keyword}"</p>
-                        <Button variant="link" className="mt-2" onClick={() => handleFilterChange('keyword', '')}>
-                            Clear search
-                        </Button>
+                        {filters.keyword ? (
+                            <>
+                                <Search className="h-12 w-12 mx-auto mb-4 opacity-30" />
+                                <p>No students match "{filters.keyword}"</p>
+                                <Button variant="link" className="mt-2" onClick={() => handleFilterChange('keyword', '')}>
+                                    Clear search
+                                </Button>
+                            </>
+                        ) : filters.dateFilter !== 'all' ? (
+                            <>
+                                <CalendarDays className="h-12 w-12 mx-auto mb-4 opacity-30" />
+                                <p>No students found for the selected date range.</p>
+                                <Button variant="link" className="mt-2" onClick={() => handleFilterChange('dateFilter', 'all')}>
+                                    Show all dates
+                                </Button>
+                            </>
+                        ) : (
+                            <>
+                                <Users className="h-12 w-12 mx-auto mb-4 opacity-30" />
+                                <p>No students found for the selected filters.</p>
+                            </>
+                        )}
                     </div>
                 </Card>
             )}

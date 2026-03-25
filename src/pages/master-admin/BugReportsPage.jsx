@@ -58,11 +58,15 @@ const BugReportsPage = () => {
     const fetchReports = useCallback(async () => {
         setLoading(true);
         try {
-            // Fetch all errors, then filter for user reports
-            const allData = await errorLoggerService.getErrors({});
+            // Fetch user reports from backend with source filter and high limit
+            const response = await errorLoggerService.getErrors({ 
+                source: 'user_report', 
+                limit: 500 
+            });
+            const allData = response?.data || response || [];
             
-            // Filter for user-submitted bug reports
-            const userReports = (allData || []).filter(e => 
+            // Additional client-side filter as safety net
+            const userReports = (Array.isArray(allData) ? allData : []).filter(e => 
                 e.source === 'user_report' || 
                 e.error_message?.startsWith('[USER REPORT]') ||
                 e.metadata?.isUserReport === true

@@ -13,7 +13,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Search, Loader2, Building2, User, IndianRupee, DoorOpen, Save, Bed, Users, ArrowLeft } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from '@/components/ui/badge';
-import { refreshFeeLedger, getHostelFeeTypeId } from '@/utils/feeLedgerService';
+import { refreshFeeLedger, getHostelFeeTypeId, refreshInstallmentLedger, fetchBillingConfig } from '@/utils/feeLedgerService';
 
 const HostelFee = () => {
   const navigate = useNavigate();
@@ -25,13 +25,15 @@ const HostelFee = () => {
   const [rooms, setRooms] = useState([]);
   const [roomTypes, setRoomTypes] = useState([]);
   const [classes, setClasses] = useState([]);
-  const [assignedBeds, setAssignedBeds] = useState({}); // { roomId: ['B1', 'B2', ...] }
+  const [assignedBeds, setAssignedBeds] = useState({});
   const [loading, setLoading] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [billingConfig, setBillingConfig] = useState(null);
+  const [roomTypeFees, setRoomTypeFees] = useState([]);
   
   const [searchFilters, setSearchFilters] = useState({
     class_id: '',
@@ -44,10 +46,12 @@ const HostelFee = () => {
     room_type_id: '',
     bed_number: '',
     hostel_fee: '',
+    annual_fee: '',
     billing_cycle: 'monthly',
     check_in_date: '',
     check_out_date: '',
-    hostel_guardian_contact: ''
+    hostel_guardian_contact: '',
+    fee_override_reason: ''
   });
 
   const branchId = selectedBranch?.id || user?.profile?.branch_id;
@@ -55,18 +59,22 @@ const HostelFee = () => {
   const fetchInitialData = useCallback(async () => {
     if (!branchId) return;
 
-    const [hostelsRes, roomsRes, roomTypesRes, classesRes] = await Promise.all([
+    const [hostelsRes, roomsRes, roomTypesRes, classesRes, billingCfg, rtFeesRes] = await Promise.all([
       supabase.from('hostels').select('*').eq('branch_id', branchId),
       supabase.from('hostel_rooms').select('*, hostels(name)').eq('branch_id', branchId),
       supabase.from('hostel_room_types').select('*').eq('branch_id', branchId),
-      supabase.from('classes').select('id, name').eq('branch_id', branchId).order('name')
+      supabase.from('classes').select('id, name').eq('branch_id', branchId).order('name'),
+      fetchBillingConfig('hostel', branchId, currentSessionId),
+      supabase.from('hostel_room_type_fees').select('*').eq('branch_id', branchId).eq('session_id', currentSessionId)
     ]);
 
     setHostels(hostelsRes.data || []);
     setRooms(roomsRes.data || []);
     setRoomTypes(roomTypesRes.data || []);
     setClasses(classesRes.data || []);
-  }, [branchId]);
+    setBillingConfig(billingCfg);
+    setRoomTypeFees(rtFeesRes.data || []);
+  }, [branchId, currentSessionId]);
 
   useEffect(() => {
     fetchInitialData();
@@ -142,10 +150,12 @@ const HostelFee = () => {
       room_type_id: hostel?.room_type_id || '',
       bed_number: hostel?.bed_number || '',
       hostel_fee: hostel?.hostel_fee || '',
+      annual_fee: hostel?.annual_fee || '',
       billing_cycle: hostel?.billing_cycle || 'monthly',
       check_in_date: hostel?.check_in_date || '',
       check_out_date: hostel?.check_out_date || '',
-      hostel_guardian_contact: hostel?.hostel_guardian_contact || ''
+      hostel_guardian_contact: hostel?.hostel_guardian_contact || '',
+      fee_override_reason: hostel?.fee_override_reason || ''
     });
     
     // Fetch assigned beds for the room if student already has hostel assignment
@@ -161,7 +171,8 @@ const HostelFee = () => {
     setSelectedStudent(null);
     setFormData({
       hostel_id: '', room_id: '', room_type_id: '', bed_number: '',
-      hostel_fee: '', billing_cycle: 'monthly', check_in_date: '', check_out_date: '', hostel_guardian_contact: ''
+      hostel_fee: '', annual_fee: '', billing_cycle: 'monthly', check_in_date: '', check_out_date: '', hostel_guardian_contact: '',
+      fee_override_reason: ''
     });
     setAssignedBeds({});
   };
@@ -201,16 +212,26 @@ const HostelFee = () => {
   const handleRoomChange = async (roomId) => {
     const room = rooms.find(r => r.id === roomId);
     if (room) {
-      // Get assigned beds for this room (excluding current student if editing)
       const assigned = await fetchAssignedBeds(roomId, selectedStudent?.id);
       setAssignedBeds({ [roomId]: assigned });
       
-      // Note: Hostel fee now comes from Fee Structures, not from room type
+      // Auto-fill annual fee from hostel_room_type_fees if available
+      const roomType = roomTypes.find(rt => rt.id === room.room_type_id);
+      let annualFee = '';
+      if (roomType && formData.hostel_id) {
+        const feeRow = roomTypeFees.find(f => f.hostel_id === formData.hostel_id && f.room_type === roomType.name);
+        if (feeRow) {
+          annualFee = (feeRow.annual_accommodation_fee || 0) + (feeRow.annual_mess_fee || 0) + (feeRow.annual_laundry_fee || 0) + (feeRow.annual_electricity_fee || 0);
+        }
+      }
+
       setFormData(prev => ({
         ...prev,
         room_id: roomId,
         room_type_id: room.room_type_id || '',
-        bed_number: ''
+        bed_number: '',
+        annual_fee: annualFee || prev.annual_fee,
+        hostel_fee: annualFee ? Math.round(annualFee / (billingConfig?.working_months || 10)) : prev.hostel_fee
       }));
     }
   };
@@ -258,10 +279,12 @@ const HostelFee = () => {
       room_type_id: formData.room_type_id || null,
       bed_number: formData.bed_number || null,
       hostel_fee: formData.hostel_fee ? parseFloat(formData.hostel_fee) : null,
-      billing_cycle: formData.billing_cycle || 'monthly',
+      annual_fee: formData.annual_fee ? parseFloat(formData.annual_fee) : null,
+      billing_cycle: billingConfig?.billing_mode || formData.billing_cycle || 'monthly',
       check_in_date: formData.check_in_date || null,
       check_out_date: formData.check_out_date || null,
-      hostel_guardian_contact: formData.hostel_guardian_contact || null
+      hostel_guardian_contact: formData.hostel_guardian_contact || null,
+      fee_override_reason: formData.fee_override_reason || null
     };
 
     let error;
@@ -282,10 +305,10 @@ const HostelFee = () => {
     if (error) {
       toast({ variant: 'destructive', title: 'Error updating hostel info', description: error.message });
     } else {
-      // Auto-write to unified fee ledger if hostel_fee is set
-      if (hostelPayload.hostel_fee && hostelPayload.hostel_fee > 0) {
+      // Auto-write to unified fee ledger if fee is set
+      const annualFee = hostelPayload.annual_fee || hostelPayload.hostel_fee;
+      if (annualFee && annualFee > 0) {
         const hostelFeeTypeId = await getHostelFeeTypeId(branchId, currentSessionId);
-        // Get the source reference ID (student_hostel_details record)
         const { data: hostelRecord } = await supabase
           .from('student_hostel_details')
           .select('id')
@@ -294,20 +317,20 @@ const HostelFee = () => {
           .eq('branch_id', branchId)
           .maybeSingle();
 
-        const ledgerResult = await refreshFeeLedger({
+        const ledgerResult = await refreshInstallmentLedger({
           studentId: selectedStudent.id,
           feeSource: 'hostel',
           feeTypeId: hostelFeeTypeId,
-          amount: hostelPayload.hostel_fee,
-          billingCycle: hostelPayload.billing_cycle || 'monthly',
+          annualFee: parseFloat(annualFee),
           sessionId: currentSessionId,
           branchId: branchId,
           organizationId: organizationId,
           sourceReferenceId: hostelRecord?.id || null,
+          effectiveFrom: hostelPayload.check_in_date || null,
         });
 
         if (ledgerResult.success) {
-          console.log(`Hostel fee ledger: ${ledgerResult.rowsCreated} entries created`);
+          console.log(`Hostel fee ledger: ${ledgerResult.rowsCreated} installments created`);
         } else {
           console.error('Hostel fee ledger error:', ledgerResult.error);
           toast({ variant: 'destructive', title: 'Hostel saved, but fee ledger failed', description: ledgerResult.error });
@@ -513,9 +536,24 @@ const HostelFee = () => {
                     )}
                   </div>
 
-                  <div className="space-y-2">
-                    <Label>Hostel Fee (₹)</Label>
-                    <Input type="number" min="0" value={formData.hostel_fee} onChange={(e) => setFormData({...formData, hostel_fee: e.target.value})} placeholder="e.g. 5000" />
+                  <div className="space-y-2 p-2 bg-muted/30 rounded-lg">
+                    <Label className="text-xs font-semibold">Annual Hostel Fee (₹)</Label>
+                    <Input type="number" min="0" value={formData.annual_fee} onChange={(e) => {
+                      const annual = e.target.value;
+                      const wm = billingConfig?.working_months || 10;
+                      setFormData({...formData, annual_fee: annual, hostel_fee: annual ? Math.round(parseFloat(annual) / wm) : ''});
+                    }} placeholder="Total annual fee" />
+                    {formData.annual_fee && (
+                      <p className="text-xs text-muted-foreground">
+                        Monthly: ₹{Math.round(parseFloat(formData.annual_fee) / (billingConfig?.working_months || 10)).toLocaleString('en-IN')}
+                      </p>
+                    )}
+                    {billingConfig && (
+                      <p className="text-xs text-muted-foreground">
+                        Billing: <strong className="capitalize">{(billingConfig.billing_mode || 'monthly').replace('_', ' ')}</strong>
+                        {billingConfig.billing_mode === 'monthly' && ` • ${billingConfig.working_months || 10} months`}
+                      </p>
+                    )}
                   </div>
 
                   <div className="space-y-2">
@@ -592,7 +630,12 @@ const HostelFee = () => {
                           <TableCell>{getHostelName(student.hostel?.hostel_id)}</TableCell>
                           <TableCell>{getRoomName(student.hostel?.room_id)}</TableCell>
                           <TableCell className="text-right">
-                            {student.hostel?.hostel_fee ? `₹${student.hostel.hostel_fee}` : '-'}
+                            {student.hostel?.annual_fee ? (
+                              <div>
+                                <span>₹{Number(student.hostel.annual_fee).toLocaleString('en-IN')}</span>
+                                <span className="block text-[10px] text-muted-foreground">annual</span>
+                              </div>
+                            ) : student.hostel?.hostel_fee ? `₹${student.hostel.hostel_fee}` : '-'}
                           </TableCell>
                           <TableCell>
                             <Badge variant={student.hostel ? 'default' : 'secondary'}>

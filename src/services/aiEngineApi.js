@@ -295,17 +295,28 @@ export const aiEngineApi = {
   // Get spoof alerts
   getSpoofAlerts: (params = {}) => {
     const queryParams = new URLSearchParams();
+    const ctx = getUserContext();
+    // Backend requires branch_id and organization_id as query params
+    queryParams.append('branch_id', params.branch_id || ctx.branchId);
+    queryParams.append('organization_id', params.organization_id || ctx.organizationId);
     if (params.days) queryParams.append('days', params.days);
     if (params.status) queryParams.append('status', params.status);
     if (params.severity) queryParams.append('severity', params.severity);
     if (params.spoofType) queryParams.append('spoof_type', params.spoofType);
+    if (params.limit) queryParams.append('limit', params.limit);
     
-    const queryString = queryParams.toString();
-    return apiCall(`/camera/spoof-alerts${queryString ? `?${queryString}` : ''}`);
+    return apiCall(`/camera/spoof-alerts?${queryParams.toString()}`);
   },
   
   // Get spoof alerts summary
-  getSpoofAlertsSummary: (days = 7) => apiCall(`/camera/spoof-alerts/summary?days=${days}`),
+  getSpoofAlertsSummary: (params = {}) => {
+    const queryParams = new URLSearchParams();
+    const ctx = getUserContext();
+    queryParams.append('branch_id', params.branch_id || ctx.branchId);
+    queryParams.append('organization_id', params.organization_id || ctx.organizationId);
+    queryParams.append('days', params.days || 7);
+    return apiCall(`/camera/spoof-alerts/summary?${queryParams.toString()}`);
+  },
   
   // Log spoof alert
   logSpoofAlert: (alertData) => apiCall('/camera/spoof-alerts', 'POST', alertData),

@@ -15,14 +15,14 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { supabase } from '@/lib/supabaseClient';
+import { supabase } from '@/lib/customSupabaseClient';
+import { aiEngineApi } from '@/services/aiEngineApi';
+import { formatDateTime } from '@/utils/dateUtils';
 import {
   Activity, CheckCircle, XCircle, AlertTriangle, RefreshCw, Cpu,
   Database, Camera, Wifi, Shield, Clock, Server, HardDrive,
-  Zap, Eye, Brain, BarChart3, Play, Pause, RotateCcw
+  Zap, Eye, Brain, BarChart3, Play, Pause, RotateCcw, Info
 } from 'lucide-react';
-
-const AI_ENGINE_URL = import.meta.env.VITE_AI_ENGINE_URL || 'http://localhost:8501';
 
 // ═══════════════════════════════ STATUS INDICATOR ═══════════════════════════════
 const StatusIndicator = ({ status, label, detail, icon: Icon }) => {
@@ -31,6 +31,7 @@ const StatusIndicator = ({ status, label, detail, icon: Icon }) => {
     offline: 'bg-red-500',
     warning: 'bg-yellow-500',
     checking: 'bg-blue-500 animate-pulse',
+    'not-configured': 'bg-gray-400',
   };
 
   const badges = {
@@ -38,19 +39,20 @@ const StatusIndicator = ({ status, label, detail, icon: Icon }) => {
     offline: <Badge className="bg-red-100 text-red-800">Offline</Badge>,
     warning: <Badge className="bg-yellow-100 text-yellow-800">Warning</Badge>,
     checking: <Badge className="bg-blue-100 text-blue-800">Checking...</Badge>,
+    'not-configured': <Badge className="bg-gray-100 text-gray-600">Not Configured</Badge>,
   };
 
   return (
     <div className="flex items-center justify-between p-4 border rounded-lg hover:shadow-sm transition-shadow">
       <div className="flex items-center gap-3">
-        <div className={`w-3 h-3 rounded-full ${colors[status]}`} />
+        <div className={`w-3 h-3 rounded-full ${colors[status] || 'bg-gray-400'}`} />
         {Icon && <Icon className="w-5 h-5 text-gray-500" />}
         <div>
           <p className="font-medium text-sm">{label}</p>
           {detail && <p className="text-xs text-gray-500">{detail}</p>}
         </div>
       </div>
-      {badges[status]}
+      {badges[status] || <Badge className="bg-gray-100 text-gray-600">Unknown</Badge>}
     </div>
   );
 };
@@ -106,6 +108,25 @@ export default function FaceAttendanceTestDashboard() {
   const [overallHealth, setOverallHealth] = useState(0);
   const [dbStats, setDbStats] = useState(null);
   const [lastChecked, setLastChecked] = useState(null);
+  const [aiEngineAvailable, setAiEngineAvailable] = useState(null); // null = unchecked, true/false
+
+  // Helper: safely query a Supabase table (returns null if table doesn't exist)
+  const safeTableQuery = async (tableName, queryFn) => {
+    try {
+      const result = await queryFn();
+      if (result?.error) {
+        const msg = result.error.message || '';
+        // Table doesn't exist or RLS blocks
+        if (msg.includes('does not exist') || msg.includes('permission denied') || result.error.code === '42P01') {
+          return { exists: false, data: null, error: result.error };
+        }
+        return { exists: true, data: null, error: result.error };
+      }
+      return { exists: true, data: result.data, count: result.count, error: null };
+    } catch {
+      return { exists: false, data: null, error: { message: 'Query failed' } };
+    }
+  };
 
   // ═══════════════════ SYSTEM HEALTH CHECK ═══════════════════
   const checkSystemHealth = useCallback(async () => {
@@ -113,10 +134,10 @@ export default function FaceAttendanceTestDashboard() {
     if (!branchId) {
       setSystemStatus({
         aiEngine: 'checking',
-        database: 'warning',
+        database: 'not-configured',
         faissIndex: 'checking',
-        cameras: 'warning',
-        notifications: 'warning',
+        cameras: 'not-configured',
+        notifications: 'not-configured',
       });
       return;
     }
@@ -130,71 +151,76 @@ export default function FaceAttendanceTestDashboard() {
       notifications: 'checking',
     }));
 
-    // Check AI Engine
+    // Check AI Engine (via backend proxy)
     try {
-      const res = await fetch(`${AI_ENGINE_URL}/health`, { signal: AbortSignal.timeout(5000) });
-      if (res.ok) {
-        const data = await res.json();
-        setAiEngineInfo(data);
+      const data = await aiEngineApi.checkHealth();
+      if (data?.success !== false) {
+        setAiEngineInfo(data?.data || data);
+        setAiEngineAvailable(true);
         setSystemStatus(prev => ({ ...prev, aiEngine: 'online' }));
       } else {
-        setSystemStatus(prev => ({ ...prev, aiEngine: 'offline' }));
+        setAiEngineAvailable(false);
+        setSystemStatus(prev => ({ ...prev, aiEngine: 'not-configured' }));
       }
     } catch {
-      setSystemStatus(prev => ({ ...prev, aiEngine: 'offline' }));
+      setAiEngineAvailable(false);
+      setSystemStatus(prev => ({ ...prev, aiEngine: 'not-configured' }));
     }
 
-    // Check FAISS Index
+    // Check FAISS Index (via backend proxy)
     try {
-      const res = await fetch(`${AI_ENGINE_URL}/api/v1/index/status`, { signal: AbortSignal.timeout(5000) });
-      if (res.ok) {
-        const data = await res.json();
+      const data = await aiEngineApi.getIndexStatus();
+      if (data?.success !== false) {
+        const totalFaces = data?.total_faces || data?.data?.total_faces || 0;
         setSystemStatus(prev => ({
           ...prev,
-          faissIndex: data.total_faces > 0 ? 'online' : 'warning',
+          faissIndex: totalFaces > 0 ? 'online' : 'warning',
         }));
       } else {
-        setSystemStatus(prev => ({ ...prev, faissIndex: 'offline' }));
+        setSystemStatus(prev => ({ ...prev, faissIndex: 'not-configured' }));
       }
     } catch {
-      setSystemStatus(prev => ({ ...prev, faissIndex: 'offline' }));
+      setSystemStatus(prev => ({ ...prev, faissIndex: 'not-configured' }));
     }
 
-    // Check Database
-    try {
-      const { count, error } = await supabase
+    // Check Database (face_embeddings_v2 table)
+    const dbResult = await safeTableQuery('face_embeddings_v2', () =>
+      supabase
         .from('face_embeddings_v2')
         .select('id', { count: 'exact', head: true })
-        .eq('branch_id', branchId);
+        .eq('branch_id', branchId)
+    );
 
-      if (!error) {
-        setDbStats({ registeredFaces: count || 0 });
-        setSystemStatus(prev => ({ ...prev, database: 'online' }));
-      } else {
-        setSystemStatus(prev => ({ ...prev, database: 'warning' }));
-      }
-    } catch {
-      setSystemStatus(prev => ({ ...prev, database: 'offline' }));
+    if (!dbResult.exists) {
+      setSystemStatus(prev => ({ ...prev, database: 'not-configured' }));
+      setDbStats(null);
+    } else if (dbResult.error) {
+      setSystemStatus(prev => ({ ...prev, database: 'warning' }));
+      setDbStats(null);
+    } else {
+      setDbStats({ registeredFaces: dbResult.count || 0 });
+      setSystemStatus(prev => ({ ...prev, database: 'online' }));
     }
 
-    // Check Cameras
-    try {
-      const { data: cameras, error } = await supabase
+    // Check Cameras (camera_devices table)
+    const camResult = await safeTableQuery('camera_devices', () =>
+      supabase
         .from('camera_devices')
         .select('id, is_active')
-        .eq('branch_id', branchId);
+        .eq('branch_id', branchId)
+    );
 
-      if (!error && cameras) {
-        const activeCameras = cameras.filter(c => c.is_active).length;
-        setSystemStatus(prev => ({
-          ...prev,
-          cameras: activeCameras > 0 ? 'online' : cameras.length > 0 ? 'warning' : 'offline',
-        }));
-      } else {
-        setSystemStatus(prev => ({ ...prev, cameras: 'warning' }));
-      }
-    } catch {
-      setSystemStatus(prev => ({ ...prev, cameras: 'offline' }));
+    if (!camResult.exists) {
+      setSystemStatus(prev => ({ ...prev, cameras: 'not-configured' }));
+    } else if (camResult.error) {
+      setSystemStatus(prev => ({ ...prev, cameras: 'warning' }));
+    } else {
+      const cameras = camResult.data || [];
+      const activeCameras = cameras.filter(c => c.is_active).length;
+      setSystemStatus(prev => ({
+        ...prev,
+        cameras: activeCameras > 0 ? 'online' : cameras.length > 0 ? 'warning' : 'not-configured',
+      }));
     }
 
     // Notification check
@@ -206,12 +232,17 @@ export default function FaceAttendanceTestDashboard() {
   // ═══════════════════ CALCULATE OVERALL HEALTH ═══════════════════
   useEffect(() => {
     const statusValues = Object.values(systemStatus);
-    const score = statusValues.reduce((acc, s) => {
+    const configuredServices = statusValues.filter(s => s !== 'not-configured' && s !== 'checking');
+    if (configuredServices.length === 0) {
+      setOverallHealth(0);
+      return;
+    }
+    const score = configuredServices.reduce((acc, s) => {
       if (s === 'online') return acc + 100;
       if (s === 'warning') return acc + 50;
       return acc;
     }, 0);
-    setOverallHealth(Math.round(score / statusValues.length));
+    setOverallHealth(Math.round(score / configuredServices.length));
   }, [systemStatus]);
 
   // ═══════════════════ TEST DEFINITIONS ═══════════════════
@@ -222,12 +253,16 @@ export default function FaceAttendanceTestDashboard() {
       category: 'connectivity',
       run: async () => {
         const start = Date.now();
-        const res = await fetch(`${AI_ENGINE_URL}/health`, { signal: AbortSignal.timeout(10000) });
-        const duration = Date.now() - start;
-        if (res.ok) {
-          return { status: 'passed', message: `AI Engine responding in ${duration}ms`, duration };
+        try {
+          const data = await aiEngineApi.checkHealth();
+          const duration = Date.now() - start;
+          if (data && data.success !== false) {
+            return { status: 'passed', message: `AI Engine responding in ${duration}ms`, duration };
+          }
+          return { status: 'warning', message: 'AI Engine returned unsuccessful response - not deployed yet', duration };
+        } catch {
+          return { status: 'warning', message: 'AI Engine not deployed. Deploy the Python AI Engine to enable face recognition.', duration: Date.now() - start };
         }
-        return { status: 'failed', message: `AI Engine returned ${res.status}`, duration };
       },
     },
     {
@@ -236,16 +271,20 @@ export default function FaceAttendanceTestDashboard() {
       category: 'connectivity',
       run: async () => {
         const start = Date.now();
-        const res = await fetch(`${AI_ENGINE_URL}/api/v1/index/status`, { signal: AbortSignal.timeout(10000) });
-        const duration = Date.now() - start;
-        if (res.ok) {
-          const data = await res.json();
-          if (data.total_faces > 0) {
-            return { status: 'passed', message: `Index has ${data.total_faces} face vectors`, duration };
+        try {
+          const data = await aiEngineApi.getIndexStatus();
+          const duration = Date.now() - start;
+          if (data?.success === false) {
+            return { status: 'warning', message: 'FAISS index not available - AI Engine not deployed', duration };
+          }
+          const totalFaces = data?.total_faces || data?.data?.total_faces || 0;
+          if (totalFaces > 0) {
+            return { status: 'passed', message: `Index has ${totalFaces} face vectors`, duration };
           }
           return { status: 'warning', message: 'Index is empty - no faces registered', duration };
+        } catch {
+          return { status: 'warning', message: 'FAISS service not available - deploy AI Engine first', duration: Date.now() - start };
         }
-        return { status: 'failed', message: 'Cannot access FAISS index', duration };
       },
     },
     {
@@ -254,15 +293,13 @@ export default function FaceAttendanceTestDashboard() {
       category: 'database',
       run: async () => {
         const start = Date.now();
-        const { count, error } = await supabase
-          .from('face_embeddings_v2')
-          .select('id', { count: 'exact', head: true })
-          .eq('branch_id', branchId);
+        const result = await safeTableQuery('face_embeddings_v2', () =>
+          supabase.from('face_embeddings_v2').select('id', { count: 'exact', head: true }).eq('branch_id', branchId)
+        );
         const duration = Date.now() - start;
-        if (!error) {
-          return { status: 'passed', message: `${count || 0} face records found`, duration };
-        }
-        return { status: 'failed', message: error.message, duration };
+        if (!result.exists) return { status: 'warning', message: 'Table not created yet - run database migrations', duration };
+        if (result.error) return { status: 'failed', message: result.error.message, duration };
+        return { status: 'passed', message: `${result.count || 0} face records found`, duration };
       },
     },
     {
@@ -271,15 +308,13 @@ export default function FaceAttendanceTestDashboard() {
       category: 'database',
       run: async () => {
         const start = Date.now();
-        const { count, error } = await supabase
-          .from('face_recognition_logs')
-          .select('id', { count: 'exact', head: true })
-          .eq('branch_id', branchId);
+        const result = await safeTableQuery('face_recognition_logs', () =>
+          supabase.from('face_recognition_logs').select('id', { count: 'exact', head: true }).eq('branch_id', branchId)
+        );
         const duration = Date.now() - start;
-        if (!error) {
-          return { status: 'passed', message: `${count || 0} recognition logs`, duration };
-        }
-        return { status: 'failed', message: error.message, duration };
+        if (!result.exists) return { status: 'warning', message: 'Table not created yet - run database migrations', duration };
+        if (result.error) return { status: 'failed', message: result.error.message, duration };
+        return { status: 'passed', message: `${result.count || 0} recognition logs`, duration };
       },
     },
     {
@@ -288,15 +323,13 @@ export default function FaceAttendanceTestDashboard() {
       category: 'database',
       run: async () => {
         const start = Date.now();
-        const { count, error } = await supabase
-          .from('face_attendance_logs')
-          .select('id', { count: 'exact', head: true })
-          .eq('branch_id', branchId);
+        const result = await safeTableQuery('face_attendance_logs', () =>
+          supabase.from('face_attendance_logs').select('id', { count: 'exact', head: true }).eq('branch_id', branchId)
+        );
         const duration = Date.now() - start;
-        if (!error) {
-          return { status: 'passed', message: `${count || 0} attendance records`, duration };
-        }
-        return { status: 'failed', message: error.message, duration };
+        if (!result.exists) return { status: 'warning', message: 'Table not created yet - run database migrations', duration };
+        if (result.error) return { status: 'failed', message: result.error.message, duration };
+        return { status: 'passed', message: `${result.count || 0} attendance records`, duration };
       },
     },
     {
@@ -305,16 +338,15 @@ export default function FaceAttendanceTestDashboard() {
       category: 'database',
       run: async () => {
         const start = Date.now();
-        const { data, error } = await supabase
-          .from('camera_devices')
-          .select('id, is_active')
-          .eq('branch_id', branchId);
+        const result = await safeTableQuery('camera_devices', () =>
+          supabase.from('camera_devices').select('id, is_active').eq('branch_id', branchId)
+        );
         const duration = Date.now() - start;
-        if (!error) {
-          const active = data?.filter(c => c.is_active).length || 0;
-          return { status: 'passed', message: `${data?.length || 0} cameras (${active} active)`, duration };
-        }
-        return { status: 'failed', message: error.message, duration };
+        if (!result.exists) return { status: 'warning', message: 'Table not created yet - run database migrations', duration };
+        if (result.error) return { status: 'failed', message: result.error.message, duration };
+        const data = result.data || [];
+        const active = data.filter(c => c.is_active).length;
+        return { status: 'passed', message: `${data.length} cameras (${active} active)`, duration };
       },
     },
     {
@@ -323,15 +355,14 @@ export default function FaceAttendanceTestDashboard() {
       category: 'database',
       run: async () => {
         const start = Date.now();
-        const { count, error } = await supabase
-          .from('anti_spoofing_alerts')
-          .select('id', { count: 'exact', head: true })
-          .eq('branch_id', branchId);
+        const result = await safeTableQuery('anti_spoofing_alerts', () =>
+          supabase.from('anti_spoofing_alerts').select('id', { count: 'exact', head: true }).eq('branch_id', branchId)
+        );
         const duration = Date.now() - start;
-        if (!error) {
-          return { status: count > 0 ? 'warning' : 'passed', message: `${count || 0} spoof attempts detected`, duration };
-        }
-        return { status: 'failed', message: error.message, duration };
+        if (!result.exists) return { status: 'warning', message: 'Table not created yet - run database migrations', duration };
+        if (result.error) return { status: 'failed', message: result.error.message, duration };
+        const count = result.count || 0;
+        return { status: count > 0 ? 'warning' : 'passed', message: `${count} spoof attempts detected`, duration };
       },
     },
     {
@@ -340,18 +371,22 @@ export default function FaceAttendanceTestDashboard() {
       category: 'ai',
       run: async () => {
         const start = Date.now();
-        const res = await fetch(`${AI_ENGINE_URL}/health`, { signal: AbortSignal.timeout(10000) });
-        const duration = Date.now() - start;
-        if (res.ok) {
-          const data = await res.json();
-          const hasLiveness = data.modules?.liveness || data.liveness_enabled;
+        try {
+          const data = await aiEngineApi.checkHealth();
+          const duration = Date.now() - start;
+          if (data?.success === false) {
+            return { status: 'warning', message: 'AI Engine not deployed - liveness detection unavailable', duration };
+          }
+          const healthData = data?.data || data;
+          const hasLiveness = healthData?.modules?.liveness || healthData?.liveness_enabled;
           return {
             status: hasLiveness ? 'passed' : 'warning',
             message: hasLiveness ? 'Liveness detection active' : 'Liveness detection not available',
             duration,
           };
+        } catch {
+          return { status: 'warning', message: 'AI Engine not deployed - liveness detection unavailable', duration: Date.now() - start };
         }
-        return { status: 'failed', message: 'Cannot check liveness module', duration };
       },
     },
     {
@@ -360,17 +395,21 @@ export default function FaceAttendanceTestDashboard() {
       category: 'ai',
       run: async () => {
         const start = Date.now();
-        const res = await fetch(`${AI_ENGINE_URL}/health`, { signal: AbortSignal.timeout(10000) });
-        const duration = Date.now() - start;
-        if (res.ok) {
-          const data = await res.json();
+        try {
+          const data = await aiEngineApi.checkHealth();
+          const duration = Date.now() - start;
+          if (data?.success === false) {
+            return { status: 'warning', message: 'AI Engine not deployed - face recognition unavailable', duration };
+          }
+          const healthData = data?.data || data;
           return {
             status: 'passed',
-            message: `ArcFace model loaded, ${data.model || 'buffalo_l'}`,
+            message: `ArcFace model loaded, ${healthData?.model || 'buffalo_l'}`,
             duration,
           };
+        } catch {
+          return { status: 'warning', message: 'AI Engine not deployed - face recognition unavailable', duration: Date.now() - start };
         }
-        return { status: 'failed', message: 'Cannot reach AI engine', duration };
       },
     },
     {
@@ -378,11 +417,15 @@ export default function FaceAttendanceTestDashboard() {
       name: 'API Latency Test (Round Trip)',
       category: 'performance',
       run: async () => {
+        // Skip latency test if AI engine is known to be unavailable
+        if (aiEngineAvailable === false) {
+          return { status: 'warning', message: 'Skipped - AI Engine not deployed', duration: 0 };
+        }
         const times = [];
         for (let i = 0; i < 3; i++) {
           const start = Date.now();
           try {
-            await fetch(`${AI_ENGINE_URL}/health`, { signal: AbortSignal.timeout(5000) });
+            await aiEngineApi.checkHealth();
             times.push(Date.now() - start);
           } catch {
             times.push(5000);
@@ -476,7 +519,7 @@ export default function FaceAttendanceTestDashboard() {
           <div>
             <h1 className="text-2xl font-bold flex items-center gap-2">
               <Activity className="w-7 h-7 text-blue-600" />
-              🧪 Face Attendance System Test Dashboard
+              Face Attendance System Test Dashboard
             </h1>
             <p className="text-gray-500 mt-1">
               System health monitoring, connectivity tests & diagnostics
@@ -496,6 +539,19 @@ export default function FaceAttendanceTestDashboard() {
         </div>
       </div>
 
+      {/* ═══════ AI ENGINE NOT CONFIGURED BANNER ═══════ */}
+      {aiEngineAvailable === false && (
+        <Alert className="border-blue-200 bg-blue-50">
+          <Info className="h-4 w-4 text-blue-600" />
+          <AlertTitle className="text-blue-800">AI Face Recognition Engine Not Deployed</AlertTitle>
+          <AlertDescription className="text-blue-700">
+            The Python AI Engine (FastAPI) is not running. This is expected if the AI Face Attendance
+            module has not been deployed yet. The engine handles face detection, recognition, and FAISS
+            vector indexing. Deploy the AI Engine service to enable these features.
+          </AlertDescription>
+        </Alert>
+      )}
+
       {/* ═══════ OVERALL HEALTH SCORE ═══════ */}
       <Card>
         <CardContent className="p-6">
@@ -503,13 +559,15 @@ export default function FaceAttendanceTestDashboard() {
             <div>
               <h2 className="text-lg font-semibold">Overall System Health</h2>
               <p className="text-sm text-gray-500">
-                Last checked: {lastChecked ? lastChecked.toLocaleTimeString() : 'Never'}
+                Last checked: {lastChecked ? formatDateTime(lastChecked) : 'Never'}
               </p>
             </div>
             <div className="text-right">
               <span className={`text-4xl font-bold ${healthColor}`}>{overallHealth}%</span>
               <p className="text-xs text-gray-400 mt-1">
-                {overallHealth >= 80 ? 'System Healthy' : overallHealth >= 50 ? 'Needs Attention' : 'Critical Issues'}
+                {Object.values(systemStatus).every(s => s === 'not-configured' || s === 'checking')
+                  ? 'Setup Required'
+                  : overallHealth >= 80 ? 'System Healthy' : overallHealth >= 50 ? 'Needs Attention' : 'Critical Issues'}
               </p>
             </div>
           </div>
@@ -529,7 +587,13 @@ export default function FaceAttendanceTestDashboard() {
             <StatusIndicator
               status={systemStatus.aiEngine}
               label="Python AI Engine (FastAPI)"
-              detail={aiEngineInfo ? `Model: ${aiEngineInfo.model || 'ArcFace'}` : `${AI_ENGINE_URL}`}
+              detail={
+                systemStatus.aiEngine === 'online'
+                  ? (aiEngineInfo ? `Model: ${aiEngineInfo.model || 'ArcFace'}` : 'Connected')
+                  : systemStatus.aiEngine === 'not-configured'
+                    ? 'Not deployed - deploy AI Engine to enable'
+                    : 'Checking...'
+              }
               icon={Cpu}
             />
           </CardContent>
@@ -545,7 +609,13 @@ export default function FaceAttendanceTestDashboard() {
             <StatusIndicator
               status={systemStatus.database}
               label="Supabase PostgreSQL"
-              detail={dbStats ? `${dbStats.registeredFaces} registered faces` : 'Checking...'}
+              detail={
+                systemStatus.database === 'online'
+                  ? (dbStats ? `${dbStats.registeredFaces} registered faces` : 'Connected')
+                  : systemStatus.database === 'not-configured'
+                    ? 'Face tables not created yet'
+                    : 'Checking...'
+              }
               icon={HardDrive}
             />
           </CardContent>
@@ -561,7 +631,11 @@ export default function FaceAttendanceTestDashboard() {
             <StatusIndicator
               status={systemStatus.faissIndex}
               label="FAISS Vector Search"
-              detail="512-dimensional face vectors"
+              detail={
+                systemStatus.faissIndex === 'not-configured'
+                  ? 'Not available - deploy AI Engine first'
+                  : '512-dimensional face vectors'
+              }
               icon={Eye}
             />
           </CardContent>
@@ -674,7 +748,7 @@ export default function FaceAttendanceTestDashboard() {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
             <div className="p-3 bg-gray-50 rounded-lg">
               <p className="text-gray-500">AI Engine URL</p>
-              <p className="font-mono text-xs mt-1 truncate">{AI_ENGINE_URL}</p>
+              <p className="font-mono text-xs mt-1 truncate">Backend Proxy (/api/camera/ai)</p>
             </div>
             <div className="p-3 bg-gray-50 rounded-lg">
               <p className="text-gray-500">Branch ID</p>

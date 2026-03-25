@@ -23,6 +23,7 @@ import {
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Separator } from '@/components/ui/separator';
 import { supabase } from '@/lib/supabaseClient';
+import { aiEngineApi } from '@/services/aiEngineApi';
 import { formatDate } from '@/utils/dateUtils';
 import {
   Settings, Save, RotateCcw, Shield, Brain, Camera, Bell,
@@ -30,8 +31,6 @@ import {
   Rocket, Lock, Database, Server, Monitor, Smartphone,
   RefreshCw, ChevronRight, Gauge
 } from 'lucide-react';
-
-const AI_ENGINE_URL = import.meta.env.VITE_AI_ENGINE_URL || 'http://localhost:8501';
 
 // ═══════════════════════════════ SETTINGS STATE ═══════════════════════════════
 const defaultSettings = {
@@ -247,24 +246,20 @@ export default function FaceAttendanceAdminSettings() {
     try {
       switch (checkKey) {
         case 'aiEngine': {
-          const res = await fetch(`${AI_ENGINE_URL}/health`, { signal: AbortSignal.timeout(5000) });
+          const data = await aiEngineApi.checkHealth();
           setLaunchChecklist(prev => ({
             ...prev,
-            aiEngine: res.ok ? 'passed' : 'failed',
+            aiEngine: data ? 'passed' : 'failed',
           }));
           break;
         }
         case 'faissIndex': {
-          const res = await fetch(`${AI_ENGINE_URL}/api/v1/index/status`, { signal: AbortSignal.timeout(5000) });
-          if (res.ok) {
-            const data = await res.json();
-            setLaunchChecklist(prev => ({
-              ...prev,
-              faissIndex: data.total_faces > 0 ? 'passed' : 'warning',
-            }));
-          } else {
-            setLaunchChecklist(prev => ({ ...prev, faissIndex: 'failed' }));
-          }
+          const data = await aiEngineApi.getIndexStatus();
+          const totalFaces = data?.total_faces || data?.data?.total_faces || 0;
+          setLaunchChecklist(prev => ({
+            ...prev,
+            faissIndex: totalFaces > 0 ? 'passed' : 'warning',
+          }));
           break;
         }
         case 'cameras': {
@@ -308,15 +303,15 @@ export default function FaceAttendanceAdminSettings() {
           break;
         }
         case 'testsPassing': {
-          // Quick health + index check
+          // Quick health + index check via backend proxy
           try {
             const [h, i] = await Promise.all([
-              fetch(`${AI_ENGINE_URL}/health`, { signal: AbortSignal.timeout(5000) }),
-              fetch(`${AI_ENGINE_URL}/api/v1/index/status`, { signal: AbortSignal.timeout(5000) }),
+              aiEngineApi.checkHealth(),
+              aiEngineApi.getIndexStatus(),
             ]);
             setLaunchChecklist(prev => ({
               ...prev,
-              testsPassing: h.ok && i.ok ? 'passed' : 'warning',
+              testsPassing: h && i ? 'passed' : 'warning',
             }));
           } catch {
             setLaunchChecklist(prev => ({ ...prev, testsPassing: 'failed' }));

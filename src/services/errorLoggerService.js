@@ -102,14 +102,17 @@ export const errorLoggerService = {
             if (filters.status && filters.status !== 'All') params.append('status', filters.status);
             if (filters.severity && filters.severity !== 'All') params.append('severity', filters.severity);
             if (filters.search) params.append('search', filters.search);
+            if (filters.source) params.append('source', filters.source);
+            if (filters.page) params.append('page', filters.page);
+            if (filters.limit) params.append('limit', filters.limit);
             
             const response = await retryWithBackoff(() => axios.get(`${API_URL}/queries-finder/logs?${params.toString()}`, {
                 headers: { Authorization: `Bearer ${session?.access_token}` }
             }));
-            return response.data.data;
+            return response.data;
         } catch (error) {
             console.error('Failed to fetch logs:', error);
-            return [];
+            return { data: [], pagination: { total: 0, page: 1, limit: 20, pages: 0 } };
         }
     },
 

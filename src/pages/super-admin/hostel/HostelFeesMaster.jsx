@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Helmet } from 'react-helmet';
 import { supabase } from '@/lib/customSupabaseClient';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
@@ -13,7 +13,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Loader2, Save, IndianRupee, Route, MapPin, Calendar, TrendingUp, Settings, AlertCircle } from 'lucide-react';
+import { Loader2, Save, IndianRupee, Building, Calendar, Settings, AlertCircle, Bed } from 'lucide-react';
 import { format, parseISO, isValid } from 'date-fns';
 
 const BILLING_MODES = [
@@ -40,22 +40,25 @@ const INSTALLMENT_LABELS = {
     ],
 };
 
-const TransportFeesMaster = () => {
+const HostelFeesMaster = () => {
     const { user, currentSessionId, organizationId } = useAuth();
     const { selectedBranch } = useBranch();
     const { toast } = useToast();
 
     // Tab 1: Billing Setup
-    const [billingMode, setBillingMode] = useState('monthly');
+    const [billingMode, setBillingMode] = useState('annual');
     const [workingMonths, setWorkingMonths] = useState(10);
     const [numTerms, setNumTerms] = useState(3);
-    const [oneWayPercentage, setOneWayPercentage] = useState(60);
     const [prorateMidYear, setProrateMidYear] = useState(true);
+    const [hasMessFee, setHasMessFee] = useState(false);
+    const [hasLaundryFee, setHasLaundryFee] = useState(false);
+    const [hasElectricityFee, setHasElectricityFee] = useState(false);
     const [billingSettingsId, setBillingSettingsId] = useState(null);
 
-    // Tab 2: Route Fees
-    const [routes, setRoutes] = useState([]);
-    const [routePickupMappings, setRoutePickupMappings] = useState([]);
+    // Tab 2: Room-Type Fees
+    const [hostels, setHostels] = useState([]);
+    const [roomTypeFees, setRoomTypeFees] = useState([]);
+    const [roomTypes, setRoomTypes] = useState([]);
 
     // Tab 3: Due Dates & Fines
     const [installmentConfig, setInstallmentConfig] = useState([]);
@@ -68,14 +71,13 @@ const TransportFeesMaster = () => {
 
     // Stats
     const stats = useMemo(() => {
-        const routeCount = routes.length;
-        const stopsWithFees = routePickupMappings.filter(m => (m.annual_fee || 0) > 0 || (m.monthly_fees || 0) > 0).length;
+        const hostelCount = hostels.length;
+        const roomTypesWithFees = roomTypeFees.filter(r => (r.annual_accommodation_fee || 0) > 0).length;
         const configuredInstallments = installmentConfig.filter(c => c.due_date).length;
         const totalInstallments = installmentConfig.length;
-        return { routeCount, stopsWithFees, configuredInstallments, totalInstallments, billingMode };
-    }, [routes, routePickupMappings, installmentConfig, billingMode]);
+        return { hostelCount, roomTypesWithFees, configuredInstallments, totalInstallments };
+    }, [hostels, roomTypeFees, installmentConfig]);
 
-    // Get installment labels based on current billing mode
     const currentInstallmentLabels = useMemo(() => {
         const fn = INSTALLMENT_LABELS[billingMode];
         return fn ? fn(workingMonths, numTerms) : [];
@@ -85,29 +87,31 @@ const TransportFeesMaster = () => {
         if (!branchId) return;
         setLoading(true);
         try {
-            const [feesRes, routesRes, mappingsRes, installmentRes] = await Promise.all([
-                supabase.from('transport_fees_master').select('*').eq('branch_id', branchId).limit(1),
-                supabase.from('transport_routes').select('id, route_title, is_active').eq('branch_id', branchId).order('route_title'),
-                supabase.from('route_pickup_point_mappings').select('*, route:route_id(route_title), pickup_point:pickup_point_id(name)').eq('branch_id', branchId).order('stop_order'),
-                supabase.from('transport_fee_installment_config').select('*').eq('branch_id', branchId).eq('session_id', currentSessionId).order('installment_number'),
+            const [masterRes, hostelsRes, roomTypesRes, roomTypeFeesRes, installmentRes] = await Promise.all([
+                supabase.from('hostel_fees_master').select('*').eq('branch_id', branchId).eq('session_id', currentSessionId).maybeSingle(),
+                supabase.from('hostels').select('id, name').eq('branch_id', branchId).order('name'),
+                supabase.from('hostel_room_types').select('id, name').eq('branch_id', branchId).order('name'),
+                supabase.from('hostel_room_type_fees').select('*').eq('branch_id', branchId).eq('session_id', currentSessionId),
+                supabase.from('hostel_fee_installment_config').select('*').eq('branch_id', branchId).eq('session_id', currentSessionId).order('installment_number'),
             ]);
 
-            setRoutes(routesRes.data || []);
-            setRoutePickupMappings(mappingsRes.data || []);
-
-            // Load billing settings from first transport_fees_master row
-            const masterRow = feesRes.data?.[0];
-            if (masterRow) {
-                setBillingSettingsId(masterRow.id);
-                if (masterRow.billing_mode) setBillingMode(masterRow.billing_mode);
-                if (masterRow.working_months) setWorkingMonths(masterRow.working_months);
-                if (masterRow.num_terms) setNumTerms(masterRow.num_terms);
-                if (masterRow.one_way_percentage != null) setOneWayPercentage(masterRow.one_way_percentage);
-                if (masterRow.prorate_mid_year != null) setProrateMidYear(masterRow.prorate_mid_year);
-            }
-
-            // Load installment config
+            setHostels(hostelsRes.data || []);
+            setRoomTypes(roomTypesRes.data || []);
+            setRoomTypeFees(roomTypeFeesRes.data || []);
             setInstallmentConfig(installmentRes.data || []);
+
+            // Load billing settings
+            const master = masterRes.data;
+            if (master) {
+                setBillingSettingsId(master.id);
+                setBillingMode(master.billing_mode || 'annual');
+                setWorkingMonths(master.working_months || 10);
+                setNumTerms(master.num_terms || 3);
+                setProrateMidYear(master.prorate_mid_year !== false);
+                setHasMessFee(master.has_mess_fee || false);
+                setHasLaundryFee(master.has_laundry_fee || false);
+                setHasElectricityFee(master.has_electricity_fee || false);
+            }
         } catch (error) {
             toast({ variant: "destructive", title: "Error fetching data", description: error.message });
         } finally {
@@ -120,68 +124,124 @@ const TransportFeesMaster = () => {
     }, [fetchData]);
 
     // ═══════════════════════════════════════════════════
-    // TAB 1: Billing Setup Save
+    // TAB 1: Billing Setup
     // ═══════════════════════════════════════════════════
     const handleSaveBillingSetup = async () => {
         setSaving(true);
         try {
-            const billingPayload = {
+            const payload = {
                 branch_id: branchId,
-                organization_id: organizationId,
                 session_id: currentSessionId,
+                organization_id: organizationId,
                 billing_mode: billingMode,
                 working_months: workingMonths,
                 num_terms: numTerms,
-                one_way_percentage: parseFloat(oneWayPercentage),
                 prorate_mid_year: prorateMidYear,
+                has_mess_fee: hasMessFee,
+                has_laundry_fee: hasLaundryFee,
+                has_electricity_fee: hasElectricityFee,
+                updated_at: new Date().toISOString(),
             };
 
-            // Upsert billing settings into transport_fees_master
-            // We store billing config in the first row (month = 'April' as anchor)
-            const { error: deleteError } = await supabase
-                .from('transport_fees_master')
-                .delete()
-                .eq('branch_id', branchId);
-            if (deleteError) throw deleteError;
+            if (billingSettingsId) {
+                const { error } = await supabase
+                    .from('hostel_fees_master')
+                    .update(payload)
+                    .eq('id', billingSettingsId);
+                if (error) throw error;
+            } else {
+                const { data, error } = await supabase
+                    .from('hostel_fees_master')
+                    .insert(payload)
+                    .select('id')
+                    .single();
+                if (error) throw error;
+                setBillingSettingsId(data.id);
+            }
 
-            const { error: insertError } = await supabase
-                .from('transport_fees_master')
-                .insert({ ...billingPayload, month: 'April', due_date: null, fine_type: 'none', fine_value: null });
-            if (insertError) throw insertError;
-
-            toast({ title: "Billing Setup Saved", description: `Mode: ${billingMode.replace('_', ' ')} | Working Months: ${workingMonths}` });
+            toast({ title: "Billing Setup Saved", description: `Mode: ${billingMode.replace('_', ' ')}` });
         } catch (error) {
-            toast({ variant: "destructive", title: "Error saving billing setup", description: error.message });
+            toast({ variant: "destructive", title: "Error saving", description: error.message });
         } finally {
             setSaving(false);
         }
     };
 
     // ═══════════════════════════════════════════════════
-    // TAB 2: Route Fees
+    // TAB 2: Room-Type Fees
     // ═══════════════════════════════════════════════════
-    const handleStopFeeChange = async (mappingId, field, value) => {
-        const numVal = value ? parseFloat(value) : null;
-        const updateObj = { [field]: numVal };
+    const handleRoomTypeFeeChange = (hostelId, roomTypeName, field, value) => {
+        setRoomTypeFees(prev => {
+            const idx = prev.findIndex(r => r.hostel_id === hostelId && r.room_type === roomTypeName);
+            const numVal = value ? parseFloat(value) : 0;
+            if (idx >= 0) {
+                const updated = [...prev];
+                updated[idx] = { ...updated[idx], [field]: numVal };
+                return updated;
+            }
+            return [...prev, {
+                branch_id: branchId,
+                session_id: currentSessionId,
+                organization_id: organizationId,
+                hostel_id: hostelId,
+                room_type: roomTypeName,
+                annual_accommodation_fee: 0,
+                annual_mess_fee: 0,
+                annual_laundry_fee: 0,
+                annual_electricity_fee: 0,
+                [field]: numVal,
+            }];
+        });
+    };
 
-        // Auto-sync: if annual_fee changes, update monthly_fees = annual / working_months
-        if (field === 'annual_fee' && numVal != null) {
-            updateObj.monthly_fees = Math.round((numVal / workingMonths) * 100) / 100;
-        }
-        // If monthly_fees changes, update annual_fee = monthly * working_months
-        if (field === 'monthly_fees' && numVal != null) {
-            updateObj.annual_fee = Math.round(numVal * workingMonths * 100) / 100;
-        }
+    const getRoomTypeFeeValue = (hostelId, roomTypeName, field) => {
+        const row = roomTypeFees.find(r => r.hostel_id === hostelId && r.room_type === roomTypeName);
+        return row?.[field] || '';
+    };
 
-        const { error } = await supabase
-            .from('route_pickup_point_mappings')
-            .update(updateObj)
-            .eq('id', mappingId);
+    const getRoomTypeTotal = (hostelId, roomTypeName) => {
+        const row = roomTypeFees.find(r => r.hostel_id === hostelId && r.room_type === roomTypeName);
+        if (!row) return 0;
+        return (row.annual_accommodation_fee || 0) + (row.annual_mess_fee || 0) + (row.annual_laundry_fee || 0) + (row.annual_electricity_fee || 0);
+    };
 
-        if (error) {
-            toast({ variant: 'destructive', title: 'Error updating stop fee', description: error.message });
-        } else {
-            setRoutePickupMappings(prev => prev.map(m => m.id === mappingId ? { ...m, ...updateObj } : m));
+    const handleSaveRoomTypeFees = async () => {
+        setSaving(true);
+        try {
+            // Delete existing and re-insert
+            await supabase
+                .from('hostel_room_type_fees')
+                .delete()
+                .eq('branch_id', branchId)
+                .eq('session_id', currentSessionId);
+
+            const validRows = roomTypeFees.filter(r =>
+                r.hostel_id && r.room_type && (
+                    (r.annual_accommodation_fee || 0) > 0 ||
+                    (r.annual_mess_fee || 0) > 0 ||
+                    (r.annual_laundry_fee || 0) > 0 ||
+                    (r.annual_electricity_fee || 0) > 0
+                )
+            ).map(({ id, ...rest }) => ({
+                ...rest,
+                branch_id: branchId,
+                session_id: currentSessionId,
+                organization_id: organizationId,
+            }));
+
+            if (validRows.length > 0) {
+                const { error } = await supabase
+                    .from('hostel_room_type_fees')
+                    .insert(validRows);
+                if (error) throw error;
+            }
+
+            toast({ title: "Room-Type Fees Saved", description: `${validRows.length} room type fees configured.` });
+            fetchData();
+        } catch (error) {
+            toast({ variant: "destructive", title: "Error saving", description: error.message });
+        } finally {
+            setSaving(false);
         }
     };
 
@@ -191,7 +251,6 @@ const TransportFeesMaster = () => {
     const handleGenerateInstallments = () => {
         const labels = currentInstallmentLabels;
         const existingMap = new Map(installmentConfig.map(c => [c.installment_number, c]));
-
         const newConfig = labels.map(({ num, label }) => {
             const existing = existingMap.get(num);
             return existing || {
@@ -208,7 +267,6 @@ const TransportFeesMaster = () => {
         setInstallmentConfig(newConfig);
     };
 
-    // Auto-generate when billing mode changes
     useEffect(() => {
         if (!loading && branchId) {
             handleGenerateInstallments();
@@ -218,25 +276,18 @@ const TransportFeesMaster = () => {
     const handleInstallmentChange = (index, field, value) => {
         const updated = [...installmentConfig];
         const item = { ...updated[index] };
-
         if (field === 'fine_value') {
             item[field] = value === '' ? 0 : parseFloat(value);
         } else {
             item[field] = value;
         }
-        if (field === 'fine_type' && value === 'none') {
-            item.fine_value = 0;
-        }
-
+        if (field === 'fine_type' && value === 'none') item.fine_value = 0;
         updated[index] = item;
 
         if (copyFirst && index === 0) {
-            const first = item;
             setInstallmentConfig(updated.map((c, i) => i === 0 ? c : {
-                ...c,
-                due_date: first.due_date,
-                fine_type: first.fine_type,
-                fine_value: first.fine_type !== 'none' ? first.fine_value : 0,
+                ...c, due_date: item.due_date, fine_type: item.fine_type,
+                fine_value: item.fine_type !== 'none' ? item.fine_value : 0,
             }));
         } else {
             setInstallmentConfig(updated);
@@ -246,9 +297,8 @@ const TransportFeesMaster = () => {
     const handleSaveInstallments = async () => {
         setSaving(true);
         try {
-            // Delete existing config for this branch+session
             await supabase
-                .from('transport_fee_installment_config')
+                .from('hostel_fee_installment_config')
                 .delete()
                 .eq('branch_id', branchId)
                 .eq('session_id', currentSessionId);
@@ -258,22 +308,21 @@ const TransportFeesMaster = () => {
                 session_id: currentSessionId,
                 organization_id: organizationId,
                 installment_number: c.installment_number,
-                installment_label: c.installment_label || currentInstallmentLabels.find(l => l.num === c.installment_number)?.label || `Installment ${c.installment_number}`,
+                installment_label: c.installment_label || `Installment ${c.installment_number}`,
                 due_date: c.due_date || null,
                 fine_type: c.fine_type || 'none',
                 fine_value: c.fine_type !== 'none' ? (parseFloat(c.fine_value) || 0) : 0,
             }));
 
             const { error } = await supabase
-                .from('transport_fee_installment_config')
+                .from('hostel_fee_installment_config')
                 .insert(insertData);
-
             if (error) throw error;
 
             toast({ title: "Due Dates & Fines Saved", description: `${insertData.length} installments configured.` });
             fetchData();
         } catch (error) {
-            toast({ variant: "destructive", title: "Error saving installments", description: error.message });
+            toast({ variant: "destructive", title: "Error saving", description: error.message });
         } finally {
             setSaving(false);
         }
@@ -285,17 +334,6 @@ const TransportFeesMaster = () => {
         return isValid(date) ? format(date, 'yyyy-MM-dd') : '';
     };
 
-    // Group mappings by route
-    const routeMappings = useMemo(() => {
-        const grouped = {};
-        routePickupMappings.forEach(m => {
-            const routeId = m.route_id;
-            if (!grouped[routeId]) grouped[routeId] = { route: m.route, stops: [] };
-            grouped[routeId].stops.push(m);
-        });
-        return grouped;
-    }, [routePickupMappings]);
-
     if (loading) {
         return <DashboardLayout><div className="flex justify-center items-center h-64"><Loader2 className="h-8 w-8 animate-spin" /></div></DashboardLayout>;
     }
@@ -304,9 +342,9 @@ const TransportFeesMaster = () => {
         <DashboardLayout>
             <div className="p-4 sm:p-6 lg:p-8">
                 <Helmet>
-                    <title>Transport Fees Master | Jashchar ERP</title>
+                    <title>Hostel Fees Master | Jashchar ERP</title>
                 </Helmet>
-                <h1 className="text-2xl font-bold mb-6">💰 Transport Fees Master</h1>
+                <h1 className="text-2xl font-bold mb-6">🏠 Hostel Fees Master</h1>
 
                 {/* Stats Cards */}
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
@@ -318,14 +356,14 @@ const TransportFeesMaster = () => {
                     </div>
                     <div className="bg-card rounded-xl shadow p-4 border-l-4 border-green-500">
                         <div className="flex items-center gap-3">
-                            <Route className="h-8 w-8 text-green-500" />
-                            <div><p className="text-xs text-muted-foreground">Active Routes</p><p className="text-2xl font-bold">{stats.routeCount}</p></div>
+                            <Building className="h-8 w-8 text-green-500" />
+                            <div><p className="text-xs text-muted-foreground">Hostels</p><p className="text-2xl font-bold">{stats.hostelCount}</p></div>
                         </div>
                     </div>
                     <div className="bg-card rounded-xl shadow p-4 border-l-4 border-purple-500">
                         <div className="flex items-center gap-3">
-                            <MapPin className="h-8 w-8 text-purple-500" />
-                            <div><p className="text-xs text-muted-foreground">Stops with Fees</p><p className="text-2xl font-bold">{stats.stopsWithFees}</p></div>
+                            <Bed className="h-8 w-8 text-purple-500" />
+                            <div><p className="text-xs text-muted-foreground">Room Types with Fees</p><p className="text-2xl font-bold">{stats.roomTypesWithFees}</p></div>
                         </div>
                     </div>
                     <div className="bg-card rounded-xl shadow p-4 border-l-4 border-amber-500">
@@ -341,8 +379,8 @@ const TransportFeesMaster = () => {
                     <Button variant={activeTab === 'billing' ? 'default' : 'outline'} onClick={() => setActiveTab('billing')}>
                         <Settings className="mr-2 h-4 w-4" /> Billing Setup
                     </Button>
-                    <Button variant={activeTab === 'routewise' ? 'default' : 'outline'} onClick={() => setActiveTab('routewise')}>
-                        <Route className="mr-2 h-4 w-4" /> Route-wise Fees
+                    <Button variant={activeTab === 'roomfees' ? 'default' : 'outline'} onClick={() => setActiveTab('roomfees')}>
+                        <Bed className="mr-2 h-4 w-4" /> Room-Type Fees
                     </Button>
                     <Button variant={activeTab === 'duedates' ? 'default' : 'outline'} onClick={() => setActiveTab('duedates')}>
                         <Calendar className="mr-2 h-4 w-4" /> Due Dates & Fines
@@ -353,19 +391,19 @@ const TransportFeesMaster = () => {
                 {activeTab === 'billing' && (
                     <Card>
                         <CardHeader>
-                            <CardTitle>Billing Configuration</CardTitle>
-                            <p className="text-sm text-muted-foreground">Configure how transport fees are billed for this branch. This setting applies to ALL students.</p>
+                            <CardTitle>Hostel Billing Configuration</CardTitle>
+                            <p className="text-sm text-muted-foreground">Configure how hostel fees are billed for this branch.</p>
                         </CardHeader>
                         <CardContent className="space-y-8">
-                            {/* Billing Mode Selection */}
+                            {/* Billing Mode */}
                             <div>
                                 <Label className="text-base font-semibold mb-3 block">Billing Mode</Label>
                                 <RadioGroup value={billingMode} onValueChange={setBillingMode} className="space-y-3">
                                     {BILLING_MODES.map(mode => (
                                         <div key={mode.value} className={`flex items-start space-x-3 p-3 rounded-lg border transition-colors ${billingMode === mode.value ? 'border-primary bg-primary/5' : 'border-border hover:border-muted-foreground/30'}`}>
-                                            <RadioGroupItem value={mode.value} id={`billing_${mode.value}`} className="mt-0.5" />
+                                            <RadioGroupItem value={mode.value} id={`hbilling_${mode.value}`} className="mt-0.5" />
                                             <div>
-                                                <Label htmlFor={`billing_${mode.value}`} className="font-medium cursor-pointer">{mode.label}</Label>
+                                                <Label htmlFor={`hbilling_${mode.value}`} className="font-medium cursor-pointer">{mode.label}</Label>
                                                 <p className="text-sm text-muted-foreground">{mode.desc}</p>
                                             </div>
                                         </div>
@@ -373,84 +411,72 @@ const TransportFeesMaster = () => {
                                 </RadioGroup>
                             </div>
 
-                            {/* Working Months (only for monthly) */}
                             {billingMode === 'monthly' && (
                                 <div className="p-4 bg-muted/30 rounded-lg border">
                                     <Label className="font-semibold">Working Months</Label>
-                                    <p className="text-sm text-muted-foreground mb-2">How many months does your school operate per session?</p>
+                                    <p className="text-sm text-muted-foreground mb-2">How many months does the hostel operate per session?</p>
                                     <Select value={String(workingMonths)} onValueChange={(v) => setWorkingMonths(parseInt(v))}>
                                         <SelectTrigger className="w-48"><SelectValue /></SelectTrigger>
                                         <SelectContent>
-                                            <SelectItem value="10">10 months (Jun-Mar)</SelectItem>
-                                            <SelectItem value="11">11 months (May-Mar)</SelectItem>
-                                            <SelectItem value="12">12 months (Apr-Mar)</SelectItem>
+                                            <SelectItem value="10">10 months</SelectItem>
+                                            <SelectItem value="11">11 months</SelectItem>
+                                            <SelectItem value="12">12 months</SelectItem>
                                         </SelectContent>
                                     </Select>
                                 </div>
                             )}
 
-                            {/* Number of Terms (only for term_wise) */}
                             {billingMode === 'term_wise' && (
                                 <div className="p-4 bg-muted/30 rounded-lg border">
                                     <Label className="font-semibold">Number of Terms</Label>
-                                    <p className="text-sm text-muted-foreground mb-2">How many academic terms per session?</p>
                                     <Select value={String(numTerms)} onValueChange={(v) => setNumTerms(parseInt(v))}>
                                         <SelectTrigger className="w-48"><SelectValue /></SelectTrigger>
                                         <SelectContent>
-                                            <SelectItem value="2">2 Terms (Semester)</SelectItem>
-                                            <SelectItem value="3">3 Terms (Trimester)</SelectItem>
-                                            <SelectItem value="4">4 Terms (Quarter)</SelectItem>
+                                            <SelectItem value="2">2 Terms</SelectItem>
+                                            <SelectItem value="3">3 Terms</SelectItem>
+                                            <SelectItem value="4">4 Terms</SelectItem>
                                         </SelectContent>
                                     </Select>
                                 </div>
                             )}
 
-                            {/* Additional Settings */}
+                            {/* Fee Components Toggle */}
                             <div className="space-y-4 p-4 bg-muted/30 rounded-lg border">
-                                <Label className="font-semibold text-base">Additional Settings</Label>
-                                
+                                <Label className="font-semibold text-base">Fee Components</Label>
+                                <p className="text-sm text-muted-foreground">Select which components are charged separately. Accommodation is always included.</p>
+
                                 <div className="flex items-center justify-between">
                                     <div>
-                                        <Label className="font-medium">Pro-rata for mid-year joining</Label>
-                                        <p className="text-sm text-muted-foreground">Auto-adjust fee when student joins mid-session</p>
+                                        <Label className="font-medium">Mess/Food Fee</Label>
+                                        <p className="text-sm text-muted-foreground">Charge mess fee separately from room fee</p>
                                     </div>
-                                    <Switch checked={prorateMidYear} onCheckedChange={setProrateMidYear} />
+                                    <Switch checked={hasMessFee} onCheckedChange={setHasMessFee} />
                                 </div>
 
-                                <div className="flex items-center gap-4">
-                                    <div className="flex-1">
-                                        <Label className="font-medium">One-way fee percentage</Label>
-                                        <p className="text-sm text-muted-foreground">% of full fee charged for one-way transport</p>
+                                <div className="flex items-center justify-between">
+                                    <div>
+                                        <Label className="font-medium">Laundry Fee</Label>
+                                        <p className="text-sm text-muted-foreground">Charge laundry fee separately</p>
                                     </div>
-                                    <div className="flex items-center gap-2 w-32">
-                                        <Input
-                                            type="number"
-                                            min="10"
-                                            max="100"
-                                            value={oneWayPercentage}
-                                            onChange={(e) => setOneWayPercentage(e.target.value)}
-                                            className="h-9"
-                                        />
-                                        <span className="text-sm font-medium">%</span>
+                                    <Switch checked={hasLaundryFee} onCheckedChange={setHasLaundryFee} />
+                                </div>
+
+                                <div className="flex items-center justify-between">
+                                    <div>
+                                        <Label className="font-medium">Electricity/AC Fee</Label>
+                                        <p className="text-sm text-muted-foreground">Extra charge for AC rooms or electricity</p>
                                     </div>
+                                    <Switch checked={hasElectricityFee} onCheckedChange={setHasElectricityFee} />
                                 </div>
                             </div>
 
-                            {/* Preview */}
-                            <div className="p-4 bg-blue-50 dark:bg-blue-950/30 rounded-lg border border-blue-200 dark:border-blue-800">
-                                <div className="flex items-start gap-2">
-                                    <AlertCircle className="h-5 w-5 text-blue-500 mt-0.5" />
-                                    <div>
-                                        <p className="font-medium text-blue-700 dark:text-blue-300">Preview</p>
-                                        <p className="text-sm text-blue-600 dark:text-blue-400">
-                                            {billingMode === 'annual' && 'Students will see 1 annual fee row. They can pay any amount at any time.'}
-                                            {billingMode === 'monthly' && `Fee will be split into ${workingMonths} monthly installments. E.g., ₹30,000 annual = ₹${Math.round(30000/workingMonths).toLocaleString('en-IN')}/month`}
-                                            {billingMode === 'term_wise' && `Fee will be split into ${numTerms} term installments. E.g., ₹30,000 annual = ₹${Math.round(30000/numTerms).toLocaleString('en-IN')}/term`}
-                                            {billingMode === 'quarterly' && 'Fee will be split into 4 quarterly installments. E.g., ₹30,000 annual = ₹7,500/quarter'}
-                                            {billingMode === 'half_yearly' && 'Fee will be split into 2 half-yearly installments. E.g., ₹30,000 annual = ₹15,000/semester'}
-                                        </p>
-                                    </div>
+                            {/* Pro-rata */}
+                            <div className="flex items-center justify-between p-4 bg-muted/30 rounded-lg border">
+                                <div>
+                                    <Label className="font-medium">Pro-rata for mid-year joining</Label>
+                                    <p className="text-sm text-muted-foreground">Auto-adjust fee when student joins mid-session</p>
                                 </div>
+                                <Switch checked={prorateMidYear} onCheckedChange={setProrateMidYear} />
                             </div>
 
                             <div className="flex justify-end">
@@ -463,74 +489,101 @@ const TransportFeesMaster = () => {
                     </Card>
                 )}
 
-                {/* ═══════════════ TAB 2: ROUTE-WISE FEES ═══════════════ */}
-                {activeTab === 'routewise' && (
+                {/* ═══════════════ TAB 2: ROOM-TYPE FEES ═══════════════ */}
+                {activeTab === 'roomfees' && (
                     <div className="space-y-6">
                         <div className="p-3 bg-blue-50 dark:bg-blue-950/30 rounded-lg border border-blue-200 dark:border-blue-800 text-sm">
                             <div className="flex items-start gap-2">
                                 <AlertCircle className="h-4 w-4 text-blue-500 mt-0.5" />
                                 <p className="text-blue-700 dark:text-blue-300">
-                                    <strong>Annual Fee is the Source of Truth.</strong> Enter the annual fee per stop. 
-                                    Monthly fee is auto-calculated as Annual ÷ {workingMonths} months.
-                                    {billingMode !== 'monthly' && billingMode !== 'annual' && 
-                                        ` Per-installment = Annual ÷ ${billingMode === 'quarterly' ? '4' : billingMode === 'half_yearly' ? '2' : numTerms}.`}
+                                    <strong>Annual Fee is the Source of Truth.</strong> Enter annual fees per room type for each hostel.
+                                    {hasMessFee && ' Mess fee column is enabled.'}
+                                    {hasLaundryFee && ' Laundry fee column is enabled.'}
+                                    {hasElectricityFee && ' Electricity fee column is enabled.'}
                                 </p>
                             </div>
                         </div>
 
-                        {Object.keys(routeMappings).length === 0 ? (
+                        {hostels.length === 0 ? (
                             <Card className="p-8 text-center text-muted-foreground">
-                                <Route className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                                <p>No routes with pickup point mappings found.</p>
-                                <p className="text-sm mt-1">Configure routes and map pickup points first.</p>
+                                <Building className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                                <p>No hostels found. Create hostels first.</p>
+                            </Card>
+                        ) : roomTypes.length === 0 ? (
+                            <Card className="p-8 text-center text-muted-foreground">
+                                <Bed className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                                <p>No room types found. Configure room types first.</p>
                             </Card>
                         ) : (
-                            Object.entries(routeMappings).map(([routeId, { route, stops }]) => (
-                                <Card key={routeId}>
+                            hostels.map(hostel => (
+                                <Card key={hostel.id}>
                                     <CardHeader>
                                         <CardTitle className="flex items-center gap-2">
-                                            <Route className="h-5 w-5 text-primary" />
-                                            {route?.route_title || 'Unknown Route'}
-                                            <span className="text-sm font-normal text-muted-foreground ml-2">({stops.length} stops)</span>
+                                            <Building className="h-5 w-5 text-primary" />
+                                            {hostel.name}
                                         </CardTitle>
                                     </CardHeader>
                                     <CardContent>
-                                        <div className="border rounded-lg overflow-hidden">
+                                        <div className="border rounded-lg overflow-x-auto">
                                             <table className="w-full text-sm">
                                                 <thead className="bg-muted/50">
                                                     <tr>
-                                                        <th className="px-4 py-2 text-left w-12">Order</th>
-                                                        <th className="px-4 py-2 text-left">Stop Name</th>
-                                                        <th className="px-4 py-2 text-left">Distance</th>
-                                                        <th className="px-4 py-2 text-left w-44">Annual Fee (₹)</th>
-                                                        <th className="px-4 py-2 text-left w-36">Monthly (₹)</th>
+                                                        <th className="px-4 py-2 text-left">Room Type</th>
+                                                        <th className="px-4 py-2 text-left w-40">Room/Accommodation (₹)</th>
+                                                        {hasMessFee && <th className="px-4 py-2 text-left w-36">Mess (₹)</th>}
+                                                        {hasLaundryFee && <th className="px-4 py-2 text-left w-36">Laundry (₹)</th>}
+                                                        {hasElectricityFee && <th className="px-4 py-2 text-left w-36">Electricity (₹)</th>}
+                                                        <th className="px-4 py-2 text-left w-36">Total Annual (₹)</th>
                                                     </tr>
                                                 </thead>
                                                 <tbody>
-                                                    {stops.map((stop) => (
-                                                        <tr key={stop.id} className="border-t hover:bg-muted/30">
-                                                            <td className="px-4 py-2 font-medium">{stop.stop_order || '-'}</td>
+                                                    {roomTypes.map(rt => (
+                                                        <tr key={rt.id} className="border-t hover:bg-muted/30">
+                                                            <td className="px-4 py-2 font-medium">{rt.name}</td>
                                                             <td className="px-4 py-2">
-                                                                <div className="flex items-center gap-1">
-                                                                    <MapPin className="h-3 w-3 text-muted-foreground" />
-                                                                    {stop.pickup_point?.name || 'Unknown'}
-                                                                </div>
+                                                                <Input
+                                                                    type="number"
+                                                                    className="h-8 w-32"
+                                                                    value={getRoomTypeFeeValue(hostel.id, rt.name, 'annual_accommodation_fee')}
+                                                                    onChange={(e) => handleRoomTypeFeeChange(hostel.id, rt.name, 'annual_accommodation_fee', e.target.value)}
+                                                                    placeholder="0"
+                                                                />
                                                             </td>
-                                                            <td className="px-4 py-2">{stop.distance || '-'}</td>
-                                                            <td className="px-4 py-2">
-                                                                <div className="flex items-center gap-1">
-                                                                    <IndianRupee className="h-3 w-3 text-muted-foreground" />
+                                                            {hasMessFee && (
+                                                                <td className="px-4 py-2">
                                                                     <Input
                                                                         type="number"
                                                                         className="h-8 w-32"
-                                                                        value={stop.annual_fee || ''}
-                                                                        onChange={(e) => handleStopFeeChange(stop.id, 'annual_fee', e.target.value)}
+                                                                        value={getRoomTypeFeeValue(hostel.id, rt.name, 'annual_mess_fee')}
+                                                                        onChange={(e) => handleRoomTypeFeeChange(hostel.id, rt.name, 'annual_mess_fee', e.target.value)}
                                                                         placeholder="0"
                                                                     />
-                                                                </div>
-                                                            </td>
-                                                            <td className="px-4 py-2 text-muted-foreground">
-                                                                ₹{((stop.annual_fee || stop.monthly_fees * workingMonths || 0) / workingMonths).toLocaleString('en-IN', { maximumFractionDigits: 0 })}/mo
+                                                                </td>
+                                                            )}
+                                                            {hasLaundryFee && (
+                                                                <td className="px-4 py-2">
+                                                                    <Input
+                                                                        type="number"
+                                                                        className="h-8 w-32"
+                                                                        value={getRoomTypeFeeValue(hostel.id, rt.name, 'annual_laundry_fee')}
+                                                                        onChange={(e) => handleRoomTypeFeeChange(hostel.id, rt.name, 'annual_laundry_fee', e.target.value)}
+                                                                        placeholder="0"
+                                                                    />
+                                                                </td>
+                                                            )}
+                                                            {hasElectricityFee && (
+                                                                <td className="px-4 py-2">
+                                                                    <Input
+                                                                        type="number"
+                                                                        className="h-8 w-32"
+                                                                        value={getRoomTypeFeeValue(hostel.id, rt.name, 'annual_electricity_fee')}
+                                                                        onChange={(e) => handleRoomTypeFeeChange(hostel.id, rt.name, 'annual_electricity_fee', e.target.value)}
+                                                                        placeholder="0"
+                                                                    />
+                                                                </td>
+                                                            )}
+                                                            <td className="px-4 py-2 font-semibold text-primary">
+                                                                ₹{getRoomTypeTotal(hostel.id, rt.name).toLocaleString('en-IN')}
                                                             </td>
                                                         </tr>
                                                     ))}
@@ -540,6 +593,15 @@ const TransportFeesMaster = () => {
                                     </CardContent>
                                 </Card>
                             ))
+                        )}
+
+                        {hostels.length > 0 && roomTypes.length > 0 && (
+                            <div className="flex justify-end">
+                                <Button onClick={handleSaveRoomTypeFees} disabled={saving}>
+                                    {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+                                    Save All Room-Type Fees
+                                </Button>
+                            </div>
                         )}
                     </div>
                 )}
@@ -552,13 +614,12 @@ const TransportFeesMaster = () => {
                                 <div>
                                     <CardTitle>Due Dates & Fines</CardTitle>
                                     <p className="text-sm text-muted-foreground mt-1">
-                                        Configure due dates for <strong className="capitalize">{billingMode.replace('_', ' ')}</strong> billing mode 
-                                        ({currentInstallmentLabels.length} installment{currentInstallmentLabels.length !== 1 ? 's' : ''})
+                                        Configure due dates for <strong className="capitalize">{billingMode.replace('_', ' ')}</strong> billing mode
                                     </p>
                                 </div>
                                 <div className="flex items-center space-x-2">
-                                    <Checkbox id="copyFirstInst" checked={copyFirst} onCheckedChange={setCopyFirst} />
-                                    <label htmlFor="copyFirstInst" className="text-sm font-medium">Copy first to all</label>
+                                    <Checkbox id="hcopyFirst" checked={copyFirst} onCheckedChange={setCopyFirst} />
+                                    <label htmlFor="hcopyFirst" className="text-sm font-medium">Copy first to all</label>
                                 </div>
                             </div>
                         </CardHeader>
@@ -597,16 +658,16 @@ const TransportFeesMaster = () => {
                                                             className="flex items-center space-x-4 mt-2"
                                                         >
                                                             <div className="flex items-center space-x-2">
-                                                                <RadioGroupItem value="none" id={`fine_none_${index}`} />
-                                                                <Label htmlFor={`fine_none_${index}`}>None</Label>
+                                                                <RadioGroupItem value="none" id={`hfine_none_${index}`} />
+                                                                <Label htmlFor={`hfine_none_${index}`}>None</Label>
                                                             </div>
                                                             <div className="flex items-center space-x-2">
-                                                                <RadioGroupItem value="percentage" id={`fine_pct_${index}`} />
-                                                                <Label htmlFor={`fine_pct_${index}`}>Percentage (%)</Label>
+                                                                <RadioGroupItem value="percentage" id={`hfine_pct_${index}`} />
+                                                                <Label htmlFor={`hfine_pct_${index}`}>Percentage (%)</Label>
                                                             </div>
                                                             <div className="flex items-center space-x-2">
-                                                                <RadioGroupItem value="fixed" id={`fine_fix_${index}`} />
-                                                                <Label htmlFor={`fine_fix_${index}`}>Fixed Amount</Label>
+                                                                <RadioGroupItem value="fixed" id={`hfine_fix_${index}`} />
+                                                                <Label htmlFor={`hfine_fix_${index}`}>Fixed Amount</Label>
                                                             </div>
                                                         </RadioGroup>
                                                     </div>
@@ -642,4 +703,4 @@ const TransportFeesMaster = () => {
     );
 };
 
-export default TransportFeesMaster;
+export default HostelFeesMaster;

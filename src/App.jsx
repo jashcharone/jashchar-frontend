@@ -477,6 +477,7 @@ const Hostels = lazy(() => import('@/pages/super-admin/hostel/Hostels'));
 const HostelRooms = lazy(() => import('@/pages/super-admin/hostel/HostelRooms'));
 const RoomTypes = lazy(() => import('@/pages/super-admin/hostel/RoomTypes'));
 const HostelFee = lazy(() => import('@/pages/super-admin/hostel/HostelFee'));
+const HostelFeesMaster = lazy(() => import('@/pages/super-admin/hostel/HostelFeesMaster'));
 const HostelAnalysis = lazy(() => import('@/pages/super-admin/hostel/HostelAnalysis'));
 const HostelAttendance = lazy(() => import('@/pages/super-admin/hostel/HostelAttendance'));
 const MarkAttendance = lazy(() => import('@/pages/super-admin/hostel/MarkAttendance'));
@@ -1742,6 +1743,7 @@ function App() {
             <Route path={ROUTES.SUPER_ADMIN.HOSTEL_ROOMS} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="hostel"><HostelRooms /></ProtectedRoute>} />
             <Route path={ROUTES.SUPER_ADMIN.ROOM_TYPES} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="hostel"><RoomTypes /></ProtectedRoute>} />
             <Route path={ROUTES.SUPER_ADMIN.HOSTEL_FEE} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="hostel"><HostelFee /></ProtectedRoute>} />
+            <Route path={ROUTES.SUPER_ADMIN.HOSTEL_FEES_MASTER} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="hostel"><HostelFeesMaster /></ProtectedRoute>} />
             <Route path={ROUTES.SUPER_ADMIN.HOSTEL_ANALYSIS} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="hostel"><HostelAnalysis /></ProtectedRoute>} />
             <Route path={ROUTES.SUPER_ADMIN.HOSTEL_ATTENDANCE} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="hostel"><HostelAttendance /></ProtectedRoute>} />
             <Route path={ROUTES.SUPER_ADMIN.HOSTEL_MARK_ATTENDANCE} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="hostel"><MarkAttendance /></ProtectedRoute>} />

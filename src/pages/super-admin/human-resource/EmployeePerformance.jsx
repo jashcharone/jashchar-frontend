@@ -1,6 +1,6 @@
 ﻿import React, { useState, useEffect } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
-import { supabase } from '@/lib/customSupabaseClient';
+import hrApi from '@/services/hrApi';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { useBranch } from '@/contexts/BranchContext';
 import { useToast } from '@/components/ui/use-toast';
@@ -35,12 +35,16 @@ const EmployeePerformance = () => {
     const fetchData = async () => {
         if (!selectedBranch?.id) return;
         setLoading(true);
-        const [staffRes, reviewsRes] = await Promise.all([
-            supabase.from('employee_profiles').select('id, full_name').eq('branch_id', selectedBranch.id),
-            supabase.from('employee_performance').select('*, employee:employee_id(full_name)').eq('branch_id', selectedBranch.id).order('review_date', { ascending: false })
-        ]);
-        setStaffList(staffRes.data || []);
-        setReviews(reviewsRes.data || []);
+        try {
+            const [staffRes, reviewsRes] = await Promise.all([
+                hrApi.getPerformanceStaffList({ branchId: selectedBranch.id }),
+                hrApi.getPerformanceReviews({ branchId: selectedBranch.id })
+            ]);
+            setStaffList(staffRes.data?.data || []);
+            setReviews(reviewsRes.data?.data || []);
+        } catch (err) {
+            console.error('Failed to fetch performance data:', err);
+        }
         setLoading(false);
     };
 
@@ -53,19 +57,18 @@ const EmployeePerformance = () => {
             toast({ variant: 'destructive', title: 'Please select a branch' });
             return;
         }
-        const { error } = await supabase.from('employee_performance').insert({
-            ...newReview,
-            branch_id: selectedBranch.id,
-            reviewer_id: user.id
-        });
-
-        if (error) {
-            toast({ variant: 'destructive', title: 'Failed to add review', description: error.message });
-        } else {
+        try {
+            await hrApi.createPerformanceReview({
+                ...newReview,
+                branch_id: selectedBranch.id,
+                reviewer_id: user.id
+            });
             toast({ title: 'Success', description: 'Performance review added.' });
             setIsModalOpen(false);
             fetchData();
             setNewReview({ employee_id: '', rating: 3, feedback: '', review_date: new Date().toISOString().split('T')[0] });
+        } catch (err) {
+            toast({ variant: 'destructive', title: 'Failed to add review', description: err.message });
         }
     };
 

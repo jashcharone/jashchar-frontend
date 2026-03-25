@@ -103,7 +103,10 @@ const LiveFaceAttendance = () => {
     // 🚀 AI Engine State (Python backend with ArcFace 512D)
     const [useAIEngine, setUseAIEngine] = useState(true); // Prefer AI Engine
     const [aiEngineAvailable, setAIEngineAvailable] = useState(false);
+    const [aiEngineHealthy, setAIEngineHealthy] = useState(false); // Engine running (even if FAISS empty)
     const [aiEngineChecking, setAIEngineChecking] = useState(true);
+    const aiEngineAvailableRef = useRef(false);
+    aiEngineAvailableRef.current = aiEngineAvailable;
     
     // 🔴 WebSocket State (Real-time recognition - Day 21)
     const [useWebSocket, setUseWebSocket] = useState(false); // Default HTTP polling (more reliable)
@@ -259,15 +262,29 @@ const LiveFaceAttendance = () => {
                         health?.data?.status === 'healthy'
                     );
                     if (isHealthy) {
-                        // Check if FAISS index has any faces enrolled
+                        setAIEngineHealthy(true); // Engine is running
+                        // Check if FAISS index has any faces enrolled for this branch
                         try {
-                            const indexData = await aiEngineApi.getIndexStatus();
-                            if ((indexData.total_faces || indexData?.data?.total_faces || 0) === 0) {
-                                console.log('⚠️ AI Engine healthy but FAISS index empty — using browser AI (click "Sync to AI" to use AI Engine)');
+                            const indexResp = await aiEngineApi.getIndexStatus(branchId);
+                            // Backend wraps as { success, data: { total_faces, indexes, branch_index, ... } }
+                            const respData = indexResp?.data || indexResp || {};
+                            // total_faces is normalized by backend; fallback: extract from indexes
+                            let totalFaces = respData.total_faces;
+                            if (totalFaces === undefined && respData.indexes) {
+                                const bid = branchId || localStorage.getItem('selectedBranchId');
+                                const branchIdx = bid
+                                    ? respData.indexes.find(i => i.branch_id === bid && !i.class_id)
+                                    : null;
+                                totalFaces = branchIdx ? (branchIdx.embedding_count || 0)
+                                    : respData.indexes.reduce((s, i) => s + (i.embedding_count || 0), 0);
+                            }
+                            totalFaces = totalFaces || 0;
+                            
+                            if (totalFaces === 0) {
+                                console.log('⚠️ AI Engine healthy but FAISS index empty — click "Sync to AI" to populate');
                                 setAIEngineAvailable(false);
                             } else {
                                 setAIEngineAvailable(true);
-                                const totalFaces = indexData.total_faces || indexData?.data?.total_faces || 0;
                                 console.log(`✅ AI Engine available (ArcFace 512D) — ${totalFaces} faces in FAISS index`);
                             }
                         } catch {
@@ -511,6 +528,13 @@ const LiveFaceAttendance = () => {
                 description: `${successCount} faces synced to AI Engine${failCount > 0 ? `, ${failCount} failed` : ''}`
             });
             
+            // Re-check AI Engine availability after sync
+            if (successCount > 0) {
+                setAIEngineAvailable(true);
+                // Restart scan loop so it picks up AI engine mode
+                if (isScanning) startFaceLoop();
+            }
+            
             // Refresh registered faces
             await fetchRegisteredFaces();
         } catch (err) {
@@ -605,7 +629,7 @@ const LiveFaceAttendance = () => {
         
         // 🔴 WebSocket Mode (Real-time, most efficient) - Day 21
         // Read from ref (not state) so we always see the latest value, even in callbacks
-        if (useWebSocketRef.current && aiEngineAvailable) {
+        if (useWebSocketRef.current && aiEngineAvailableRef.current) {
             // Connect to WebSocket if not already connected
             if (!ws.isConnected) {
                 ws.connect();
@@ -639,7 +663,7 @@ const LiveFaceAttendance = () => {
             isRecognizingRef.current = true;
             try {
                 // 🚀 USE AI ENGINE (Python ArcFace 512D) if available
-                if (useAIEngine && aiEngineAvailable) {
+                if (useAIEngine && aiEngineAvailableRef.current) {
                     // Capture frame
                     const imageBase64 = captureVideoFrame(videoRef.current);
                     if (!imageBase64) { isRecognizingRef.current = false; return; }
@@ -1194,16 +1218,16 @@ const LiveFaceAttendance = () => {
                             <Users className="w-3 h-3 mr-1" />
                             {registeredFaces.length} registered
                         </Badge>
-                        {aiEngineAvailable && (
+                        {aiEngineHealthy && (
                             <Button
                                 size="sm"
                                 variant="outline"
                                 onClick={syncFacesToAIEngine}
                                 disabled={syncing}
-                                className="h-7 text-xs border-blue-400 text-blue-600 hover:bg-blue-50"
+                                className={`h-7 text-xs ${aiEngineAvailable ? 'border-green-400 text-green-600 hover:bg-green-50' : 'border-orange-400 text-orange-600 hover:bg-orange-50'}`}
                             >
                                 {syncing ? <Loader2 className="w-3 h-3 mr-1 animate-spin" /> : <RefreshCw className="w-3 h-3 mr-1" />}
-                                {syncing ? 'Syncing...' : 'Sync to AI'}
+                                {syncing ? 'Syncing...' : (aiEngineAvailable ? 'Sync to AI' : '⚡ Sync to AI')}
                             </Button>
                         )}
                         <Badge 

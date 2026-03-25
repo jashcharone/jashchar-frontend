@@ -33,7 +33,7 @@ const STATUS_OPTS = [
 ];
 
 const initialFormData = {
-  route_title: '', start_location: '', end_location: '',
+  route_title: '', start_point: '', end_point: '',
   distance_km: '', estimated_time_minutes: '', route_type: 'both',
   is_active: true, note: '',
 };
@@ -85,7 +85,7 @@ const TransportRoutes = () => {
         }
         // Fetch assigned vehicle counts per route
         const { data: assignments } = await supabase
-          .from('transport_assign_vehicle')
+          .from('route_vehicle_assignments')
           .select('route_id')
           .in('route_id', routeIds);
         if (assignments) {
@@ -118,8 +118,8 @@ const TransportRoutes = () => {
       const q = searchQuery.toLowerCase();
       result = result.filter(r =>
         (r.route_title || '').toLowerCase().includes(q) ||
-        (r.start_location || '').toLowerCase().includes(q) ||
-        (r.end_location || '').toLowerCase().includes(q)
+        (r.start_point || '').toLowerCase().includes(q) ||
+        (r.end_point || '').toLowerCase().includes(q)
       );
     }
     return result;
@@ -134,8 +134,8 @@ const TransportRoutes = () => {
     setEditingRoute(route);
     setFormData({
       route_title: route.route_title || '',
-      start_location: route.start_location || '',
-      end_location: route.end_location || '',
+      start_point: route.start_point || '',
+      end_point: route.end_point || '',
       distance_km: route.distance_km || '',
       estimated_time_minutes: route.estimated_time_minutes || '',
       route_type: route.route_type || 'both',
@@ -154,7 +154,7 @@ const TransportRoutes = () => {
     if (filteredRoutes.length === 0) return toast({ variant: 'destructive', title: 'No data to export' });
     const headers = ['Route', 'Start', 'End', 'Type', 'Distance (km)', 'Time (min)', 'Stops', 'Vehicles', 'Active'];
     const rows = filteredRoutes.map(r => [
-      r.route_title || '', r.start_location || '', r.end_location || '', r.route_type || '',
+      r.route_title || '', r.start_point || '', r.end_point || '', r.route_type || '',
       r.distance_km || '', r.estimated_time_minutes || '', stopCounts[r.id] || 0, vehicleCounts[r.id] || 0, r.is_active ? 'Yes' : 'No'
     ]);
     const csv = [headers, ...rows].map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(',')).join('\n');
@@ -186,8 +186,8 @@ const TransportRoutes = () => {
 
     const payload = {
       route_title: formData.route_title.trim(),
-      start_location: formData.start_location || null,
-      end_location: formData.end_location || null,
+      start_point: formData.start_point || null,
+      end_point: formData.end_point || null,
       distance_km: formData.distance_km ? parseFloat(formData.distance_km) : null,
       estimated_time_minutes: formData.estimated_time_minutes ? parseInt(formData.estimated_time_minutes) : null,
       route_type: formData.route_type || null,
@@ -282,12 +282,12 @@ const TransportRoutes = () => {
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-2">
-                    <Label htmlFor="start_location">Start Location</Label>
-                    <Input id="start_location" value={formData.start_location} onChange={(e) => setFormData({...formData, start_location: e.target.value})} placeholder="e.g. School Gate" />
+                    <Label htmlFor="start_point">Start Location</Label>
+                    <Input id="start_point" value={formData.start_point} onChange={(e) => setFormData({...formData, start_point: e.target.value})} placeholder="e.g. School Gate" />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="end_location">End Location</Label>
-                    <Input id="end_location" value={formData.end_location} onChange={(e) => setFormData({...formData, end_location: e.target.value})} placeholder="e.g. Bus Stand" />
+                    <Label htmlFor="end_point">End Location</Label>
+                    <Input id="end_point" value={formData.end_point} onChange={(e) => setFormData({...formData, end_point: e.target.value})} placeholder="e.g. Bus Stand" />
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-3">
@@ -380,10 +380,10 @@ const TransportRoutes = () => {
                               <td className="px-3 py-3 text-muted-foreground">{(currentPage - 1) * itemsPerPage + index + 1}</td>
                               <td className="px-3 py-3">
                                 <div className="font-semibold">{route.route_title}</div>
-                                {(route.start_location || route.end_location) && (
+                                {(route.start_point || route.end_point) && (
                                   <div className="text-xs text-muted-foreground flex items-center gap-1">
                                     <MapPin className="h-3 w-3" />
-                                    {route.start_location || '?'} → {route.end_location || '?'}
+                                    {route.start_point || '?'} → {route.end_point || '?'}
                                   </div>
                                 )}
                               </td>

@@ -177,12 +177,17 @@ export const getFaceDescriptor = async (input) => {
 export const compareFaces = (descriptor1, descriptor2) => {
     if (!descriptor1 || !descriptor2) return Infinity;
     
-    // Ensure both are Float32Array with correct length (128)
+    // Ensure both are Float32Array
     const arr1 = ensureFloat32Array(descriptor1);
     const arr2 = ensureFloat32Array(descriptor2);
     
-    if (!arr1 || !arr2 || arr1.length !== 128 || arr2.length !== 128) {
-        console.warn('[FaceAI] Invalid descriptor length:', arr1?.length, arr2?.length);
+    if (!arr1 || !arr2) return Infinity;
+    
+    // Dimension mismatch (e.g. 128D browser vs 512D ArcFace) — incompatible, skip silently
+    if (arr1.length !== arr2.length) return Infinity;
+    
+    // Standard face-api.js uses 128D, ArcFace uses 512D
+    if (arr1.length !== 128 && arr1.length !== 512) {
         return Infinity;
     }
     

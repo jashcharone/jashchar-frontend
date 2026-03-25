@@ -181,8 +181,13 @@ export const aiEngineApi = {
     return apiCall('/camera/ai/enroll', 'POST', payload);
   },
   
-  // Get FAISS index status
-  getIndexStatus: () => apiCall('/camera/ai/index/status'),
+  // Get FAISS index status (pass branchId for branch-specific count)
+  getIndexStatus: (branchId) => {
+    const context = getUserContext();
+    const branch_id = branchId || context.branchId;
+    const query = branch_id ? `?branch_id=${branch_id}` : '';
+    return apiCall(`/camera/ai/index/status${query}`);
+  },
   
   // Rebuild FAISS index
   rebuildIndex: (branchId) => apiCall('/camera/ai/index/rebuild', 'POST', { branch_id: branchId }),

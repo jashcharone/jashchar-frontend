@@ -155,6 +155,14 @@ const hrApi = {
     createHolidayCalendar: (data) => api.post('/hr-module/holiday-calendars', data),
     addHoliday: (data) => api.post('/hr-module/holidays', data),
     deleteHoliday: (id) => api.delete(`/hr-module/holidays/${id}`),
+
+    // ═══════════════════════════════════════════════════════════════════════════
+    // EMPLOYEE PERFORMANCE REVIEWS
+    // ═══════════════════════════════════════════════════════════════════════════
+
+    getPerformanceReviews: (params) => api.get('/hr-module/performance-reviews', { params }),
+    getPerformanceStaffList: (params) => api.get('/hr-module/performance-reviews/staff', { params }),
+    createPerformanceReview: (data) => api.post('/hr-module/performance-reviews', data),
 };
 
 export default hrApi;

@@ -10,7 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
-import { Search, Loader2, IndianRupee, Users, AlertCircle, CheckCircle2, Clock, Phone, RefreshCcw, Bus, Home } from 'lucide-react';
+import { Search, Loader2, IndianRupee, Users, AlertCircle, CheckCircle2, Clock, Phone, RefreshCcw, Bus, Home, CalendarDays } from 'lucide-react';
 import { sortClasses, sortSections } from '@/utils/classOrderUtils';
 
 
@@ -41,6 +41,9 @@ const CollectFees = () => {
     const [selectedClass, setSelectedClass] = useState('all');
     const [selectedSection, setSelectedSection] = useState('all');
     const [keyword, setKeyword] = useState('');
+    const [dateFilter, setDateFilter] = useState('all');
+    const [dateFrom, setDateFrom] = useState('');
+    const [dateTo, setDateTo] = useState('');
     const [students, setStudents] = useState([]);
     const [allStudents, setAllStudents] = useState([]); // Store all fetched students for client-side filtering
     const [loading, setLoading] = useState(false);
@@ -143,6 +146,20 @@ const CollectFees = () => {
         setStudents(filteredStudents);
     }, [filteredStudents]);
 
+    // Admission Period date range helper
+    const getDateRange = (filter, from, to) => {
+        const now = new Date();
+        const toISO = (d) => d.toISOString().split('T')[0];
+        switch (filter) {
+            case 'today': return { from: toISO(now), to: toISO(now) };
+            case 'last7days': { const d = new Date(now); d.setDate(d.getDate() - 7); return { from: toISO(d), to: toISO(now) }; }
+            case 'last30days': { const d = new Date(now); d.setDate(d.getDate() - 30); return { from: toISO(d), to: toISO(now) }; }
+            case 'thisMonth': return { from: toISO(new Date(now.getFullYear(), now.getMonth(), 1)), to: toISO(now) };
+            case 'custom': return { from: from || null, to: to || null };
+            default: return { from: null, to: null };
+        }
+    };
+
     const handleSearch = async () => {
         if (!branchId) {
             toast({ variant: 'destructive', title: 'Branch not selected' });
@@ -177,6 +194,11 @@ const CollectFees = () => {
 
             // NOTE: Keyword search is done client-side for instant results
             // No server-side keyword filter needed
+
+            // Admission Period filter
+            const dateRange = getDateRange(dateFilter, dateFrom, dateTo);
+            if (dateRange.from) query = query.gte('admission_date', dateRange.from);
+            if (dateRange.to) query = query.lte('admission_date', dateRange.to);
 
             const { data, error } = await query.order('full_name');
 
@@ -629,7 +651,7 @@ const CollectFees = () => {
                     <CardTitle>Select Criteria</CardTitle>
                 </CardHeader>
                 <CardContent>
-                    <div className="grid grid-cols-1 md:grid-cols-5 gap-4 items-end">
+                    <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4 items-end">
                         <div className="space-y-2">
                             <label className="text-sm font-medium">Class</label>
                             <Select value={selectedClass} onValueChange={setSelectedClass}>
@@ -650,7 +672,21 @@ const CollectFees = () => {
                                 </SelectContent>
                             </Select>
                         </div>
-                         <div className="space-y-2 md:col-span-2">
+                        <div className="space-y-2">
+                            <label className="text-sm font-medium flex items-center gap-1"><CalendarDays className="h-3.5 w-3.5" /> Admission Period</label>
+                            <Select value={dateFilter} onValueChange={setDateFilter}>
+                                <SelectTrigger><SelectValue placeholder="Select Period" /></SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="all">All Time</SelectItem>
+                                    <SelectItem value="today">Today</SelectItem>
+                                    <SelectItem value="last7days">Last 7 Days</SelectItem>
+                                    <SelectItem value="last30days">Last 30 Days</SelectItem>
+                                    <SelectItem value="thisMonth">This Month</SelectItem>
+                                    <SelectItem value="custom">Custom Range</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+                         <div className="space-y-2 md:col-span-2 lg:col-span-2">
                             <label className="text-sm font-medium">Instant Search</label>
                             <Input 
                                 placeholder="Type any letter to search..."
@@ -658,6 +694,20 @@ const CollectFees = () => {
                                 onChange={e => setKeyword(e.target.value)}
                             />
                         </div>
+                    </div>
+                    {dateFilter === 'custom' && (
+                        <div className="grid grid-cols-2 gap-4 mt-3">
+                            <div className="space-y-2">
+                                <label className="text-sm font-medium">From Date</label>
+                                <Input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)} />
+                            </div>
+                            <div className="space-y-2">
+                                <label className="text-sm font-medium">To Date</label>
+                                <Input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)} />
+                            </div>
+                        </div>
+                    )}
+                    <div className="flex justify-end mt-3">
                         <Button onClick={handleSearch} disabled={loading} className="h-10">
                             <RefreshCcw className="mr-2 h-4 w-4" />{loading ? 'Loading...' : 'Refresh'}
                         </Button>

@@ -152,15 +152,15 @@ const StaffProfile = () => {
           {/* LEFT SIDEBAR - PROFILE CARD */}
           <div className="lg:col-span-1 space-y-6">
             <Card className="overflow-hidden border-none shadow-lg">
-              <div className="h-32 bg-gradient-to-r from-blue-500 to-purple-600 relative">
-                <div className="absolute -bottom-16 left-1/2 transform -translate-x-1/2">
-                  <Avatar className="w-32 h-32 border-4 border-background shadow-md">
+              <div className="h-36 bg-gradient-to-r from-blue-500 to-purple-600 relative">
+                <div className="absolute -bottom-14 left-1/2 transform -translate-x-1/2">
+                  <Avatar className="w-28 h-28 border-4 border-background shadow-md">
                     <AvatarImage src={staff.photo_url} className="object-cover" />
-                    <AvatarFallback className="text-4xl bg-primary/10 text-primary">{staff.full_name?.charAt(0)}</AvatarFallback>
+                    <AvatarFallback className="text-3xl bg-primary/10 text-primary">{staff.full_name?.charAt(0)}</AvatarFallback>
                   </Avatar>
                 </div>
               </div>
-              <CardContent className="pt-20 pb-6 px-4 text-center">
+              <CardContent className="pt-16 pb-6 px-4 text-center">
                 <h2 className="text-2xl font-bold text-foreground">{staff.full_name}</h2>
                 <p className="text-sm text-primary font-mono font-semibold mb-4">{staff.staff_id}</p>
                 

@@ -339,7 +339,7 @@ const HRDashboard = () => {
                 totalEmployees,
                 activeEmployees,
                 onLeaveToday: leaveRequests.length,
-                pendingLeaves: leaves?.length || 0,
+                pendingLeaves: leaveRequests.length,
                 departments: deptCount || 0,
                 designations: desigCount || 0,
                 newJoinees,

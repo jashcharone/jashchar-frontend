@@ -179,9 +179,10 @@ const StaffDirectory = () => {
             const matchesDept = filters.department === 'all' || employee.department_id === filters.department;
             const matchesDesig = filters.designation === 'all' || employee.designation_id === filters.designation;
             
-            // Status filter
-            const employeeStatus = employee.is_active === false ? 'inactive' : 
-                                   employee.on_leave ? 'on_leave' : 'active';
+            // Status filter - uses employment_status field from DB
+            const empStatus = (employee.employment_status || 'Active').toLowerCase();
+            const employeeStatus = empStatus === 'inactive' ? 'inactive' : 
+                                   empStatus === 'on leave' ? 'on_leave' : 'active';
             const matchesStatus = filters.status === 'all' || employeeStatus === filters.status;
             
             // Enhanced search - search in name, staff_id, phone, email, department, designation
@@ -202,9 +203,9 @@ const StaffDirectory = () => {
     // Stats calculation
     const stats = useMemo(() => {
         const total = employees.length;
-        const active = employees.filter(e => e.is_active !== false && !e.on_leave).length;
-        const inactive = employees.filter(e => e.is_active === false).length;
-        const onLeave = employees.filter(e => e.on_leave).length;
+        const active = employees.filter(e => (e.employment_status || 'Active').toLowerCase() === 'active').length;
+        const inactive = employees.filter(e => (e.employment_status || '').toLowerCase() === 'inactive').length;
+        const onLeave = employees.filter(e => (e.employment_status || '').toLowerCase() === 'on leave').length;
         const deptCount = new Set(employees.filter(e => e.department_id).map(e => e.department_id)).size;
         
         return { total, active, inactive, onLeave, deptCount };
@@ -228,7 +229,7 @@ const StaffDirectory = () => {
         try {
             const { error } = await supabase
                 .from('employee_profiles')
-                .update({ is_active: false, updated_at: new Date().toISOString() })
+                .update({ employment_status: 'Inactive', updated_at: new Date().toISOString() })
                 .eq('id', employeeToDisable.id);
             
             if (error) throw error;
@@ -247,7 +248,7 @@ const StaffDirectory = () => {
         try {
             const { error } = await supabase
                 .from('employee_profiles')
-                .update({ is_active: true, updated_at: new Date().toISOString() })
+                .update({ employment_status: 'Active', updated_at: new Date().toISOString() })
                 .eq('id', emp.id);
             
             if (error) throw error;
@@ -271,7 +272,7 @@ const StaffDirectory = () => {
             emp.mobile || emp.phone || '-',
             emp.email || '-',
             emp.date_of_joining ? formatDate(emp.date_of_joining) : '-',
-            emp.is_active === false ? 'Inactive' : emp.on_leave ? 'On Leave' : 'Active'
+            emp.employment_status || 'Active'
         ]);
         
         const csvContent = [headers.join(','), ...rows.map(row => row.map(cell => `"${cell}"`).join(','))].join('\n');
@@ -302,10 +303,11 @@ const StaffDirectory = () => {
 
     // Get status badge - Dark/Light mode compatible
     const getStatusBadge = (emp) => {
-        if (emp.is_active === false) {
+        const status = (emp.employment_status || 'Active').toLowerCase();
+        if (status === 'inactive') {
             return <Badge variant="destructive" className="text-xs">Inactive</Badge>;
         }
-        if (emp.on_leave) {
+        if (status === 'on leave') {
             return <Badge className="text-xs bg-yellow-500/20 text-yellow-600 dark:text-yellow-400 border border-yellow-500/30">On Leave</Badge>;
         }
         return <Badge className="text-xs bg-green-500/20 text-green-600 dark:text-green-400 border border-green-500/30">Active</Badge>;
@@ -615,7 +617,7 @@ const StaffDirectory = () => {
                                                         <Edit className="h-4 w-4 mr-2" /> Edit
                                                     </DropdownMenuItem>
                                                     <DropdownMenuSeparator />
-                                                    {emp.is_active === false ? (
+                                                    {(emp.employment_status || 'Active').toLowerCase() === 'inactive' ? (
                                                         <DropdownMenuItem onClick={() => handleEnableEmployee(emp)} className="text-green-600">
                                                             <UserCheck className="h-4 w-4 mr-2" /> Enable
                                                         </DropdownMenuItem>
@@ -636,7 +638,7 @@ const StaffDirectory = () => {
                                     </div>
                                     <div className="pt-12 px-4 pb-4">
                                         <h3 className="font-bold text-lg truncate">{emp.full_name}</h3>
-                                        <p className="text-sm text-muted-foreground mb-2">{emp.role?.name} • {emp.department?.name || 'No Dept'}</p>
+                                        <p className="text-sm text-muted-foreground mb-2">{emp.role?.name} ï¿½ {emp.department?.name || 'No Dept'}</p>
                                         <p className="text-xs text-muted-foreground mb-1 flex items-center gap-1">
                                             <Briefcase className="h-3 w-3" /> {emp.designation?.name || 'Not assigned'}
                                         </p>
@@ -726,7 +728,7 @@ const StaffDirectory = () => {
                                                             <Edit className="h-4 w-4 mr-2" /> Edit
                                                         </DropdownMenuItem>
                                                         <DropdownMenuSeparator />
-                                                        {emp.is_active === false ? (
+                                                        {(emp.employment_status || 'Active').toLowerCase() === 'inactive' ? (
                                                             <DropdownMenuItem onClick={() => handleEnableEmployee(emp)} className="text-green-600">
                                                                 <UserCheck className="h-4 w-4 mr-2" /> Enable
                                                             </DropdownMenuItem>

@@ -107,20 +107,24 @@ const StudentAssignmentPage = () => {
     const [filterSection, setFilterSection] = useState('');
     const [searchQuery, setSearchQuery] = useState('');
 
+    // Helper: extract array from API response (handles both raw arrays and {success, data} wrapper)
+    const extractArray = (res) => {
+        if (Array.isArray(res)) return res;
+        if (res?.success && Array.isArray(res.data)) return res.data;
+        if (res?.data && Array.isArray(res.data)) return res.data;
+        return [];
+    };
+
     // Fetch reference data
     const fetchReferenceData = useCallback(async () => {
         try {
             // Fetch exam groups
             const groupsRes = await examGroupService.getAll();
-            if (groupsRes.success) {
-                setExamGroups(groupsRes.data || []);
-            }
+            setExamGroups(extractArray(groupsRes));
 
             // Fetch classes
             const classesRes = await apiClient.get('/academics/classes');
-            if (classesRes.success) {
-                setClasses(classesRes.data || []);
-            }
+            setClasses(extractArray(classesRes));
         } catch (error) {
             console.error('Error fetching reference data:', error);
         }
@@ -172,9 +176,7 @@ const StudentAssignmentPage = () => {
             if (filterClass) {
                 try {
                     const sectionsRes = await apiClient.get(`/academics/sections?class_id=${filterClass}`);
-                    if (sectionsRes.success) {
-                        setSections(sectionsRes.data || []);
-                    }
+                    setSections(extractArray(sectionsRes));
                 } catch (error) {
                     console.error('Error fetching sections:', error);
                 }
@@ -204,12 +206,11 @@ const StudentAssignmentPage = () => {
             }
             
             const response = await apiClient.get(url);
-            if (response.success) {
-                // Filter out already assigned students
-                const assignedIds = examStudents.map(es => es.student_id);
-                const available = (response.data || []).filter(s => !assignedIds.includes(s.id));
-                setAvailableStudents(available);
-            }
+            const studentsData = extractArray(response);
+            // Filter out already assigned students
+            const assignedIds = examStudents.map(es => es.student_id);
+            const available = studentsData.filter(s => !assignedIds.includes(s.id));
+            setAvailableStudents(available);
         } catch (error) {
             console.error('Error fetching students:', error);
             toast({
@@ -224,6 +225,13 @@ const StudentAssignmentPage = () => {
     useEffect(() => {
         fetchReferenceData();
     }, [fetchReferenceData]);
+
+    // Re-fetch classes when assign dialog opens (in case initial fetch failed)
+    useEffect(() => {
+        if (assignDialogOpen && classes.length === 0) {
+            fetchReferenceData();
+        }
+    }, [assignDialogOpen]);
 
     // Handle select all checkbox
     const handleSelectAll = (checked) => {

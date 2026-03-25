@@ -503,7 +503,7 @@ const ExamManagement = () => {
                                                 )}
                                             </TableCell>
                                             <TableCell>{getExamGroupName(exam.exam_group_id)}</TableCell>
-                                            <TableCell>{exam.subjects?.name || exam.subject_name || '-'}</TableCell>
+                                            <TableCell>{exam.subject?.name || exam.subject_name || '-'}</TableCell>
                                             <TableCell>{exam.exam_date ? formatDate(exam.exam_date) : '-'}</TableCell>
                                             <TableCell>
                                                 {exam.start_time && exam.end_time ? (

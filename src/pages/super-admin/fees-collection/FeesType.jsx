@@ -228,11 +228,31 @@ const FeesType = () => {
             description: formData.description?.trim() || null,
         };
 
-        if (isEditing && formData.id) {
-            upsertData.id = formData.id;
+        // Duplicate check: Prevent creating fee type with same code or name
+        if (!isEditing || !formData.id) {
+            const { data: existing } = await supabase
+                .from('fee_types')
+                .select('id, name, code')
+                .eq('branch_id', selectedBranch.id)
+                .eq('session_id', currentSessionId)
+                .or(`code.eq.${upsertData.code},name.ilike.${upsertData.name}`)
+                .limit(1);
+
+            if (existing && existing.length > 0) {
+                toast({ variant: 'destructive', title: 'Duplicate Fee Type!', description: `"${existing[0].name}" (${existing[0].code}) already exists.` });
+                setIsSubmitting(false);
+                return;
+            }
         }
 
-        const { error } = await supabase.from('fee_types').upsert(upsertData);
+        let error;
+        if (isEditing && formData.id) {
+            // Edit mode: update existing record
+            ({ error } = await supabase.from('fee_types').update(upsertData).eq('id', formData.id));
+        } else {
+            // Create mode: insert new record
+            ({ error } = await supabase.from('fee_types').insert(upsertData));
+        }
 
         if (error) {
             toast({ variant: 'destructive', title: 'Error saving fee type', description: error.message });

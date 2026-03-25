@@ -285,17 +285,27 @@ export const useFaceRecognitionWebSocket = ({
  * @param {number} quality - JPEG quality (0-1)
  * @returns {string|null} Base64 image data (without prefix)
  */
-export const captureVideoFrame = (videoElement, quality = 0.8) => {
+export const captureVideoFrame = (videoElement, quality = 0.7, maxWidth = 640) => {
     if (!videoElement || videoElement.readyState < 2) {
         return null;
     }
     
     const canvas = document.createElement('canvas');
-    canvas.width = videoElement.videoWidth;
-    canvas.height = videoElement.videoHeight;
+    const srcW = videoElement.videoWidth;
+    const srcH = videoElement.videoHeight;
+    
+    // Downscale to maxWidth for faster AI processing (640px is optimal for face detection)
+    if (srcW > maxWidth) {
+        const scale = maxWidth / srcW;
+        canvas.width = maxWidth;
+        canvas.height = Math.round(srcH * scale);
+    } else {
+        canvas.width = srcW;
+        canvas.height = srcH;
+    }
     
     const ctx = canvas.getContext('2d');
-    ctx.drawImage(videoElement, 0, 0);
+    ctx.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
     
     const dataUrl = canvas.toDataURL('image/jpeg', quality);
     // Remove data:image/jpeg;base64, prefix

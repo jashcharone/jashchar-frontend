@@ -52,7 +52,7 @@ import {
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════
 
 const COOLDOWN_MS = 30000; // 30 second cooldown before re-checking same person
-const SCAN_INTERVAL_MS = 2000; // Check faces every 2s (HTTP mode needs time for AI processing)
+const SCAN_INTERVAL_MS = 1000; // Check faces every 1s (fast scanning for classroom mode)
 
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════
 // MAIN COMPONENT
@@ -86,8 +86,8 @@ const LiveFaceAttendance = () => {
     const [matchedPersons, setMatchedPersons] = useState([]);
     const [recentlyMarked, setRecentlyMarked] = useState(new Set());
     
-    // Class Mode - For focused attendance of specific class
-    const [classMode, setClassMode] = useState(false);
+    // Class Mode - For focused attendance of specific class (default ON — classroom-only mode)
+    const [classMode, setClassMode] = useState(true);
     const [classes, setClasses] = useState([]);
     const [sections, setSections] = useState([]);
     const [selectedClass, setSelectedClass] = useState('');
@@ -99,6 +99,14 @@ const LiveFaceAttendance = () => {
     const [autoMark, setAutoMark] = useState(true);
     const [matchThreshold, setMatchThreshold] = useState(0.5);
     const [showFullscreen, setShowFullscreen] = useState(false);
+    const [showSettings, setShowSettings] = useState(false);
+    
+    // Current time display
+    const [currentTime, setCurrentTime] = useState(new Date());
+    useEffect(() => {
+        const timer = setInterval(() => setCurrentTime(new Date()), 1000);
+        return () => clearInterval(timer);
+    }, []);
     
     // 🚀 AI Engine State (Python backend with ArcFace 512D)
     const [useAIEngine, setUseAIEngine] = useState(true); // Prefer AI Engine
@@ -387,12 +395,23 @@ const LiveFaceAttendance = () => {
     };
     
     const fetchClasses = async () => {
+        // Try current session first; if empty, fall back to any session for this branch
         let query = supabase
             .from('classes')
             .select('id, name')
             .eq('branch_id', branchId);
         if (currentSessionId) query = query.eq('session_id', currentSessionId);
-        const { data } = await query.order('name');
+        let { data } = await query.order('name');
+        
+        if ((!data || data.length === 0) && currentSessionId) {
+            // Fallback: load classes from any session for this branch
+            const { data: fallback } = await supabase
+                .from('classes')
+                .select('id, name')
+                .eq('branch_id', branchId)
+                .order('name');
+            data = fallback;
+        }
         
         setClasses((data || []).map(c => ({ ...c, class_name: c.name })));
     };
@@ -412,7 +431,7 @@ const LiveFaceAttendance = () => {
     const fetchClassStudents = async () => {
         if (!selectedClass || !selectedSection) return;
         
-        // Get students directly by class_id and section_id (session-wise)
+        // Get students by class_id and section_id - try with session first, fallback without
         let query = supabase
             .from('student_profiles')
             .select('id, full_name, admission_number, photo_url')
@@ -421,7 +440,20 @@ const LiveFaceAttendance = () => {
             .eq('section_id', selectedSection)
             .eq('is_disabled', false);
         if (currentSessionId) query = query.eq('session_id', currentSessionId);
-        const { data } = await query.order('full_name');
+        let { data } = await query.order('full_name');
+        
+        if ((!data || data.length === 0) && currentSessionId) {
+            // Fallback: load students without session filter (class_id already scopes correctly)
+            const { data: fallback } = await supabase
+                .from('student_profiles')
+                .select('id, full_name, admission_number, photo_url')
+                .eq('branch_id', branchId)
+                .eq('class_id', selectedClass)
+                .eq('section_id', selectedSection)
+                .eq('is_disabled', false)
+                .order('full_name');
+            data = fallback;
+        }
         
         setClassStudents(data || []);
         
@@ -909,7 +941,7 @@ const LiveFaceAttendance = () => {
                 ctx.fillStyle = 'rgba(0, 180, 0, 0.9)';
                 ctx.fillRect(labelX - confWidth/2 - 8, confY - 14, confWidth + 16, 20);
                 ctx.fillStyle = '#fff';
-                ctx.fillText(confText, confY);
+                ctx.fillText(confText, labelX, confY);
                 ctx.restore();
             }
         }
@@ -1186,190 +1218,267 @@ const LiveFaceAttendance = () => {
     
     return (
         <DashboardLayout>
-            <div className="p-4 md:p-6 space-y-4">
-                {/* Header */}
-                <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-                    <div>
-                        <h1 className="text-2xl md:text-3xl font-bold flex items-center gap-2">
-                            <ScanFace className="w-7 h-7 md:w-8 md:h-8 text-primary" />
-                            Live Face Attendance
-                        </h1>
-                        <p className="text-muted-foreground mt-1">
-                            🤖 Real AI face recognition • Multi-face detection
-                        </p>
-                        <div className="flex items-center gap-2 mt-1.5 flex-wrap">
-                            {selectedBranch?.name && (
-                                <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700 border-blue-200">
-                                    <School className="w-3 h-3 mr-1" />
-                                    {selectedBranch.name}
-                                </Badge>
-                            )}
-                            {currentSessionName && (
-                                <Badge variant="outline" className="text-xs bg-purple-50 text-purple-700 border-purple-200">
-                                    <Calendar className="w-3 h-3 mr-1" />
-                                    {currentSessionName}
-                                </Badge>
-                            )}
-                        </div>
+            <div className="p-3 md:p-5 space-y-3">
+                
+                {/* ══════════════ TOP HERO BAR — Class/Section + Controls ══════════════ */}
+                <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-violet-600 via-purple-600 to-indigo-700 dark:from-violet-800 dark:via-purple-900 dark:to-indigo-950 p-4 md:p-5 shadow-xl">
+                    {/* Decorative background elements */}
+                    <div className="absolute inset-0 opacity-10">
+                        <div className="absolute -top-10 -right-10 w-40 h-40 rounded-full bg-white/20 blur-2xl" />
+                        <div className="absolute -bottom-10 -left-10 w-32 h-32 rounded-full bg-white/15 blur-2xl" />
                     </div>
                     
-                    <div className="flex items-center gap-2 flex-wrap">
-                        <Badge variant="outline" className="text-sm">
-                            <Users className="w-3 h-3 mr-1" />
-                            {registeredFaces.length} registered
-                        </Badge>
-                        {aiEngineHealthy && (
-                            <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={syncFacesToAIEngine}
-                                disabled={syncing}
-                                className={`h-7 text-xs ${aiEngineAvailable ? 'border-green-400 text-green-600 hover:bg-green-50' : 'border-orange-400 text-orange-600 hover:bg-orange-50'}`}
-                            >
-                                {syncing ? <Loader2 className="w-3 h-3 mr-1 animate-spin" /> : <RefreshCw className="w-3 h-3 mr-1" />}
-                                {syncing ? 'Syncing...' : (aiEngineAvailable ? 'Sync to AI' : '⚡ Sync to AI')}
-                            </Button>
+                    <div className="relative z-10">
+                        {/* Row 1: Title + Status + Time */}
+                        <div className="flex items-center justify-between mb-4">
+                            <div className="flex items-center gap-3">
+                                <div className="p-2.5 rounded-xl bg-white/15 backdrop-blur-sm">
+                                    <ScanFace className="w-7 h-7 text-white" />
+                                </div>
+                                <div>
+                                    <h1 className="text-xl md:text-2xl font-bold text-white tracking-tight">
+                                        Live Face Attendance
+                                    </h1>
+                                    <p className="text-white/60 text-xs md:text-sm">
+                                        AI-Powered Real-time Recognition • {selectedBranch?.name || 'Branch'}
+                                    </p>
+                                </div>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <div className="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/10 backdrop-blur-sm">
+                                    <Clock className="w-3.5 h-3.5 text-white/70" />
+                                    <span className="text-white/90 text-sm font-mono">
+                                        {currentTime.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                                    </span>
+                                </div>
+                                <Badge 
+                                    className={`text-xs font-semibold px-3 py-1 ${
+                                        isScanning 
+                                            ? 'bg-red-500 text-white animate-pulse shadow-lg shadow-red-500/30' 
+                                            : 'bg-white/20 text-white/80'
+                                    }`}
+                                >
+                                    {isScanning ? "● LIVE" : "○ STANDBY"}
+                                </Badge>
+                            </div>
+                        </div>
+                        
+                        {/* Row 2: Class + Section Selector (PROMINENT) */}
+                        <div className="flex flex-col sm:flex-row items-stretch sm:items-end gap-3">
+                            <div className="flex-1 grid grid-cols-2 gap-3">
+                                <div>
+                                    <Label className="text-white/70 text-xs font-medium mb-1.5 block">Select Class</Label>
+                                    <Select value={selectedClass} onValueChange={setSelectedClass}>
+                                        <SelectTrigger className="bg-white/10 border-white/20 text-white hover:bg-white/15 focus:ring-white/30 h-10">
+                                            <SelectValue placeholder="Choose class..." />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {classes.map(c => (
+                                                <SelectItem key={c.id} value={c.id}>{c.class_name}</SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                                <div>
+                                    <Label className="text-white/70 text-xs font-medium mb-1.5 block">Select Section</Label>
+                                    <Select 
+                                        value={selectedSection} 
+                                        onValueChange={setSelectedSection}
+                                        disabled={!selectedClass}
+                                    >
+                                        <SelectTrigger className="bg-white/10 border-white/20 text-white hover:bg-white/15 focus:ring-white/30 h-10 disabled:opacity-40">
+                                            <SelectValue placeholder="Choose section..." />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {sections.map(s => (
+                                                <SelectItem key={s.id} value={s.id}>{s.section_name}</SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                            </div>
+                            
+                            {/* Quick Actions */}
+                            <div className="flex items-end gap-2">
+                                <Button
+                                    variant={isScanning ? "destructive" : "default"}
+                                    onClick={isScanning ? stopCamera : startCamera}
+                                    disabled={modelsLoading}
+                                    className={`h-10 px-5 font-semibold shadow-lg ${
+                                        !isScanning ? 'bg-emerald-500 hover:bg-emerald-600 text-white shadow-emerald-500/30' : ''
+                                    }`}
+                                >
+                                    {modelsLoading ? (
+                                        <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Loading...</>
+                                    ) : isScanning ? (
+                                        <><Pause className="w-4 h-4 mr-2" /> Stop</>
+                                    ) : (
+                                        <><Play className="w-4 h-4 mr-2" /> Start Camera</>
+                                    )}
+                                </Button>
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={() => setShowSettings(!showSettings)}
+                                    className="h-10 w-10 text-white/70 hover:text-white hover:bg-white/10"
+                                    title="Settings"
+                                >
+                                    <Settings className="w-4 h-4" />
+                                </Button>
+                            </div>
+                        </div>
+                        
+                        {/* Row 3: Class Progress Bar (only when class+section selected) */}
+                        {selectedClass && selectedSection && (
+                            <div className="mt-3 pt-3 border-t border-white/10">
+                                <div className="flex items-center justify-between mb-1.5">
+                                    <span className="text-white/80 text-sm font-medium flex items-center gap-2">
+                                        <GraduationCap className="w-4 h-4" />
+                                        {selectedClassName} - {selectedSectionName}
+                                        <span className="text-white/50 text-xs">({classStudents.length} students)</span>
+                                    </span>
+                                    <span className="text-white font-bold text-sm">
+                                        {classProgress.present}/{classProgress.total} Present
+                                    </span>
+                                </div>
+                                <div className="h-2 bg-white/10 rounded-full overflow-hidden">
+                                    <motion.div
+                                        className="h-full bg-emerald-400 rounded-full"
+                                        initial={{ width: 0 }}
+                                        animate={{ width: `${classProgress.percent}%` }}
+                                        transition={{ duration: 0.5, ease: 'easeOut' }}
+                                    />
+                                </div>
+                                <p className="text-white/40 text-xs mt-1">{classProgress.percent}% attendance completed</p>
+                            </div>
                         )}
-                        <Badge 
-                            variant={isScanning ? "default" : "secondary"} 
-                            className={isScanning ? "bg-green-500 animate-pulse" : ""}
-                        >
-                            {isScanning ? "🔴 SCANNING" : "⏸️ Paused"}
-                        </Badge>
-                        {classMode && selectedClass && (
-                            <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
-                                <School className="w-3 h-3 mr-1" />
-                                {selectedClassName} {selectedSectionName}
-                            </Badge>
-                        )}
+                        
+                        {/* Settings Panel (collapsible) */}
+                        <AnimatePresence>
+                            {showSettings && (
+                                <motion.div
+                                    initial={{ height: 0, opacity: 0 }}
+                                    animate={{ height: 'auto', opacity: 1 }}
+                                    exit={{ height: 0, opacity: 0 }}
+                                    className="overflow-hidden"
+                                >
+                                    <div className="mt-3 pt-3 border-t border-white/10 flex flex-wrap items-center gap-4">
+                                        <div className="flex items-center gap-2">
+                                            <input type="checkbox" id="autoMark" checked={autoMark} onChange={(e) => setAutoMark(e.target.checked)} className="rounded" />
+                                            <Label htmlFor="autoMark" className="text-white/80 text-xs cursor-pointer">Auto-mark</Label>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            <Label className="text-white/60 text-xs">Accuracy:</Label>
+                                            <Select value={String(matchThreshold)} onValueChange={(v) => setMatchThreshold(parseFloat(v))}>
+                                                <SelectTrigger className="w-28 h-7 bg-white/10 border-white/20 text-white text-xs">
+                                                    <SelectValue />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem value="0.4">40% Loose</SelectItem>
+                                                    <SelectItem value="0.5">50% Normal</SelectItem>
+                                                    <SelectItem value="0.6">60% Strict</SelectItem>
+                                                    <SelectItem value="0.7">70% Very Strict</SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            <Button variant="ghost" size="sm" onClick={() => setSoundEnabled(!soundEnabled)} className="h-7 text-white/70 hover:text-white hover:bg-white/10 text-xs">
+                                                {soundEnabled ? <Volume2 className="w-3 h-3 mr-1" /> : <VolumeX className="w-3 h-3 mr-1" />}
+                                                {soundEnabled ? 'Sound ON' : 'Sound OFF'}
+                                            </Button>
+                                        </div>
+                                        {aiEngineHealthy && (
+                                            <Button size="sm" variant="ghost" onClick={syncFacesToAIEngine} disabled={syncing}
+                                                className="h-7 text-white/70 hover:text-white hover:bg-white/10 text-xs">
+                                                {syncing ? <Loader2 className="w-3 h-3 mr-1 animate-spin" /> : <RefreshCw className="w-3 h-3 mr-1" />}
+                                                {syncing ? 'Syncing...' : 'Sync to AI'}
+                                            </Button>
+                                        )}
+                                        <Badge className="bg-white/10 text-white/70 text-xs">
+                                            <Users className="w-3 h-3 mr-1" />
+                                            {registeredFaces.length} faces enrolled
+                                        </Badge>
+                                    </div>
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
                     </div>
                 </div>
                 
-                {/* AI Loading */}
+                {/* AI Loading Alert */}
                 {modelsLoading && (
                     <Alert className="border-blue-500/50 bg-blue-500/5">
                         <Loader2 className="w-4 h-4 animate-spin text-blue-500" />
                         <AlertDescription className="text-blue-700">
-                            🤖 Loading AI Face Recognition Models... {modelLoadProgress}
+                            Loading AI Face Recognition Models... {modelLoadProgress}
                         </AlertDescription>
                     </Alert>
                 )}
                 
-                {/* Stats Cards */}
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                    <Card className="bg-gradient-to-br from-green-50 to-green-100/50 dark:from-green-950/30 dark:to-green-900/20">
-                        <CardContent className="pt-4 pb-4">
-                            <div className="flex items-center gap-3">
-                                <div className="p-2.5 rounded-xl bg-green-500/20">
-                                    <UserCheck className="h-5 w-5 text-green-600" />
-                                </div>
-                                <div>
-                                    <p className="text-lg sm:text-2xl font-bold text-green-700">{todayStats.present}</p>
-                                    <p className="text-xs text-green-600/80">Present Today{todayStats.staff > 0 ? ` (${todayStats.students}S + ${todayStats.staff}T)` : ''}</p>
-                                </div>
-                            </div>
-                        </CardContent>
-                    </Card>
-                    
-                    <Card>
-                        <CardContent className="pt-4 pb-4">
-                            <div className="flex items-center gap-3">
-                                <div className="p-2.5 rounded-xl bg-purple-500/20">
-                                    <Activity className="h-5 w-5 text-purple-600" />
-                                </div>
-                                <div>
-                                    <p className="text-lg sm:text-2xl font-bold">{detectedFaces.length}</p>
-                                    <p className="text-xs text-muted-foreground">Faces in Frame</p>
-                                </div>
-                            </div>
-                        </CardContent>
-                    </Card>
-                    
-                    <Card>
-                        <CardContent className="pt-4 pb-4">
-                            <div className="flex items-center gap-3">
-                                <div className="p-2.5 rounded-xl bg-blue-500/20">
-                                    <Target className="h-5 w-5 text-blue-600" />
-                                </div>
-                                <div>
-                                    <p className="text-lg sm:text-2xl font-bold">{uniqueMatchedPersons.length}</p>
-                                    <p className="text-xs text-muted-foreground">Recognized</p>
-                                </div>
-                            </div>
-                        </CardContent>
-                    </Card>
-                    
-                    <Card>
-                        <CardContent className="pt-4 pb-4">
-                            <div className="flex items-center gap-3">
-                                <div className="p-2.5 rounded-xl bg-orange-500/20">
-                                    <History className="h-5 w-5 text-orange-600" />
-                                </div>
-                                <div>
-                                    <p className="text-lg sm:text-2xl font-bold">{attendanceLog.length}</p>
-                                    <p className="text-xs text-muted-foreground">Log Entries</p>
-                                </div>
-                            </div>
-                        </CardContent>
-                    </Card>
+                {/* ══════════════ LIVE STATS STRIP ══════════════ */}
+                <div className="grid grid-cols-4 gap-2 md:gap-3">
+                    {[
+                        { label: 'Present Today', value: classMode && selectedClass && selectedSection ? classProgress.present : todayStats.present, sub: classMode && selectedClass && selectedSection ? `${selectedClassName} ${selectedSectionName}` : (todayStats.staff > 0 ? `${todayStats.students}S + ${todayStats.staff}T` : 'Students'), icon: UserCheck, color: 'emerald', gradient: 'from-emerald-500 to-green-600' },
+                        { label: 'Faces Detected', value: detectedFaces.length, sub: 'In Frame Now', icon: Activity, color: 'violet', gradient: 'from-violet-500 to-purple-600' },
+                        { label: 'Recognized', value: uniqueMatchedPersons.length, sub: 'Matched Faces', icon: Target, color: 'blue', gradient: 'from-blue-500 to-cyan-600' },
+                        { label: 'Log Entries', value: attendanceLog.length, sub: 'This Session', icon: History, color: 'amber', gradient: 'from-amber-500 to-orange-600' }
+                    ].map((stat, i) => (
+                        <motion.div
+                            key={stat.label}
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: i * 0.05 }}
+                        >
+                            <Card className="relative overflow-hidden border-0 shadow-md hover:shadow-lg transition-shadow">
+                                <div className={`absolute inset-0 bg-gradient-to-br ${stat.gradient} opacity-[0.06] dark:opacity-[0.12]`} />
+                                <CardContent className="p-3 md:p-4 relative">
+                                    <div className="flex items-center gap-2.5">
+                                        <div className={`p-2 rounded-xl bg-${stat.color}-500/15`}>
+                                            <stat.icon className={`h-4 w-4 md:h-5 md:w-5 text-${stat.color}-600 dark:text-${stat.color}-400`} />
+                                        </div>
+                                        <div className="min-w-0">
+                                            <p className={`text-xl md:text-2xl font-bold text-${stat.color}-700 dark:text-${stat.color}-300 leading-none`}>{stat.value}</p>
+                                            <p className="text-[10px] md:text-xs text-muted-foreground truncate mt-0.5">{stat.sub}</p>
+                                        </div>
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        </motion.div>
+                    ))}
                 </div>
                 
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-                    {/* Camera Feed - 2/3 */}
-                    <div className="lg:col-span-2 space-y-4">
-                        <Card>
-                            <CardHeader className="pb-2">
-                                <div className="flex items-center justify-between">
-                                    <CardTitle className="text-lg flex items-center gap-2">
-                                        <Video className="w-5 h-5" />
-                                        Camera Feed
-                                        {detectedFaces.length > 0 && (
-                                            <Badge variant="secondary" className="ml-2">
-                                                {detectedFaces.length} face{detectedFaces.length !== 1 ? 's' : ''}
-                                            </Badge>
-                                        )}
-                                    </CardTitle>
-                                    <div className="flex items-center gap-2">
-                                        <Button
-                                            variant="outline"
-                                            size="icon"
-                                            onClick={() => setSoundEnabled(!soundEnabled)}
-                                            title={soundEnabled ? "Mute" : "Unmute"}
-                                        >
-                                            {soundEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
-                                        </Button>
-                                        <Button
-                                            variant={isScanning ? "destructive" : "default"}
-                                            onClick={isScanning ? stopCamera : startCamera}
-                                            disabled={modelsLoading}
-                                        >
-                                            {isScanning ? (
-                                                <><Pause className="w-4 h-4 mr-2" /> Stop</>
-                                            ) : (
-                                                <><Play className="w-4 h-4 mr-2" /> Start</>
-                                            )}
-                                        </Button>
-                                    </div>
-                                </div>
-                            </CardHeader>
-                            <CardContent>
-                                <div className="relative aspect-video bg-black rounded-xl overflow-hidden">
+                {/* ══════════════ MAIN CONTENT — Camera + Right Panel ══════════════ */}
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-3">
+                    
+                    {/* Camera Feed — 8/12 columns */}
+                    <div className="lg:col-span-8">
+                        <Card className="overflow-hidden border-0 shadow-lg">
+                            <CardContent className="p-0">
+                                <div className="relative bg-black" style={{ aspectRatio: '16/9' }}>
                                     {cameraError ? (
                                         <div className="absolute inset-0 flex items-center justify-center bg-muted">
                                             <div className="text-center">
                                                 <VideoOff className="w-16 h-16 mx-auto text-muted-foreground mb-4" />
-                                                <p className="text-destructive">{cameraError}</p>
+                                                <p className="text-destructive font-medium">{cameraError}</p>
                                                 <Button variant="outline" className="mt-4" onClick={startCamera}>
                                                     <RefreshCw className="w-4 h-4 mr-2" /> Retry
                                                 </Button>
                                             </div>
                                         </div>
                                     ) : !isScanning ? (
-                                        <div className="absolute inset-0 flex items-center justify-center bg-muted/80">
+                                        <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-slate-900 to-slate-800">
                                             <div className="text-center">
-                                                <Camera className="w-20 h-20 mx-auto text-muted-foreground mb-4" />
-                                                <p className="text-lg font-medium">Camera Ready</p>
-                                                <p className="text-sm text-muted-foreground mt-1">Click "Start" to begin scanning</p>
+                                                <div className="relative mx-auto mb-5">
+                                                    <div className="w-24 h-24 rounded-full border-2 border-dashed border-white/20 flex items-center justify-center">
+                                                        <Camera className="w-10 h-10 text-white/40" />
+                                                    </div>
+                                                </div>
+                                                <p className="text-white/70 text-lg font-medium">Camera Ready</p>
+                                                <p className="text-white/40 text-sm mt-1">
+                                                    {selectedClass && selectedSection 
+                                                        ? `${selectedClassName} ${selectedSectionName} — Click Start to begin`
+                                                        : 'Select class & section above, then click Start'}
+                                                </p>
                                             </div>
                                         </div>
                                     ) : (
@@ -1386,44 +1495,79 @@ const LiveFaceAttendance = () => {
                                                 style={{ transform: 'scaleX(-1)' }}
                                             />
                                             
-                                            {/* Multi-face match overlay - deduplicated by person_id */}
+                                            {/* Top-left Live badge */}
+                                            <div className="absolute top-3 left-3 flex items-center gap-2">
+                                                <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-red-600/90 backdrop-blur-sm shadow-lg">
+                                                    <div className="w-2 h-2 rounded-full bg-white animate-pulse" />
+                                                    <span className="text-white text-xs font-bold tracking-wider">LIVE</span>
+                                                </div>
+                                                {detectedFaces.length > 0 && (
+                                                    <div className="px-2.5 py-1 rounded-full bg-black/60 backdrop-blur-sm text-white text-xs font-medium">
+                                                        {detectedFaces.length} face{detectedFaces.length !== 1 ? 's' : ''}
+                                                    </div>
+                                                )}
+                                            </div>
+                                            
+                                            {/* Top-right class info */}
+                                            {selectedClass && selectedSection && (
+                                                <div className="absolute top-3 right-3 px-3 py-1.5 rounded-lg bg-black/50 backdrop-blur-sm">
+                                                    <span className="text-white/90 text-xs font-medium">{selectedClassName} - {selectedSectionName}</span>
+                                                    <span className="text-emerald-400 text-xs ml-2 font-bold">{classProgress.present}/{classProgress.total}</span>
+                                                </div>
+                                            )}
+                                            
+                                            {/* Bottom recognition overlay */}
                                             <AnimatePresence>
                                                 {uniqueMatchedPersons.length > 0 && (
                                                     <motion.div
-                                                        initial={{ opacity: 0, y: 20 }}
+                                                        initial={{ opacity: 0, y: 30 }}
                                                         animate={{ opacity: 1, y: 0 }}
-                                                        exit={{ opacity: 0, y: 20 }}
-                                                        className="absolute bottom-4 left-4 right-4 bg-green-500/95 text-white p-4 rounded-xl shadow-lg"
+                                                        exit={{ opacity: 0, y: 30 }}
+                                                        transition={{ type: 'spring', stiffness: 300, damping: 25 }}
+                                                        className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 via-black/60 to-transparent pt-10 pb-4 px-4"
                                                     >
                                                         {uniqueMatchedPersons.length === 1 ? (
                                                             <div className="flex items-center gap-4">
-                                                                <CheckCircle2 className="w-10 h-10 flex-shrink-0" />
+                                                                <div className="p-2 rounded-full bg-emerald-500/20 backdrop-blur-sm">
+                                                                    <CheckCircle2 className="w-8 h-8 text-emerald-400" />
+                                                                </div>
                                                                 <div className="flex-1 min-w-0">
-                                                                    <p className="text-xl font-bold truncate">
+                                                                    <p className="text-white text-xl font-bold truncate">
                                                                         {uniqueMatchedPersons[0]?.match?.person_name}
                                                                     </p>
-                                                                    <p className="text-sm opacity-90">
-                                                                        {Math.round((uniqueMatchedPersons[0]?.confidence || 0) * 100)}% confidence
+                                                                    <p className="text-white/60 text-sm">
+                                                                        {Math.round((uniqueMatchedPersons[0]?.confidence || 0) * 100)}% match
+                                                                        {uniqueMatchedPersons[0]?.match?.person_type === 'staff' && ' • Staff'}
                                                                     </p>
                                                                 </div>
-                                                                <Badge className="bg-white text-green-600 text-lg px-4 py-2 flex-shrink-0">
-                                                                    PRESENT
-                                                                </Badge>
+                                                                <motion.div 
+                                                                    initial={{ scale: 0.5 }} 
+                                                                    animate={{ scale: 1 }}
+                                                                    className="px-4 py-2 rounded-xl bg-emerald-500 text-white font-bold text-sm shadow-lg shadow-emerald-500/30"
+                                                                >
+                                                                    PRESENT ✓
+                                                                </motion.div>
                                                             </div>
                                                         ) : (
                                                             <div className="space-y-2">
-                                                                <div className="flex items-center gap-2">
-                                                                    <Users className="w-6 h-6" />
-                                                                    <span className="font-bold">
+                                                                <div className="flex items-center gap-2 text-white">
+                                                                    <Users className="w-5 h-5 text-emerald-400" />
+                                                                    <span className="font-bold text-sm">
                                                                         {uniqueMatchedPersons.length} People Recognized
                                                                     </span>
                                                                 </div>
-                                                                <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                                                                <div className="flex flex-wrap gap-2">
                                                                     {uniqueMatchedPersons.slice(0, 6).map((p, idx) => (
-                                                                        <div key={idx} className="flex items-center gap-2 bg-white/20 rounded-lg p-2">
-                                                                            <CheckCircle2 className="w-4 h-4 flex-shrink-0" />
-                                                                            <span className="text-sm truncate">{p.match.person_name}</span>
-                                                                        </div>
+                                                                        <motion.div 
+                                                                            key={idx}
+                                                                            initial={{ opacity: 0, scale: 0.8 }}
+                                                                            animate={{ opacity: 1, scale: 1 }}
+                                                                            transition={{ delay: idx * 0.05 }}
+                                                                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-500/20 backdrop-blur-sm border border-emerald-500/30"
+                                                                        >
+                                                                            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                                                                            <span className="text-white text-xs font-medium">{p.match.person_name}</span>
+                                                                        </motion.div>
                                                                     ))}
                                                                 </div>
                                                             </div>
@@ -1434,173 +1578,131 @@ const LiveFaceAttendance = () => {
                                         </>
                                     )}
                                 </div>
-                                <canvas ref={canvasRef} className="hidden" />
                             </CardContent>
                         </Card>
-                        
-                        {/* Settings & Class Mode */}
-                        <Card>
-                            <CardHeader className="pb-2">
-                                <div className="flex items-center justify-between">
-                                    <CardTitle className="text-sm flex items-center gap-2">
-                                        <Settings className="w-4 h-4" /> Settings
-                                    </CardTitle>
-                                    <div className="flex items-center gap-2">
-                                        <Label htmlFor="classMode" className="text-sm font-normal">Class Mode</Label>
-                                        <input
-                                            type="checkbox"
-                                            id="classMode"
-                                            checked={classMode}
-                                            onChange={(e) => setClassMode(e.target.checked)}
-                                            className="rounded"
-                                        />
-                                    </div>
-                                </div>
-                            </CardHeader>
-                            <CardContent>
-                                <div className="flex flex-wrap items-center gap-4">
-                                    <div className="flex items-center gap-2">
-                                        <input
-                                            type="checkbox"
-                                            id="autoMark"
-                                            checked={autoMark}
-                                            onChange={(e) => setAutoMark(e.target.checked)}
-                                            className="rounded"
-                                        />
-                                        <Label htmlFor="autoMark" className="text-sm">Auto-mark</Label>
-                                    </div>
-                                    <div className="flex items-center gap-2">
-                                        <Label className="text-sm">Threshold:</Label>
-                                        <Select value={String(matchThreshold)} onValueChange={(v) => setMatchThreshold(parseFloat(v))}>
-                                            <SelectTrigger className="w-28">
-                                                <SelectValue />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                <SelectItem value="0.4">40% Loose</SelectItem>
-                                                <SelectItem value="0.5">50% Normal</SelectItem>
-                                                <SelectItem value="0.6">60% Strict</SelectItem>
-                                                <SelectItem value="0.7">70% Very Strict</SelectItem>
-                                            </SelectContent>
-                                        </Select>
-                                    </div>
-                                </div>
-                                
-                                {/* Class Mode Filters */}
-                                {classMode && (
-                                    <div className="mt-4 pt-4 border-t">
-                                        <div className="flex items-center gap-2 mb-3">
-                                            <School className="w-4 h-4 text-primary" />
-                                            <span className="text-sm font-medium">Class Mode - Focus on specific class</span>
-                                        </div>
-                                        <div className="grid grid-cols-2 gap-3">
-                                            <div>
-                                                <Label className="text-xs mb-1 block">Class</Label>
-                                                <Select value={selectedClass} onValueChange={setSelectedClass}>
-                                                    <SelectTrigger>
-                                                        <SelectValue placeholder="Select Class" />
-                                                    </SelectTrigger>
-                                                    <SelectContent>
-                                                        {classes.map(c => (
-                                                            <SelectItem key={c.id} value={c.id}>{c.class_name}</SelectItem>
-                                                        ))}
-                                                    </SelectContent>
-                                                </Select>
-                                            </div>
-                                            <div>
-                                                <Label className="text-xs mb-1 block">Section</Label>
-                                                <Select 
-                                                    value={selectedSection} 
-                                                    onValueChange={setSelectedSection}
-                                                    disabled={!selectedClass}
-                                                >
-                                                    <SelectTrigger>
-                                                        <SelectValue placeholder="Select Section" />
-                                                    </SelectTrigger>
-                                                    <SelectContent>
-                                                        {sections.map(s => (
-                                                            <SelectItem key={s.id} value={s.id}>{s.section_name}</SelectItem>
-                                                        ))}
-                                                    </SelectContent>
-                                                </Select>
-                                            </div>
-                                        </div>
-                                        
-                                        {/* Class Progress */}
-                                        {selectedClass && selectedSection && (
-                                            <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-950/30 rounded-lg">
-                                                <div className="flex justify-between items-center mb-2">
-                                                    <span className="text-sm font-medium">
-                                                        {selectedClassName} {selectedSectionName} Progress
-                                                    </span>
-                                                    <span className="text-sm text-muted-foreground">
-                                                        {classProgress.present}/{classProgress.total}
-                                                    </span>
-                                                </div>
-                                                <Progress value={classProgress.percent} className="h-2" />
-                                                <p className="text-xs text-muted-foreground mt-1">
-                                                    {classProgress.percent}% students marked present
-                                                </p>
-                                            </div>
-                                        )}
-                                    </div>
-                                )}
-                            </CardContent>
-                        </Card>
+                        <canvas ref={canvasRef} className="hidden" />
                     </div>
                     
-                    {/* Right Panel - 1/3 */}
-                    <div className="space-y-4">
-                        {/* Live Log */}
-                        <Card className="h-fit">
-                            <CardHeader className="pb-2">
-                                <CardTitle className="text-sm flex items-center gap-2">
-                                    <History className="w-4 h-4" />
-                                    Live Attendance Log
+                    {/* Right Panel — 4/12 columns */}
+                    <div className="lg:col-span-4 space-y-3">
+                        
+                        {/* Class Students List (always show when class selected) */}
+                        {selectedClass && selectedSection && classStudents.length > 0 && (
+                            <Card className="border-0 shadow-md">
+                                <CardHeader className="pb-2 pt-3 px-4">
+                                    <div className="flex items-center justify-between">
+                                        <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                                            <GraduationCap className="w-4 h-4 text-primary" />
+                                            {selectedClassName} {selectedSectionName}
+                                        </CardTitle>
+                                        <div className="flex items-center gap-1.5">
+                                            <Badge variant="secondary" className="text-xs">{classStudents.length}</Badge>
+                                            {classProgress.present > 0 && (
+                                                <Badge className="bg-emerald-500 text-white text-xs">{classProgress.present} ✓</Badge>
+                                            )}
+                                        </div>
+                                    </div>
+                                </CardHeader>
+                                <CardContent className="px-3 pb-3">
+                                    <ScrollArea className="h-[220px] lg:h-[260px]">
+                                        <div className="space-y-0.5">
+                                            {classStudents.map((student, idx) => {
+                                                const isMarked = markedStudentIds.has(student.full_name);
+                                                const hasFaceReg = registeredFaces.some(f => f.person_id === student.id);
+                                                
+                                                return (
+                                                    <motion.div
+                                                        key={student.id}
+                                                        initial={{ opacity: 0 }}
+                                                        animate={{ opacity: 1 }}
+                                                        transition={{ delay: idx * 0.01 }}
+                                                        className={`flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-sm transition-colors ${
+                                                            isMarked 
+                                                                ? 'bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800' 
+                                                                : 'hover:bg-muted/50'
+                                                        }`}
+                                                    >
+                                                        <div className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold flex-shrink-0 ${
+                                                            isMarked ? 'bg-emerald-500 text-white' : 
+                                                            hasFaceReg ? 'bg-blue-100 text-blue-600 dark:bg-blue-900 dark:text-blue-300' : 'bg-muted text-muted-foreground'
+                                                        }`}>
+                                                            {isMarked ? '✓' : hasFaceReg ? '●' : (idx + 1)}
+                                                        </div>
+                                                        <span className={`flex-1 truncate text-xs ${isMarked ? 'text-emerald-700 dark:text-emerald-300 font-semibold' : ''}`}>
+                                                            {student.full_name}
+                                                        </span>
+                                                        {!hasFaceReg && !isMarked && (
+                                                            <div className="w-2 h-2 rounded-full bg-orange-400 flex-shrink-0" title="No face registered" />
+                                                        )}
+                                                    </motion.div>
+                                                );
+                                            })}
+                                        </div>
+                                    </ScrollArea>
+                                </CardContent>
+                            </Card>
+                        )}
+                        
+                        {/* Live Attendance Log */}
+                        <Card className="border-0 shadow-md">
+                            <CardHeader className="pb-2 pt-3 px-4">
+                                <div className="flex items-center justify-between">
+                                    <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                                        <History className="w-4 h-4 text-amber-600" />
+                                        Live Log
+                                    </CardTitle>
                                     {attendanceLog.length > 0 && (
-                                        <Badge variant="secondary" className="ml-auto">{attendanceLog.length}</Badge>
+                                        <Badge variant="secondary" className="text-xs">{attendanceLog.length}</Badge>
                                     )}
-                                </CardTitle>
+                                </div>
                             </CardHeader>
-                            <CardContent>
-                                <ScrollArea className="h-[400px] lg:h-[500px]">
-                                    <div className="space-y-2">
+                            <CardContent className="px-3 pb-3">
+                                <ScrollArea className={`${selectedClass && selectedSection && classStudents.length > 0 ? 'h-[250px] lg:h-[300px]' : 'h-[400px] lg:h-[560px]'}`}>
+                                    <div className="space-y-1.5">
                                         {attendanceLog.length === 0 ? (
-                                            <div className="text-center text-muted-foreground py-12">
-                                                <Clock className="w-12 h-12 mx-auto opacity-50 mb-3" />
-                                                <p className="font-medium">No entries yet</p>
-                                                <p className="text-sm">Start scanning to see attendance</p>
+                                            <div className="text-center text-muted-foreground py-10">
+                                                <div className="w-14 h-14 rounded-full bg-muted/50 flex items-center justify-center mx-auto mb-3">
+                                                    <Clock className="w-7 h-7 opacity-40" />
+                                                </div>
+                                                <p className="font-medium text-sm">No entries yet</p>
+                                                <p className="text-xs mt-1">Start scanning to see attendance log</p>
                                             </div>
                                         ) : (
                                             attendanceLog.map((log) => (
                                                 <motion.div
                                                     key={log.id}
-                                                    initial={{ opacity: 0, x: -20 }}
+                                                    initial={{ opacity: 0, x: -15 }}
                                                     animate={{ opacity: 1, x: 0 }}
-                                                    className={`flex items-center gap-3 p-2.5 rounded-lg border ${
-                                                        log.status === 'success' ? 'bg-green-50 border-green-200 dark:bg-green-950/30 dark:border-green-800' :
-                                                        log.status === 'already' ? 'bg-yellow-50 border-yellow-200 dark:bg-yellow-950/30 dark:border-yellow-800' :
-                                                        'bg-red-50 border-red-200 dark:bg-red-950/30 dark:border-red-800'
+                                                    className={`flex items-center gap-2.5 p-2 rounded-lg border transition-colors ${
+                                                        log.status === 'success' ? 'bg-emerald-50/80 border-emerald-200/50 dark:bg-emerald-950/20 dark:border-emerald-800/50' :
+                                                        log.status === 'already' ? 'bg-amber-50/80 border-amber-200/50 dark:bg-amber-950/20 dark:border-amber-800/50' :
+                                                        'bg-red-50/80 border-red-200/50 dark:bg-red-950/20 dark:border-red-800/50'
                                                     }`}
                                                 >
-                                                    {log.status === 'success' ? (
-                                                        <UserCheck className="w-5 h-5 text-green-600 flex-shrink-0" />
-                                                    ) : log.status === 'already' ? (
-                                                        <User className="w-5 h-5 text-yellow-600 flex-shrink-0" />
-                                                    ) : (
-                                                        <UserX className="w-5 h-5 text-red-600 flex-shrink-0" />
-                                                    )}
+                                                    <div className={`w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 ${
+                                                        log.status === 'success' ? 'bg-emerald-500/15' :
+                                                        log.status === 'already' ? 'bg-amber-500/15' : 'bg-red-500/15'
+                                                    }`}>
+                                                        {log.status === 'success' ? (
+                                                            <UserCheck className="w-3.5 h-3.5 text-emerald-600" />
+                                                        ) : log.status === 'already' ? (
+                                                            <User className="w-3.5 h-3.5 text-amber-600" />
+                                                        ) : (
+                                                            <UserX className="w-3.5 h-3.5 text-red-600" />
+                                                        )}
+                                                    </div>
                                                     <div className="flex-1 min-w-0">
-                                                        <p className="font-medium truncate text-sm">{log.person_name}</p>
-                                                        <p className="text-xs text-muted-foreground">
+                                                        <p className="font-medium truncate text-xs">{log.person_name}</p>
+                                                        <p className="text-[10px] text-muted-foreground">
                                                             {log.confidence}% • {log.time}
                                                         </p>
                                                     </div>
                                                     <Badge 
                                                         variant="outline" 
-                                                        className={`text-xs flex-shrink-0 ${
-                                                            log.status === 'success' ? 'border-green-500 text-green-600' :
-                                                            log.status === 'already' ? 'border-yellow-500 text-yellow-600' :
-                                                            'border-red-500 text-red-600'
+                                                        className={`text-[10px] px-1.5 py-0 flex-shrink-0 ${
+                                                            log.status === 'success' ? 'border-emerald-400 text-emerald-600' :
+                                                            log.status === 'already' ? 'border-amber-400 text-amber-600' :
+                                                            'border-red-400 text-red-600'
                                                         }`}
                                                     >
                                                         {log.status === 'success' ? '✓ Marked' :
@@ -1613,53 +1715,6 @@ const LiveFaceAttendance = () => {
                                 </ScrollArea>
                             </CardContent>
                         </Card>
-                        
-                        {/* Class Students List (when in class mode) */}
-                        {classMode && selectedClass && selectedSection && classStudents.length > 0 && (
-                            <Card>
-                                <CardHeader className="pb-2">
-                                    <CardTitle className="text-sm flex items-center gap-2">
-                                        <GraduationCap className="w-4 h-4" />
-                                        {selectedClassName} {selectedSectionName} Students
-                                        <Badge variant="secondary" className="ml-auto">{classStudents.length}</Badge>
-                                    </CardTitle>
-                                </CardHeader>
-                                <CardContent>
-                                    <ScrollArea className="h-[250px]">
-                                        <div className="space-y-1">
-                                            {classStudents.map((student) => {
-                                                const isMarked = markedStudentIds.has(student.full_name);
-                                                const hasFaceReg = registeredFaces.some(f => f.person_id === student.id);
-                                                
-                                                return (
-                                                    <div
-                                                        key={student.id}
-                                                        className={`flex items-center gap-2 p-2 rounded text-sm ${
-                                                            isMarked ? 'bg-green-50 dark:bg-green-950/30' : 'hover:bg-muted/50'
-                                                        }`}
-                                                    >
-                                                        <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs ${
-                                                            isMarked ? 'bg-green-500 text-white' : 
-                                                            hasFaceReg ? 'bg-blue-100 text-blue-600' : 'bg-muted text-muted-foreground'
-                                                        }`}>
-                                                            {isMarked ? '✓' : hasFaceReg ? '👤' : '?'}
-                                                        </div>
-                                                        <span className={`flex-1 truncate ${isMarked ? 'text-green-700 font-medium' : ''}`}>
-                                                            {student.full_name}
-                                                        </span>
-                                                        {!hasFaceReg && (
-                                                            <Badge variant="outline" className="text-xs text-orange-500 border-orange-300">
-                                                                No Face
-                                                            </Badge>
-                                                        )}
-                                                    </div>
-                                                );
-                                            })}
-                                        </div>
-                                    </ScrollArea>
-                                </CardContent>
-                            </Card>
-                        )}
                     </div>
                 </div>
             </div>

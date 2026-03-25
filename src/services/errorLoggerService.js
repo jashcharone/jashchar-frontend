@@ -72,6 +72,9 @@ export const errorLoggerService = {
                 stack_trace: context.stack_trace || `${stackTrace}\n\nComponent Stack:\n${componentStack}`,
                 user_id: user?.id,
                 user_role: userRole,
+                organization_id: context.organization_id || null,
+                branch_id: context.branch_id || null,
+                session_id: context.session_id || null,
                 device_info: {
                     userAgent: navigator.userAgent,
                     platform: navigator.platform,

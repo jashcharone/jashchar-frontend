@@ -252,6 +252,11 @@ const ReportDialog = ({ isOpen, onClose }) => {
         
         try {
             const deviceInfo = getDeviceInfo();
+
+            // Capture console logs from global buffer
+            const consoleLogs = (window.__JASHCHAR_CONSOLE_LOGS__ || []).slice(-50);
+            const lastErrors = (window.__JASHCHAR_LAST_ERRORS__ || []).slice(-20);
+
             const reportData = {
                 // Map to error logger format
                 error_message: `[USER REPORT] ${formData.title}`,
@@ -271,7 +276,10 @@ const ReportDialog = ({ isOpen, onClose }) => {
                     reporter_email: formData.contactEmail,
                     reporter_id: user?.id,
                     reporter_name: user?.name || user?.email,
-                    reported_at: new Date().toISOString()
+                    reported_at: new Date().toISOString(),
+                    console_logs: consoleLogs,
+                    last_errors: lastErrors,
+                    has_console_logs: consoleLogs.length > 0
                 }
             };
 

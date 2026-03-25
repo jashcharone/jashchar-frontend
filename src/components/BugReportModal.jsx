@@ -60,6 +60,7 @@ import {
     MonitorDown
 } from 'lucide-react';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
+import { useBranch } from '@/contexts/BranchContext';
 import { useLocation } from 'react-router-dom';
 import { errorLoggerService } from '@/services/errorLoggerService';
 import { useToast } from '@/components/ui/use-toast';
@@ -127,7 +128,8 @@ const getDeviceInfo = () => {
 };
 
 const BugReportModal = ({ isOpen, onClose }) => {
-    const { user } = useAuth();
+    const { user, currentSessionId, organizationId } = useAuth();
+    const { selectedBranch } = useBranch();
     const location = useLocation();
     const { toast } = useToast();
     const fileInputRef = useRef(null);
@@ -406,6 +408,9 @@ const BugReportModal = ({ isOpen, onClose }) => {
                 source: 'user_report',
                 module: moduleInfo,
                 stack_trace: bugReport.stack,
+                organization_id: organizationId,
+                branch_id: selectedBranch?.id,
+                session_id: currentSessionId,
                 metadata: {
                     // Bug details
                     category: formData.category,

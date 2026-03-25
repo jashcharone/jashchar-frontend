@@ -339,6 +339,23 @@ const QueriesFinder = () => {
 
     // ==================== AI PROMPT GENERATION ====================
     const generateAiPrompt = (error) => {
+        // Format console logs if available
+        const consoleLogs = error.metadata?.console_logs || [];
+        const lastErrors = error.metadata?.last_errors || [];
+        const allLogs = consoleLogs.length > 0 ? consoleLogs : lastErrors;
+        const consoleSection = allLogs.length > 0
+            ? `### 📋 Console Logs (F12)
+\`\`\`
+${allLogs.map(log => `[${log.type}] ${log.timestamp || ''} ${log.message}`).join('\n')}
+\`\`\`\n`
+            : '';
+
+        // Device info
+        const device = error.device_info || error.metadata?.device || {};
+        const deviceSection = device.browser
+            ? `### 🖥️ Device Info\n- Browser: ${device.browser}\n- OS: ${device.os}\n- Screen: ${device.screenSize}\n- Language: ${device.language}\n`
+            : '';
+
         return `You are an expert AI coding assistant working on the Jashchar ERP project (React + Node.js + Supabase).
 Please fix the following error.
 
@@ -349,17 +366,21 @@ Please fix the following error.
 **User Role:** ${error.user_role}
 **Source:** ${error.source}
 **Frequency:** ${error.frequency} occurrences
+**Severity:** ${error.severity}
 
 ### 🛠️ Stack Trace
 \`\`\`
 ${error.stack_trace || 'No stack trace available.'}
 \`\`\`
 
+${consoleSection}
+${deviceSection}
 ### 🤖 Task Instructions
-1. **Analyze**: Identify the specific file and line number causing the crash from the stack trace.
+1. **Analyze**: Identify the specific file and line number causing the crash from the stack trace and console logs.
 2. **Context**: If a file path is mentioned (e.g., \`src/pages/...\`), assume it is relative to the project root.
-3. **Fix**: Provide the corrected code block to fix this issue.
-4. **Explanation**: Briefly explain why this error occurred and how the fix resolves it.
+3. **Console Logs**: Use the F12 console output above to understand the full error flow.
+4. **Fix**: Provide the corrected code block to fix this issue.
+5. **Explanation**: Briefly explain why this error occurred and how the fix resolves it.
 `;
     };
 

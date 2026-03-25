@@ -26,7 +26,8 @@ import {
     AlertCircle, XCircle, Info, Image, FileText,
     ChevronLeft, ChevronRight, Filter, Mail, Globe,
     Smartphone, Target, ListOrdered, MessageSquare,
-    Calendar, ZoomIn, ExternalLink, Copy, Terminal, Database
+    Calendar, ZoomIn, ExternalLink, Copy, Terminal, Database,
+    Wand2
 } from 'lucide-react';
 import { formatDateTime } from '@/utils/dateUtils';
 
@@ -967,8 +968,73 @@ const BugReportsPage = () => {
 
                                 {/* Action Footer */}
                                 <div className="flex justify-between items-center px-6 py-4 border-t bg-muted/30">
-                                    <div className="text-xs text-muted-foreground">
-                                        Report #{selectedReport.id?.slice(0, 8)}...
+                                    <div className="flex items-center gap-2">
+                                        <div className="text-xs text-muted-foreground">
+                                            Report #{selectedReport.id?.slice(0, 8)}...
+                                        </div>
+                                        <Button
+                                            size="sm"
+                                            className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white"
+                                            onClick={() => {
+                                                const meta = selectedReport.metadata || {};
+                                                const consoleLogs = meta.console_logs || meta.last_errors || [];
+                                                const device = selectedReport.device_info || meta.device || {};
+
+                                                const consoleSection = consoleLogs.length > 0
+                                                    ? `### 📋 Console Logs (F12 - ${consoleLogs.length} entries)\n\`\`\`\n${consoleLogs.map(log => `[${log.type}] ${log.timestamp || ''} ${log.message}`).join('\n')}\n\`\`\`\n`
+                                                    : '### 📋 Console Logs\nNo console logs captured.\n';
+
+                                                const deviceSection = device.browser
+                                                    ? `### 🖥️ Device Info\n- Browser: ${device.browser}\n- OS: ${device.os}\n- Screen: ${device.screenSize}\n- Language: ${device.language || 'N/A'}\n`
+                                                    : '';
+
+                                                const prompt = `You are an expert AI coding assistant working on the Jashchar ERP project (React + Node.js + Supabase).
+A user has reported a bug. Please analyze all the information below and fix it.
+
+### 🚨 Bug Report
+**Title:** ${selectedReport.error_message?.replace('[USER REPORT] ', '')}
+**Category:** ${meta.category || selectedReport.module_name || 'Unknown'}
+**Priority:** ${meta.priority || selectedReport.severity || 'medium'}
+**Page URL:** ${selectedReport.page_url}
+**Reporter:** ${meta.reporter_name || 'Unknown'} (${meta.reporter_email || 'N/A'}) - Role: ${selectedReport.user_role || meta.reporter_role || 'N/A'}
+**Reported At:** ${meta.reported_at || selectedReport.created_at}
+
+### 📝 User Description
+${meta.description || 'No description provided.'}
+
+### 🔄 Steps to Reproduce
+${meta.steps_to_reproduce || 'Not provided.'}
+
+### ✅ Expected Behavior
+${meta.expected_behavior || 'Not provided.'}
+
+### ❌ Actual Behavior
+${meta.actual_behavior || 'Not provided.'}
+
+### 🛠️ Stack Trace
+\`\`\`
+${selectedReport.stack_trace || 'No stack trace available.'}
+\`\`\`
+
+${consoleSection}
+${deviceSection}
+### 🤖 Task Instructions
+1. **Analyze**: Read the bug description, console logs, and stack trace carefully.
+2. **Locate**: Find the exact file and code causing this issue.
+3. **Console Logs**: Use the F12 console output above to trace the full error flow.
+4. **Fix**: Provide the corrected code to fix this issue.
+5. **Explain**: Briefly explain the root cause and how the fix resolves it.
+`;
+                                                navigator.clipboard.writeText(prompt);
+                                                toast({
+                                                    title: '🤖 AI Fix Prompt Copied!',
+                                                    description: 'Paste this into GitHub Copilot or any AI assistant to get an instant fix.',
+                                                    className: 'bg-purple-100 border-purple-500 text-purple-900'
+                                                });
+                                            }}
+                                        >
+                                            <Wand2 className="h-3 w-3 mr-1" /> Copy for AI Fix
+                                        </Button>
                                     </div>
                                     <div className="flex items-center gap-2">
                                         <Select

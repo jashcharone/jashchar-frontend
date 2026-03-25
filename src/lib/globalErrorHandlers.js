@@ -5,9 +5,64 @@
  * This ensures that errors outside of React's ErrorBoundary (like async errors, event handlers)
  * are also logged to the Queries Finder.
  */
+// ── Console Log Buffer Constants ─────────────────────────────────────────────
+const MAX_CONSOLE_LOGS = 200;
+const MAX_ERROR_LOGS = 50;
+
+/**
+ * Formats console args into a single string for storage
+ */
+const formatConsoleArgs = (args) => {
+  return args.map(arg => {
+    if (arg instanceof Error) return `${arg.name}: ${arg.message}`;
+    if (typeof arg === 'object') {
+      try { return JSON.stringify(arg); } catch { return String(arg); }
+    }
+    return String(arg);
+  }).join(' ');
+};
+
 export const initGlobalErrorHandlers = () => {
   if (window.__globalErrorHandlersInitialized) return;
   window.__globalErrorHandlersInitialized = true;
+
+  // ── Initialize global console log buffers ──────────────────────────────────
+  // These are read by BugReportModal.captureConsoleLogs()
+  window.__JASHCHAR_CONSOLE_LOGS__ = window.__JASHCHAR_CONSOLE_LOGS__ || [];
+  window.__JASHCHAR_LAST_ERRORS__ = window.__JASHCHAR_LAST_ERRORS__ || [];
+
+  // ── Intercept console.log / console.warn / console.info ───────────────────
+  const originalConsoleLog = console.log;
+  const originalConsoleInfo = console.info;
+  const originalConsoleWarn = console.warn;
+
+  const pushToLogBuffer = (type, args) => {
+    const entry = {
+      type,
+      message: formatConsoleArgs(args),
+      timestamp: new Date().toISOString()
+    };
+    window.__JASHCHAR_CONSOLE_LOGS__.push(entry);
+    // Keep buffer bounded
+    if (window.__JASHCHAR_CONSOLE_LOGS__.length > MAX_CONSOLE_LOGS) {
+      window.__JASHCHAR_CONSOLE_LOGS__ = window.__JASHCHAR_CONSOLE_LOGS__.slice(-MAX_CONSOLE_LOGS);
+    }
+  };
+
+  console.log = (...args) => {
+    originalConsoleLog.apply(console, args);
+    pushToLogBuffer('log', args);
+  };
+
+  console.info = (...args) => {
+    originalConsoleInfo.apply(console, args);
+    pushToLogBuffer('info', args);
+  };
+
+  console.warn = (...args) => {
+    originalConsoleWarn.apply(console, args);
+    pushToLogBuffer('warn', args);
+  };
 
   // 1. Catch Global Uncaught Exceptions (Synchronous & some Async)
   window.onerror = (message, source, lineno, colno, error) => {
@@ -49,7 +104,6 @@ export const initGlobalErrorHandlers = () => {
 
   // 3. Intercept console.error (to catch handled but logged errors)
   const originalConsoleError = console.error;
-  const originalConsoleWarn = console.warn;
   console.error = (...args) => {
     // ── AI Engine offline errors: downgrade to warn (not red error) ──────────────
     // Python AI engine being offline is expected during dev. Don't show red errors.
@@ -76,6 +130,21 @@ export const initGlobalErrorHandlers = () => {
 
     // ── Call original console.error for all other real errors ───────────────────
     originalConsoleError.apply(console, args);
+
+    // ── Store in global buffers for Bug Report capture ──────────────────────────
+    const errorEntry = {
+      type: 'error',
+      message: formatConsoleArgs(args),
+      timestamp: new Date().toISOString()
+    };
+    window.__JASHCHAR_CONSOLE_LOGS__.push(errorEntry);
+    if (window.__JASHCHAR_CONSOLE_LOGS__.length > MAX_CONSOLE_LOGS) {
+      window.__JASHCHAR_CONSOLE_LOGS__ = window.__JASHCHAR_CONSOLE_LOGS__.slice(-MAX_CONSOLE_LOGS);
+    }
+    window.__JASHCHAR_LAST_ERRORS__.push(errorEntry);
+    if (window.__JASHCHAR_LAST_ERRORS__.length > MAX_ERROR_LOGS) {
+      window.__JASHCHAR_LAST_ERRORS__ = window.__JASHCHAR_LAST_ERRORS__.slice(-MAX_ERROR_LOGS);
+    }
 
     // Prevent infinite loops: Don't log errors from the logger itself
     // The logger prints "Failed to log error to system" if it fails.

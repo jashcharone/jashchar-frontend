@@ -33,8 +33,8 @@ const getSessionYearFormat = (sessionName) => {
 const IdAutoGenerationSettings = ({ settings, handleChange, currentSessionName }) => {
     // Generate preview of enrollment ID with session year
     const sessionYear = getSessionYearFormat(currentSessionName);
-    const prefix = settings.student_enrollment_id_prefix || 'STU';
-    const digits = settings.student_enrollment_id_digit || 5;
+    const prefix = settings.enrollment_id_prefix || 'STU';
+    const digits = settings.enrollment_id_digit || 5;
     const previewNumber = `${prefix}-${sessionYear}-${'X'.repeat(digits)}`;
     const exampleNumber = `${prefix}-${sessionYear}-${String(1).padStart(digits, '0')}`;
     
@@ -76,8 +76,8 @@ const IdAutoGenerationSettings = ({ settings, handleChange, currentSessionName }
                 <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
                     <Label className="font-medium">Auto Enroll ID.</Label>
                     <RadioGroup 
-                        value={String(settings.student_enrollment_id_auto_generation)} 
-                        onValueChange={(val) => handleChange('student_enrollment_id_auto_generation', val === 'true')} 
+                        value={String(settings.enrollment_id_auto_generation)} 
+                        onValueChange={(val) => handleChange('enrollment_id_auto_generation', val === 'true')} 
                         className="flex gap-4"
                     >
                         <div className="flex items-center space-x-2">
@@ -90,16 +90,16 @@ const IdAutoGenerationSettings = ({ settings, handleChange, currentSessionName }
                         </div>
                     </RadioGroup>
                 </div>
-                {settings.student_enrollment_id_auto_generation && (
+                {settings.enrollment_id_auto_generation && (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
                         <div className="space-y-2">
                             <Label htmlFor="stud-prefix">Enroll ID. Prefix</Label>
-                            <Input id="stud-prefix" placeholder="e.g., STU" value={settings.student_enrollment_id_prefix || ''} onChange={(e) => handleChange('student_enrollment_id_prefix', e.target.value.toUpperCase())} />
+                            <Input id="stud-prefix" placeholder="e.g., STU" value={settings.enrollment_id_prefix || ''} onChange={(e) => handleChange('enrollment_id_prefix', e.target.value.toUpperCase())} />
                             <p className="text-xs text-muted-foreground">Prefix for your branch (e.g., STU, JASH, ABC)</p>
                         </div>
                         <div className="space-y-2">
                             <Label htmlFor="stud-digit">Sequence Digits</Label>
-                            <Select value={String(settings.student_enrollment_id_digit || '5')} onValueChange={(v) => handleChange('student_enrollment_id_digit', parseInt(v))}>
+                            <Select value={String(settings.enrollment_id_digit || '5')} onValueChange={(v) => handleChange('enrollment_id_digit', parseInt(v))}>
                                 <SelectTrigger><SelectValue placeholder="Select digits" /></SelectTrigger>
                                 <SelectContent>{[4,5,6,7,8].map(d => <SelectItem key={d} value={String(d)}>{d} digits (up to {Math.pow(10, d) - 1} students/year)</SelectItem>)}</SelectContent>
                             </Select>
@@ -650,13 +650,30 @@ const GeneralSetting = () => {
             .eq('id', branchId)
             .single();
         
+        // Also fetch enrollment settings from branch_settings table
+        const { data: branchSettingsData, error: settingsError } = await supabase
+            .from('branch_settings')
+            .select('enrollment_id_auto_generation, enrollment_id_prefix, enrollment_id_digit, enrollment_id_start_from')
+            .eq('branch_id', branchId)
+            .single();
+        
         if (error) {
             console.error('[GeneralSetting] Error fetching settings:', error);
             toast({ variant: 'destructive', title: 'Failed to fetch settings', description: error.message });
         } else {
-            console.log('[GeneralSetting] Settings loaded for:', branchData?.branch_name, branchData);
-            setSettings(branchData || {});
+            // Merge branch data with enrollment settings from branch_settings
+            const mergedSettings = {
+                ...branchData,
+                ...(branchSettingsData || {})
+            };
+            console.log('[GeneralSetting] Settings loaded for:', branchData?.branch_name, mergedSettings);
+            setSettings(mergedSettings || {});
         }
+        
+        if (settingsError) {
+            console.warn('[GeneralSetting] Could not fetch enrollment settings:', settingsError.message);
+        }
+        
         setIsFetching(false);
     }, [branchId, toast]);
 
@@ -681,14 +698,11 @@ const GeneralSetting = () => {
         
         // Save to branches table - this is what all consumers read from
         // Only update settings-related columns, not structure columns
+        // NOTE: enrollment_id_* columns are in branch_settings table, not branches
         const settingsColumns = {
             password_auto_generation: settings.password_auto_generation,
             password_default: settings.password_default,
             password_default_employee: settings.password_default_employee,
-            student_enrollment_id_auto_generation: settings.student_enrollment_id_auto_generation,
-            student_enrollment_id_prefix: settings.student_enrollment_id_prefix,
-            student_enrollment_id_digit: settings.student_enrollment_id_digit,
-            student_admission_start_from: settings.student_admission_start_from,
             staff_id_auto_generation: settings.staff_id_auto_generation,
             staff_id_prefix: settings.staff_id_prefix,
             student_username_auto_generation: settings.student_username_auto_generation,
@@ -711,6 +725,24 @@ const GeneralSetting = () => {
             upi_merchant_name: settings.upi_merchant_name,
             updated_at: new Date().toISOString()
         };
+
+        // Save enrollment settings to branch_settings table
+        const enrollmentSettings = {
+            enrollment_id_auto_generation: settings.enrollment_id_auto_generation,
+            enrollment_id_prefix: settings.enrollment_id_prefix,
+            enrollment_id_digit: settings.enrollment_id_digit,
+            enrollment_id_start_from: settings.enrollment_id_start_from,
+            updated_at: new Date().toISOString()
+        };
+        
+        const { error: enrollError } = await supabase
+            .from('branch_settings')
+            .update(enrollmentSettings)
+            .eq('branch_id', branchId);
+        
+        if (enrollError) {
+            console.error('[GeneralSetting] Enrollment settings save error:', enrollError);
+        }
 
         const { error } = await supabase
             .from('branches')

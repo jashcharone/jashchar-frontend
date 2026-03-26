@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+﻿import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import DashboardLayout from '@/components/DashboardLayout';
 import { supabase } from '@/lib/customSupabaseClient';
@@ -1368,12 +1368,12 @@ const BulkUpload = () => {
         // Get branch settings for prefix and digit
         const { data: branchSettings } = await supabase
             .from('branches')
-            .select('student_enrollment_id_prefix, student_enrollment_id_digit')
+            .select('enrollment_id_prefix, enrollment_id_digit')
             .eq('id', branchIdParam)
             .single();
         
-        const prefix = (branchSettings?.student_enrollment_id_prefix ?? 'STU').trim();
-        const digit = Number(branchSettings?.student_enrollment_id_digit) || 5;
+        const prefix = (branchSettings?.enrollment_id_prefix ?? 'STU').trim();
+        const digit = Number(branchSettings?.enrollment_id_digit) || 5;
         
         // 🌟 Use session year format (e.g., "2026-2027" → "2026/27")
         let sessionYear;

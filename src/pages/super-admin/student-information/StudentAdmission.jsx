@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+﻿import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
 import { supabase } from '@/lib/customSupabaseClient';
 import { sortClasses, sortSections } from '@/utils/classOrderUtils';
@@ -315,7 +315,8 @@ const initialFormData = {
   bank_name: '',
   ifsc_code: '',
   // Academic Details - Government tracking
-  sats_no: ''  // Karnataka SATS Number (Student Achievement Tracking System)
+  sats_no: '',  // Karnataka SATS Number (Student Achievement Tracking System)
+  admission_no: ''  // Manual Admission Number (filled during admission)
 };
 
 const AddSiblingModal = ({ onSiblingAdd }) => {
@@ -465,9 +466,9 @@ const StudentAdmission = () => {
   const { isChecking: isSatsChecking, error: satsError, validateSatsNo, clearError: clearSatsError } = useSatsValidation();
 
   const isStudentAdmissionAutoGenConfigValid = useCallback((settings) => {
-    const prefix = (settings?.student_enrollment_id_prefix ?? '').trim();
-    const digit = Number(settings?.student_enrollment_id_digit);
-    const startFrom = Number(settings?.student_admission_start_from);
+    const prefix = (settings?.enrollment_id_prefix ?? '').trim();
+    const digit = Number(settings?.enrollment_id_digit);
+    const startFrom = Number(settings?.enrollment_id_start_from);
     return Boolean(prefix) && Number.isFinite(digit) && digit > 0 && Number.isFinite(startFrom);
   }, []);
 
@@ -503,14 +504,15 @@ const StudentAdmission = () => {
       switch (field.field_name) {
         case 'enrollment_id':
           return (
-            <SmartField label={label} required={isRequired} error={errors.enrollment_id} touched={touched.enrollment_id} icon={Hash} hint={schoolSettings?.student_enrollment_id_auto_generation ? "Auto-generated" : null}>
+            <SmartField label={label} required={isRequired} error={errors.enrollment_id} touched={touched.enrollment_id} icon={Hash} hint={schoolSettings?.enrollment_id_auto_generation ? "Auto-generated" : null}>
               <Input
                 value={formData.enrollment_id}
                 placeholder="Enter admission number"
                 onChange={e => handleChange('enrollment_id', e.target.value)}
-                disabled={Boolean(schoolSettings?.student_enrollment_id_auto_generation) && isStudentAdmissionAutoGenConfigValid(schoolSettings)}
+                disabled={Boolean(schoolSettings?.enrollment_id_auto_generation)}
+                readOnly={Boolean(schoolSettings?.enrollment_id_auto_generation)}
                 onBlur={() => handleBlur('enrollment_id')}
-                className={cn("h-11", schoolSettings?.student_enrollment_id_auto_generation && "bg-muted/50")}
+                className={cn("h-11", schoolSettings?.enrollment_id_auto_generation && "bg-muted/50 cursor-not-allowed")}
               />
             </SmartField>
           );
@@ -1218,6 +1220,25 @@ const StudentAdmission = () => {
                 </div>
               </SmartField>
              );
+        // Admission No - Manual admission number filled during admission
+        case 'admission_no':
+             return (
+              <SmartField 
+                label={label || "Admission No"} 
+                required={isRequired} 
+                error={errors[field.field_name]} 
+                touched={touched[field.field_name]} 
+                icon={FileText}
+              >
+                <Input 
+                  value={formData[field.field_name] || ''} 
+                  placeholder="Enter Admission Number"
+                  onChange={e => handleChange(field.field_name, e.target.value)}
+                  onBlur={() => handleBlur(field.field_name)}
+                  className="h-11"
+                />
+              </SmartField>
+             );
       }
     }
 
@@ -1619,8 +1640,8 @@ const StudentAdmission = () => {
    * Uses GLOBAL query across ALL branches for uniqueness
    */
   const generateNextIdLocal = useCallback(async (settings, branchId) => {
-    const prefix = (settings?.student_enrollment_id_prefix ?? 'STU').trim();
-    const digit = Number(settings?.student_enrollment_id_digit) || 5;
+    const prefix = (settings?.enrollment_id_prefix ?? 'STU').trim();
+    const digit = Number(settings?.enrollment_id_digit) || 5;
     
     // 🌟 Use session year format (e.g., "2026-2027" → "2026-27") - hyphen, not slash
     let sessionYear;
@@ -1696,7 +1717,7 @@ const StudentAdmission = () => {
     if (!branchId) return null;
 
     // Check if auto-generation is enabled
-    if (!settings?.student_enrollment_id_auto_generation) {
+    if (!settings?.enrollment_id_auto_generation) {
       return null;
     }
 
@@ -1753,7 +1774,7 @@ const StudentAdmission = () => {
   useEffect(() => {
     // Only regenerate if session actually changed (not initial load)
     if (prevSessionIdRef.current && formData.session_id && prevSessionIdRef.current !== formData.session_id) {
-      if (schoolSettings?.student_enrollment_id_auto_generation) {
+      if (schoolSettings?.enrollment_id_auto_generation) {
         console.log('[SessionChange] Regenerating admission number for new session:', formData.session_id);
         generateNextIdRef.current(schoolSettings, selectedBranch?.id);
       }
@@ -1764,15 +1785,35 @@ const StudentAdmission = () => {
   const fetchSchoolSettings = useCallback(async () => {
     const branchId = selectedBranch?.id;
     if (!branchId) return;
+    
+    // Fetch from branches table
     const { data, error } = await supabase.from('branches').select('*').eq('id', branchId).single();
     if (error) {
       console.error('Could not fetch branch settings:', error);
       toast({ variant: 'destructive', title: 'Could not fetch school settings.' });
       return;
     }
-    setSchoolSettings(data);
-    if (data?.student_enrollment_id_auto_generation) {
-      await generateNextIdRef.current(data, branchId);
+    
+    // Also fetch enrollment settings from branch_settings table
+    const { data: branchSettingsData, error: settingsError } = await supabase
+      .from('branch_settings')
+      .select('enrollment_id_auto_generation, enrollment_id_prefix, enrollment_id_digit, enrollment_id_start_from')
+      .eq('branch_id', branchId)
+      .single();
+    
+    if (settingsError) {
+      console.warn('Could not fetch enrollment settings from branch_settings:', settingsError.message);
+    }
+    
+    // Merge branch data with enrollment settings
+    const mergedSettings = {
+      ...data,
+      ...(branchSettingsData || {})
+    };
+    
+    setSchoolSettings(mergedSettings);
+    if (mergedSettings?.enrollment_id_auto_generation) {
+      await generateNextIdRef.current(mergedSettings, branchId);
     }
   }, [selectedBranch?.id, toast]);
   
@@ -2596,6 +2637,8 @@ const StudentAdmission = () => {
         roll_number: formData.roll_number,
         admission_date,
         category_id: formData.category_id || null,
+        sats_no: formData.sats_no || null,
+        admission_no: formData.admission_no || null,
         // Parent info
         father_name: formData.father_name || null,
         father_phone: formData.father_phone || null,
@@ -2703,7 +2746,7 @@ const StudentAdmission = () => {
                         || 'An unknown error occurred.';
       const isDuplicate = errorMessage.includes('duplicate key value') || errorMessage.includes('already exists') || errorMessage.includes('already registered');
       toast({ variant: 'destructive', title: 'Admission Failed', description: isDuplicate ? `Duplicate Entry Detected (ID, Email or Aadhar)` : errorMessage });
-      if (isDuplicate && schoolSettings?.student_enrollment_id_auto_generation) await generateNextId(schoolSettings);
+      if (isDuplicate && schoolSettings?.enrollment_id_auto_generation) await generateNextId(schoolSettings);
     } finally {
       setLoading(false);
     }

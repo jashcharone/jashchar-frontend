@@ -736,13 +736,20 @@ const GeneralSetting = () => {
             updated_at: new Date().toISOString()
         };
         
+        console.log('[GeneralSetting] Saving enrollment settings:', enrollmentSettings);
+        
         const { error: enrollError } = await supabase
             .from('branch_settings')
             .upsert(enrollmentSettings, { onConflict: 'branch_id' });
         
         if (enrollError) {
             console.error('[GeneralSetting] Enrollment settings save error:', enrollError);
+            toast({ variant: 'destructive', title: 'Failed to save enrollment settings', description: enrollError.message });
+            setLoading(false);
+            return;
         }
+        
+        console.log('[GeneralSetting] Enrollment settings saved successfully');
 
         const { error } = await supabase
             .from('branches')

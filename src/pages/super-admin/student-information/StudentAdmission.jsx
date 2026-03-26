@@ -1799,7 +1799,7 @@ const StudentAdmission = () => {
       .from('branch_settings')
       .select('enrollment_id_auto_generation, enrollment_id_prefix, enrollment_id_digit, enrollment_id_start_from')
       .eq('branch_id', branchId)
-      .single();
+      .maybeSingle();
     
     if (settingsError) {
       console.warn('Could not fetch enrollment settings from branch_settings:', settingsError.message);

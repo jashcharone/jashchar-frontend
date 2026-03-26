@@ -655,7 +655,7 @@ const GeneralSetting = () => {
             .from('branch_settings')
             .select('enrollment_id_auto_generation, enrollment_id_prefix, enrollment_id_digit, enrollment_id_start_from')
             .eq('branch_id', branchId)
-            .single();
+            .maybeSingle();
         
         if (error) {
             console.error('[GeneralSetting] Error fetching settings:', error);
@@ -726,8 +726,9 @@ const GeneralSetting = () => {
             updated_at: new Date().toISOString()
         };
 
-        // Save enrollment settings to branch_settings table
+        // Save enrollment settings to branch_settings table (upsert to handle new rows)
         const enrollmentSettings = {
+            branch_id: branchId,
             enrollment_id_auto_generation: settings.enrollment_id_auto_generation,
             enrollment_id_prefix: settings.enrollment_id_prefix,
             enrollment_id_digit: settings.enrollment_id_digit,
@@ -737,8 +738,7 @@ const GeneralSetting = () => {
         
         const { error: enrollError } = await supabase
             .from('branch_settings')
-            .update(enrollmentSettings)
-            .eq('branch_id', branchId);
+            .upsert(enrollmentSettings, { onConflict: 'branch_id' });
         
         if (enrollError) {
             console.error('[GeneralSetting] Enrollment settings save error:', enrollError);

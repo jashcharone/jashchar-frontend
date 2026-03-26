@@ -71,7 +71,7 @@ const Template14_CertificateStyle = ({ receiptData, copyType }) => {
         <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '8.5px', marginBottom: '5px', borderBottom: '1px solid #e8d8b0', paddingBottom: '4px' }}>
           <div><span style={{ color: '#b8860b' }}>Name:</span> <strong>{student?.full_name || '-'}</strong></div>
           <div><span style={{ color: '#b8860b' }}>Class:</span> {student?.class?.name || '-'}{student?.section?.name ? ` (${student.section.name})` : ''}</div>
-          <div><span style={{ color: '#b8860b' }}>Adm No:</span> {student?.school_code || '-'}</div>
+          <div><span style={{ color: '#b8860b' }}>Enroll ID:</span> {student?.enrollment_id || '-'}</div>
           <div><span style={{ color: '#b8860b' }}>Date:</span> {receiptDate ? format(new Date(receiptDate), 'dd MMM yyyy') : '-'}</div>
           <div><span style={{ color: '#b8860b' }}>No:</span> {transactionId?.split('/').pop() || '-'}</div>
         </div>

@@ -1,4 +1,4 @@
-﻿import React from 'react';
+import React from 'react';
 import { Link } from 'react-router-dom';
 import DashboardLayout from '@/components/DashboardLayout';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
@@ -15,7 +15,7 @@ const StudentDashboard = () => {
         { title: 'Subjects Enrolled', value: '6', icon: BookOpen },
         { title: 'Attendance', value: '92%', icon: CalendarCheck, change: '100% this week' },
         { title: 'Upcoming Assignments', value: '2', icon: ClipboardList },
-        { title: 'Pending Fees', value: '₹1,500', icon: IndianRupee, changeType: 'increase' },
+        { title: 'Pending Fees', value: '?1,500', icon: IndianRupee, changeType: 'increase' },
     ];
     
     const quickLinks = [

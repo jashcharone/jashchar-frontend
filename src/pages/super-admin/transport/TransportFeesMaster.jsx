@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Helmet } from 'react-helmet';
 import { supabase } from '@/lib/customSupabaseClient';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
@@ -17,7 +17,7 @@ import { Loader2, Save, IndianRupee, Route, MapPin, Calendar, TrendingUp, Settin
 import { format, parseISO, isValid } from 'date-fns';
 
 const BILLING_MODES = [
-    { value: 'annual', label: 'Annual', desc: 'Single annual fee — student pays any amount, any time' },
+    { value: 'annual', label: 'Annual', desc: 'Single annual fee � student pays any amount, any time' },
     { value: 'monthly', label: 'Monthly', desc: 'Split into monthly installments' },
     { value: 'term_wise', label: 'Term-wise', desc: 'Split into academic terms' },
     { value: 'quarterly', label: 'Quarterly', desc: '4 quarterly installments' },
@@ -119,9 +119,9 @@ const TransportFeesMaster = () => {
         fetchData();
     }, [fetchData]);
 
-    // ═══════════════════════════════════════════════════
+    // ---------------------------------------------------
     // TAB 1: Billing Setup Save
-    // ═══════════════════════════════════════════════════
+    // ---------------------------------------------------
     const handleSaveBillingSetup = async () => {
         setSaving(true);
         try {
@@ -157,9 +157,9 @@ const TransportFeesMaster = () => {
         }
     };
 
-    // ═══════════════════════════════════════════════════
+    // ---------------------------------------------------
     // TAB 2: Route Fees
-    // ═══════════════════════════════════════════════════
+    // ---------------------------------------------------
     const handleStopFeeChange = async (mappingId, field, value) => {
         const numVal = value ? parseFloat(value) : null;
         const updateObj = { [field]: numVal };
@@ -185,9 +185,9 @@ const TransportFeesMaster = () => {
         }
     };
 
-    // ═══════════════════════════════════════════════════
+    // ---------------------------------------------------
     // TAB 3: Installment Due Dates & Fines
-    // ═══════════════════════════════════════════════════
+    // ---------------------------------------------------
     const handleGenerateInstallments = () => {
         const labels = currentInstallmentLabels;
         const existingMap = new Map(installmentConfig.map(c => [c.installment_number, c]));
@@ -306,7 +306,7 @@ const TransportFeesMaster = () => {
                 <Helmet>
                     <title>Transport Fees Master | Jashchar ERP</title>
                 </Helmet>
-                <h1 className="text-2xl font-bold mb-6">💰 Transport Fees Master</h1>
+                <h1 className="text-2xl font-bold mb-6">?? Transport Fees Master</h1>
 
                 {/* Stats Cards */}
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
@@ -349,7 +349,7 @@ const TransportFeesMaster = () => {
                     </Button>
                 </div>
 
-                {/* ═══════════════ TAB 1: BILLING SETUP ═══════════════ */}
+                {/* --------------- TAB 1: BILLING SETUP --------------- */}
                 {activeTab === 'billing' && (
                     <Card>
                         <CardHeader>
@@ -444,10 +444,10 @@ const TransportFeesMaster = () => {
                                         <p className="font-medium text-blue-700 dark:text-blue-300">Preview</p>
                                         <p className="text-sm text-blue-600 dark:text-blue-400">
                                             {billingMode === 'annual' && 'Students will see 1 annual fee row. They can pay any amount at any time.'}
-                                            {billingMode === 'monthly' && `Fee will be split into ${workingMonths} monthly installments. E.g., ₹30,000 annual = ₹${Math.round(30000/workingMonths).toLocaleString('en-IN')}/month`}
-                                            {billingMode === 'term_wise' && `Fee will be split into ${numTerms} term installments. E.g., ₹30,000 annual = ₹${Math.round(30000/numTerms).toLocaleString('en-IN')}/term`}
-                                            {billingMode === 'quarterly' && 'Fee will be split into 4 quarterly installments. E.g., ₹30,000 annual = ₹7,500/quarter'}
-                                            {billingMode === 'half_yearly' && 'Fee will be split into 2 half-yearly installments. E.g., ₹30,000 annual = ₹15,000/semester'}
+                                            {billingMode === 'monthly' && `Fee will be split into ${workingMonths} monthly installments. E.g., ?30,000 annual = ?${Math.round(30000/workingMonths).toLocaleString('en-IN')}/month`}
+                                            {billingMode === 'term_wise' && `Fee will be split into ${numTerms} term installments. E.g., ?30,000 annual = ?${Math.round(30000/numTerms).toLocaleString('en-IN')}/term`}
+                                            {billingMode === 'quarterly' && 'Fee will be split into 4 quarterly installments. E.g., ?30,000 annual = ?7,500/quarter'}
+                                            {billingMode === 'half_yearly' && 'Fee will be split into 2 half-yearly installments. E.g., ?30,000 annual = ?15,000/semester'}
                                         </p>
                                     </div>
                                 </div>
@@ -463,7 +463,7 @@ const TransportFeesMaster = () => {
                     </Card>
                 )}
 
-                {/* ═══════════════ TAB 2: ROUTE-WISE FEES ═══════════════ */}
+                {/* --------------- TAB 2: ROUTE-WISE FEES --------------- */}
                 {activeTab === 'routewise' && (
                     <div className="space-y-6">
                         <div className="p-3 bg-blue-50 dark:bg-blue-950/30 rounded-lg border border-blue-200 dark:border-blue-800 text-sm">
@@ -471,9 +471,9 @@ const TransportFeesMaster = () => {
                                 <AlertCircle className="h-4 w-4 text-blue-500 mt-0.5" />
                                 <p className="text-blue-700 dark:text-blue-300">
                                     <strong>Annual Fee is the Source of Truth.</strong> Enter the annual fee per stop. 
-                                    Monthly fee is auto-calculated as Annual ÷ {workingMonths} months.
+                                    Monthly fee is auto-calculated as Annual � {workingMonths} months.
                                     {billingMode !== 'monthly' && billingMode !== 'annual' && 
-                                        ` Per-installment = Annual ÷ ${billingMode === 'quarterly' ? '4' : billingMode === 'half_yearly' ? '2' : numTerms}.`}
+                                        ` Per-installment = Annual � ${billingMode === 'quarterly' ? '4' : billingMode === 'half_yearly' ? '2' : numTerms}.`}
                                 </p>
                             </div>
                         </div>
@@ -502,8 +502,8 @@ const TransportFeesMaster = () => {
                                                         <th className="px-4 py-2 text-left w-12">Order</th>
                                                         <th className="px-4 py-2 text-left">Stop Name</th>
                                                         <th className="px-4 py-2 text-left">Distance</th>
-                                                        <th className="px-4 py-2 text-left w-44">Annual Fee (₹)</th>
-                                                        <th className="px-4 py-2 text-left w-36">Monthly (₹)</th>
+                                                        <th className="px-4 py-2 text-left w-44">Annual Fee (?)</th>
+                                                        <th className="px-4 py-2 text-left w-36">Monthly (?)</th>
                                                     </tr>
                                                 </thead>
                                                 <tbody>
@@ -530,7 +530,7 @@ const TransportFeesMaster = () => {
                                                                 </div>
                                                             </td>
                                                             <td className="px-4 py-2 text-muted-foreground">
-                                                                ₹{((stop.annual_fee || stop.monthly_fees * workingMonths || 0) / workingMonths).toLocaleString('en-IN', { maximumFractionDigits: 0 })}/mo
+                                                                ?{((stop.annual_fee || stop.monthly_fees * workingMonths || 0) / workingMonths).toLocaleString('en-IN', { maximumFractionDigits: 0 })}/mo
                                                             </td>
                                                         </tr>
                                                     ))}
@@ -544,7 +544,7 @@ const TransportFeesMaster = () => {
                     </div>
                 )}
 
-                {/* ═══════════════ TAB 3: DUE DATES & FINES ═══════════════ */}
+                {/* --------------- TAB 3: DUE DATES & FINES --------------- */}
                 {activeTab === 'duedates' && (
                     <Card>
                         <CardHeader>
@@ -611,7 +611,7 @@ const TransportFeesMaster = () => {
                                                         </RadioGroup>
                                                     </div>
                                                     <div className="md:col-span-2">
-                                                        <Label>{config.fine_type === 'percentage' ? '% Value' : 'Amount (₹)'}</Label>
+                                                        <Label>{config.fine_type === 'percentage' ? '% Value' : 'Amount (?)'}</Label>
                                                         <Input
                                                             type="number"
                                                             step="0.01"

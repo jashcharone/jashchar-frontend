@@ -1,9 +1,9 @@
-﻿/**
- * 📊 STUDENT INFORMATION REPORT - WORLD'S BEST COMPREHENSIVE SYSTEM
- * ═══════════════════════════════════════════════════════════════════════════════
+/**
+ * ?? STUDENT INFORMATION REPORT - WORLD'S BEST COMPREHENSIVE SYSTEM
+ * -------------------------------------------------------------------------------
  * Total: 28+ Report Types across 6 Categories
  * Features: Charts, Visualizations, Export (Excel/PDF/CSV), Column Toggle
- * ═══════════════════════════════════════════════════════════════════════════════
+ * -------------------------------------------------------------------------------
  */
 
 import React, { useState, useEffect, useMemo } from 'react';
@@ -33,9 +33,9 @@ import {
   PieChart as RechartPie, Pie, Cell, Legend, LineChart, Line, Area, AreaChart
 } from 'recharts';
 
-// ═══════════════════════════════════════════════════════════════════════════════
-// 📊 REPORT CATEGORIES & TYPES CONFIGURATION
-// ═══════════════════════════════════════════════════════════════════════════════
+// -------------------------------------------------------------------------------
+// ?? REPORT CATEGORIES & TYPES CONFIGURATION
+// -------------------------------------------------------------------------------
 
 const REPORT_CATEGORIES = [
   { key: 'basic', label: 'Student Data', icon: Users, color: 'bg-blue-500' },
@@ -92,9 +92,9 @@ const REPORT_TYPES = {
 // Chart colors
 const CHART_COLORS = ['#3B82F6', '#EC4899', '#10B981', '#F59E0B', '#8B5CF6', '#06B6D4', '#EF4444', '#84CC16'];
 
-// ═══════════════════════════════════════════════════════════════════════════════
-// 📊 CHART COMPONENTS
-// ═══════════════════════════════════════════════════════════════════════════════
+// -------------------------------------------------------------------------------
+// ?? CHART COMPONENTS
+// -------------------------------------------------------------------------------
 
 const GenderRatioChart = ({ data }) => {
   const chartData = data?.classes?.map(c => ({
@@ -265,9 +265,9 @@ const VacancyChart = ({ data }) => {
   );
 };
 
-// ═══════════════════════════════════════════════════════════════════════════════
-// 📊 MAIN COMPONENT
-// ═══════════════════════════════════════════════════════════════════════════════
+// -------------------------------------------------------------------------------
+// ?? MAIN COMPONENT
+// -------------------------------------------------------------------------------
 
 const StudentInformationReport = () => {
   const { user, currentSessionId, organizationId } = useAuth();
@@ -427,7 +427,7 @@ const StudentInformationReport = () => {
       case 'student_report':
       case 'student_profile':
         return [
-          { key: 'admission_number', label: 'Adm. No' },
+          { key: 'enrollment_id', label: 'Enroll ID' },
           { key: 'name', label: 'Student Name', render: (_, r) => `${r.first_name || ''} ${r.last_name || ''}`.trim() },
           { key: 'class', label: 'Class', render: (_, r) => r.class?.name || '-' },
           { key: 'section', label: 'Section', render: (_, r) => r.section?.name || '-' },
@@ -437,7 +437,7 @@ const StudentInformationReport = () => {
         ];
       case 'guardian_report':
         return [
-          { key: 'admission_number', label: 'Adm. No' },
+          { key: 'enrollment_id', label: 'Enroll ID' },
           { key: 'name', label: 'Student', render: (_, r) => `${r.first_name || ''} ${r.last_name || ''}`.trim() },
           { key: 'class', label: 'Class', render: (_, r) => r.class?.name || '-' },
           { key: 'father_name', label: 'Father' },
@@ -490,7 +490,7 @@ const StudentInformationReport = () => {
         ];
       case 'birthday_report':
         return [
-          { key: 'admissionNo', label: 'Adm. No' },
+          { key: 'enrollmentId', label: 'Enroll ID' },
           { key: 'name', label: 'Student Name' },
           { key: 'dob', label: 'Date of Birth', render: (v) => formatDate(v) },
           { key: 'age', label: 'Age' },
@@ -513,7 +513,7 @@ const StudentInformationReport = () => {
         ];
       case 'admission_report':
         return [
-          { key: 'admission_number', label: 'Adm. No' },
+          { key: 'enrollment_id', label: 'Enroll ID' },
           { key: 'name', label: 'Student', render: (_, r) => `${r.first_name || ''} ${r.last_name || ''}`.trim() },
           { key: 'class', label: 'Class', render: (_, r) => r.class?.name || '-' },
           { key: 'admission_date', label: 'Admission Date', render: (v) => formatDate(v) },
@@ -537,7 +537,7 @@ const StudentInformationReport = () => {
         ];
       case 'tc_issued_report':
         return [
-          { key: 'admission_number', label: 'Adm. No' },
+          { key: 'enrollment_id', label: 'Enroll ID' },
           { key: 'name', label: 'Student', render: (_, r) => `${r.first_name || ''} ${r.last_name || ''}`.trim() },
           { key: 'class', label: 'Class', render: (_, r) => r.class?.name || '-' },
           { key: 'left_date', label: 'Left Date', render: (v) => formatDate(v) },
@@ -547,7 +547,7 @@ const StudentInformationReport = () => {
       case 'student_login_credential':
       case 'parent_login_credential':
         return [
-          { key: 'admission_number', label: 'Adm. No' },
+          { key: 'enrollment_id', label: 'Enroll ID' },
           { key: 'name', label: 'Student', render: (_, r) => `${r.first_name || ''} ${r.last_name || ''}`.trim() },
           { key: 'class', label: 'Class', render: (_, r) => r.class?.name || '-' },
           { key: 'email', label: 'Login ID / Email' },
@@ -555,7 +555,7 @@ const StudentInformationReport = () => {
         ];
       case 'transport_users_report':
         return [
-          { key: 'admissionNo', label: 'Adm. No' },
+          { key: 'enrollmentId', label: 'Enroll ID' },
           { key: 'name', label: 'Student' },
           { key: 'className', label: 'Class' },
           { key: 'routeName', label: 'Route' },
@@ -565,7 +565,7 @@ const StudentInformationReport = () => {
         ];
       case 'hostel_students_report':
         return [
-          { key: 'admissionNo', label: 'Adm. No' },
+          { key: 'enrollmentId', label: 'Enroll ID' },
           { key: 'name', label: 'Student' },
           { key: 'className', label: 'Class' },
           { key: 'hostelName', label: 'Hostel' },
@@ -601,7 +601,7 @@ const StudentInformationReport = () => {
         ];
       case 'student_history':
         return [
-          { key: 'admission_number', label: 'Adm. No' },
+          { key: 'enrollment_id', label: 'Enroll ID' },
           { key: 'name', label: 'Student', render: (_, r) => `${r.first_name || ''} ${r.last_name || ''}`.trim() },
           { key: 'class', label: 'Class', render: (_, r) => r.class?.name || '-' },
           { key: 'admission_date', label: 'Admission Date', render: (v) => formatDate(v) },

@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Loader2, AlertCircle } from 'lucide-react';
@@ -42,7 +42,7 @@ const AadharInput = ({ value, onChange, label, required, checkDuplicates = false
         `)
         .eq('aadhar_no', aadharNumber);
       
-      // 🔒 IMPORTANT: Only check duplicates within SAME organization
+      // ?? IMPORTANT: Only check duplicates within SAME organization
       if (organizationId) {
         query = query.eq('organization_id', organizationId);
       }

@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
 import { supabase } from '@/lib/customSupabaseClient';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
@@ -132,14 +132,14 @@ const SessionSetting = () => {
                 // Session has already ended!
                 toast({ 
                     variant: 'destructive', 
-                    title: `⚠️ Session Expired - ${branch.branch_name}`,
+                    title: `?? Session Expired - ${branch.branch_name}`,
                     description: `Session "${activeSession.name}" has ended. Please create next session "${nextSessionName}".`,
                     duration: 10000
                 });
             } else if (daysUntilEnd <= warningDays && daysUntilEnd >= 0 && !nextSessionExists) {
                 // Session ending soon
                 toast({ 
-                    title: `📅 Session Ending Soon - ${branch.branch_name}`,
+                    title: `?? Session Ending Soon - ${branch.branch_name}`,
                     description: `Session "${activeSession.name}" ends in ${daysUntilEnd} days. Consider creating "${nextSessionName}".`,
                     duration: 8000
                 });
@@ -192,7 +192,7 @@ const SessionSetting = () => {
             if (error) throw error;
 
             toast({ 
-                title: '✅ Next Session Created', 
+                title: '? Next Session Created', 
                 description: `Session "${nextSessionName}" created. Activate it when ready.` 
             });
             fetchData();
@@ -342,7 +342,7 @@ const SessionSetting = () => {
                 .update({ is_active: true })
                 .eq('id', sessionId);
 
-            // ✅ CRITICAL: Also update schools.current_session_id to keep in sync
+            // ? CRITICAL: Also update schools.current_session_id to keep in sync
             await supabase
                 .from('schools')
                 .update({ current_session_id: sessionId })
@@ -675,7 +675,7 @@ const SessionSetting = () => {
                                                         <div className="flex items-center justify-between">
                                                             <div>
                                                                 <p className="font-medium text-primary">
-                                                                    📅 Create Next Session
+                                                                    ?? Create Next Session
                                                                 </p>
                                                                 <p className="text-sm text-muted-foreground">
                                                                     Suggested: <span className="font-semibold">{getNextSessionName(activeSession.name)}</span>

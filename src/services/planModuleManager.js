@@ -1,4 +1,4 @@
-﻿import { supabase } from '@/lib/customSupabaseClient';
+import { supabase } from '@/lib/customSupabaseClient';
 import { ALL_MODULES } from '@/config/modules';
 import { moduleSyncService } from './moduleSyncService';
 

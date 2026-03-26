@@ -1,4 +1,4 @@
-﻿import React from 'react';
+import React from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
 import { Card } from '@/components/ui/card';
 import { Construction, Users } from 'lucide-react';

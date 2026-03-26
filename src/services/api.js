@@ -1,4 +1,4 @@
-﻿import { getApiBaseUrl } from '@/utils/platform';
+import { getApiBaseUrl } from '@/utils/platform';
 import { supabase } from '@/lib/customSupabaseClient';
 
 // Platform-aware API URL (Capacitor uses full Railway URL, web uses relative /api)

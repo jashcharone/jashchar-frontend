@@ -51,7 +51,7 @@ const ReportCardDesignerPage = () => {
         show_father_name: true,
         show_mother_name: true,
         show_dob: true,
-        show_admission_no: true,
+        show_enrollment_id: true,
         show_roll_no: true,
         show_class: true,
         show_section: true,
@@ -161,7 +161,7 @@ const ReportCardDesignerPage = () => {
             show_father_name: true,
             show_mother_name: true,
             show_dob: true,
-            show_admission_no: true,
+            show_enrollment_id: true,
             show_roll_no: true,
             show_class: true,
             show_section: true,
@@ -368,9 +368,9 @@ const ReportCardDesignerPage = () => {
                                 <span>15</span>
                             </div>
                         )}
-                        {template.show_admission_no && (
+                        {template.show_enrollment_id && (
                             <div className="flex gap-2">
-                                <span className="font-semibold">Adm No:</span>
+                                <span className="font-semibold">Enroll ID:</span>
                                 <span>2024001</span>
                             </div>
                         )}
@@ -790,7 +790,7 @@ const ReportCardDesignerPage = () => {
                                         { key: 'show_father_name', label: "Father's Name" },
                                         { key: 'show_mother_name', label: "Mother's Name" },
                                         { key: 'show_dob', label: 'Date of Birth' },
-                                        { key: 'show_admission_no', label: 'Admission No' },
+                                        { key: 'show_enrollment_id', label: 'Enroll ID' },
                                         { key: 'show_roll_no', label: 'Roll No' },
                                         { key: 'show_class', label: 'Class' },
                                         { key: 'show_section', label: 'Section' },

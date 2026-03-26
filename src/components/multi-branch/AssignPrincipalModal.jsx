@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -131,7 +131,7 @@ const AssignPrincipalModal = ({ open, onOpenChange, branch, onAssign, loading })
                   onClick={() => setSelectedUserId('none')}
                 >
                   <Avatar className="h-10 w-10 bg-muted">
-                    <AvatarFallback>”</AvatarFallback>
+                    <AvatarFallback>�</AvatarFallback>
                   </Avatar>
                   <div className="flex-1">
                     <p className="font-medium text-muted-foreground italic">No Principal</p>

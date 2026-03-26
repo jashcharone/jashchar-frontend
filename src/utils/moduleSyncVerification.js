@@ -1,4 +1,4 @@
-﻿import { ALL_MODULES } from '@/config/modules';
+import { ALL_MODULES } from '@/config/modules';
 import { supabase } from '@/lib/customSupabaseClient';
 
 export const verifyModuleSync = async () => {

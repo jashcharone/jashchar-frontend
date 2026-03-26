@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Organization/Branch Selector Component
  * Allows users to switch between their organizations and branches
  */
@@ -201,7 +201,7 @@ export const OrgBranchSelector = ({ compact = false, className = '' }) => {
                     )}
                   </span>
                   <span className="text-xs text-muted-foreground">
-                    Branch-{branch.sequence} • {branch.branch_code}
+                    Branch-{branch.sequence} � {branch.branch_code}
                   </span>
                 </div>
                 {selectedBranch?.id === branch.id && (

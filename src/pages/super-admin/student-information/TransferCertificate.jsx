@@ -44,7 +44,7 @@ const TCPrintTemplate = ({ tc, schoolInfo }) => {
       <div className="text-center border-b-2 border-black pb-4 mb-4">
         <h1 className="text-2xl font-bold uppercase tracking-wide">{schoolInfo?.name || 'School Name'}</h1>
         <p className="text-sm">{schoolInfo?.address || 'School Address'}</p>
-        <p className="text-sm">Affiliation No: {schoolInfo?.affiliation_no || '___'} | School Code: {schoolInfo?.school_code || '___'}</p>
+        <p className="text-sm">Affiliation No: {schoolInfo?.affiliation_no || '___'} | School Code: {schoolInfo?.enrollment_id || '___'}</p>
         <h2 className="text-xl font-bold mt-3 uppercase border-2 border-black inline-block px-6 py-1">
           {tc.is_duplicate ? 'DUPLICATE TRANSFER CERTIFICATE' : 'TRANSFER CERTIFICATE'}
         </h2>
@@ -64,7 +64,7 @@ const TCPrintTemplate = ({ tc, schoolInfo }) => {
             ['2', "Father's Name", tc.father_name],
             ['3', "Mother's Name", tc.mother_name],
             ['4', 'Date of Birth (in words)', tc.date_of_birth ? formatDate(tc.date_of_birth) : ''],
-            ['5', 'Admission Number', tc.admission_number],
+            ['5', 'Enrollment ID', tc.enrollment_id],
             ['6', 'Date of Admission', tc.admission_date ? formatDate(tc.admission_date) : ''],
             ['7', 'Class at the time of Admission', tc.class_at_admission],
             ['8', 'Class at the time of Leaving', tc.class_at_leaving],
@@ -197,7 +197,7 @@ export default function TransferCertificate() {
           email: data.contact_email,
           logo: data.logo_url,
           affiliation_no: '', // Column doesn't exist in schools table
-          school_code: ''     // Column doesn't exist in schools table
+          enrollment_id: ''     // Column doesn't exist in schools table
         });
       }
     })();
@@ -267,7 +267,7 @@ export default function TransferCertificate() {
     if (modalSelectedClass) {
       let qry = supabase
         .from('student_profiles')
-        .select('id, full_name, father_name, mother_name, date_of_birth, school_code, admission_date, class_id, section_id, classes!student_profiles_class_id_fkey(name), sections!student_profiles_section_id_fkey(name), photo_url')
+        .select('id, full_name, father_name, mother_name, date_of_birth, enrollment_id, admission_date, class_id, section_id, classes!student_profiles_class_id_fkey(name), sections!student_profiles_section_id_fkey(name), photo_url')
         .eq('branch_id', selectedBranch.id)
         .eq('session_id', currentSessionId)
         .eq('is_disabled', false)
@@ -277,9 +277,9 @@ export default function TransferCertificate() {
         qry = qry.eq('section_id', modalSelectedSection);
       }
       
-      // If search query, filter by name/school_code
+      // If search query, filter by name/enrollment_id
       if (query && query.length >= 2) {
-        qry = qry.or(`full_name.ilike.%${query}%,school_code.ilike.%${query}%`);
+        qry = qry.or(`full_name.ilike.%${query}%,enrollment_id.ilike.%${query}%`);
       }
       
       const { data } = await qry.order('full_name').limit(50);
@@ -291,11 +291,11 @@ export default function TransferCertificate() {
     if (!query || query.length < 2) { setStudents([]); return; }
     const { data } = await supabase
       .from('student_profiles')
-      .select('id, full_name, father_name, mother_name, date_of_birth, school_code, admission_date, class_id, section_id, classes!student_profiles_class_id_fkey(name), sections!student_profiles_section_id_fkey(name), photo_url')
+      .select('id, full_name, father_name, mother_name, date_of_birth, enrollment_id, admission_date, class_id, section_id, classes!student_profiles_class_id_fkey(name), sections!student_profiles_section_id_fkey(name), photo_url')
       .eq('branch_id', selectedBranch.id)
       .eq('session_id', currentSessionId)
       .eq('is_disabled', false)
-      .or(`full_name.ilike.%${query}%,school_code.ilike.%${query}%`)
+      .or(`full_name.ilike.%${query}%,enrollment_id.ilike.%${query}%`)
       .limit(10);
     setStudents(data || []);
   };
@@ -417,7 +417,7 @@ export default function TransferCertificate() {
       const q = search.toLowerCase();
       return tc.student_name?.toLowerCase().includes(q) ||
         tc.tc_number?.toLowerCase().includes(q) ||
-        tc.admission_number?.toLowerCase().includes(q);
+        tc.enrollment_id?.toLowerCase().includes(q);
     }
     return true;
   });
@@ -506,7 +506,7 @@ export default function TransferCertificate() {
                     <tr>
                       <th className="p-3 text-left">TC Number</th>
                       <th className="p-3 text-left">Student</th>
-                      <th className="p-3 text-left hidden md:table-cell">Adm. No</th>
+                      <th className="p-3 text-left hidden md:table-cell">Enroll ID</th>
                       <th className="p-3 text-left hidden lg:table-cell">Class</th>
                       <th className="p-3 text-left hidden lg:table-cell">Date of Leaving</th>
                       <th className="p-3 text-center">Status</th>
@@ -528,7 +528,7 @@ export default function TransferCertificate() {
                             <p className="text-xs text-muted-foreground">{tc.father_name}</p>
                           </div>
                         </td>
-                        <td className="p-3 hidden md:table-cell">{tc.admission_number}</td>
+                        <td className="p-3 hidden md:table-cell">{tc.enrollment_id}</td>
                         <td className="p-3 hidden lg:table-cell">{tc.class_at_leaving}</td>
                         <td className="p-3 hidden lg:table-cell">{formatDate(tc.date_of_leaving)}</td>
                         <td className="p-3 text-center">{statusBadge(tc.status)}</td>
@@ -664,7 +664,7 @@ export default function TransferCertificate() {
                         <div>
                           <p className="text-sm font-medium">{s.full_name}</p>
                           <p className="text-xs text-muted-foreground">
-                            {s.school_code} | {s.classes?.name || 'N/A'}{s.sections?.name ? ` - ${s.sections.name}` : ''} | Father: {s.father_name}
+                            {s.enrollment_id} | {s.classes?.name || 'N/A'}{s.sections?.name ? ` - ${s.sections.name}` : ''} | Father: {s.father_name}
                           </p>
                         </div>
                       </div>
@@ -682,7 +682,7 @@ export default function TransferCertificate() {
                       <div className="flex-1">
                         <p className="font-medium">{selectedStudent.full_name}</p>
                         <p className="text-xs text-muted-foreground">
-                          Adm: {selectedStudent.school_code} | Class: {selectedStudent.classes?.name}{selectedStudent.sections?.name ? ` - ${selectedStudent.sections.name}` : ''} |
+                          Enroll: {selectedStudent.enrollment_id} | Class: {selectedStudent.classes?.name}{selectedStudent.sections?.name ? ` - ${selectedStudent.sections.name}` : ''} |
                           DOB: {formatDate(selectedStudent.date_of_birth)}
                         </p>
                       </div>
@@ -821,7 +821,7 @@ export default function TransferCertificate() {
                     ['Father Name', viewTC.father_name],
                     ['Mother Name', viewTC.mother_name],
                     ['DOB', formatDate(viewTC.date_of_birth)],
-                    ['Admission No', viewTC.admission_number],
+                    ['Enroll ID', viewTC.enrollment_id],
                     ['Admission Date', formatDate(viewTC.admission_date)],
                     ['Class at Admission', viewTC.class_at_admission],
                     ['Class at Leaving', viewTC.class_at_leaving],

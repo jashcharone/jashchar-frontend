@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { formatDate } from '@/utils/dateUtils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -56,7 +56,7 @@ const EventsTab = ({ branchId }) => {
             <div key={item.id} className="flex justify-between p-4 border rounded-lg bg-white">
               <div>
                 <div className="font-bold">{item.title_en}</div>
-                <div className="text-sm text-slate-500">{formatDate(item.start_date)} • {item.location}</div>
+                <div className="text-sm text-slate-500">{formatDate(item.start_date)} � {item.location}</div>
               </div>
               <div className="flex gap-2">
                 <Button variant="ghost" size="icon" onClick={() => setEditing(item)}><Edit className="h-4 w-4" /></Button>

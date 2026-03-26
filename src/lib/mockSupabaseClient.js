@@ -1,4 +1,4 @@
-﻿/**
+/**
  * MOCK CLIENT: Safe Fallback for Missing Env
  * Prevents app crash when Supabase keys are missing.
  * Logs warnings and blocks all writes.

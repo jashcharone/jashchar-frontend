@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Helmet } from 'react-helmet';
 import DashboardLayout from '@/components/DashboardLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -64,7 +64,7 @@ const ParentLoginCredentialReport = () => {
     setLoading(true);
     const { data, error } = await supabase
       .from('student_profiles')
-      .select('school_code, full_name, username, email') // Assuming parent username/password are tied to student profile for simplicity
+      .select('enrollment_id, full_name, username, email') // Assuming parent username/password are tied to student profile for simplicity
       .eq('branch_id', branchId)
       .eq('class_id', selectedClass)
       .eq('section_id', selectedSection);
@@ -76,7 +76,7 @@ const ParentLoginCredentialReport = () => {
       // For parent password, we'll use a placeholder as passwords are not stored directly
       // In a real scenario, this would involve a secure method to retrieve/reset parent passwords.
       const formattedData = data.map(student => ({
-        admissionNo: student.school_code,
+        enrollmentId: student.enrollment_id,
         studentName: student.full_name,
         parentUsername: student.username, // Assuming student username is used for parent login for now
         parentPassword: '********' // Placeholder for security
@@ -153,7 +153,7 @@ const ParentLoginCredentialReport = () => {
               <table className="w-full text-sm text-left text-gray-500 dark:text-gray-400">
                 <thead className="text-xs text-gray-700 dark:text-gray-300 uppercase bg-gray-50 dark:bg-gray-800">
                   <tr>
-                    <th scope="col" className="px-6 py-3">Admission No</th>
+                    <th scope="col" className="px-6 py-3">Enroll ID</th>
                     <th scope="col" className="px-6 py-3">Student Name</th>
                     <th scope="col" className="px-6 py-3">Parent Username</th>
                     <th scope="col" className="px-6 py-3">Parent Password</th>
@@ -162,7 +162,7 @@ const ParentLoginCredentialReport = () => {
                 <tbody>
                   {reportData.map((row, index) => (
                     <tr key={index} className="bg-white dark:bg-gray-900 border-b dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800">
-                      <td className="px-6 py-4 font-medium">{row.admissionNo}</td>
+                      <td className="px-6 py-4 font-medium">{row.enrollmentId}</td>
                       <td className="px-6 py-4">{row.studentName}</td>
                       <td className="px-6 py-4">{row.parentUsername}</td>
                       <td className="px-6 py-4">{row.parentPassword}</td>

@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { 
@@ -164,7 +164,7 @@ const AssignPlanDialog = ({ school, isOpen, onOpenChange, onPlanAssigned }) => {
                 <SelectContent>
                   {plans.map(plan => (
                     <SelectItem key={plan.id} value={plan.id}>
-                      {plan.name} - ₹{plan.price}/{plan.subscription_period_value} {plan.subscription_period_type}
+                      {plan.name} - ?{plan.price}/{plan.subscription_period_value} {plan.subscription_period_type}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -177,7 +177,7 @@ const AssignPlanDialog = ({ school, isOpen, onOpenChange, onPlanAssigned }) => {
                       <div>
                         <p className="font-medium">{selectedPlan.name}</p>
                         <p className="text-sm text-muted-foreground">
-                          ₹{selectedPlan.price} per {selectedPlan.subscription_period_value} {selectedPlan.subscription_period_type}
+                          ?{selectedPlan.price} per {selectedPlan.subscription_period_value} {selectedPlan.subscription_period_type}
                         </p>
                       </div>
                     ) : null;
@@ -467,8 +467,8 @@ const SchoolDetails = () => {
     
     const newStatus = school.status === 'Active' ? 'Inactive' : 'Active';
     const confirmMessage = newStatus === 'Inactive' 
-      ? ` ï¸ Warning: Setting school to Inactive will:\n\n• Block all users from logging in\n• Prevent access to school dashboard\n• Suspend all school operations\n\nYou can reactivate it anytime.\n\nAre you sure?`
-      : `✅ Reactivate School:\n\n• All users will be able to login again\n• School dashboard will be accessible\n• All operations will resume\n\nDo you want to activate this school?`;
+      ? ` ️ Warning: Setting school to Inactive will:\n\n� Block all users from logging in\n� Prevent access to school dashboard\n� Suspend all school operations\n\nYou can reactivate it anytime.\n\nAre you sure?`
+      : `? Reactivate School:\n\n� All users will be able to login again\n� School dashboard will be accessible\n� All operations will resume\n\nDo you want to activate this school?`;
 
     if (!window.confirm(confirmMessage)) return;
 
@@ -530,7 +530,7 @@ const SchoolDetails = () => {
       formatDate(t.created_at),
       calculateExpiryDate(t.created_at, school?.plan),
       t.transaction_id || 'N/A',
-      `₹${t.amount || 0}`,
+      `?${t.amount || 0}`,
       t.payment_method || 'N/A'
     ]);
 
@@ -583,7 +583,7 @@ const SchoolDetails = () => {
                   <td>${formatDate(t.created_at)}</td>
                   <td>${calculateExpiryDate(t.created_at, school?.plan)}</td>
                   <td>${t.transaction_id || 'N/A'}</td>
-                  <td>₹${t.amount || 0}</td>
+                  <td>?${t.amount || 0}</td>
                   <td>${t.payment_method || 'N/A'}</td>
                 </tr>
               `).join('')}
@@ -791,7 +791,7 @@ const SchoolDetails = () => {
                     )}
                   </div>
                   <div className="text-center">
-                    <p className="text-xs text-muted-foreground font-mono">{school.school_code_prefix}{school.school_code_number}</p>
+                    <p className="text-xs text-muted-foreground font-mono">{school.enrollment_id_prefix}{school.enrollment_id_number}</p>
                   </div>
                 </div>
 
@@ -958,7 +958,7 @@ const SchoolDetails = () => {
                   <>
                     <div className="flex justify-between">
                       <dt className="font-medium text-muted-foreground">Price</dt>
-                      <dd>₹{school.plan.price || 'N/A'}</dd>
+                      <dd>?{school.plan.price || 'N/A'}</dd>
                     </div>
                     <div className="flex justify-between">
                       <dt className="font-medium text-muted-foreground">Period</dt>
@@ -1069,7 +1069,7 @@ const SchoolDetails = () => {
                           <td className="px-4 py-3">{formatDate(t.created_at)}</td>
                           <td className="px-4 py-3">{calculateExpiryDate(t.created_at, school.plan)}</td>
                           <td className="px-4 py-3 font-mono text-xs">{t.transaction_id || 'N/A'}</td>
-                          <td className="px-4 py-3 text-right font-semibold">₹{t.amount || 0}</td>
+                          <td className="px-4 py-3 text-right font-semibold">?{t.amount || 0}</td>
                           <td className="px-4 py-3 text-center">
                             <span className="px-2 py-1 rounded text-xs bg-muted">
                               {t.payment_method || 'N/A'}
@@ -1116,7 +1116,7 @@ const SchoolDetails = () => {
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Total Amount</span>
                   <span className="font-semibold">
-                    ₹{transactions.reduce((sum, t) => sum + (parseFloat(t.amount) || 0), 0).toLocaleString('en-IN')}
+                    ?{transactions.reduce((sum, t) => sum + (parseFloat(t.amount) || 0), 0).toLocaleString('en-IN')}
                   </span>
                 </div>
                 <div className="flex justify-between">
@@ -1126,7 +1126,7 @@ const SchoolDetails = () => {
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">School Code</span>
                   <span className="font-semibold font-mono">
-                    {school.school_code_prefix}{school.school_code_number}
+                    {school.enrollment_id_prefix}{school.enrollment_id_number}
                   </span>
                 </div>
               </div>
@@ -1141,7 +1141,7 @@ const SchoolDetails = () => {
           <AlertDialogHeader>
             <AlertDialogTitle className="flex items-center gap-2">
               <AlertTriangle className="h-5 w-5 text-red-600" />
-               ï¸ HARD DELETE - Are you absolutely sure?
+               ️ HARD DELETE - Are you absolutely sure?
             </AlertDialogTitle>
             <AlertDialogDescription>
               This action <strong>CANNOT</strong> be undone. This will <strong>permanently delete</strong>:

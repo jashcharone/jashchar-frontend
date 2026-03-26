@@ -157,7 +157,7 @@ const StudentReportGenerator = () => {
     
     return Array.from({ length: 50 }, (_, i) => ({
       id: i + 1,
-      admission_number: `ADM${2024}${String(i + 1).padStart(4, '0')}`,
+      enrollment_id: `ADM${2024}${String(i + 1).padStart(4, '0')}`,
       first_name: ['Rahul', 'Priya', 'Amit', 'Sneha', 'Raj', 'Anita', 'Vikram', 'Meena', 'Arun', 'Kavya'][i % 10],
       last_name: ['Sharma', 'Verma', 'Singh', 'Patel', 'Kumar', 'Gupta', 'Rao', 'Reddy', 'Joshi', 'Nair'][i % 10],
       class: { name: classes[i % 10], id: i % 10 + 1 },
@@ -1040,7 +1040,7 @@ const StudentReportGenerator = () => {
                   type="text"
                   value={filters.search || ''}
                   onChange={(e) => setFilters(prev => ({ ...prev, search: e.target.value }))}
-                  placeholder="Name, Phone, Admission No..."
+                  placeholder="Name, Phone, Enroll ID..."
                   className="px-2 py-1.5 text-sm border dark:border-gray-600 rounded bg-white dark:bg-gray-700 dark:text-gray-200 w-48"
                 />
               </div>

@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
 import DataTableExport from '@/components/DataTableExport';
 import { Button } from '@/components/ui/button';
@@ -27,7 +27,7 @@ const OnlineFeesCollectionReport = () => {
 
   const columns = useMemo(() => [
     { key: 'payment_date_formatted', label: 'Date' },
-    { key: 'admission_no', label: 'Admission No' },
+    { key: 'enrollment_id', label: 'Enroll ID' },
     { key: 'student_name', label: 'Name' },
     { key: 'class_section', label: 'Class' },
     { key: 'transaction_id', label: 'Transaction ID' },
@@ -37,7 +37,7 @@ const OnlineFeesCollectionReport = () => {
   const exportData = useMemo(() => {
     return reportData.map(row => ({
       payment_date_formatted: format(new Date(row.payment_date), 'dd-MM-yyyy'),
-      admission_no: row.student?.school_code || '',
+      enrollment_id: row.student?.enrollment_id || '',
       student_name: row.student?.full_name || '',
       class_section: `${row.student?.class?.name || ''} (${row.student?.section?.name || ''})`,
       transaction_id: row.transaction_id || '',
@@ -81,7 +81,7 @@ const OnlineFeesCollectionReport = () => {
         fine_paid,
         student:profiles (
           full_name,
-          school_code,
+          enrollment_id,
           class:classes!student_profiles_class_id_fkey(name),
           section:sections (name)
         )
@@ -153,7 +153,7 @@ const OnlineFeesCollectionReport = () => {
             <thead>
               <tr className="text-left bg-muted">
                 <th className="p-2">Date</th>
-                <th className="p-2">Admission No</th>
+                <th className="p-2">Enroll ID</th>
                 <th className="p-2">Name</th>
                 <th className="p-2">Class</th>
                 <th className="p-2">Transaction ID</th>
@@ -164,7 +164,7 @@ const OnlineFeesCollectionReport = () => {
               {reportData.length > 0 ? reportData.map(row => (
                 <tr key={row.id} className="border-b">
                   <td className="p-2">{format(new Date(row.payment_date), 'dd-MM-yyyy')}</td>
-                  <td className="p-2">{row.student.school_code}</td>
+                  <td className="p-2">{row.student.enrollment_id}</td>
                   <td className="p-2">{row.student.full_name}</td>
                   <td className="p-2">{row.student.class.name} ({row.student.section.name})</td>
                   <td className="p-2">{row.transaction_id}</td>

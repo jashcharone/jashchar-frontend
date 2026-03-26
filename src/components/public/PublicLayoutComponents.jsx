@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { 
   Menu, X, Facebook, Twitter, Instagram, Linkedin, Youtube, 
@@ -490,7 +490,7 @@ export const PublicFooter = ({ settings, school }) => {
 
         {/* Copyright */}
         <div className="border-t border-gray-800 pt-6 text-center text-xs uppercase tracking-wider" style={{ color: copyrightText }}>
-          {copyright || `© ${schoolName} ${new Date().getFullYear()} All rights reserved`}
+          {copyright || `� ${schoolName} ${new Date().getFullYear()} All rights reserved`}
         </div>
       </div>
     </footer>

@@ -1,4 +1,4 @@
-﻿import { enforceBackendPermission } from '@/utils/permissionVisibilityHelper';
+import { enforceBackendPermission } from '@/utils/permissionVisibilityHelper';
 
 /**
  * Mock middleware for enforcement in client-side code (to be used in API wrappers).

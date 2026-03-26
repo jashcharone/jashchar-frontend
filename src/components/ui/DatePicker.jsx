@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { format, isValid, isAfter, startOfToday, parse } from 'date-fns';
 import { Calendar as CalendarIcon } from 'lucide-react';
 

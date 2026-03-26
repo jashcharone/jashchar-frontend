@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
 import { ROUTES } from '@/registry/routeRegistry';
 import { BASE_SIDEBAR } from '@/config/sidebarConfig';

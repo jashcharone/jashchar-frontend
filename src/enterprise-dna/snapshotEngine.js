@@ -1,4 +1,4 @@
-﻿/**
+/**
  * AUTO SNAPSHOT ENGINE
  * captures state before mutations.
  */

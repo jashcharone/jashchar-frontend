@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { staffApi } from '@/lib/api/staffApi';
 import { humanResourceApi } from '@/lib/api/humanResourceApi';
@@ -300,7 +300,7 @@ const AddEmployee = () => {
     }, [branchId, selectedBranch?.id, branches, stateBranchId]);
 
     /**
-     * 🌟 GLOBAL UNIQUE EMPLOYEE ID GENERATOR
+     * ?? GLOBAL UNIQUE EMPLOYEE ID GENERATOR
      * Uses Backend API to generate globally unique employee ID
      * Format: PREFIX-SESSION_YEAR-SEQUENCE (e.g., EMP-2026/27-00012)
      * 
@@ -315,7 +315,7 @@ const AddEmployee = () => {
                 return;
             }
 
-            // 🌟 Call Backend API for GLOBAL UNIQUE employee ID
+            // ?? Call Backend API for GLOBAL UNIQUE employee ID
             // Using centralized api client for proper URL handling (relative /api on production, VITE_API_BASE_URL on localhost)
             const response = await api.get(`/staff/next-employee-id?branch_id=${currentBranchId}&session_id=${currentSessionId || ''}`, {
                 headers: {
@@ -340,12 +340,12 @@ const AddEmployee = () => {
     }, [formData.branch_id, branchId, selectedBranch?.id, currentSessionId]);
 
     /**
-     * 📋 LOCAL FALLBACK: Generate employee ID locally if API fails
+     * ?? LOCAL FALLBACK: Generate employee ID locally if API fails
      * Uses GLOBAL query across ALL branches for uniqueness
      */
     const generateNextEmployeeIdLocal = useCallback(async () => {
         try {
-            // 🌟 Use session year format (e.g., "2026-2027" → "2026/27")
+            // ?? Use session year format (e.g., "2026-2027" ? "2026/27")
             let sessionYear;
             if (currentSessionName) {
                 const match = currentSessionName.match(/(\d{4})-(\d{4})/);
@@ -359,7 +359,7 @@ const AddEmployee = () => {
             }
             const prefix = `EMP-${sessionYear}-`;
             
-            // 🌟 Query GLOBALLY across ALL branches
+            // ?? Query GLOBALLY across ALL branches
             const { data, error } = await supabase
                 .from('employee_profiles')
                 .select('staff_id')
@@ -513,7 +513,7 @@ const AddEmployee = () => {
             
             if (userCheck.exists) {
                 if (userCheck.crossOrg) {
-                    // ✅ CROSS-ORG: User exists in another org — allow linking to current branch
+                    // ? CROSS-ORG: User exists in another org � allow linking to current branch
                     setSearchResult({ 
                         exists: true, 
                         crossOrg: true, 
@@ -528,7 +528,7 @@ const AddEmployee = () => {
                     return;
                 }
                 
-                // Same org/branch duplicate — block
+                // Same org/branch duplicate � block
                 setSearchResult({ 
                     exists: true, 
                     full_name: 'Existing User',
@@ -568,7 +568,7 @@ const AddEmployee = () => {
         setFormData(prev => ({ 
             ...prev, 
             phone: searchMobile,
-            // ✅ CROSS-ORG: Pre-fill email if available from cross-org user
+            // ? CROSS-ORG: Pre-fill email if available from cross-org user
             ...(searchResult?.crossOrg && searchResult?.email ? { email: searchResult.email } : {})
         }));
         setCurrentStep(1);
@@ -1013,7 +1013,7 @@ const AddEmployee = () => {
                         <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
                             {searchResult ? (
                                 searchResult.crossOrg ? (
-                                    /* ✅ CROSS-ORG: User exists in another org — show info + continue button */
+                                    /* ? CROSS-ORG: User exists in another org � show info + continue button */
                                     <div className="bg-blue-500/10 p-6 rounded-lg border border-blue-500/20 shadow-sm">
                                         <div className="flex items-center gap-3 mb-4">
                                             <div className="bg-blue-500/20 p-2 rounded-full">
@@ -1047,7 +1047,7 @@ const AddEmployee = () => {
                                         </div>
                                     </div>
                                 ) : (
-                                    /* ❌ Same branch duplicate — block */
+                                    /* ? Same branch duplicate � block */
                                     <div className="bg-yellow-500/10 p-6 rounded-lg border border-yellow-500/20 shadow-sm">
                                         <div className="flex items-center gap-3 mb-4">
                                             <div className="bg-yellow-500/20 p-2 rounded-full">
@@ -1828,7 +1828,7 @@ const AddEmployee = () => {
                          </div>
                         {getFieldProps('basic_salary').isVisible && (
                          <div className="space-y-2 pt-2">
-                            <Label className="text-lg text-green-700 dark:text-green-400">Basic Salary (₹) {getFieldProps('basic_salary').isRequired && <span className="text-red-500">*</span>}</Label>
+                            <Label className="text-lg text-green-700 dark:text-green-400">Basic Salary (?) {getFieldProps('basic_salary').isRequired && <span className="text-red-500">*</span>}</Label>
                             <Input type="number" value={formData.basic_salary} onChange={e => handleChange('basic_salary', e.target.value)} placeholder="0.00" className="text-lg font-bold" />
                         </div>
                         )}

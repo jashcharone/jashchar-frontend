@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import DashboardLayout from '@/components/DashboardLayout';
 import { supabase } from '@/lib/customSupabaseClient';
@@ -252,7 +252,7 @@ const TransportVehicles = () => {
         </Button>
 
         <div className="flex items-center justify-between mb-4">
-          <h1 className="text-2xl font-bold">🚌 Transport Vehicles</h1>
+          <h1 className="text-2xl font-bold">?? Transport Vehicles</h1>
           <Button variant="outline" size="sm" onClick={handleExportCSV}>
             <Download className="mr-1 h-4 w-4" /> Export
           </Button>

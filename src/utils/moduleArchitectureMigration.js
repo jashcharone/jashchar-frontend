@@ -1,4 +1,4 @@
-﻿import { moduleRegistryService } from '@/services/moduleRegistryService';
+import { moduleRegistryService } from '@/services/moduleRegistryService';
 import { rolePermissionSyncService } from '@/services/rolePermissionSyncService';
 import { planModuleService } from '@/services/planModuleService';
 import { supabase } from '@/lib/customSupabaseClient';
@@ -16,7 +16,7 @@ export const runModuleArchitectureMigration = async () => {
     errors: []
   };
 
-  console.log("ðŸš€ STARTING MODULE ARCHITECTURE MIGRATION...");
+  console.log("🚀 STARTING MODULE ARCHITECTURE MIGRATION...");
 
   // STEP 1: Seed Modules Table
   try {
@@ -66,6 +66,6 @@ export const runModuleArchitectureMigration = async () => {
     report.errors.push({ step: 3, error: e.message });
   }
 
-  console.log("✅ MIGRATION COMPLETE", report);
+  console.log("? MIGRATION COMPLETE", report);
   return report;
 };

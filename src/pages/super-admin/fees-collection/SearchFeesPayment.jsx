@@ -38,7 +38,7 @@ const SearchFeesPayment = () => {
             .from('fee_payments')
             .select(`
                 id, payment_date, amount, discount_amount, fine_paid, payment_mode, transaction_id,
-                student:student_profiles(id, full_name, school_code, class:classes!student_profiles_class_id_fkey(name), section:sections!student_profiles_section_id_fkey(name)),
+                student:student_profiles(id, full_name, enrollment_id, class:classes!student_profiles_class_id_fkey(name), section:sections!student_profiles_section_id_fkey(name)),
                 master:fee_masters(fee_group:fee_groups(name), fee_type:fee_types(name))
             `)
             .eq('branch_id', branchId)
@@ -92,7 +92,7 @@ const SearchFeesPayment = () => {
                                                 <td className="p-2">{format(new Date(p.payment_date), 'dd-MM-yyyy')}</td>
                                                 <td className="p-2">
                                                     <Link to={`/${basePath}/student-information/profile/${p.student?.id}`} className="hover:underline">
-                                                        {p.student?.full_name} ({p.student?.school_code})
+                                                        {p.student?.full_name} ({p.student?.enrollment_id})
                                                     </Link>
                                                 </td>
                                                 <td className="p-2">{p.student?.class?.name} ({p.student?.section?.name})</td>

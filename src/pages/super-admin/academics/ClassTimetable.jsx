@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
 import api from '@/lib/api';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
@@ -18,7 +18,7 @@ const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"
 const DAY_SHORT = { Monday: 'Mon', Tuesday: 'Tue', Wednesday: 'Wed', Thursday: 'Thu', Friday: 'Fri', Saturday: 'Sat', Sunday: 'Sun' };
 const INT_TO_DAY = { 1: 'Monday', 2: 'Tuesday', 3: 'Wednesday', 4: 'Thursday', 5: 'Friday', 6: 'Saturday', 7: 'Sunday' };
 
-/* ── time helpers ── */
+/* -- time helpers -- */
 const addMinutes = (timeStr, mins) => {
     const [h, m] = timeStr.split(':').map(Number);
     const total = h * 60 + m + mins;
@@ -40,36 +40,36 @@ const ClassTimetable = () => {
     const { selectedBranch } = useBranch();
     const branchId = selectedBranch?.id;
 
-    /* ── master data ── */
+    /* -- master data -- */
     const [classes, setClasses] = useState([]);
     const [sections, setSections] = useState([]);
     const [subjectGroups, setSubjectGroups] = useState([]);
     const [subjects, setSubjects] = useState([]);
     const [teachers, setTeachers] = useState([]);
 
-    /* ── filters ── */
+    /* -- filters -- */
     const [filters, setFilters] = useState({ class_id: '', section_id: '', subject_group_id: '' });
 
-    /* ── timetable state (keyed by day) ── */
+    /* -- timetable state (keyed by day) -- */
     const [timetable, setTimetable] = useState({}); // { Monday: [{...}], Tuesday: [{...}], ... }
     const [activeDay, setActiveDay] = useState('Monday');
 
-    /* ── modes & loading ── */
+    /* -- modes & loading -- */
     const [mode, setMode] = useState('idle');     // idle | edit | view
     const [loading, setLoading] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
 
-    /* ── quick generate ── */
+    /* -- quick generate -- */
     const [quickGen, setQuickGen] = useState({ start_time: '08:00', duration: 45, interval: 10, room_no: '' });
 
-    /* ── delete confirmation ── */
+    /* -- delete confirmation -- */
     const [deleteTarget, setDeleteTarget] = useState(null); // { day, id }
 
-    /* ── lookup maps ── */
+    /* -- lookup maps -- */
     const subjectMap = useMemo(() => Object.fromEntries(subjects.map(s => [s.id, s.name])), [subjects]);
     const teacherMap = useMemo(() => Object.fromEntries(teachers.map(t => [t.id, t.full_name])), [teachers]);
 
-    /* ═══════ DATA FETCH ═══════ */
+    /* ------- DATA FETCH ------- */
     useEffect(() => {
         if (!branchId) return;
         const headers = { 'x-school-id': branchId, 'x-branch-id': branchId };
@@ -86,7 +86,7 @@ const ClassTimetable = () => {
         });
     }, [branchId]);
 
-    /* ── fetch sections when class changes ── */
+    /* -- fetch sections when class changes -- */
     useEffect(() => {
         if (!filters.class_id || !branchId) { setSections([]); return; }
         const headers = { 'x-school-id': branchId, 'x-branch-id': branchId };
@@ -102,7 +102,7 @@ const ClassTimetable = () => {
             .catch(() => setSections([]));
     }, [filters.class_id, branchId]);
 
-    /* ── fetch subjects when subject group changes ── */
+    /* -- fetch subjects when subject group changes -- */
     useEffect(() => {
         if (!filters.subject_group_id || !branchId) { setSubjects([]); return; }
         const grp = subjectGroups.find(sg => sg.id === filters.subject_group_id);
@@ -114,7 +114,7 @@ const ClassTimetable = () => {
             .catch(() => setSubjects([]));
     }, [filters.subject_group_id, branchId, subjectGroups]);
 
-    /* ═══════ HANDLERS ═══════ */
+    /* ------- HANDLERS ------- */
     const emptyRow = (day) => ({
         _id: `new-${Date.now()}-${Math.random()}`,
         day_of_week: day,
@@ -133,7 +133,7 @@ const ClassTimetable = () => {
         return map;
     };
 
-    /* ── Search (loads view mode) ── */
+    /* -- Search (loads view mode) -- */
     const handleSearch = async () => {
         if (!filters.class_id || !filters.section_id) {
             toast({ variant: 'destructive', title: 'Please select Class and Section.' });
@@ -156,7 +156,7 @@ const ClassTimetable = () => {
         setLoading(false);
     };
 
-    /* ── Add button → opens edit mode with empty rows ── */
+    /* -- Add button ? opens edit mode with empty rows -- */
     const handleAdd = () => {
         if (!filters.class_id || !filters.section_id) {
             toast({ variant: 'destructive', title: 'Please select Class and Section first.' });
@@ -169,7 +169,7 @@ const ClassTimetable = () => {
         setActiveDay('Monday');
     };
 
-    /* ── Quick Generate: auto-fills time slots for current day ── */
+    /* -- Quick Generate: auto-fills time slots for current day -- */
     const handleQuickGenerate = () => {
         const { start_time, duration, interval, room_no } = quickGen;
         if (!start_time || !duration) {
@@ -208,7 +208,7 @@ const ClassTimetable = () => {
         toast({ title: `${newEntries.length} periods generated for ${activeDay}` });
     };
 
-    /* ── Row manipulation ── */
+    /* -- Row manipulation -- */
     const addRowToDay = (day) => {
         setTimetable(prev => ({ ...prev, [day]: [...(prev[day] || []), emptyRow(day)] }));
     };
@@ -234,7 +234,7 @@ const ClassTimetable = () => {
         setDeleteTarget(null);
     };
 
-    /* ── Save ── */
+    /* -- Save -- */
     const handleSave = async () => {
         setIsSaving(true);
         const allEntries = DAYS.flatMap(d => (timetable[d] || []).map(e => ({ ...e, day_of_week: d })));
@@ -256,15 +256,15 @@ const ClassTimetable = () => {
         setIsSaving(false);
     };
 
-    /* ── Switch to edit from view ── */
+    /* -- Switch to edit from view -- */
     const switchToEdit = () => setMode('edit');
 
-    /* ═══════ Computed: get max periods across all days for view grid ═══════ */
+    /* ------- Computed: get max periods across all days for view grid ------- */
     const maxPeriods = useMemo(() => {
         return Math.max(1, ...DAYS.map(d => (timetable[d] || []).filter(e => e.subject_id).length));
     }, [timetable]);
 
-    /* ═══════ RENDER ═══════ */
+    /* ------- RENDER ------- */
     const selectedClassName = classes.find(c => c.id === filters.class_id)?.name || '';
     const selectedSectionName = sections.find(s => s.id === filters.section_id)?.name || '';
 
@@ -288,7 +288,7 @@ const ClassTimetable = () => {
                 )}
             </div>
 
-            {/* ═══════ SELECT CRITERIA ═══════ */}
+            {/* ------- SELECT CRITERIA ------- */}
             <div className="bg-card p-5 rounded-xl shadow border mb-4">
                 <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3">Select Criteria</h2>
                 <div className="grid grid-cols-1 md:grid-cols-5 gap-4 items-end">
@@ -322,7 +322,7 @@ const ClassTimetable = () => {
                 </div>
             </div>
 
-            {/* ═══════ EDIT MODE ═══════ */}
+            {/* ------- EDIT MODE ------- */}
             {mode === 'edit' && (
                 <>
                     {/* Quick Generate */}
@@ -450,7 +450,7 @@ const ClassTimetable = () => {
                 </>
             )}
 
-            {/* ═══════ VIEW MODE - Weekly Grid ═══════ */}
+            {/* ------- VIEW MODE - Weekly Grid ------- */}
             {mode === 'view' && (
                 <div className="bg-card rounded-xl shadow border overflow-hidden">
                     <div className="p-4 border-b bg-muted/30">
@@ -522,7 +522,7 @@ const ClassTimetable = () => {
                 </div>
             )}
 
-            {/* ═══════ DELETE CONFIRMATION ═══════ */}
+            {/* ------- DELETE CONFIRMATION ------- */}
             <AlertDialog open={!!deleteTarget} onOpenChange={() => setDeleteTarget(null)}>
                 <AlertDialogContent>
                     <AlertDialogHeader>

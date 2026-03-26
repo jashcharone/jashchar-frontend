@@ -369,7 +369,7 @@ const SchoolsPage = () => {
                                            <span className="text-xs text-blue-500 font-medium my-0.5">
                                               {branch.is_primary ? `Branch-${parseInt(branch.branchSequence || '1')} (Primary)` : `Branch-${parseInt(branch.branchSequence || idx + 1)}`}
                                            </span>
-                                           <span className="text-[10px] text-muted-foreground font-mono">Code: {branch.branch_code || branch.school_code}</span>
+                                           <span className="text-[10px] text-muted-foreground font-mono">Code: {branch.branch_code || branch.enrollment_id}</span>
                                        </div>
                                    ))}
                                </div>

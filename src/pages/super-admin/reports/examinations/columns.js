@@ -17,7 +17,7 @@
 export const MARKS_COLUMNS = [
   // Student Info
   { key: 'student_name', label: 'Student Name', type: 'string', width: 180, sortable: true },
-  { key: 'admission_no', label: 'Admission No', type: 'string', width: 110 },
+  { key: 'enrollment_id', label: 'Enroll ID', type: 'string', width: 110 },
   { key: 'roll_no', label: 'Roll No', type: 'string', width: 80, sortable: true },
   { key: 'class_name', label: 'Class', type: 'string', width: 80, groupable: true },
   { key: 'section_name', label: 'Section', type: 'string', width: 80, groupable: true },
@@ -100,7 +100,7 @@ export const MARKS_COLUMNS = [
 export const COMPARATIVE_COLUMNS = [
   // Student/Class Info
   { key: 'student_name', label: 'Student Name', type: 'string', width: 180, sortable: true },
-  { key: 'admission_no', label: 'Admission No', type: 'string', width: 110 },
+  { key: 'enrollment_id', label: 'Enroll ID', type: 'string', width: 110 },
   { key: 'class_name', label: 'Class', type: 'string', width: 80, groupable: true },
   { key: 'section_name', label: 'Section', type: 'string', width: 80, groupable: true },
   
@@ -178,7 +178,7 @@ export const ADMIN_COLUMNS = [
   
   // Student Info for seating
   { key: 'student_name', label: 'Student Name', type: 'string', width: 180, sortable: true },
-  { key: 'admission_no', label: 'Admission No', type: 'string', width: 110 },
+  { key: 'enrollment_id', label: 'Enroll ID', type: 'string', width: 110 },
   { key: 'roll_no', label: 'Roll No', type: 'string', width: 80 },
   { key: 'class_name', label: 'Class', type: 'string', width: 80, groupable: true },
   { key: 'section_name', label: 'Section', type: 'string', width: 80, groupable: true },
@@ -236,7 +236,7 @@ export const ADMIN_COLUMNS = [
 export const PARENT_COLUMNS = [
   // Student Info
   { key: 'student_name', label: 'Student Name', type: 'string', width: 180, sortable: true },
-  { key: 'admission_no', label: 'Admission No', type: 'string', width: 110 },
+  { key: 'enrollment_id', label: 'Enroll ID', type: 'string', width: 110 },
   { key: 'roll_no', label: 'Roll No', type: 'string', width: 80, sortable: true },
   { key: 'class_name', label: 'Class', type: 'string', width: 80, groupable: true },
   { key: 'section_name', label: 'Section', type: 'string', width: 80, groupable: true },

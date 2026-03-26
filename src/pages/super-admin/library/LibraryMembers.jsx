@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { supabase } from '@/lib/customSupabaseClient';
 import DashboardLayout from '@/components/DashboardLayout';
@@ -64,7 +64,7 @@ const LibraryMembers = () => {
           id,
           library_card_no,
           member_type,
-          student:student_profiles(full_name, school_code, phone),
+          student:student_profiles(full_name, enrollment_id, phone),
           staff:employee_profiles(full_name, phone)
         `)
         .eq('branch_id', user.user_metadata.branch_id);
@@ -102,7 +102,7 @@ const LibraryMembers = () => {
         }
         query = supabase
           .from('student_profiles')
-          .select('id, full_name, school_code')
+          .select('id, full_name, enrollment_id')
           .eq('branch_id', user.user_metadata.branch_id)
           .eq('class_id', classId)
           .eq('section_id', sectionId);
@@ -227,7 +227,7 @@ const LibraryMembers = () => {
                     <TableHead>Card No</TableHead>
                     <TableHead>Member Name</TableHead>
                     <TableHead>Member Type</TableHead>
-                    <TableHead>Admission No / Staff ID</TableHead>
+                    <TableHead>Enroll ID / Staff ID</TableHead>
                     <TableHead>Phone</TableHead>
                     <TableHead className="text-right">Action</TableHead>
                   </TableRow>
@@ -243,7 +243,7 @@ const LibraryMembers = () => {
                       </TableCell>
                       <TableCell className="capitalize">{m.member_type}</TableCell>
                       <TableCell>
-                        {m.member_type === 'student' ? m.student?.school_code : '-'}
+                        {m.member_type === 'student' ? m.student?.enrollment_id : '-'}
                       </TableCell>
                       <TableCell>
                         {m.member_type === 'student' ? m.student?.phone : m.staff?.phone}
@@ -310,7 +310,7 @@ const LibraryMembers = () => {
                   <SelectContent>
                     {availableUsers.map(u => (
                       <SelectItem key={u.id} value={u.id}>
-                        {u.full_name} {u.school_code ? `(${u.school_code})` : ''}
+                        {u.full_name} {u.enrollment_id ? `(${u.enrollment_id})` : ''}
                       </SelectItem>
                     ))}
                   </SelectContent>

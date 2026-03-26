@@ -25,7 +25,7 @@ export const STUDENT_TEMPLATES = [
     category: TEMPLATE_CATEGORIES.BASIC_DATA,
     description: 'Simple list with essential student information',
     columns: [
-      { key: 'admission_number', label: 'Adm. No', type: 'string' },
+      { key: 'enrollment_id', label: 'Enroll ID', type: 'string' },
       { key: 'full_name', label: 'Student Name', type: 'computed', 
         render: (_, row) => `${row.first_name || ''} ${row.last_name || ''}`.trim() },
       { key: 'class.name', label: 'Class', type: 'string' },
@@ -43,7 +43,7 @@ export const STUDENT_TEMPLATES = [
     category: TEMPLATE_CATEGORIES.BASIC_DATA,
     description: 'Full student details including all fields',
     columns: [
-      { key: 'admission_number', label: 'Adm. No', type: 'string' },
+      { key: 'enrollment_id', label: 'Enroll ID', type: 'string' },
       { key: 'full_name', label: 'Name', type: 'computed' },
       { key: 'class.name', label: 'Class', type: 'string' },
       { key: 'section.name', label: 'Section', type: 'string' },
@@ -59,7 +59,7 @@ export const STUDENT_TEMPLATES = [
     ],
     defaultFilters: {},
     defaultGroupBy: ['class.name'],
-    defaultSortBy: [{ field: 'admission_number', direction: 'asc' }]
+    defaultSortBy: [{ field: 'enrollment_id', direction: 'asc' }]
   },
   {
     key: 'contact_directory',
@@ -67,7 +67,7 @@ export const STUDENT_TEMPLATES = [
     category: TEMPLATE_CATEGORIES.BASIC_DATA,
     description: 'Phone and email details of students and parents',
     columns: [
-      { key: 'admission_number', label: 'Adm. No', type: 'string' },
+      { key: 'enrollment_id', label: 'Enroll ID', type: 'string' },
       { key: 'full_name', label: 'Student Name', type: 'computed' },
       { key: 'class.name', label: 'Class', type: 'string' },
       { key: 'phone', label: 'Student Phone', type: 'phone' },
@@ -85,7 +85,7 @@ export const STUDENT_TEMPLATES = [
     category: TEMPLATE_CATEGORIES.BASIC_DATA,
     description: 'Emergency contacts with blood group for safety',
     columns: [
-      { key: 'admission_number', label: 'Adm. No', type: 'string' },
+      { key: 'enrollment_id', label: 'Enroll ID', type: 'string' },
       { key: 'full_name', label: 'Student Name', type: 'computed' },
       { key: 'class.name', label: 'Class', type: 'string' },
       { key: 'guardian_name', label: 'Guardian', type: 'string' },
@@ -104,7 +104,7 @@ export const STUDENT_TEMPLATES = [
     description: 'Student photos with basic details',
     columns: [
       { key: 'photo_url', label: 'Photo', type: 'image' },
-      { key: 'admission_number', label: 'Adm. No', type: 'string' },
+      { key: 'enrollment_id', label: 'Enroll ID', type: 'string' },
       { key: 'full_name', label: 'Name', type: 'computed' },
       { key: 'class.name', label: 'Class', type: 'string' },
       { key: 'section.name', label: 'Section', type: 'string' }
@@ -119,7 +119,7 @@ export const STUDENT_TEMPLATES = [
     category: TEMPLATE_CATEGORIES.BASIC_DATA,
     description: 'Complete address details for students',
     columns: [
-      { key: 'admission_number', label: 'Adm. No', type: 'string' },
+      { key: 'enrollment_id', label: 'Enroll ID', type: 'string' },
       { key: 'full_name', label: 'Name', type: 'computed' },
       { key: 'class.name', label: 'Class', type: 'string' },
       { key: 'address', label: 'Address', type: 'string' },
@@ -137,7 +137,7 @@ export const STUDENT_TEMPLATES = [
     category: TEMPLATE_CATEGORIES.BASIC_DATA,
     description: 'Previous school and TC details',
     columns: [
-      { key: 'admission_number', label: 'Adm. No', type: 'string' },
+      { key: 'enrollment_id', label: 'Enroll ID', type: 'string' },
       { key: 'full_name', label: 'Name', type: 'computed' },
       { key: 'class.name', label: 'Class', type: 'string' },
       { key: 'previous_school', label: 'Previous School', type: 'string' },
@@ -154,7 +154,7 @@ export const STUDENT_TEMPLATES = [
     category: TEMPLATE_CATEGORIES.BASIC_DATA,
     description: 'Track document submission status',
     columns: [
-      { key: 'admission_number', label: 'Adm. No', type: 'string' },
+      { key: 'enrollment_id', label: 'Enroll ID', type: 'string' },
       { key: 'full_name', label: 'Name', type: 'computed' },
       { key: 'class.name', label: 'Class', type: 'string' },
       { key: 'aadhar_number', label: 'Aadhar', type: 'string' },
@@ -172,7 +172,7 @@ export const STUDENT_TEMPLATES = [
     category: TEMPLATE_CATEGORIES.BASIC_DATA,
     description: 'Health and medical information',
     columns: [
-      { key: 'admission_number', label: 'Adm. No', type: 'string' },
+      { key: 'enrollment_id', label: 'Enroll ID', type: 'string' },
       { key: 'full_name', label: 'Name', type: 'computed' },
       { key: 'class.name', label: 'Class', type: 'string' },
       { key: 'blood_group', label: 'Blood Group', type: 'badge' },
@@ -192,7 +192,7 @@ export const STUDENT_TEMPLATES = [
     description: 'Data for printing student ID cards',
     columns: [
       { key: 'photo_url', label: 'Photo', type: 'image' },
-      { key: 'admission_number', label: 'Adm. No', type: 'string' },
+      { key: 'enrollment_id', label: 'Enroll ID', type: 'string' },
       { key: 'full_name', label: 'Name', type: 'computed' },
       { key: 'class.name', label: 'Class', type: 'string' },
       { key: 'section.name', label: 'Section', type: 'string' },
@@ -212,7 +212,7 @@ export const STUDENT_TEMPLATES = [
     category: TEMPLATE_CATEGORIES.BASIC_DATA,
     description: 'Special notes and remarks about students',
     columns: [
-      { key: 'admission_number', label: 'Adm. No', type: 'string' },
+      { key: 'enrollment_id', label: 'Enroll ID', type: 'string' },
       { key: 'full_name', label: 'Name', type: 'computed' },
       { key: 'class.name', label: 'Class', type: 'string' },
       { key: 'notes', label: 'Notes', type: 'string' }
@@ -227,7 +227,7 @@ export const STUDENT_TEMPLATES = [
     category: TEMPLATE_CATEGORIES.BASIC_DATA,
     description: 'Track incomplete student profiles',
     columns: [
-      { key: 'admission_number', label: 'Adm. No', type: 'string' },
+      { key: 'enrollment_id', label: 'Enroll ID', type: 'string' },
       { key: 'full_name', label: 'Name', type: 'computed' },
       { key: 'class.name', label: 'Class', type: 'string' },
       { key: 'phone', label: 'Phone', type: 'phone' },
@@ -424,7 +424,7 @@ export const STUDENT_TEMPLATES = [
     category: TEMPLATE_CATEGORIES.ADMISSION,
     description: 'Students admitted within date range',
     columns: [
-      { key: 'admission_number', label: 'Adm. No', type: 'string' },
+      { key: 'enrollment_id', label: 'Enroll ID', type: 'string' },
       { key: 'full_name', label: 'Name', type: 'computed' },
       { key: 'class.name', label: 'Class', type: 'string' },
       { key: 'admission_date', label: 'Admission Date', type: 'date' },
@@ -476,7 +476,7 @@ export const STUDENT_TEMPLATES = [
     category: TEMPLATE_CATEGORIES.ADMISSION,
     description: 'Students transferred between classes',
     columns: [
-      { key: 'admission_number', label: 'Adm. No', type: 'string' },
+      { key: 'enrollment_id', label: 'Enroll ID', type: 'string' },
       { key: 'full_name', label: 'Name', type: 'computed' },
       { key: 'from_class', label: 'From Class', type: 'string' },
       { key: 'to_class', label: 'To Class', type: 'string' },
@@ -492,7 +492,7 @@ export const STUDENT_TEMPLATES = [
     category: TEMPLATE_CATEGORIES.ADMISSION,
     description: 'Students who left and re-joined',
     columns: [
-      { key: 'admission_number', label: 'Adm. No', type: 'string' },
+      { key: 'enrollment_id', label: 'Enroll ID', type: 'string' },
       { key: 'full_name', label: 'Name', type: 'computed' },
       { key: 'class.name', label: 'Class', type: 'string' },
       { key: 'left_date', label: 'Left Date', type: 'date' },
@@ -542,7 +542,7 @@ export const STUDENT_TEMPLATES = [
     category: TEMPLATE_CATEGORIES.ADMISSION,
     description: 'Track document verification during admission',
     columns: [
-      { key: 'admission_number', label: 'Adm. No', type: 'string' },
+      { key: 'enrollment_id', label: 'Enroll ID', type: 'string' },
       { key: 'full_name', label: 'Name', type: 'computed' },
       { key: 'class.name', label: 'Class', type: 'string' },
       { key: 'documents_submitted', label: 'Submitted', type: 'number' },
@@ -559,7 +559,7 @@ export const STUDENT_TEMPLATES = [
     category: TEMPLATE_CATEGORIES.ADMISSION,
     description: 'Fee payment status of new admissions',
     columns: [
-      { key: 'admission_number', label: 'Adm. No', type: 'string' },
+      { key: 'enrollment_id', label: 'Enroll ID', type: 'string' },
       { key: 'full_name', label: 'Name', type: 'computed' },
       { key: 'class.name', label: 'Class', type: 'string' },
       { key: 'admission_date', label: 'Adm. Date', type: 'date' },
@@ -577,7 +577,7 @@ export const STUDENT_TEMPLATES = [
     category: TEMPLATE_CATEGORIES.ADMISSION,
     description: 'Track admission form completion status',
     columns: [
-      { key: 'admission_number', label: 'Adm. No', type: 'string' },
+      { key: 'enrollment_id', label: 'Enroll ID', type: 'string' },
       { key: 'full_name', label: 'Name', type: 'computed' },
       { key: 'class.name', label: 'Class', type: 'string' },
       { key: 'completion_percent', label: 'Completion %', type: 'percentage' },
@@ -598,7 +598,7 @@ export const STUDENT_TEMPLATES = [
     description: 'Students with birthdays in current month',
     isBirthdayReport: 'current_month',
     columns: [
-      { key: 'admission_number', label: 'Adm. No', type: 'string' },
+      { key: 'enrollment_id', label: 'Enroll ID', type: 'string' },
       { key: 'full_name', label: 'Name', type: 'computed' },
       { key: 'date_of_birth', label: 'DOB', type: 'date' },
       { key: 'age', label: 'Age', type: 'computed' },
@@ -756,7 +756,7 @@ export const STUDENT_TEMPLATES = [
     category: TEMPLATE_CATEGORIES.CREDENTIALS,
     description: 'Student portal login credentials',
     columns: [
-      { key: 'admission_number', label: 'Adm. No', type: 'string' },
+      { key: 'enrollment_id', label: 'Enroll ID', type: 'string' },
       { key: 'full_name', label: 'Name', type: 'computed' },
       { key: 'class.name', label: 'Class', type: 'string' },
       { key: 'email', label: 'Email/Username', type: 'email' },
@@ -788,7 +788,7 @@ export const STUDENT_TEMPLATES = [
     category: TEMPLATE_CATEGORIES.CREDENTIALS,
     description: 'Transfer certificates issued',
     columns: [
-      { key: 'admission_number', label: 'Adm. No', type: 'string' },
+      { key: 'enrollment_id', label: 'Enroll ID', type: 'string' },
       { key: 'full_name', label: 'Name', type: 'computed' },
       { key: 'tc_number', label: 'TC No', type: 'string' },
       { key: 'tc_date', label: 'TC Date', type: 'date' },
@@ -805,7 +805,7 @@ export const STUDENT_TEMPLATES = [
     category: TEMPLATE_CATEGORIES.CREDENTIALS,
     description: 'Students who have left the school',
     columns: [
-      { key: 'admission_number', label: 'Adm. No', type: 'string' },
+      { key: 'enrollment_id', label: 'Enroll ID', type: 'string' },
       { key: 'full_name', label: 'Name', type: 'computed' },
       { key: 'last_class', label: 'Last Class', type: 'string' },
       { key: 'left_date', label: 'Left Date', type: 'date' },
@@ -837,7 +837,7 @@ export const STUDENT_TEMPLATES = [
     category: TEMPLATE_CATEGORIES.CREDENTIALS,
     description: 'Students receiving scholarships',
     columns: [
-      { key: 'admission_number', label: 'Adm. No', type: 'string' },
+      { key: 'enrollment_id', label: 'Enroll ID', type: 'string' },
       { key: 'full_name', label: 'Name', type: 'computed' },
       { key: 'class.name', label: 'Class', type: 'string' },
       { key: 'scholarship_type', label: 'Scholarship Type', type: 'string' },
@@ -853,7 +853,7 @@ export const STUDENT_TEMPLATES = [
     category: TEMPLATE_CATEGORIES.CREDENTIALS,
     description: 'Students using school transport',
     columns: [
-      { key: 'admission_number', label: 'Adm. No', type: 'string' },
+      { key: 'enrollment_id', label: 'Enroll ID', type: 'string' },
       { key: 'full_name', label: 'Name', type: 'computed' },
       { key: 'class.name', label: 'Class', type: 'string' },
       { key: 'route_name', label: 'Route', type: 'string' },
@@ -870,7 +870,7 @@ export const STUDENT_TEMPLATES = [
     category: TEMPLATE_CATEGORIES.CREDENTIALS,
     description: 'Students staying in hostel',
     columns: [
-      { key: 'admission_number', label: 'Adm. No', type: 'string' },
+      { key: 'enrollment_id', label: 'Enroll ID', type: 'string' },
       { key: 'full_name', label: 'Name', type: 'computed' },
       { key: 'class.name', label: 'Class', type: 'string' },
       { key: 'room_number', label: 'Room', type: 'string' },

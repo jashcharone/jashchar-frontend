@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Frontend Billing Status Utility Functions
  * Handles subscription status calculation including grace period logic
  */

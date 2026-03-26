@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import DashboardLayout from '@/components/DashboardLayout';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
@@ -43,7 +43,7 @@ const QrAttendanceScan = () => {
 
   const handleStartScanning = () => {
     toast({
-      title: 'ðŸš§ Feature Coming Soon',
+      title: '🚧 Feature Coming Soon',
       description: 'QR Code scanning functionality will be available in the next update!'
     });
   };

@@ -1,4 +1,4 @@
-﻿import { canWrite } from "./safeWriteGuard";
+import { canWrite } from "./safeWriteGuard";
 import { toast } from "@/components/ui/use-toast";
 
 const DEFAULT_OPTIONS = {

@@ -1,4 +1,4 @@
-﻿export const MASTER_ADMIN_ROUTES = {
+export const MASTER_ADMIN_ROUTES = {
   SCHOOLS_LIST: '/master-admin/schools',
   SCHOOL_NEW: '/master-admin/schools/new',
   ORG_CREATE: '/master-admin/organizations/create',

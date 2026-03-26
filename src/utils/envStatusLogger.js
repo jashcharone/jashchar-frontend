@@ -1,4 +1,4 @@
-﻿import { maskEnvValue } from './envLogger';
+import { maskEnvValue } from './envLogger';
 
 export const printEnvStatus = (status) => {
   if (!status) return;
@@ -9,7 +9,7 @@ export const printEnvStatus = (status) => {
 };
 
 export const printSetupInstructions = () => {
-  console.group("ðŸ› ï¸ ENV SETUP INSTRUCTIONS");
+  console.group("🛠️ ENV SETUP INSTRUCTIONS");
   console.log("1. Open .env file");
   console.log("2. Add VITE_SUPABASE_URL=...");
   console.log("3. Add VITE_SUPABASE_ANON_KEY=...");

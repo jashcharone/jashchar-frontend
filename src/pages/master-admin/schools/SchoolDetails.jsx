@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { formatDate } from '@/utils/dateUtils';
 import { useParams, useNavigate } from 'react-router-dom';
 import DashboardLayout from '@/components/DashboardLayout';
@@ -74,7 +74,7 @@ const SchoolDetails = () => {
           <Card>
             <CardHeader><CardTitle className="text-lg">General Information</CardTitle></CardHeader>
             <CardContent className="space-y-4">
-              <div className="flex items-center gap-3"><Building className="h-4 w-4 text-muted-foreground" /> <div><div className="text-sm font-medium">School Code</div><div className="text-sm text-muted-foreground">{school.school_code_number || 'N/A'}</div></div></div>
+              <div className="flex items-center gap-3"><Building className="h-4 w-4 text-muted-foreground" /> <div><div className="text-sm font-medium">School Code</div><div className="text-sm text-muted-foreground">{school.enrollment_id_number || 'N/A'}</div></div></div>
               <div className="flex items-center gap-3"><Mail className="h-4 w-4 text-muted-foreground" /> <div><div className="text-sm font-medium">Email</div><div className="text-sm text-muted-foreground">{school.contact_email}</div></div></div>
               <div className="flex items-center gap-3"><Phone className="h-4 w-4 text-muted-foreground" /> <div><div className="text-sm font-medium">Phone</div><div className="text-sm text-muted-foreground">{school.contact_number || 'N/A'}</div></div></div>
               <div className="flex items-center gap-3"><MapPin className="h-4 w-4 text-muted-foreground" /> <div><div className="text-sm font-medium">Address</div><div className="text-sm text-muted-foreground">{school.address || 'N/A'}</div></div></div>

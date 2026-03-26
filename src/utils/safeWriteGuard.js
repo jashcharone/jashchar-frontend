@@ -1,4 +1,4 @@
-﻿import { SAFE_MODE_FLAG } from "@/services/safeRecoveryManager";
+import { SAFE_MODE_FLAG } from "@/services/safeRecoveryManager";
 import { toast } from "@/components/ui/use-toast";
 
 export const canWrite = () => {

@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import DashboardLayout from '@/components/DashboardLayout';
 import { supabase } from '@/lib/customSupabaseClient';
@@ -89,7 +89,7 @@ const AssignPermissionSchool = () => {
         const structuredModules = [];
         const processedSlugs = new Set();
 
-        // ✅ FIX: Deduplicate overlapping modules
+        // ? FIX: Deduplicate overlapping modules
         // If 'finance' exists, skip 'income' and 'expenses' (they're submodules of finance)
         // This prevents showing same items 3 times: income, finance(with income/expense), expenses
         const hasFinance = allowedModules.some(m => m.slug === 'finance');
@@ -127,7 +127,7 @@ const AssignPermissionSchool = () => {
             .from('role_permissions')
             .select('*')
             .eq('role_id', roleId)
-            .eq('branch_id', branchId);  // ✅ FIX: Filter by branch for proper data isolation
+            .eq('branch_id', branchId);  // ? FIX: Filter by branch for proper data isolation
 
         if (permError) {
             console.error('Permission fetch error:', permError);
@@ -144,7 +144,7 @@ const AssignPermissionSchool = () => {
                 };
             });
         }
-        // ✅ STRICT MODE: No defaults applied
+        // ? STRICT MODE: No defaults applied
         // If no permissions saved in database, user sees empty checkboxes
         // They must explicitly assign permissions - matching sidebar behavior 100%
 
@@ -152,7 +152,7 @@ const AssignPermissionSchool = () => {
         setLoading(false);
     };
 
-    // ⚠️ DEPRECATED: applyRoleDefaults removed for 100% strict permission logic
+    // ?? DEPRECATED: applyRoleDefaults removed for 100% strict permission logic
     // Sidebar now shows ONLY what's in role_permissions table
     // This function is kept for reference but not called
     const applyRoleDefaults = (roleName, modules, permMap) => {
@@ -426,7 +426,7 @@ const AssignPermissionSchool = () => {
         return (
             <DashboardLayout>
                 <div className="flex flex-col items-center justify-center p-10 space-y-4 text-center">
-                    <div className="text-destructive text-5xl">⚠️</div>
+                    <div className="text-destructive text-5xl">??</div>
                     <h2 className="text-2xl font-bold">No Active Subscription</h2>
                     <p className="text-muted-foreground max-w-md">
                         No subscription plan found. Please contact Master Admin to assign a plan.

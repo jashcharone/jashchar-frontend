@@ -1,4 +1,4 @@
-﻿/**
+/**
  * UI STRUCTURE FREEZE
  * Fingerprints critical UI components to detect layout regressions.
  */

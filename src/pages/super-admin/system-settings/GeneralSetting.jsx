@@ -31,16 +31,16 @@ const getSessionYearFormat = (sessionName) => {
 
 // ID Auto Generation Settings Tab
 const IdAutoGenerationSettings = ({ settings, handleChange, currentSessionName }) => {
-    // Generate preview of admission number with session year
+    // Generate preview of enrollment ID with session year
     const sessionYear = getSessionYearFormat(currentSessionName);
-    const prefix = settings.student_admission_no_prefix || 'STU';
-    const digits = settings.student_admission_no_digit || 5;
+    const prefix = settings.student_enrollment_id_prefix || 'STU';
+    const digits = settings.student_enrollment_id_digit || 5;
     const previewNumber = `${prefix}-${sessionYear}-${'X'.repeat(digits)}`;
     const exampleNumber = `${prefix}-${sessionYear}-${String(1).padStart(digits, '0')}`;
     
     return (
     <div className="space-y-6">
-        {/* Student Admission No */}
+        {/* Student Enroll ID */}
         <Card className="border-border/50 shadow-sm">
             <CardHeader className="pb-4">
                 <div className="flex items-center gap-3">
@@ -48,13 +48,13 @@ const IdAutoGenerationSettings = ({ settings, handleChange, currentSessionName }
                         <Hash className="h-5 w-5 text-blue-600 dark:text-blue-400" />
                     </div>
                     <div>
-                        <CardTitle className="text-base">Student Admission No. Auto Generation</CardTitle>
-                        <CardDescription>Configure automatic admission number generation for students</CardDescription>
+                        <CardTitle className="text-base">Student Enroll ID. Auto Generation</CardTitle>
+                        <CardDescription>Configure automatic enrollment ID generation for students</CardDescription>
                     </div>
                 </div>
             </CardHeader>
             <CardContent className="space-y-4">
-                {/* 🌟 Global Unique Info Banner */}
+                {/* Global Unique Info Banner */}
                 <div className="p-4 rounded-lg bg-gradient-to-r from-green-500/10 to-blue-500/10 border border-green-500/20">
                     <div className="flex items-start gap-3">
                         <div className="p-1.5 rounded-full bg-green-500/20">
@@ -63,21 +63,21 @@ const IdAutoGenerationSettings = ({ settings, handleChange, currentSessionName }
                             </svg>
                         </div>
                         <div>
-                            <p className="font-medium text-green-700 dark:text-green-400">🌟 Global Unique Admission Numbers</p>
+                            <p className="font-medium text-green-700 dark:text-green-400">Global Unique Enrollment IDs</p>
                             <p className="text-sm text-muted-foreground mt-1">
                                 Format: <code className="px-1.5 py-0.5 rounded bg-muted">{previewNumber}</code><br/>
                                 Example: <code className="px-1.5 py-0.5 rounded bg-muted font-bold">{exampleNumber}</code><br/>
-                                <span className="text-xs">Admission numbers are <strong>globally unique</strong> across all branches - No duplicates for 100+ years!</span>
+                                <span className="text-xs">Enrollment IDs are <strong>globally unique</strong> across all branches - No duplicates for 100+ years!</span>
                             </p>
                         </div>
                     </div>
                 </div>
 
                 <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
-                    <Label className="font-medium">Auto Admission No.</Label>
+                    <Label className="font-medium">Auto Enroll ID.</Label>
                     <RadioGroup 
-                        value={String(settings.student_admission_no_auto_generation)} 
-                        onValueChange={(val) => handleChange('student_admission_no_auto_generation', val === 'true')} 
+                        value={String(settings.student_enrollment_id_auto_generation)} 
+                        onValueChange={(val) => handleChange('student_enrollment_id_auto_generation', val === 'true')} 
                         className="flex gap-4"
                     >
                         <div className="flex items-center space-x-2">
@@ -90,16 +90,16 @@ const IdAutoGenerationSettings = ({ settings, handleChange, currentSessionName }
                         </div>
                     </RadioGroup>
                 </div>
-                {settings.student_admission_no_auto_generation && (
+                {settings.student_enrollment_id_auto_generation && (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
                         <div className="space-y-2">
-                            <Label htmlFor="stud-prefix">Admission No. Prefix</Label>
-                            <Input id="stud-prefix" placeholder="e.g., STU" value={settings.student_admission_no_prefix || ''} onChange={(e) => handleChange('student_admission_no_prefix', e.target.value.toUpperCase())} />
+                            <Label htmlFor="stud-prefix">Enroll ID. Prefix</Label>
+                            <Input id="stud-prefix" placeholder="e.g., STU" value={settings.student_enrollment_id_prefix || ''} onChange={(e) => handleChange('student_enrollment_id_prefix', e.target.value.toUpperCase())} />
                             <p className="text-xs text-muted-foreground">Prefix for your branch (e.g., STU, JASH, ABC)</p>
                         </div>
                         <div className="space-y-2">
                             <Label htmlFor="stud-digit">Sequence Digits</Label>
-                            <Select value={String(settings.student_admission_no_digit || '5')} onValueChange={(v) => handleChange('student_admission_no_digit', parseInt(v))}>
+                            <Select value={String(settings.student_enrollment_id_digit || '5')} onValueChange={(v) => handleChange('student_enrollment_id_digit', parseInt(v))}>
                                 <SelectTrigger><SelectValue placeholder="Select digits" /></SelectTrigger>
                                 <SelectContent>{[4,5,6,7,8].map(d => <SelectItem key={d} value={String(d)}>{d} digits (up to {Math.pow(10, d) - 1} students/year)</SelectItem>)}</SelectContent>
                             </Select>
@@ -124,7 +124,7 @@ const IdAutoGenerationSettings = ({ settings, handleChange, currentSessionName }
                 </div>
             </CardHeader>
             <CardContent className="space-y-4">
-                {/* 🌟 Global Unique Info Banner */}
+                {/* Global Unique Info Banner */}
                 <div className="p-4 rounded-lg bg-gradient-to-r from-emerald-500/10 to-teal-500/10 border border-emerald-500/20">
                     <div className="flex items-start gap-3">
                         <div className="p-1.5 rounded-full bg-emerald-500/20">
@@ -133,7 +133,7 @@ const IdAutoGenerationSettings = ({ settings, handleChange, currentSessionName }
                             </svg>
                         </div>
                         <div>
-                            <p className="font-medium text-emerald-700 dark:text-emerald-400">🌟 Global Unique Employee IDs</p>
+                            <p className="font-medium text-emerald-700 dark:text-emerald-400">Global Unique Employee IDs</p>
                             <p className="text-sm text-muted-foreground mt-1">
                                 Format: <code className="px-1.5 py-0.5 rounded bg-muted">{settings.staff_id_prefix || 'EMP'}-{sessionYear}-XXXXX</code><br/>
                                 Example: <code className="px-1.5 py-0.5 rounded bg-muted font-bold">{settings.staff_id_prefix || 'EMP'}-{sessionYear}-00001</code><br/>
@@ -243,14 +243,14 @@ const IdAutoGenerationSettings = ({ settings, handleChange, currentSessionName }
                             <div className="space-y-4 pt-2">
                                 <div className="space-y-2">
                                     <Label htmlFor="pass-student" className="text-sm flex items-center gap-2">
-                                        🎓 Student & Parent Default Password
+                                        Student & Parent Default Password
                                     </Label>
                                     <Input id="pass-student" placeholder="e.g., Student@123" value={settings.password_default || ''} onChange={(e) => handleChange('password_default', e.target.value)} />
                                     <p className="text-xs text-muted-foreground">Used when admitting new students and creating parent accounts</p>
                                 </div>
                                 <div className="space-y-2">
                                     <Label htmlFor="pass-employee" className="text-sm flex items-center gap-2">
-                                        👨‍💼 Employee Default Password
+                                        Employee Default Password
                                     </Label>
                                     <Input id="pass-employee" placeholder="e.g., Staff@123" value={settings.password_default_employee || ''} onChange={(e) => handleChange('password_default_employee', e.target.value)} />
                                     <p className="text-xs text-muted-foreground">Used when adding new staff/employees (Teachers, Principal, etc.)</p>
@@ -466,12 +466,12 @@ const FeesSettings = ({ settings, handleChange, handleQuillChange }) => (
                             <RadioGroupItem value="detailed" id="receipt-detailed" className="mt-1" />
                             <div className="flex-1">
                                 <Label htmlFor="receipt-detailed" className="font-medium cursor-pointer">
-                                    📋 Detailed (Month-wise)
+                                    Detailed (Month-wise)
                                 </Label>
                                 <p className="text-sm text-muted-foreground mt-1">
                                     Shows each month as separate row with full summary section.
                                     <br />
-                                    <span className="text-xs text-blue-600">Example: Apr ₹500, May ₹500, Jun ₹500 (3 rows)</span>
+                                    <span className="text-xs text-blue-600">Example: Apr ?500, May ?500, Jun ?500 (3 rows)</span>
                                 </p>
                             </div>
                         </div>
@@ -479,12 +479,12 @@ const FeesSettings = ({ settings, handleChange, handleQuillChange }) => (
                             <RadioGroupItem value="summary" id="receipt-summary" className="mt-1" />
                             <div className="flex-1">
                                 <Label htmlFor="receipt-summary" className="font-medium cursor-pointer">
-                                    📄 Summary (Installment-wise)
+                                    Summary (Installment-wise)
                                 </Label>
                                 <p className="text-sm text-muted-foreground mt-1">
                                     Clean receipt showing billing cycle and installment total only.
                                     <br />
-                                    <span className="text-xs text-green-600">Example: Quarterly Fee (Apr-Jun) ₹1,500 (1 row)</span>
+                                    <span className="text-xs text-green-600">Example: Quarterly Fee (Apr-Jun) ?1,500 (1 row)</span>
                                 </p>
                             </div>
                         </div>
@@ -588,7 +588,7 @@ const FeesSettings = ({ settings, handleChange, handleQuillChange }) => (
                                     <div className="text-sm">
                                         <p className="font-medium">{settings.upi_merchant_name || 'Your School'}</p>
                                         <p className="text-muted-foreground">{settings.upi_id}</p>
-                                        <p className="text-green-600 text-xs mt-1">✓ Ready for fee collection</p>
+                                        <p className="text-green-600 text-xs mt-1">? Ready for fee collection</p>
                                     </div>
                                 </div>
                             </div>
@@ -643,7 +643,7 @@ const GeneralSetting = () => {
         console.log('[GeneralSetting] Fetching settings for branch:', branchId);
         setIsFetching(true);
         
-        // 🌟 Read from branches table - this is what all consumers (StudentAdmission, AddEmployee, BulkUpload) read from
+        // Read from branches table - this is what all consumers (StudentAdmission, AddEmployee, BulkUpload) read from
         const { data: branchData, error } = await supabase
             .from('branches')
             .select('*')
@@ -679,15 +679,15 @@ const GeneralSetting = () => {
             return;
         }
         
-        // 🌟 Save to branches table - this is what all consumers read from
+        // Save to branches table - this is what all consumers read from
         // Only update settings-related columns, not structure columns
         const settingsColumns = {
             password_auto_generation: settings.password_auto_generation,
             password_default: settings.password_default,
             password_default_employee: settings.password_default_employee,
-            student_admission_no_auto_generation: settings.student_admission_no_auto_generation,
-            student_admission_no_prefix: settings.student_admission_no_prefix,
-            student_admission_no_digit: settings.student_admission_no_digit,
+            student_enrollment_id_auto_generation: settings.student_enrollment_id_auto_generation,
+            student_enrollment_id_prefix: settings.student_enrollment_id_prefix,
+            student_enrollment_id_digit: settings.student_enrollment_id_digit,
             student_admission_start_from: settings.student_admission_start_from,
             staff_id_auto_generation: settings.staff_id_auto_generation,
             staff_id_prefix: settings.staff_id_prefix,

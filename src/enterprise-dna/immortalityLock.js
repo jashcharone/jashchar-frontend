@@ -1,4 +1,4 @@
-﻿import baseline from './projectBaseline.json';
+import baseline from './projectBaseline.json';
 
 /**
  * HORIZON IMMORTALITY LOCK

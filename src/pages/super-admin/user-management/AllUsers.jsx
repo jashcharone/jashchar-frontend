@@ -307,8 +307,8 @@ const AllUsers = () => {
                                                         {user.staff_id && (
                                                             <div className="text-xs text-muted-foreground">{user.staff_id}</div>
                                                         )}
-                                                        {user.school_code && (
-                                                            <div className="text-xs text-muted-foreground">{user.school_code}</div>
+                                                        {user.enrollment_id && (
+                                                            <div className="text-xs text-muted-foreground">{user.enrollment_id}</div>
                                                         )}
                                                     </div>
                                                 </div>

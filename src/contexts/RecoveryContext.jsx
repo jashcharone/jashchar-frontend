@@ -1,4 +1,4 @@
-﻿import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
 import { Capacitor } from '@capacitor/core';
 import { safeInitialize } from '@/utils/initializationGuard';
 import { startMonitoring, stopMonitoring } from '@/services/connectionStatusMonitor';
@@ -29,7 +29,7 @@ export const RecoveryProvider = ({ children }) => {
     // The native HTTP layer handles connectivity; WebView-based Supabase
     // health checks can give false negatives.
     if (_isCapacitorNative()) {
-      console.log('[RecoveryContext] Capacitor native → skipping initialization diagnostics');
+      console.log('[RecoveryContext] Capacitor native ? skipping initialization diagnostics');
       disableReadOnlyMode();
       setDiagnosticResult({ status: 'HEALTHY', message: 'Native app' });
       setIsReadOnly(false);
@@ -51,7 +51,7 @@ export const RecoveryProvider = ({ children }) => {
 
     runInit();
 
-    // Start Monitor (only on web — skipped internally on native too)
+    // Start Monitor (only on web � skipped internally on native too)
     startMonitoring((isConnected) => {
       syncState();
     });

@@ -1,4 +1,4 @@
-﻿import React from 'react';
+import React from 'react';
 import { X, Mail, Phone } from 'lucide-react';
 
 const InactiveSchoolNotification = ({ settings }) => {
@@ -17,7 +17,7 @@ const InactiveSchoolNotification = ({ settings }) => {
           </p>
           <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-4 text-left">
             <p className="text-sm text-amber-800 dark:text-amber-300 font-medium mb-2">
-               ï¸ What this means:
+               ️ What this means:
             </p>
             <ul className="text-sm text-amber-700 dark:text-amber-400 space-y-1 list-disc list-inside">
               <li>The school website is temporarily unavailable</li>

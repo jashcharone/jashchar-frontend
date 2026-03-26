@@ -1,4 +1,4 @@
-﻿import { supabase } from '@/lib/customSupabaseClient';
+import { supabase } from '@/lib/customSupabaseClient';
 
 /**
  * Repairs plan_modules mappings by ensuring all plans have their modules

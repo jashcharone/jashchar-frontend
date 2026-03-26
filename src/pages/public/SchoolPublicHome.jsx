@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { formatDate, getMonthShortName } from '@/utils/dateUtils';
 import { useParams, Link } from 'react-router-dom';
 import publicCmsService from '@/services/publicCmsService';
@@ -340,7 +340,7 @@ const CoursesSection = ({ slug, primaryColor = DEFAULT_PRIMARY }) => {
                     {c.title}
                   </span>
                   <div className="flex text-yellow-400 text-sm">
-                    {'✨'.repeat(Math.round(c.rating || 5))}
+                    {'?'.repeat(Math.round(c.rating || 5))}
                   </div>
                 </div>
                 <h3 className="text-xl font-bold mb-3 text-gray-900 dark:text-white hover:opacity-80 transition-opacity" style={{ color: 'inherit' }}>

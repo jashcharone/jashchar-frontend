@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { formatDateTime } from '@/utils/dateUtils';
 import { supabase } from '@/lib/customSupabaseClient';
 import DashboardLayout from '@/components/DashboardLayout';

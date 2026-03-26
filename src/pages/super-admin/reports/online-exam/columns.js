@@ -90,7 +90,7 @@ export const SETUP_COLUMNS = [
 export const RESULT_COLUMNS = [
   // Student Info
   { key: 'student_name', label: 'Student Name', type: 'string', width: 180, sortable: true },
-  { key: 'admission_no', label: 'Admission No', type: 'string', width: 110 },
+  { key: 'enrollment_id', label: 'Enroll ID', type: 'string', width: 110 },
   { key: 'roll_no', label: 'Roll No', type: 'string', width: 80, sortable: true },
   { key: 'class_name', label: 'Class', type: 'string', width: 80, groupable: true },
   { key: 'section_name', label: 'Section', type: 'string', width: 80, groupable: true },
@@ -176,7 +176,7 @@ export const RESULT_COLUMNS = [
 export const TECHNICAL_COLUMNS = [
   // Student Info
   { key: 'student_name', label: 'Student Name', type: 'string', width: 180, sortable: true },
-  { key: 'admission_no', label: 'Admission No', type: 'string', width: 110 },
+  { key: 'enrollment_id', label: 'Enroll ID', type: 'string', width: 110 },
   { key: 'class_name', label: 'Class', type: 'string', width: 80, groupable: true },
   
   // Exam Info

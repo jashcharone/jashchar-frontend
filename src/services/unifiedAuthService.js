@@ -23,7 +23,7 @@ const API_URL = getApiBaseUrl();
 /**
  * Unified Login
  * @param {object} credentials - Login credentials
- * @param {string} credentials.identifier - Email, mobile, admission_no, or username
+ * @param {string} credentials.identifier - Email, mobile, enrollment_id, or username
  * @param {string} credentials.password - User password
  * @param {string} credentials.organization_slug - Organization subdomain
  * @param {string} [credentials.role_hint] - Optional role hint for faster lookup

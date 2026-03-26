@@ -58,7 +58,7 @@ const RefundApprovals = () => {
             if (studentIds.length > 0) {
                 const { data: students } = await supabase
                     .from('student_profiles')
-                    .select('id, full_name, school_code, class_id, classes!student_profiles_class_id_fkey(name), sections!student_profiles_section_id_fkey(name)')
+                    .select('id, full_name, enrollment_id, class_id, classes!student_profiles_class_id_fkey(name), sections!student_profiles_section_id_fkey(name)')
                     .in('id', studentIds)
                     .eq('branch_id', selectedBranch.id);
                 
@@ -269,7 +269,7 @@ const RefundApprovals = () => {
                                                     <div>
                                                         <p className="font-medium">{refund.student?.full_name || 'Unknown'}</p>
                                                         <p className="text-xs text-muted-foreground">
-                                                            {refund.student?.school_code} • {refund.student?.classes?.name || ''}
+                                                            {refund.student?.enrollment_id} • {refund.student?.classes?.name || ''}
                                                         </p>
                                                     </div>
                                                 </td>

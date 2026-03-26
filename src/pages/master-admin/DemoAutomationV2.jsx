@@ -1,4 +1,4 @@
-﻿import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -92,7 +92,7 @@ const DemoAutomationV2 = () => {
   }, [logs]);
 
   const handleStart = async () => {
-    console.log('ðŸš€ Starting Demo Automation...', { scenario });
+    console.log('🚀 Starting Demo Automation...', { scenario });
     try {
       setVerificationResults(null);
       setSchoolCredentials(null);
@@ -101,7 +101,7 @@ const DemoAutomationV2 = () => {
       setProgress(0);
       setStatus('running');
       
-      console.log('ðŸ“ž Calling runDemoAutomation...');
+      console.log('📞 Calling runDemoAutomation...');
       await runDemoAutomation(
         setLogs, 
         setProgress, 
@@ -112,13 +112,13 @@ const DemoAutomationV2 = () => {
         setSchoolCredentials,
         selectedModules // Pass selected modules
       );
-      console.log('✅ runDemoAutomation completed');
+      console.log('? runDemoAutomation completed');
     } catch (error) {
-      console.error('❌ Automation Error:', error);
+      console.error('? Automation Error:', error);
       setStatus('error');
       setLogs(prev => [...prev, {
         timestamp: new Date().toLocaleTimeString(),
-        message: `❌ Fatal Error: ${error.message}`,
+        message: `? Fatal Error: ${error.message}`,
         type: 'error'
       }]);
     }

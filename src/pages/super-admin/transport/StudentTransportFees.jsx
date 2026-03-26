@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import DashboardLayout from '@/components/DashboardLayout';
 import { supabase } from '@/lib/customSupabaseClient';
@@ -114,7 +114,7 @@ const StudentTransportFees = () => {
     let query = supabase
       .from('student_profiles')
       .select(`
-        id, full_name, school_code, roll_number,
+        id, full_name, enrollment_id, roll_number,
         class:classes!student_profiles_class_id_fkey(name),
         section:sections!student_profiles_section_id_fkey(name)
       `)
@@ -125,7 +125,7 @@ const StudentTransportFees = () => {
     }
 
     if (searchFilters.search) {
-      query = query.or(`full_name.ilike.%${searchFilters.search}%,school_code.ilike.%${searchFilters.search}%`);
+      query = query.or(`full_name.ilike.%${searchFilters.search}%,enrollment_id.ilike.%${searchFilters.search}%`);
     }
 
     const { data: studentData, error } = await query.order('full_name');
@@ -305,7 +305,7 @@ const StudentTransportFees = () => {
     if (filteredStudents.length === 0) return toast({ variant: 'destructive', title: 'No data to export' });
     const headers = ['Student', 'School Code', 'Class', 'Route', 'Pickup Point', 'Type', 'Fee', 'Status'];
     const rows = filteredStudents.map(s => [
-      s.full_name || '', s.school_code || '', `${s.class?.name || ''} ${s.section || ''}`.trim(),
+      s.full_name || '', s.enrollment_id || '', `${s.class?.name || ''} ${s.section || ''}`.trim(),
       s.transport?.route_title || '', s.transport?.pickup_point_name || '', s.transport?.pickup_type || '',
       s.transport?.transport_fee || '', s.transport ? 'Active' : 'Not Assigned'
     ]);
@@ -459,7 +459,7 @@ const StudentTransportFees = () => {
         </Button>
 
         <div className="flex items-center justify-between mb-4">
-          <h1 className="text-2xl font-bold">🚌 Student Transport Fees</h1>
+          <h1 className="text-2xl font-bold">?? Student Transport Fees</h1>
           <Button variant="outline" size="sm" onClick={handleExportCSV}>
             <Download className="mr-1 h-4 w-4" /> Export
           </Button>
@@ -489,7 +489,7 @@ const StudentTransportFees = () => {
             <div className="bg-card rounded-xl shadow p-4 border-l-4 border-purple-500">
               <div className="flex items-center gap-3">
                 <IndianRupee className="h-8 w-8 text-purple-500" />
-                <div><p className="text-xs text-muted-foreground">Monthly Revenue</p><p className="text-2xl font-bold">₹{stats.totalFee.toLocaleString('en-IN')}</p></div>
+                <div><p className="text-xs text-muted-foreground">Monthly Revenue</p><p className="text-2xl font-bold">?{stats.totalFee.toLocaleString('en-IN')}</p></div>
               </div>
             </div>
           </div>
@@ -499,7 +499,7 @@ const StudentTransportFees = () => {
           {/* Left - Search + Form */}
           <div className="xl:col-span-1 space-y-4">
             <div className="bg-card text-card-foreground rounded-xl shadow-lg p-6">
-              <h2 className="text-xl font-bold mb-4">🔍 Search Students</h2>
+              <h2 className="text-xl font-bold mb-4">?? Search Students</h2>
               <div className="space-y-3">
                 <div className="space-y-2">
                   <Label>Class</Label>
@@ -512,7 +512,7 @@ const StudentTransportFees = () => {
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <Label>Name / Admission No</Label>
+                  <Label>Name / Enroll ID</Label>
                   <Input placeholder="Enter name or admission no..." value={searchFilters.search} onChange={(e) => setSearchFilters({...searchFilters, search: e.target.value})} onKeyDown={(e) => e.key === 'Enter' && searchStudents()} />
                 </div>
                 <Button onClick={searchStudents} className="w-full" disabled={loading}>
@@ -526,14 +526,14 @@ const StudentTransportFees = () => {
             {selectedStudent && (
               <div className="bg-card text-card-foreground rounded-xl shadow-lg p-6">
                 <div className="flex justify-between items-center mb-4">
-                  <h2 className="text-lg font-bold">🎯 Assign Transport</h2>
+                  <h2 className="text-lg font-bold">?? Assign Transport</h2>
                   <Button variant="ghost" size="icon" className="h-7 w-7" onClick={handleCancel}><X className="h-4 w-4" /></Button>
                 </div>
                 <div className="flex items-center gap-2 mb-3 p-2 bg-primary/5 rounded-lg">
                   <User className="h-4 w-4 text-primary" />
                   <div>
                     <p className="text-sm font-medium">{selectedStudent.full_name}</p>
-                    <p className="text-xs text-muted-foreground">{selectedStudent.class?.name}{selectedStudent.section?.name ? ` - ${selectedStudent.section.name}` : ''} | {selectedStudent.school_code || 'N/A'}</p>
+                    <p className="text-xs text-muted-foreground">{selectedStudent.class?.name}{selectedStudent.section?.name ? ` - ${selectedStudent.section.name}` : ''} | {selectedStudent.enrollment_id || 'N/A'}</p>
                   </div>
                 </div>
                 <form onSubmit={handleSubmit} className="space-y-3">
@@ -555,7 +555,7 @@ const StudentTransportFees = () => {
                         <SelectValue placeholder={!formData.transport_route_id ? "Select Route first" : routePickupPoints.length === 0 ? "No pickup points for route" : "Select Pickup Point"} />
                       </SelectTrigger>
                       <SelectContent>
-                        {routePickupPoints.map(p => <SelectItem key={p.id} value={p.id}>{p.name} {p.monthly_fees ? `(₹${p.monthly_fees})` : ''}</SelectItem>)}
+                        {routePickupPoints.map(p => <SelectItem key={p.id} value={p.id}>{p.name} {p.monthly_fees ? `(?${p.monthly_fees})` : ''}</SelectItem>)}
                       </SelectContent>
                     </Select>
                   </div>
@@ -596,7 +596,7 @@ const StudentTransportFees = () => {
                   <div className="space-y-2 p-2 bg-muted/30 rounded-lg">
                     <div className="grid grid-cols-2 gap-2">
                       <div className="space-y-1">
-                        <Label className="text-xs font-semibold">Annual Fee (₹)</Label>
+                        <Label className="text-xs font-semibold">Annual Fee (?)</Label>
                         <Input type="number" value={formData.annual_fee} onChange={(e) => {
                           const annual = e.target.value;
                           const wm = billingConfig?.working_months || 10;
@@ -610,13 +610,13 @@ const StudentTransportFees = () => {
                     </div>
                     {formData.pickup_type !== 'both' && billingConfig?.one_way_percentage && (
                       <p className="text-xs text-amber-600 dark:text-amber-400">
-                        ⚠ One-way: {billingConfig.one_way_percentage}% of annual fee = ₹{Math.round((formData.annual_fee || 0) * billingConfig.one_way_percentage / 100).toLocaleString('en-IN')}
+                        ? One-way: {billingConfig.one_way_percentage}% of annual fee = ?{Math.round((formData.annual_fee || 0) * billingConfig.one_way_percentage / 100).toLocaleString('en-IN')}
                       </p>
                     )}
                     {billingConfig && (
                       <p className="text-xs text-muted-foreground">
                         Billing: <strong className="capitalize">{(billingConfig.billing_mode || 'monthly').replace('_', ' ')}</strong>
-                        {billingConfig.billing_mode === 'monthly' && ` • ${billingConfig.working_months || 10} months`}
+                        {billingConfig.billing_mode === 'monthly' && ` � ${billingConfig.working_months || 10} months`}
                       </p>
                     )}
                   </div>
@@ -700,7 +700,7 @@ const StudentTransportFees = () => {
             <div className="bg-card text-card-foreground rounded-xl shadow-lg">
               <div className="p-6">
                 <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-xl font-bold">🎓 Student Transport List</h2>
+                  <h2 className="text-xl font-bold">?? Student Transport List</h2>
                   {hasSearched && (
                     <Select value={statusFilter} onValueChange={(v) => { setStatusFilter(v); setCurrentPage(1); }}>
                       <SelectTrigger className="w-[150px]"><SelectValue /></SelectTrigger>
@@ -745,7 +745,7 @@ const StudentTransportFees = () => {
                               <td className="px-3 py-3">
                                 <div>
                                   <p className="font-medium">{student.full_name}</p>
-                                  <p className="text-xs text-muted-foreground">{student.school_code || ''}</p>
+                                  <p className="text-xs text-muted-foreground">{student.enrollment_id || ''}</p>
                                 </div>
                               </td>
                               <td className="px-3 py-3">{student.class?.name || '-'}{student.section?.name ? ` - ${student.section.name}` : ''}</td>

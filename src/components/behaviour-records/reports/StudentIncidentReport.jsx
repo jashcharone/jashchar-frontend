@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -105,7 +105,7 @@ const StudentIncidentReport = ({ classes, sections, onClassChange, fetchData, lo
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Admission No</TableHead>
+              <TableHead>Enroll ID</TableHead>
               <TableHead>Student Name</TableHead>
               <TableHead>Class (Section)</TableHead>
               <TableHead>Gender</TableHead>
@@ -119,7 +119,7 @@ const StudentIncidentReport = ({ classes, sections, onClassChange, fetchData, lo
             {paginatedData.length > 0 ? (
               paginatedData.map((entry, i) => (
                 <TableRow key={i}>
-                  <TableCell>{entry.student.admission_no}</TableCell>
+                  <TableCell>{entry.student.enrollment_id}</TableCell>
                   <TableCell className="font-medium">{entry.student.full_name}</TableCell>
                   <TableCell>{entry.student.class?.name} ({entry.student.section?.name})</TableCell>
                   <TableCell>{entry.student.gender}</TableCell>

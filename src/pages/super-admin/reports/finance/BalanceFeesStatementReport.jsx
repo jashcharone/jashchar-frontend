@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
 import DataTableExport from '@/components/DataTableExport';
 import { Button } from '@/components/ui/button';
@@ -23,7 +23,7 @@ const BalanceFeesStatementReport = () => {
   const printRef = useRef();
 
   const columns = useMemo(() => [
-    { key: 'admission_no', label: 'Admission No' },
+    { key: 'enrollment_id', label: 'Enroll ID' },
     { key: 'student_name', label: 'Student Name' },
     { key: 'class_section', label: 'Class' },
     { key: 'fee_group', label: 'Fees Group' },
@@ -127,7 +127,7 @@ const BalanceFeesStatementReport = () => {
           <table className="w-full text-sm">
             <thead>
               <tr className="text-left bg-muted">
-                <th className="p-2">Admission No</th>
+                <th className="p-2">Enroll ID</th>
                 <th className="p-2">Student Name</th>
                 <th className="p-2">Class</th>
                 <th className="p-2">Fees Group</th>
@@ -142,7 +142,7 @@ const BalanceFeesStatementReport = () => {
             <tbody>
               {reportData.length > 0 ? reportData.map((row, index) => (
                 <tr key={index} className="border-b">
-                  <td className="p-2">{row.admission_no}</td>
+                  <td className="p-2">{row.enrollment_id}</td>
                   <td className="p-2">{row.student_name}</td>
                   <td className="p-2">{row.class_name} ({row.section_name})</td>
                   <td className="p-2">{row.fee_group}</td>

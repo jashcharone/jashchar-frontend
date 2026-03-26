@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { Users, UserCheck, IndianRupee, GraduationCap, Layout, Save, X } from 'lucide-react';
@@ -11,7 +11,7 @@ import FeeCollectionChart from '@/components/dashboard/charts/FeeCollectionChart
 
 const AdminDashboard = () => {
   const { user, school } = useAuth();
-  const currencySymbol = school?.currency_symbol || '₹';
+  const currencySymbol = school?.currency_symbol || '?';
   const [isEditing, setIsEditing] = useState(false);
 
   // Initial Data

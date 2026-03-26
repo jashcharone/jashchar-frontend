@@ -1,4 +1,4 @@
-﻿
+
 import { supabase as client } from '@/lib/customSupabaseClient';
 
 /**

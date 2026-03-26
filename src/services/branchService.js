@@ -1,4 +1,4 @@
-﻿import api from '@/lib/api';
+import api from '@/lib/api';
 import { supabase } from '@/lib/customSupabaseClient';
 
 export const branchService = {

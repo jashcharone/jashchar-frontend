@@ -113,7 +113,7 @@ const StudentIdCard = () => {
                 .from('student_profiles')
                 .select(`
                     id,
-                    school_code,
+                    enrollment_id,
                     full_name,
                     first_name,
                     last_name,
@@ -273,8 +273,8 @@ const StudentIdCard = () => {
         // Get best available address
         const displayAddress = student.present_address || student.permanent_address || '';
         
-        // Get admission number (school_code)
-        const admissionNo = student.school_code || 'N/A';
+        // Get admission number (enrollment_id)
+        const enrollmentId = student.enrollment_id || 'N/A';
         
         return (
             <div className="id-card">
@@ -292,8 +292,8 @@ const StudentIdCard = () => {
                     <div className="info-section">
                         <div className="student-name">{fullName}</div>
                         <div className="info-row">
-                            <span className="info-label">Adm No:</span>
-                            <span className="info-value">{admissionNo}</span>
+                            <span className="info-label">Enroll ID:</span>
+                            <span className="info-value">{enrollmentId}</span>
                         </div>
                         <div className="info-row">
                             <span className="info-label">Class:</span>
@@ -424,7 +424,7 @@ const StudentIdCard = () => {
                                                 />
                                             </TableHead>
                                             <TableHead>Photo</TableHead>
-                                            <TableHead>Admission No</TableHead>
+                                            <TableHead>Enroll ID</TableHead>
                                             <TableHead>Name</TableHead>
                                             <TableHead>Class</TableHead>
                                             <TableHead>Section</TableHead>
@@ -441,7 +441,7 @@ const StudentIdCard = () => {
                                                 ? `${nameParts[0]?.[0] || ''}${nameParts[nameParts.length - 1]?.[0] || ''}`
                                                 : displayName.substring(0, 2).toUpperCase();
                                             const phoneNumber = student.phone || '-';
-                                            const admissionNo = student.school_code || '-';
+                                            const enrollmentId = student.enrollment_id || '-';
                                             
                                             return (
                                             <TableRow key={student.id}>
@@ -458,7 +458,7 @@ const StudentIdCard = () => {
                                                     </Avatar>
                                                 </TableCell>
                                                 <TableCell>
-                                                    <Badge variant="outline">{admissionNo}</Badge>
+                                                    <Badge variant="outline">{enrollmentId}</Badge>
                                                 </TableCell>
                                                 <TableCell className="font-medium">{displayName}</TableCell>
                                                 <TableCell>{student.classes?.name || 'N/A'}</TableCell>

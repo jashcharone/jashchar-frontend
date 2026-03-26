@@ -218,7 +218,7 @@ const BulkApprovalModal = ({
                             {paper.student?.full_name || `Roll: ${paper.student_roll_no}`}
                           </p>
                           <p className="text-xs text-gray-500">
-                            {paper.student?.admission_number}
+                            {paper.student?.enrollment_id}
                           </p>
                         </div>
                       </div>
@@ -264,7 +264,7 @@ const BulkApprovalModal = ({
                             {paper.student?.full_name || `Roll: ${paper.student_roll_no}`}
                           </p>
                           <p className="text-xs text-gray-500">
-                            {paper.student?.admission_number}
+                            {paper.student?.enrollment_id}
                           </p>
                         </div>
                         <div className="flex items-center gap-4">

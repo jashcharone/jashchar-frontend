@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { subscribeToPushNotifications } from '@/utils/pushNotification';
 import { Button } from '@/components/ui/button';

@@ -61,7 +61,7 @@ function SchoolLogin() {
         return;
       }
       
-      // ✅ Check if school is inactive
+      // ? Check if school is inactive
       if (schoolData.status === 'Inactive') {
         toast({ 
           variant: 'destructive', 
@@ -116,18 +116,18 @@ function SchoolLogin() {
   // Send OTP handler
   const handleSendOTP = async () => {
     if (!mobileNumber || mobileNumber.length !== 10) {
-      toast({ variant: 'destructive', title: 'Invalid Mobile', description: '10 ಅಂಕಿಯ ಮೊಬೈಲ್ ನಂಬರ್ ನಮೂದಿಸಿ' });
+      toast({ variant: 'destructive', title: 'Invalid Mobile', description: '10 ????????' });
       return;
     }
     setOtpLoading(true);
     try {
       const response = await unifiedAuthV2Service.sendOTP(`+91${mobileNumber}`, otpChannel);
       if (response.success) {
-        toast({ title: 'OTP ಕಳುಹಿಸಲಾಗಿದೆ', description: `${otpChannel === 'whatsapp' ? 'WhatsApp' : 'SMS'} ಗೆ OTP ಕಳುಹಿಸಲಾಗಿದೆ` });
+        toast({ title: 'OTP ????????????', description: `${otpChannel === 'whatsapp' ? 'WhatsApp' : 'SMS'} OTP ????????????` });
         setOtpStep('otp');
         setOtpCountdown(60);
       } else {
-        toast({ variant: 'destructive', title: 'Error', description: response.error || 'OTP ಕಳುಹಿಸಲು ವಿಫಲವಾಗಿದೆ' });
+        toast({ variant: 'destructive', title: 'Error', description: response.error || 'OTP ?????????????' });
       }
     } catch (error) {
       toast({ variant: 'destructive', title: 'Error', description: error.message });
@@ -139,7 +139,7 @@ function SchoolLogin() {
   const handleVerifyOTP = async () => {
     const otpCode = otp.join('');
     if (otpCode.length !== 6) {
-      toast({ variant: 'destructive', title: 'Invalid OTP', description: '6 ಅಂಕಿಯ OTP ನಮೂದಿಸಿ' });
+      toast({ variant: 'destructive', title: 'Invalid OTP', description: '6 OTP ???????' });
       return;
     }
     setOtpLoading(true);
@@ -153,11 +153,11 @@ function SchoolLogin() {
           setUserRoles(rolesResponse.roles);
           setOtpStep('role');
         } else {
-          toast({ variant: 'destructive', title: 'No Roles', description: 'ಈ ಮೊಬೈಲ್ ನಂಬರ್‌ಗೆ ಯಾವುದೇ role ಲಿಂಕ್ ಆಗಿಲ್ಲ' });
+          toast({ variant: 'destructive', title: 'No Roles', description: '? ?????role ??????' });
           resetV2State();
         }
       } else {
-        toast({ variant: 'destructive', title: 'Invalid OTP', description: response.error || 'OTP ತಪ್ಪಾಗಿದೆ' });
+        toast({ variant: 'destructive', title: 'Invalid OTP', description: response.error || 'OTP ?????????' });
       }
     } catch (error) {
       toast({ variant: 'destructive', title: 'Error', description: error.message });
@@ -171,7 +171,7 @@ function SchoolLogin() {
     try {
       const response = await unifiedAuthV2Service.selectRole(unifiedUserId, role.id);
       if (response.success) {
-        toast({ title: 'ಯಶಸ್ವಿ!', description: `${role.role_type} ಆಗಿ ಲಾಗಿನ್ ಆಗಿದೆ` });
+        toast({ title: '??????!', description: `${role.role_type} ??????` });
         // Store session and redirect
         localStorage.setItem('unified_session', JSON.stringify(response.session));
         navigate('/dashboard');
@@ -188,11 +188,11 @@ function SchoolLogin() {
   const handlePinLogin = async () => {
     const pinCode = pin.join('');
     if (!mobileNumber || mobileNumber.length !== 10) {
-      toast({ variant: 'destructive', title: 'Invalid Mobile', description: '10 ಅಂಕಿಯ ಮೊಬೈಲ್ ನಂಬರ್ ನಮೂದಿಸಿ' });
+      toast({ variant: 'destructive', title: 'Invalid Mobile', description: '10 ????????' });
       return;
     }
     if (pinCode.length !== 6) {
-      toast({ variant: 'destructive', title: 'Invalid PIN', description: '6 ಅಂಕಿಯ PIN ನಮೂದಿಸಿ' });
+      toast({ variant: 'destructive', title: 'Invalid PIN', description: '6 PIN ???????' });
       return;
     }
     setOtpLoading(true);
@@ -206,10 +206,10 @@ function SchoolLogin() {
           setOtpStep('role');
           setLoginMethod('mobile'); // Switch to show role selector
         } else {
-          toast({ variant: 'destructive', title: 'No Roles', description: 'ಈ ಮೊಬೈಲ್ ನಂಬರ್‌ಗೆ ಯಾವುದೇ role ಲಿಂಕ್ ಆಗಿಲ್ಲ' });
+          toast({ variant: 'destructive', title: 'No Roles', description: '? ?????role ??????' });
         }
       } else {
-        toast({ variant: 'destructive', title: 'Invalid PIN', description: response.error || 'PIN ತಪ್ಪಾಗಿದೆ' });
+        toast({ variant: 'destructive', title: 'Invalid PIN', description: response.error || 'PIN ?????????' });
       }
     } catch (error) {
       toast({ variant: 'destructive', title: 'Error', description: error.message });
@@ -227,7 +227,7 @@ function SchoolLogin() {
       }
       setFaceScanning(true);
     } catch (error) {
-      toast({ variant: 'destructive', title: 'Camera Error', description: 'ಕ್ಯಾಮರಾ ಆಕ್ಸೆಸ್ ಅನುಮತಿ ನೀಡಿ' });
+      toast({ variant: 'destructive', title: 'Camera Error', description: '?????????' });
     }
   };
 
@@ -255,7 +255,7 @@ function SchoolLogin() {
           stopCamera();
         }
       } else {
-        toast({ variant: 'destructive', title: 'Face Not Recognized', description: 'ಮುಖ ಗುರುತಿಸಲಾಗಲಿಲ್ಲ. ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ.' });
+        toast({ variant: 'destructive', title: 'Face Not Recognized', description: '???????????????. ??????????.' });
       }
     } catch (error) {
       toast({ variant: 'destructive', title: 'Error', description: error.message });
@@ -516,7 +516,7 @@ function SchoolLogin() {
                       <ArrowLeft size={16} /> Change Number
                     </button>
                     <div className="text-center mb-4">
-                      <p className="text-sm text-gray-600 dark:text-gray-400">OTP ಕಳುಹಿಸಲಾಗಿದೆ</p>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">OTP ????????????</p>
                       <p className="font-medium">+91 {mobileNumber}</p>
                     </div>
                     <div className="space-y-2">
@@ -556,7 +556,7 @@ function SchoolLogin() {
                 {otpStep === 'role' && (
                   <>
                     <div className="text-center mb-4">
-                      <p className="text-sm text-gray-600 dark:text-gray-400">ಯಾವ role ಆಗಿ ಲಾಗಿನ್ ಆಗಬೇಕು?</p>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">role ????????</p>
                     </div>
                     <div className="space-y-2">
                       {userRoles.map((role) => (
@@ -594,7 +594,7 @@ function SchoolLogin() {
                     <div className="w-24 h-24 mx-auto mb-4 rounded-full bg-purple-100 dark:bg-purple-900/50 flex items-center justify-center">
                       <ScanFace size={48} className="text-purple-600 dark:text-purple-400" />
                     </div>
-                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">ಕ್ಯಾಮರಾ ಬಳಸಿ ಮುಖ ಸ್ಕ್ಯಾನ್ ಮಾಡಿ</p>
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">?????????</p>
                     <Button onClick={startFaceScan} className="w-full hover-bg-dynamic" style={buttonStyle}>
                       Start Face Scan
                     </Button>

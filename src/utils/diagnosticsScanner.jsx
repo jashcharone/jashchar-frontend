@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { supabase } from '@/lib/customSupabaseClient';
 
 // Error Boundary to catch crashes in the tested component

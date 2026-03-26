@@ -1,4 +1,4 @@
-﻿import { MASTER_ADMIN_CONSTANTS } from '@/constants/masterAdminConstants';
+import { MASTER_ADMIN_CONSTANTS } from '@/constants/masterAdminConstants';
 
 export const masterAdminSafetyService = {
   /**
@@ -13,7 +13,7 @@ export const masterAdminSafetyService = {
       MASTER_ADMIN_CONSTANTS.PROTECTED_TABLES.includes(table) &&
       MASTER_ADMIN_CONSTANTS.PROTECTED_OPERATIONS.includes(operation.toUpperCase())
     ) {
-      console.error(`ðŸ›‘ BLOCKED: Attempt to ${operation} protected table '${table}' from unauthorized service.`);
+      console.error(`🛑 BLOCKED: Attempt to ${operation} protected table '${table}' from unauthorized service.`);
       return false;
     }
     return true;

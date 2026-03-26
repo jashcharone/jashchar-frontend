@@ -9,8 +9,8 @@ export const sampleReceiptData = {
   student: {
     full_name: 'RAJESH KUMAR S',
     father_name: 'Suresh Kumar',
-    school_code: 'SSV-2025-001',
-    admission_no: 'ADM001',
+    enrollment_id: 'SSV-2025-001',
+    enrollment_id: 'ADM001',
     class: { name: '10th Standard' },
     section: { name: 'A' }
   },

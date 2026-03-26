@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -104,7 +104,7 @@ const WhatsAppAccounts = ({ onAccountsChange }) => {
       }
       const res = await api.post('/whatsapp-manager/accounts', payload);
       if (res.data.success) {
-        toast({ title: "✅ Success", description: "WABA Account added successfully" });
+        toast({ title: "? Success", description: "WABA Account added successfully" });
         setIsAddDialogOpen(false);
         fetchAccounts();
         resetForm();
@@ -125,7 +125,7 @@ const WhatsAppAccounts = ({ onAccountsChange }) => {
       try {
           const res = await api.delete(`/whatsapp-manager/accounts/${id}`);
           if (res.data.success) {
-              toast({ title: "✅ Deleted", description: `Account "${name}" deleted successfully` });
+              toast({ title: "? Deleted", description: `Account "${name}" deleted successfully` });
               fetchAccounts();
           }
       } catch (error) {
@@ -163,7 +163,7 @@ const WhatsAppAccounts = ({ onAccountsChange }) => {
       const res = await api.put(`/whatsapp-manager/accounts/${editingAccount.id}`, updateData);
       if (res.data.success) {
         toast({ 
-          title: "✅ Success", 
+          title: "? Success", 
           description: "Account updated successfully" 
         });
         setIsEditDialogOpen(false);
@@ -304,7 +304,7 @@ const WhatsAppAccounts = ({ onAccountsChange }) => {
                     <SelectValue placeholder="Select organization" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="platform">🌐 Platform-Wide (All Organizations)</SelectItem>
+                    <SelectItem value="platform">?? Platform-Wide (All Organizations)</SelectItem>
                     {organizations.map((org) => (
                       <SelectItem key={org.id} value={org.id}>{org.name}</SelectItem>
                     ))}

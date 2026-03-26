@@ -1,4 +1,4 @@
-﻿/**
+/**
  * AUTO-REPAIR PROMPT GENERATOR
  * Constructs a high-precision prompt for Horizon AI to fix automation errors.
  */
@@ -9,7 +9,7 @@ export const generateFixPrompt = (error, phase, stepDetails, codeLocation) => {
     const errorMessage = error?.message || 'Unknown error';
 
     return `
-ðŸš¨ **DEMO AUTOMATION ERROR REPORT - AUTO-GENERATED PROMPT** ðŸš¨
+🚨 **DEMO AUTOMATION ERROR REPORT - AUTO-GENERATED PROMPT** 🚨
 
 **STATUS**: CRITICAL FAILURE in Phase: ${phase}
 **TIMESTAMP**: ${timestamp}

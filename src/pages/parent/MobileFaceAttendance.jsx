@@ -272,7 +272,7 @@ const MobileFaceAttendance = () => {
                 student: {
                     id: studentId,
                     name: 'Demo Student',
-                    admission_number: 'ADM001',
+                    enrollment_id: 'ADM001',
                     class: '10',
                     section: 'A'
                 },

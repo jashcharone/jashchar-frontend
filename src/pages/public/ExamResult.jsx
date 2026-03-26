@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useSchoolSlug } from '@/hooks/useSchoolSlug';
 import publicCmsService from '@/services/publicCmsService';
 import { Button } from '@/components/ui/button';
@@ -27,7 +27,7 @@ const ExamResult = () => {
   // Exam Data
   const [exams, setExams] = useState([]);
   const [formData, setFormData] = useState({
-    admission_no: '',
+    enrollment_id: '',
     exam_id: ''
   });
   const [result, setResult] = useState(null);
@@ -81,7 +81,7 @@ const ExamResult = () => {
 
   const handleSearch = async (e) => {
     e.preventDefault();
-    if (!formData.admission_no || !formData.exam_id) {
+    if (!formData.enrollment_id || !formData.exam_id) {
         toast({ variant: 'destructive', title: 'Please fill all fields' });
         return;
     }
@@ -144,11 +144,11 @@ const ExamResult = () => {
                 <CardContent>
                     <form onSubmit={handleSearch} className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
                         <div className="space-y-2">
-                            <Label>Admission No <span className="text-red-500">*</span></Label>
+                            <Label>Enroll ID <span className="text-red-500">*</span></Label>
                             <Input 
-                                value={formData.admission_no} 
-                                onChange={(e) => setFormData({...formData, admission_no: e.target.value})}
-                                placeholder="Enter Admission No"
+                                value={formData.enrollment_id} 
+                                onChange={(e) => setFormData({...formData, enrollment_id: e.target.value})}
+                                placeholder="Enter Enroll ID"
                             />
                         </div>
                         <div className="space-y-2">
@@ -199,8 +199,8 @@ const ExamResult = () => {
                                 <p className="font-semibold">{result.roll_number || '-'}</p>
                             </div>
                             <div>
-                                <p className="text-sm text-gray-500">Admission No</p>
-                                <p className="font-semibold">{result.admission_no}</p>
+                                <p className="text-sm text-gray-500">Enroll ID</p>
+                                <p className="font-semibold">{result.enrollment_id}</p>
                             </div>
                         </div>
 

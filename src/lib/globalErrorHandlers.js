@@ -1,11 +1,11 @@
-﻿import { errorLoggerService } from '@/services/errorLoggerService';
+import { errorLoggerService } from '@/services/errorLoggerService';
 
 /**
  * Initializes global error handlers to catch uncaught exceptions and unhandled rejections.
  * This ensures that errors outside of React's ErrorBoundary (like async errors, event handlers)
  * are also logged to the Queries Finder.
  */
-// ── Console Log Buffer Constants ─────────────────────────────────────────────
+// -- Console Log Buffer Constants ---------------------------------------------
 const MAX_CONSOLE_LOGS = 200;
 const MAX_ERROR_LOGS = 50;
 
@@ -26,12 +26,12 @@ export const initGlobalErrorHandlers = () => {
   if (window.__globalErrorHandlersInitialized) return;
   window.__globalErrorHandlersInitialized = true;
 
-  // ── Initialize global console log buffers ──────────────────────────────────
+  // -- Initialize global console log buffers ----------------------------------
   // These are read by BugReportModal.captureConsoleLogs()
   window.__JASHCHAR_CONSOLE_LOGS__ = window.__JASHCHAR_CONSOLE_LOGS__ || [];
   window.__JASHCHAR_LAST_ERRORS__ = window.__JASHCHAR_LAST_ERRORS__ || [];
 
-  // ── Intercept console.log / console.warn / console.info ───────────────────
+  // -- Intercept console.log / console.warn / console.info -------------------
   const originalConsoleLog = console.log;
   const originalConsoleInfo = console.info;
   const originalConsoleWarn = console.warn;
@@ -105,7 +105,7 @@ export const initGlobalErrorHandlers = () => {
   // 3. Intercept console.error (to catch handled but logged errors)
   const originalConsoleError = console.error;
   console.error = (...args) => {
-    // ── AI Engine offline errors: downgrade to warn (not red error) ──────────────
+    // -- AI Engine offline errors: downgrade to warn (not red error) --------------
     // Python AI engine being offline is expected during dev. Don't show red errors.
     const isAIEngineError =
       (args[0] && typeof args[0] === 'string' && (
@@ -123,15 +123,15 @@ export const initGlobalErrorHandlers = () => {
       ));
 
     if (isAIEngineError) {
-      // Show as yellow warning instead of red error — still visible but not alarming
+      // Show as yellow warning instead of red error � still visible but not alarming
       originalConsoleWarn.apply(console, ['[AI Engine offline]', ...args]);
       return; // Skip backend logging
     }
 
-    // ── Call original console.error for all other real errors ───────────────────
+    // -- Call original console.error for all other real errors -------------------
     originalConsoleError.apply(console, args);
 
-    // ── Store in global buffers for Bug Report capture ──────────────────────────
+    // -- Store in global buffers for Bug Report capture --------------------------
     const errorEntry = {
       type: 'error',
       message: formatConsoleArgs(args),

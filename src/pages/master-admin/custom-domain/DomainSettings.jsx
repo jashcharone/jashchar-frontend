@@ -1,4 +1,4 @@
-ï»¿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowLeft, Save, Plus, Trash2, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -22,7 +22,7 @@ import {
 const DomainSettings = () => {
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
-  const [instruction, setInstruction] = useState(`â€¢ You'll need to setup a DNS record to point to your store on our server. DNS records can be setup through your domain registrars control panel. Since every registrar has a different setup, contact them for assistance if you're unsure.\nâ€¢ DNS changes may take up to 48-72 hours to take effect, although it's normally a lot faster than that. You will receive a reply when your custom domain has been activated. Please allow 1-2 business days for this process to complete.`);
+  const [instruction, setInstruction] = useState(`• You'll need to setup a DNS record to point to your store on our server. DNS records can be setup through your domain registrars control panel. Since every registrar has a different setup, contact them for assistance if you're unsure.\n• DNS changes may take up to 48-72 hours to take effect, although it's normally a lot faster than that. You will receive a reply when your custom domain has been activated. Please allow 1-2 business days for this process to complete.`);
   const [status, setStatus] = useState(true);
   const [dnsEnabled, setDnsEnabled] = useState(true);
   const [dnsRecords, setDnsRecords] = useState([

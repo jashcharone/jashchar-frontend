@@ -184,7 +184,7 @@ const ExamReportGenerator = () => {
       return {
         id: i + 1,
         student_name: names[i % names.length],
-        admission_no: `ADM${2024}${String(i + 1).padStart(4, '0')}`,
+        enrollment_id: `ADM${2024}${String(i + 1).padStart(4, '0')}`,
         roll_no: String((i % 40) + 1),
         class_name: classes[i % 10],
         section_name: sections[i % 3],
@@ -231,7 +231,7 @@ const ExamReportGenerator = () => {
       return {
         id: i + 1,
         student_name: names[i % names.length],
-        admission_no: `ADM${2024}${String(i + 1).padStart(4, '0')}`,
+        enrollment_id: `ADM${2024}${String(i + 1).padStart(4, '0')}`,
         class_name: classes[i % 10],
         section_name: sections[i % 3],
         term_1_percentage: term1,
@@ -282,7 +282,7 @@ const ExamReportGenerator = () => {
       seat_capacity: 40,
       seats_occupied: 35 + (i % 5),
       student_name: names[i % names.length],
-      admission_no: `ADM${2024}${String(i + 1).padStart(4, '0')}`,
+      enrollment_id: `ADM${2024}${String(i + 1).padStart(4, '0')}`,
       roll_no: String((i % 40) + 1),
       class_name: classes[i % 10],
       section_name: ['A', 'B', 'C'][i % 3],
@@ -317,7 +317,7 @@ const ExamReportGenerator = () => {
       return {
         id: i + 1,
         student_name: names[i % names.length],
-        admission_no: `ADM${2024}${String(i + 1).padStart(4, '0')}`,
+        enrollment_id: `ADM${2024}${String(i + 1).padStart(4, '0')}`,
         roll_no: String((i % 40) + 1),
         class_name: ['1st', '2nd', '3rd', '4th', '5th', '6th', '7th', '8th', '9th', '10th'][i % 10],
         section_name: ['A', 'B', 'C'][i % 3],

@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Helmet } from 'react-helmet';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Link, Navigate } from 'react-router-dom';
@@ -57,7 +57,7 @@ const LoadingScreen = () => (
 
 const Homepage = () => {
   // Capacitor native app: hostname is 'app.jashchar.local' (set in capacitor.config.ts)
-  // Skip marketing homepage entirely — go straight to login
+  // Skip marketing homepage entirely � go straight to login
   if (typeof window !== 'undefined' && window.location.hostname === 'app.jashchar.local') {
     return <Navigate to="/login" replace />;
   }

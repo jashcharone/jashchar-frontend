@@ -1,4 +1,4 @@
-﻿import React, { useMemo } from 'react';
+import React, { useMemo } from 'react';
 import { useParams } from 'react-router-dom';
 import PublicSchoolLayout from '@/components/public/PublicSchoolLayout';
 import { useSchoolSlug } from '@/hooks/useSchoolSlug';
@@ -136,7 +136,7 @@ const SchoolSubpage = ({ variant, title }) => {
             Phase-1 result lookup template. The search is UI-only for now.
           </p>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-            <input className="border rounded-md px-3 py-2" placeholder="Admission No." aria-label="Admission Number" />
+            <input className="border rounded-md px-3 py-2" placeholder="Enroll ID." aria-label="Enrollment ID" />
             <input className="border rounded-md px-3 py-2" placeholder="Date of Birth" aria-label="Date of Birth" />
             <Button className="bg-[#c70039] hover:bg-[#a0002d] rounded-sm">Search</Button>
           </div>
@@ -208,7 +208,7 @@ const SchoolSubpage = ({ variant, title }) => {
             <div className="space-y-4">
               {items.map((e) => (
                 <div key={e.id} className="border rounded-md p-4">
-                  <div className="text-xs text-gray-500">{e.date} • {e.time}</div>
+                  <div className="text-xs text-gray-500">{e.date} � {e.time}</div>
                   <div className="font-semibold text-gray-800 mt-1">{e.title}</div>
                   <div className="text-sm text-gray-600 mt-2">Location: {e.location}</div>
                 </div>

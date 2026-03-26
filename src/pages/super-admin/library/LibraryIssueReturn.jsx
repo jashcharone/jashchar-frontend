@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { supabase } from '@/lib/customSupabaseClient';
 import DashboardLayout from '@/components/DashboardLayout';
@@ -68,20 +68,20 @@ const LibraryIssueReturn = () => {
           id, 
           library_card_no, 
           member_type,
-          student:student_profiles(id, full_name, school_code, phone, gender, class:classes!student_profiles_class_id_fkey(name), section:sections!student_profiles_section_id_fkey(name)),
+          student:student_profiles(id, full_name, enrollment_id, phone, gender, class:classes!student_profiles_class_id_fkey(name), section:sections!student_profiles_section_id_fkey(name)),
           staff:employee_profiles(id, full_name, phone, role:roles(name))
         `)
         .eq('branch_id', user.user_metadata.branch_id)
         .eq('library_card_no', searchId)
         .maybeSingle();
 
-      // If not found by card, try finding by Admission No (school_code) for students
+      // If not found by card, try finding by Enroll ID (enrollment_id) for students
       if (!memberData) {
          const { data: student } = await supabase
             .from('student_profiles')
             .select('id')
             .eq('branch_id', user.user_metadata.branch_id)
-            .eq('school_code', searchId)
+            .eq('enrollment_id', searchId)
             .maybeSingle();
          
          if (student) {
@@ -91,7 +91,7 @@ const LibraryIssueReturn = () => {
                   id, 
                   library_card_no, 
                   member_type,
-                  student:student_profiles(id, full_name, school_code, phone, gender, class:classes!student_profiles_class_id_fkey(name), section:sections!student_profiles_section_id_fkey(name)),
+                  student:student_profiles(id, full_name, enrollment_id, phone, gender, class:classes!student_profiles_class_id_fkey(name), section:sections!student_profiles_section_id_fkey(name)),
                   staff:employee_profiles(id, full_name, phone, role:roles(name))
                 `)
                 .eq('branch_id', user.user_metadata.branch_id)
@@ -200,7 +200,7 @@ const LibraryIssueReturn = () => {
               <CardContent>
                 <div className="flex gap-2">
                   <Input 
-                    placeholder="Card No / Admission No" 
+                    placeholder="Card No / Enroll ID" 
                     value={searchId} 
                     onChange={(e) => setSearchId(e.target.value)} 
                   />
@@ -235,8 +235,8 @@ const LibraryIssueReturn = () => {
                       {member.member_type === 'student' && (
                         <>
                           <div className="flex justify-between border-b pb-1">
-                            <span className="text-muted-foreground">Admission No</span>
-                            <span className="font-medium">{member.student?.school_code}</span>
+                            <span className="text-muted-foreground">Enroll ID</span>
+                            <span className="font-medium">{member.student?.enrollment_id}</span>
                           </div>
                           <div className="flex justify-between border-b pb-1">
                             <span className="text-muted-foreground">Class</span>

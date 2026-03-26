@@ -174,13 +174,13 @@ const FeesCarryForward = () => {
                              <div className="overflow-x-auto">
                                 <table className="w-full text-sm">
                                     <thead className="bg-muted">
-                                        <tr className="text-left"><th className="p-2">Student Name</th><th className="p-2">Admission No</th><th className="p-2">Admission Date</th><th className="p-2">Roll Number</th><th className="p-2">Father Name</th><th className="p-2 text-right">Balance ({currencySymbol})</th></tr>
+                                        <tr className="text-left"><th className="p-2">Student Name</th><th className="p-2">Enroll ID</th><th className="p-2">Admission Date</th><th className="p-2">Roll Number</th><th className="p-2">Father Name</th><th className="p-2 text-right">Balance ({currencySymbol})</th></tr>
                                     </thead>
                                     <tbody>
                                         {students.length > 0 ? students.map(student => (
                                             <tr key={student.id} className="border-b">
                                                 <td className="p-2">{student.full_name}</td>
-                                                <td className="p-2">{student.school_code}</td>
+                                                <td className="p-2">{student.enrollment_id}</td>
                                                 <td className="p-2">{student.admission_date ? format(new Date(student.admission_date), 'dd-MM-yyyy') : 'N/A'}</td>
                                                 <td className="p-2">{student.roll_number}</td>
                                                 <td className="p-2">{student.father_name}</td>

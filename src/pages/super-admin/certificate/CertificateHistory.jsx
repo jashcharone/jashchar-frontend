@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { formatDate } from '@/utils/dateUtils';
 import DashboardLayout from '@/components/DashboardLayout';
 import { Button } from '@/components/ui/button';
@@ -48,7 +48,7 @@ const CertificateHistory = () => {
         .select(`
             id,
             generated_date,
-            student_profiles:student_id(full_name, admission_no, classes:classes!student_profiles_class_id_fkey(name)),
+            student_profiles:student_id(full_name, enrollment_id, classes:classes!student_profiles_class_id_fkey(name)),
             certificate_templates:template_id(name, template_html, background_image)
         `)
         .eq('branch_id', user.branch_id)
@@ -109,7 +109,7 @@ const CertificateHistory = () => {
 
   const filteredCertificates = certificates.filter(cert => 
     cert.student_profiles?.full_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    cert.student_profiles?.admission_no.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    cert.student_profiles?.enrollment_id.toLowerCase().includes(searchTerm.toLowerCase()) ||
     cert.certificate_templates?.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
@@ -148,7 +148,7 @@ const CertificateHistory = () => {
                   <TableRow>
                     <TableHead>Certificate Name</TableHead>
                     <TableHead>Student Name</TableHead>
-                    <TableHead>Admission No</TableHead>
+                    <TableHead>Enroll ID</TableHead>
                     <TableHead>Class</TableHead>
                     <TableHead>Generated Date</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
@@ -159,7 +159,7 @@ const CertificateHistory = () => {
                     <TableRow key={cert.id}>
                       <TableCell className="font-medium">{cert.certificate_templates?.name}</TableCell>
                       <TableCell>{cert.student_profiles?.full_name}</TableCell>
-                      <TableCell>{cert.student_profiles?.admission_no}</TableCell>
+                      <TableCell>{cert.student_profiles?.enrollment_id}</TableCell>
                       <TableCell>{cert.student_profiles?.classes?.name}</TableCell>
                       <TableCell>{formatDate(cert.generated_date)}</TableCell>
                       <TableCell className="text-right space-x-2">

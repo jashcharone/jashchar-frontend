@@ -29,7 +29,7 @@ export const REPORT_TEMPLATES = {
     id: 'outstanding_fees',
     name: 'Outstanding Fees Report',
     description: 'List of pending fee payments',
-    columns: ['school_code', 'student_name', 'class', 'fee_type', 'total_amount', 'paid', 'balance', 'due_date', 'days_overdue']
+    columns: ['enrollment_id', 'student_name', 'class', 'fee_type', 'total_amount', 'paid', 'balance', 'due_date', 'days_overdue']
   },
   CLASS_WISE: {
     id: 'class_wise',
@@ -47,7 +47,7 @@ export const REPORT_TEMPLATES = {
     id: 'defaulter_list',
     name: 'Defaulter List',
     description: 'Students with overdue fees',
-    columns: ['school_code', 'student_name', 'class', 'outstanding', 'overdue_days', 'risk_level', 'phone']
+    columns: ['enrollment_id', 'student_name', 'class', 'outstanding', 'overdue_days', 'risk_level', 'phone']
   },
   FEE_STRUCTURE: {
     id: 'fee_structure',
@@ -626,7 +626,7 @@ export const generateFeeReceipt = (receipt, schoolInfo = {}) => {
         <span>${receipt.student_name || '-'}</span>
         
         <span class="label">School Code:</span>
-        <span>${receipt.school_code || '-'}</span>
+        <span>${receipt.enrollment_id || '-'}</span>
         
         <span class="label">Class:</span>
         <span>${receipt.class_name || '-'} ${receipt.section_name || ''}</span>

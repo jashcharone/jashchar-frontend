@@ -1,4 +1,4 @@
-﻿import React, { useState } from 'react';
+import React, { useState } from 'react';
 import { useRecovery } from '@/contexts/RecoveryContext';
 import { WifiOff, RefreshCcw, Info } from 'lucide-react';
 import { Button } from '@/components/ui/button';

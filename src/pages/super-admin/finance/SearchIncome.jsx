@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
 import { supabase } from '@/lib/customSupabaseClient';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
@@ -133,7 +133,7 @@ const SearchIncome = () => {
                                     <TableHead>Invoice Number</TableHead>
                                     <TableHead>Income Head</TableHead>
                                     <TableHead>Date</TableHead>
-                                    <TableHead className="text-right">Amount (₹)</TableHead>
+                                    <TableHead className="text-right">Amount (?)</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
@@ -145,7 +145,7 @@ const SearchIncome = () => {
                                             <div className="flex flex-col items-center justify-center text-muted-foreground">
                                                 <p className="text-orange-500 mb-4">No data available in table</p>
                                                 <FileBox className="h-20 w-20 text-gray-300 mb-4" />
-                                                <p className="text-green-600">← Add new record or search with different criteria.</p>
+                                                <p className="text-green-600">? Add new record or search with different criteria.</p>
                                             </div>
                                         </TableCell>
                                     </TableRow>
@@ -156,7 +156,7 @@ const SearchIncome = () => {
                                             <TableCell>{income.invoice_no || '-'}</TableCell>
                                             <TableCell>{income.income_head?.name || '-'}</TableCell>
                                             <TableCell>{income.date ? format(new Date(income.date), 'MM/dd/yyyy') : '-'}</TableCell>
-                                            <TableCell className="text-right">₹{income.amount?.toLocaleString('en-IN') || '0'}</TableCell>
+                                            <TableCell className="text-right">?{income.amount?.toLocaleString('en-IN') || '0'}</TableCell>
                                         </TableRow>
                                     ))
                                 )}

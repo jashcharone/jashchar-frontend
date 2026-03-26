@@ -471,7 +471,7 @@ const GraceMarksPage = () => {
                                             <TableHeader>
                                                 <TableRow>
                                                     <TableHead>Student</TableHead>
-                                                    <TableHead>Admission No</TableHead>
+                                                    <TableHead>Enroll ID</TableHead>
                                                     <TableHead>Subject</TableHead>
                                                     <TableHead>Original Marks</TableHead>
                                                     <TableHead>Grace Given</TableHead>
@@ -486,7 +486,7 @@ const GraceMarksPage = () => {
                                                         <TableCell className="font-medium">
                                                             {record.students?.first_name} {record.students?.last_name}
                                                         </TableCell>
-                                                        <TableCell>{record.students?.admission_no}</TableCell>
+                                                        <TableCell>{record.students?.enrollment_id}</TableCell>
                                                         <TableCell>{record.subjects?.name}</TableCell>
                                                         <TableCell>{record.original_marks}</TableCell>
                                                         <TableCell className="text-green-600 font-medium">

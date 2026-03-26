@@ -52,7 +52,7 @@ const Template09_DarkElegance = ({ receiptData, copyType }) => {
         <div style={{ flex: 1, backgroundColor: '#16213e', padding: '5px 8px', borderRadius: '4px', borderLeft: '3px solid #e2b04a' }}>
           <div style={{ marginBottom: '2px' }}>Student: <strong style={{ color: '#fff' }}>{student?.full_name || '-'}</strong></div>
           <div style={{ marginBottom: '2px' }}>Father: {student?.father_name || '-'}</div>
-          <div>Adm#: {student?.school_code || '-'}</div>
+          <div>Adm#: {student?.enrollment_id || '-'}</div>
         </div>
         <div style={{ flex: 1, backgroundColor: '#16213e', padding: '5px 8px', borderRadius: '4px', borderLeft: '3px solid #e2b04a' }}>
           <div style={{ marginBottom: '2px' }}>Class: {student?.class?.name || '-'}{student?.section?.name ? ` (${student.section.name})` : ''}</div>

@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -57,7 +57,7 @@ const NewsTab = ({ branchId }) => {
             <div key={item.id} className="flex justify-between p-4 border rounded-lg bg-white">
               <div>
                 <div className="font-bold">{item.title_en}</div>
-                <div className="text-sm text-slate-500">{item.date} • {item.is_published ? 'Published' : 'Draft'}</div>
+                <div className="text-sm text-slate-500">{item.date} � {item.is_published ? 'Published' : 'Draft'}</div>
               </div>
               <div className="flex gap-2">
                 <Button variant="ghost" size="icon" onClick={() => setEditing(item)}><Edit className="h-4 w-4" /></Button>

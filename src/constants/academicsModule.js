@@ -1,4 +1,4 @@
-﻿export const ACADEMICS_MODULE = {
+export const ACADEMICS_MODULE = {
   id: 'academics',
   name: 'Academics',
   slug: 'academics',

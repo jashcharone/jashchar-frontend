@@ -1,4 +1,4 @@
-﻿/**
+/**
  * TEMPLATE: Copy this file when creating new module pages
  * This includes all permission checks pre-configured
  * 
@@ -14,7 +14,7 @@ import React, { useState, useEffect } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
 import { supabase } from '@/lib/customSupabaseClient';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
-import { usePermissions } from '@/contexts/PermissionContext'; // ✅ Step 1: Import hook
+import { usePermissions } from '@/contexts/PermissionContext'; // ? Step 1: Import hook
 import { useToast } from '@/components/ui/use-toast';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -42,13 +42,13 @@ import {
 } from '@/components/ui/dialog';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
-//  ï¸ CHANGE THIS: Replace with your module slug
+//  ️ CHANGE THIS: Replace with your module slug
 const MODULE_SLUG = 'module_name.submodule_name'; // Example: 'academics.subjects', 'fees.fee_types'
 
 const YourModulePage = () => {
     const { toast } = useToast();
     const { user, school } = useAuth();
-    const { canView, canAdd, canEdit, canDelete } = usePermissions(); // ✅ Step 2: Get permission functions
+    const { canView, canAdd, canEdit, canDelete } = usePermissions(); // ? Step 2: Get permission functions
     
     const [items, setItems] = useState([]);
     const [itemName, setItemName] = useState('');
@@ -63,7 +63,7 @@ const YourModulePage = () => {
         setIsFetching(true);
         
         const { data, error } = await supabase
-            .from('your_table_name') //  ï¸ Change table name
+            .from('your_table_name') //  ️ Change table name
             .select('*')
             .eq('branch_id', user.profile.branch_id)
             .order('name', { ascending: true });
@@ -194,7 +194,7 @@ const YourModulePage = () => {
                                                 <td className="px-6 py-4 font-medium">{item.name}</td>
                                                 <td className="px-6 py-4 text-right space-x-1">
                                                     
-                                                    {/* ✅ Edit Button - Only show if user has 'edit' permission */}
+                                                    {/* ? Edit Button - Only show if user has 'edit' permission */}
                                                     {canEdit(MODULE_SLUG) && (
                                                     <Dialog onOpenChange={(isOpen) => !isOpen && setEditingItem(null)}>
                                                         <DialogTrigger asChild>
@@ -218,7 +218,7 @@ const YourModulePage = () => {
                                                     </Dialog>
                                                     )}
                                                     
-                                                    {/* ✅ Delete Button - Only show if user has 'delete' permission */}
+                                                    {/* ? Delete Button - Only show if user has 'delete' permission */}
                                                     {canDelete(MODULE_SLUG) && (
                                                     <AlertDialog>
                                                         <AlertDialogTrigger asChild>

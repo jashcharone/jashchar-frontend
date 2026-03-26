@@ -1,4 +1,4 @@
-﻿export const STAGING_CONFIG = {
+export const STAGING_CONFIG = {
   enabled: import.meta.env.VITE_STAGING_MODE === 'true',
   uiStaging: import.meta.env.VITE_UI_STAGING_MODE === 'true',
   

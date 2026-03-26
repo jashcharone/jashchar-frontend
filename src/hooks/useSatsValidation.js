@@ -34,7 +34,7 @@ export const useSatsValidation = (initialError = '') => {
             first_name, 
             last_name, 
             full_name,
-            school_code,
+            enrollment_id,
             organization_id,
             organizations:organization_id (id, name, code),
             branches:branch_id (id, branch_name, branch_code)
@@ -65,12 +65,12 @@ export const useSatsValidation = (initialError = '') => {
           setDuplicateDetails({
             studentId: duplicate.id,
             studentName,
-            schoolCode: duplicate.school_code,
+            schoolCode: duplicate.enrollment_id,
             branchName,
             orgName
           });
           
-          setError(`SATS Number already assigned to ${studentName} (${duplicate.school_code}) at ${branchName}`);
+          setError(`SATS Number already assigned to ${studentName} (${duplicate.enrollment_id}) at ${branchName}`);
         } else {
           setError('');
           setDuplicateDetails(null);

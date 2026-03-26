@@ -1,4 +1,4 @@
-﻿import React from 'react';
+import React from 'react';
 import { useSupabaseAuth } from '@/contexts/SupabaseAuthContext';
 import {
   Select,
@@ -12,7 +12,7 @@ import { cn } from '@/lib/utils';
 const SessionSwitcher = () => {
   const { currentSessionId, switchSession, sessionList, loading } = useSupabaseAuth();
 
-  // ✅ Show ALL sessions (both active & inactive) so user can switch freely
+  // ? Show ALL sessions (both active & inactive) so user can switch freely
   const sessionsToShow = sessionList || [];
   
   // Get current session to check if active

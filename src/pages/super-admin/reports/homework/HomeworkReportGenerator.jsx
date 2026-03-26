@@ -232,7 +232,7 @@ const HomeworkReportGenerator = () => {
         // Student Info
         student_id: studentIndex + 1,
         student_name: students[studentIndex],
-        admission_no: `ADM${2024}${String(studentIndex + 1).padStart(4, '0')}`,
+        enrollment_id: `ADM${2024}${String(studentIndex + 1).padStart(4, '0')}`,
         roll_number: studentIndex + 1,
         student_contact: `98${String(Math.floor(Math.random() * 100000000)).padStart(8, '0')}`,
         parent_name: `Mr. ${students[studentIndex].split(' ')[1]}`,

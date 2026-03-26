@@ -1,4 +1,4 @@
-﻿import { supabase } from '@/lib/customSupabaseClient';
+import { supabase } from '@/lib/customSupabaseClient';
 import { schoolModuleMap } from '@/lib/schoolModules';
 
 /**
@@ -114,7 +114,7 @@ export const getSchoolOwnerModules = async (branchId = null) => {
             const matched = slugMatch || nameMatch || idMatch;
             
             if (matched) {
-                console.log(`✓ Matched: ${m.name} (${m.slug}) - slug:${slugMatch}, name:${nameMatch}, id:${idMatch}`);
+                console.log(`? Matched: ${m.name} (${m.slug}) - slug:${slugMatch}, name:${nameMatch}, id:${idMatch}`);
             }
             
             return matched;

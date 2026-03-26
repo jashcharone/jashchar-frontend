@@ -101,7 +101,7 @@ const QueriesFinder = () => {
         if (errorId && fromBoundary) {
             setIncomingError({ errorId, page });
             toast({
-                title: '🚨 Error Report Received',
+                title: 'Error Report Received',
                 description: `Error ID: ${errorId} from page: ${page}`,
                 className: 'bg-red-100 border-red-500 text-red-800',
                 duration: 8000
@@ -135,7 +135,7 @@ const QueriesFinder = () => {
 
                 if (newlyFixed.length > 0) {
                     toast({
-                        title: '✅ Issues Resolved',
+                        title: '? Issues Resolved',
                         description: `${newlyFixed.length} issue(s) have been marked as Fixed.`,
                         className: 'bg-green-100 border-green-500 text-green-800'
                     });
@@ -176,7 +176,7 @@ const QueriesFinder = () => {
 
             if (staleErrors.length === 0) {
                 toast({ 
-                    title: '🔍 Auto-Check Complete', 
+                    title: 'Auto-Check Complete', 
                     description: 'No stale errors found. System is healthy!',
                     className: 'bg-blue-100 border-blue-500 text-blue-800'
                 });
@@ -188,7 +188,7 @@ const QueriesFinder = () => {
                 }
 
                 toast({ 
-                    title: '✨ Auto-Check Complete', 
+                    title: '? Auto-Check Complete', 
                     description: `Auto-resolved ${resolvedCount} stale errors (24h+ inactive).`,
                     className: 'bg-green-100 border-green-500 text-green-800'
                 });
@@ -268,7 +268,7 @@ const QueriesFinder = () => {
             if (res.success) {
                 setSystemEnabled(checked);
                 toast({ 
-                    title: checked ? '✅ System Enabled' : '⏸️ System Disabled', 
+                    title: checked ? '? System Enabled' : 'System Disabled', 
                     description: res.message 
                 });
             }
@@ -282,7 +282,7 @@ const QueriesFinder = () => {
         setAutoCheckEnabled(checked);
         setAutoCheckEnabledStorage(checked);
         toast({
-            title: checked ? '⏰ Auto-Check Enabled' : '⏸️ Auto-Check Paused',
+            title: checked ? '? Auto-Check Enabled' : 'Auto-Check Paused',
             description: checked ? 'Will auto-resolve stale errors every 24 hours' : 'Auto-check is now paused'
         });
     };
@@ -304,7 +304,7 @@ const QueriesFinder = () => {
     const handleStatusChange = async (id, newStatus) => {
         try {
             await errorLoggerService.updateStatus(id, newStatus);
-            toast({ title: '✅ Status Updated', description: `Error marked as ${newStatus}` });
+            toast({ title: '? Status Updated', description: `Error marked as ${newStatus}` });
             fetchErrors();
         } catch (err) {
             toast({ variant: 'destructive', title: 'Update Failed' });
@@ -326,7 +326,7 @@ const QueriesFinder = () => {
                 await errorLoggerService.updateStatus(error.id, 'fixed');
             }
             toast({ 
-                title: '✅ Bulk Resolve Complete', 
+                title: '? Bulk Resolve Complete', 
                 description: `Marked ${pendingErrors.length} errors as fixed.`,
                 className: 'bg-green-100 border-green-500'
             });
@@ -344,7 +344,7 @@ const QueriesFinder = () => {
         const lastErrors = error.metadata?.last_errors || [];
         const allLogs = consoleLogs.length > 0 ? consoleLogs : lastErrors;
         const consoleSection = allLogs.length > 0
-            ? `### 📋 Console Logs (F12)
+            ? `### Console Logs (F12)
 \`\`\`
 ${allLogs.map(log => `[${log.type}] ${log.timestamp || ''} ${log.message}`).join('\n')}
 \`\`\`\n`
@@ -353,13 +353,13 @@ ${allLogs.map(log => `[${log.type}] ${log.timestamp || ''} ${log.message}`).join
         // Device info
         const device = error.device_info || error.metadata?.device || {};
         const deviceSection = device.browser
-            ? `### 🖥️ Device Info\n- Browser: ${device.browser}\n- OS: ${device.os}\n- Screen: ${device.screenSize}\n- Language: ${device.language}\n`
+            ? `### Device Info\n- Browser: ${device.browser}\n- OS: ${device.os}\n- Screen: ${device.screenSize}\n- Language: ${device.language}\n`
             : '';
 
         return `You are an expert AI coding assistant working on the Jashchar ERP project (React + Node.js + Supabase).
 Please fix the following error.
 
-### 🚨 Error Report
+### Error Report
 **Message:** ${error.error_message}
 **Location:** ${error.page_url}
 **Module:** ${error.module_name || 'Unknown'}
@@ -368,14 +368,14 @@ Please fix the following error.
 **Frequency:** ${error.frequency} occurrences
 **Severity:** ${error.severity}
 
-### 🛠️ Stack Trace
+### Stack Trace
 \`\`\`
 ${error.stack_trace || 'No stack trace available.'}
 \`\`\`
 
 ${consoleSection}
 ${deviceSection}
-### 🤖 Task Instructions
+### Task Instructions
 1. **Analyze**: Identify the specific file and line number causing the crash from the stack trace and console logs.
 2. **Context**: If a file path is mentioned (e.g., \`src/pages/...\`), assume it is relative to the project root.
 3. **Console Logs**: Use the F12 console output above to understand the full error flow.
@@ -387,7 +387,7 @@ ${deviceSection}
     const handleCopyPrompt = (error) => {
         navigator.clipboard.writeText(generateAiPrompt(error));
         toast({ 
-            title: '🤖 Prompt Copied!', 
+            title: 'Prompt Copied!', 
             description: 'Paste this into your AI assistant to get an instant fix.',
             className: 'bg-purple-100 border-purple-500 text-purple-900'
         });
@@ -402,7 +402,7 @@ ${deviceSection}
                 module: 'system-health-center',
                 dashboard: 'master-admin'
             });
-            toast({ title: '🧪 Test Error Logged', description: 'Check the list (refresh if needed).' });
+            toast({ title: 'Test Error Logged', description: 'Check the list (refresh if needed).' });
             fetchErrors();
         }
     };
@@ -433,7 +433,7 @@ ${deviceSection}
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
-        toast({ title: '📥 Export Complete', description: 'CSV file downloaded.' });
+        toast({ title: 'Export Complete', description: 'CSV file downloaded.' });
     };
 
     // ==================== HELPERS ====================
@@ -518,7 +518,7 @@ ${deviceSection}
                                 className="data-[state=checked]:bg-green-500"
                             />
                             <Label htmlFor="system-mode" className="text-sm font-medium text-white/90 cursor-pointer">
-                                {systemEnabled ? '🟢 Monitoring Active' : '🔴 Monitoring Paused'}
+                                {systemEnabled ? 'Monitoring Active' : 'Monitoring Paused'}
                             </Label>
                         </div>
                     </div>
@@ -579,11 +579,11 @@ ${deviceSection}
                                     </div>
                                     <div>
                                         <h3 className="font-bold text-red-500 text-lg">
-                                            🚨 NEW ERROR REPORT!
+                                            NEW ERROR REPORT!
                                         </h3>
                                         <p className="text-sm text-muted-foreground">
                                             <code className="bg-muted px-2 py-0.5 rounded font-mono">{incomingError.errorId}</code>
-                                            <span className="mx-2">→</span>
+                                            <span className="mx-2">?</span>
                                             <span className="font-medium">{incomingError.page}</span>
                                         </p>
                                     </div>
@@ -597,7 +597,7 @@ ${deviceSection}
                                         <Search className="h-4 w-4 mr-1" /> Find
                                     </Button>
                                     <Button size="sm" variant="ghost" onClick={() => setIncomingError(null)}>
-                                        ✕
+                                        ?
                                     </Button>
                                 </div>
                             </div>
@@ -744,10 +744,10 @@ ${deviceSection}
                                     </SelectTrigger>
                                     <SelectContent>
                                         <SelectItem value="All">All Severity</SelectItem>
-                                        <SelectItem value="critical">🔴 Critical</SelectItem>
-                                        <SelectItem value="error">🟠 Error</SelectItem>
-                                        <SelectItem value="warning">🟡 Warning</SelectItem>
-                                        <SelectItem value="info">🔵 Info</SelectItem>
+                                        <SelectItem value="critical">Critical</SelectItem>
+                                        <SelectItem value="error">Error</SelectItem>
+                                        <SelectItem value="warning">Warning</SelectItem>
+                                        <SelectItem value="info">Info</SelectItem>
                                     </SelectContent>
                                 </Select>
                             </div>
@@ -802,7 +802,7 @@ ${deviceSection}
                                                             <TableCell colSpan={8} className="h-48 text-center">
                                                                 <div className="flex flex-col items-center justify-center gap-2 text-muted-foreground">
                                                                     <CheckCircle className="h-12 w-12 text-green-500/50" />
-                                                                    <p className="text-lg font-medium">All Clear! 🎉</p>
+                                                                    <p className="text-lg font-medium">All Clear! ??</p>
                                                                     <p className="text-sm">No issues found in this category.</p>
                                                                 </div>
                                                             </TableCell>
@@ -848,7 +848,7 @@ ${deviceSection}
                                                                     {isUserReport(error) && (
                                                                         <div className="mb-1 flex items-center gap-2">
                                                                             <Badge className="bg-pink-500/20 text-pink-400 border-pink-500/30 text-[10px]">
-                                                                                👤 USER REPORT
+                                                                                USER REPORT
                                                                             </Badge>
                                                                             {(() => {
                                                                                 const meta = typeof error.metadata === 'string' ? JSON.parse(error.metadata || '{}') : (error.metadata || {});
@@ -871,7 +871,7 @@ ${deviceSection}
                                                                         const meta = typeof error.metadata === 'string' ? JSON.parse(error.metadata || '{}') : (error.metadata || {});
                                                                         return meta.reporter_email && (
                                                                             <div className="text-[10px] text-pink-400 mt-0.5">
-                                                                                📧 {meta.reporter_email}
+                                                                                {meta.reporter_email}
                                                                             </div>
                                                                         );
                                                                     })()}

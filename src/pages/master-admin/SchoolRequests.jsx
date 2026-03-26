@@ -120,7 +120,7 @@ const SchoolRequests = () => {
         try {
             const result = await apiClient.post('/admin/sync-requests');
             toast({ 
-                title: "✅ Sync Complete", 
+                title: "? Sync Complete", 
                 description: `${result.syncedCount || 0} requests updated to Approved status` 
             });
             fetchRequests(); // Refresh list
@@ -237,12 +237,12 @@ const SchoolRequests = () => {
             // Show detailed error toast
             toast({ 
                 variant: "destructive", 
-                title: "❌ Approval Failed - ಅನುಮೋದನೆ ವಿಫಲ", 
+                title: "? Approval Failed - ???????", 
                 description: (
                     <div className="space-y-2">
                         <p className="font-semibold">{errorMessage}</p>
-                        {technicalError && <p className="text-sm opacity-90">ದೋಷ: {technicalError}</p>}
-                        {failedAt && <p className="text-sm opacity-90">ಎಲ್ಲಿ ವಿಫಲ: {failedAt}</p>}
+                        {technicalError && <p className="text-sm opacity-90">???: {technicalError}</p>}
+                        {failedAt && <p className="text-sm opacity-90">????: {failedAt}</p>}
                         {errorHint && <p className="text-xs opacity-75 mt-1">{errorHint}</p>}
                     </div>
                 ),
@@ -256,11 +256,11 @@ const SchoolRequests = () => {
     // Helper to get registration type display
     const getRegistrationType = (type) => {
         const typeMap = {
-            'single_school': { label: 'Single School', icon: 'ðŸ«', color: 'bg-blue-100 text-blue-800' },
-            'organization': { label: 'Organization', icon: 'ðŸ¢', color: 'bg-purple-100 text-purple-800' },
-            'organization_multi_branch': { label: 'Multi-Branch Organization', icon: 'ðŸ—ï¸', color: 'bg-orange-100 text-orange-800' }
+            'single_school': { label: 'Single School', icon: '🏫', color: 'bg-blue-100 text-blue-800' },
+            'organization': { label: 'Organization', icon: '🏢', color: 'bg-purple-100 text-purple-800' },
+            'organization_multi_branch': { label: 'Multi-Branch Organization', icon: '🏗️', color: 'bg-orange-100 text-orange-800' }
         };
-        return typeMap[type] || { label: type || 'Single School', icon: 'ðŸ«', color: 'bg-gray-100 text-gray-800' };
+        return typeMap[type] || { label: type || 'Single School', icon: '🏫', color: 'bg-gray-100 text-gray-800' };
     };
 
     // Filter requests based on active tab
@@ -302,13 +302,13 @@ const SchoolRequests = () => {
                             All Requests ({requests.length})
                         </TabsTrigger>
                         <TabsTrigger value="single_school" className="flex items-center gap-2">
-                            ðŸ« Single School ({requests.filter(r => (r.registration_type || 'single_school') === 'single_school').length})
+                            🏫 Single School ({requests.filter(r => (r.registration_type || 'single_school') === 'single_school').length})
                         </TabsTrigger>
                         <TabsTrigger value="organization" className="flex items-center gap-2">
-                            ðŸ¢ Organization ({requests.filter(r => r.registration_type === 'organization').length})
+                            🏢 Organization ({requests.filter(r => r.registration_type === 'organization').length})
                         </TabsTrigger>
                         <TabsTrigger value="organization_multi_branch" className="flex items-center gap-2">
-                            ðŸ—ï¸ Multi-Branch ({requests.filter(r => r.registration_type === 'organization_multi_branch').length})
+                            🏗️ Multi-Branch ({requests.filter(r => r.registration_type === 'organization_multi_branch').length})
                         </TabsTrigger>
                     </TabsList>
 
@@ -460,7 +460,7 @@ const SchoolRequests = () => {
                                         <SelectContent>
                                             {plans.map((plan) => (
                                                 <SelectItem key={plan.id} value={plan.id}>
-                                                    {plan.name} - ₹{plan.price}/month
+                                                    {plan.name} - ?{plan.price}/month
                                                 </SelectItem>
                                             ))}
                                         </SelectContent>

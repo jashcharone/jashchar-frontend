@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../contexts/SupabaseAuthContext';
 import api from '@/lib/api';
@@ -85,7 +85,7 @@ const StudentDashboard = () => {
         <div className="flex-1 text-center md:text-left">
           <h1 className="text-2xl font-bold text-foreground">{profile.full_name}</h1>
           <div className="flex flex-wrap gap-4 mt-2 justify-center md:justify-start text-sm text-muted-foreground">
-             <span className="flex items-center gap-1"><User className="w-4 h-4"/> Admission No: <span className="text-foreground font-medium">{profile.admission_no}</span></span>
+             <span className="flex items-center gap-1"><User className="w-4 h-4"/> Enroll ID: <span className="text-foreground font-medium">{profile.enrollment_id}</span></span>
              <span className="flex items-center gap-1"><Calendar className="w-4 h-4"/> Class: <span className="text-foreground font-medium">{profile.current_class} - {profile.section}</span></span>
              <span className="flex items-center gap-1"><AlertCircle className="w-4 h-4"/> Roll No: <span className="text-foreground font-medium">{profile.roll_no}</span></span>
           </div>
@@ -110,8 +110,8 @@ const StudentDashboard = () => {
         <div className="cursor-pointer">
             <StatCard 
               title="Fees Paid" 
-              value={`₹ ${stats.fees?.paid || 0}`} 
-              subtext={`Due: ₹ ${stats.fees?.due || 0}`} 
+              value={`? ${stats.fees?.paid || 0}`} 
+              subtext={`Due: ? ${stats.fees?.due || 0}`} 
               color="border-blue-500" 
               icon={Book}
             />

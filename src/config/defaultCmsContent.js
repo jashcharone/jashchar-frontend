@@ -1,4 +1,4 @@
-﻿export const defaultCmsContent = {
+export const defaultCmsContent = {
     hero: { 
         title: "India's #1 Smart School Management ERP", 
         subtitle: 'Streamline your entire school operations from Admissions to Results. Designed specifically for CBSE, ICSE, and State Board schools to go 100% paperless.', 

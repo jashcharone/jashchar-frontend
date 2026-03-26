@@ -135,7 +135,7 @@ export default function StudentIdCardDesigner() {
     try {
       let q = supabase
         .from('student_profiles')
-        .select('id, school_code, full_name, first_name, last_name, gender, date_of_birth, blood_group, phone, father_name, mother_name, present_address, permanent_address, city, state, pincode, photo_url, roll_number, classes:classes!student_profiles_class_id_fkey(id, name), sections:sections!student_profiles_section_id_fkey(id, name)')
+        .select('id, enrollment_id, full_name, first_name, last_name, gender, date_of_birth, blood_group, phone, father_name, mother_name, present_address, permanent_address, city, state, pincode, photo_url, roll_number, classes:classes!student_profiles_class_id_fkey(id, name), sections:sections!student_profiles_section_id_fkey(id, name)')
         .eq('branch_id', branchId)
         .eq('class_id', filters.class_id)
         .or('status.is.null,status.eq.active');
@@ -160,7 +160,7 @@ export default function StudentIdCardDesigner() {
           try {
             const qrData = JSON.stringify({
               name: student.full_name || `${student.first_name} ${student.last_name}`,
-              admNo: student.school_code,
+              admNo: student.enrollment_id,
               class: student.classes?.name,
               school: branchInfo?.branch_name || branchInfo?.name,
             });
@@ -240,7 +240,7 @@ export default function StudentIdCardDesigner() {
               <div class="photo">${s.photo_url ? `<img src="${s.photo_url}" />` : initials}</div>
               <div class="student-name">${name}</div>
               <div class="info-section">
-                <div class="info-row"><span class="info-label">Adm No:</span><span class="info-value">${s.school_code || 'N/A'}</span></div>
+                <div class="info-row"><span class="info-label">Enroll ID:</span><span class="info-value">${s.enrollment_id || 'N/A'}</span></div>
                 <div class="info-row"><span class="info-label">Class:</span><span class="info-value">${s.classes?.name || ''} ${s.sections?.name ? '- ' + s.sections.name : ''}</span></div>
                 <div class="info-row"><span class="info-label">DOB:</span><span class="info-value">${s.date_of_birth ? format(new Date(s.date_of_birth), 'dd/MM/yyyy') : 'N/A'}</span></div>
                 <div class="info-row"><span class="info-label">Father:</span><span class="info-value">${s.father_name || 'N/A'}</span></div>
@@ -258,7 +258,7 @@ export default function StudentIdCardDesigner() {
             <div class="photo-section"><div class="photo">${s.photo_url ? `<img src="${s.photo_url}" />` : initials}</div></div>
             <div class="info-section">
               <div class="student-name">${name}</div>
-              <div class="info-row"><span class="info-label">Adm No:</span><span class="info-value">${s.school_code || 'N/A'}</span></div>
+              <div class="info-row"><span class="info-label">Enroll ID:</span><span class="info-value">${s.enrollment_id || 'N/A'}</span></div>
               <div class="info-row"><span class="info-label">Class:</span><span class="info-value">${s.classes?.name || ''} ${s.sections?.name ? '- ' + s.sections.name : ''}</span></div>
               <div class="info-row"><span class="info-label">DOB:</span><span class="info-value">${s.date_of_birth ? format(new Date(s.date_of_birth), 'dd/MM/yyyy') : 'N/A'}</span></div>
               <div class="info-row"><span class="info-label">Blood:</span><span class="info-value">${s.blood_group || 'N/A'}</span></div>
@@ -318,7 +318,7 @@ export default function StudentIdCardDesigner() {
             </div>
             <p className="text-xs font-bold text-center mb-1">{name}</p>
             <div className="text-[9px] w-full space-y-0.5">
-              <div className="flex"><span className="w-12 font-bold opacity-80">Adm:</span><span>{student.school_code || 'N/A'}</span></div>
+              <div className="flex"><span className="w-12 font-bold opacity-80">Enroll:</span><span>{student.enrollment_id || 'N/A'}</span></div>
               <div className="flex"><span className="w-12 font-bold opacity-80">Class:</span><span>{student.classes?.name} {student.sections?.name}</span></div>
               <div className="flex"><span className="w-12 font-bold opacity-80">DOB:</span><span>{student.date_of_birth ? format(new Date(student.date_of_birth), 'dd/MM/yyyy') : 'N/A'}</span></div>
               <div className="flex"><span className="w-12 font-bold opacity-80">Father:</span><span>{student.father_name || 'N/A'}</span></div>
@@ -348,7 +348,7 @@ export default function StudentIdCardDesigner() {
           <div className="flex-1 text-[9px]">
             <p className="text-xs font-bold mb-1">{name}</p>
             <div className="space-y-0.5">
-              <div className="flex"><span className="w-12 font-bold opacity-80">Adm:</span><span>{student.school_code || 'N/A'}</span></div>
+              <div className="flex"><span className="w-12 font-bold opacity-80">Enroll:</span><span>{student.enrollment_id || 'N/A'}</span></div>
               <div className="flex"><span className="w-12 font-bold opacity-80">Class:</span><span>{student.classes?.name} {student.sections?.name}</span></div>
               <div className="flex"><span className="w-12 font-bold opacity-80">DOB:</span><span>{student.date_of_birth ? format(new Date(student.date_of_birth), 'dd/MM/yyyy') : 'N/A'}</span></div>
               <div className="flex"><span className="w-12 font-bold opacity-80">Blood:</span><span>{student.blood_group || 'N/A'}</span></div>
@@ -498,7 +498,7 @@ export default function StudentIdCardDesigner() {
                           <th className="py-2 px-3 w-10"></th>
                           <th className="py-2 px-3 text-left">Photo</th>
                           <th className="py-2 px-3 text-left">Name</th>
-                          <th className="py-2 px-3 text-left">Adm No</th>
+                          <th className="py-2 px-3 text-left">Enroll ID</th>
                           <th className="py-2 px-3 text-left">Class</th>
                           <th className="py-2 px-3 text-left">Father</th>
                         </tr>
@@ -515,7 +515,7 @@ export default function StudentIdCardDesigner() {
                               </div>
                             </td>
                             <td className="py-2 px-3 font-medium">{s.full_name || `${s.first_name} ${s.last_name}`}</td>
-                            <td className="py-2 px-3">{s.school_code || '-'}</td>
+                            <td className="py-2 px-3">{s.enrollment_id || '-'}</td>
                             <td className="py-2 px-3">{s.classes?.name} {s.sections?.name}</td>
                             <td className="py-2 px-3">{s.father_name || '-'}</td>
                           </tr>

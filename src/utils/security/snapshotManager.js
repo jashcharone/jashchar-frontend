@@ -1,4 +1,4 @@
-﻿/**
+/**
  * AUTOMATIC SNAPSHOT MANAGER
  * Captures system state before changes to allow instant rollback.
  */

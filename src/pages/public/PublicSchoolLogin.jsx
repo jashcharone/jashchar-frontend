@@ -132,18 +132,18 @@ const PublicSchoolLogin = () => {
   // V2 Auth Handlers
   const handleSendOTP = async () => {
     if (!mobileNumber || mobileNumber.length !== 10) {
-      toast({ variant: 'destructive', title: 'Invalid Mobile', description: '10 ಅಂಕಿಯ ಮೊಬೈಲ್ ನಂಬರ್ ನಮೂದಿಸಿ' });
+      toast({ variant: 'destructive', title: 'Invalid Mobile', description: '10 ????????' });
       return;
     }
     setOtpLoading(true);
     try {
       const response = await unifiedAuthV2Service.sendOTP(`+91${mobileNumber}`, otpChannel);
       if (response.success) {
-        toast({ title: 'OTP ಕಳುಹಿಸಲಾಗಿದೆ', description: `${otpChannel === 'whatsapp' ? 'WhatsApp' : 'SMS'} ಗೆ OTP ಕಳುಹಿಸಲಾಗಿದೆ` });
+        toast({ title: 'OTP ????????????', description: `${otpChannel === 'whatsapp' ? 'WhatsApp' : 'SMS'} OTP ????????????` });
         setOtpStep('otp');
         setOtpCountdown(60);
       } else {
-        toast({ variant: 'destructive', title: 'Error', description: response.error || 'OTP ಕಳುಹಿಸಲು ವಿಫಲವಾಗಿದೆ' });
+        toast({ variant: 'destructive', title: 'Error', description: response.error || 'OTP ?????????????' });
       }
     } catch (error) {
       toast({ variant: 'destructive', title: 'Error', description: error.message });
@@ -154,7 +154,7 @@ const PublicSchoolLogin = () => {
   const handleVerifyOTP = async () => {
     const otpCode = otp.join('');
     if (otpCode.length !== 6) {
-      toast({ variant: 'destructive', title: 'Invalid OTP', description: '6 ಅಂಕಿಯ OTP ನಮೂದಿಸಿ' });
+      toast({ variant: 'destructive', title: 'Invalid OTP', description: '6 OTP ???????' });
       return;
     }
     setOtpLoading(true);
@@ -167,11 +167,11 @@ const PublicSchoolLogin = () => {
           setUserRoles(rolesResponse.roles);
           setOtpStep('role');
         } else {
-          toast({ variant: 'destructive', title: 'No Roles', description: 'ಈ ಮೊಬೈಲ್ ನಂಬರ್‌ಗೆ ಯಾವುದೇ role ಲಿಂಕ್ ಆಗಿಲ್ಲ' });
+          toast({ variant: 'destructive', title: 'No Roles', description: '? ?????role ??????' });
           resetV2State();
         }
       } else {
-        toast({ variant: 'destructive', title: 'Invalid OTP', description: response.error || 'OTP ತಪ್ಪಾಗಿದೆ' });
+        toast({ variant: 'destructive', title: 'Invalid OTP', description: response.error || 'OTP ?????????' });
       }
     } catch (error) {
       toast({ variant: 'destructive', title: 'Error', description: error.message });
@@ -184,7 +184,7 @@ const PublicSchoolLogin = () => {
     try {
       const response = await unifiedAuthV2Service.selectRole(unifiedUserId, role.id);
       if (response.success) {
-        toast({ title: 'ಯಶಸ್ವಿ!', description: `${role.role_type} ಆಗಿ ಲಾಗಿನ್ ಆಗಿದೆ` });
+        toast({ title: '??????!', description: `${role.role_type} ??????` });
         localStorage.setItem('unified_session', JSON.stringify(response.session));
         navigate('/dashboard');
       } else {
@@ -199,11 +199,11 @@ const PublicSchoolLogin = () => {
   const handlePinLogin = async () => {
     const pinCode = pin.join('');
     if (!mobileNumber || mobileNumber.length !== 10) {
-      toast({ variant: 'destructive', title: 'Invalid Mobile', description: '10 ಅಂಕಿಯ ಮೊಬೈಲ್ ನಂಬರ್ ನಮೂದಿಸಿ' });
+      toast({ variant: 'destructive', title: 'Invalid Mobile', description: '10 ????????' });
       return;
     }
     if (pinCode.length !== 6) {
-      toast({ variant: 'destructive', title: 'Invalid PIN', description: '6 ಅಂಕಿಯ PIN ನಮೂದಿಸಿ' });
+      toast({ variant: 'destructive', title: 'Invalid PIN', description: '6 PIN ???????' });
       return;
     }
     setOtpLoading(true);
@@ -217,10 +217,10 @@ const PublicSchoolLogin = () => {
           setOtpStep('role');
           setLoginMethod('otp');
         } else {
-          toast({ variant: 'destructive', title: 'No Roles', description: 'ಈ ಮೊಬೈಲ್ ನಂಬರ್‌ಗೆ ಯಾವುದೇ role ಲಿಂಕ್ ಆಗಿಲ್ಲ' });
+          toast({ variant: 'destructive', title: 'No Roles', description: '? ?????role ??????' });
         }
       } else {
-        toast({ variant: 'destructive', title: 'Invalid PIN', description: response.error || 'PIN ತಪ್ಪಾಗಿದೆ' });
+        toast({ variant: 'destructive', title: 'Invalid PIN', description: response.error || 'PIN ?????????' });
       }
     } catch (error) {
       toast({ variant: 'destructive', title: 'Error', description: error.message });
@@ -237,7 +237,7 @@ const PublicSchoolLogin = () => {
       }
       setFaceScanning(true);
     } catch (error) {
-      toast({ variant: 'destructive', title: 'Camera Error', description: 'ಕ್ಯಾಮರಾ ಆಕ್ಸೆಸ್ ಅನುಮತಿ ನೀಡಿ' });
+      toast({ variant: 'destructive', title: 'Camera Error', description: '?????????' });
     }
   };
 
@@ -264,7 +264,7 @@ const PublicSchoolLogin = () => {
           stopCamera();
         }
       } else {
-        toast({ variant: 'destructive', title: 'Face Not Recognized', description: 'ಮುಖ ಗುರುತಿಸಲಾಗಲಿಲ್ಲ. ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ.' });
+        toast({ variant: 'destructive', title: 'Face Not Recognized', description: '???????????????. ??????????.' });
       }
     } catch (error) {
       toast({ variant: 'destructive', title: 'Error', description: error.message });
@@ -830,7 +830,7 @@ const PublicSchoolLogin = () => {
             
             {/* Email Field */}
             <div className="space-y-2">
-              <Label className="text-sm font-medium text-slate-700">Email / Admission No. / Mobile</Label>
+              <Label className="text-sm font-medium text-slate-700">Email / Enroll ID. / Mobile</Label>
               <div className="relative group">
                 <div className="absolute -inset-0.5 bg-gradient-to-r from-blue-500 to-purple-500 rounded-xl opacity-0 group-hover:opacity-20 blur transition duration-300"></div>
                 <div className="relative">
@@ -838,7 +838,7 @@ const PublicSchoolLogin = () => {
                   <input 
                     className="w-full pl-12 h-12 rounded-xl border focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none transition-all shadow-sm text-sm" 
                     style={{ backgroundColor: '#ffffff', borderColor: '#e2e8f0', color: '#1e293b' }}
-                    placeholder="Email, Admission No. or Mobile" 
+                    placeholder="Email, Enroll ID. or Mobile" 
                     value={formData.email} 
                     onChange={e => setFormData({...formData, email: e.target.value})}
                     required
@@ -867,7 +867,7 @@ const PublicSchoolLogin = () => {
                     type={showPassword ? "text" : "password"} 
                     className="w-full pl-12 pr-12 h-12 rounded-xl border focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none transition-all shadow-sm text-sm" 
                     style={{ backgroundColor: '#ffffff', borderColor: '#e2e8f0', color: '#1e293b' }}
-                    placeholder="••••••••" 
+                    placeholder="��������" 
                     value={formData.password} 
                     onChange={e => setFormData({...formData, password: e.target.value})}
                     required
@@ -985,7 +985,7 @@ const PublicSchoolLogin = () => {
                             : 'border-slate-200 hover:border-slate-300 text-slate-600'
                         }`}
                       >
-                        📱 WhatsApp
+                        WhatsApp
                       </button>
                       <button
                         type="button"
@@ -996,7 +996,7 @@ const PublicSchoolLogin = () => {
                             : 'border-slate-200 hover:border-slate-300 text-slate-600'
                         }`}
                       >
-                        💬 SMS
+                        SMS
                       </button>
                     </div>
                   </div>

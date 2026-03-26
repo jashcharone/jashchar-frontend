@@ -1,4 +1,4 @@
-﻿import React from 'react';
+import React from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
 import StatCard from '@/components/StatCard';
 import { BookOpen, CheckSquare, BookX, Users } from 'lucide-react';

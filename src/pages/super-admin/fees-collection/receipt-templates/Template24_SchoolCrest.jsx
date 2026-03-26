@@ -77,7 +77,7 @@ const Template24_SchoolCrest = ({ receiptData, copyType }) => {
         <div style={{ display: 'flex', justifyContent: 'center', gap: '15px', fontSize: '8.5px', marginBottom: '5px', padding: '3px 0', borderTop: `1px solid ${gold}`, borderBottom: `1px solid ${gold}` }}>
           <span><strong>Name:</strong> {student?.full_name || '-'}</span>
           <span><strong>Class:</strong> {student?.class?.name || '-'}{student?.section?.name ? ` (${student.section.name})` : ''}</span>
-          <span><strong>Adm No:</strong> {student?.school_code || '-'}</span>
+          <span><strong>Enroll ID:</strong> {student?.enrollment_id || '-'}</span>
           <span><strong>Mode:</strong> {paymentMode || 'Cash'}</span>
         </div>
 

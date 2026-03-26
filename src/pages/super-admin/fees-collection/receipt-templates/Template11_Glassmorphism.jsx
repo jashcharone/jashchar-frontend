@@ -62,7 +62,7 @@ const Template11_Glassmorphism = ({ receiptData, copyType }) => {
           <div><span style={{ color: '#9e9e9e' }}>Name:</span> <strong>{student?.full_name || '-'}</strong></div>
           <div><span style={{ color: '#9e9e9e' }}>Father:</span> {student?.father_name || '-'}</div>
           <div><span style={{ color: '#9e9e9e' }}>Class:</span> {student?.class?.name || '-'}{student?.section?.name ? ` (${student.section.name})` : ''}</div>
-          <div><span style={{ color: '#9e9e9e' }}>Adm No:</span> {student?.school_code || '-'}</div>
+          <div><span style={{ color: '#9e9e9e' }}>Enroll ID:</span> {student?.enrollment_id || '-'}</div>
           <div><span style={{ color: '#9e9e9e' }}>Session:</span> {sessionName || '-'}</div>
           <div><span style={{ color: '#9e9e9e' }}>Mode:</span> {paymentMode || 'Cash'}</div>
         </div>

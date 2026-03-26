@@ -52,7 +52,7 @@ const AdmitCardDesignerPage = () => {
         show_dob: true,
         show_address: false,
         show_category: false,
-        show_admission_no: true,
+        show_enrollment_id: true,
         show_roll_no: true,
         show_class_section: true,
         // Text Content
@@ -129,7 +129,7 @@ const AdmitCardDesignerPage = () => {
             show_dob: true,
             show_address: false,
             show_category: false,
-            show_admission_no: true,
+            show_enrollment_id: true,
             show_roll_no: true,
             show_class_section: true,
             school_name: '',
@@ -672,10 +672,10 @@ const AdmitCardDesignerPage = () => {
                                     />
                                 </div>
                                 <div className="flex items-center justify-between">
-                                    <Label>Admission No</Label>
+                                    <Label>Enroll ID</Label>
                                     <Switch
-                                        checked={formData.show_admission_no}
-                                        onCheckedChange={() => handleSwitchChange('show_admission_no')}
+                                        checked={formData.show_enrollment_id}
+                                        onCheckedChange={() => handleSwitchChange('show_enrollment_id')}
                                     />
                                 </div>
                                 <div className="flex items-center justify-between">

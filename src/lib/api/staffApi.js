@@ -1,4 +1,4 @@
-﻿import api from '../api';
+import api from '../api';
 import { supabase } from '../customSupabaseClient';
 
 export const staffApi = {
@@ -28,7 +28,7 @@ export const staffApi = {
             `)
             .or(`phone.eq.${cleanMobile},phone.eq.+91${cleanMobile},phone.eq.91${cleanMobile}`);
         
-        // ✅ CROSS-ORG FIX: Filter by organization to only find duplicates within SAME org
+        // ? CROSS-ORG FIX: Filter by organization to only find duplicates within SAME org
         if (organizationId) {
             query = query.eq('organization_id', organizationId);
         }

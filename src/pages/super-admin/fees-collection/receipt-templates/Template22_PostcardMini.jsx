@@ -43,7 +43,7 @@ const Template22_PostcardMini = ({ receiptData, copyType }) => {
       <div style={{ fontSize: '8px', marginBottom: '4px', display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
         <strong>{student?.full_name || '-'}</strong>
         <span>{student?.class?.name || '-'}{student?.section?.name ? `(${student.section.name})` : ''}</span>
-        <span>#{student?.school_code || '-'}</span>
+        <span>#{student?.enrollment_id || '-'}</span>
         <span>{paymentMode || 'Cash'}</span>
       </div>
 

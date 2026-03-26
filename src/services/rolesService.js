@@ -1,11 +1,11 @@
-﻿import { supabase } from '@/lib/customSupabaseClient';
+import { supabase } from '@/lib/customSupabaseClient';
 import { syncPlanModulesToSchoolOwnerPermissions } from '@/services/planModuleSyncService';
 import { repairPlanModuleMappings } from '@/services/planModuleRepairService';
 
-// ═══════════════════════════════════════════════════════════════════════════════
+// -------------------------------------------------------------------------------
 // ALL 40 SYSTEM ROLES in Display Order
 // These are created automatically for every new branch
-// ═══════════════════════════════════════════════════════════════════════════════
+// -------------------------------------------------------------------------------
 export const SYSTEM_ROLES_CONFIG = [
   { name: 'Super Admin', order: 1, description: 'Full system access' },
   { name: 'Admin', order: 2, description: 'Administrative access' },

@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { MessageSquare, Edit, Link as LinkIcon, Send, History, Settings, BarChart3, Bot, Blocks, Zap, Brain, Building2, Shield, TrendingUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -92,7 +92,7 @@ const WhatsAppManager = () => {
       <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-4">
         <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
           <TabsList className="bg-green-50 dark:bg-green-900/20 p-1 inline-flex w-max sm:flex sm:flex-wrap sm:w-auto h-auto gap-1">
-            {/* 🔒 Platform Admin Features (Master Admin Only) */}
+            {/* ?? Platform Admin Features (Master Admin Only) */}
             <TabsTrigger value="platform-config" className="data-[state=active]:bg-white dark:data-[state=active]:bg-gray-800 data-[state=active]:text-red-700 data-[state=active]:shadow-sm bg-red-50 dark:bg-red-900/20 text-xs sm:text-sm whitespace-nowrap">
               <Shield className="h-3 w-3 sm:h-4 sm:w-4 sm:mr-2" /> <span className="hidden sm:inline">Platform Config</span><span className="sm:hidden">Config</span>
             </TabsTrigger>
@@ -132,12 +132,12 @@ const WhatsAppManager = () => {
           </TabsList>
         </div>
 
-        {/* 🔒 Platform Config Tab (Master Admin Only) */}
+        {/* ?? Platform Config Tab (Master Admin Only) */}
         <TabsContent value="platform-config" className="space-y-4">
           <PlatformConfig />
         </TabsContent>
 
-        {/* 🔒 Org Usage Overview (Master Admin Only) */}
+        {/* ?? Org Usage Overview (Master Admin Only) */}
         <TabsContent value="org-usage" className="space-y-4">
           <OrgUsageOverview />
         </TabsContent>

@@ -1,4 +1,4 @@
-﻿import { runSafeMigrations } from '@/services/migrationService';
+import { runSafeMigrations } from '@/services/migrationService';
 
 /**
  * System initialization routine.

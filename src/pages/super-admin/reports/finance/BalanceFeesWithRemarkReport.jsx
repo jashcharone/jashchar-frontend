@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
 import DataTableExport from '@/components/DataTableExport';
 import { supabase } from '@/lib/customSupabaseClient';
@@ -22,7 +22,7 @@ const BalanceFeesWithRemarkReport = () => {
     const printRef = useRef();
 
     const columns = useMemo(() => [
-        { key: 'student_info', label: 'Student Name (Admission No)' },
+        { key: 'student_info', label: 'Student Name (Enroll ID)' },
         { key: 'class_section', label: 'Class' },
         { key: 'fees_list', label: 'Fees' },
         { key: 'total_amount_formatted', label: 'Amount' },
@@ -35,12 +35,12 @@ const BalanceFeesWithRemarkReport = () => {
     const exportData = useMemo(() => {
         if (!reportData) return [];
         return reportData.map(row => ({
-            student_info: `${row.student_name} (${row.admission_no})`,
+            student_info: `${row.student_name} (${row.enrollment_id})`,
             class_section: `${row.class_name} (${row.section_name})`,
             fees_list: row.fees_details?.join(', ') || '',
-            total_amount_formatted: `₹${Number(row.total_amount).toFixed(2)}`,
-            total_paid_formatted: `₹${Number(row.total_paid).toFixed(2)}`,
-            balance_formatted: `₹${Number(row.balance).toFixed(2)}`,
+            total_amount_formatted: `?${Number(row.total_amount).toFixed(2)}`,
+            total_paid_formatted: `?${Number(row.total_paid).toFixed(2)}`,
+            balance_formatted: `?${Number(row.balance).toFixed(2)}`,
             guardian_phone: row.guardian_phone || '',
             remark: ''
         }));
@@ -138,22 +138,22 @@ const BalanceFeesWithRemarkReport = () => {
                             <table className="w-full text-sm">
                                 <thead className="bg-muted">
                                     <tr className="text-left">
-                                        {['Student Name (Admission No)', 'Class', 'Fees', 'Amount', 'Paid', 'Balance', 'Guardian Phone', 'Remark'].map(h => <th key={h} className="p-2">{h}</th>)}
+                                        {['Student Name (Enroll ID)', 'Class', 'Fees', 'Amount', 'Paid', 'Balance', 'Guardian Phone', 'Remark'].map(h => <th key={h} className="p-2">{h}</th>)}
                                     </tr>
                                 </thead>
                                 <tbody>
                                     {reportData.map((row, idx) => (
                                         <tr key={idx} className="border-b">
-                                            <td className="p-2">{row.student_name} ({row.admission_no})</td>
+                                            <td className="p-2">{row.student_name} ({row.enrollment_id})</td>
                                             <td className="p-2">{row.class_name} ({row.section_name})</td>
                                             <td className="p-2">
                                                 <ul>
                                                     {row.fees_details?.map((fee, i) => <li key={i}>{fee}</li>)}
                                                 </ul>
                                             </td>
-                                            <td className="p-2 text-right">₹{Number(row.total_amount).toFixed(2)}</td>
-                                            <td className="p-2 text-right">₹{Number(row.total_paid).toFixed(2)}</td>
-                                            <td className="p-2 text-right font-bold">₹{Number(row.balance).toFixed(2)}</td>
+                                            <td className="p-2 text-right">?{Number(row.total_amount).toFixed(2)}</td>
+                                            <td className="p-2 text-right">?{Number(row.total_paid).toFixed(2)}</td>
+                                            <td className="p-2 text-right font-bold">?{Number(row.balance).toFixed(2)}</td>
                                             <td className="p-2">{row.guardian_phone}</td>
                                             <td className="p-2 border-l border-dashed"></td>
                                         </tr>

@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useSchoolSlug } from '@/hooks/useSchoolSlug';
 import publicCmsService from '@/services/publicCmsService';
 import { PublicHeader, PublicFooter, TopBar } from '@/components/public/PublicLayoutComponents';
@@ -18,7 +18,7 @@ const PublicExamResult = () => {
   const [news, setNews] = useState([]);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  const [admissionNo, setAdmissionNo] = useState('');
+  const [enrollmentId, setAdmissionNo] = useState('');
   const [selectedExam, setSelectedExam] = useState('');
   const [result, setResult] = useState(null);
   const [searched, setSearched] = useState(false);
@@ -64,7 +64,7 @@ const PublicExamResult = () => {
     setSearched(true);
     // Simulate result fetch
     // In reality: await supabase.from('exam_results').select('*')...
-    if (admissionNo === '12345') {
+    if (enrollmentId === '12345') {
       setResult({
         student: 'John Doe',
         class: 'Class 10 - A',
@@ -132,8 +132,8 @@ const PublicExamResult = () => {
                 </div>
                 <div className="md:col-span-1">
                   <Input 
-                    placeholder="Admission No. (e.g. 12345)" 
-                    value={admissionNo}
+                    placeholder="Enroll ID. (e.g. 12345)" 
+                    value={enrollmentId}
                     onChange={e => setAdmissionNo(e.target.value)}
                     required
                     className="w-full"
@@ -188,7 +188,7 @@ const PublicExamResult = () => {
                     </div>
                     <p className="text-lg font-medium text-slate-800">No result found</p>
                     <p className="text-slate-500 mt-1">
-                      We couldn't find any result for Admission No: <span className="font-mono font-bold text-slate-700">{admissionNo}</span>
+                      We couldn't find any result for Enroll ID: <span className="font-mono font-bold text-slate-700">{enrollmentId}</span>
                     </p>
                     <p className="text-sm mt-4 text-slate-400">Please check the number or contact school administration.</p>
                   </CardContent>

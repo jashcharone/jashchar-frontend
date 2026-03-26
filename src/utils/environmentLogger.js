@@ -1,4 +1,4 @@
-﻿import { getEnvironmentStatus } from "@/services/environmentValidator";
+import { getEnvironmentStatus } from "@/services/environmentValidator";
 
 export const maskSensitiveData = (value) => {
   if (!value) return 'UNDEFINED';
@@ -8,7 +8,7 @@ export const maskSensitiveData = (value) => {
 
 export const logEnvironmentStatus = () => {
   const status = getEnvironmentStatus();
-  console.groupCollapsed("ðŸ” Environment Diagnostic");
+  console.groupCollapsed("🔍 Environment Diagnostic");
   console.log("Supabase URL:", status.url);
   console.log("Supabase Key:", status.key);
   console.log("Config Valid:", status.valid);
@@ -23,7 +23,7 @@ export const logEnvironmentStatus = () => {
 };
 
 export const logDiagnosticResult = (result) => {
-  console.group("ðŸ›  Connection Diagnostic Result");
+  console.group("🛠 Connection Diagnostic Result");
   console.log("Status:", result.status);
   console.log("Details:", result.details);
   if (result.classification) {

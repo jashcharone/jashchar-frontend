@@ -1,4 +1,4 @@
-﻿/**
+/**
  * DEMO AUTOMATION ENGINE V2 (SAFE MODE)
  * Singleton controller for managing the automation state.
  * FIXED: Context Propagation & School ID Validation
@@ -97,25 +97,25 @@ class AutomationEngine {
      * Pre-flight validation checks
      */
     async runPreFlightChecks() {
-        this.logger.log('ðŸ” Running pre-flight checks...', 'info');
+        this.logger.log('🔍 Running pre-flight checks...', 'info');
         
         try {
             // Check database connectivity
             const { error: dbError } = await supabase.from('schools').select('id').limit(1);
             if (dbError) throw new Error(`Database connection failed: ${dbError.message}`);
-            this.logger.log('✅ Database connection verified', 'success');
+            this.logger.log('? Database connection verified', 'success');
             
             // Check user permissions (basic check)
             const { data: { user } } = await supabase.auth.getUser();
             if (!user) {
-                this.logger.log(' ï¸ No authenticated user found, proceeding anyway', 'warning');
+                this.logger.log(' ️ No authenticated user found, proceeding anyway', 'warning');
             } else {
-                this.logger.log(`✅ Authenticated as: ${user.email}`, 'success');
+                this.logger.log(`? Authenticated as: ${user.email}`, 'success');
             }
             
-            this.logger.log('✅ All pre-flight checks passed', 'success');
+            this.logger.log('? All pre-flight checks passed', 'success');
         } catch (error) {
-            this.logger.log(`❌ Pre-flight check failed: ${error.message}`, 'error');
+            this.logger.log(`? Pre-flight check failed: ${error.message}`, 'error');
             // Don't throw - allow automation to proceed even if checks fail
             // This prevents blocking due to minor issues
         }
@@ -154,7 +154,7 @@ class AutomationEngine {
 
         this.updateState({ status: 'running' });
         this.startTimer();
-        this.logger.log('ðŸš€ Automation Engine Started in SAFE MODE', 'info');
+        this.logger.log('🚀 Automation Engine Started in SAFE MODE', 'info');
 
         try {
             // Pre-flight checks
@@ -180,7 +180,7 @@ class AutomationEngine {
                 // Map to demoSchoolId as requested for explicit clarity
                 this.context.demoSchoolId = this.context.branchId;
                 
-                this.logger.log(`✅ Context Secured: School ID ${this.context.demoSchoolId}`, 'success');
+                this.logger.log(`? Context Secured: School ID ${this.context.demoSchoolId}`, 'success');
             });
 
             // Phase 2: Verify Subscription & Modules
@@ -199,7 +199,7 @@ class AutomationEngine {
                 if (subError) throw new Error(`Subscription verification failed: ${subError.message}`);
                 if (!subscription) throw new Error('No active subscription found for demo school');
                 
-                this.logger.log(`✅ Subscription verified: ${subscription.subscription_plans?.name || 'Active Plan'}`, 'success');
+                this.logger.log(`? Subscription verified: ${subscription.subscription_plans?.name || 'Active Plan'}`, 'success');
                 
                 // Get enabled modules for this plan
                 const { data: planModules } = await supabase
@@ -208,7 +208,7 @@ class AutomationEngine {
                     .eq('plan_id', subscription.plan_id);
                 
                 const moduleNames = planModules?.map(pm => pm.modules?.name).filter(Boolean) || [];
-                this.logger.log(`ðŸ“¦ Enabled Modules (${moduleNames.length}): ${moduleNames.join(', ')}`, 'info');
+                this.logger.log(`📦 Enabled Modules (${moduleNames.length}): ${moduleNames.join(', ')}`, 'info');
                 
                 // Store module info in context for later phases
                 this.context.enabledModules = moduleNames;
@@ -308,7 +308,7 @@ class AutomationEngine {
      * Replaced flaky RPC with robust Client-Side Auth Logic.
      */
     async executeSafeStudentEnrollment() {
-        this.logger.log('ðŸ” Phase 4: Safe Student Enrollment Initiated (Client-Side)', 'info');
+        this.logger.log('🔍 Phase 4: Safe Student Enrollment Initiated (Client-Side)', 'info');
         
         // FIXED: Use demoSchoolId or branchId safely
         const branchId = this.context.demoSchoolId || this.context.branchId;
@@ -363,7 +363,7 @@ class AutomationEngine {
 
                         student.username = `retry_${retrySuffix}_${student.username}`;
                         student.rollNumber = `${student.rollNumber}R${attempts}`;
-                        this.logger.log(`™ï¸ Retrying with new email: ${student.email}`, 'warning');
+                        this.logger.log(`�️ Retrying with new email: ${student.email}`, 'warning');
                     }
 
                     // A. Create Parent Auth
@@ -401,7 +401,7 @@ class AutomationEngine {
                                 full_name: `${student.firstName} ${student.lastName}`,
                                 class_id: targetClass.id,
                                 section_id: targetSection.id,
-                                admission_no: student.rollNumber,
+                                enrollment_id: student.rollNumber,
                                 roll_number: student.rollNumber
                             }
                         }
@@ -438,7 +438,7 @@ class AutomationEngine {
                         house_id: houseId,
                         admission_date: new Date().toISOString().split('T')[0],
                         role_id: studentRoleId,
-                        admission_no: student.rollNumber,
+                        enrollment_id: student.rollNumber,
                         roll_number: student.rollNumber,
                         gender: student.gender,
                         dob: '2015-01-01',
@@ -447,7 +447,7 @@ class AutomationEngine {
                         guardian_phone: '9876543210'
                     }, { onConflict: 'id' });
 
-                    this.logger.log(`✅ Enrolled: ${student.firstName} ${student.lastName}`, 'success');
+                    this.logger.log(`? Enrolled: ${student.firstName} ${student.lastName}`, 'success');
                     enrolled = true;
                     successCount++;
                     
@@ -456,7 +456,7 @@ class AutomationEngine {
                     this.context.studentIds.push(studentId);
 
                 } catch (e) {
-                    this.logger.log(` ï¸ Enrollment Attempt ${attempts + 1} Failed: ${e.message}`, 'warning');
+                    this.logger.log(` ️ Enrollment Attempt ${attempts + 1} Failed: ${e.message}`, 'warning');
                     attempts++;
                 }
             }
@@ -534,7 +534,7 @@ class AutomationEngine {
 
         this.updateState({ currentPhase: phaseId });
         this.setPhaseStatus(phaseId, 'running');
-        this.logger.log(`▼ï¸ Starting Phase ${phaseId}: ${phaseName}`, 'info');
+        this.logger.log(`?️ Starting Phase ${phaseId}: ${phaseName}`, 'info');
 
         try {
             await action();
@@ -564,19 +564,19 @@ class AutomationEngine {
             error: error.message,
             fixPrompt: prompt
         });
-        this.logger.log(`❌ Error: ${error.message}`, 'error');
+        this.logger.log(`? Error: ${error.message}`, 'error');
     }
 
     stop() {
         this.stopTimer();
         this.updateState({ status: 'idle' });
-        this.logger.log('⏹ï¸ Automation Stopped', 'warning');
+        this.logger.log('?️ Automation Stopped', 'warning');
     }
 
     complete() {
         this.stopTimer();
         this.updateState({ status: 'complete', progress: 100 });
-        this.logger.log('✅ All Phases Completed Successfully!', 'success');
+        this.logger.log('? All Phases Completed Successfully!', 'success');
     }
 }
 
@@ -602,7 +602,7 @@ export const runDemoAutomation = async (
     // Set selected modules in context
     if (selectedModules && selectedModules.length > 0) {
         engine.context.selectedModules = selectedModules;
-        engine.logger.log(`ðŸ“¦ Selected Modules: ${selectedModules.length} modules will be populated`, 'info');
+        engine.logger.log(`📦 Selected Modules: ${selectedModules.length} modules will be populated`, 'info');
     }
 
     // Subscribe UI callbacks
@@ -633,12 +633,12 @@ export const runDemoAutomation = async (
     });
 
     // Start the engine
-    console.log('ðŸŽ¯ Starting AutomationEngine...');
+    console.log('🎯 Starting AutomationEngine...');
     try {
         await engine.start();
-        console.log('✅ AutomationEngine started successfully');
+        console.log('? AutomationEngine started successfully');
     } catch (error) {
-        console.error('❌ Failed to start automation engine:', error);
+        console.error('? Failed to start automation engine:', error);
         if (statusCallback) statusCallback('error');
         throw error;
     }

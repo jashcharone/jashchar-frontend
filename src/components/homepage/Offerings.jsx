@@ -1,4 +1,4 @@
-﻿import React, { useState } from 'react';
+import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowRight, BookOpen, Users, IndianRupee, Briefcase, Smartphone, UserCheck, Bus, GraduationCap, Video, FileText, ClipboardList, CheckSquare, Layout, Edit, Search, Monitor, Barcode, QrCode, MessageCircle, Mic } from 'lucide-react';
 import { cn } from '@/lib/utils';

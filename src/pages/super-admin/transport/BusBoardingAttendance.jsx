@@ -62,7 +62,7 @@ const BusBoardingAttendance = () => {
       .from('student_transport_details')
       .select(`
         id, student_id, seat_number, pickup_type, special_instructions,
-        student:student_id(id, student_name, school_code, section_name, class_name),
+        student:student_id(id, student_name, enrollment_id, section_name, class_name),
         pickup_point:pickup_id(pickup_point_name, stop_order)
       `)
       .eq('branch_id', branchId)
@@ -350,7 +350,7 @@ const BusBoardingAttendance = () => {
                                 <td className="px-3 py-2">
                                   <div>
                                     <span className="font-medium">{s.student?.student_name || 'N/A'}</span>
-                                    {s.student?.school_code && <span className="text-xs text-muted-foreground ml-1">({s.student.school_code})</span>}
+                                    {s.student?.enrollment_id && <span className="text-xs text-muted-foreground ml-1">({s.student.enrollment_id})</span>}
                                   </div>
                                 </td>
                                 <td className="px-3 py-2 text-xs">{s.student?.class_name || ''} {s.student?.section_name || ''}</td>

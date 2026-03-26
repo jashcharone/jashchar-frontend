@@ -121,7 +121,7 @@ const VisitorApprovals = () => {
                       <span className="text-muted-foreground">Student</span>
                       <span className="font-medium">
                         {v.student ? `${v.student.first_name} ${v.student.last_name}` : '-'}
-                        {v.student?.admission_number && <span className="text-xs ml-1">({v.student.admission_number})</span>}
+                        {v.student?.enrollment_id && <span className="text-xs ml-1">({v.student.enrollment_id})</span>}
                       </span>
                     </div>
                     <div className="flex justify-between">

@@ -1,4 +1,4 @@
-﻿import React, { Suspense } from 'react';
+import React, { Suspense } from 'react';
 import { 
   GitBranch, Video, CalendarDays, Download, FileText, 
   GraduationCap, Settings2, FileBarChart, ShieldAlert,

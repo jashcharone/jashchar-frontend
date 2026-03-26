@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -24,7 +24,7 @@ const RatingDetailsModal = ({ isOpen, onClose, courseId, branchId }) => {
       .from('course_reviews')
       .select(`
         id, rating, review,
-        student:student_profiles(full_name, school_code),
+        student:student_profiles(full_name, enrollment_id),
         guest:guest_users(name)
       `)
       .eq('course_id', courseId)
@@ -74,7 +74,7 @@ const RatingDetailsModal = ({ isOpen, onClose, courseId, branchId }) => {
                 reviews.map(r => (
                   <TableRow key={r.id}>
                     <TableCell className="font-medium">
-                      {r.student?.full_name ? `${r.student.full_name} (${r.student.school_code})` : r.guest?.name ? `${r.guest.name} (Guest)` : 'Unknown'}
+                      {r.student?.full_name ? `${r.student.full_name} (${r.student.enrollment_id})` : r.guest?.name ? `${r.guest.name} (Guest)` : 'Unknown'}
                     </TableCell>
                     <TableCell>
                       <div className="flex text-orange-400">

@@ -1,4 +1,4 @@
-﻿import React, { useState } from 'react';
+import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -505,7 +505,7 @@ const ProfileEditTemplate = ({
               <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-2 mt-4 text-sm text-indigo-100/80">
                 <div className="flex items-center gap-2">
                   <User className="w-4 h-4" />
-                  <span>ID: {profile?.school_code || 'N/A'}</span>
+                  <span>ID: {profile?.enrollment_id || 'N/A'}</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <Calendar className="w-4 h-4" />

@@ -1,4 +1,4 @@
-﻿import React, { useState } from 'react';
+import React, { useState } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { useBranch } from '@/contexts/BranchContext';
@@ -62,7 +62,7 @@ const ImportStaff = () => {
             return;
         }
         toast({
-            title: "ðŸš§ Feature In Development",
+            title: "🚧 Feature In Development",
             description: "Staff import functionality is coming soon!",
         });
     };

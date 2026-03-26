@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -85,7 +85,7 @@ const AssignExamStudentsModal = ({ isOpen, onClose, exam, branchId }) => {
 
         const { data, error } = await supabase
             .from('profiles_legacy')
-            .select('id, full_name, school_code, father_name, gender, categories:student_categories(name)')
+            .select('id, full_name, enrollment_id, father_name, gender, categories:student_categories(name)')
             .eq('branch_id', branchId)
             .eq('branch_id', selectedBranch.id)
             .eq('class_id', filters.class_id)
@@ -231,7 +231,7 @@ const AssignExamStudentsModal = ({ isOpen, onClose, exam, branchId }) => {
                                 <TableHead className="w-[50px]">
                                     <Checkbox checked={isAllSelected} onCheckedChange={toggleAll} />
                                 </TableHead>
-                                <TableHead>Admission No</TableHead>
+                                <TableHead>Enroll ID</TableHead>
                                 <TableHead>Student Name</TableHead>
                                 <TableHead>Father Name</TableHead>
                                 <TableHead>Category</TableHead>
@@ -254,7 +254,7 @@ const AssignExamStudentsModal = ({ isOpen, onClose, exam, branchId }) => {
                                                 onCheckedChange={() => toggleStudent(student.id)} 
                                             />
                                         </TableCell>
-                                        <TableCell>{student.school_code}</TableCell>
+                                        <TableCell>{student.enrollment_id}</TableCell>
                                         <TableCell className="font-medium">{student.full_name}</TableCell>
                                         <TableCell>{student.father_name}</TableCell>
                                         <TableCell>{student.categories?.name || '-'}</TableCell>

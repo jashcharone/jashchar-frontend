@@ -246,7 +246,7 @@ const HomeworkEvaluationReportGenerator = () => {
         // Student Info
         student_id: studentIndex + 1,
         student_name: students[studentIndex],
-        admission_no: `ADM${2024}${String(studentIndex + 1).padStart(4, '0')}`,
+        enrollment_id: `ADM${2024}${String(studentIndex + 1).padStart(4, '0')}`,
         roll_number: studentIndex + 1,
         
         // Teacher Info

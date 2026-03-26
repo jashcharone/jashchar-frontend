@@ -48,7 +48,7 @@ export const HOMEWORK_EVAL_COLUMNS = [
   // ─────────────────────────────────────────────────────────────────────────────
   { key: 'student_id', label: 'Student ID', type: 'hidden', group: 'Student Info' },
   { key: 'student_name', label: 'Student Name', type: 'text', group: 'Student Info', sortable: true, width: 180 },
-  { key: 'admission_no', label: 'Admission No', type: 'text', group: 'Student Info', sortable: true, width: 120 },
+  { key: 'enrollment_id', label: 'Enroll ID', type: 'text', group: 'Student Info', sortable: true, width: 120 },
   { key: 'roll_number', label: 'Roll No', type: 'number', group: 'Student Info', sortable: true, width: 80 },
   
   // ─────────────────────────────────────────────────────────────────────────────
@@ -190,13 +190,13 @@ export const COLUMN_SETS = {
   batch_evaluation_status: ['homework_id', 'homework_title', 'evaluation_status', 'evaluated_count', 'pending_evaluation', 'evaluation_date'],
   
   // Grades & Analysis Templates (10)
-  grade_report: ['student_name', 'admission_no', 'class_name', 'section_name', 'homework_title', 'marks_obtained', 'max_marks', 'marks_percentage', 'grade'],
+  grade_report: ['student_name', 'enrollment_id', 'class_name', 'section_name', 'homework_title', 'marks_obtained', 'max_marks', 'marks_percentage', 'grade'],
   class_marks_summary: ['class_name', 'section_name', 'homework_title', 'class_average', 'class_highest', 'class_lowest', 'pass_count', 'fail_count', 'pass_percentage'],
   subject_performance: ['subject_name', 'class_name', 'class_average', 'class_highest', 'class_lowest', 'pass_percentage', 'grade_a_plus', 'grade_a', 'grade_b_plus', 'grade_f'],
   grade_distribution: ['homework_title', 'class_name', 'grade_a_plus', 'grade_a', 'grade_b_plus', 'grade_b', 'grade_c_plus', 'grade_c', 'grade_d', 'grade_f'],
-  top_performers: ['student_name', 'admission_no', 'class_name', 'section_name', 'student_average', 'total_homework_evaluated', 'overall_percentage', 'rank_in_class'],
-  low_performers: ['student_name', 'admission_no', 'class_name', 'section_name', 'student_average', 'fail_count', 'overall_percentage', 'trend'],
-  student_progress: ['student_name', 'admission_no', 'homework_title', 'marks_obtained', 'previous_score', 'score_change', 'score_change_percent', 'trend'],
+  top_performers: ['student_name', 'enrollment_id', 'class_name', 'section_name', 'student_average', 'total_homework_evaluated', 'overall_percentage', 'rank_in_class'],
+  low_performers: ['student_name', 'enrollment_id', 'class_name', 'section_name', 'student_average', 'fail_count', 'overall_percentage', 'trend'],
+  student_progress: ['student_name', 'enrollment_id', 'homework_title', 'marks_obtained', 'previous_score', 'score_change', 'score_change_percent', 'trend'],
   comparative_analysis: ['student_name', 'class_name', 'student_average', 'class_average', 'deviation_from_avg', 'percentile', 'rank_in_class'],
   performance_trends: ['student_name', 'class_name', 'subject_name', 'overall_percentage', 'trend', 'student_highest', 'student_lowest'],
   marks_vs_attendance: ['student_name', 'class_name', 'overall_percentage', 'student_average', 'total_homework_evaluated', 'rank_in_class'],
@@ -204,8 +204,8 @@ export const COLUMN_SETS = {
   // Feedback & Communication Templates (5)
   feedback_report: ['student_name', 'homework_title', 'marks_obtained', 'grade', 'feedback_comment', 'improvement_areas', 'strengths', 'teacher_remarks'],
   feedback_pending: ['student_name', 'homework_title', 'evaluation_date', 'marks_obtained', 'grade', 'feedback_sent', 'feedback_acknowledged'],
-  parent_notification_status: ['student_name', 'admission_no', 'homework_title', 'grade', 'parent_notified', 'notification_method', 'parent_viewed_result', 'parent_viewed_date'],
-  student_progress_card: ['student_name', 'admission_no', 'class_name', 'student_average', 'total_homework_evaluated', 'overall_percentage', 'rank_in_class', 'trend', 'teacher_remarks'],
+  parent_notification_status: ['student_name', 'enrollment_id', 'homework_title', 'grade', 'parent_notified', 'notification_method', 'parent_viewed_result', 'parent_viewed_date'],
+  student_progress_card: ['student_name', 'enrollment_id', 'class_name', 'student_average', 'total_homework_evaluated', 'overall_percentage', 'rank_in_class', 'trend', 'teacher_remarks'],
   revaluation_requests: ['student_name', 'homework_title', 'marks_obtained', 'grade', 'revaluation_requested', 'revaluation_status', 'parent_feedback'],
 };
 

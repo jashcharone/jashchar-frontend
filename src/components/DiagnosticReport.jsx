@@ -1,4 +1,4 @@
-﻿import React from 'react';
+import React from 'react';
 import { AlertTriangle, Activity } from 'lucide-react';
 
 const DiagnosticReport = ({ diagnosticResult }) => {

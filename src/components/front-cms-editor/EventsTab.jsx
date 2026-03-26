@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { formatDate } from '@/utils/dateUtils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -101,7 +101,7 @@ const EventsTab = ({ branchId }) => {
                   <h4 className="font-medium">{event.title || 'Untitled'}</h4>
                   <div className="text-sm text-muted-foreground">
                     {event.start_date ? formatDate(event.start_date) : 'No Date'}
-                    {event.location && ` • ${event.location}`}
+                    {event.location && ` � ${event.location}`}
                   </div>
                 </div>
               </div>

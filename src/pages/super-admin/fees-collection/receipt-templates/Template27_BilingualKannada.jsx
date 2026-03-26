@@ -70,7 +70,7 @@ const Template27_BilingualKannada = ({ receiptData, copyType }) => {
               <td style={{ width: '25%', padding: '2px 3px' }}><span style={{ color: darkGold }}>ಹೆಸರು / Name:</span> <strong>{student?.full_name || '-'}</strong></td>
               <td style={{ width: '25%', padding: '2px 3px' }}><span style={{ color: darkGold }}>ತಂದೆ / Father:</span> {student?.father_name || '-'}</td>
               <td style={{ width: '25%', padding: '2px 3px' }}><span style={{ color: darkGold }}>ತರಗತಿ / Class:</span> {student?.class?.name || '-'}{student?.section?.name ? ` (${student.section.name})` : ''}</td>
-              <td style={{ width: '25%', padding: '2px 3px' }}><span style={{ color: darkGold }}>ಪ್ರವೇಶ ಸಂ. / Adm#:</span> {student?.school_code || '-'}</td>
+              <td style={{ width: '25%', padding: '2px 3px' }}><span style={{ color: darkGold }}>ಪ್ರವೇಶ ಸಂ. / Adm#:</span> {student?.enrollment_id || '-'}</td>
             </tr>
             <tr>
               <td style={{ padding: '2px 3px' }}><span style={{ color: darkGold }}>ರಸೀದಿ ಸಂ. / Receipt#:</span> {transactionId?.split('/').pop() || '-'}</td>

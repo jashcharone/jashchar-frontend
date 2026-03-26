@@ -47,7 +47,7 @@ const Template16_VintageTypewriter = ({ receiptData, copyType }) => {
         {/* STUDENT INFO - Typewriter line style */}
         <div style={{ fontSize: '8.5px', marginBottom: '5px', lineHeight: '1.7' }}>
           <div>Name ........... : <strong>{student?.full_name || '-'}</strong>    Father&apos;s Name .. : {student?.father_name || '-'}</div>
-          <div>Class .......... : {student?.class?.name || '-'}{student?.section?.name ? ` (${student.section.name})` : ''}    Adm No ......... : {student?.school_code || '-'}    Date : {receiptDate ? format(new Date(receiptDate), 'dd-MM-yyyy') : '-'}</div>
+          <div>Class .......... : {student?.class?.name || '-'}{student?.section?.name ? ` (${student.section.name})` : ''}    Enroll ID ......... : {student?.enrollment_id || '-'}    Date : {receiptDate ? format(new Date(receiptDate), 'dd-MM-yyyy') : '-'}</div>
           <div>Receipt No ..... : {transactionId?.split('/').pop() || '-'}    Mode ........... : {paymentMode || 'Cash'}    Session : {sessionName || '-'}</div>
         </div>
 

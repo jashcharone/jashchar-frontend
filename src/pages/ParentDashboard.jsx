@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Users, GraduationCap, Calendar, CreditCard, BookOpen, 
@@ -81,7 +81,7 @@ const ChildCard = ({ child, onViewDashboard, index }) => {
             </div>
             <div className="flex items-center gap-2">
               <FileText size={16} className="text-red-300" />
-              <span className="text-sm">{child.school_code || child.admission_number || child.student_id || 'N/A'}</span>
+              <span className="text-sm">{child.enrollment_id || child.enrollment_id || child.student_id || 'N/A'}</span>
             </div>
             <div className="flex items-center gap-2">
               <Calendar size={16} className="text-red-300" />
@@ -98,7 +98,7 @@ const ChildCard = ({ child, onViewDashboard, index }) => {
             onClick={() => onViewDashboard(child)}
             className="bg-red-500 hover:bg-red-600 text-white rounded-full px-6"
           >
-            <span className="mr-2">●</span> Dashboard
+            <span className="mr-2">?</span> Dashboard
           </Button>
         </div>
       </div>
@@ -239,7 +239,7 @@ const ChildDashboard = ({ child, onBack }) => {
           <div>
             <h1 className="text-xl font-bold">{child.full_name || `${child.first_name} ${child.last_name}`}</h1>
             <p className="text-sm text-muted-foreground">
-              {child.class_name} {child.section_name && `(${child.section_name})`} • Roll #{child.roll_number || 'N/A'}
+              {child.class_name} {child.section_name && `(${child.section_name})`} � Roll #{child.roll_number || 'N/A'}
             </p>
           </div>
         </div>
@@ -257,7 +257,7 @@ const ChildDashboard = ({ child, onBack }) => {
         </div>
       ) : (
         <>
-          {/* ── Summary Cards ── */}
+          {/* -- Summary Cards -- */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0 }}>
               <Card className="border-emerald-200 dark:border-emerald-800">
@@ -283,12 +283,12 @@ const ChildDashboard = ({ child, onBack }) => {
                   <div className="flex items-center gap-3">
                     <IndianRupee className="h-8 w-8 text-blue-500" />
                     <div>
-                      <p className="text-2xl font-bold text-blue-600">₹{(feeData?.remaining || 0).toLocaleString()}</p>
+                      <p className="text-2xl font-bold text-blue-600">?{(feeData?.remaining || 0).toLocaleString()}</p>
                       <p className="text-xs text-muted-foreground">Fee Pending</p>
                     </div>
                   </div>
                   <div className="text-xs text-muted-foreground mt-2">
-                    Paid: ₹{(feeData?.paid || 0).toLocaleString()} / ₹{(feeData?.total || 0).toLocaleString()}
+                    Paid: ?{(feeData?.paid || 0).toLocaleString()} / ?{(feeData?.total || 0).toLocaleString()}
                   </div>
                 </CardContent>
               </Card>
@@ -317,19 +317,19 @@ const ChildDashboard = ({ child, onBack }) => {
                     <div>
                       <p className="text-lg font-bold">{child.class_name}</p>
                       <p className="text-xs text-muted-foreground">
-                        Section {child.section_name || '-'} • Roll #{child.roll_number || '-'}
+                        Section {child.section_name || '-'} � Roll #{child.roll_number || '-'}
                       </p>
                     </div>
                   </div>
                   <p className="text-xs text-muted-foreground mt-2">
-                    Adm#: {child.school_code || child.admission_number || '-'}
+                    Adm#: {child.enrollment_id || child.enrollment_id || '-'}
                   </p>
                 </CardContent>
               </Card>
             </motion.div>
           </div>
 
-          {/* ── Quick Links ── */}
+          {/* -- Quick Links -- */}
           <Card>
             <CardHeader className="pb-2">
               <CardTitle className="text-base">Quick Actions</CardTitle>
@@ -355,7 +355,7 @@ const ChildDashboard = ({ child, onBack }) => {
             </CardContent>
           </Card>
 
-          {/* ── Recent Fee Payments ── */}
+          {/* -- Recent Fee Payments -- */}
           {feeData?.recentPayments?.length > 0 && (
             <Card>
               <CardHeader className="pb-2">
@@ -368,9 +368,9 @@ const ChildDashboard = ({ child, onBack }) => {
                   {feeData.recentPayments.map((p, i) => (
                     <div key={i} className="flex items-center justify-between p-3 rounded-lg bg-muted/30">
                       <div>
-                        <p className="font-medium text-sm">₹{(p.amount || 0).toLocaleString()}</p>
+                        <p className="font-medium text-sm">?{(p.amount || 0).toLocaleString()}</p>
                         <p className="text-xs text-muted-foreground">
-                          {p.payment_date ? format(new Date(p.payment_date), 'dd MMM yyyy') : ''} • {p.payment_mode || 'Cash'}
+                          {p.payment_date ? format(new Date(p.payment_date), 'dd MMM yyyy') : ''} � {p.payment_mode || 'Cash'}
                         </p>
                       </div>
                       <Badge variant="outline" className="text-emerald-600">Paid</Badge>

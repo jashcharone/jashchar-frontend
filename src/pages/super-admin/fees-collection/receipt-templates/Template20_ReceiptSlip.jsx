@@ -43,7 +43,7 @@ const Template20_ReceiptSlip = ({ receiptData, copyType }) => {
       <div style={{ margin: '4px 0', lineHeight: '1.6' }}>
         <div>Name  : {student?.full_name || '-'}</div>
         <div>Class : {student?.class?.name || '-'}{student?.section?.name ? ` (${student.section.name})` : ''}</div>
-        <div>Adm#  : {student?.school_code || '-'}</div>
+        <div>Adm#  : {student?.enrollment_id || '-'}</div>
         <div>Rcpt# : {transactionId?.split('/').pop() || '-'}</div>
         <div>Date  : {receiptDate ? format(new Date(receiptDate), 'dd-MM-yyyy') : '-'}</div>
         <div>Mode  : {paymentMode || 'Cash'}</div>

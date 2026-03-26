@@ -1,4 +1,4 @@
-﻿// === COMPREHENSIVE PATH-TO-SLUG MAPPING ===
+// === COMPREHENSIVE PATH-TO-SLUG MAPPING ===
 // Maps URL path segments to actual database permission slugs
 // Extracted from Sidebar.jsx for performance optimization
 

@@ -1001,7 +1001,7 @@ const OnlineExamPage = () => {
                                 <TableRow>
                                     <TableHead>#</TableHead>
                                     <TableHead>Student</TableHead>
-                                    <TableHead>Admission No</TableHead>
+                                    <TableHead>Enroll ID</TableHead>
                                     <TableHead className="text-center">Score</TableHead>
                                     <TableHead className="text-center">Status</TableHead>
                                     <TableHead>Submitted At</TableHead>
@@ -1021,7 +1021,7 @@ const OnlineExamPage = () => {
                                             <TableCell>
                                                 {r.students?.first_name} {r.students?.last_name}
                                             </TableCell>
-                                            <TableCell>{r.students?.admission_no}</TableCell>
+                                            <TableCell>{r.students?.enrollment_id}</TableCell>
                                             <TableCell className="text-center">
                                                 {r.obtained_marks}/{selectedTest?.total_marks}
                                             </TableCell>

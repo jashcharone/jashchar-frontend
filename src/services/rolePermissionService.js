@@ -1,4 +1,4 @@
-﻿import { supabase } from '@/lib/customSupabaseClient';
+import { supabase } from '@/lib/customSupabaseClient';
 import { autoRepairSchoolOwnerPermissions } from '@/services/planModuleSyncService';
 
 export const rolePermissionService = {

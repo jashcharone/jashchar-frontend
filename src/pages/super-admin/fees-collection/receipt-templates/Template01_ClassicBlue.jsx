@@ -146,8 +146,8 @@ const Template01_ClassicBlue = ({ receiptData, copyType }) => {
             <span>: {student?.father_name || '-'}</span>
           </div>
           <div style={{ display: 'flex', marginBottom: '2px' }}>
-            <span style={{ width: '85px', fontWeight: '600', color: '#444' }}>Admission No</span>
-            <span>: {student?.school_code || student?.admission_no || '-'}</span>
+            <span style={{ width: '85px', fontWeight: '600', color: '#444' }}>Enroll ID</span>
+            <span>: {student?.enrollment_id || student?.enrollment_id || '-'}</span>
           </div>
           {extraInfo?.type === 'hostel' && (
             <div style={{ display: 'flex', marginBottom: '2px' }}>

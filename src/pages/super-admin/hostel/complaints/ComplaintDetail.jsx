@@ -185,7 +185,7 @@ export default function ComplaintDetail() {
                         <CardContent className="p-4 space-y-3">
                             <p className="text-sm font-medium">Student</p>
                             <p className="text-sm">{complaint.student?.first_name} {complaint.student?.last_name}</p>
-                            <p className="text-xs text-gray-500">Adm: {complaint.student?.admission_number}</p>
+                            <p className="text-xs text-gray-500">Enroll: {complaint.student?.enrollment_id}</p>
                             <p className="text-sm font-medium mt-2">Location</p>
                             <p className="text-sm">{complaint.hostel?.name} - Room {complaint.room?.room_number}</p>
                         </CardContent>

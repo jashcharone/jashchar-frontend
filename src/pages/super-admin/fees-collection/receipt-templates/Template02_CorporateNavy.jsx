@@ -73,7 +73,7 @@ const Template02_CorporateNavy = ({ receiptData, copyType }) => {
         <span style={{ color: '#999' }}>|</span>
         <span>Father: {student?.father_name || '-'}</span>
         <span style={{ color: '#999' }}>|</span>
-        <span>Adm#: {student?.school_code || student?.admission_no || '-'}</span>
+        <span>Adm#: {student?.enrollment_id || student?.enrollment_id || '-'}</span>
         <span style={{ color: '#999' }}>|</span>
         <span>Class: {student?.class?.name || '-'}{student?.section?.name ? `(${student.section.name})` : ''}</span>
         <span style={{ color: '#999' }}>|</span>

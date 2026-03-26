@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
 import { supabase } from '@/lib/customSupabaseClient';
 import { useToast } from '@/components/ui/use-toast';
@@ -25,7 +25,7 @@ const BulkInvoiceGenerator = () => {
             const { data, error } = await supabase
                 .from('schools')
                 .select(`
-                    id, name, school_code_number,
+                    id, name, enrollment_id_number,
                     subscription:school_subscriptions (
                         id, plan_id, billing_type, status,
                         plan:subscription_plans (
@@ -84,7 +84,7 @@ const BulkInvoiceGenerator = () => {
             const { error } = await supabase.from('subscription_invoices').insert({
                 branch_id: school.id,
                 subscription_id: sub.id,
-                invoice_number: `INV-${school.school_code_number}-${Date.now()}`,
+                invoice_number: `INV-${school.enrollment_id_number}-${Date.now()}`,
                 generated_date: new Date().toISOString(),
                 due_date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(), // 7 days due
                 billing_period_start: new Date().toISOString(), // Simplified

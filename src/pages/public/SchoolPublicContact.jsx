@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import publicCmsService from '@/services/publicCmsService';
 import { Loader2, MapPin, Phone, Mail, Send } from 'lucide-react';

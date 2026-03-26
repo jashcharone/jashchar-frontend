@@ -1,4 +1,4 @@
-ï»¿import React from 'react';
+import React from 'react';
 import { Link } from 'react-router-dom';
 import { Facebook, Twitter, Linkedin, Instagram, Send, Globe, Youtube, MapPin, Phone, Mail, ChevronUp } from 'lucide-react';
 import { Input } from '@/components/ui/input';
@@ -56,16 +56,16 @@ const Footer = ({ content, contact }) => {
               {quickLinks.length > 0 ? quickLinks.map((link, idx) => (
                   <li key={idx}>
                   <a href={link.href} className="hover:text-primary transition-colors flex items-center gap-2">
-                      <span className="text-primary">Âº</span> {link.name}
+                      <span className="text-primary">º</span> {link.name}
                   </a>
                   </li>
               )) : (
                   <>
-                    <li><Link to="/" className="hover:text-primary transition-colors flex items-center gap-2"><span className="text-primary">Âº</span> Home</Link></li>
-                    <li><Link to="/#features" className="hover:text-primary transition-colors flex items-center gap-2"><span className="text-primary">Âº</span> Features</Link></li>
-                    <li><Link to="/#pricing" className="hover:text-primary transition-colors flex items-center gap-2"><span className="text-primary">Âº</span> Pricing</Link></li>
-                    <li><Link to="/#faq" className="hover:text-primary transition-colors flex items-center gap-2"><span className="text-primary">Âº</span> Faq</Link></li>
-                    <li><Link to="/contact" className="hover:text-primary transition-colors flex items-center gap-2"><span className="text-primary">Âº</span> Contact</Link></li>
+                    <li><Link to="/" className="hover:text-primary transition-colors flex items-center gap-2"><span className="text-primary">º</span> Home</Link></li>
+                    <li><Link to="/#features" className="hover:text-primary transition-colors flex items-center gap-2"><span className="text-primary">º</span> Features</Link></li>
+                    <li><Link to="/#pricing" className="hover:text-primary transition-colors flex items-center gap-2"><span className="text-primary">º</span> Pricing</Link></li>
+                    <li><Link to="/#faq" className="hover:text-primary transition-colors flex items-center gap-2"><span className="text-primary">º</span> Faq</Link></li>
+                    <li><Link to="/contact" className="hover:text-primary transition-colors flex items-center gap-2"><span className="text-primary">º</span> Contact</Link></li>
                   </>
               )}
               </ul>
@@ -78,7 +78,7 @@ const Footer = ({ content, contact }) => {
                     {legalLinks.map((link, idx) => (
                       <li key={idx}>
                         <a href={link.href} className="hover:text-primary transition-colors flex items-center gap-2">
-                          <span className="text-primary">Âº</span> {link.name}
+                          <span className="text-primary">º</span> {link.name}
                         </a>
                       </li>
                     ))}
@@ -146,7 +146,7 @@ const Footer = ({ content, contact }) => {
       <div className="bg-white text-slate-800 py-6">
         <div className="container mx-auto px-4 flex flex-col md:flex-row justify-between items-center gap-4">
           <div className="text-sm font-medium text-center md:text-left">
-            {copyrightText || 'Copyright Ã‚Â© 2025 Jashchar ERP School Management - Developed by Jashchar Pvt Ltd'}
+            {copyrightText || 'Copyright Â© 2025 Jashchar ERP School Management - Developed by Jashchar Pvt Ltd'}
           </div>
           
           <div className="flex items-center gap-6">

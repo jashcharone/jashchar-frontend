@@ -1,4 +1,4 @@
-﻿import React, { useState, useMemo, useRef } from 'react';
+import React, { useState, useMemo, useRef } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
 import DataTableExport from '@/components/DataTableExport';
 import { Button } from '@/components/ui/button';
@@ -24,7 +24,7 @@ const BookIssueReturnReport = () => {
     { key: 'return_date', label: 'Return Date' },
     { key: 'member_id_short', label: 'Member ID' },
     { key: 'library_card_no', label: 'Card No' },
-    { key: 'admission_no', label: 'Adm No' },
+    { key: 'enrollment_id', label: 'Enroll ID' },
     { key: 'member_name', label: 'Member Name' },
     { key: 'member_type', label: 'Type' }
   ], []);
@@ -37,7 +37,7 @@ const BookIssueReturnReport = () => {
       return_date: item.return_date || '',
       member_id_short: item.member?.id?.slice(0, 8) || '',
       library_card_no: item.member?.library_card_no || '',
-      admission_no: item.member?.student?.school_code || '-',
+      enrollment_id: item.member?.student?.enrollment_id || '-',
       member_name: item.member?.member_type === 'student' ? item.member?.student?.full_name : item.member?.staff?.full_name || '',
       member_type: item.member?.member_type || ''
     }));
@@ -59,7 +59,7 @@ const BookIssueReturnReport = () => {
           id,
           library_card_no, 
           member_type,
-          student:student_profiles(school_code, full_name),
+          student:student_profiles(enrollment_id, full_name),
           staff:employee_profiles(full_name)
         )
       `)
@@ -128,7 +128,7 @@ const BookIssueReturnReport = () => {
               <th className="px-4 py-3">Return Date</th>
               <th className="px-4 py-3">Member ID</th>
               <th className="px-4 py-3">Card No</th>
-              <th className="px-4 py-3">Adm No</th>
+              <th className="px-4 py-3">Enroll ID</th>
               <th className="px-4 py-3">Member Name</th>
               <th className="px-4 py-3">Type</th>
             </tr>
@@ -145,7 +145,7 @@ const BookIssueReturnReport = () => {
                   <td className="px-4 py-3 text-green-600 dark:text-green-400 font-medium">{item.return_date}</td>
                   <td className="px-4 py-3">{item.member?.id.slice(0,8)}</td>
                   <td className="px-4 py-3">{item.member?.library_card_no}</td>
-                  <td className="px-4 py-3">{item.member?.student?.school_code || '-'}</td>
+                  <td className="px-4 py-3">{item.member?.student?.enrollment_id || '-'}</td>
                   <td className="px-4 py-3">
                     {item.member?.member_type === 'student' ? item.member?.student?.full_name : item.member?.staff?.full_name}
                   </td>

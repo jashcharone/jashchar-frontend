@@ -81,7 +81,7 @@ export const TRANSPORT_COLUMNS = [
   // TRANSPORT USER (STUDENT) INFORMATION
   // ─────────────────────────────────────────────────────────────────────────────
   { key: 'student_id', label: 'Student ID', type: 'text', group: 'User Info', sortable: true, width: 100 },
-  { key: 'admission_number', label: 'Admission No', type: 'text', group: 'User Info', sortable: true, width: 120 },
+  { key: 'enrollment_id', label: 'Enroll ID', type: 'text', group: 'User Info', sortable: true, width: 120 },
   { key: 'student_name', label: 'Student Name', type: 'text', group: 'User Info', sortable: true, width: 150 },
   { key: 'class_name', label: 'Class', type: 'text', group: 'User Info', sortable: true, width: 80 },
   { key: 'section_name', label: 'Section', type: 'text', group: 'User Info', sortable: true, width: 70 },
@@ -241,7 +241,7 @@ export const TRANSPORT_COLUMNS = [
 export const COLUMN_SETS = {
   // Route & Vehicle Templates
   route_master: ['route_id', 'route_name', 'route_code', 'start_point', 'end_point', 'total_distance', 'total_stops', 'estimated_time', 'route_fee', 'route_status'],
-  route_students: ['route_name', 'student_name', 'admission_number', 'class_name', 'section_name', 'pickup_stop', 'drop_stop', 'father_phone'],
+  route_students: ['route_name', 'student_name', 'enrollment_id', 'class_name', 'section_name', 'pickup_stop', 'drop_stop', 'father_phone'],
   stop_wise: ['route_name', 'stop_name', 'stop_sequence', 'pickup_time', 'drop_time', 'distance_from_school', 'stop_fee', 'students_at_stop'],
   vehicle_inventory: ['vehicle_number', 'vehicle_name', 'vehicle_type', 'vehicle_model', 'seating_capacity', 'fuel_type', 'vehicle_status', 'gps_enabled', 'driver_name'],
   vehicle_route: ['vehicle_number', 'vehicle_type', 'route_name', 'driver_name', 'driver_phone', 'seating_capacity', 'current_occupancy', 'occupancy_percent'],
@@ -249,19 +249,19 @@ export const COLUMN_SETS = {
   distance_report: ['route_name', 'start_point', 'end_point', 'total_distance', 'total_stops', 'estimated_time', 'route_fee'],
   timing_report: ['route_name', 'stop_name', 'stop_sequence', 'pickup_time', 'drop_time', 'estimated_time'],
   change_requests: ['request_id', 'student_name', 'class_name', 'current_route', 'requested_route', 'request_reason', 'request_date', 'request_status', 'approved_by'],
-  unallocated: ['student_name', 'admission_number', 'class_name', 'section_name', 'student_address', 'father_phone', 'request_date'],
+  unallocated: ['student_name', 'enrollment_id', 'class_name', 'section_name', 'student_address', 'father_phone', 'request_date'],
   
   // Users & Fee Templates
-  users_list: ['student_name', 'admission_number', 'class_name', 'section_name', 'route_name', 'pickup_stop', 'transport_type', 'user_status', 'allocation_date'],
+  users_list: ['student_name', 'enrollment_id', 'class_name', 'section_name', 'route_name', 'pickup_stop', 'transport_type', 'user_status', 'allocation_date'],
   new_requests: ['request_id', 'student_name', 'class_name', 'student_address', 'father_phone', 'request_date', 'request_status'],
-  fee_collection: ['student_name', 'admission_number', 'class_name', 'route_name', 'transport_fee', 'fee_paid', 'fee_due', 'last_payment_date', 'payment_status'],
+  fee_collection: ['student_name', 'enrollment_id', 'class_name', 'route_name', 'transport_fee', 'fee_paid', 'fee_due', 'last_payment_date', 'payment_status'],
   route_fee: ['route_name', 'total_students', 'transport_fee', 'collection_amount', 'pending_amount'],
-  defaulters: ['student_name', 'admission_number', 'class_name', 'route_name', 'transport_fee', 'fee_due', 'days_overdue', 'father_phone'],
+  defaulters: ['student_name', 'enrollment_id', 'class_name', 'route_name', 'transport_fee', 'fee_due', 'days_overdue', 'father_phone'],
   pickup_contact: ['student_name', 'class_name', 'pickup_stop', 'pickup_person', 'pickup_person_phone', 'father_phone', 'mother_phone'],
   emergency_contact: ['student_name', 'class_name', 'route_name', 'emergency_contact', 'emergency_phone', 'father_phone', 'student_address'],
-  card_status: ['student_name', 'admission_number', 'class_name', 'card_number', 'card_issue_date', 'card_expiry_date', 'card_status'],
-  discontinued: ['student_name', 'admission_number', 'class_name', 'route_name', 'allocation_date', 'user_status', 'remarks'],
-  history: ['student_name', 'admission_number', 'class_name', 'route_name', 'transport_type', 'allocation_date', 'user_status'],
+  card_status: ['student_name', 'enrollment_id', 'class_name', 'card_number', 'card_issue_date', 'card_expiry_date', 'card_status'],
+  discontinued: ['student_name', 'enrollment_id', 'class_name', 'route_name', 'allocation_date', 'user_status', 'remarks'],
+  history: ['student_name', 'enrollment_id', 'class_name', 'route_name', 'transport_type', 'allocation_date', 'user_status'],
   
   // Operations Templates
   trip_log: ['trip_date', 'route_name', 'vehicle_number', 'driver_name', 'trip_type', 'departure_time', 'arrival_time', 'students_boarded', 'trip_status'],

@@ -98,7 +98,7 @@ const Template30_DigitalModern = ({ receiptData, copyType }) => {
             <div><span style={{ fontSize: '7px', color: '#94a3b8' }}>STUDENT</span><br /><span style={{ fontWeight: '600' }}>{student?.full_name || ''}</span></div>
             <div><span style={{ fontSize: '7px', color: '#94a3b8' }}>PARENT</span><br /><span>{student?.father_name || ''}</span></div>
             <div><span style={{ fontSize: '7px', color: '#94a3b8' }}>CLASS</span><br /><span>{student?.class?.name || ''} {student?.section?.name ? `(${student.section.name})` : ''}</span></div>
-            <div><span style={{ fontSize: '7px', color: '#94a3b8' }}>ADM NO</span><br /><span style={{ fontWeight: '600', color: accent }}>{student?.school_code || student?.admission_no || ''}</span></div>
+            <div><span style={{ fontSize: '7px', color: '#94a3b8' }}>ADM NO</span><br /><span style={{ fontWeight: '600', color: accent }}>{student?.enrollment_id || student?.enrollment_id || ''}</span></div>
           </div>
 
           {/* Fee Items - Card Layout */}

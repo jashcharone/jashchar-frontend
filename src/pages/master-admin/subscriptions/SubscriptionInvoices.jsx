@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { formatDate } from '@/utils/dateUtils';
 import { supabase } from '@/lib/customSupabaseClient';
 import DashboardLayout from '@/components/DashboardLayout';
@@ -316,7 +316,7 @@ const SubscriptionInvoices = () => {
                                         <img src={invoice.school?.logo_url || `https://ui-avatars.com/api/?name=${(invoice.school?.name || 'S').charAt(0)}&background=random&color=fff`} alt="" className="w-8 h-8 rounded-full" />
                                         {invoice.school?.name || 'Unknown School'}
                                     </td>
-                                    <td className="px-6 py-4 font-semibold">₹{(invoice.total_amount || invoice.amount || 0).toFixed(2)}</td>
+                                    <td className="px-6 py-4 font-semibold">?{(invoice.total_amount || invoice.amount || 0).toFixed(2)}</td>
                                     <td className="px-6 py-4">{invoice.due_date ? formatDate(invoice.due_date) : 'N/A'}</td>
                                     <td className="px-6 py-4"><Badge className={getStatusBadge(invoice.payment_status)}>{invoice.payment_status || 'Pending'}</Badge></td>
                                     <td className="px-6 py-4 text-center space-x-2">

@@ -62,7 +62,7 @@ const Template08_GradientSunset = ({ receiptData, copyType }) => {
         <div style={{ flex: 1, backgroundColor: '#fff', borderRadius: '8px', padding: '6px 10px', boxShadow: '0 1px 4px rgba(0,0,0,0.1)' }}>
           <div style={{ marginBottom: '2px' }}><strong style={{ color: '#ff6b6b' }}>Student:</strong> <strong>{student?.full_name || '-'}</strong></div>
           <div style={{ marginBottom: '2px' }}><strong style={{ color: '#ff6b6b' }}>Father:</strong> {student?.father_name || '-'}</div>
-          <div><strong style={{ color: '#ff6b6b' }}>Adm#:</strong> {student?.school_code || '-'} | <strong style={{ color: '#ff6b6b' }}>Class:</strong> {student?.class?.name || '-'}{student?.section?.name ? `(${student.section.name})` : ''}</div>
+          <div><strong style={{ color: '#ff6b6b' }}>Adm#:</strong> {student?.enrollment_id || '-'} | <strong style={{ color: '#ff6b6b' }}>Class:</strong> {student?.class?.name || '-'}{student?.section?.name ? `(${student.section.name})` : ''}</div>
         </div>
         <div style={{ flex: 1, backgroundColor: '#fff', borderRadius: '8px', padding: '6px 10px', boxShadow: '0 1px 4px rgba(0,0,0,0.1)' }}>
           <div style={{ marginBottom: '2px' }}><strong style={{ color: '#ffa726' }}>Receipt:</strong> {transactionId || '-'}</div>

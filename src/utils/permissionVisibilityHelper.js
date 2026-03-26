@@ -1,4 +1,4 @@
-﻿import { SIDEBAR_TO_MODULE_MAP } from '@/lib/moduleMapping';
+import { SIDEBAR_TO_MODULE_MAP } from '@/lib/moduleMapping';
 import { ALL_MODULES } from '@/config/modules';
 
 /**

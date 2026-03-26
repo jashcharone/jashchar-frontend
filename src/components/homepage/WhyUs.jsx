@@ -1,4 +1,4 @@
-﻿import React from 'react';
+import React from 'react';
 import { motion } from 'framer-motion';
 import { Shield, Headphones, Zap, Globe, Layout, MessageSquare, IndianRupee, RefreshCw, Award, Star, Trophy, Lightbulb, Check, Heart } from 'lucide-react';
 

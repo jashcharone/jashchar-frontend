@@ -1,4 +1,4 @@
-﻿import { supabase } from '@/lib/customSupabaseClient';
+import { supabase } from '@/lib/customSupabaseClient';
 
 /**
  * Verify if a School Owner has permissions for all modules in their plan.

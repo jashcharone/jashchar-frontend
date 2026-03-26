@@ -1,11 +1,11 @@
-﻿import React from 'react';
+import React from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
 import { useToast } from '@/components/ui/use-toast';
 
 const EditStudentPanelProfile = () => {
     const { toast } = useToast();
     toast({
-        title: "ðŸš§ Feature In Progress ðŸš§",
+        title: "🚧 Feature In Progress 🚧",
         description: "This is the student-facing edit page. It will show only the fields enabled by the school owner. You can request its full functionality!",
     });
 

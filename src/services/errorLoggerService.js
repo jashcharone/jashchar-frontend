@@ -1,4 +1,4 @@
-﻿import axios from 'axios';
+import axios from 'axios';
 import { supabase } from '@/lib/customSupabaseClient';
 import { getApiBaseUrl } from '@/utils/platform';
 

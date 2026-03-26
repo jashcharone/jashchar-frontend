@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -99,7 +99,7 @@ const SchoolOwnerDiagnostics = () => {
     if (status === 'scanning' && currentIndex < queue.length) {
       const item = queue[currentIndex];
       setCurrentItem(item);
-      addLog(`Scanning: ${item.category} † ${item.name} (${item.path})`, 'info');
+      addLog(`Scanning: ${item.category} � ${item.name} (${item.path})`, 'info');
       
       // If component is missing in map, fail immediately
       if (!LOCAL_COMPONENT_MAP[item.path]) {

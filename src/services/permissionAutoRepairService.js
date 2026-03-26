@@ -1,4 +1,4 @@
-﻿import { supabase } from '@/lib/customSupabaseClient';
+import { supabase } from '@/lib/customSupabaseClient';
 import { syncPlanModulesToSchoolOwnerPermissions } from '@/services/planModuleSyncService';
 
 /**

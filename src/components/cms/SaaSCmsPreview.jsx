@@ -1,4 +1,4 @@
-﻿import React from 'react';
+import React from 'react';
 import { motion } from 'framer-motion';
 import { HomepageHeader } from '@/components/homepage/Header';
 import Hero from '@/components/homepage/Hero';

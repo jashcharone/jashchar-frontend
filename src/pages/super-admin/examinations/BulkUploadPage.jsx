@@ -291,7 +291,7 @@ const BulkUploadPage = () => {
         const errors = [];
 
         // Check required fields
-        if (!row['Roll Number'] && !row['roll_number'] && !row['admission_number']) {
+        if (!row['Roll Number'] && !row['roll_number'] && !row['enrollment_id']) {
             errors.push('Missing student identifier');
         }
 

@@ -1,4 +1,4 @@
-﻿import { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { initializeSystemOnStartup } from '@/services/initializationService';
 import { autoRepairAllSchoolOwnerPermissions } from '@/services/permissionAutoRepairService';
 import { getSchoolOwnerProfile } from '@/services/schoolOwnerProfileService';

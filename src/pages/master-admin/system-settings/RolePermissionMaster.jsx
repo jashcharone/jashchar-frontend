@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { supabase } from '@/lib/customSupabaseClient';
 import DashboardLayout from '@/components/DashboardLayout';
 import { Button } from '@/components/ui/button';
@@ -649,7 +649,7 @@ const RolePermissionMaster = () => {
                                     Configure access for modules enabled in this organization's subscription plan.
                                     {selectedRole.name !== 'School Owner' && (
                                         <span className="block text-amber-600 mt-1">
-                                             ï¸ Only School Owner can be assigned permissions initially.
+                                             ️ Only School Owner can be assigned permissions initially.
                                         </span>
                                     )}
                                 </p>

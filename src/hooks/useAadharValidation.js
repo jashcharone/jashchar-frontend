@@ -1,4 +1,4 @@
-﻿import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback } from 'react';
 import { supabase } from '@/lib/customSupabaseClient';
 
 export const useAadharValidation = (initialError = '') => {
@@ -28,14 +28,14 @@ export const useAadharValidation = (initialError = '') => {
             first_name, 
             last_name, 
             full_name,
-            school_code,
+            enrollment_id,
             organization_id,
             organizations:organization_id (id, name, code),
             branches:branch_id (id, branch_name, branch_code)
           `)
           .eq('aadhar_no', aadharNumber);
         
-        // 🔒 IMPORTANT: Only check duplicates within SAME organization
+        // ?? IMPORTANT: Only check duplicates within SAME organization
         if (organizationId) {
           query = query.eq('organization_id', organizationId);
         }
@@ -61,7 +61,7 @@ export const useAadharValidation = (initialError = '') => {
           // Store duplicate details for display
           setDuplicateDetails({
             studentName,
-            admissionNo: student.school_code,
+            enrollmentId: student.enrollment_id,
             organizationName: orgName,
             branchName: branchName
           });

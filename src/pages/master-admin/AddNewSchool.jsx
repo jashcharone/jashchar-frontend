@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { ArrowLeft, Building, User, Save, Eye, EyeOff, UploadCloud, Image, Loader2, AlertCircle } from 'lucide-react';
@@ -50,9 +50,9 @@ const AddNewSchool = () => {
     address: '',
     board: '', // Added Board
     currency: 'INR',
-    currencySymbol: '₹',
-    school_code_prefix: 'SCH',
-    school_code_number: Math.floor(100000 + Math.random() * 900000).toString(),
+    currencySymbol: '?',
+    enrollment_id_prefix: 'SCH',
+    enrollment_id_number: Math.floor(100000 + Math.random() * 900000).toString(),
     domainType: 'Default',
     subscription_plan: '',
     status: 'Active',
@@ -382,8 +382,8 @@ const AddNewSchool = () => {
           logo_url: logoUrl,
           currency: formData.currency,
           currency_symbol: formData.currencySymbol,
-          school_code_prefix: formData.school_code_prefix,
-          school_code_number: formData.school_code_number,
+          enrollment_id_prefix: formData.enrollment_id_prefix,
+          enrollment_id_number: formData.enrollment_id_number,
           domain_type: formData.domainType,
           status: formData.status || 'Active'
         })
@@ -561,8 +561,8 @@ const AddNewSchool = () => {
               </Select>
             </div>
             <div><Label>Currency Symbol</Label><Input value={formData.currencySymbol} readOnly className="bg-muted" /></div>
-            <div><Label>Branch Code Prefix</Label><Input value={formData.school_code_prefix} readOnly className="bg-muted" /></div>
-            <div><Label>Branch Code Number</Label><Input value={formData.school_code_number} readOnly className="bg-muted" /></div>
+            <div><Label>Branch Code Prefix</Label><Input value={formData.enrollment_id_prefix} readOnly className="bg-muted" /></div>
+            <div><Label>Branch Code Number</Label><Input value={formData.enrollment_id_number} readOnly className="bg-muted" /></div>
             
             <div className="md:col-span-2">
                 <Label required>Branch URL Alias (Subdomain)</Label>
@@ -587,7 +587,7 @@ const AddNewSchool = () => {
                 <SelectContent>
                   {subscriptionPlans.map(plan => (
                     <SelectItem key={plan.id} value={plan.id}>
-                      {plan.name} ({plan.plan_type} - {plan.plan_type === 'Prepaid' ? `₹${plan.price}` : 'Usage Based'})
+                      {plan.name} ({plan.plan_type} - {plan.plan_type === 'Prepaid' ? `?${plan.price}` : 'Usage Based'})
                     </SelectItem>
                   ))}
                 </SelectContent>

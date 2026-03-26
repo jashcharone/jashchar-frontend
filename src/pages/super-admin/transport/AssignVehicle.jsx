@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import DashboardLayout from '@/components/DashboardLayout';
 import { supabase } from '@/lib/customSupabaseClient';
@@ -315,7 +315,7 @@ const AssignVehicle = () => {
           </div>
         </div>
 
-        {/* ═══════ OPTIMIZATION INSIGHTS (Day 23 Enhancement) ═══════ */}
+        {/* ------- OPTIMIZATION INSIGHTS (Day 23 Enhancement) ------- */}
         {!loading && assignments.length > 0 && (
           <div className="mt-6 bg-card text-card-foreground rounded-xl shadow-lg p-6">
             <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
@@ -335,13 +335,13 @@ const AssignVehicle = () => {
                         <Route className="h-5 w-5 text-green-600" />
                       )}
                       <span className="font-semibold text-sm">
-                        {unassignedRoutes.length > 0 ? `${unassignedRoutes.length} Routes Without Vehicle` : 'All Routes Assigned ✅'}
+                        {unassignedRoutes.length > 0 ? `${unassignedRoutes.length} Routes Without Vehicle` : 'All Routes Assigned ?'}
                       </span>
                     </div>
                     {unassignedRoutes.length > 0 && (
                       <ul className="text-xs text-gray-600 dark:text-gray-400 space-y-1 mt-2">
                         {unassignedRoutes.slice(0, 5).map(r => (
-                          <li key={r.id}>• {r.route_title}</li>
+                          <li key={r.id}>� {r.route_title}</li>
                         ))}
                       </ul>
                     )}
@@ -358,13 +358,13 @@ const AssignVehicle = () => {
                     <div className="flex items-center gap-2 mb-2">
                       <Bus className="h-5 w-5 text-blue-600" />
                       <span className="font-semibold text-sm">
-                        {unassignedVehicles.length > 0 ? `${unassignedVehicles.length} Idle Vehicles` : 'All Vehicles Utilized ✅'}
+                        {unassignedVehicles.length > 0 ? `${unassignedVehicles.length} Idle Vehicles` : 'All Vehicles Utilized ?'}
                       </span>
                     </div>
                     {unassignedVehicles.length > 0 && (
                       <ul className="text-xs text-gray-600 dark:text-gray-400 space-y-1 mt-2">
                         {unassignedVehicles.slice(0, 5).map(v => (
-                          <li key={v.id}>• {v.vehicle_number} (Cap: {v.seating_capacity || 'N/A'})</li>
+                          <li key={v.id}>� {v.vehicle_number} (Cap: {v.seating_capacity || 'N/A'})</li>
                         ))}
                       </ul>
                     )}

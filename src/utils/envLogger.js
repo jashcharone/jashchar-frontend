@@ -1,4 +1,4 @@
-﻿import { loadSupabaseEnv } from "@/services/envLoader";
+import { loadSupabaseEnv } from "@/services/envLoader";
 
 export const maskEnvValue = (value) => {
   if (!value) return "MISSING";
@@ -9,16 +9,16 @@ export const maskEnvValue = (value) => {
 export const logEnvStatus = () => {
   const { loaded, url, key, errors } = loadSupabaseEnv();
   
-  console.groupCollapsed("ðŸ›¡ï¸ Supabase Environment Status");
-  console.log(`Status: ${loaded ? "✅ LOADED" : "❌ MISSING / INVALID"}`);
+  console.groupCollapsed("🛡️ Supabase Environment Status");
+  console.log(`Status: ${loaded ? "? LOADED" : "? MISSING / INVALID"}`);
   console.log(`URL: ${maskEnvValue(import.meta.env.VITE_SUPABASE_URL)}`);
   console.log(`Key: ${maskEnvValue(import.meta.env.VITE_SUPABASE_ANON_KEY)}`);
   
   if (!loaded) {
     console.error("Errors:", errors);
-    console.warn(" ï¸ APP RUNNING IN SAFE MOCK MODE (DB Disconnected)");
+    console.warn(" ️ APP RUNNING IN SAFE MOCK MODE (DB Disconnected)");
   } else {
-    console.log("✅ Safe Mode: INACTIVE (Normal Operation)");
+    console.log("? Safe Mode: INACTIVE (Normal Operation)");
   }
   console.groupEnd();
 };

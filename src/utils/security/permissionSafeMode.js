@@ -1,4 +1,4 @@
-﻿/**
+/**
  * PERMISSION SAFE MODE
  * Enforces "Append-Only" logic for Roles and Permissions.
  */

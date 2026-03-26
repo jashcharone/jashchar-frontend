@@ -178,7 +178,7 @@ const RegisterVisitor = () => {
                     <SelectContent>
                       {students.map(s => (
                         <SelectItem key={s.student_id || s.id} value={s.student_id || s.id}>
-                          {s.student?.first_name || s.first_name} {s.student?.last_name || s.last_name} ({s.student?.admission_number || s.admission_number})
+                          {s.student?.first_name || s.first_name} {s.student?.last_name || s.last_name} ({s.student?.enrollment_id || s.enrollment_id})
                         </SelectItem>
                       ))}
                     </SelectContent>

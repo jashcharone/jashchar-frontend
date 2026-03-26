@@ -190,7 +190,7 @@ const HostelReportGenerator = () => {
       
       // Student Info
       student_id: `STD${String(i + 1).padStart(4, '0')}`,
-      admission_number: `ADM${2024}${String(i + 1).padStart(4, '0')}`,
+      enrollment_id: `ADM${2024}${String(i + 1).padStart(4, '0')}`,
       student_name: ['Rahul Sharma', 'Priya Verma', 'Amit Singh', 'Sneha Patel', 'Raj Kumar'][i % 5],
       class_name: ['6th', '7th', '8th', '9th', '10th', '11th', '12th'][i % 7],
       section_name: ['A', 'B', 'C'][i % 3],

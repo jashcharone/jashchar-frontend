@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { useBranch } from '@/contexts/BranchContext';
@@ -77,10 +77,10 @@ const AttendanceByDate = () => {
 
         try {
             // 1. Fetch students
-            // Note: In student_profiles, admission number is stored as 'school_code'
+            // Note: In student_profiles, admission number is stored as 'enrollment_id'
             let studentQuery = supabase
                 .from('student_profiles')
-                .select('id, full_name, school_code, roll_number')
+                .select('id, full_name, enrollment_id, roll_number')
                 .eq('branch_id', branchId)
                 .eq('class_id', filters.class_id)
                 .eq('section_id', filters.section_id)

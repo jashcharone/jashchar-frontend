@@ -509,7 +509,7 @@ const PerformanceDashboard = () => {
                                                 <TableRow>
                                                     <TableHead className="w-12">Rank</TableHead>
                                                     <TableHead>Student</TableHead>
-                                                    <TableHead>Admission No</TableHead>
+                                                    <TableHead>Enroll ID</TableHead>
                                                     <TableHead className="text-right">Obtained</TableHead>
                                                     <TableHead className="text-right">Percentage</TableHead>
                                                     <TableHead className="text-center">Grade</TableHead>
@@ -534,7 +534,7 @@ const PerformanceDashboard = () => {
                                                         <TableCell className="font-medium">
                                                             {student.students?.first_name} {student.students?.last_name}
                                                         </TableCell>
-                                                        <TableCell>{student.students?.admission_no}</TableCell>
+                                                        <TableCell>{student.students?.enrollment_id}</TableCell>
                                                         <TableCell className="text-right">
                                                             {student.obtained_marks}/{student.total_marks}
                                                         </TableCell>

@@ -1,4 +1,4 @@
-﻿import { ROUTES } from '@/registry/routeRegistry';
+import { ROUTES } from '@/registry/routeRegistry';
 
 /**
  * HORIZON SAFETY SHIELD - PROJECT INTEGRITY VALIDATOR

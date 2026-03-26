@@ -1,4 +1,4 @@
-﻿export class DemoLogger {
+export class DemoLogger {
   constructor(setLogState) {
     this.setLogState = setLogState;
     this.logs = [];

@@ -47,7 +47,7 @@ export default function StudentProfileTimeline({ studentId, student }) {
           type: 'admission',
           date: student.admission_date,
           title: 'Student Admitted',
-          description: `Admitted to ${student.classes?.name || ''} ${student.sections?.name || ''}. Admission No: ${student.school_code || 'N/A'}`,
+          description: `Admitted to ${student.classes?.name || ''} ${student.sections?.name || ''}. Enroll ID: ${student.enrollment_id || 'N/A'}`,
         });
       }
 

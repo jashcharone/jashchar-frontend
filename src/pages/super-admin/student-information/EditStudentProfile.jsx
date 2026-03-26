@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import DashboardLayout from '@/components/DashboardLayout';
 import { supabase } from '@/lib/customSupabaseClient';
@@ -27,7 +27,7 @@ const ICON_MAP = {
   BookOpen, User, Key, Users, Bus, FileText, UserCog, Shield, Files, Building, BedDouble, GraduationCap, Phone, MapPin, School, Home, Heart, CreditCard, Mail
 };
 
-// 🌟 WORLD-CLASS Premium Section Card Component (Same as StudentAdmission)
+// ?? WORLD-CLASS Premium Section Card Component (Same as StudentAdmission)
 const SectionBox = ({ icon, title, children, className, collapsible = false, defaultOpen = true, badge, badgeColor = 'primary', gradient = 'blue' }) => {
   const Icon = icon || FileText;
   const [isOpen, setIsOpen] = useState(defaultOpen);
@@ -132,8 +132,8 @@ const FieldRenderer = ({ field, formData, customFieldValues, onChange, masterDat
     // Handle System Fields
     if (field.is_system) {
         switch (field.field_name) {
-             case 'admission_no':
-                  return <div className="lg:col-span-1">{label}<Input value={formData.school_code || ''} disabled className="bg-muted" /></div>;
+             case 'enrollment_id':
+                  return <div className="lg:col-span-1">{label}<Input value={formData.enrollment_id || ''} disabled className="bg-muted" /></div>;
              case 'session':
                   return <div className="lg:col-span-1">{label}<Select value={formData.session_id} onValueChange={v => onChange('session_id', v, true)}><SelectTrigger><SelectValue placeholder="Select Session" /></SelectTrigger><SelectContent>{masterData.sessions.map(s => <SelectItem key={s.id} value={s.id}>{s.name} {s.is_active ? '(Active)' : ''}</SelectItem>)}</SelectContent></Select></div>;
              case 'class':
@@ -565,7 +565,7 @@ const EditStudentProfile = () => {
           const { data, error } = await supabase.from('route_pickup_point_mappings').select('pickup_point:transport_pickup_points(id, name), monthly_fees, pickup_time').eq('route_id', formData.transport_route_id);
           if (data) setPickupPoints(data);
           
-          // 🚗 AUTO-FETCH Vehicle & Driver info from route_vehicle_assignments
+          // ?? AUTO-FETCH Vehicle & Driver info from route_vehicle_assignments
           const { data: assignmentData } = await supabase
             .from('route_vehicle_assignments')
             .select('vehicle:vehicle_id(vehicle_number, driver_name, driver_contact)')
@@ -739,7 +739,7 @@ const EditStudentProfile = () => {
                 transport_route_id: formData.transport_route_id,
                 transport_pickup_point_id: formData.transport_pickup_point_id,
                 transport_fee: formData.transport_fee,
-                billing_cycle: transportBillingCycle, // 🔧 Save billing_cycle from route
+                billing_cycle: transportBillingCycle, // ?? Save billing_cycle from route
                 pickup_time: formData.pickup_time,
                 drop_time: formData.drop_time,
                 vehicle_number: formData.vehicle_number,
@@ -1097,7 +1097,7 @@ const EditStudentProfile = () => {
                  );
             })}
 
-            {/* 📸 PHOTO GALLERY - All Photos in One Place at the End */}
+            {/* ?? PHOTO GALLERY - All Photos in One Place at the End */}
             <SectionBox icon={Camera} title="Photo Gallery" badge="Upload Photos" badgeColor="info" gradient="purple">
               <div className="col-span-full space-y-6">
                 {/* Student Identity Header */}
@@ -1115,8 +1115,8 @@ const EditStudentProfile = () => {
                         {formData.full_name || formData.first_name || 'Student'}
                       </h3>
                       <p className="text-xs text-muted-foreground mt-1">
-                        {formData.admission_no && `Admission No: ${formData.admission_no}`}
-                        {formData.roll_number && ` • Roll: ${formData.roll_number}`}
+                        {formData.enrollment_id && `Enroll ID: ${formData.enrollment_id}`}
+                        {formData.roll_number && ` � Roll: ${formData.roll_number}`}
                       </p>
                     </div>
                   </div>

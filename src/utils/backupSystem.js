@@ -1,4 +1,4 @@
-﻿/**
+/**
  * HORIZON SAFETY SHIELD - AUTO SNAPSHOT BACKUP SYSTEM
  * Automatically creates local backups of critical state before dangerous operations.
  */

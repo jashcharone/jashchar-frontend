@@ -199,7 +199,7 @@ const SOSAlerts = () => {
               <div><Label>Student *</Label>
                 <Select value={triggerForm.student_id} onValueChange={(v) => setTriggerForm(p => ({ ...p, student_id: v }))}>
                   <SelectTrigger><SelectValue placeholder="Select student" /></SelectTrigger>
-                  <SelectContent>{students.map(s => <SelectItem key={s.id} value={s.id}>{s.full_name} ({s.admission_number})</SelectItem>)}</SelectContent>
+                  <SelectContent>{students.map(s => <SelectItem key={s.id} value={s.id}>{s.full_name} ({s.enrollment_id})</SelectItem>)}</SelectContent>
                 </Select>
               </div>
               <div><Label>Hostel</Label>

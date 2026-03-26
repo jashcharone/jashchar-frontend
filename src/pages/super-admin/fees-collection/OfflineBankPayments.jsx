@@ -83,7 +83,7 @@ const OfflineBankPayments = () => {
                 .select(`
                     *,
                     student:student_id(
-                        id, full_name, school_code, phone, photo_url,
+                        id, full_name, enrollment_id, phone, photo_url,
                         classes!student_profiles_class_id_fkey(name),
                         sections!student_profiles_section_id_fkey(name)
                     )
@@ -128,7 +128,7 @@ const OfflineBankPayments = () => {
         if (searchKeyword) {
             const keyword = searchKeyword.toLowerCase();
             const studentName = p.student?.full_name?.toLowerCase() || '';
-            const admNo = p.student?.school_code?.toLowerCase() || '';
+            const admNo = p.student?.enrollment_id?.toLowerCase() || '';
             const refNo = p.reference_no?.toLowerCase() || '';
             
             if (!studentName.includes(keyword) && !admNo.includes(keyword) && !refNo.includes(keyword)) {
@@ -465,7 +465,7 @@ const OfflineBankPayments = () => {
                                                         <div>
                                                             <p className="font-medium">{payment.student?.full_name || 'Unknown'}</p>
                                                             <p className="text-xs text-muted-foreground">
-                                                                {payment.student?.school_code} • {payment.student?.classes?.name || ''} {payment.student?.sections?.name || ''}
+                                                                {payment.student?.enrollment_id} • {payment.student?.classes?.name || ''} {payment.student?.sections?.name || ''}
                                                             </p>
                                                         </div>
                                                     </div>
@@ -552,7 +552,7 @@ const OfflineBankPayments = () => {
                                     <div>
                                         <p className="font-semibold">{selectedPayment.student?.full_name}</p>
                                         <p className="text-sm text-muted-foreground">
-                                            {selectedPayment.student?.school_code} • {selectedPayment.student?.classes?.name}
+                                            {selectedPayment.student?.enrollment_id} • {selectedPayment.student?.classes?.name}
                                         </p>
                                     </div>
                                 </div>

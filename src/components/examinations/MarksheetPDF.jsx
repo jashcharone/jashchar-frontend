@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { formatDate } from '@/utils/dateUtils';
 import { supabase } from '@/lib/customSupabaseClient';
 import { Loader2 } from 'lucide-react';
@@ -81,7 +81,7 @@ const MarksheetPDF = React.forwardRef(({ studentId, templateId, branchId }, ref)
                     <div className="space-y-1">
                         {renderField(true, 'Student Name', student.full_name)}
                         {renderField(template.show_roll_no, 'Roll No', student.roll_number)}
-                        {renderField(template.show_admission_no, 'Admission No', student.school_code)}
+                        {renderField(template.show_enrollment_id, 'Enroll ID', student.enrollment_id)}
                         {renderField(template.show_father_name, "Father's Name", student.father_name)}
                         {renderField(template.show_mother_name, "Mother's Name", student.mother_name)}
                     </div>

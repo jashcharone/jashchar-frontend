@@ -30,7 +30,7 @@ export const fetchStudentsFromSupabase = async ({
   if (sectionId) query = query.eq('section_id', sectionId);
   if (categoryId) query = query.eq('category_id', categoryId);
   if (search) {
-    query = query.or(`first_name.ilike.%${search}%,last_name.ilike.%${search}%,school_code.ilike.%${search}%`);
+    query = query.or(`first_name.ilike.%${search}%,last_name.ilike.%${search}%,enrollment_id.ilike.%${search}%`);
   }
 
   const { data: students, error } = await query.order('first_name');
@@ -63,7 +63,7 @@ export const fetchStudentsFromSupabase = async ({
   // Step 5: Enrich students with related data
   return students.map(s => ({
     ...s,
-    admission_number: s.school_code || s.admission_no || null,
+    enrollment_id: s.enrollment_id || s.enrollment_id || null,
     class: classMap[s.class_id] || null,
     section: sectionMap[s.section_id] || null,
     category: categoryMap[s.category_id] || null
@@ -86,7 +86,7 @@ export const fetchFeesDataFromSupabase = async ({
       *,
       student:student_profiles(
         id, 
-        school_code, 
+        enrollment_id, 
         first_name, 
         last_name,
         class_id,
@@ -118,7 +118,7 @@ export const fetchFeesDataFromSupabase = async ({
     fee_head: row.note || 'Fee Payment',
     student: row.student ? {
       ...row.student,
-      admission_number: row.student.school_code
+      enrollment_id: row.student.enrollment_id
     } : null
   }));
   
@@ -143,7 +143,7 @@ export const fetchTransportDataFromSupabase = async ({
     .from('student_transport_details')
     .select(`
       *,
-      student:student_profiles(id, school_code, first_name, last_name, class_id, class:classes(id, name)),
+      student:student_profiles(id, enrollment_id, first_name, last_name, class_id, class:classes(id, name)),
       route:transport_routes(id, name, description)
     `)
     .eq('branch_id', branchId)
@@ -169,7 +169,7 @@ export const fetchTransportDataFromSupabase = async ({
     transport_fee: row.transport_fee || 0,
     student: row.student ? {
       ...row.student,
-      admission_number: row.student.school_code,
+      enrollment_id: row.student.enrollment_id,
       class_name: row.student?.class?.name || ''
     } : null
   }));
@@ -188,7 +188,7 @@ export const fetchHostelDataFromSupabase = async ({
     .from('student_hostel_details')
     .select(`
       *,
-      student:student_profiles(id, school_code, first_name, last_name, class_id, class:classes(id, name)),
+      student:student_profiles(id, enrollment_id, first_name, last_name, class_id, class:classes(id, name)),
       hostel:hostels(id, name, type),
       room:hostel_rooms(id, room_number, capacity, floor)
     `)
@@ -214,7 +214,7 @@ export const fetchHostelDataFromSupabase = async ({
     check_out_date: row.check_out_date || '',
     student: row.student ? {
       ...row.student,
-      admission_number: row.student.school_code,
+      enrollment_id: row.student.enrollment_id,
       class_name: row.student?.class?.name || ''
     } : null
   }));
@@ -361,7 +361,7 @@ export const fetchExamDataFromSupabase = async ({
     .from('exam_marks')
     .select(`
       *,
-      student:student_profiles(id, school_code, first_name, last_name, class:classes(id, name))
+      student:student_profiles(id, enrollment_id, first_name, last_name, class:classes(id, name))
     `)
     .in('exam_subject_id', esIds);
 
@@ -387,7 +387,7 @@ export const fetchExamDataFromSupabase = async ({
       percentage: es.max_marks ? ((row.marks || 0) / es.max_marks * 100).toFixed(2) : 0,
       student: row.student ? {
         ...row.student,
-        admission_number: row.student.school_code,
+        enrollment_id: row.student.enrollment_id,
         class_name: row.student?.class?.name || ''
       } : null
     };
@@ -410,7 +410,7 @@ export const fetchFinanceDataFromSupabase = async ({
       *,
       student:student_profiles(
         id, 
-        school_code, 
+        enrollment_id, 
         first_name, 
         last_name, 
         class_id, 
@@ -459,8 +459,8 @@ export const fetchFinanceDataFromSupabase = async ({
       
       // Student info
       student_name: row.student ? `${row.student.first_name || ''} ${row.student.last_name || ''}`.trim() : '',
-      admission_number: row.student?.school_code || '',
-      admission_no: row.student?.school_code || '',
+      enrollment_id: row.student?.enrollment_id || '',
+      enrollment_id: row.student?.enrollment_id || '',
       class_name: row.student?.class?.name || '',
       section_name: row.student?.section?.name || '',
       class_id: row.student?.class_id || null,
@@ -503,7 +503,7 @@ export const fetchFinanceDataFromSupabase = async ({
       // Original student object
       student: row.student ? {
         ...row.student,
-        admission_number: row.student.school_code
+        enrollment_id: row.student.enrollment_id
       } : null
     };
   });
@@ -945,7 +945,7 @@ export const fetchAttendanceDataFromSupabase = async ({
     .from('student_attendance')
     .select(`
       *,
-      student:student_profiles(id, school_code, first_name, last_name, class_id)
+      student:student_profiles(id, enrollment_id, first_name, last_name, class_id)
     `)
     .eq('branch_id', branchId)
     .eq('session_id', sessionId);
@@ -966,7 +966,7 @@ export const fetchAttendanceDataFromSupabase = async ({
     ...row,
     student: row.student ? {
       ...row.student,
-      admission_number: row.student.school_code
+      enrollment_id: row.student.enrollment_id
     } : null
   }));
 };
@@ -1025,7 +1025,7 @@ export const fetchHomeworkEvaluationDataFromSupabase = async ({
     .from('homework_evaluations')
     .select(`
       *,
-      student:student_profiles(id, school_code, first_name, last_name, class:classes(id, name)),
+      student:student_profiles(id, enrollment_id, first_name, last_name, class:classes(id, name)),
       homework:homeworks(id, description, subject_id, homework_date, submission_date, max_marks, subject:subjects(id, name))
     `)
     .eq('branch_id', branchId);
@@ -1052,7 +1052,7 @@ export const fetchHomeworkEvaluationDataFromSupabase = async ({
     status: row.status || 'Pending',
     student: row.student ? {
       ...row.student,
-      admission_number: row.student.school_code,
+      enrollment_id: row.student.enrollment_id,
       class_name: row.student?.class?.name || ''
     } : null
   }));
@@ -1071,7 +1071,7 @@ export const fetchOnlineExamDataFromSupabase = async ({
     .from('student_quiz_attempts')
     .select(`
       *,
-      student:student_profiles(id, school_code, first_name, last_name, class:classes(id, name)),
+      student:student_profiles(id, enrollment_id, first_name, last_name, class:classes(id, name)),
       quiz:online_exams(id, title, total_marks, passing_marks, time_limit)
     `)
     .eq('branch_id', branchId);
@@ -1099,7 +1099,7 @@ export const fetchOnlineExamDataFromSupabase = async ({
     result: row.correct_answers >= (row.quiz?.passing_marks || 0) ? 'Pass' : 'Fail',
     student: row.student ? {
       ...row.student,
-      admission_number: row.student.school_code,
+      enrollment_id: row.student.enrollment_id,
       class_name: row.student?.class?.name || ''
     } : null
   }));

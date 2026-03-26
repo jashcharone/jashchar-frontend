@@ -63,7 +63,7 @@ const Template12_NeoBrutalist = ({ receiptData, copyType }) => {
               <td style={{ width: '25%' }}>NAME: {student?.full_name || '-'}</td>
               <td style={{ width: '25%' }}>FATHER: {student?.father_name || '-'}</td>
               <td style={{ width: '25%' }}>CLASS: {student?.class?.name || '-'}{student?.section?.name ? ` (${student.section.name})` : ''}</td>
-              <td style={{ width: '25%' }}>ADM#: {student?.school_code || '-'}</td>
+              <td style={{ width: '25%' }}>ADM#: {student?.enrollment_id || '-'}</td>
             </tr>
           </tbody>
         </table>

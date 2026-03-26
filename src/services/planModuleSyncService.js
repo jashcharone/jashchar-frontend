@@ -1,4 +1,4 @@
-﻿import { supabase } from '@/lib/customSupabaseClient';
+import { supabase } from '@/lib/customSupabaseClient';
 import { ACADEMICS_MODULE } from '@/constants/academicsModule';
 
 /**

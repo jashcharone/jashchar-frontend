@@ -1,4 +1,4 @@
-﻿export const logFullDiagnostic = (diagnosticResult) => {
+export const logFullDiagnostic = (diagnosticResult) => {
   const timestamp = new Date().toISOString();
   const logEntry = {
     timestamp,
@@ -12,7 +12,7 @@
     // ignore
   }
 
-  console.log("ðŸ“‹ [DIAGNOSTIC REPORT SAVED]", logEntry);
+  console.log("📋 [DIAGNOSTIC REPORT SAVED]", logEntry);
 };
 
 export const exportDiagnosticReport = () => {

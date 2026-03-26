@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { supabase } from '@/lib/customSupabaseClient';
 import { useToast } from '@/components/ui/use-toast';
 import { Button } from '@/components/ui/button';
@@ -154,11 +154,11 @@ const SubscriptionPlans = () => {
                                         <td className="px-6 py-4 whitespace-nowrap"><Badge variant={plan.plan_type === 'Prepaid' ? 'secondary' : 'default'}>{plan.plan_type}</Badge></td>
                                         <td className="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground">
                                             {plan.plan_type === 'Prepaid' ? (
-                                                <span className="font-semibold">₹{plan.price || '0'}</span>
+                                                <span className="font-semibold">?{plan.price || '0'}</span>
                                             ) : (
                                                 <div className="flex flex-col text-xs">
-                                                    <span>Student: ₹{plan.per_student_charge || '0'}</span>
-                                                    <span>Staff: ₹{plan.per_staff_charge || '0'}</span>
+                                                    <span>Student: ?{plan.per_student_charge || '0'}</span>
+                                                    <span>Staff: ?{plan.per_staff_charge || '0'}</span>
                                                 </div>
                                             )}
                                         </td>

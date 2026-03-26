@@ -58,7 +58,7 @@ const Template10_MaterialCard = ({ receiptData, copyType }) => {
         <span style={chipStyle}>👤 {student?.full_name || '-'}</span>
         <span style={chipStyle}>👨 {student?.father_name || '-'}</span>
         <span style={chipStyle}>📚 {student?.class?.name || '-'}{student?.section?.name ? `(${student.section.name})` : ''}</span>
-        <span style={chipStyle}>🎫 {student?.school_code || '-'}</span>
+        <span style={chipStyle}>🎫 {student?.enrollment_id || '-'}</span>
         <span style={chipStyle}>📅 {receiptDate ? format(new Date(receiptDate), 'dd MMM yyyy') : '-'}</span>
         <span style={chipStyle}>💳 {paymentMode || 'Cash'}</span>
         <span style={chipStyle}>📖 {sessionName || '-'}</span>

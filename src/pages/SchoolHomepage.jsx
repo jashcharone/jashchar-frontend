@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { supabase } from '@/lib/customSupabaseClient';
 import { Button } from '@/components/ui/button';
@@ -169,7 +169,7 @@ const SchoolHomepage = () => {
                 </div>
                 <div className="bg-gray-900 py-4">
                     <div className="container mx-auto px-4 text-center text-xs text-gray-500">
-                        {settings.footer_copyright_text || 'COPYRIGHT Â© 2025. ALL RIGHTS RESERVED.'}
+                        {settings.footer_copyright_text || 'COPYRIGHT © 2025. ALL RIGHTS RESERVED.'}
                     </div>
                 </div>
             </footer>

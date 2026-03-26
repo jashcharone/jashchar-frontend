@@ -103,7 +103,7 @@ const StudentDashboard = () => {
     try {
       // 1. Fetch students
       const { data: students, error: studErr } = await supabase.from('student_profiles')
-        .select('id, full_name, gender, date_of_birth, phone, email, photo_url, admission_date, school_code, father_name, father_phone, mother_phone, guardian_phone, is_disabled, status, class_id, section_id, classes!student_profiles_class_id_fkey(id, name), sections!student_profiles_section_id_fkey(id, name), category_id, student_categories(id, name), transport_details_id, hostel_details_id, is_rte_student')
+        .select('id, full_name, gender, date_of_birth, phone, email, photo_url, admission_date, enrollment_id, father_name, father_phone, mother_phone, guardian_phone, is_disabled, status, class_id, section_id, classes!student_profiles_class_id_fkey(id, name), sections!student_profiles_section_id_fkey(id, name), category_id, student_categories(id, name), transport_details_id, hostel_details_id, is_rte_student')
         .eq('branch_id', selectedBranch.id)
         .eq('session_id', selectedSessionId)
         .order('created_at', { ascending: false });
@@ -471,7 +471,7 @@ const StudentDashboard = () => {
                           <div>
                             <p className="text-sm font-medium leading-tight">{student.full_name}</p>
                             <p className="text-xs text-muted-foreground">
-                              {student.classes?.name || '-'} {student.sections?.name ? `• ${student.sections.name}` : ''} {student.school_code ? `• ${student.school_code}` : ''}
+                              {student.classes?.name || '-'} {student.sections?.name ? `• ${student.sections.name}` : ''} {student.enrollment_id ? `• ${student.enrollment_id}` : ''}
                             </p>
                           </div>
                         </div>

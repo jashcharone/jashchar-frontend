@@ -219,7 +219,7 @@ const HostelAttendance = () => {
                     <TableRow>
                       <TableHead>#</TableHead>
                       <TableHead>Student</TableHead>
-                      <TableHead className="hidden sm:table-cell">Admission No</TableHead>
+                      <TableHead className="hidden sm:table-cell">Enroll ID</TableHead>
                       <TableHead className="hidden md:table-cell">Class</TableHead>
                       <TableHead className="hidden lg:table-cell">Hostel</TableHead>
                       <TableHead className="hidden lg:table-cell">Room</TableHead>
@@ -234,7 +234,7 @@ const HostelAttendance = () => {
                       <TableRow key={record.id}>
                         <TableCell className="font-medium">{idx + 1}</TableCell>
                         <TableCell className="text-sm">{record.student?.full_name || record.student?.first_name || '-'}</TableCell>
-                        <TableCell className="hidden sm:table-cell">{record.student?.admission_number || '-'}</TableCell>
+                        <TableCell className="hidden sm:table-cell">{record.student?.enrollment_id || '-'}</TableCell>
                         <TableCell className="hidden md:table-cell">
                           {record.student?.class?.name || '-'}
                           {record.student?.section?.name ? ` - ${record.student.section.name}` : ''}

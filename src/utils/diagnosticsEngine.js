@@ -1,4 +1,4 @@
-﻿import { BASE_SIDEBAR } from '@/config/sidebarConfig';
+import { BASE_SIDEBAR } from '@/config/sidebarConfig';
 
 // This configuration is now dynamic and future-proof.
 // It imports the single source of truth from sidebarConfig.js

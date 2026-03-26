@@ -1,4 +1,4 @@
-﻿/**
+/**
  * AUTOMATION VALIDATION SUITE
  * Verifies success criteria after each phase.
  */

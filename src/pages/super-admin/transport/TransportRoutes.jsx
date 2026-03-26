@@ -235,7 +235,7 @@ const TransportRoutes = () => {
         </Button>
 
         <div className="flex items-center justify-between mb-4">
-          <h1 className="text-2xl font-bold">🛣️ Transport Routes</h1>
+          <h1 className="text-2xl font-bold">Transport Routes</h1>
           <Button variant="outline" size="sm" onClick={handleExportCSV}>
             <Download className="mr-1 h-4 w-4" /> Export
           </Button>
@@ -383,7 +383,7 @@ const TransportRoutes = () => {
                                 {(route.start_point || route.end_point) && (
                                   <div className="text-xs text-muted-foreground flex items-center gap-1">
                                     <MapPin className="h-3 w-3" />
-                                    {route.start_point || '?'} → {route.end_point || '?'}
+                                    {route.start_point || '?'} ? {route.end_point || '?'}
                                   </div>
                                 )}
                               </td>

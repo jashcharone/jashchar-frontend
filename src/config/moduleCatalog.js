@@ -1,4 +1,4 @@
-﻿/**
+/**
  * MASTER MODULE CATALOG
  * 
  * This is the Single Source of Truth for all modules in the application.
@@ -281,7 +281,7 @@ export const MODULE_CATALOG = {
     slug: "reports",
     submodules: [
       { label: "Student Information", slug: "student_information" },
-      { label: "Finance Report", slug: "finance_report" },  // ✅ Changed from 'finance' to avoid duplicate
+      { label: "Finance Report", slug: "finance_report" },  // ? Changed from 'finance' to avoid duplicate
       { label: "Attendance", slug: "attendance" },
       { label: "Examinations", slug: "examinations" },
       { label: "Human Resource", slug: "human_resource" },

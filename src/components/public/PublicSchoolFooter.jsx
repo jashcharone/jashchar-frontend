@@ -1,4 +1,4 @@
-﻿import React from 'react';
+import React from 'react';
 import { Link } from 'react-router-dom';
 import { Facebook, Twitter, Youtube, Linkedin, Instagram, MapPin, Phone, Mail } from 'lucide-react';
 import { getSubdomain } from '@/utils/subdomain';
@@ -19,7 +19,7 @@ const PublicSchoolFooter = ({ school, settings, alias }) => {
   const contactEmail = settings.contact_email || '';
   const address = settings.address || '';
   const footerAboutText = settings.footer_about_text || settings.footer_text || "Providing quality education and fostering holistic development for future leaders.";
-  const copyrightText = settings.copyright_text || settings.footer_copyright_text || `Â© ${new Date().getFullYear()} ${settings.cms_title || school?.name}. All Rights Reserved.`;
+  const copyrightText = settings.copyright_text || settings.footer_copyright_text || `© ${new Date().getFullYear()} ${settings.cms_title || school?.name}. All Rights Reserved.`;
 
   return (
     <footer style={{ backgroundColor: footerBgColor, color: footerTextColor }} className="pt-16 pb-8">

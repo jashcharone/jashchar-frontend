@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import DashboardLayout from "@/components/DashboardLayout";
 import StatCard from "@/components/StatCard";
@@ -127,7 +127,7 @@ const MasterAdminDashboard = () => {
     { title: "Suspended Schools", value: stats.suspendedSchools || 0, icon: ShieldCheck, color: "bg-red-500" },
     { title: "Total Users", value: stats.totalUsers || 0, icon: Users, color: "bg-purple-500" },
     { title: "New Today", value: stats.newSchoolsToday || 0, icon: Clock, color: "bg-yellow-500" },
-    { title: "Total Revenue", value: `₹${stats.totalRevenue || 0}`, icon: IndianRupee, color: "bg-emerald-600" },
+    { title: "Total Revenue", value: `?${stats.totalRevenue || 0}`, icon: IndianRupee, color: "bg-emerald-600" },
   ];
 
   if (loading) {

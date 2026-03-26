@@ -1,4 +1,4 @@
-﻿import { supabase as originalClient } from '@/lib/customSupabaseClient';
+import { supabase as originalClient } from '@/lib/customSupabaseClient';
 import { safeFetch } from '@/utils/safeFetchWrapper';
 
 /**

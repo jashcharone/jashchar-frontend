@@ -1,4 +1,4 @@
-﻿import { supabase } from './customSupabaseClient';
+import { supabase } from './customSupabaseClient';
 import { getApiBaseUrl } from '@/utils/platform';
 
 /**

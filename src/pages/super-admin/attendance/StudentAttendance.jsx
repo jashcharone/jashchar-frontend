@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { useBranch } from '@/contexts/BranchContext';
@@ -36,10 +36,10 @@ const StudentAttendance = () => {
         date: format(new Date(), 'yyyy-MM-dd'),
     });
 
-    // ✅ JASHCHAR ERP - Use selectedBranch.id as primary, fallback to user profile
+    // ? JASHCHAR ERP - Use selectedBranch.id as primary, fallback to user profile
     const branchId = selectedBranch?.id || user?.profile?.branch_id;
 
-    // ✅ Permission check
+    // ? Permission check
     const hasViewPermission = canView('attendance') || canView('attendance.student_attendance');
     const hasAddPermission = canAdd('attendance') || canAdd('attendance.student_attendance');
     const hasEditPermission = canEdit('attendance') || canEdit('attendance.student_attendance');
@@ -101,17 +101,17 @@ const StudentAttendance = () => {
         setAttendance({});
 
         try {
-            // ✅ JASHCHAR ERP - Fetch students with correct columns (school_code or roll_number, not admission_no)
+            // ? JASHCHAR ERP - Fetch students with correct columns (enrollment_id or roll_number, not enrollment_id)
             let studentQuery = supabase
                 .from('student_profiles')
-                .select('id, full_name, school_code, roll_number')
+                .select('id, full_name, enrollment_id, roll_number')
                 .eq('branch_id', branchId)
                 .eq('class_id', filters.class_id)
                 .eq('section_id', filters.section_id)
                 .or('status.eq.active,status.is.null')
                 .order('roll_number', { ascending: true, nullsFirst: false });
             
-            // ✅ Add session filter if available
+            // ? Add session filter if available
             if (currentSessionId) {
                 studentQuery = studentQuery.eq('session_id', currentSessionId);
             }
@@ -133,7 +133,7 @@ const StudentAttendance = () => {
             
             setStudents(studentData);
 
-            // ✅ Fetch existing attendance for that date
+            // ? Fetch existing attendance for that date
             let attendanceQuery = supabase
                 .from('student_attendance')
                 .select('student_id, status, remark')
@@ -192,7 +192,7 @@ const StudentAttendance = () => {
     };
 
     const handleSave = async () => {
-        // ✅ JASHCHAR ERP - Permission check
+        // ? JASHCHAR ERP - Permission check
         if (!hasAddPermission && !hasEditPermission) {
             toast({ variant: 'destructive', title: 'Permission Denied', description: 'You do not have permission to save attendance.' });
             return;
@@ -211,7 +211,7 @@ const StudentAttendance = () => {
         setIsSaving(true);
         
         try {
-            // ✅ JASHCHAR ERP - Include all required fields: organization_id, branch_id, session_id
+            // ? JASHCHAR ERP - Include all required fields: organization_id, branch_id, session_id
             const attendanceToSave = Object.entries(attendance).map(([studentId, details]) => ({
                 organization_id: organizationId,
                 branch_id: branchId,
@@ -247,7 +247,7 @@ const StudentAttendance = () => {
         <DashboardLayout>
             <h1 className="text-xl sm:text-2xl font-bold mb-4">Student Attendance</h1>
             
-            {/* ✅ Permission Warning */}
+            {/* ? Permission Warning */}
             {!hasViewPermission && (
                 <Alert variant="destructive" className="mb-4">
                     <AlertCircle className="h-4 w-4" />
@@ -255,7 +255,7 @@ const StudentAttendance = () => {
                 </Alert>
             )}
             
-            {/* ✅ Branch Warning */}
+            {/* ? Branch Warning */}
             {!branchId && (
                 <Alert variant="destructive" className="mb-4">
                     <AlertCircle className="h-4 w-4" />
@@ -320,7 +320,7 @@ const StudentAttendance = () => {
                                         <tr key={student.id} className="border-b hover:bg-muted/50">
                                             <td className="p-2">{index + 1}</td>
                                             <td className="p-2 font-medium">{student.full_name}</td>
-                                            <td className="p-2 text-muted-foreground hidden sm:table-cell">{student.roll_number || student.school_code || '-'}</td>
+                                            <td className="p-2 text-muted-foreground hidden sm:table-cell">{student.roll_number || student.enrollment_id || '-'}</td>
                                             <td className="p-2">
                                                 <RadioGroup
                                                     value={attendance[student.id]?.status || 'Present'}

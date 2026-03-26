@@ -958,7 +958,7 @@ function RiskStudentRow({ item, onView }) {
                 <div>
                     <p className="font-medium">{student.first_name} {student.last_name}</p>
                     <p className="text-sm text-gray-500">
-                        {student.admission_number} • {student.class?.name} {student.section?.name}
+                        {student.enrollment_id} • {student.class?.name} {student.section?.name}
                     </p>
                 </div>
             </div>

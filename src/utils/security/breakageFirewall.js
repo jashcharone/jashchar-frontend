@@ -1,4 +1,4 @@
-﻿import { isRouteLocked } from './routeImmutabilityLock';
+import { isRouteLocked } from './routeImmutabilityLock';
 import { isSidebarItemLocked } from './sidebarImmutabilityLock';
 import { takeSystemSnapshot, rollbackToSnapshot } from './snapshotManager';
 

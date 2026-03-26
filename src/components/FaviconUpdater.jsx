@@ -1,4 +1,4 @@
-﻿import { useEffect } from 'react';
+import { useEffect } from 'react';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import frontCmsService from '@/services/frontCmsService';
 import { supabase } from '@/lib/customSupabaseClient';

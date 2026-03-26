@@ -197,7 +197,7 @@ const TransportReportGenerator = () => {
       
       // Student/User Info
       student_id: `STD${String(i + 1).padStart(4, '0')}`,
-      admission_number: `ADM${2024}${String(i + 1).padStart(4, '0')}`,
+      enrollment_id: `ADM${2024}${String(i + 1).padStart(4, '0')}`,
       student_name: ['Rahul Sharma', 'Priya Verma', 'Amit Singh', 'Sneha Patel', 'Raj Kumar'][i % 5],
       class_name: ['5th', '6th', '7th', '8th', '9th', '10th'][i % 6],
       section_name: ['A', 'B', 'C'][i % 3],

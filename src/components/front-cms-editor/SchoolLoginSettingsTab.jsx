@@ -1,4 +1,4 @@
-ï»¿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -98,12 +98,12 @@ const SchoolLoginSettingsTab = ({ branchId }) => {
 
   // Preset themes
   const presetThemes = [
-    { name: 'Modern Blue', color: '#3b82f6', icon: 'ðŸ”µ' },
-    { name: 'Royal Purple', color: '#7c3aed', icon: 'ðŸ’œ' },
-    { name: 'Nature Green', color: '#10b981', icon: 'ðŸŒ¿' },
-    { name: 'Sunset Orange', color: '#f97316', icon: 'ðŸŒ…' },
-    { name: 'Classic Red', color: '#dc2626', icon: 'â¤ï¸' },
-    { name: 'Ocean Teal', color: '#0d9488', icon: 'ðŸŒŠ' },
+    { name: 'Modern Blue', color: '#3b82f6', icon: '??' },
+    { name: 'Royal Purple', color: '#7c3aed', icon: '??' },
+    { name: 'Nature Green', color: '#10b981', icon: '??' },
+    { name: 'Sunset Orange', color: '#f97316', icon: '??' },
+    { name: 'Classic Red', color: '#dc2626', icon: '??' },
+    { name: 'Ocean Teal', color: '#0d9488', icon: '??' },
   ];
 
   if (loading) {
@@ -584,7 +584,7 @@ const SchoolLoginSettingsTab = ({ branchId }) => {
                         <p className="text-amber-400 text-[8px] mb-1">EDUCATION EXCELLENCE</p>
                         <h2 className="text-lg font-bold leading-tight">Empowering<br/>Future Leaders</h2>
                       </div>
-                      <p className="text-white/50 text-[8px]">Â© 2025</p>
+                      <p className="text-white/50 text-[8px]">© 2025</p>
                     </div>
                   </div>
                 )}
@@ -605,7 +605,7 @@ const SchoolLoginSettingsTab = ({ branchId }) => {
                       </div>
                       <div className="relative">
                         <Lock className="absolute left-2 top-1/2 -translate-y-1/2 h-3 w-3 text-slate-400" />
-                        <div className="h-7 bg-slate-100 rounded pl-6 flex items-center text-[9px] text-slate-400">â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢</div>
+                        <div className="h-7 bg-slate-100 rounded pl-6 flex items-center text-[9px] text-slate-400">••••••••</div>
                       </div>
                       <button 
                         className="w-full h-7 rounded text-white text-[9px] font-medium flex items-center justify-center gap-1"

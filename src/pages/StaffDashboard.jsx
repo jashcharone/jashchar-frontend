@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import axios from 'axios';
 
@@ -46,9 +46,9 @@ const StaffDashboard = () => {
             <div className="bg-card p-6 rounded-lg shadow-sm border border-border">
                 <h3 className="font-semibold mb-4">Attendance Task</h3>
                 {stats?.attendanceMarked ? (
-                    <span className="text-green-600 dark:text-green-400 font-medium">✅ Marked for today</span>
+                    <span className="text-green-600 dark:text-green-400 font-medium">? Marked for today</span>
                 ) : (
-                    <span className="text-red-600 dark:text-red-400 font-medium"> ï¸ Pending for today</span>
+                    <span className="text-red-600 dark:text-red-400 font-medium"> ️ Pending for today</span>
                 )}
             </div>
         </div>
@@ -58,11 +58,11 @@ const StaffDashboard = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="bg-card p-6 rounded-lg shadow-sm border border-border">
                 <h3 className="text-muted-foreground text-sm">Today's Collection</h3>
-                <p className="text-2xl font-bold text-green-600 dark:text-green-400">₹{stats?.todayCollection}</p>
+                <p className="text-2xl font-bold text-green-600 dark:text-green-400">?{stats?.todayCollection}</p>
             </div>
             <div className="bg-card p-6 rounded-lg shadow-sm border border-border">
                 <h3 className="text-muted-foreground text-sm">Pending Fees</h3>
-                <p className="text-2xl font-bold text-red-600 dark:text-red-400">₹{stats?.pendingFees}</p>
+                <p className="text-2xl font-bold text-red-600 dark:text-red-400">?{stats?.pendingFees}</p>
             </div>
         </div>
       )}

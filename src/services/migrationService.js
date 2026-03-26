@@ -1,4 +1,4 @@
-﻿import { repairPlanModuleMappings } from '@/services/planModuleRepairService';
+import { repairPlanModuleMappings } from '@/services/planModuleRepairService';
 import { checkDatabaseIntegrity } from '@/utils/databaseHealthCheck';
 
 /**

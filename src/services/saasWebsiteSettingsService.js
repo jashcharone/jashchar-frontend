@@ -1,4 +1,4 @@
-﻿import { supabase } from '@/lib/customSupabaseClient';
+import { supabase } from '@/lib/customSupabaseClient';
 import { masterAdminSafetyService } from '@/services/masterAdminSafetyService';
 
 export const saasWebsiteSettingsService = {

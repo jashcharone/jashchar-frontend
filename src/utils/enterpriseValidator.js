@@ -1,4 +1,4 @@
-﻿import baseline from '@/enterprise-dna/projectBaseline.json';
+import baseline from '@/enterprise-dna/projectBaseline.json';
 import { NEW_MODULES } from '@/modules/moduleRegistry.append';
 
 export const validateEntireProject = () => {

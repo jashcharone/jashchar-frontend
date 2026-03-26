@@ -664,7 +664,7 @@ const ModerationEnginePage = () => {
                                             <TableHeader>
                                                 <TableRow>
                                                     <TableHead>Student</TableHead>
-                                                    <TableHead>Admission No</TableHead>
+                                                    <TableHead>Enroll ID</TableHead>
                                                     <TableHead>Subject</TableHead>
                                                     <TableHead>Original</TableHead>
                                                     <TableHead>Moderated</TableHead>
@@ -681,7 +681,7 @@ const ModerationEnginePage = () => {
                                                             <TableCell className="font-medium">
                                                                 {record.students?.first_name} {record.students?.last_name}
                                                             </TableCell>
-                                                            <TableCell>{record.students?.admission_no}</TableCell>
+                                                            <TableCell>{record.students?.enrollment_id}</TableCell>
                                                             <TableCell>{record.subjects?.name}</TableCell>
                                                             <TableCell>{record.original_marks}</TableCell>
                                                             <TableCell className="font-bold">{record.moderated_marks}</TableCell>

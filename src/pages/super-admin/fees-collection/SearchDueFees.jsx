@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+﻿import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import DashboardLayout from '@/components/DashboardLayout';
 import { supabase } from '@/lib/customSupabaseClient';
@@ -76,7 +76,7 @@ const SearchDueFees = () => {
             // 1. Fetch all students in selected class/section
             let studentsQuery = supabase
                 .from('student_profiles')
-                .select('id, full_name, school_code, photo_url, father_name, father_phone, mother_phone, guardian_phone, class_id, section_id, classes!student_profiles_class_id_fkey(name), sections!student_profiles_section_id_fkey(name)')
+                .select('id, full_name, enrollment_id, photo_url, father_name, father_phone, mother_phone, guardian_phone, class_id, section_id, classes!student_profiles_class_id_fkey(name), sections!student_profiles_section_id_fkey(name)')
                 .eq('branch_id', branchId)
                 .eq('status', 'active');
             
@@ -362,7 +362,7 @@ const SearchDueFees = () => {
         }
         const totalDue = student.total_due.toLocaleString('en-IN');
         
-        return `? *FEE REMINDER*\n????????????????????\n\n? *${schoolName}*\n\n? Student: *${studentName}*\n? Class: *${className}${sectionName}*\n\n? *Fee Details:*\n${feeDetailsEng}\n? *Total Due: ?${totalDue}*\n\nPlease pay the fees at your earliest convenience.\n\nThank you.\n\n--------------------\n\n? *????? ???????*\n????????????????????\n\n? *${schoolName}*\n\n? ??????????: *${studentName}*\n? ?????: *${className}${sectionName}*\n\n? *????? ????:*\n${feeDetailsKan}\n? *????? ????: ?${totalDue}*\n\n???????? ?????????? ???????.\n\n??????????.`;
+        return `? *FEE REMINDER*\n????????????????????\n\n? *${schoolName}*\n\n? Student: *${studentName}*\n? Class: *${className}${sectionName}*\n\n? *Fee Details:*\n${feeDetailsEng}\n? *Total Due: ?${totalDue}*\n\nPlease pay the fees at your earliest convenience.\n\nThank you.\n\n--------------------\n\n? *???????*\n????????????????????\n\n? *${schoolName}*\n\n? ??????????: *${studentName}*\n? ?????: *${className}${sectionName}*\n\n? *????:*\n${feeDetailsKan}\n? *????: ?${totalDue}*\n\n???????????????.\n\n??????????.`;
     };
 
     // Bulk WhatsApp send - opens one by one with delay
@@ -637,8 +637,8 @@ const SearchDueFees = () => {
                                                             <div className="min-w-0">
                                                                 <p className="font-semibold text-sm truncate">{student.full_name}</p>
                                                                 <p className="text-xs text-muted-foreground">
-                                                                    {student.school_code || ''}
-                                                                    {student.school_code && student.phone ? ' • ' : ''}
+                                                                    {student.enrollment_id || ''}
+                                                                    {student.enrollment_id && student.phone ? ' • ' : ''}
                                                                     {student.phone && <span className="text-green-500">{student.phone}</span>}
                                                                 </p>
                                                             </div>

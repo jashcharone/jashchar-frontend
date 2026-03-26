@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { supabase } from '@/lib/customSupabaseClient';
 import DashboardLayout from '@/components/DashboardLayout';
@@ -216,20 +216,20 @@ const EditSubscriptionPlan = () => {
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
                     <div><Label htmlFor="no_of_students" className="flex items-center"><Users className="w-4 h-4 mr-1"/>No. Of Students (Active) *</Label><Input id="no_of_students" name="no_of_students" type="number" value={formData.no_of_students} onChange={handleInputChange} required /></div>
                     <div><Label htmlFor="no_of_staffs" className="flex items-center"><UserCheck className="w-4 h-4 mr-1"/>No. Of Staffs (Active) *</Label><Input id="no_of_staffs" name="no_of_staffs" type="number" value={formData.no_of_staffs} onChange={handleInputChange} required /></div>
-                    <div><Label htmlFor="price">Charges (₹) *</Label><Input id="price" name="price" type="number" value={formData.price} onChange={handleInputChange} required /></div>
+                    <div><Label htmlFor="price">Charges (?) *</Label><Input id="price" name="price" type="number" value={formData.price} onChange={handleInputChange} required /></div>
                 </div>
             )}
             
             {formData.plan_type === 'Postpaid' && (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                    <div><Label htmlFor="per_student_charge">Per Active Student Charges (₹) *</Label><Input id="per_student_charge" name="per_student_charge" type="number" value={formData.per_student_charge} onChange={handleInputChange} required /></div>
-                    <div><Label htmlFor="per_staff_charge">Per Active Staff Charges (₹) *</Label><Input id="per_staff_charge" name="per_staff_charge" type="number" value={formData.per_staff_charge} onChange={handleInputChange} required /></div>
+                    <div><Label htmlFor="per_student_charge">Per Active Student Charges (?) *</Label><Input id="per_student_charge" name="per_student_charge" type="number" value={formData.per_student_charge} onChange={handleInputChange} required /></div>
+                    <div><Label htmlFor="per_staff_charge">Per Active Staff Charges (?) *</Label><Input id="per_staff_charge" name="per_staff_charge" type="number" value={formData.per_staff_charge} onChange={handleInputChange} required /></div>
                 </div>
             )}
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                 <div><Label htmlFor="gst_percentage">GST Percentage (%)</Label><Input id="gst_percentage" name="gst_percentage" type="number" value={formData.gst_percentage} onChange={handleInputChange} /></div>
-                <div><Label htmlFor="discount">Discount (₹)</Label><Input id="discount" name="discount" type="number" value={formData.discount} onChange={handleInputChange} /></div>
+                <div><Label htmlFor="discount">Discount (?)</Label><Input id="discount" name="discount" type="number" value={formData.discount} onChange={handleInputChange} /></div>
             </div>
 
             <div className="mb-6">

@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useSchoolSlug } from '@/hooks/useSchoolSlug';
 import { generateSchoolSitemap } from '@/utils/generateSitemap';
 

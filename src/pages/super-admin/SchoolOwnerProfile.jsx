@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/lib/customSupabaseClient';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
@@ -44,7 +44,7 @@ const SchoolOwnerProfile = () => {
       facebook_url: metadata.facebook_url || profileData.facebook_url || '',
       twitter_url: metadata.twitter_url || profileData.twitter_url || '',
       linkedin_url: metadata.linkedin_url || profileData.linkedin_url || '',
-      school_code: profileData.school_code || metadata.school_code || ''
+      enrollment_id: profileData.enrollment_id || metadata.enrollment_id || ''
     };
   }, []);
 

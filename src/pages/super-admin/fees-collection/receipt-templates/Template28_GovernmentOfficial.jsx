@@ -95,8 +95,8 @@ const Template28_GovernmentOfficial = ({ receiptData, copyType }) => {
           <tr>
             <td style={labelCell}>Student Name</td>
             <td style={cellStyle}>{student?.full_name || 'N/A'}</td>
-            <td style={labelCell}>Admission No.</td>
-            <td style={cellStyle}>{student?.school_code || student?.admission_no || 'N/A'}</td>
+            <td style={labelCell}>Enroll ID.</td>
+            <td style={cellStyle}>{student?.enrollment_id || student?.enrollment_id || 'N/A'}</td>
           </tr>
           <tr>
             <td style={labelCell}>Father's Name</td>

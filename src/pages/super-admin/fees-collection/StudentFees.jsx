@@ -1557,7 +1557,7 @@ const StudentFees = () => {
                         student: {
                             id: studentId,
                             name: student?.full_name || student?.name,
-                            admission_no: student?.admission_no,
+                            enrollment_id: student?.enrollment_id,
                             father_name: student?.father_name,
                             class: student?.classes?.name || student?.class?.name,
                             section: student?.sections?.name || student?.section?.name,
@@ -1615,7 +1615,7 @@ const StudentFees = () => {
                         student: {
                             id: studentId,
                             name: student?.full_name || student?.name,
-                            admission_no: student?.admission_no,
+                            enrollment_id: student?.enrollment_id,
                             father_name: student?.father_name,
                             class: student?.classes?.name || student?.class?.name,
                             section: student?.sections?.name || student?.section?.name,
@@ -1672,7 +1672,7 @@ const StudentFees = () => {
                     student: {
                         id: studentId,
                         name: student?.full_name || student?.name,
-                        admission_no: student?.admission_no,
+                        enrollment_id: student?.enrollment_id,
                         father_name: student?.father_name,
                         class: student?.classes?.name || student?.class?.name,
                         section: student?.sections?.name || student?.section?.name,
@@ -1912,7 +1912,7 @@ const StudentFees = () => {
                     student: {
                         id: studentId,
                         name: student?.full_name || student?.name,
-                        admission_no: student?.admission_no,
+                        enrollment_id: student?.enrollment_id,
                         father_name: student?.father_name,
                         class: student?.classes?.name || student?.class?.name,
                         section: student?.sections?.name || student?.section?.name,
@@ -1980,7 +1980,7 @@ const StudentFees = () => {
                         student: {
                             id: studentId,
                             name: student?.full_name || student?.name,
-                            admission_no: student?.admission_no,
+                            enrollment_id: student?.enrollment_id,
                             father_name: student?.father_name,
                             class: student?.classes?.name || student?.class?.name,
                             section: student?.sections?.name || student?.section?.name,
@@ -2128,7 +2128,7 @@ const StudentFees = () => {
                     student: {
                         id: studentId,
                         name: student?.full_name || student?.name,
-                        admission_no: student?.admission_no,
+                        enrollment_id: student?.enrollment_id,
                         father_name: student?.father_name,
                         class: student?.classes?.name || student?.class?.name,
                         section: student?.sections?.name || student?.section?.name,
@@ -2196,7 +2196,7 @@ const StudentFees = () => {
                         student: {
                             id: studentId,
                             name: student?.full_name || student?.name,
-                            admission_no: student?.admission_no,
+                            enrollment_id: student?.enrollment_id,
                             father_name: student?.father_name,
                             class: student?.classes?.name || student?.class?.name,
                             section: student?.sections?.name || student?.section?.name,
@@ -2341,7 +2341,7 @@ const StudentFees = () => {
                         student: {
                             id: studentId,
                             name: student?.full_name || student?.name,
-                            admission_no: student?.admission_no,
+                            enrollment_id: student?.enrollment_id,
                             father_name: student?.father_name,
                             class: student?.classes?.name || student?.class?.name,
                             section: student?.sections?.name || student?.section?.name,
@@ -2453,7 +2453,7 @@ const StudentFees = () => {
                     student: {
                         id: studentId,
                         name: student?.full_name || student?.name,
-                        admission_no: student?.admission_no,
+                        enrollment_id: student?.enrollment_id,
                         father_name: student?.father_name,
                         class: student?.classes?.name || student?.class?.name,
                         section: student?.sections?.name || student?.section?.name,
@@ -2854,7 +2854,7 @@ const StudentFees = () => {
 
                         {/* Student Details Grid */}
                         <div className="flex-1 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-6 gap-y-2 text-sm border-l pl-4">
-                            <InfoRow icon={CreditCard} label="Admission No" value={student.school_code} />
+                            <InfoRow icon={CreditCard} label="Enroll ID" value={student.enrollment_id} />
                             <InfoRow icon={User} label="Father" value={student.father_name} />
                             <InfoRow icon={Users} label="Mother" value={student.mother_name} />
                             <InfoRow icon={Calendar} label="DOB" value={student.date_of_birth ? format(parseISO(student.date_of_birth), 'dd MMM yyyy') : null} />

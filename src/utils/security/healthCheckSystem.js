@@ -1,4 +1,4 @@
-﻿import { validateRouteIntegrity } from './routeImmutabilityLock';
+import { validateRouteIntegrity } from './routeImmutabilityLock';
 import { validateSidebarIntegrity } from './sidebarImmutabilityLock';
 import { getSnapshots } from './snapshotManager';
 import { getEnvironmentStatus } from './stagingModeManager';

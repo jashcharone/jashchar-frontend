@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -117,7 +117,7 @@ const WhatsAppTemplates = ({ accounts = [] }) => {
     try {
       const res = await api.post(`/whatsapp-manager/accounts/${selectedAccount}/templates/sync`);
       if (res.data.success) {
-        toast({ title: "✅ Synced", description: `Synced ${res.data.count || 0} templates from Meta.` });
+        toast({ title: "? Synced", description: `Synced ${res.data.count || 0} templates from Meta.` });
         fetchTemplates();
       }
     } catch (error) {
@@ -170,7 +170,7 @@ const WhatsAppTemplates = ({ accounts = [] }) => {
       const res = await api.post(`/whatsapp-manager/accounts/${accountId}/templates/create`, payload);
       
       if (res.data.success) {
-        toast({ title: "Success! 🎉", description: "Template created successfully." });
+        toast({ title: "Success! ??", description: "Template created successfully." });
         setIsCreateOpen(false);
         resetForm();
         fetchTemplates();
@@ -307,9 +307,9 @@ const WhatsAppTemplates = ({ accounts = [] }) => {
             onChange={(e) => setStatusFilter(e.target.value)}
           >
             <option value="ALL">All Status</option>
-            <option value="APPROVED">✅ Approved</option>
-            <option value="PENDING">⏳ Pending</option>
-            <option value="REJECTED">❌ Rejected</option>
+            <option value="APPROVED">? Approved</option>
+            <option value="PENDING">? Pending</option>
+            <option value="REJECTED">? Rejected</option>
           </select>
           
           <select 
@@ -318,9 +318,9 @@ const WhatsAppTemplates = ({ accounts = [] }) => {
             onChange={(e) => setCategoryFilter(e.target.value)}
           >
             <option value="ALL">All Categories</option>
-            <option value="UTILITY">📦 Utility</option>
-            <option value="MARKETING">📢 Marketing</option>
-            <option value="AUTHENTICATION">🔐 Auth</option>
+            <option value="UTILITY">?? Utility</option>
+            <option value="MARKETING">?? Marketing</option>
+            <option value="AUTHENTICATION">?? Auth</option>
           </select>
         </div>
         
@@ -394,12 +394,12 @@ const WhatsAppTemplates = ({ accounts = [] }) => {
                       </TableCell>
                       <TableCell>
                         <p className="text-xs text-muted-foreground line-clamp-2 max-w-[300px]">
-                          {t.body_content || '—'}
+                          {t.body_content || '�'}
                         </p>
                       </TableCell>
                       <TableCell>
                         <Badge variant="outline" className={getCategoryColor(t.category)}>
-                          {t.category || '—'}
+                          {t.category || '�'}
                         </Badge>
                       </TableCell>
                       <TableCell>
@@ -522,7 +522,7 @@ const WhatsAppTemplates = ({ accounts = [] }) => {
                 <div>
                   <Label className="text-xs">Message Body * (max 1024 chars)</Label>
                   <Textarea 
-                    placeholder={`Hello {{1}},\n\nYour fee of ₹{{2}} is due on {{3}}.\n\nThank you!`}
+                    placeholder={`Hello {{1}},\n\nYour fee of ?{{2}} is due on {{3}}.\n\nThank you!`}
                     rows={8}
                     maxLength={1024}
                     value={templateForm.body}
@@ -624,7 +624,7 @@ const WhatsAppTemplates = ({ accounts = [] }) => {
                 <div>
                   <p className="font-medium">{previewTemplate.template_name}</p>
                   <p className="text-xs text-muted-foreground">
-                    {previewTemplate.category} • {previewTemplate.language?.toUpperCase() || 'EN'}
+                    {previewTemplate.category} � {previewTemplate.language?.toUpperCase() || 'EN'}
                   </p>
                 </div>
                 <Badge className={getStatusColor(previewTemplate.approval_status)}>
@@ -652,7 +652,7 @@ const WhatsAppTemplates = ({ accounts = [] }) => {
                   )}
                   
                   <div className="text-right text-[10px] text-gray-500 mt-2">
-                    {new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })} ✓✓
+                    {new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })} ??
                   </div>
                 </div>
               </div>

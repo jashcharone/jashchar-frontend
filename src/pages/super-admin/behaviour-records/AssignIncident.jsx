@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
 import { Button } from '@/components/ui/button';
 import {
@@ -98,7 +98,7 @@ const AssignIncident = () => {
       // 1. Fetch students
       let studentQuery = supabase
         .from('student_profiles')
-        .select('id, full_name, admission_no, gender, phone, class_id, section_id')
+        .select('id, full_name, enrollment_id, gender, phone, class_id, section_id')
         .eq('branch_id', user.user_metadata.branch_id)
         .eq('class_id', selectedClass)
         .eq('section_id', selectedSection);
@@ -219,7 +219,7 @@ const AssignIncident = () => {
                   <TableHeader>
                     <TableRow>
                       <TableHead>Student Name</TableHead>
-                      <TableHead>Admission No</TableHead>
+                      <TableHead>Enroll ID</TableHead>
                       <TableHead>Gender</TableHead>
                       <TableHead>Phone</TableHead>
                       <TableHead>Total Points</TableHead>
@@ -231,7 +231,7 @@ const AssignIncident = () => {
                       students.map((student) => (
                         <TableRow key={student.id}>
                           <TableCell className="font-medium">{student.full_name}</TableCell>
-                          <TableCell>{student.admission_no}</TableCell>
+                          <TableCell>{student.enrollment_id}</TableCell>
                           <TableCell>{student.gender}</TableCell>
                           <TableCell>{student.phone}</TableCell>
                           <TableCell>

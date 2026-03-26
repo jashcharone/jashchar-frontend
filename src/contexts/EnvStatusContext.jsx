@@ -1,4 +1,4 @@
-﻿import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
 import { loadSupabaseEnv } from '@/services/envLoader';
 import { isSupabaseReady } from '@/lib/supabaseClientSafe';
 

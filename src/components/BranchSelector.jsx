@@ -1,4 +1,4 @@
-﻿import React from 'react';
+import React from 'react';
 import { useBranch } from '@/contexts/BranchContext';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import {

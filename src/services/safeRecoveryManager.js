@@ -1,4 +1,4 @@
-﻿import { toast } from "@/components/ui/use-toast";
+import { toast } from "@/components/ui/use-toast";
 
 /**
  * SERVICE: Safe Recovery Manager
@@ -10,14 +10,14 @@ export const SAFE_MODE_FLAG = '__SAFE_READ_ONLY_MODE';
 export const enableReadOnlyMode = () => {
   if (typeof window !== 'undefined') {
     window[SAFE_MODE_FLAG] = true;
-    console.warn('ðŸš¨ APP SWITCHED TO SAFE READ-ONLY MODE ðŸš¨');
+    console.warn('🚨 APP SWITCHED TO SAFE READ-ONLY MODE 🚨');
   }
 };
 
 export const disableReadOnlyMode = () => {
   if (typeof window !== 'undefined') {
     window[SAFE_MODE_FLAG] = false;
-    console.log('ðŸŸ¢ APP RESTORED TO NORMAL MODE');
+    console.log('🟢 APP RESTORED TO NORMAL MODE');
   }
 };
 

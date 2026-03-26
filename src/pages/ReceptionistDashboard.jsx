@@ -1,4 +1,4 @@
-﻿import React from 'react';
+import React from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
 import StatCard from '@/components/StatCard';
 import { Phone, UserPlus, Mail, Building, Clock } from 'lucide-react';

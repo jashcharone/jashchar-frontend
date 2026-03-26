@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import DashboardLayout from '@/components/DashboardLayout';
 import { supabase } from '@/lib/customSupabaseClient';
@@ -120,7 +120,7 @@ const ViewArticle = () => {
                             <CardDescription>Feature coming soon!</CardDescription>
                         </CardHeader>
                         <CardContent>
-                            <p className="text-muted-foreground">ðŸš§ This feature isn't implemented yet”but don't worry! You can request it in your next prompt! ðŸš€</p>
+                            <p className="text-muted-foreground">🚧 This feature isn't implemented yet�but don't worry! You can request it in your next prompt! 🚀</p>
                         </CardContent>
                     </Card>
                 </section>

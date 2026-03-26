@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { ArrowLeft, Building, Save, UploadCloud, Image, Loader2 } from 'lucide-react';
@@ -197,7 +197,7 @@ const EditSchool = () => {
           post_office: schoolData.post_office || '',
           board: schoolData.board || '',
           currency: schoolData.currency || 'INR',
-          currency_symbol: schoolData.currency_symbol || '₹',
+          currency_symbol: schoolData.currency_symbol || '?',
           subscription_plan: currentPlanId,
           current_session_id: schoolData.current_session_id || '',
           status: schoolData.status || 'Active',
@@ -328,7 +328,7 @@ const EditSchool = () => {
         post_office: formData.post_office?.trim() || null, // Save post office
         board: formData.board?.trim() || null,
         currency: formData.currency || 'INR',
-        currency_symbol: formData.currency_symbol || '₹',
+        currency_symbol: formData.currency_symbol || '?',
         status: formData.status || 'Active',
         logo_url: logoUrl || null,
         plan_id: formData.subscription_plan, // Ensure plan_id is synced in schools table
@@ -508,7 +508,7 @@ const EditSchool = () => {
                     setFormData(prev => ({
                         ...prev,
                         currency: v,
-                        currency_symbol: selectedCurrency?.symbol || '₹'
+                        currency_symbol: selectedCurrency?.symbol || '?'
                     }));
                 }}>
                     <SelectTrigger><SelectValue placeholder="Select Currency" /></SelectTrigger>
@@ -521,7 +521,7 @@ const EditSchool = () => {
                     </SelectContent>
                 </Select>
             </div>
-            <div><Label htmlFor="currency_symbol">Currency Symbol</Label><Input id="currency_symbol" value={formData.currency_symbol} onChange={handleInputChange} placeholder="₹" readOnly className="bg-muted" /></div>
+            <div><Label htmlFor="currency_symbol">Currency Symbol</Label><Input id="currency_symbol" value={formData.currency_symbol} onChange={handleInputChange} placeholder="?" readOnly className="bg-muted" /></div>
             <div><Label>Subscription Plan *</Label><Select value={formData.subscription_plan} onValueChange={(v) => handleSelectChange('subscription_plan', v)} required><SelectTrigger><SelectValue placeholder="Select a plan" /></SelectTrigger><SelectContent>{subscriptionPlans.map(plan => <SelectItem key={plan.id} value={plan.id}>{plan.name}</SelectItem>)}</SelectContent></Select></div>
             <div>
               <Label>Current Academic Session</Label>
@@ -548,13 +548,13 @@ const EditSchool = () => {
               <Label>Status</Label>
               <Select value={formData.status} onValueChange={(v) => {
                 if (v === 'Inactive') {
-                  if (window.confirm(' ï¸ Warning: Setting school to Inactive will:\n\n• Block all users from logging in\n• Prevent access to school dashboard\n• Suspend all school operations\n\nYou can reactivate it anytime by changing status back to Active.\n\nAre you sure you want to deactivate this school?')) {
+                  if (window.confirm(' ️ Warning: Setting school to Inactive will:\n\n� Block all users from logging in\n� Prevent access to school dashboard\n� Suspend all school operations\n\nYou can reactivate it anytime by changing status back to Active.\n\nAre you sure you want to deactivate this school?')) {
                     handleSelectChange('status', v);
                   }
                 } else if (v === 'Active') {
                   // Reactivating - show confirmation
                   if (formData.status === 'Inactive') {
-                    if (window.confirm('✅ Reactivate School:\n\n• All users will be able to login again\n• School dashboard will be accessible\n• All operations will resume\n\nDo you want to activate this school?')) {
+                    if (window.confirm('? Reactivate School:\n\n� All users will be able to login again\n� School dashboard will be accessible\n� All operations will resume\n\nDo you want to activate this school?')) {
                       handleSelectChange('status', v);
                     }
                   } else {
@@ -568,24 +568,24 @@ const EditSchool = () => {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="Active">✅ Active</SelectItem>
-                  <SelectItem value="Inactive">❌ Inactive</SelectItem>
+                  <SelectItem value="Active">? Active</SelectItem>
+                  <SelectItem value="Inactive">? Inactive</SelectItem>
                 </SelectContent>
               </Select>
               {formData.status === 'Inactive' && (
                 <div className="mt-2 p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-md">
                   <p className="text-xs text-amber-800 dark:text-amber-300 font-medium mb-1">
-                     ï¸ This school is currently inactive
+                     ️ This school is currently inactive
                   </p>
                   <p className="text-xs text-amber-700 dark:text-amber-400">
-                    • Users cannot login or access the system<br/>
-                    • You can reactivate by changing status to "Active" above
+                    � Users cannot login or access the system<br/>
+                    � You can reactivate by changing status to "Active" above
                   </p>
                 </div>
               )}
               {formData.status === 'Active' && (
                 <p className="text-xs text-green-600 dark:text-green-400 mt-1">
-                  ✅ School is active. All users can access the system.
+                  ? School is active. All users can access the system.
                 </p>
               )}
             </div>

@@ -19,7 +19,7 @@ export const COLLECTION_COLUMNS = [
   { key: 'date', label: 'Date', type: 'date', width: 100, sortable: true },
   { key: 'receipt_no', label: 'Receipt No', type: 'string', width: 100 },
   { key: 'student_name', label: 'Student Name', type: 'string', width: 180, sortable: true },
-  { key: 'admission_no', label: 'Admission No', type: 'string', width: 100 },
+  { key: 'enrollment_id', label: 'Enroll ID', type: 'string', width: 100 },
   { key: 'class_name', label: 'Class', type: 'string', width: 80, groupable: true },
   { key: 'section_name', label: 'Section', type: 'string', width: 80, groupable: true },
   
@@ -78,7 +78,7 @@ export const COLLECTION_COLUMNS = [
 export const OUTSTANDING_COLUMNS = [
   // Student Info
   { key: 'student_name', label: 'Student Name', type: 'string', width: 180, sortable: true },
-  { key: 'admission_no', label: 'Admission No', type: 'string', width: 100 },
+  { key: 'enrollment_id', label: 'Enroll ID', type: 'string', width: 100 },
   { key: 'class_name', label: 'Class', type: 'string', width: 80, groupable: true },
   { key: 'section_name', label: 'Section', type: 'string', width: 80, groupable: true },
   { key: 'roll_no', label: 'Roll No', type: 'string', width: 80 },
@@ -129,7 +129,7 @@ export const OUTSTANDING_COLUMNS = [
 export const CONCESSION_COLUMNS = [
   // Student Info
   { key: 'student_name', label: 'Student Name', type: 'string', width: 180, sortable: true },
-  { key: 'admission_no', label: 'Admission No', type: 'string', width: 100 },
+  { key: 'enrollment_id', label: 'Enroll ID', type: 'string', width: 100 },
   { key: 'class_name', label: 'Class', type: 'string', width: 80, groupable: true },
   { key: 'section_name', label: 'Section', type: 'string', width: 80 },
   

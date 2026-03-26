@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -25,7 +25,7 @@ const AccountantDashboard = () => {
     const { user, school, currentSessionId } = useAuth();
     const { selectedBranch } = useBranch();
     const navigate = useNavigate();
-    const currencySymbol = school?.currency_symbol || '₹';
+    const currencySymbol = school?.currency_symbol || '?';
     
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
@@ -116,7 +116,7 @@ const AccountantDashboard = () => {
                 .from('fee_payments')
                 .select(`
                     id, amount, payment_date, payment_mode, receipt_no,
-                    student:student_id(full_name, school_code)
+                    student:student_id(full_name, enrollment_id)
                 `)
                 .eq('branch_id', branchId)
                 .order('payment_date', { ascending: false })
@@ -139,7 +139,7 @@ const AccountantDashboard = () => {
                 .from('student_fees')
                 .select(`
                     id, balance, due_date,
-                    student:student_id(full_name, school_code, class:class_id(name))
+                    student:student_id(full_name, enrollment_id, class:class_id(name))
                 `)
                 .eq('branch_id', branchId)
                 .gt('balance', 0)
@@ -240,7 +240,7 @@ const AccountantDashboard = () => {
             currency: 'INR',
             minimumFractionDigits: 0,
             maximumFractionDigits: 0
-        }).format(amount).replace('₹', currencySymbol);
+        }).format(amount).replace('?', currencySymbol);
     };
 
     // Net Balance
@@ -282,10 +282,10 @@ const AccountantDashboard = () => {
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
                     <div>
                         <h1 className="text-lg sm:text-2xl font-bold text-gray-900">
-                            Welcome, {user?.profile?.full_name || 'Accountant'}! 👋
+                            Welcome, {user?.profile?.full_name || 'Accountant'}! ??
                         </h1>
                         <p className="text-gray-500">
-                            {format(new Date(), 'EEEE, dd MMMM yyyy')} • Financial Overview
+                            {format(new Date(), 'EEEE, dd MMMM yyyy')} � Financial Overview
                         </p>
                     </div>
                     <Button 
@@ -572,7 +572,7 @@ const AccountantDashboard = () => {
                                             <div>
                                                 <p className="font-medium text-sm">{payment.student?.full_name || 'Unknown'}</p>
                                                 <p className="text-xs text-gray-500">
-                                                    {payment.student?.school_code} • {payment.receipt_no}
+                                                    {payment.student?.enrollment_id} � {payment.receipt_no}
                                                 </p>
                                             </div>
                                         </div>
@@ -619,7 +619,7 @@ const AccountantDashboard = () => {
                                             <div>
                                                 <p className="font-medium text-sm">{item.student?.full_name || 'Unknown'}</p>
                                                 <p className="text-xs text-gray-500">
-                                                    {item.student?.school_code} • {item.student?.class?.name || 'N/A'}
+                                                    {item.student?.enrollment_id} � {item.student?.class?.name || 'N/A'}
                                                 </p>
                                             </div>
                                         </div>
@@ -631,7 +631,7 @@ const AccountantDashboard = () => {
                                 )) : (
                                     <div className="text-center py-8 text-green-500">
                                         <CheckCircle2 className="w-12 h-12 mx-auto mb-2 opacity-50" />
-                                        No overdue students! 🎉
+                                        No overdue students! ??
                                     </div>
                                 )}
                             </div>

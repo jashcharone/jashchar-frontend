@@ -1,4 +1,4 @@
-﻿import { usePermissions as usePermsContext } from '@/contexts/PermissionContext';
+import { usePermissions as usePermsContext } from '@/contexts/PermissionContext';
 
 export const usePermissions = (moduleKey) => {
   const { canView, canAdd, canEdit, canDelete, loading } = usePermsContext();

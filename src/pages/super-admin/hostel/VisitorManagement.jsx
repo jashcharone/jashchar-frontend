@@ -232,7 +232,7 @@ const VisitorManagement = () => {
                         <TableCell>{getRelationLabel(v.visitor_relation)}</TableCell>
                         <TableCell>
                           {v.student ? `${v.student.first_name} ${v.student.last_name}` : '-'}
-                          {v.student?.admission_number && <span className="text-xs text-muted-foreground ml-1">({v.student.admission_number})</span>}
+                          {v.student?.enrollment_id && <span className="text-xs text-muted-foreground ml-1">({v.student.enrollment_id})</span>}
                         </TableCell>
                         <TableCell>{getPurposeLabel(v.visit_purpose)}</TableCell>
                         <TableCell className="text-xs">{formatDateTime(v.entry_time)}</TableCell>

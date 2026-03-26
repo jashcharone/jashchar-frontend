@@ -668,7 +668,7 @@ const EditSchoolRequest = () => {
               planId: selectedPlanId
           });
           
-          toast({ title: "✅ Success", description: result.message || "Request updated and approved successfully." });
+          toast({ title: "? Success", description: result.message || "Request updated and approved successfully." });
       } else {
           toast({ title: "Success", description: "Request updated successfully." });
       }
@@ -688,12 +688,12 @@ const EditSchoolRequest = () => {
       // Show detailed error toast
       toast({ 
           variant: "destructive", 
-          title: "❌ Approval Failed - ಅನುಮೋದನೆ ವಿಫಲ", 
+          title: "? Approval Failed - ???????", 
           description: (
               <div className="space-y-2">
                   <p className="font-semibold">{errorMessage}</p>
-                  {technicalError && <p className="text-sm opacity-90">ದೋಷ: {technicalError}</p>}
-                  {failedAt && <p className="text-sm opacity-90">ಎಲ್ಲಿ ವಿಫಲ: {failedAt}</p>}
+                  {technicalError && <p className="text-sm opacity-90">???: {technicalError}</p>}
+                  {failedAt && <p className="text-sm opacity-90">????: {failedAt}</p>}
                   {errorHint && <p className="text-xs opacity-75 mt-1">{errorHint}</p>}
               </div>
           ),
@@ -1223,17 +1223,17 @@ const EditSchoolRequest = () => {
                                         <>
                                             <div>
                                                 <p className="text-slate-500 dark:text-slate-400">Per Student Charge</p>
-                                                <p className="font-medium dark:text-slate-200">₹{plan.per_student_charge}</p>
+                                                <p className="font-medium dark:text-slate-200">?{plan.per_student_charge}</p>
                                             </div>
                                             <div>
                                                 <p className="text-slate-500 dark:text-slate-400">Per Staff Charge</p>
-                                                <p className="font-medium dark:text-slate-200">₹{plan.per_staff_charge}</p>
+                                                <p className="font-medium dark:text-slate-200">?{plan.per_staff_charge}</p>
                                             </div>
                                         </>
                                     ) : (
                                         <div>
                                             <p className="text-slate-500 dark:text-slate-400">Price</p>
-                                            <p className="font-medium dark:text-slate-200">₹{plan.price}</p>
+                                            <p className="font-medium dark:text-slate-200">?{plan.price}</p>
                                         </div>
                                     )}
                                     <div>

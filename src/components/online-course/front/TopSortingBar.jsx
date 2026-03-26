@@ -1,4 +1,4 @@
-﻿import React from 'react';
+import React from 'react';
 import { LayoutGrid, List, ArrowUpDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';

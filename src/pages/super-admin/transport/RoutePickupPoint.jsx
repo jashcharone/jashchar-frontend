@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import DashboardLayout from '@/components/DashboardLayout';
 import { supabase } from '@/lib/customSupabaseClient';
@@ -229,7 +229,7 @@ const RoutePickupPoint = () => {
                                                     <Input className="h-8 text-xs" type="time" value={field.pickup_time} onChange={e => handleFieldChange(field.id, 'pickup_time', e.target.value)} />
                                                 </div>
                                                 <div>
-                                                    <Label className="text-xs">Fees (₹)</Label>
+                                                    <Label className="text-xs">Fees (?)</Label>
                                                     <Input className="h-8 text-xs" type="number" min="0" value={field.monthly_fees} onChange={e => handleFieldChange(field.id, 'monthly_fees', e.target.value)} />
                                                 </div>
                                             </div>
@@ -292,7 +292,7 @@ const RoutePickupPoint = () => {
                                                                 <th className="px-6 py-3">Pickup Point</th>
                                                                 <th className="px-6 py-3">Distance (km)</th>
                                                                 <th className="px-6 py-3">Pickup Time</th>
-                                                                <th className="px-6 py-3 text-right">Monthly Fees (₹)</th>
+                                                                <th className="px-6 py-3 text-right">Monthly Fees (?)</th>
                                                             </tr>
                                                         </thead>
                                                         <tbody>

@@ -841,7 +841,7 @@ const QuickRegisterDialog = ({ open, onClose, person, personType, branchId, orga
                         <span className="truncate">Register - {person?.full_name}</span>
                     </DialogTitle>
                     <DialogDescription className="text-xs sm:text-sm">
-                        {personType === 'student' ? 'Student' : 'Staff'} • {person?.school_code || person?.phone || person?.department}
+                        {personType === 'student' ? 'Student' : 'Staff'} • {person?.enrollment_id || person?.phone || person?.department}
                     </DialogDescription>
                 </DialogHeader>
                 
@@ -1155,7 +1155,7 @@ const FaceRegistration = () => {
         let query = supabase
             .from('student_profiles')
             .select(`
-                id, full_name, school_code, photo_url, class_id, section_id
+                id, full_name, enrollment_id, photo_url, class_id, section_id
             `)
             .eq('branch_id', branchId)
             .eq('session_id', currentSessionId)  // ✅ Current session only
@@ -1257,7 +1257,7 @@ const FaceRegistration = () => {
         return students.filter(s => {
             const matchesSearch = !searchTerm || 
                 s.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                s.school_code?.toLowerCase().includes(searchTerm.toLowerCase());
+                s.enrollment_id?.toLowerCase().includes(searchTerm.toLowerCase());
             
             const isRegistered = !!faceRegistrations[s.id];
             const matchesStatus = filterStatus === 'all' || 
@@ -1655,7 +1655,7 @@ const FaceRegistration = () => {
                                                     </div>
                                                     <p className="text-xs text-muted-foreground mt-0.5">
                                                         {activeTab === 'students' 
-                                                            ? `${person.school_code || '-'} • ${person.classes?.class_name || ''} ${person.sections?.section_name || ''}`
+                                                            ? `${person.enrollment_id || '-'} • ${person.classes?.class_name || ''} ${person.sections?.section_name || ''}`
                                                             : `${person.phone || '-'} • ${person.department || '-'}`
                                                         }
                                                     </p>
@@ -1714,7 +1714,7 @@ const FaceRegistration = () => {
                                             <TableHead className="w-12">#</TableHead>
                                             <TableHead>Photo</TableHead>
                                             <TableHead>Name</TableHead>
-                                            <TableHead>{activeTab === 'students' ? 'Adm No' : 'Phone'}</TableHead>
+                                            <TableHead>{activeTab === 'students' ? 'Enroll ID' : 'Phone'}</TableHead>
                                             {activeTab === 'students' && <TableHead>Class</TableHead>}
                                             {activeTab === 'staff' && <TableHead>Dept</TableHead>}
                                             <TableHead className="text-center">Status</TableHead>
@@ -1746,7 +1746,7 @@ const FaceRegistration = () => {
                                                     </TableCell>
                                                     <TableCell className="font-medium">{person.full_name}</TableCell>
                                                     <TableCell className="text-muted-foreground">
-                                                        {activeTab === 'students' ? person.school_code : person.phone}
+                                                        {activeTab === 'students' ? person.enrollment_id : person.phone}
                                                     </TableCell>
                                                     {activeTab === 'students' && (
                                                         <TableCell>

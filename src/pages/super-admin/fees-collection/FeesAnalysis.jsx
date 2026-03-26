@@ -119,7 +119,7 @@ const FeesAnalysis = () => {
     try {
       // === 1. GET ALL STUDENTS FOR THIS SESSION ===
       let studentQuery = supabase.from('student_profiles')
-        .select('id, full_name, school_code, class_id, classes!student_profiles_class_id_fkey(name), sections!student_profiles_section_id_fkey(name), father_name, phone, father_phone, mother_phone, guardian_name, guardian_phone')
+        .select('id, full_name, enrollment_id, class_id, classes!student_profiles_class_id_fkey(name), sections!student_profiles_section_id_fkey(name), father_name, phone, father_phone, mother_phone, guardian_name, guardian_phone')
         .eq('branch_id', branchId)
         .eq('session_id', selectedSessionId);
       
@@ -570,10 +570,10 @@ const FeesAnalysis = () => {
 
       <h2>Fee Defaulters (${topDefaulters.length} students)</h2>
       <table>
-        <thead><tr><th>#</th><th>Adm No</th><th>Student</th><th>Class</th><th>Father/Guardian</th><th>Mobile</th><th>Academic</th><th>Transport</th><th>Hostel</th><th>Total</th><th>Paid</th><th>Due</th></tr></thead>
+        <thead><tr><th>#</th><th>Enroll ID</th><th>Student</th><th>Class</th><th>Father/Guardian</th><th>Mobile</th><th>Academic</th><th>Transport</th><th>Hostel</th><th>Total</th><th>Paid</th><th>Due</th></tr></thead>
         <tbody>${topDefaulters.map((d, i) => {
           const fb = d.breakdown || {};
-          return `<tr><td>${i + 1}</td><td>${d.student?.school_code || '-'}</td><td>${d.student?.full_name || '-'}</td><td>${d.student?.classes?.name || '-'}</td><td>${d.student?.father_name || '-'}</td><td>${d.student?.father_phone || d.student?.phone || '-'}</td><td>${fb.academic > 0 ? '₹' + fb.academic.toLocaleString('en-IN') : '-'}</td><td>${fb.transport > 0 ? '₹' + fb.transport.toLocaleString('en-IN') : '-'}</td><td>${fb.hostel > 0 ? '₹' + fb.hostel.toLocaleString('en-IN') : '-'}</td><td>₹${d.total.toLocaleString('en-IN')}</td><td class="text-green">₹${d.paid.toLocaleString('en-IN')}</td><td class="text-red"><strong>₹${d.due.toLocaleString('en-IN')}</strong></td></tr>`;
+          return `<tr><td>${i + 1}</td><td>${d.student?.enrollment_id || '-'}</td><td>${d.student?.full_name || '-'}</td><td>${d.student?.classes?.name || '-'}</td><td>${d.student?.father_name || '-'}</td><td>${d.student?.father_phone || d.student?.phone || '-'}</td><td>${fb.academic > 0 ? '₹' + fb.academic.toLocaleString('en-IN') : '-'}</td><td>${fb.transport > 0 ? '₹' + fb.transport.toLocaleString('en-IN') : '-'}</td><td>${fb.hostel > 0 ? '₹' + fb.hostel.toLocaleString('en-IN') : '-'}</td><td>₹${d.total.toLocaleString('en-IN')}</td><td class="text-green">₹${d.paid.toLocaleString('en-IN')}</td><td class="text-red"><strong>₹${d.due.toLocaleString('en-IN')}</strong></td></tr>`;
         }).join('')}</tbody>
       </table>
 
@@ -613,8 +613,8 @@ const FeesAnalysis = () => {
         <tbody>${classWiseFees.map(c => `<tr><td>${c.name}</td><td>${c.studentCount}</td><td>₹${c.allocated.toLocaleString('en-IN')}</td><td class="text-green">₹${c.collected.toLocaleString('en-IN')}</td><td class="text-red">₹${c.due.toLocaleString('en-IN')}</td><td>${c.rate}%</td><td>${c.fullyPaid}</td><td>${c.partial}</td><td>${c.unpaid}</td></tr>`).join('')}
         <tr style="font-weight:bold;border-top:2px solid #333;"><td>TOTAL</td><td>${overview.totalStudents}</td><td>₹${overview.totalAllocated.toLocaleString('en-IN')}</td><td class="text-green">₹${overview.totalCollected.toLocaleString('en-IN')}</td><td class="text-red">₹${overview.totalDue.toLocaleString('en-IN')}</td><td>${overview.collectionRate}%</td><td>${overview.fullyPaid}</td><td>${overview.partialPaid}</td><td>${overview.unpaid}</td></tr></tbody></table>
       <h2>Fee Defaulters (${topDefaulters.length} students)</h2>
-      <table><thead><tr><th>#</th><th>Adm No</th><th>Student</th><th>Class</th><th>Father</th><th>Mobile</th><th>Total</th><th>Paid</th><th>Due</th></tr></thead>
-        <tbody>${topDefaulters.map((d, i) => `<tr><td>${i + 1}</td><td>${d.student?.school_code || '-'}</td><td>${d.student?.full_name || '-'}</td><td>${d.student?.classes?.name || '-'}</td><td>${d.student?.father_name || '-'}</td><td>${d.student?.father_phone || d.student?.phone || '-'}</td><td>₹${d.total.toLocaleString('en-IN')}</td><td class="text-green">₹${d.paid.toLocaleString('en-IN')}</td><td class="text-red"><strong>₹${d.due.toLocaleString('en-IN')}</strong></td></tr>`).join('')}</tbody></table>
+      <table><thead><tr><th>#</th><th>Enroll ID</th><th>Student</th><th>Class</th><th>Father</th><th>Mobile</th><th>Total</th><th>Paid</th><th>Due</th></tr></thead>
+        <tbody>${topDefaulters.map((d, i) => `<tr><td>${i + 1}</td><td>${d.student?.enrollment_id || '-'}</td><td>${d.student?.full_name || '-'}</td><td>${d.student?.classes?.name || '-'}</td><td>${d.student?.father_name || '-'}</td><td>${d.student?.father_phone || d.student?.phone || '-'}</td><td>₹${d.total.toLocaleString('en-IN')}</td><td class="text-green">₹${d.paid.toLocaleString('en-IN')}</td><td class="text-red"><strong>₹${d.due.toLocaleString('en-IN')}</strong></td></tr>`).join('')}</tbody></table>
       <div class="footer">Generated by Jashchar ERP • ${format(new Date(), 'dd MMMM yyyy, hh:mm a')}</div>`;
     await downloadReportAsPDF({
       title: `Fees Analysis Report - ${selectedBranch?.name || 'School'}`,
@@ -631,10 +631,10 @@ const FeesAnalysis = () => {
     rows.push(['TOTAL', overview.totalStudents, overview.totalAllocated, overview.totalCollected, overview.totalDue, overview.collectionRate, overview.fullyPaid, overview.partialPaid, overview.unpaid]);
     
     let csv = headers.join(',') + '\n' + rows.map(r => r.join(',')).join('\n');
-    csv += '\n\n\nTop Defaulters\nAdmission No,Student,Class,Father/Guardian,Mobile,Academic Fee,Transport Fee,Hostel Fee,Total Fee,Paid,Due,Discount,Fine\n';
+    csv += '\n\n\nTop Defaulters\nEnroll ID,Student,Class,Father/Guardian,Mobile,Academic Fee,Transport Fee,Hostel Fee,Total Fee,Paid,Due,Discount,Fine\n';
     csv += topDefaulters.map(d => {
       const fb = d.breakdown || {};
-      return `${d.student?.school_code || ''},${d.student?.full_name || ''},${d.student?.classes?.name || ''},${d.student?.father_name || ''},${d.student?.father_phone || d.student?.phone || ''},${fb.academic || 0},${fb.transport || 0},${fb.hostel || 0},${d.total},${d.paid},${d.due},${fb.discount || 0},${fb.fine || 0}`;
+      return `${d.student?.enrollment_id || ''},${d.student?.full_name || ''},${d.student?.classes?.name || ''},${d.student?.father_name || ''},${d.student?.father_phone || d.student?.phone || ''},${fb.academic || 0},${fb.transport || 0},${fb.hostel || 0},${d.total},${d.paid},${d.due},${fb.discount || 0},${fb.fine || 0}`;
     }).join('\n');
 
     const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
@@ -1012,7 +1012,7 @@ const FeesAnalysis = () => {
                       <thead>
                         <tr className="border-b bg-red-50 dark:bg-red-950/20">
                           <th className="p-2 text-left font-semibold">#</th>
-                          <th className="p-2 text-left font-semibold">Admission No</th>
+                          <th className="p-2 text-left font-semibold">Enroll ID</th>
                           <th className="p-2 text-left font-semibold">Student Name</th>
                           <th className="p-2 text-left font-semibold">Class</th>
                           <th className="p-2 text-left font-semibold">Father/Guardian</th>
@@ -1034,7 +1034,7 @@ const FeesAnalysis = () => {
                           return (
                             <tr key={d.id} className="border-b hover:bg-muted/30">
                               <td className="p-2 text-muted-foreground">{i + 1}</td>
-                              <td className="p-2 text-xs font-mono">{d.student?.school_code || '-'}</td>
+                              <td className="p-2 text-xs font-mono">{d.student?.enrollment_id || '-'}</td>
                               <td className="p-2 font-medium">{d.student?.full_name || '-'}</td>
                               <td className="p-2 text-xs">{d.student?.classes?.name || '-'}</td>
                               <td className="p-2 text-xs">{d.student?.father_name || d.student?.guardian_name || '-'}</td>

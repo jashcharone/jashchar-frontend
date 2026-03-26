@@ -120,7 +120,7 @@ const QuickFees = () => {
             const fetchStudents = async () => {
                 // Filter by current session and branch - using student_profiles table
                 let query = supabase.from('student_profiles')
-                    .select('id, full_name, school_code, session_id')
+                    .select('id, full_name, enrollment_id, session_id')
                     .eq('branch_id', branchId)
                     .eq('class_id', selectedClass)
                     .eq('status', 'active')
@@ -167,7 +167,7 @@ const QuickFees = () => {
     const checkForAssignedFees = async (studentId, student) => {
         if (!student) return;
         setFetching(true);
-        const groupName = `Quick Fees - ${student.school_code}`;
+        const groupName = `Quick Fees - ${student.enrollment_id}`;
         const { data: feeGroups, error } = await supabase.from('fee_groups').select('id').eq('name', groupName).eq('branch_id', branchId).eq('session_id', currentSessionId);
 
         if (error) {
@@ -227,9 +227,9 @@ const QuickFees = () => {
         
         if (Number(feeData.firstInstallment) > 0) {
              generated.push({
-                fee_group: `Quick Fees - ${selectedStudent.school_code}`,
+                fee_group: `Quick Fees - ${selectedStudent.enrollment_id}`,
                 fee_type: 'Installment-1',
-                fee_code: `QF-${selectedStudent.school_code}-1`,
+                fee_code: `QF-${selectedStudent.enrollment_id}-1`,
                 due_date: new Date().toISOString().split('T')[0], // Due today or configurable? Assuming today for 1st.
                 fine_type: feeData.fineType || 'none',
                 fine_value: feeData.fineValue || 0,
@@ -246,9 +246,9 @@ const QuickFees = () => {
             const dueDate = setDate(nextMonth, Number(feeData.monthlyDueDate));
             
             generated.push({
-                fee_group: `Quick Fees - ${selectedStudent.school_code}`,
+                fee_group: `Quick Fees - ${selectedStudent.enrollment_id}`,
                 fee_type: `Installment-${i + (Number(feeData.firstInstallment) > 0 ? 2 : 1)}`,
-                fee_code: `QF-${selectedStudent.school_code}-${i + (Number(feeData.firstInstallment) > 0 ? 2 : 1)}`,
+                fee_code: `QF-${selectedStudent.enrollment_id}-${i + (Number(feeData.firstInstallment) > 0 ? 2 : 1)}`,
                 due_date: dueDate.toISOString().split('T')[0],
                 fine_type: feeData.fineType || 'none',
                 fine_value: feeData.fineValue || 0,
@@ -402,7 +402,7 @@ const QuickFees = () => {
             ? (Number(feeData.totalFees) - Number(feeData.firstInstallment || 0)) / Number(feeData.numInstallments) 
             : 0;
             
-        const groupName = `Quick Fees - ${student.school_code}`;
+        const groupName = `Quick Fees - ${student.enrollment_id}`;
         
         // Check if already assigned
         const { data: existingGroup } = await supabase
@@ -438,7 +438,7 @@ const QuickFees = () => {
         if (Number(feeData.firstInstallment) > 0) {
             installmentsToCreate.push({
                 fee_type: 'Installment-1',
-                fee_code: `QF-${student.school_code}-1`,
+                fee_code: `QF-${student.enrollment_id}-1`,
                 due_date: new Date().toISOString().split('T')[0],
                 amount: Number(feeData.firstInstallment)
             });
@@ -450,7 +450,7 @@ const QuickFees = () => {
             
             installmentsToCreate.push({
                 fee_type: `Installment-${i + (Number(feeData.firstInstallment) > 0 ? 2 : 1)}`,
-                fee_code: `QF-${student.school_code}-${i + (Number(feeData.firstInstallment) > 0 ? 2 : 1)}`,
+                fee_code: `QF-${student.enrollment_id}-${i + (Number(feeData.firstInstallment) > 0 ? 2 : 1)}`,
                 due_date: dueDate.toISOString().split('T')[0],
                 amount: installmentAmount
             });
@@ -527,7 +527,7 @@ const QuickFees = () => {
         setLoading(true);
         try {
             // 1. Create Fee Group
-            const groupName = `Quick Fees - ${selectedStudent.school_code}`;
+            const groupName = `Quick Fees - ${selectedStudent.enrollment_id}`;
             const { data: feeGroup, error: groupError } = await supabase.from('fee_groups').insert({ branch_id: branchId, session_id: currentSessionId, organization_id: organizationId, name: groupName, description: 'Auto-generated quick fees' }).select().single();
             if (groupError) throw groupError;
 
@@ -723,7 +723,7 @@ const QuickFees = () => {
                                 <Select value={selectedStudentId} onValueChange={setSelectedStudentId} disabled={!selectedClass}>
                                     <SelectTrigger><SelectValue placeholder="Select Student" /></SelectTrigger>
                                     <SelectContent>
-                                        {students.map(s => <SelectItem key={s.id} value={s.id}>{s.full_name} ({s.school_code})</SelectItem>)}
+                                        {students.map(s => <SelectItem key={s.id} value={s.id}>{s.full_name} ({s.enrollment_id})</SelectItem>)}
                                     </SelectContent>
                                 </Select>
                             </div>
@@ -1007,7 +1007,7 @@ const QuickFees = () => {
                                                             onCheckedChange={() => toggleStudentSelection(student.id)}
                                                         />
                                                     </td>
-                                                    <td className="p-3 font-mono text-xs">{student.school_code}</td>
+                                                    <td className="p-3 font-mono text-xs">{student.enrollment_id}</td>
                                                     <td className="p-3 font-medium">{student.full_name}</td>
                                                     <td className="p-3">
                                                         <Badge variant="outline" className="text-xs">Active</Badge>

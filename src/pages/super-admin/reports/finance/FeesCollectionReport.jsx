@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -33,7 +33,7 @@ const FeesCollectionReport = () => {
   const columns = useMemo(() => [
     { key: 'transaction_id', label: 'Transaction ID' },
     { key: 'date', label: 'Date' },
-    { key: 'admission_no', label: 'Admission No' },
+    { key: 'enrollment_id', label: 'Enroll ID' },
     { key: 'student_name', label: 'Name' },
     { key: 'class_section', label: 'Class' },
     { key: 'fee_type', label: 'Fee Type' },
@@ -164,7 +164,7 @@ const FeesCollectionReport = () => {
               <tr className="text-left bg-muted">
                 <th className="p-2">Transaction ID</th>
                 <th className="p-2">Date</th>
-                <th className="p-2">Admission No</th>
+                <th className="p-2">Enroll ID</th>
                 <th className="p-2">Name</th>
                 <th className="p-2">Class</th>
                 <th className="p-2">Fee Type</th>
@@ -181,7 +181,7 @@ const FeesCollectionReport = () => {
                 <tr key={row.payment_id} className="border-b">
                   <td className="p-2">{row.transaction_id?.substring(0, 8) || row.payment_id?.substring(0, 8)}</td>
                   <td className="p-2">{format(new Date(row.date), 'dd-MM-yyyy')}</td>
-                  <td className="p-2">{row.admission_no}</td>
+                  <td className="p-2">{row.enrollment_id}</td>
                   <td className="p-2">{row.student_name}</td>
                   <td className="p-2">{row.class_name} ({row.section_name})</td>
                   <td className="p-2">{row.fee_type}</td>

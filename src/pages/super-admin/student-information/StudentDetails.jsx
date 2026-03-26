@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
 import { supabase } from '@/lib/customSupabaseClient';
 import api from '@/lib/api';
@@ -64,7 +64,7 @@ const StudentDetails = () => {
     const [disableFormData, setDisableFormData] = useState({ reason_id: '', note: '' });
     const [disableLoading, setDisableLoading] = useState(false);
 
-    // ✅ FIX: Use selectedBranch.id OR fallback to user profile/metadata branch_id
+    // ? FIX: Use selectedBranch.id OR fallback to user profile/metadata branch_id
     const branchId = selectedBranch?.id || user?.profile?.branch_id || user?.user_metadata?.branch_id;
 
     const calculateAge = (dob) => {
@@ -72,7 +72,7 @@ const StudentDetails = () => {
         return differenceInYears(new Date(), new Date(dob));
     };
 
-    // 🔍 Highlight search text in results
+    // ?? Highlight search text in results
     const highlightText = (text, searchTerm) => {
         if (!searchTerm || !text) return text;
         const regex = new RegExp(`(${searchTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
@@ -95,7 +95,7 @@ const StudentDetails = () => {
             s.full_name || `${s.first_name} ${s.last_name}`,
             s.class?.name || '',
             s.section?.name || '',
-            s.school_code || '',
+            s.enrollment_id || '',
             s.roll_number || '',
             s.phone || '',
             s.father_name || ''
@@ -116,7 +116,7 @@ const StudentDetails = () => {
             s.full_name || `${s.first_name} ${s.last_name}`,
             s.class?.name || '',
             s.section?.name || '',
-            s.school_code || '',
+            s.enrollment_id || '',
             s.roll_number || '',
             s.phone || '',
             s.father_name || '',
@@ -164,7 +164,7 @@ const StudentDetails = () => {
                     <td>${s.full_name || `${s.first_name} ${s.last_name}`}</td>
                     <td>${s.class?.name || ''}</td>
                     <td>${s.section?.name || ''}</td>
-                    <td>${s.school_code || ''}</td>
+                    <td>${s.enrollment_id || ''}</td>
                     <td>${s.roll_number || ''}</td>
                     <td>${s.phone || ''}</td>
                     <td>${s.father_name || ''}</td>
@@ -277,7 +277,7 @@ const StudentDetails = () => {
         const to = from + pageSize - 1;
 
         let studentQuery = supabase.from('student_profiles').select(`
-            id, full_name, first_name, last_name, school_code, roll_number, gender, date_of_birth, phone, photo_url,
+            id, full_name, first_name, last_name, enrollment_id, roll_number, gender, date_of_birth, phone, photo_url,
             father_name, father_phone, guardian_name, guardian_phone, admission_date, session_id, is_disabled,
             class:classes!student_profiles_class_id_fkey( name ),
             section:sections!student_profiles_section_id_fkey( name )
@@ -308,7 +308,7 @@ const StudentDetails = () => {
         // Server-side keyword search
         if (filters.keyword && filters.keyword.trim()) {
             const kw = filters.keyword.trim();
-            studentQuery = studentQuery.or(`full_name.ilike.%${kw}%,school_code.ilike.%${kw}%,roll_number.ilike.%${kw}%,phone.ilike.%${kw}%,father_name.ilike.%${kw}%`);
+            studentQuery = studentQuery.or(`full_name.ilike.%${kw}%,enrollment_id.ilike.%${kw}%,roll_number.ilike.%${kw}%,phone.ilike.%${kw}%,father_name.ilike.%${kw}%`);
         }
         
         // Admission date filter
@@ -784,7 +784,7 @@ const StudentDetails = () => {
                             />
                             {filters.keyword && (
                                 <Button variant="ghost" size="sm" className="h-8 px-2" onClick={() => handleFilterChange('keyword', '')}>
-                                    ✕
+                                    ?
                                 </Button>
                             )}
                         </div>
@@ -801,7 +801,7 @@ const StudentDetails = () => {
                                     <th className="p-3 text-left font-medium">Section</th>
                                     <th className="p-3 text-left font-medium">Gender</th>
                                     <th className="p-3 text-left font-medium">Mobile No</th>
-                                    <th className="p-3 text-left font-medium">Admission No</th>
+                                    <th className="p-3 text-left font-medium">Enroll ID</th>
                                     <th className="p-3 text-left font-medium">Roll</th>
                                     <th className="p-3 text-left font-medium">Age</th>
                                     <th className="p-3 text-left font-medium">Father/Guardian</th>
@@ -843,7 +843,7 @@ const StudentDetails = () => {
                                             <td className="p-3">{highlightText(s.phone, filters.keyword) || '-'}</td>
                                             <td className="p-3">
                                                 <div>
-                                                    <span className="font-medium">{highlightText(s.school_code, filters.keyword)}</span>
+                                                    <span className="font-medium">{highlightText(s.enrollment_id, filters.keyword)}</span>
                                                     <div className="text-xs text-muted-foreground">{s.admission_date ? formatDate(s.admission_date) : ''}</div>
                                                 </div>
                                             </td>
@@ -876,7 +876,7 @@ const StudentDetails = () => {
                                                 )}
                                             </td>
                                             <td className="p-3 min-w-[180px]">
-                                                <div className="space-y-1" title={`Total: ₹${studentFees.total.toLocaleString()} | Paid: ₹${studentFees.paid.toLocaleString()} | Balance: ₹${studentFees.balance.toLocaleString()}`}>
+                                                <div className="space-y-1" title={`Total: ?${studentFees.total.toLocaleString()} | Paid: ?${studentFees.paid.toLocaleString()} | Balance: ?${studentFees.balance.toLocaleString()}`}>
                                                     <div className="flex items-center gap-2">
                                                         <Progress 
                                                             value={feesProgress} 
@@ -885,24 +885,24 @@ const StudentDetails = () => {
                                                         <span className={`text-xs font-medium w-10 ${feesProgress === 100 ? 'text-green-600 dark:text-green-400' : feesProgress > 0 ? 'text-amber-600 dark:text-amber-400' : 'text-red-500 dark:text-red-400'}`}>{feesProgress}%</span>
                                                     </div>
                                                     <div className="flex items-center justify-between text-xs">
-                                                        <span className="text-green-600 dark:text-green-400">₹{studentFees.paid.toLocaleString('en-IN')}</span>
+                                                        <span className="text-green-600 dark:text-green-400">?{studentFees.paid.toLocaleString('en-IN')}</span>
                                                         <span className="text-muted-foreground">/</span>
-                                                        <span className="text-muted-foreground">₹{studentFees.total.toLocaleString('en-IN')}</span>
+                                                        <span className="text-muted-foreground">?{studentFees.total.toLocaleString('en-IN')}</span>
                                                     </div>
                                                     {/* Show discount, fine, and refund if present */}
                                                     <div className="flex flex-wrap gap-1 text-[10px]">
                                                         {studentFees.discount > 0 && (
-                                                            <span className="text-amber-600 dark:text-amber-400" title="Discount">D:₹{studentFees.discount.toLocaleString('en-IN')}</span>
+                                                            <span className="text-amber-600 dark:text-amber-400" title="Discount">D:?{studentFees.discount.toLocaleString('en-IN')}</span>
                                                         )}
                                                         {studentFees.fine > 0 && (
-                                                            <span className="text-orange-600 dark:text-orange-400" title="Fine">F:₹{studentFees.fine.toLocaleString('en-IN')}</span>
+                                                            <span className="text-orange-600 dark:text-orange-400" title="Fine">F:?{studentFees.fine.toLocaleString('en-IN')}</span>
                                                         )}
                                                         {studentFees.refunded > 0 && (
-                                                            <span className="text-blue-600 dark:text-blue-400" title="Refund">R:₹{studentFees.refunded.toLocaleString('en-IN')}</span>
+                                                            <span className="text-blue-600 dark:text-blue-400" title="Refund">R:?{studentFees.refunded.toLocaleString('en-IN')}</span>
                                                         )}
                                                     </div>
                                                     {studentFees.balance > 0 && (
-                                                        <div className="text-xs text-red-600 dark:text-red-400 font-medium">Due: ₹{studentFees.balance.toLocaleString('en-IN')}</div>
+                                                        <div className="text-xs text-red-600 dark:text-red-400 font-medium">Due: ?{studentFees.balance.toLocaleString('en-IN')}</div>
                                                     )}
                                                 </div>
                                             </td>
@@ -1016,7 +1016,7 @@ const StudentDetails = () => {
                         <div className="p-3 bg-muted rounded-lg">
                             <p className="font-medium">{studentToDisable?.full_name}</p>
                             <p className="text-sm text-muted-foreground">
-                                {studentToDisable?.class?.name}-{studentToDisable?.section?.name} | {studentToDisable?.school_code}
+                                {studentToDisable?.class?.name}-{studentToDisable?.section?.name} | {studentToDisable?.enrollment_id}
                             </p>
                         </div>
                         <div className="space-y-2">

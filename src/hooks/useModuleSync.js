@@ -1,4 +1,4 @@
-﻿import { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { moduleInitializationService } from '@/services/moduleInitializationService';
 
 export const useModuleSync = () => {

@@ -1,4 +1,4 @@
-﻿import { supabase } from '@/lib/customSupabaseClient';
+import { supabase } from '@/lib/customSupabaseClient';
 
 export const verifyPlanModuleSync = async () => {
     const report = { verified: true, issues: [] };

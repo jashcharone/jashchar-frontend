@@ -1,4 +1,4 @@
-﻿import React from 'react';
+import React from 'react';
 import { formatDate } from '@/utils/dateUtils';
 import { Star, Clock, BookOpen, ShoppingCart, Play, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';

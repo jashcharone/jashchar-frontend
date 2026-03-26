@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
 import { supabase } from '@/lib/customSupabaseClient';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
@@ -144,13 +144,13 @@ const DisabledStudents = () => {
     
     setLoading(true);
     
-    // Use session from header dropdown (currentSessionId) — respects user's session selection
+    // Use session from header dropdown (currentSessionId) � respects user's session selection
     const activeSessionId = currentSessionId;
 
     let query = supabase
       .from('student_profiles')
       .select(`
-        id, full_name, first_name, last_name, school_code, roll_number, gender, 
+        id, full_name, first_name, last_name, enrollment_id, roll_number, gender, 
         date_of_birth, phone, photo_url, father_name, is_disabled, disabled_at, 
         disable_note, disable_reason_id, session_id,
         class:classes!student_profiles_class_id_fkey(name),
@@ -176,7 +176,7 @@ const DisabledStudents = () => {
       query = query.eq('disable_reason_id', filters.reason_id);
     }
     if (filters.keyword) {
-      query = query.or(`full_name.ilike.%${filters.keyword}%,school_code.ilike.%${filters.keyword}%,phone.ilike.%${filters.keyword}%`);
+      query = query.or(`full_name.ilike.%${filters.keyword}%,enrollment_id.ilike.%${filters.keyword}%,phone.ilike.%${filters.keyword}%`);
     }
 
     const { data, error, count } = await query;
@@ -257,12 +257,12 @@ const DisabledStudents = () => {
       toast({ variant: 'destructive', title: 'No data to copy' });
       return;
     }
-    const headers = ['Name', 'Class', 'Section', 'Admission No', 'Father', 'Reason', 'Disabled Date'];
+    const headers = ['Name', 'Class', 'Section', 'Enroll ID', 'Father', 'Reason', 'Disabled Date'];
     const rows = students.map(s => [
       s.full_name || '',
       s.class?.name || '',
       s.section?.name || '',
-      s.school_code || '',
+      s.enrollment_id || '',
       s.father_name || '',
       getReasonText(s.disable_reason_id) || s.disable_note || '',
       s.disabled_at ? format(new Date(s.disabled_at), 'dd/MM/yyyy') : ''
@@ -277,12 +277,12 @@ const DisabledStudents = () => {
       toast({ variant: 'destructive', title: 'No data to export' });
       return;
     }
-    const headers = ['Name', 'Class', 'Section', 'Admission No', 'Phone', 'Father', 'Reason', 'Note', 'Disabled Date'];
+    const headers = ['Name', 'Class', 'Section', 'Enroll ID', 'Phone', 'Father', 'Reason', 'Note', 'Disabled Date'];
     const rows = students.map(s => [
       s.full_name || '',
       s.class?.name || '',
       s.section?.name || '',
-      s.school_code || '',
+      s.enrollment_id || '',
       s.phone || '',
       s.father_name || '',
       getReasonText(s.disable_reason_id) || '',
@@ -330,13 +330,13 @@ const DisabledStudents = () => {
       <h1>Disabled Students List</h1>
       <p>Total: ${students.length} | Printed: ${format(new Date(), 'dd/MM/yyyy HH:mm')}</p>
       <table>
-        <thead><tr><th>#</th><th>Name</th><th>Class</th><th>Admission No</th><th>Father</th><th>Reason</th><th>Disabled Date</th></tr></thead>
+        <thead><tr><th>#</th><th>Name</th><th>Class</th><th>Enroll ID</th><th>Father</th><th>Reason</th><th>Disabled Date</th></tr></thead>
         <tbody>
         ${studentsWithReasons.map((s, i) => `<tr>
           <td>${i + 1}</td>
           <td>${s.full_name || ''}</td>
           <td>${s.class?.name || ''}-${s.section?.name || ''}</td>
-          <td>${s.school_code || ''}</td>
+          <td>${s.enrollment_id || ''}</td>
           <td>${s.father_name || ''}</td>
           <td>${s.reasonText}</td>
           <td>${s.disabled_at ? format(new Date(s.disabled_at), 'dd/MM/yyyy') : ''}</td>
@@ -452,7 +452,7 @@ const DisabledStudents = () => {
             <div className="md:col-span-2">
               <label className="text-sm font-medium mb-1 block">Search</label>
               <Input 
-                placeholder="Name, Admission No, Phone..." 
+                placeholder="Name, Enroll ID, Phone..." 
                 value={filters.keyword} 
                 onChange={e => handleFilterChange('keyword', e.target.value)} 
               />
@@ -490,7 +490,7 @@ const DisabledStudents = () => {
                   <th className="p-3 text-left font-medium">Photo</th>
                   <th className="p-3 text-left font-medium">Student Name</th>
                   <th className="p-3 text-left font-medium">Class</th>
-                  <th className="p-3 text-left font-medium">Admission No</th>
+                  <th className="p-3 text-left font-medium">Enroll ID</th>
                   <th className="p-3 text-left font-medium">Father Name</th>
                   <th className="p-3 text-left font-medium">Disable Reason</th>
                   <th className="p-3 text-left font-medium">Note</th>
@@ -527,7 +527,7 @@ const DisabledStudents = () => {
                     <td className="p-3">
                       <Badge variant="outline">{s.class?.name}-{s.section?.name}</Badge>
                     </td>
-                    <td className="p-3 font-mono text-sm">{s.school_code}</td>
+                    <td className="p-3 font-mono text-sm">{s.enrollment_id}</td>
                     <td className="p-3">{s.father_name || '-'}</td>
                     <td className="p-3">
                       <Badge variant="destructive" className="font-normal">

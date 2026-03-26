@@ -46,13 +46,13 @@ const MarksheetDesignerPage = () => {
         school_address: '',
         affiliation_no: '',
         exam_center: '',
-        school_code: '',
+        enrollment_id: '',
         // Student Info Display
         show_student_photo: true,
         show_father_name: true,
         show_mother_name: true,
         show_dob: true,
-        show_admission_no: true,
+        show_enrollment_id: true,
         show_roll_no: true,
         show_class: true,
         show_section: true,
@@ -162,12 +162,12 @@ const MarksheetDesignerPage = () => {
             school_address: '',
             affiliation_no: '',
             exam_center: '',
-            school_code: '',
+            enrollment_id: '',
             show_student_photo: true,
             show_father_name: true,
             show_mother_name: true,
             show_dob: true,
-            show_admission_no: true,
+            show_enrollment_id: true,
             show_roll_no: true,
             show_class: true,
             show_section: true,
@@ -379,9 +379,9 @@ const MarksheetDesignerPage = () => {
                 {/* Student Info */}
                 <div className="flex gap-6 mb-6">
                     <div className="flex-1 grid grid-cols-2 gap-2 text-sm">
-                        {template.show_admission_no && (
+                        {template.show_enrollment_id && (
                             <div className="flex gap-2">
-                                <span className="font-semibold">Admission No:</span>
+                                <span className="font-semibold">Enroll ID:</span>
                                 <span>2024001</span>
                             </div>
                         )}
@@ -752,8 +752,8 @@ const MarksheetDesignerPage = () => {
                                     <div className="space-y-2">
                                         <Label>School Code</Label>
                                         <Input
-                                            value={formData.school_code}
-                                            onChange={(e) => handleInputChange('school_code', e.target.value)}
+                                            value={formData.enrollment_id}
+                                            onChange={(e) => handleInputChange('enrollment_id', e.target.value)}
                                             placeholder="e.g., 12345"
                                         />
                                     </div>
@@ -777,7 +777,7 @@ const MarksheetDesignerPage = () => {
                                         { key: 'show_father_name', label: "Father's Name" },
                                         { key: 'show_mother_name', label: "Mother's Name" },
                                         { key: 'show_dob', label: 'Date of Birth' },
-                                        { key: 'show_admission_no', label: 'Admission No' },
+                                        { key: 'show_enrollment_id', label: 'Enroll ID' },
                                         { key: 'show_roll_no', label: 'Roll No' },
                                         { key: 'show_class', label: 'Class' },
                                         { key: 'show_section', label: 'Section' },

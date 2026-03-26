@@ -27,7 +27,7 @@ const ExamResultPage = () => {
 
   const [exams, setExams] = useState([]);
   const [selectedExam, setSelectedExam] = useState('');
-  const [admissionNo, setAdmissionNo] = useState('');
+  const [enrollmentId, setAdmissionNo] = useState('');
   const [result, setResult] = useState(null);
   const [searched, setSearched] = useState(false);
   const [error, setError] = useState('');
@@ -87,7 +87,7 @@ const ExamResultPage = () => {
       return;
     }
     
-    if (!admissionNo.trim()) {
+    if (!enrollmentId.trim()) {
       setError('Please enter admission number');
       return;
     }
@@ -99,9 +99,9 @@ const ExamResultPage = () => {
       // Fetch student by admission number
       const { data: student, error: studentError } = await supabase
         .from('student_profiles')
-        .select('id, full_name, school_code, class_id, section_id, photo_url, roll_number')
+        .select('id, full_name, enrollment_id, class_id, section_id, photo_url, roll_number')
         .eq('branch_id', school.id)
-        .eq('school_code', admissionNo.trim())
+        .eq('enrollment_id', enrollmentId.trim())
         .single();
 
       if (studentError || !student) {
@@ -273,10 +273,10 @@ const ExamResultPage = () => {
               <form onSubmit={handleSearch} className="space-y-4">
                 <div className="grid md:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <label className="text-sm font-medium text-gray-700">Admission No <span className="text-red-500">*</span></label>
+                    <label className="text-sm font-medium text-gray-700">Enroll ID <span className="text-red-500">*</span></label>
                     <Input 
                       placeholder="Enter your admission number" 
-                      value={admissionNo}
+                      value={enrollmentId}
                       onChange={e => setAdmissionNo(e.target.value)}
                       className="h-12"
                     />
@@ -368,8 +368,8 @@ const ExamResultPage = () => {
                         </div>
                         <div className="grid grid-cols-2 gap-4">
                           <div>
-                            <p className="text-xs text-gray-500 uppercase tracking-wide">Admission No</p>
-                            <p className="font-semibold">{result.student.school_code}</p>
+                            <p className="text-xs text-gray-500 uppercase tracking-wide">Enroll ID</p>
+                            <p className="font-semibold">{result.student.enrollment_id}</p>
                           </div>
                           <div>
                             <p className="text-xs text-gray-500 uppercase tracking-wide">Roll No</p>

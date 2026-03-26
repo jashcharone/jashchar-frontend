@@ -378,9 +378,9 @@ const PairWearableDialog = ({ open, onClose, branchId, organizationId, onSaved }
         if (searchType === 'student') {
             query = supabase
                 .from(table)
-                .select('id, full_name, school_code, class_id, photo_url')
+                .select('id, full_name, enrollment_id, class_id, photo_url')
                 .eq('branch_id', branchId)
-                .or(`full_name.ilike.%${searchTerm}%,school_code.ilike.%${searchTerm}%`)
+                .or(`full_name.ilike.%${searchTerm}%,enrollment_id.ilike.%${searchTerm}%`)
                 .limit(15);
         } else {
             query = supabase
@@ -423,7 +423,7 @@ const PairWearableDialog = ({ open, onClose, branchId, organizationId, onSaved }
                 user_type: searchType,
                 user_id: selectedUser.id,
                 user_name: selectedUser.full_name,
-                user_code: searchType === 'student' ? selectedUser.school_code : selectedUser.phone,
+                user_code: searchType === 'student' ? selectedUser.enrollment_id : selectedUser.phone,
                 connection_status: 'never_connected',
                 battery_level: 100,
                 is_active: true,
@@ -681,7 +681,7 @@ const PairWearableDialog = ({ open, onClose, branchId, organizationId, onSaved }
                                             <div className="flex-1">
                                                 <p className="font-medium">{user.full_name}</p>
                                                 <p className="text-xs text-muted-foreground">
-                                                    {searchType === 'student' ? user.school_code : user.phone}
+                                                    {searchType === 'student' ? user.enrollment_id : user.phone}
                                                 </p>
                                             </div>
                                             {selectedUser?.id === user.id && (
@@ -774,7 +774,7 @@ const PairWearableDialog = ({ open, onClose, branchId, organizationId, onSaved }
                                     <div>
                                         <p className="font-semibold">{selectedUser?.full_name}</p>
                                         <p className="text-sm text-muted-foreground">
-                                            {searchType === 'student' ? selectedUser?.school_code : selectedUser?.phone}
+                                            {searchType === 'student' ? selectedUser?.enrollment_id : selectedUser?.phone}
                                         </p>
                                         <Badge variant="outline" className="mt-1 capitalize">{searchType}</Badge>
                                     </div>

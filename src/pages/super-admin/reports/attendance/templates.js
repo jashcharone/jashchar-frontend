@@ -24,7 +24,7 @@ export const ATTENDANCE_TEMPLATES = [
     name: 'Daily Attendance - Basic',
     category: TEMPLATE_CATEGORIES.DAILY,
     description: 'Simple daily attendance mark list',
-    columns: getColumns(['admission_number', 'full_name', 'class.name', 'section.name', 'attendance_date', 'status']),
+    columns: getColumns(['enrollment_id', 'full_name', 'class.name', 'section.name', 'attendance_date', 'status']),
     defaultFilters: { date: 'today' },
     defaultGroupBy: ['class.name'],
     defaultSortBy: [{ field: 'roll_number', direction: 'asc' }]
@@ -34,7 +34,7 @@ export const ATTENDANCE_TEMPLATES = [
     name: 'Daily Attendance - Detailed',
     category: TEMPLATE_CATEGORIES.DAILY,
     description: 'Full attendance with check-in/out times',
-    columns: getColumns(['admission_number', 'full_name', 'class.name', 'section.name', 'attendance_date', 'status', 'check_in_time', 'check_out_time', 'late_minutes', 'remarks']),
+    columns: getColumns(['enrollment_id', 'full_name', 'class.name', 'section.name', 'attendance_date', 'status', 'check_in_time', 'check_out_time', 'late_minutes', 'remarks']),
     defaultFilters: { date: 'today' },
     defaultGroupBy: ['class.name'],
     defaultSortBy: [{ field: 'class.name', direction: 'asc' }]
@@ -55,7 +55,7 @@ export const ATTENDANCE_TEMPLATES = [
     name: "Today's Absentees",
     category: TEMPLATE_CATEGORIES.DAILY,
     description: 'List of students absent today',
-    columns: getColumns(['admission_number', 'full_name', 'class.name', 'section.name', 'father_name', 'father_phone', 'absence_reason']),
+    columns: getColumns(['enrollment_id', 'full_name', 'class.name', 'section.name', 'father_name', 'father_phone', 'absence_reason']),
     defaultFilters: { date: 'today', status: 'absent' },
     defaultGroupBy: ['class.name'],
     defaultSortBy: []
@@ -65,7 +65,7 @@ export const ATTENDANCE_TEMPLATES = [
     name: "Today's Late Arrivals",
     category: TEMPLATE_CATEGORIES.DAILY,
     description: 'Students who came late today',
-    columns: getColumns(['admission_number', 'full_name', 'class.name', 'section.name', 'check_in_time', 'late_minutes', 'remarks']),
+    columns: getColumns(['enrollment_id', 'full_name', 'class.name', 'section.name', 'check_in_time', 'late_minutes', 'remarks']),
     defaultFilters: { date: 'today', status: 'late' },
     defaultGroupBy: ['class.name'],
     defaultSortBy: [{ field: 'late_minutes', direction: 'desc' }]
@@ -75,7 +75,7 @@ export const ATTENDANCE_TEMPLATES = [
     name: 'Half Day Students',
     category: TEMPLATE_CATEGORIES.DAILY,
     description: 'Students with half-day attendance',
-    columns: getColumns(['admission_number', 'full_name', 'class.name', 'section.name', 'attendance_date', 'check_in_time', 'check_out_time', 'remarks']),
+    columns: getColumns(['enrollment_id', 'full_name', 'class.name', 'section.name', 'attendance_date', 'check_in_time', 'check_out_time', 'remarks']),
     defaultFilters: { status: 'half_day' },
     defaultGroupBy: ['class.name'],
     defaultSortBy: []
@@ -109,7 +109,7 @@ export const ATTENDANCE_TEMPLATES = [
     name: 'Period-wise Attendance',
     category: TEMPLATE_CATEGORIES.PERIOD_SUBJECT,
     description: 'Attendance for each period of the day',
-    columns: getColumns(['admission_number', 'full_name', 'class.name', 'period_number', 'subject.name', 'period_status']),
+    columns: getColumns(['enrollment_id', 'full_name', 'class.name', 'period_number', 'subject.name', 'period_status']),
     defaultFilters: { date: 'today' },
     defaultGroupBy: ['period_number'],
     defaultSortBy: [{ field: 'period_number', direction: 'asc' }]
@@ -119,7 +119,7 @@ export const ATTENDANCE_TEMPLATES = [
     name: 'Subject-wise Attendance',
     category: TEMPLATE_CATEGORIES.PERIOD_SUBJECT,
     description: 'Attendance grouped by subject',
-    columns: getColumns(['admission_number', 'full_name', 'class.name', 'subject.name', 'subject.code', 'days_present', 'days_absent', 'attendance_percentage']),
+    columns: getColumns(['enrollment_id', 'full_name', 'class.name', 'subject.name', 'subject.code', 'days_present', 'days_absent', 'attendance_percentage']),
     defaultFilters: {},
     defaultGroupBy: ['subject.name'],
     defaultSortBy: []
@@ -139,7 +139,7 @@ export const ATTENDANCE_TEMPLATES = [
     name: 'Period-wise Absent List',
     category: TEMPLATE_CATEGORIES.PERIOD_SUBJECT,
     description: 'Students absent in specific periods',
-    columns: getColumns(['admission_number', 'full_name', 'class.name', 'period_number', 'subject.name', 'teacher.name']),
+    columns: getColumns(['enrollment_id', 'full_name', 'class.name', 'period_number', 'subject.name', 'teacher.name']),
     defaultFilters: { period_status: 'absent' },
     defaultGroupBy: ['period_number'],
     defaultSortBy: []
@@ -159,7 +159,7 @@ export const ATTENDANCE_TEMPLATES = [
     name: 'Lab/Practical Attendance',
     category: TEMPLATE_CATEGORIES.PERIOD_SUBJECT,
     description: 'Attendance for lab and practical sessions',
-    columns: getColumns(['admission_number', 'full_name', 'class.name', 'subject.name', 'attendance_date', 'period_status', 'remarks']),
+    columns: getColumns(['enrollment_id', 'full_name', 'class.name', 'subject.name', 'attendance_date', 'period_status', 'remarks']),
     defaultFilters: { subject_type: 'practical' },
     defaultGroupBy: ['subject.name'],
     defaultSortBy: []
@@ -173,7 +173,7 @@ export const ATTENDANCE_TEMPLATES = [
     name: 'Monthly Attendance Summary',
     category: TEMPLATE_CATEGORIES.MONTHLY,
     description: 'Month-wise attendance for all students',
-    columns: getColumns(['admission_number', 'full_name', 'class.name', 'section.name', 'month', 'working_days', 'days_present', 'days_absent', 'attendance_percentage']),
+    columns: getColumns(['enrollment_id', 'full_name', 'class.name', 'section.name', 'month', 'working_days', 'days_present', 'days_absent', 'attendance_percentage']),
     defaultFilters: {},
     defaultGroupBy: ['class.name'],
     defaultSortBy: [{ field: 'attendance_percentage', direction: 'asc' }],
@@ -194,7 +194,7 @@ export const ATTENDANCE_TEMPLATES = [
     name: 'Below 75% Attendance',
     category: TEMPLATE_CATEGORIES.MONTHLY,
     description: 'Students with attendance below 75%',
-    columns: getColumns(['admission_number', 'full_name', 'class.name', 'section.name', 'working_days', 'days_present', 'attendance_percentage', 'father_phone']),
+    columns: getColumns(['enrollment_id', 'full_name', 'class.name', 'section.name', 'working_days', 'days_present', 'attendance_percentage', 'father_phone']),
     defaultFilters: { attendance_below: 75 },
     defaultGroupBy: ['class.name'],
     defaultSortBy: [{ field: 'attendance_percentage', direction: 'asc' }]
@@ -204,7 +204,7 @@ export const ATTENDANCE_TEMPLATES = [
     name: 'Above 90% Attendance',
     category: TEMPLATE_CATEGORIES.MONTHLY,
     description: 'Students with excellent attendance (>90%)',
-    columns: getColumns(['admission_number', 'full_name', 'class.name', 'section.name', 'working_days', 'days_present', 'attendance_percentage']),
+    columns: getColumns(['enrollment_id', 'full_name', 'class.name', 'section.name', 'working_days', 'days_present', 'attendance_percentage']),
     defaultFilters: { attendance_above: 90 },
     defaultGroupBy: ['class.name'],
     defaultSortBy: [{ field: 'attendance_percentage', direction: 'desc' }]
@@ -214,7 +214,7 @@ export const ATTENDANCE_TEMPLATES = [
     name: 'Late Arrival Analysis',
     category: TEMPLATE_CATEGORIES.MONTHLY,
     description: 'Monthly late arrival patterns',
-    columns: getColumns(['admission_number', 'full_name', 'class.name', 'section.name', 'month', 'days_late', 'total_late', 'attendance_percentage']),
+    columns: getColumns(['enrollment_id', 'full_name', 'class.name', 'section.name', 'month', 'days_late', 'total_late', 'attendance_percentage']),
     defaultFilters: {},
     defaultGroupBy: ['class.name'],
     defaultSortBy: [{ field: 'days_late', direction: 'desc' }]
@@ -224,7 +224,7 @@ export const ATTENDANCE_TEMPLATES = [
     name: 'Yearly Attendance Report',
     category: TEMPLATE_CATEGORIES.MONTHLY,
     description: 'Full year attendance summary',
-    columns: getColumns(['admission_number', 'full_name', 'class.name', 'section.name', 'total_working_days', 'total_present', 'total_absent', 'total_late', 'overall_percentage']),
+    columns: getColumns(['enrollment_id', 'full_name', 'class.name', 'section.name', 'total_working_days', 'total_present', 'total_absent', 'total_late', 'overall_percentage']),
     defaultFilters: {},
     defaultGroupBy: ['class.name'],
     defaultSortBy: [{ field: 'overall_percentage', direction: 'asc' }]
@@ -248,7 +248,7 @@ export const ATTENDANCE_TEMPLATES = [
     name: 'Consecutive Absence Alert',
     category: TEMPLATE_CATEGORIES.DEFAULTERS,
     description: 'Students absent for 3+ consecutive days',
-    columns: getColumns(['admission_number', 'full_name', 'class.name', 'section.name', 'consecutive_absent', 'last_absent_date', 'father_name', 'father_phone', 'parent_notified']),
+    columns: getColumns(['enrollment_id', 'full_name', 'class.name', 'section.name', 'consecutive_absent', 'last_absent_date', 'father_name', 'father_phone', 'parent_notified']),
     defaultFilters: { consecutive_days: 3 },
     defaultGroupBy: ['class.name'],
     defaultSortBy: [{ field: 'consecutive_absent', direction: 'desc' }]
@@ -258,7 +258,7 @@ export const ATTENDANCE_TEMPLATES = [
     name: 'Chronic Absentees List',
     category: TEMPLATE_CATEGORIES.DEFAULTERS,
     description: 'Students frequently absent',
-    columns: getColumns(['admission_number', 'full_name', 'class.name', 'section.name', 'days_absent', 'attendance_percentage', 'father_phone', 'mother_phone']),
+    columns: getColumns(['enrollment_id', 'full_name', 'class.name', 'section.name', 'days_absent', 'attendance_percentage', 'father_phone', 'mother_phone']),
     defaultFilters: { attendance_below: 60 },
     defaultGroupBy: ['class.name'],
     defaultSortBy: [{ field: 'attendance_percentage', direction: 'asc' }]
@@ -268,7 +268,7 @@ export const ATTENDANCE_TEMPLATES = [
     name: 'Parent Notification Pending',
     category: TEMPLATE_CATEGORIES.DEFAULTERS,
     description: 'Absentees whose parents not yet notified',
-    columns: getColumns(['admission_number', 'full_name', 'class.name', 'section.name', 'consecutive_absent', 'last_absent_date', 'father_phone', 'parent_notified']),
+    columns: getColumns(['enrollment_id', 'full_name', 'class.name', 'section.name', 'consecutive_absent', 'last_absent_date', 'father_phone', 'parent_notified']),
     defaultFilters: { parent_notified: 'No' },
     defaultGroupBy: ['class.name'],
     defaultSortBy: [{ field: 'consecutive_absent', direction: 'desc' }]
@@ -278,7 +278,7 @@ export const ATTENDANCE_TEMPLATES = [
     name: 'Habitual Late Comers',
     category: TEMPLATE_CATEGORIES.DEFAULTERS,
     description: 'Students frequently coming late',
-    columns: getColumns(['admission_number', 'full_name', 'class.name', 'section.name', 'days_late', 'total_late', 'attendance_percentage', 'father_phone']),
+    columns: getColumns(['enrollment_id', 'full_name', 'class.name', 'section.name', 'days_late', 'total_late', 'attendance_percentage', 'father_phone']),
     defaultFilters: { late_days_above: 5 },
     defaultGroupBy: ['class.name'],
     defaultSortBy: [{ field: 'days_late', direction: 'desc' }]
@@ -288,7 +288,7 @@ export const ATTENDANCE_TEMPLATES = [
     name: 'Attendance Warning List',
     category: TEMPLATE_CATEGORIES.DEFAULTERS,
     description: 'Students at risk of falling below minimum attendance',
-    columns: getColumns(['admission_number', 'full_name', 'class.name', 'section.name', 'working_days', 'days_present', 'attendance_percentage', 'father_phone']),
+    columns: getColumns(['enrollment_id', 'full_name', 'class.name', 'section.name', 'working_days', 'days_present', 'attendance_percentage', 'father_phone']),
     defaultFilters: { attendance_between: [65, 75] },
     defaultGroupBy: ['class.name'],
     defaultSortBy: [{ field: 'attendance_percentage', direction: 'asc' }]
@@ -298,7 +298,7 @@ export const ATTENDANCE_TEMPLATES = [
     name: 'Medical Leave Report',
     category: TEMPLATE_CATEGORIES.DEFAULTERS,
     description: 'Students on medical leave',
-    columns: getColumns(['admission_number', 'full_name', 'class.name', 'section.name', 'attendance_date', 'leave_days', 'absence_reason', 'remarks']),
+    columns: getColumns(['enrollment_id', 'full_name', 'class.name', 'section.name', 'attendance_date', 'leave_days', 'absence_reason', 'remarks']),
     defaultFilters: { status: 'leave', leave_type: 'medical' },
     defaultGroupBy: ['class.name'],
     defaultSortBy: []

@@ -1,4 +1,4 @@
-﻿/**
+/**
  * ENTERPRISE APPEND-ONLY MERGE ENGINE
  * Strict logic to ensure new items never overwrite or delete existing ones.
  */

@@ -70,7 +70,7 @@ export const HOSTEL_COLUMNS = [
   // STUDENT/RESIDENT INFORMATION
   // ─────────────────────────────────────────────────────────────────────────────
   { key: 'student_id', label: 'Student ID', type: 'text', group: 'Student Info', sortable: true, width: 100 },
-  { key: 'admission_number', label: 'Admission No', type: 'text', group: 'Student Info', sortable: true, width: 120 },
+  { key: 'enrollment_id', label: 'Enroll ID', type: 'text', group: 'Student Info', sortable: true, width: 120 },
   { key: 'student_name', label: 'Student Name', type: 'text', group: 'Student Info', sortable: true, width: 150 },
   { key: 'class_name', label: 'Class', type: 'text', group: 'Student Info', sortable: true, width: 80 },
   { key: 'section_name', label: 'Section', type: 'text', group: 'Student Info', sortable: true, width: 70 },
@@ -275,7 +275,7 @@ export const HOSTEL_COLUMNS = [
 export const COLUMN_SETS = {
   // Accommodation Templates
   room_inventory: ['room_number', 'room_name', 'floor_number', 'room_type', 'bed_capacity', 'occupied_beds', 'vacant_beds', 'room_fee', 'room_status', 'room_condition'],
-  room_allocation: ['room_number', 'bed_number', 'student_name', 'admission_number', 'class_name', 'allocation_date', 'allocation_status'],
+  room_allocation: ['room_number', 'bed_number', 'student_name', 'enrollment_id', 'class_name', 'allocation_date', 'allocation_status'],
   occupancy: ['hostel_name', 'floor_number', 'room_number', 'bed_capacity', 'occupied_beds', 'vacant_beds', 'occupancy_percent'],
   floor_summary: ['hostel_name', 'floor_number', 'floor_name', 'floor_rooms', 'floor_beds', 'floor_occupancy', 'occupancy_percent'],
   vacant_beds: ['hostel_name', 'floor_number', 'room_number', 'bed_number', 'bed_type', 'room_type', 'bed_status', 'bed_fee'],
@@ -286,8 +286,8 @@ export const COLUMN_SETS = {
   new_requests: ['request_id', 'student_name', 'class_name', 'permanent_address', 'father_phone', 'request_date', 'request_status'],
   
   // Student Templates
-  students_list: ['student_name', 'admission_number', 'class_name', 'section_name', 'hostel_name', 'room_number', 'bed_number', 'allocation_date', 'allocation_status'],
-  class_wise: ['class_name', 'section_name', 'student_name', 'admission_number', 'room_number', 'hostel_name', 'father_phone'],
+  students_list: ['student_name', 'enrollment_id', 'class_name', 'section_name', 'hostel_name', 'room_number', 'bed_number', 'allocation_date', 'allocation_status'],
+  class_wise: ['class_name', 'section_name', 'student_name', 'enrollment_id', 'room_number', 'hostel_name', 'father_phone'],
   guardian_info: ['student_name', 'class_name', 'room_number', 'father_name', 'father_phone', 'mother_name', 'mother_phone', 'guardian_name', 'guardian_phone'],
   emergency_contact: ['student_name', 'class_name', 'room_number', 'emergency_contact', 'emergency_phone', 'local_guardian_name', 'local_guardian_phone'],
   attendance_report: ['attendance_date', 'student_name', 'class_name', 'room_number', 'attendance_status', 'check_in_time', 'check_out_time'],
@@ -295,18 +295,18 @@ export const COLUMN_SETS = {
   night_out: ['nightout_id', 'student_name', 'class_name', 'room_number', 'nightout_date', 'return_date', 'destination', 'nightout_reason', 'nightout_status'],
   discipline: ['incident_id', 'student_name', 'class_name', 'room_number', 'incident_date', 'incident_type', 'severity', 'action_taken'],
   medical_record: ['medical_id', 'student_name', 'class_name', 'medical_date', 'medical_condition', 'symptoms', 'treatment', 'doctor_name'],
-  room_mate: ['room_number', 'student_name', 'admission_number', 'class_name', 'bed_number', 'father_phone'],
+  room_mate: ['room_number', 'student_name', 'enrollment_id', 'class_name', 'bed_number', 'father_phone'],
   
   // Fee & Mess Templates
-  fee_collection: ['student_name', 'admission_number', 'class_name', 'room_number', 'hostel_fee', 'mess_fee', 'total_fee', 'fee_paid', 'fee_due', 'payment_status'],
-  defaulters: ['student_name', 'admission_number', 'class_name', 'room_number', 'total_fee', 'fee_due', 'days_overdue', 'father_phone'],
+  fee_collection: ['student_name', 'enrollment_id', 'class_name', 'room_number', 'hostel_fee', 'mess_fee', 'total_fee', 'fee_paid', 'fee_due', 'payment_status'],
+  defaulters: ['student_name', 'enrollment_id', 'class_name', 'room_number', 'total_fee', 'fee_due', 'days_overdue', 'father_phone'],
   mess_allocation: ['student_name', 'class_name', 'room_number', 'mess_name', 'mess_type', 'diet_preference', 'meal_plan', 'mess_status'],
   mess_attendance: ['meal_date', 'student_name', 'class_name', 'breakfast', 'lunch', 'dinner', 'snacks', 'meals_taken'],
   feedback: ['feedback_id', 'student_name', 'feedback_date', 'feedback_type', 'feedback_category', 'rating', 'feedback_text', 'feedback_status'],
   mess_menu: ['meal_date', 'breakfast', 'lunch', 'dinner', 'snacks', 'remarks'],
   expense_report: ['request_date', 'maintenance_type', 'room_number', 'request_description', 'maintenance_cost', 'maintenance_status'],
   visitor_log: ['visit_date', 'visitor_name', 'student_name', 'visitor_relation', 'visitor_phone', 'visit_in_time', 'visit_out_time', 'visit_purpose'],
-  checkout_report: ['student_name', 'admission_number', 'class_name', 'room_number', 'check_in_date', 'actual_checkout', 'days_stayed', 'remarks'],
+  checkout_report: ['student_name', 'enrollment_id', 'class_name', 'room_number', 'check_in_date', 'actual_checkout', 'days_stayed', 'remarks'],
   revenue_report: ['hostel_name', 'total_students', 'collection_amount', 'pending_amount', 'total_revenue', 'expense_amount'],
 };
 

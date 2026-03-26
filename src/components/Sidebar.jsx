@@ -1,4 +1,4 @@
-﻿import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard, School, Users, CreditCard, Settings, BookOpen, GraduationCap, Calendar, FileText, Bus, Building, MessageSquare, Briefcase, LogOut, X, ChevronDown, ChevronRight, ChevronLeft, Package, CheckSquare, Library, Layout, Video, MonitorPlay, AlertTriangle, Award, Newspaper, Activity, IndianRupee, UserPlus, Menu, Search, Pin, PinOff, MoreHorizontal, Circle, Disc, Zap
@@ -15,6 +15,7 @@ import { usePermissions } from '@/contexts/PermissionContext';
 import { SIDEBAR_TO_MODULE_MAP, SUBMODULE_OVERRIDES } from '@/lib/moduleMapping'; 
 import { BASE_SIDEBAR } from '@/config/sidebarConfig';
 import { SIDEBAR_ORDER } from '@/config/sidebarOrder';
+import { getMenuEmoji } from '@/config/sidebarEmojis';
 import { useTheme } from '@/contexts/ThemeContext';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useDynamicSidebar } from '@/hooks/useDynamicSidebar';
@@ -33,13 +34,13 @@ const Sidebar = ({ role, isSidebarOpen, isMobile, toggleSidebar, closeSidebar, o
   const { signOut, user, school } = useAuth();
   const { canView, canAdd, canEdit, canDelete } = usePermissions();
   
-  // ✅ DYNAMIC SIDEBAR - Load modules from database
+  // ? DYNAMIC SIDEBAR - Load modules from database
   const { menu: dynamicMenu, loading: dynamicLoading, error: dynamicError, isDynamic } = useDynamicSidebar(role);
   
-  // ✅ BRANCH ATTENDANCE MODULES - Filter attendance based on master admin config
+  // ? BRANCH ATTENDANCE MODULES - Filter attendance based on master admin config
   const { isPathEnabled, hasConfig: hasAttendanceConfig } = useBranchAttendanceModules();
   
-  // ✅ PARENT SELECTED CHILD - Show limited menu when no child selected
+  // ? PARENT SELECTED CHILD - Show limited menu when no child selected
   const { hasSelectedChild } = useParentSelectedChild();
   
   // Local state
@@ -109,10 +110,10 @@ const Sidebar = ({ role, isSidebarOpen, isMobile, toggleSidebar, closeSidebar, o
 
   // --- MENU DATA PREPARATION ---
   const currentMenu = useMemo(() => {
-    // ✅ Normalize role to handle both space and underscore formats
+    // ? Normalize role to handle both space and underscore formats
     const normalizedRole = role?.toLowerCase().replace(/\s+/g, '_') || '';
     
-    // ✅ USE DYNAMIC MENU (includes static + any missing DB modules)
+    // ? USE DYNAMIC MENU (includes static + any missing DB modules)
     // The hook already handles merging and uses correct static routes
     let menuItems = dynamicMenu && dynamicMenu.length > 0 ? dynamicMenu : [];
     
@@ -127,7 +128,7 @@ const Sidebar = ({ role, isSidebarOpen, isMobile, toggleSidebar, closeSidebar, o
       return menuItems;
     }
     
-    // ✅ PARENT ROLE: Show limited menu when viewing children list (no child selected)
+    // ? PARENT ROLE: Show limited menu when viewing children list (no child selected)
     // When parent selects a child, show full menu; otherwise only Dashboard
     if (normalizedRole === 'parent' && !hasSelectedChild) {
       return menuItems.filter(item => 
@@ -135,7 +136,7 @@ const Sidebar = ({ role, isSidebarOpen, isMobile, toggleSidebar, closeSidebar, o
       );
     }
     
-    // ✅ PARENT ROLE with child selected: Show ALL parent modules (no permission filtering)
+    // ? PARENT ROLE with child selected: Show ALL parent modules (no permission filtering)
     // Parents see modules defined in BASE_SIDEBAR.parent without checking canView()
     if (normalizedRole === 'parent' && hasSelectedChild) {
       return menuItems; // Return full parent menu from config
@@ -154,7 +155,7 @@ const Sidebar = ({ role, isSidebarOpen, isMobile, toggleSidebar, closeSidebar, o
         if (!isAttendanceModule || !item.submenu) return item;
         
         const filteredSubmenu = item.submenu.filter(sub => {
-          if (sub.disabled) return true; // Keep section dividers like "── Advanced ──"
+          if (sub.disabled) return true; // Keep section dividers like "-- Advanced --"
           return isPathEnabled(sub.path);
         });
         
@@ -179,7 +180,7 @@ const Sidebar = ({ role, isSidebarOpen, isMobile, toggleSidebar, closeSidebar, o
         return false;
       }
       
-      // ✅ FIX: Finance module → Income/Expenses mapping
+      // ? FIX: Finance module ? Income/Expenses mapping
       // If user has 'finance' permission, also grant access to 'income' and 'expenses' menus
       // This prevents duplicates: Assign Permission shows Finance, Sidebar shows Income/Expenses
       let hasAccess = canView(moduleSlug);
@@ -192,10 +193,10 @@ const Sidebar = ({ role, isSidebarOpen, isMobile, toggleSidebar, closeSidebar, o
       
       if (item.submenu && item.submenu.length > 0) {
         const visibleSubmenu = item.submenu.filter(sub => {
-          // Keep section dividers like "── Advanced ──"
+          // Keep section dividers like "-- Advanced --"
           if (sub.disabled) return true;
           
-          // ✅ ATTENDANCE MODULE FILTERING - Check if path is enabled by Master Admin
+          // ? ATTENDANCE MODULE FILTERING - Check if path is enabled by Master Admin
           if (isAttendanceModule && hasAttendanceConfig) {
             const pathEnabled = isPathEnabled(sub.path);
             if (!pathEnabled) {
@@ -215,10 +216,10 @@ const Sidebar = ({ role, isSidebarOpen, isMobile, toggleSidebar, closeSidebar, o
           if (canView(doublePrefix)) return true;
           if (moduleSlug === 'front_cms' && canView('front_cms')) return true;
           
-          // ✅ Show all children if parent module has permission (for simple modules)
+          // ? Show all children if parent module has permission (for simple modules)
           if ((moduleSlug === 'income' || moduleSlug === 'expenses') && canView(moduleSlug)) return true;
           
-          // ✅ REPORTS MODULE: Map report items to related module permissions
+          // ? REPORTS MODULE: Map report items to related module permissions
           // Users with module access can see that module's reports without explicit reports.xxx permission
           if (moduleSlug === 'reports') {
             const reportToModuleMap = {
@@ -239,7 +240,7 @@ const Sidebar = ({ role, isSidebarOpen, isMobile, toggleSidebar, closeSidebar, o
             }
           }
           
-          // ⚠️ REMOVED FALLBACK: Previously showed all children if parent had access
+          // ?? REMOVED FALLBACK: Previously showed all children if parent had access
           // Now STRICT: Each submodule must have explicit permission
           // This ensures Permission DNA page controls exactly which sub-modules appear
           return false;
@@ -383,17 +384,19 @@ const Sidebar = ({ role, isSidebarOpen, isMobile, toggleSidebar, closeSidebar, o
           </div>
         )}
 
-        {/* Dot for Submenu Items */}
+        {/* Emoji for Submenu Items (replaces dot) */}
         {depth > 0 && (
-          <div className="absolute left-[26px] top-1/2 -translate-y-1/2 -translate-x-1/2 flex items-center justify-center w-4 h-4 z-10">
-             <div 
+          <div className="absolute left-[18px] top-1/2 -translate-y-1/2 flex items-center justify-center w-6 h-6 z-10 text-sm">
+            {getMenuEmoji(item.title) || (
+              <div 
                 className={cn("rounded-full transition-all duration-300", isActive ? "w-2.5 h-2.5 shadow-sm" : "w-1.5 h-1.5 opacity-50")}
                 style={{ backgroundColor: isActive ? settings.colors.sidebarPrimary : settings.colors.sidebarMutedForeground }}
-             />
+              />
+            )}
           </div>
         )}
 
-        {/* Label */}
+        {/* Label - No emoji for top-level (they have Lucide icons) */}
         <span className={cn(
           "font-medium text-[14px] whitespace-nowrap transition-all duration-300 origin-left flex-1 truncate z-10",
           !isExpanded && !isMobile && depth === 0 ? "opacity-0 w-0 overflow-hidden" : "opacity-100 w-auto"
@@ -454,7 +457,7 @@ const Sidebar = ({ role, isSidebarOpen, isMobile, toggleSidebar, closeSidebar, o
     // Handle divider items - render as non-clickable separator
     if (item.disabled || item.divider || item.path?.startsWith('#')) {
       // Section header dividers: show title text if available
-      const label = item.title?.replace(/^──\s*/, '').replace(/\s*──$/, '').trim();
+      const label = item.title?.replace(/^--\s*/, '').replace(/\s*--$/, '').trim();
       if (label && label !== '---') {
         return (
           <div className="flex items-center gap-2 px-4 py-1.5 mt-3 mb-1 mx-3 select-none">

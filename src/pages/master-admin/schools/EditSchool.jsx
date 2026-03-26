@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import DashboardLayout from '@/components/DashboardLayout';
 import { supabase } from '@/lib/customSupabaseClient';
@@ -22,7 +22,7 @@ const EditSchool = () => {
   const [plans, setPlans] = useState([]);
   const [formData, setFormData] = useState({
     name: '',
-    school_code_number: '',
+    enrollment_id_number: '',
     contact_email: '',
     contact_number: '',
     address: '',
@@ -44,7 +44,7 @@ const EditSchool = () => {
       if (school) {
         setFormData({
           name: school.name || '',
-          school_code_number: school.school_code_number || '',
+          enrollment_id_number: school.enrollment_id_number || '',
           contact_email: school.contact_email || '',
           contact_number: school.contact_number || '',
           address: school.address || '',
@@ -91,7 +91,7 @@ const EditSchool = () => {
         <form onSubmit={handleSave} className="bg-white p-6 rounded-lg shadow border space-y-6">
           <div className="grid md:grid-cols-2 gap-6">
             <div className="space-y-2"><Label>School Name</Label><Input value={formData.name} onChange={e => setFormData(p => ({...p, name: e.target.value}))} required /></div>
-            <div className="space-y-2"><Label>School Code</Label><Input value={formData.school_code_number} onChange={e => setFormData(p => ({...p, school_code_number: e.target.value}))} required /></div>
+            <div className="space-y-2"><Label>School Code</Label><Input value={formData.enrollment_id_number} onChange={e => setFormData(p => ({...p, enrollment_id_number: e.target.value}))} required /></div>
             <div className="space-y-2"><Label>Email</Label><Input value={formData.contact_email} onChange={e => setFormData(p => ({...p, contact_email: e.target.value}))} required /></div>
             <div className="space-y-2"><Label>Phone</Label><Input value={formData.contact_number} onChange={e => setFormData(p => ({...p, contact_number: e.target.value}))} /></div>
             <div className="space-y-2 md:col-span-2"><Label>Address</Label><Input value={formData.address} onChange={e => setFormData(p => ({...p, address: e.target.value}))} /></div>

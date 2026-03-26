@@ -58,7 +58,7 @@ const Template15_LedgerBook = ({ receiptData, copyType }) => {
           <span>STUDENT: <strong>{student?.full_name || '-'}</strong></span>
           <span>S/O: {student?.father_name || '-'}</span>
           <span>CLASS: {student?.class?.name || '-'}{student?.section?.name ? `-${student.section.name}` : ''}</span>
-          <span>ADM#: {student?.school_code || '-'}</span>
+          <span>ADM#: {student?.enrollment_id || '-'}</span>
         </div>
 
         {/* FEE TABLE - Ledger style */}

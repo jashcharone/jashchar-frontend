@@ -32,7 +32,7 @@ const AI_SECTION_CONFIG = {
 // Field label beautification mapping
 const AI_FIELD_LABELS = {
   session: 'Academic Session',
-  admission_no: 'Admission Number',
+  enrollment_id: 'Enrollment ID',
   class: 'Class Applying For',
   section: 'Section',
   roll_number: 'Roll Number',
@@ -140,7 +140,7 @@ const FIELD_BOX_COUNTS = {
   gender: 8,
   blood_group: 3,
   session: 9,
-  admission_no: 12,
+  enrollment_id: 12,
   class: 10,
   section: 5,
   roll_number: 6,
@@ -287,7 +287,7 @@ const getDefaultSections = () => [
     color: 'primary',
     fields: [
       { label: 'Session', width: 'third', required: true, fieldKey: 'session' },
-      { label: 'Admission No', width: 'third', required: true, fieldKey: 'admission_no' },
+      { label: 'Enroll ID', width: 'third', required: true, fieldKey: 'enrollment_id' },
       { label: 'Admission Date', width: 'third', required: true, fieldKey: 'admission_date' },
       { label: 'Class', width: 'third', required: true, fieldKey: 'class' },
       { label: 'Section', width: 'third', required: true, fieldKey: 'section' },

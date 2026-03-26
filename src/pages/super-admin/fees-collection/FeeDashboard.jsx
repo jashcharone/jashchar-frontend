@@ -261,7 +261,7 @@ const FeeDashboard = () => {
       // 1. Get all students for session
       const { data: students } = await supabase
         .from('student_profiles')
-        .select('id, full_name, school_code, class_id')
+        .select('id, full_name, enrollment_id, class_id')
         .eq('branch_id', branchId)
         .eq('session_id', selectedSessionId)
         .eq('status', 'active');
@@ -500,7 +500,7 @@ const FeeDashboard = () => {
       const defaulterList = Object.entries(studentDues)
         .map(([id, due]) => {
           const student = students.find(s => s.id === id);
-          return { id, name: student?.full_name, code: student?.school_code, due };
+          return { id, name: student?.full_name, code: student?.enrollment_id, due };
         })
         .sort((a, b) => b.due - a.due)
         .slice(0, 10);
@@ -515,7 +515,7 @@ const FeeDashboard = () => {
           return {
             id: p.id,
             studentName: student?.full_name,
-            studentCode: student?.school_code,
+            studentCode: student?.enrollment_id,
             amount: p.amount,
             mode: p.payment_mode,
             date: p.payment_date,

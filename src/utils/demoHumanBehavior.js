@@ -1,4 +1,4 @@
-﻿/**
+/**
  * HUMAN BEHAVIOR SIMULATION
  * Adds realistic delays and interaction patterns to the automation.
  */

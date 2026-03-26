@@ -48,7 +48,7 @@ const Template07_ModernMinimal = ({ receiptData, copyType }) => {
       <div style={{ padding: '8px 0', fontSize: '10px', borderBottom: '1px solid #eee' }}>
         <div style={{ fontWeight: '600', fontSize: '13px', marginBottom: '2px' }}>{student?.full_name || '-'}</div>
         <div style={{ color: '#666', fontSize: '9px' }}>
-          Father: {student?.father_name || '-'} &nbsp;|&nbsp; Class: {student?.class?.name || '-'}{student?.section?.name ? ` (${student.section.name})` : ''} &nbsp;|&nbsp; Adm#: {student?.school_code || student?.admission_no || '-'} &nbsp;|&nbsp; Session: {sessionName || '-'}
+          Father: {student?.father_name || '-'} &nbsp;|&nbsp; Class: {student?.class?.name || '-'}{student?.section?.name ? ` (${student.section.name})` : ''} &nbsp;|&nbsp; Adm#: {student?.enrollment_id || student?.enrollment_id || '-'} &nbsp;|&nbsp; Session: {sessionName || '-'}
         </div>
       </div>
 

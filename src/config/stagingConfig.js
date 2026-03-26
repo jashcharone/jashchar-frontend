@@ -1,4 +1,4 @@
-﻿export const STAGING_CONFIG = {
+export const STAGING_CONFIG = {
   // Enable staging mode via environment variable or manual toggle
   // In Vite, we use import.meta.env.VITE_STAGING_MODE
   isStaging: import.meta.env.VITE_STAGING_MODE === 'true',

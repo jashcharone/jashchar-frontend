@@ -1,4 +1,4 @@
-﻿export const getSubdomain = () => {
+export const getSubdomain = () => {
   const hostname = window.location.hostname;
   
   // Handle localhost (no subdomain)

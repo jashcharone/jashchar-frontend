@@ -8,7 +8,7 @@ import { Loader2, GraduationCap, Sparkles, Play, Building2 } from 'lucide-react'
 import { Helmet } from 'react-helmet';
 
 // Demo credentials for all schools
-// Note: Student login uses admission_number (backend converts to admission_number@student.jashchar.local)
+// Note: Student login uses enrollment_id (backend converts to enrollment_id@student.jashchar.local)
 // Parent login uses MOBILE NUMBER ONLY (backend converts to mobile@parent.jashchar.local)
 // Parent EMAIL is NOT USED - Only mobile number for authentication (per project rule)
 const DEMO_SCHOOLS = [

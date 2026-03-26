@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
 import DashboardLayout from '@/components/DashboardLayout';
 import { supabase, isSupabaseReady } from '@/lib/supabaseClient';
@@ -282,7 +282,7 @@ const AssignPermission = () => {
         }
         
         // Step 1: Apply sub-module dependency logic
-        // If Add/Edit/Delete enabled † can_view must be true
+        // If Add/Edit/Delete enabled � can_view must be true
         const enhancedPermissions = { ...permissions };
         
         Object.keys(enhancedPermissions).forEach(slug => {
@@ -439,7 +439,7 @@ const AssignPermission = () => {
         return (
             <DashboardLayout>
                 <div className="flex flex-col items-center justify-center p-10 space-y-4 text-center">
-                    <div className="text-destructive text-5xl"> ï¸</div>
+                    <div className="text-destructive text-5xl"> ️</div>
                     <h2 className="text-2xl font-bold">No Active Subscription Found</h2>
                     <p className="text-muted-foreground max-w-md">
                         This school does not have an active subscription plan, so no modules can be loaded.

@@ -148,7 +148,7 @@ const AttendanceReportGenerator = () => {
     
     return Array.from({ length: 50 }, (_, i) => ({
       id: i + 1,
-      admission_number: `ADM${2024}${String(i + 1).padStart(4, '0')}`,
+      enrollment_id: `ADM${2024}${String(i + 1).padStart(4, '0')}`,
       first_name: ['Rahul', 'Priya', 'Amit', 'Sneha', 'Raj', 'Anita', 'Vikram', 'Meena', 'Arun', 'Kavya'][i % 10],
       last_name: ['Sharma', 'Verma', 'Singh', 'Patel', 'Kumar', 'Gupta', 'Rao', 'Reddy', 'Joshi', 'Nair'][i % 10],
       roll_number: String((i % 40) + 1),

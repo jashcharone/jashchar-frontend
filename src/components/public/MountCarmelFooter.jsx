@@ -1,4 +1,4 @@
-﻿import React from 'react';
+import React from 'react';
 import { Link } from 'react-router-dom';
 import { Phone, Mail, MapPin, Facebook, Twitter, Instagram, Linkedin, Youtube, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -79,7 +79,7 @@ const MountCarmelFooter = ({ school, settings, alias }) => {
 
         <div className="border-t border-white/10 pt-8 text-center">
           <p className="text-sm text-gray-500">
-            Â© {new Date().getFullYear()} {school?.name || "Mount Carmel School"}. All rights reserved.
+            © {new Date().getFullYear()} {school?.name || "Mount Carmel School"}. All rights reserved.
           </p>
         </div>
       </div>

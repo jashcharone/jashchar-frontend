@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/lib/customSupabaseClient';
 import DashboardLayout from '@/components/DashboardLayout';
@@ -143,9 +143,9 @@ const UpdatePlanDialog = ({ subscription, branchId, onPlanUpdated, onOpenChange 
                         <div className="flex justify-between"><span>Plan:</span><span>{plans.find(p=>p.id===newPlanId)?.name}</span></div>
                         <div className="flex justify-between"><span>Students:</span><span>{preview.studentCount}</span></div>
                         <div className="flex justify-between"><span>Staff:</span><span>{preview.staffCount}</span></div>
-                        <div className="flex justify-between"><span>Base Amount:</span><span>₹{preview.baseAmount.toFixed(2)}</span></div>
-                        <div className="flex justify-between"><span>GST ({plans.find(p=>p.id===newPlanId)?.gst_percentage || 0}%):</span><span>₹{preview.gst.toFixed(2)}</span></div>
-                        <div className="flex justify-between font-bold text-xl pt-2 border-t mt-2"><span>Total:</span><span>₹{preview.total.toFixed(2)}</span></div>
+                        <div className="flex justify-between"><span>Base Amount:</span><span>?{preview.baseAmount.toFixed(2)}</span></div>
+                        <div className="flex justify-between"><span>GST ({plans.find(p=>p.id===newPlanId)?.gst_percentage || 0}%):</span><span>?{preview.gst.toFixed(2)}</span></div>
+                        <div className="flex justify-between font-bold text-xl pt-2 border-t mt-2"><span>Total:</span><span>?{preview.total.toFixed(2)}</span></div>
                     </> : <p className="text-muted-foreground text-sm">Select a plan to see the preview.</p>}
                 </div>
             </div>
@@ -356,7 +356,7 @@ const SubscriptionsList = () => {
                                 </DropdownMenuContent>
                             </DropdownMenu>
                           ) : (
-                            <span className="text-muted-foreground text-sm">”</span>
+                            <span className="text-muted-foreground text-sm">�</span>
                           )}
                       </td>
                     </tr>

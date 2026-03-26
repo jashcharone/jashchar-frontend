@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -127,7 +127,7 @@ const TemplateDownload = () => {
         <div className="flex-1">
           <h4 className="font-medium text-blue-900 dark:text-blue-100 mb-1">Download Header Template</h4>
           <p className="text-sm text-blue-700 dark:text-blue-300 mb-3">
-            Download a ready-to-use template (2230px × 300px). Edit it with any image editor (Canva, Photoshop, etc.), 
+            Download a ready-to-use template (2230px � 300px). Edit it with any image editor (Canva, Photoshop, etc.), 
             add your school logo & details, then upload.
           </p>
           <div className="flex flex-wrap gap-2">

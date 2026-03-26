@@ -131,7 +131,7 @@ const CollectFees = () => {
         const searchTerm = keyword.toLowerCase().trim();
         return allStudents.filter(s => {
             const fullName = (s.full_name || '').toLowerCase();
-            const schoolCode = (s.school_code || '').toLowerCase();
+            const schoolCode = (s.enrollment_id || '').toLowerCase();
             const fatherName = (s.father_name || '').toLowerCase();
             const phone = (s.father_phone || s.mother_phone || s.guardian_phone || s.phone || '').toLowerCase();
             return fullName.includes(searchTerm) || 
@@ -175,7 +175,7 @@ const CollectFees = () => {
             // Use student_profiles directly - it's faster and more reliable
             let query = supabase
                 .from('student_profiles')
-                .select('id, full_name, father_name, mother_name, phone, father_phone, mother_phone, guardian_phone, school_code, session_id, date_of_birth, gender, photo_url, admission_date, classes!student_profiles_class_id_fkey(name), sections!student_profiles_section_id_fkey(name)')
+                .select('id, full_name, father_name, mother_name, phone, father_phone, mother_phone, guardian_phone, enrollment_id, session_id, date_of_birth, gender, photo_url, admission_date, classes!student_profiles_class_id_fkey(name), sections!student_profiles_section_id_fkey(name)')
                 .eq('branch_id', branchId);
             
             // Filter by branch's active session
@@ -872,7 +872,7 @@ const CollectFees = () => {
                                                                 </div>
                                                                 <div>
                                                                     <p className="font-semibold text-foreground">{highlightText(student.full_name, keyword)}</p>
-                                                                    <p className="text-xs text-muted-foreground">{highlightText(student.school_code, keyword) || 'No Admission No'}</p>
+                                                                    <p className="text-xs text-muted-foreground">{highlightText(student.enrollment_id, keyword) || 'No Enroll ID'}</p>
                                                                 </div>
                                                             </div>
                                                         </td>

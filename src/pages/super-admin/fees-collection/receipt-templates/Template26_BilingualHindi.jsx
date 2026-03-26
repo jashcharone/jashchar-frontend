@@ -73,7 +73,7 @@ const Template26_BilingualHindi = ({ receiptData, copyType }) => {
               <td style={{ width: '25%', padding: '2px 3px' }}><span style={{ color: saffron }}>नाम / Name:</span> <strong>{student?.full_name || '-'}</strong></td>
               <td style={{ width: '25%', padding: '2px 3px' }}><span style={{ color: saffron }}>पिता / Father:</span> {student?.father_name || '-'}</td>
               <td style={{ width: '25%', padding: '2px 3px' }}><span style={{ color: saffron }}>कक्षा / Class:</span> {student?.class?.name || '-'}{student?.section?.name ? ` (${student.section.name})` : ''}</td>
-              <td style={{ width: '25%', padding: '2px 3px' }}><span style={{ color: saffron }}>प्रवेश सं. / Adm#:</span> {student?.school_code || '-'}</td>
+              <td style={{ width: '25%', padding: '2px 3px' }}><span style={{ color: saffron }}>प्रवेश सं. / Adm#:</span> {student?.enrollment_id || '-'}</td>
             </tr>
             <tr>
               <td style={{ padding: '2px 3px' }}><span style={{ color: saffron }}>रसीद सं. / Receipt#:</span> {transactionId?.split('/').pop() || '-'}</td>

@@ -1134,7 +1134,7 @@ export default function ClassActivities() {
                   <div>
                     <p className="font-medium">{p.student?.first_name} {p.student?.last_name}</p>
                     <p className="text-sm text-muted-foreground">
-                      {p.student?.admission_no} | Roll: {p.student?.roll_no}
+                      {p.student?.enrollment_id} | Roll: {p.student?.roll_no}
                     </p>
                   </div>
                 </div>

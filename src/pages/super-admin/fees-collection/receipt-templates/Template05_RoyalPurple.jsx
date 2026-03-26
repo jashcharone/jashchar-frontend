@@ -66,7 +66,7 @@ const Template05_RoyalPurple = ({ receiptData, copyType }) => {
         <div style={{ flex: 1 }}>
           <div style={{ marginBottom: '2px' }}><span style={{ color: '#4a148c', fontWeight: 'bold' }}>Student:</span> <strong>{student?.full_name || '-'}</strong></div>
           <div style={{ marginBottom: '2px' }}><span style={{ color: '#4a148c', fontWeight: 'bold' }}>Father:</span> {student?.father_name || '-'}</div>
-          <div><span style={{ color: '#4a148c', fontWeight: 'bold' }}>Adm#:</span> {student?.school_code || student?.admission_no || '-'}</div>
+          <div><span style={{ color: '#4a148c', fontWeight: 'bold' }}>Adm#:</span> {student?.enrollment_id || student?.enrollment_id || '-'}</div>
         </div>
         <div style={{ flex: 1 }}>
           <div style={{ marginBottom: '2px' }}><span style={{ color: '#4a148c', fontWeight: 'bold' }}>Date:</span> {receiptDate ? format(new Date(receiptDate), 'dd MMM yyyy hh:mm a') : '-'}</div>

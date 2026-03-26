@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
 import { useToast } from '@/components/ui/use-toast';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
@@ -158,7 +158,7 @@ const EmploymentCategory = () => {
                             <CardHeader className="pb-4 border-b">
                                 <CardTitle className="text-lg flex items-center gap-2">
                                     <div className="h-5 w-5 flex items-center justify-center">
-                                        <span className="text-lg font-bold">°</span>
+                                        <span className="text-lg font-bold">�</span>
                                     </div>
                                     Employment Category List
                                 </CardTitle>

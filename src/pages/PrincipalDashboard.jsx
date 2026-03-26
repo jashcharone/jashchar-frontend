@@ -1,4 +1,4 @@
-ï»¿import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import DashboardLayout from '@/components/DashboardLayout';
 import WelcomeMessage from '@/components/WelcomeMessage';
@@ -147,11 +147,11 @@ const PrincipalDashboard = () => {
           supabase.from('notices').select('id, title, notice_date, message')
             .eq('branch_id', branchId)
             .order('notice_date', { ascending: false }).limit(5),
-          // Classes â€” handle NULL session_id (classes table has no is_active column)
+          // Classes — handle NULL session_id (classes table has no is_active column)
           supabase.from('classes').select('id', { count: 'exact', head: true })
             .eq('branch_id', branchId)
             .or(`session_id.eq.${sessionId},session_id.is.null`),
-          // Sections â€” handle NULL session_id (sections table has no is_active column)
+          // Sections — handle NULL session_id (sections table has no is_active column)
           supabase.from('sections').select('id', { count: 'exact', head: true })
             .eq('branch_id', branchId)
             .or(`session_id.eq.${sessionId},session_id.is.null`),
@@ -245,7 +245,7 @@ const PrincipalDashboard = () => {
               value={dashData.totalStudents}
               icon={Users}
               gradient="from-violet-600 via-purple-600 to-indigo-600"
-              subtitle={`${dashData.classCount} classes Â· ${dashData.sectionCount} sections`}
+              subtitle={`${dashData.classCount} classes · ${dashData.sectionCount} sections`}
               delay={0}
             />
             <PrincipalStatCard
@@ -261,7 +261,7 @@ const PrincipalDashboard = () => {
               value={stuAtt.total > 0 ? `${stuAtt.rate}%` : 'No data'}
               icon={CalendarCheck}
               gradient="from-cyan-500 via-blue-500 to-indigo-500"
-              subtitle={stuAtt.total > 0 ? `${stuAtt.present} present Â· ${stuAtt.absent} absent` : 'Not marked yet'}
+              subtitle={stuAtt.total > 0 ? `${stuAtt.present} present · ${stuAtt.absent} absent` : 'Not marked yet'}
               delay={200}
             />
             <PrincipalStatCard
@@ -269,7 +269,7 @@ const PrincipalDashboard = () => {
               value={staffAtt.total > 0 ? `${staffAtt.rate}%` : 'No data'}
               icon={UserCheck}
               gradient="from-amber-500 via-orange-500 to-yellow-500"
-              subtitle={staffAtt.total > 0 ? `${staffAtt.present} present Â· ${staffAtt.absent} absent` : 'Not marked yet'}
+              subtitle={staffAtt.total > 0 ? `${staffAtt.present} present · ${staffAtt.absent} absent` : 'Not marked yet'}
               delay={300}
             />
           </div>

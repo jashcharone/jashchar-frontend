@@ -1,4 +1,4 @@
-﻿import { Layout } from 'lucide-react';
+import { Layout } from 'lucide-react';
 
 export const availableSchoolModules = [
   'front_cms', 'academics', 'student_information', 'fees_collection', 'finance',

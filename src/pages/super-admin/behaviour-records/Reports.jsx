@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
 import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -72,7 +72,7 @@ const Reports = () => {
         .select(`
           *,
           student:student_profiles!student_behaviour_incidents_student_id_fkey(
-            id, full_name, admission_no, gender, phone,
+            id, full_name, enrollment_id, gender, phone,
             class_id, section_id, house_id,
             class:classes!student_profiles_class_id_fkey(id, name),
             section:sections!student_profiles_section_id_fkey(id, name),

@@ -5,7 +5,7 @@
 
 export const STUDENT_COLUMNS = [
   // Basic Identity
-  { key: 'admission_number', label: 'Adm. No', type: 'string', width: 100, groupable: false },
+  { key: 'enrollment_id', label: 'Enroll ID', type: 'string', width: 100, groupable: false },
   { key: 'first_name', label: 'First Name', type: 'string', width: 120, groupable: false },
   { key: 'last_name', label: 'Last Name', type: 'string', width: 100, groupable: false },
   {
@@ -119,12 +119,12 @@ export const getColumns = (keys) => keys.map(getColumn).filter(Boolean);
 
 // Predefined column sets
 export const COLUMN_SETS = {
-  basic: ['admission_number', 'full_name', 'class.name', 'section.name', 'father_name', 'phone'],
+  basic: ['enrollment_id', 'full_name', 'class.name', 'section.name', 'father_name', 'phone'],
   complete: STUDENT_COLUMNS.filter(c => c.type !== 'computed').map(c => c.key),
-  contact: ['admission_number', 'full_name', 'class.name', 'phone', 'email', 'father_phone', 'mother_phone', 'emergency_contact'],
-  address: ['admission_number', 'full_name', 'class.name', 'address', 'city', 'state', 'pincode'],
-  demographics: ['admission_number', 'full_name', 'class.name', 'gender', 'date_of_birth', 'blood_group', 'religion', 'caste', 'category'],
-  documents: ['admission_number', 'full_name', 'class.name', 'aadhar_number', 'birth_certificate_no', 'tc_number', 'tc_date'],
+  contact: ['enrollment_id', 'full_name', 'class.name', 'phone', 'email', 'father_phone', 'mother_phone', 'emergency_contact'],
+  address: ['enrollment_id', 'full_name', 'class.name', 'address', 'city', 'state', 'pincode'],
+  demographics: ['enrollment_id', 'full_name', 'class.name', 'gender', 'date_of_birth', 'blood_group', 'religion', 'caste', 'category'],
+  documents: ['enrollment_id', 'full_name', 'class.name', 'aadhar_number', 'birth_certificate_no', 'tc_number', 'tc_date'],
   strength: ['class.name', 'section.name', 'boys_count', 'girls_count', 'total_count'],
 };
 

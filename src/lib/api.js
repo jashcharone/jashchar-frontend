@@ -1,4 +1,4 @@
-﻿import axios from 'axios';
+import axios from 'axios';
 import { supabase } from '@/lib/customSupabaseClient';
 import { getApiBaseUrl } from '@/utils/platform';
 import { getCapacitorAdapter } from '@/lib/capacitorHttpAdapter';
@@ -20,11 +20,11 @@ function resolveApiBaseUrl() {
 }
 
 // On Capacitor native: use custom adapter that calls CapacitorHttp.request() directly
-// This bypasses WebView XHR entirely → ZERO CORS issues on Android/iOS
+// This bypasses WebView XHR entirely ? ZERO CORS issues on Android/iOS
 const nativeAdapter = getCapacitorAdapter();
 
 const api = axios.create({
-  baseURL: '/api', // placeholder — overridden by request interceptor below
+  baseURL: '/api', // placeholder � overridden by request interceptor below
   timeout: DEFAULT_TIMEOUT,
   headers: {
     'Content-Type': 'application/json',
@@ -41,17 +41,17 @@ api.interceptors.request.use((config) => {
 
 import { errorLoggerService } from '@/services/errorLoggerService';
 
-// ═══════════════════════════════════════════════════════════════
+// ---------------------------------------------------------------
 // SESSION TOKEN MANAGEMENT
-// ═══════════════════════════════════════════════════════════════
+// ---------------------------------------------------------------
 // Problem: Multiple simultaneous API calls each called supabase.auth.getSession()
 // which triggered parallel token refreshes. When Supabase's "Detect compromised
 // refresh tokens" is ON, using the old refresh token after a new one was issued
-// causes ALL tokens to be revoked → user gets logged out unexpectedly.
+// causes ALL tokens to be revoked ? user gets logged out unexpectedly.
 //
 // Solution: Cache the access token and use a single refresh promise (mutex)
 // so concurrent requests share one refresh instead of racing.
-// ═══════════════════════════════════════════════════════════════
+// ---------------------------------------------------------------
 let cachedAccessToken = null;
 let tokenExpiresAt = 0; // Unix timestamp in seconds
 let refreshPromise = null; // Mutex: only one refresh at a time
@@ -84,12 +84,12 @@ supabase.auth.getSession().then(({ data: { session } }) => {
 async function getValidToken() {
   const now = Date.now() / 1000;
   
-  // Token still valid → return cached
+  // Token still valid ? return cached
   if (cachedAccessToken && now < tokenExpiresAt) {
     return cachedAccessToken;
   }
 
-  // Token expired or missing → refresh (but only one refresh at a time)
+  // Token expired or missing ? refresh (but only one refresh at a time)
   if (!refreshPromise) {
     refreshPromise = supabase.auth.getSession()
       .then(({ data: { session }, error }) => {
@@ -134,11 +134,11 @@ api.interceptors.request.use(async (config) => {
     }
   }
 
-  // ✅ PRESERVE EXPLICIT HEADERS: If x-school-id is already passed, DO NOT overwrite it.
+  // ? PRESERVE EXPLICIT HEADERS: If x-school-id is already passed, DO NOT overwrite it.
   if (config.headers['x-school-id']) {
       // Do nothing, respect the component's explicit request
   }
-  // ✅ MASTER ADMIN OVERRIDE: Use selected school ID if available
+  // ? MASTER ADMIN OVERRIDE: Use selected school ID if available
   else {
       let maTargetSchoolId = null;
       if (typeof window !== 'undefined' && window.sessionStorage) {
@@ -148,7 +148,7 @@ api.interceptors.request.use(async (config) => {
       if (maTargetSchoolId && maTargetSchoolId !== 'null' && maTargetSchoolId !== 'undefined') {
           config.headers['x-school-id'] = maTargetSchoolId;
       } 
-      // ✅ STANDARD USER + SCHOOL OWNER OVERRIDE via LocalStorage
+      // ? STANDARD USER + SCHOOL OWNER OVERRIDE via LocalStorage
       // Checks localStorage 'selectedSchoolId' first (set by PermissionContext for owners who switch schools)
       else {
           let targetSchoolId = null;
@@ -196,7 +196,7 @@ api.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config;
     
-    // Handle 401 Unauthorized — Try ONE token refresh before giving up
+    // Handle 401 Unauthorized � Try ONE token refresh before giving up
     if (error.response?.status === 401 && !originalRequest._retried) {
       originalRequest._retried = true;
       
@@ -207,7 +207,7 @@ api.interceptors.response.use(
         const { data: { session }, error: refreshError } = await supabase.auth.refreshSession();
         
         if (!refreshError && session?.access_token) {
-          // Token refreshed successfully → update cache and retry the request
+          // Token refreshed successfully ? update cache and retry the request
           cachedAccessToken = session.access_token;
           tokenExpiresAt = session.expires_at ? session.expires_at - 60 : (Date.now() / 1000 + 3540);
           originalRequest.headers.Authorization = `Bearer ${session.access_token}`;
@@ -218,7 +218,7 @@ api.interceptors.response.use(
         console.error('[API] Token refresh failed:', refreshErr);
       }
       
-      // Refresh failed → session truly expired, redirect to login
+      // Refresh failed ? session truly expired, redirect to login
       if (!isRedirectingToLogin) {
         isRedirectingToLogin = true;
         console.warn('[API] Session expired. Redirecting to login...');

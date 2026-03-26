@@ -1,4 +1,4 @@
-﻿import { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import api from '@/lib/api'; // Use the configured axios instance
 import { PUBLIC_SITE_SEED } from '@/data/publicSiteSeed';
 

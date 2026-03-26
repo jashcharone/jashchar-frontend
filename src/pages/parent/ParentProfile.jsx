@@ -72,7 +72,7 @@ const ChildCard = ({ child, onClick }) => {
               </Badge>
             </div>
             <p className="text-xs text-muted-foreground mt-1">
-              Admission: {child.school_code || child.admission_number || 'N/A'}
+              Admission: {child.enrollment_id || child.enrollment_id || 'N/A'}
             </p>
           </div>
           <ChevronRight className="h-5 w-5 text-muted-foreground" />

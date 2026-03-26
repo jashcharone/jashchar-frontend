@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -44,7 +44,7 @@ const CourseCompleteReport = ({ branchId }) => {
       
       const { data: purchases } = await supabase
         .from('student_course_purchases')
-        .select('student_id, student:student_profiles(id, full_name, school_code, class_id)')
+        .select('student_id, student:student_profiles(id, full_name, enrollment_id, class_id)')
         .eq('course_id', filters.course_id)
         .eq('branch_id', branchId);
 
@@ -118,7 +118,7 @@ const CourseCompleteReport = ({ branchId }) => {
             <TableHeader>
               <TableRow>
                 <TableHead>Student Name</TableHead>
-                <TableHead>Admission No</TableHead>
+                <TableHead>Enroll ID</TableHead>
                 <TableHead>Course Progress</TableHead>
                 <TableHead className="text-right">Action</TableHead>
               </TableRow>
@@ -129,7 +129,7 @@ const CourseCompleteReport = ({ branchId }) => {
                 data.map(s => (
                   <TableRow key={s.id}>
                     <TableCell className="font-medium">{s.full_name}</TableCell>
-                    <TableCell>{s.school_code}</TableCell>
+                    <TableCell>{s.enrollment_id}</TableCell>
                     <TableCell>{s.progress}%</TableCell>
                     <TableCell className="text-right">
                       <Button size="sm" variant="outline" onClick={() => { setSelectedStudent(s.id); setModalOpen(true); }}>

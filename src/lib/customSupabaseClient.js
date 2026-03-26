@@ -1,4 +1,4 @@
-﻿import { createClient } from '@supabase/supabase-js';
+import { createClient } from '@supabase/supabase-js';
 
 const runtime = (typeof window !== 'undefined' && window.__RUNTIME_CONFIG__) || {};
 const supabaseUrl = runtime.VITE_SUPABASE_URL || import.meta.env.VITE_SUPABASE_URL;

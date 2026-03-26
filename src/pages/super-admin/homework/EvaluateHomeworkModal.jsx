@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -29,7 +29,7 @@ const EvaluateHomeworkModal = ({ isOpen, onClose, homework, onSuccess }) => {
       // 1. Fetch students in class & section
       const { data: studentsData, error: studentsError } = await supabase
         .from('student_profiles')
-        .select('id, full_name, admission_no, roll_number')
+        .select('id, full_name, enrollment_id, roll_number')
         .eq('class_id', homework.class_id)
         .eq('section_id', homework.section_id)
         .eq('branch_id', homework.branch_id)
@@ -149,7 +149,7 @@ const EvaluateHomeworkModal = ({ isOpen, onClose, homework, onSuccess }) => {
                 <TableHeader>
                     <TableRow className="bg-gray-100">
                         <TableHead>Student Name</TableHead>
-                        <TableHead>Admission No</TableHead>
+                        <TableHead>Enroll ID</TableHead>
                         <TableHead>Status</TableHead>
                         <TableHead className="w-32">Marks</TableHead>
                         <TableHead>Note</TableHead>
@@ -168,7 +168,7 @@ const EvaluateHomeworkModal = ({ isOpen, onClose, homework, onSuccess }) => {
                             return (
                                 <TableRow key={student.id}>
                                     <TableCell className="font-medium">{student.full_name}</TableCell>
-                                    <TableCell>{student.admission_no}</TableCell>
+                                    <TableCell>{student.enrollment_id}</TableCell>
                                     <TableCell>
                                         {isEvaluated ? (
                                             <Badge className="bg-green-500">Evaluated</Badge>

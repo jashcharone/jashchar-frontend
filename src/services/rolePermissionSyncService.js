@@ -1,4 +1,4 @@
-﻿import { supabase } from '@/lib/customSupabaseClient';
+import { supabase } from '@/lib/customSupabaseClient';
 import { planModuleService } from './planModuleService';
 import { ALL_MODULES } from '@/config/modules'; // For fallbacks
 

@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
 import { supabase } from '@/lib/customSupabaseClient';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
@@ -13,7 +13,7 @@ import DataTableExport from '@/components/DataTableExport';
 const BalanceFeesReport = () => {
     const { user, school } = useAuth();
     const { selectedBranch } = useBranch();
-    const currencySymbol = school?.currency_symbol || '₹';
+    const currencySymbol = school?.currency_symbol || '?';
     const { toast } = useToast();
     const [loading, setLoading] = useState(false);
     const [classes, setClasses] = useState([]);
@@ -29,7 +29,7 @@ const BalanceFeesReport = () => {
     const columns = useMemo(() => [
         { key: 'student_name', label: 'Student Name' },
         { key: 'class_section', label: 'Class' },
-        { key: 'admission_no', label: 'Admission No' },
+        { key: 'enrollment_id', label: 'Enroll ID' },
         { key: 'roll_number', label: 'Roll Number' },
         { key: 'father_name', label: 'Father Name' },
         { key: 'total_fees', label: 'Total Fees' },
@@ -155,7 +155,7 @@ const BalanceFeesReport = () => {
                                 <table className="w-full text-sm">
                                     <thead className="bg-muted">
                                         <tr className="text-left">
-                                            {['Student Name', 'Class', 'Admission No', 'Roll Number', 'Father Name', 'Total Fees', 'Paid Fees', 'Discount', 'Fine', 'Balance'].map(h => <th key={h} className="p-2">{h}</th>)}
+                                            {['Student Name', 'Class', 'Enroll ID', 'Roll Number', 'Father Name', 'Total Fees', 'Paid Fees', 'Discount', 'Fine', 'Balance'].map(h => <th key={h} className="p-2">{h}</th>)}
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -163,7 +163,7 @@ const BalanceFeesReport = () => {
                                             <tr key={idx} className="border-b">
                                                 <td className="p-2">{row.student_name}</td>
                                                 <td className="p-2">{row.class_name} ({row.section_name})</td>
-                                                <td className="p-2">{row.admission_no}</td>
+                                                <td className="p-2">{row.enrollment_id}</td>
                                                 <td className="p-2">{row.roll_number}</td>
                                                 <td className="p-2">{row.father_name}</td>
                                                 <td className="p-2 text-right">{currencySymbol}{Number(row.total_fees).toFixed(2)}</td>

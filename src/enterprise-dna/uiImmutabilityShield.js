@@ -1,4 +1,4 @@
-﻿/**
+/**
  * UI IMMUTABILITY SHIELD
  * Prevents visual regressions by locking DOM structure hashes.
  */

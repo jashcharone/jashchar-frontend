@@ -69,7 +69,7 @@ const ChallanCopy = ({ copyLabel, student, school, lineItems, totalPaid, totalDi
         <span><strong>Name:</strong> {student?.full_name || ''}</span>
         <span><strong>S/o:</strong> {student?.father_name || ''}</span>
         <span><strong>Class:</strong> {student?.class?.name || ''} {student?.section?.name ? `(${student.section.name})` : ''}</span>
-        <span><strong>Adm No:</strong> {student?.school_code || student?.admission_no || ''}</span>
+        <span><strong>Enroll ID:</strong> {student?.enrollment_id || student?.enrollment_id || ''}</span>
       </div>
 
       {/* Fee Table */}

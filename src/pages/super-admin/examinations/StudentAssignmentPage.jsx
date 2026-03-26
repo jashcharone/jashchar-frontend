@@ -558,7 +558,7 @@ const StudentAssignmentPage = () => {
                             <TableHeader>
                                 <TableRow>
                                     <TableHead>Roll No</TableHead>
-                                    <TableHead>Admission No</TableHead>
+                                    <TableHead>Enroll ID</TableHead>
                                     <TableHead>Student Name</TableHead>
                                     <TableHead>Class</TableHead>
                                     <TableHead>Section</TableHead>
@@ -596,7 +596,7 @@ const StudentAssignmentPage = () => {
                                                     <span className="text-muted-foreground">-</span>
                                                 )}
                                             </TableCell>
-                                            <TableCell>{es.student?.admission_number || es.admission_number || '-'}</TableCell>
+                                            <TableCell>{es.student?.enrollment_id || es.enrollment_id || '-'}</TableCell>
                                             <TableCell className="font-medium">
                                                 {es.student?.full_name || es.student_name || '-'}
                                             </TableCell>
@@ -716,7 +716,7 @@ const StudentAssignmentPage = () => {
                                                     disabled={availableStudents.length === 0}
                                                 />
                                             </TableHead>
-                                            <TableHead>Admission No</TableHead>
+                                            <TableHead>Enroll ID</TableHead>
                                             <TableHead>Student Name</TableHead>
                                             <TableHead>Class</TableHead>
                                             <TableHead>Section</TableHead>
@@ -734,7 +734,7 @@ const StudentAssignmentPage = () => {
                                                 .filter(s => 
                                                     !searchQuery || 
                                                     s.full_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                                                    s.admission_number?.toLowerCase().includes(searchQuery.toLowerCase())
+                                                    s.enrollment_id?.toLowerCase().includes(searchQuery.toLowerCase())
                                                 )
                                                 .map(student => (
                                                     <TableRow key={student.id}>
@@ -744,7 +744,7 @@ const StudentAssignmentPage = () => {
                                                                 onCheckedChange={(checked) => handleStudentSelect(student.id, checked)}
                                                             />
                                                         </TableCell>
-                                                        <TableCell>{student.admission_number}</TableCell>
+                                                        <TableCell>{student.enrollment_id}</TableCell>
                                                         <TableCell className="font-medium">{student.full_name}</TableCell>
                                                         <TableCell>{student.class_name}</TableCell>
                                                         <TableCell>{student.section_name}</TableCell>
@@ -804,7 +804,7 @@ const StudentAssignmentPage = () => {
                                     <SelectContent>
                                         <SelectItem value="numeric">Numeric (001, 002, 003...)</SelectItem>
                                         <SelectItem value="alphanumeric">Alphanumeric (A001, A002...)</SelectItem>
-                                        <SelectItem value="admission">Use Admission Number</SelectItem>
+                                        <SelectItem value="admission">Use Enrollment ID</SelectItem>
                                     </SelectContent>
                                 </Select>
                             </div>

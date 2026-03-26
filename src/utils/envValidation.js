@@ -1,4 +1,4 @@
-﻿/**
+/**
  * UTILITY: Environment Variable Validation
  * Validates the format and presence of Supabase keys.
  */

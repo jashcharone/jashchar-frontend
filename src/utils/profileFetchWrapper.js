@@ -1,4 +1,4 @@
-﻿import { getSchoolOwnerProfile } from '@/services/schoolOwnerProfileService';
+import { getSchoolOwnerProfile } from '@/services/schoolOwnerProfileService';
 import { supabase } from '@/lib/customSupabaseClient';
 
 /**

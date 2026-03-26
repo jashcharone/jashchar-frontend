@@ -276,7 +276,7 @@ const FilterPanel = ({
                   type="text"
                   value={filters.search || ''}
                   onChange={(e) => updateFilter('search', e.target.value)}
-                  placeholder={filterConfig.searchPlaceholder || "Name, Phone, Admission No..."}
+                  placeholder={filterConfig.searchPlaceholder || "Name, Phone, Enroll ID..."}
                   className="w-full pl-9 pr-4 py-2 text-sm border dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 dark:text-gray-200 dark:placeholder-gray-400 focus:ring-2 focus:ring-blue-500"
                 />
               </div>

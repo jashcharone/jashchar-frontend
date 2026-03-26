@@ -1,4 +1,4 @@
-﻿import React, { useState } from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useSchoolSlug } from '@/hooks/useSchoolSlug';
 import { useSchoolPublicData } from '@/hooks/useSchoolPublicData';

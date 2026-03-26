@@ -1,4 +1,4 @@
-﻿import { diagnoseSupabaseConnection } from "./supabaseConnectionDiagnostic";
+import { diagnoseSupabaseConnection } from "./supabaseConnectionDiagnostic";
 import { disableReadOnlyMode, enableReadOnlyMode } from "./safeRecoveryManager";
 import { Capacitor } from '@capacitor/core';
 
@@ -34,7 +34,7 @@ export const startMonitoring = (onStatusChange) => {
 
   // Skip monitoring entirely on Capacitor native
   if (_isNative()) {
-    console.log('[ConnectionMonitor] Skipped — running on Capacitor native');
+    console.log('[ConnectionMonitor] Skipped � running on Capacitor native');
     isMonitoring = true;
     // Ensure read-only mode is OFF on native
     if (typeof window !== 'undefined' && window['__SAFE_READ_ONLY_MODE']) {

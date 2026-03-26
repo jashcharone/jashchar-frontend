@@ -135,7 +135,7 @@ const StudentAnalysis = () => {
     try {
       // Build base query filters
       let query = supabase.from('student_profiles')
-        .select('id, full_name, gender, date_of_birth, phone, email, photo_url, admission_date, school_code, father_name, mother_name, father_phone, mother_phone, guardian_phone, is_disabled, class_id, section_id, classes!student_profiles_class_id_fkey(id, name), sections!student_profiles_section_id_fkey(id, name), category_id, student_categories(id, name)')
+        .select('id, full_name, gender, date_of_birth, phone, email, photo_url, admission_date, enrollment_id, father_name, mother_name, father_phone, mother_phone, guardian_phone, is_disabled, class_id, section_id, classes!student_profiles_class_id_fkey(id, name), sections!student_profiles_section_id_fkey(id, name), category_id, student_categories(id, name)')
         .eq('branch_id', selectedBranch.id)
         .eq('session_id', selectedSessionId);
 
@@ -361,11 +361,11 @@ const StudentAnalysis = () => {
 
   const handleExportExcel = () => {
     // CSV Export
-    const headers = ['Admission No', 'Student Name', 'Class', 'Section', 'Gender', 'DOB', 'Age', 'Father Name', 'Mother Name', 'Phone', 'Email', 'Admission Date', 'Admission Type', 'Status'];
+    const headers = ['Enroll ID', 'Student Name', 'Class', 'Section', 'Gender', 'DOB', 'Age', 'Father Name', 'Mother Name', 'Phone', 'Email', 'Admission Date', 'Admission Type', 'Status'];
     const rows = studentList.map(s => {
       const age = s.date_of_birth ? Math.floor((Date.now() - new Date(s.date_of_birth).getTime()) / (365.25 * 24 * 60 * 60 * 1000)) : '';
       return [
-        s.school_code || '', s.full_name || '', s.classes?.name || '', s.sections?.name || '',
+        s.enrollment_id || '', s.full_name || '', s.classes?.name || '', s.sections?.name || '',
         s.gender || '', s.date_of_birth || '', age, s.father_name || '', s.mother_name || '',
         s.phone || s.father_phone || s.mother_phone || '', s.email || '',
         s.admission_date || '', s.student_categories?.name || '', s.is_disabled ? 'Disabled' : 'Active'

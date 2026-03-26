@@ -36,7 +36,7 @@ const StudentCoursePurchaseReport = ({ branchId }) => {
         .select(`
           *,
           course:online_courses(title, price, teacher:employee_profiles(full_name)),
-          student:student_profiles(full_name, school_code),
+          student:student_profiles(full_name, enrollment_id),
           guest:guest_users(name)
         `)
         .eq('branch_id', branchId)
@@ -200,7 +200,7 @@ const StudentCoursePurchaseReport = ({ branchId }) => {
                       <TableCell>
                         <div className="flex flex-col">
                           <span className="font-medium">{item.student?.full_name || item.guest?.name}</span>
-                          <span className="text-xs text-muted-foreground">{item.student ? `(Student - ${item.student.school_code})` : '(Guest)'}</span>
+                          <span className="text-xs text-muted-foreground">{item.student ? `(Student - ${item.student.enrollment_id})` : '(Guest)'}</span>
                         </div>
                       </TableCell>
                       <TableCell>{format(new Date(item.created_at), 'dd/MM/yyyy')}</TableCell>

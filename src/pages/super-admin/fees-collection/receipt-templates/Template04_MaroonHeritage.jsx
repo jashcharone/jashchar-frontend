@@ -78,7 +78,7 @@ const Template04_MaroonHeritage = ({ receiptData, copyType }) => {
         <p style={{ margin: 0, textIndent: '20px' }}>
           Received with thanks from <strong>Shri/Smt. {student?.father_name || '______'}</strong>,{' '}
           parent/guardian of <strong style={{ color: '#800000' }}>{student?.full_name || '______'}</strong>,{' '}
-          Admission No. <strong>{student?.school_code || student?.admission_no || '______'}</strong>,{' '}
+          Enroll ID. <strong>{student?.enrollment_id || student?.enrollment_id || '______'}</strong>,{' '}
           studying in Class <strong>{student?.class?.name || '______'}{student?.section?.name ? ` (${student.section.name})` : ''}</strong>,{' '}
           the sum as detailed below via <strong>{paymentMode || 'Cash'}</strong>:
         </p>

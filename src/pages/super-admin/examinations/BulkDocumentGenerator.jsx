@@ -137,7 +137,7 @@ const BulkDocumentGenerator = () => {
     const loadStudents = async () => {
         const { data, error } = await supabase
             .from('students')
-            .select('id, first_name, last_name, admission_no, roll_no, father_name')
+            .select('id, first_name, last_name, enrollment_id, roll_no, father_name')
             .eq('section_id', selectedSection)
             .eq('branch_id', selectedBranch.id)
             .eq('is_active', true)
@@ -464,7 +464,7 @@ const BulkDocumentGenerator = () => {
                                                         />
                                                     </TableHead>
                                                     <TableHead>Roll No</TableHead>
-                                                    <TableHead>Admission No</TableHead>
+                                                    <TableHead>Enroll ID</TableHead>
                                                     <TableHead>Student Name</TableHead>
                                                     <TableHead>Father's Name</TableHead>
                                                 </TableRow>
@@ -479,7 +479,7 @@ const BulkDocumentGenerator = () => {
                                                             />
                                                         </TableCell>
                                                         <TableCell>{student.roll_no || '-'}</TableCell>
-                                                        <TableCell>{student.admission_no}</TableCell>
+                                                        <TableCell>{student.enrollment_id}</TableCell>
                                                         <TableCell className="font-medium">
                                                             {student.first_name} {student.last_name}
                                                         </TableCell>

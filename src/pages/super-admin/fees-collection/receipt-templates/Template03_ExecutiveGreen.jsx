@@ -63,7 +63,7 @@ const Template03_ExecutiveGreen = ({ receiptData, copyType }) => {
         <div style={{ flex: 1, borderLeft: '3px solid #1b5e20', paddingLeft: '8px' }}>
           <div style={{ marginBottom: '2px' }}><strong>Student:</strong> <strong style={{ color: '#1b5e20' }}>{student?.full_name || '-'}</strong></div>
           <div style={{ marginBottom: '2px' }}><strong>Father:</strong> {student?.father_name || '-'}</div>
-          <div style={{ marginBottom: '2px' }}><strong>Adm#:</strong> {student?.school_code || student?.admission_no || '-'}</div>
+          <div style={{ marginBottom: '2px' }}><strong>Adm#:</strong> {student?.enrollment_id || student?.enrollment_id || '-'}</div>
           <div><strong>Class:</strong> {student?.class?.name || '-'}{student?.section?.name ? ` (${student.section.name})` : ''}</div>
         </div>
         <div style={{ flex: 1, borderLeft: '3px solid #c8a415', paddingLeft: '8px' }}>

@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { supabase } from '@/lib/customSupabaseClient';
@@ -24,12 +24,12 @@ const JoinListModal = ({ isOpen, onClose, type, itemId, branchId }) => {
       if (type === 'class') {
         const res = await supabase
           .from('gmeet_live_class_joins')
-          .select('join_time, student:student_profiles(full_name, school_code, father_name)')
+          .select('join_time, student:student_profiles(full_name, enrollment_id, father_name)')
           .eq('live_class_id', itemId)
           .eq('branch_id', branchId);
         data = res.data?.map(j => ({
           name: j.student?.full_name,
-          id_no: j.student?.school_code,
+          id_no: j.student?.enrollment_id,
           extra: j.student?.father_name,
           time: j.join_time
         })) || [];
@@ -69,7 +69,7 @@ const JoinListModal = ({ isOpen, onClose, type, itemId, branchId }) => {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>{type === 'class' ? 'Admission No' : 'Staff ID'}</TableHead>
+                  <TableHead>{type === 'class' ? 'Enroll ID' : 'Staff ID'}</TableHead>
                   <TableHead>{type === 'class' ? 'Student Name' : 'Staff Name'}</TableHead>
                   <TableHead>{type === 'class' ? 'Father Name' : 'Role'}</TableHead>
                   <TableHead>Last Join</TableHead>

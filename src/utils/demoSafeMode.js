@@ -1,4 +1,4 @@
-﻿/**
+/**
  * SAFE MODE PROTECTION SYSTEM
  * Ensures automation ONLY touches demo data and strictly respects isolation.
  */

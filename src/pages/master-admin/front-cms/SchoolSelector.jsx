@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import DashboardLayout from '@/components/DashboardLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -131,7 +131,7 @@ const SchoolSelector = () => {
                     {school.organizations?.code || school.slug || 'No Code'}
                   </p>
                   <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
-                     <span className="opacity-70">ðŸ“</span> {school.organizations?.city || school.city || 'No Location'}
+                     <span className="opacity-70">📍</span> {school.organizations?.city || school.city || 'No Location'}
                   </p>
                 </div>
                 {selectedSchoolId === school.id && (

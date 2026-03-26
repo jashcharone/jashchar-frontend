@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
 import DataTableExport from '@/components/DataTableExport';
 import { supabase } from '@/lib/customSupabaseClient';
@@ -32,7 +32,7 @@ const IncomeGroupReport = () => {
     const columns = useMemo(() => [
         { key: 'income_head', label: 'Income Head' },
         { key: 'count', label: 'Items Count' },
-        { key: 'total', label: 'Total Amount (₹)' }
+        { key: 'total', label: 'Total Amount (?)' }
     ], []);
 
     const exportData = useMemo(() => {
@@ -40,7 +40,7 @@ const IncomeGroupReport = () => {
         return Object.entries(reportData).map(([head, data]) => ({
             income_head: head,
             count: data.count,
-            total: `₹${data.total.toFixed(2)}`
+            total: `?${data.total.toFixed(2)}`
         }));
     }, [reportData]);
 
@@ -140,16 +140,16 @@ const IncomeGroupReport = () => {
                         )}
                         <div ref={printRef} className="overflow-x-auto">
                             <table className="w-full text-sm">
-                                <thead className="bg-muted"><tr className="text-left"><th className="p-2">Income Head</th><th className="p-2">Total Amount (₹)</th></tr></thead>
+                                <thead className="bg-muted"><tr className="text-left"><th className="p-2">Income Head</th><th className="p-2">Total Amount (?)</th></tr></thead>
                                 <tbody>
                                     {Object.entries(reportData).map(([head, data]) => (
                                         <tr key={head} className="border-b">
                                             <td className="p-2 font-medium">{head} ({data.count} {data.count > 1 ? 'items' : 'item'})</td>
-                                            <td className="p-2 text-right">₹{data.total.toFixed(2)}</td>
+                                            <td className="p-2 text-right">?{data.total.toFixed(2)}</td>
                                         </tr>
                                     ))}
                                 </tbody>
-                                <tfoot className="font-bold bg-muted"><tr><td className="p-2 text-right">Grand Total</td><td className="p-2 text-right">₹{grandTotal.toFixed(2)}</td></tr></tfoot>
+                                <tfoot className="font-bold bg-muted"><tr><td className="p-2 text-right">Grand Total</td><td className="p-2 text-right">?{grandTotal.toFixed(2)}</td></tr></tfoot>
                             </table>
                         </div>
                     </CardContent>

@@ -87,7 +87,7 @@ export default function ParentPaymentPortal() {
           student:student_id(
             id,
             full_name,
-            school_code,
+            enrollment_id,
             class_id,
             section_id,
             branch_id,
@@ -283,7 +283,7 @@ export default function ParentPaymentPortal() {
         notes: {
           student_id: selectedChild.id,
           student_name: selectedChild.full_name,
-          school_code: selectedChild.school_code,
+          enrollment_id: selectedChild.enrollment_id,
           fee_details: selectedFees.map(f => f.id).join(',')
         },
         theme: {
@@ -439,7 +439,7 @@ export default function ParentPaymentPortal() {
                   <div>
                     <h2 className="text-xl font-semibold">{selectedChild.full_name}</h2>
                     <div className="flex gap-2 text-sm text-muted-foreground">
-                      <span>{selectedChild.school_code}</span>
+                      <span>{selectedChild.enrollment_id}</span>
                       <span>•</span>
                       <span>{selectedChild.classes?.name} {selectedChild.sections?.name}</span>
                     </div>

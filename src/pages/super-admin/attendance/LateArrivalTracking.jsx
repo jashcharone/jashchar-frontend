@@ -134,7 +134,7 @@ const StudentLateDetailsDialog = ({ student, open, onClose }) => {
                         <div>
                             <h3 className="font-semibold text-lg">{student.student_name}</h3>
                             <p className="text-sm text-muted-foreground">
-                                {student.admission_number}
+                                {student.enrollment_id}
                             </p>
                             <p className="text-sm text-muted-foreground">
                                 {student.class_name} - {student.section_name}
@@ -259,7 +259,7 @@ const LateArrivalTracking = () => {
     const filteredArrivals = lateArrivals.filter(student => {
         const matchesSearch = !searchTerm || 
             student.student_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            student.admission_number?.toLowerCase().includes(searchTerm.toLowerCase());
+            student.enrollment_id?.toLowerCase().includes(searchTerm.toLowerCase());
         
         const matchesClass = classFilter === 'all' || 
             student.class_name === classFilter;
@@ -355,7 +355,7 @@ const LateArrivalTracking = () => {
                                                     <div>
                                                         <p className="font-medium">{student.student_name}</p>
                                                         <p className="text-xs text-muted-foreground">
-                                                            {student.admission_number}
+                                                            {student.enrollment_id}
                                                         </p>
                                                     </div>
                                                 </div>

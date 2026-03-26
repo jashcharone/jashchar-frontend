@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
 import StatCard from '@/components/StatCard';
 import { supabase } from '@/lib/customSupabaseClient';
@@ -64,8 +64,8 @@ const MasterAdminDashboard = () => {
     { title: 'Active Schools', value: stats.active_schools.toLocaleString(), icon: UserCheck },
     { title: 'Total Students', value: stats.total_students.toLocaleString(), icon: Users },
     { title: 'Total Staff', value: stats.total_staff.toLocaleString(), icon: 'User' }, //Using string as User is a common component name.
-    { title: 'This Month Revenue', value: `₹${stats.monthly_revenue.toLocaleString()}`, icon: Activity, changeType: 'increase' },
-    { title: 'Total Revenue', value: `₹${stats.total_revenue.toLocaleString()}`, icon: IndianRupee },
+    { title: 'This Month Revenue', value: `?${stats.monthly_revenue.toLocaleString()}`, icon: Activity, changeType: 'increase' },
+    { title: 'Total Revenue', value: `?${stats.total_revenue.toLocaleString()}`, icon: IndianRupee },
   ];
 
   return (
@@ -87,10 +87,10 @@ const MasterAdminDashboard = () => {
           <LineChart data={chartData} margin={{ top: 5, right: 20, left: -10, bottom: 5 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
             <XAxis dataKey="name" stroke="hsl(var(--muted-foreground))" />
-            <YAxis stroke="hsl(var(--muted-foreground))" tickFormatter={(value) => `₹${value/1000}k`} />
+            <YAxis stroke="hsl(var(--muted-foreground))" tickFormatter={(value) => `?${value/1000}k`} />
             <Tooltip
                 contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))' }} 
-                formatter={(value) => `₹${value.toLocaleString()}`}
+                formatter={(value) => `?${value.toLocaleString()}`}
                 labelStyle={{ color: 'hsl(var(--foreground))' }}
             />
             <Legend />

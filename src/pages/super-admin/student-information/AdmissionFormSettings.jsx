@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
 import { useToast } from '@/components/ui/use-toast';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
@@ -171,7 +171,7 @@ const FormFieldsSettings = () => {
 
     // ==================== FIELD OPERATIONS ====================
     const handleToggle = async (field, toggleType) => {
-        console.log('🔧 handleToggle START:', { field, toggleType }); // FIRST LINE DEBUG
+        console.log('?? handleToggle START:', { field, toggleType }); // FIRST LINE DEBUG
         const isSystem = field.is_system;
         const currentValue = toggleType === 'is_enabled' ? (field.is_enabled !== false) : !!field.is_required;
         const newValue = !currentValue;
@@ -612,14 +612,14 @@ const FormFieldsSettings = () => {
                                                                 <TableCell className="text-center">
                                                                     <Switch
                                                                         checked={isEnabled}
-                                                                        onCheckedChange={() => { console.log('🎯 Visible switch clicked!', field.key || field.id); handleToggle(field, 'is_enabled'); }}
+                                                                        onCheckedChange={() => { console.log('?? Visible switch clicked!', field.key || field.id); handleToggle(field, 'is_enabled'); }}
                                                                         className="data-[state=checked]:bg-green-500"
                                                                     />
                                                                 </TableCell>
                                                                 <TableCell className="text-center">
                                                                     <Switch
                                                                         checked={!!field.is_required}
-                                                                        onCheckedChange={() => { console.log('🎯 Required switch clicked!', field.key || field.id); handleToggle(field, 'is_required'); }}
+                                                                        onCheckedChange={() => { console.log('?? Required switch clicked!', field.key || field.id); handleToggle(field, 'is_required'); }}
                                                                         disabled={!isEnabled}
                                                                         className="data-[state=checked]:bg-red-500"
                                                                     />
@@ -830,9 +830,9 @@ const FormFieldsSettings = () => {
                                     </SelectContent>
                                 </Select>
                                 <p className="text-xs text-muted-foreground">
-                                    {editFieldData.field_type === 'aadhar' && '🔢 Format: xxxx xxxx xxxx (12 digits)'}
-                                    {editFieldData.field_type === 'phone' && '📱 Format: 10 digit mobile number'}
-                                    {editFieldData.field_type === 'pincode' && '📍 Format: 6 digit pincode'}
+                                    {editFieldData.field_type === 'aadhar' && '?? Format: xxxx xxxx xxxx (12 digits)'}
+                                    {editFieldData.field_type === 'phone' && '?? Format: 10 digit mobile number'}
+                                    {editFieldData.field_type === 'pincode' && '?? Format: 6 digit pincode'}
                                 </p>
                             </div>
                         )}

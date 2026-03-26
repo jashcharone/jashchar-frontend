@@ -1,4 +1,4 @@
-﻿import React, { useState, useRef } from 'react';
+import React, { useState, useRef } from 'react';
 import { formatDateTime } from '@/utils/dateUtils';
 import DashboardLayout from '@/components/DashboardLayout';
 import { Button } from '@/components/ui/button';
@@ -444,7 +444,7 @@ const ExportImport = () => {
                       {importResult.success.length > 0 && (
                         <div className="border rounded-lg">
                           <div className="p-3 bg-green-50 font-medium text-green-800">
-                            ✓ Successful ({importResult.success.length})
+                            ? Successful ({importResult.success.length})
                           </div>
                           {importResult.success.map(item => (
                             <div key={item.table} className="p-2 px-3 border-t flex justify-between">
@@ -458,7 +458,7 @@ const ExportImport = () => {
                       {importResult.failed.length > 0 && (
                         <div className="border rounded-lg border-red-200">
                           <div className="p-3 bg-red-50 font-medium text-red-800">
-                            ✗ Failed ({importResult.failed.length})
+                            ? Failed ({importResult.failed.length})
                           </div>
                           {importResult.failed.map(item => (
                             <div key={item.table} className="p-2 px-3 border-t text-sm">

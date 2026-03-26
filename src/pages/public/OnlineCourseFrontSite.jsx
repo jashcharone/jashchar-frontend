@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSchoolSlug } from '@/hooks/useSchoolSlug';
 import { supabase } from '@/lib/customSupabaseClient';

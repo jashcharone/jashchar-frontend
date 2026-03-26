@@ -14,8 +14,8 @@ export const ATTENDANCE_COLUMNS = [
   // STUDENT INFO
   // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   {
-    key: 'admission_number',
-    label: 'Adm. No',
+    key: 'enrollment_id',
+    label: 'Enroll ID',
     type: 'string',
     category: 'Student Info',
     sortable: true,
@@ -418,33 +418,33 @@ export const ATTENDANCE_COLUMNS = [
 export const COLUMN_SETS = {
   // Basic daily attendance view
   daily_basic: [
-    'admission_number', 'full_name', 'class.name', 'section.name', 
+    'enrollment_id', 'full_name', 'class.name', 'section.name', 
     'attendance_date', 'status', 'remarks'
   ],
   
   // Daily with time tracking
   daily_detailed: [
-    'admission_number', 'full_name', 'class.name', 'section.name',
+    'enrollment_id', 'full_name', 'class.name', 'section.name',
     'attendance_date', 'status', 'check_in_time', 'check_out_time', 
     'late_minutes', 'remarks', 'marked_by'
   ],
   
   // Period-wise attendance
   period_wise: [
-    'admission_number', 'full_name', 'class.name', 'section.name',
+    'enrollment_id', 'full_name', 'class.name', 'section.name',
     'attendance_date', 'period_number', 'subject.name', 'teacher.name', 'period_status'
   ],
   
   // Monthly summary
   monthly_summary: [
-    'admission_number', 'full_name', 'class.name', 'section.name',
+    'enrollment_id', 'full_name', 'class.name', 'section.name',
     'month', 'working_days', 'days_present', 'days_absent', 
     'days_late', 'attendance_percentage'
   ],
   
   // Defaulters list
   defaulters: [
-    'admission_number', 'full_name', 'class.name', 'section.name',
+    'enrollment_id', 'full_name', 'class.name', 'section.name',
     'consecutive_absent', 'last_absent_date', 'absence_reason',
     'father_phone', 'parent_notified'
   ],

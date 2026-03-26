@@ -300,7 +300,7 @@ const FinanceReportGenerator = () => {
       id: i + 1,
       receipt_no: `RCP${2024}${String(i + 1).padStart(5, '0')}`,
       date: `2024-${String((i % 12) + 1).padStart(2, '0')}-${String((i % 28) + 1).padStart(2, '0')}`,
-      admission_number: `ADM${2024}${String(i + 1).padStart(4, '0')}`,
+      enrollment_id: `ADM${2024}${String(i + 1).padStart(4, '0')}`,
       student_name: ['Rahul Sharma', 'Priya Verma', 'Amit Singh', 'Sneha Patel', 'Raj Kumar'][i % 5],
       class_name: classes[i % 10],
       section_name: sections[i % 3],
@@ -326,7 +326,7 @@ const FinanceReportGenerator = () => {
     
     return Array.from({ length: 50 }, (_, i) => ({
       id: i + 1,
-      admission_number: `ADM${2024}${String(i + 1).padStart(4, '0')}`,
+      enrollment_id: `ADM${2024}${String(i + 1).padStart(4, '0')}`,
       student_name: ['Rahul Sharma', 'Priya Verma', 'Amit Singh', 'Sneha Patel', 'Raj Kumar'][i % 5],
       class_name: classes[i % 10],
       section_name: sections[i % 3],
@@ -358,7 +358,7 @@ const FinanceReportGenerator = () => {
     
     return Array.from({ length: 50 }, (_, i) => ({
       id: i + 1,
-      admission_number: `ADM${2024}${String(i + 1).padStart(4, '0')}`,
+      enrollment_id: `ADM${2024}${String(i + 1).padStart(4, '0')}`,
       student_name: ['Rahul Sharma', 'Priya Verma', 'Amit Singh', 'Sneha Patel', 'Raj Kumar'][i % 5],
       class_name: classes[i % 10],
       section_name: sections[i % 3],
@@ -376,7 +376,7 @@ const FinanceReportGenerator = () => {
       waiver_reason: i % 3 === 0 ? 'Financial Hardship' : (i % 3 === 1 ? 'Merit' : 'Special Case'),
       waiver_amount: i % 2 === 0 ? 2000 + Math.round(Math.random() * 5000) : 0,
       staff_name: i % 6 === 0 ? ['Mr. Rajesh', 'Ms. Sunita', 'Mr. Vikram'][i % 3] : null,
-      sibling_admission_no: i % 6 === 1 ? `ADM${2024}${String(i + 100).padStart(4, '0')}` : null,
+      sibling_enrollment_id: i % 6 === 1 ? `ADM${2024}${String(i + 100).padStart(4, '0')}` : null,
       sibling_discount: i % 6 === 1 ? 10 : 0,
       sport_name: i % 6 === 3 ? ['Cricket', 'Football', 'Basketball', 'Athletics'][i % 4] : null,
       marks_percentage: i % 6 === 2 ? 85 + Math.round(Math.random() * 15) : null,

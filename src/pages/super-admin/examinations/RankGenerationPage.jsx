@@ -477,7 +477,7 @@ const RankGenerationPage = () => {
                                                 <TableRow>
                                                     <TableHead className="w-[100px]">Rank</TableHead>
                                                     <TableHead>Student</TableHead>
-                                                    <TableHead>Admission No</TableHead>
+                                                    <TableHead>Enroll ID</TableHead>
                                                     <TableHead>Class</TableHead>
                                                     <TableHead>Total Marks</TableHead>
                                                     <TableHead>Percentage</TableHead>
@@ -497,7 +497,7 @@ const RankGenerationPage = () => {
                                                         <TableCell className="font-medium">
                                                             {result.students?.first_name} {result.students?.last_name}
                                                         </TableCell>
-                                                        <TableCell>{result.students?.admission_no}</TableCell>
+                                                        <TableCell>{result.students?.enrollment_id}</TableCell>
                                                         <TableCell>{result.classes?.name}</TableCell>
                                                         <TableCell>
                                                             {result.total_marks}/{result.max_marks}

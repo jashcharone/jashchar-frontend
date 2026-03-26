@@ -242,7 +242,7 @@ const OnlineExamReportGenerator = () => {
       return {
         id: i + 1,
         student_name: names[i % names.length],
-        admission_no: `ADM${2024}${String(i + 1).padStart(4, '0')}`,
+        enrollment_id: `ADM${2024}${String(i + 1).padStart(4, '0')}`,
         roll_no: String((i % 40) + 1),
         class_name: classes[i % classes.length],
         section_name: ['A', 'B', 'C'][i % 3],
@@ -304,7 +304,7 @@ const OnlineExamReportGenerator = () => {
     return Array.from({ length: 50 }, (_, i) => ({
       id: i + 1,
       student_name: names[i % names.length],
-      admission_no: `ADM${2024}${String(i + 1).padStart(4, '0')}`,
+      enrollment_id: `ADM${2024}${String(i + 1).padStart(4, '0')}`,
       class_name: ['6th', '7th', '8th', '9th', '10th'][i % 5],
       exam_name: `Math - Unit Test ${(i % 3) + 1}`,
       exam_date: `2024-${String((i % 12) + 1).padStart(2, '0')}-${String((i % 28) + 1).padStart(2, '0')}`,

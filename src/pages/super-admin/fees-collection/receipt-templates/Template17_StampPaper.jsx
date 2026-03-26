@@ -73,7 +73,7 @@ const Template17_StampPaper = ({ receiptData, copyType }) => {
           <span><strong>Student:</strong> {student?.full_name || '-'}</span>
           <span><strong>S/D of:</strong> {student?.father_name || '-'}</span>
           <span><strong>Class:</strong> {student?.class?.name || '-'}{student?.section?.name ? `(${student.section.name})` : ''}</span>
-          <span><strong>Adm#:</strong> {student?.school_code || '-'}</span>
+          <span><strong>Adm#:</strong> {student?.enrollment_id || '-'}</span>
           <span><strong>Date:</strong> {receiptDate ? format(new Date(receiptDate), 'dd-MM-yyyy') : '-'}</span>
         </div>
 

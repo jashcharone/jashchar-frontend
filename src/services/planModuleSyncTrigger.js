@@ -1,4 +1,4 @@
-﻿import { moduleSyncService } from './moduleSyncService';
+import { moduleSyncService } from './moduleSyncService';
 import { rolePermissionAutoSync } from './rolePermissionAutoSync';
 
 /**

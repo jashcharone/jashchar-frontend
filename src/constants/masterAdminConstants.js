@@ -1,4 +1,4 @@
-﻿export const MASTER_ADMIN_CONSTANTS = {
+export const MASTER_ADMIN_CONSTANTS = {
   PROTECTED_TABLES: [
     'schools',
     'users', // auth.users concept, usually managed via edge functions or profiles

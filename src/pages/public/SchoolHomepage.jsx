@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { formatDate, getMonthShortName } from '@/utils/dateUtils';
 import { motion } from 'framer-motion';
 import { Helmet } from 'react-helmet';

@@ -268,7 +268,7 @@ const MarkAttendance = () => {
                     <TableRow>
                       <TableHead className="w-12">#</TableHead>
                       <TableHead>Student</TableHead>
-                      <TableHead>Adm. No</TableHead>
+                      <TableHead>Enroll ID</TableHead>
                       <TableHead>Class</TableHead>
                       <TableHead>Room</TableHead>
                       <TableHead>Bed</TableHead>
@@ -280,7 +280,7 @@ const MarkAttendance = () => {
                       <TableRow key={s.studentId} className={attendanceMap[s.studentId] === 'absent' ? 'bg-red-50 dark:bg-red-950/30' : ''}>
                         <TableCell className="font-medium">{idx + 1}</TableCell>
                         <TableCell>{s.student?.full_name || s.student?.first_name || '-'}</TableCell>
-                        <TableCell>{s.student?.admission_number || '-'}</TableCell>
+                        <TableCell>{s.student?.enrollment_id || '-'}</TableCell>
                         <TableCell>
                           {s.student?.class?.name || '-'}
                           {s.student?.section?.name ? ` - ${s.student.section.name}` : ''}

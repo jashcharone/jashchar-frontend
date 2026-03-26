@@ -1,4 +1,4 @@
-﻿export const calculateContrastRatio = (hex1, hex2) => {
+export const calculateContrastRatio = (hex1, hex2) => {
     const getLuminance = (hex) => {
       const rgb = parseInt(hex.slice(1), 16); 
       const r = (rgb >> 16) & 0xff;

@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/SupabaseAuthContext";
 import { supabase } from "@/lib/customSupabaseClient";
 import { Button } from "@/components/ui/button";
@@ -44,7 +44,7 @@ const Login = () => {
   // OPTIMIZATION: Start with false to show UI immediately. Config will apply when loaded.
   const [configLoading, setConfigLoading] = useState(false);
 
-  // ✅ Redirect if already logged in
+  // ? Redirect if already logged in
   useEffect(() => {
     const fetchRoleAndRedirect = async () => {
       if (!authLoading && user) {
@@ -123,7 +123,7 @@ const Login = () => {
     fetchRoleAndRedirect();
   }, [user, authLoading, navigate]);
 
-  // ✅ Load login page config
+  // ? Load login page config
   useEffect(() => {
     let isMounted = true;
     // SAFETY: Force stop loading after 3 seconds if Supabase hangs
@@ -255,12 +255,12 @@ const Login = () => {
       );
   }
 
-  // ✅ Main login handler
+  // ? Main login handler
   const handleLogin = async (e) => {
     e.preventDefault();
     setLoading(true);
 
-    // ✅ CLEAR OLD SESSION DATA: Prevent permission leak between users
+    // ? CLEAR OLD SESSION DATA: Prevent permission leak between users
     localStorage.removeItem('selectedSchoolId');
     localStorage.removeItem('selectedBranchId');
     localStorage.removeItem('selectedOrganizationId');
@@ -285,7 +285,7 @@ const Login = () => {
         return;
       }
 
-      // ✅ Immediately check for pending approval BEFORE showing success
+      // ? Immediately check for pending approval BEFORE showing success
       const { data: sessionData } = await supabase.auth.getSession();
       const user = sessionData?.session?.user;
 
@@ -402,13 +402,13 @@ const Login = () => {
         return;
       }
 
-      // ✅ Only show success if user is approved
+      // ? Only show success if user is approved
       toast({
         title: "Welcome back!",
         description: "Successfully logged in to your account.",
       });
 
-      // ✅ CRITICAL: Fetch role from branch_users FIRST (most reliable source)
+      // ? CRITICAL: Fetch role from branch_users FIRST (most reliable source)
       let finalRole = null;
       
       // Always try to fetch from branch_users first - this is the source of truth for employees
@@ -558,13 +558,13 @@ const Login = () => {
 
             <form onSubmit={handleLogin} className="space-y-5">
               <div className="space-y-2">
-                <Label htmlFor="identifier">Email / Admission No. / Mobile</Label>
+                <Label htmlFor="identifier">Email / Enroll ID. / Mobile</Label>
                 <Input
                   id="identifier"
                   type="text"
                   value={identifier}
                   onChange={(e) => setIdentifier(e.target.value)}
-                  placeholder="Email, Admission No. or Mobile No."
+                  placeholder="Email, Enroll ID. or Mobile No."
                   required
                 />
               </div>
@@ -586,7 +586,7 @@ const Login = () => {
                     type={showPassword ? "text" : "password"}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    placeholder="••••••••"
+                    placeholder="��������"
                     required
                   />
                   <button

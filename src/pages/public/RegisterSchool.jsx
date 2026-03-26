@@ -1,4 +1,4 @@
-﻿import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/lib/customSupabaseClient';
 import { Button } from '@/components/ui/button';
@@ -565,12 +565,12 @@ const RegisterSchool = () => {
     setLoading(true);
 
     try {
-      // ✅ IMPORTANT: DO NOT create auth user here
+      // ? IMPORTANT: DO NOT create auth user here
       // Auth user will be created ONLY when Jashchar ERP team approves
       // This prevents duplicate user errors and allows rejected requests to be resubmitted
 
       // 1. Prepare Request Data
-      // ✅ We send the password in the notes field temporarily so it can be used during approval
+      // ? We send the password in the notes field temporarily so it can be used during approval
       const { password, ...requestData } = formData;
       
       // Prepare organization data for new model
@@ -798,7 +798,7 @@ const RegisterSchool = () => {
                 {formData.registration_type === 'organization' ? ' (Organization)' : 
                  ' (Multi-Branch Organization)'}.
                 <br/><br/>
-                <strong className="text-amber-600 dark:text-amber-400"> ï¸ Important:</strong> Your registration is pending Jashchar ERP team approval. 
+                <strong className="text-amber-600 dark:text-amber-400"> ️ Important:</strong> Your registration is pending Jashchar ERP team approval. 
                 You <strong>cannot login</strong> until your request is approved.
                 <br/><br/>
                 Your organization approval will be completed within <strong>24 hours</strong>. 
@@ -1131,7 +1131,7 @@ const RegisterSchool = () => {
                     </div>
                     {errors.owner_email && (
                       <p className="text-xs text-red-500 mt-1 flex items-center gap-1">
-                        <span> ï¸</span> {errors.owner_email}
+                        <span> ️</span> {errors.owner_email}
                       </p>
                     )}
                     </div>
@@ -1185,7 +1185,7 @@ const RegisterSchool = () => {
                         )}
                     </div>
                     {errors.owner_mobile && <p className="text-xs text-red-500 mt-1 flex items-center gap-1">
-                      <span> ï¸</span> {errors.owner_mobile}
+                      <span> ️</span> {errors.owner_mobile}
                     </p>}
                     <p className="text-xs text-gray-500 dark:text-slate-500 mt-1">Enter exactly 10 digits. You can login using either email or mobile number</p>
                     </div>
@@ -1203,7 +1203,7 @@ const RegisterSchool = () => {
                             onChange={handleInputChange} 
                             minLength={6} 
                             className="pl-10 pr-10 focus:ring-indigo-500 dark:bg-slate-950 dark:border-slate-700 dark:text-white" 
-                            placeholder="••••••••" 
+                            placeholder="��������" 
                         />
                         <button
                             type="button"
@@ -1228,7 +1228,7 @@ const RegisterSchool = () => {
                             onChange={(e) => setRetypePassword(e.target.value)} 
                             minLength={6} 
                             className="pl-10 pr-10 focus:ring-indigo-500 dark:bg-slate-950 dark:border-slate-700 dark:text-white" 
-                            placeholder="••••••••" 
+                            placeholder="��������" 
                         />
                         <button
                             type="button"
@@ -1278,7 +1278,7 @@ const RegisterSchool = () => {
                     </div>
                     {errors.slug && (
                       <p className="text-xs text-red-500 mt-1 flex items-center gap-1">
-                        <span> ï¸</span> {errors.slug}
+                        <span> ️</span> {errors.slug}
                       </p>
                     )}
                     <p className="text-xs text-gray-500 dark:text-slate-500 mt-1">

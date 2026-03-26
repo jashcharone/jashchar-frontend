@@ -1,4 +1,4 @@
-﻿import React from 'react';
+import React from 'react';
 import { Smartphone } from "lucide-react";
 
 const WhatsAppMobilePreview = ({ header, body, footer, buttons }) => {

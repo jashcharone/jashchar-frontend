@@ -91,7 +91,7 @@ const HostelFee = () => {
     let query = supabase
       .from('student_profiles')
       .select(`
-        id, full_name, school_code, roll_number,
+        id, full_name, enrollment_id, roll_number,
         classes!student_profiles_class_id_fkey(name),
         sections!student_profiles_section_id_fkey(name)
       `)
@@ -102,7 +102,7 @@ const HostelFee = () => {
     }
 
     if (searchFilters.search) {
-      query = query.or(`full_name.ilike.%${searchFilters.search}%,school_code.ilike.%${searchFilters.search}%`);
+      query = query.or(`full_name.ilike.%${searchFilters.search}%,enrollment_id.ilike.%${searchFilters.search}%`);
     }
 
     const { data: studentData, error } = await query.order('full_name');
@@ -462,7 +462,7 @@ const HostelFee = () => {
                     </Select>
                   </div>
                   <div className="space-y-2">
-                    <Label>Search by Name / Admission No</Label>
+                    <Label>Search by Name / Enroll ID</Label>
                     <Input 
                       placeholder="Enter name or admission number..." 
                       value={searchFilters.search}
@@ -608,7 +608,7 @@ const HostelFee = () => {
                       <TableRow className="bg-muted/50">
                         <TableHead className="w-[50px]">#</TableHead>
                         <TableHead>Student Name</TableHead>
-                        <TableHead>Admission No.</TableHead>
+                        <TableHead>Enroll ID.</TableHead>
                         <TableHead>Class</TableHead>
                         <TableHead>Hostel</TableHead>
                         <TableHead>Room</TableHead>
@@ -622,7 +622,7 @@ const HostelFee = () => {
                         <TableRow key={student.id} className={selectedStudent?.id === student.id ? 'bg-primary/10' : ''}>
                           <TableCell>{startIndex + index + 1}</TableCell>
                           <TableCell className="font-medium">{student.full_name}</TableCell>
-                          <TableCell>{student.school_code || '-'}</TableCell>
+                          <TableCell>{student.enrollment_id || '-'}</TableCell>
                           <TableCell>
                             {student.classes?.name || '-'}
                             {student.sections?.name ? ` - ${student.sections.name}` : ''}

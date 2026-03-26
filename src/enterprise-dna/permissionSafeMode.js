@@ -1,4 +1,4 @@
-﻿import { mergeObjectsSafe } from '@/utils/appendOnlyMerge';
+import { mergeObjectsSafe } from '@/utils/appendOnlyMerge';
 
 /**
  * PERMISSION SAFE MODE

@@ -1,9 +1,9 @@
 ﻿/**
- * 🌟 WORLD-CLASS STUDENT PROFILE PAGE
- * ═══════════════════════════════════════════════════════════════════════════════
+ * WORLD-CLASS STUDENT PROFILE PAGE
+ * -------------------------------------------------------------------------------
  * Designed for 100+ years of use - The most comprehensive student profile system
  * Features: Beautiful UI, All Information, Print/Export, QR Code, Timeline, etc.
- * ═══════════════════════════════════════════════════════════════════════════════
+ * -------------------------------------------------------------------------------
  */
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
@@ -51,9 +51,9 @@ import StudentProfileTimeline from './StudentProfileTimeline';
 import StudentProfileAIInsightsTab from './StudentProfileAIInsightsTab';
 import DocumentUploadField from '@/components/common/DocumentUploadField';
 
-// ═══════════════════════════════════════════════════════════════════════════════
-// 🎨 PREMIUM COMPONENTS
-// ═══════════════════════════════════════════════════════════════════════════════
+// -------------------------------------------------------------------------------
+// PREMIUM COMPONENTS
+// -------------------------------------------------------------------------------
 
 const GlassCard = ({ children, className, gradient = false, hover = true, ...props }) => (
   <div 
@@ -180,9 +180,9 @@ const TimelineItem = ({ icon: Icon, title, description, date, status = "complete
   );
 };
 
-// ═══════════════════════════════════════════════════════════════════════════════
-// 📊 MAIN COMPONENT
-// ═══════════════════════════════════════════════════════════════════════════════
+// -------------------------------------------------------------------------------
+// MAIN COMPONENT
+// -------------------------------------------------------------------------------
 
 const StudentProfile = () => {
   const { studentId, roleSlug } = useParams();
@@ -224,7 +224,7 @@ const StudentProfile = () => {
   // Check if viewing own profile (student role)
   const isViewingOwnProfile = !studentId && user?.role === 'student';
 
-  // 🖨️ PDF Export ref and handler
+  // PDF Export ref and handler
   const printRef = useRef();
   
   // Get school/branch name for PDF
@@ -289,9 +289,9 @@ const StudentProfile = () => {
         return currentY;
       };
 
-      // ═══════════════════════════════════════════════════════════════════════════
+      // ---------------------------------------------------------------------------
       // HEADER - School Logo & Title
-      // ═══════════════════════════════════════════════════════════════════════════
+      // ---------------------------------------------------------------------------
       pdf.setFillColor(30, 64, 175); // Deep blue header
       pdf.rect(0, 0, pageWidth, 40, 'F');
       
@@ -308,9 +308,9 @@ const StudentProfile = () => {
 
       y = 48;
 
-      // ═══════════════════════════════════════════════════════════════════════════
+      // ---------------------------------------------------------------------------
       // STUDENT BASIC INFO CARD
-      // ═══════════════════════════════════════════════════════════════════════════
+      // ---------------------------------------------------------------------------
       pdf.setFillColor(248, 250, 252);
       pdf.roundedRect(margin, y, contentWidth, 32, 2, 2, 'F');
       pdf.setDrawColor(200, 210, 230);
@@ -363,7 +363,7 @@ const StudentProfile = () => {
       addText(`Class: ${student.class?.name || 'N/A'}  |  Section: ${student.section?.name || 'N/A'}`, margin + 34, y + 17, { fontSize: 9, color: [80, 100, 130] });
       
       // Admission & Roll Number
-      addText(`Admission No: ${student.school_code || 'N/A'}  |  Roll No: ${student.roll_number || 'N/A'}`, margin + 34, y + 24, { fontSize: 9, fontStyle: 'bold', color: [50, 70, 100] });
+      addText(`Enroll ID: ${student.enrollment_id || 'N/A'}  |  Roll No: ${student.roll_number || 'N/A'}`, margin + 34, y + 24, { fontSize: 9, fontStyle: 'bold', color: [50, 70, 100] });
       
       // Status Badge
       pdf.setFillColor(34, 197, 94);
@@ -372,9 +372,9 @@ const StudentProfile = () => {
 
       y += 38;
 
-      // ═══════════════════════════════════════════════════════════════════════════
+      // ---------------------------------------------------------------------------
       // PERSONAL INFORMATION (No emoji - jsPDF doesn't support it)
-      // ═══════════════════════════════════════════════════════════════════════════
+      // ---------------------------------------------------------------------------
       y = addSection('PERSONAL INFORMATION', y);
       
       const col1 = margin + 3;
@@ -402,9 +402,9 @@ const StudentProfile = () => {
       addField('RTE Student', student.is_rte_student ? 'Yes' : 'No', col3, y);
       y += 18;
 
-      // ═══════════════════════════════════════════════════════════════════════════
+      // ---------------------------------------------------------------------------
       // PARENT/GUARDIAN INFORMATION
-      // ═══════════════════════════════════════════════════════════════════════════
+      // ---------------------------------------------------------------------------
       y = checkPageBreak(y, 60);
       y = addSection('PARENT / GUARDIAN INFORMATION', y);
 
@@ -438,9 +438,9 @@ const StudentProfile = () => {
         y += 26;
       }
 
-      // ═══════════════════════════════════════════════════════════════════════════
+      // ---------------------------------------------------------------------------
       // ADDRESS INFORMATION
-      // ═══════════════════════════════════════════════════════════════════════════
+      // ---------------------------------------------------------------------------
       y = checkPageBreak(y, 50);
       y = addSection('ADDRESS INFORMATION', y);
 
@@ -456,9 +456,9 @@ const StudentProfile = () => {
       addField('Permanent Address', student.permanent_address || 'Same as Present', col2, y, 110);
       y += 18;
 
-      // ═══════════════════════════════════════════════════════════════════════════
+      // ---------------------------------------------------------------------------
       // ACADEMIC INFORMATION
-      // ═══════════════════════════════════════════════════════════════════════════
+      // ---------------------------------------------------------------------------
       y = checkPageBreak(y, 45);
       y = addSection('ACADEMIC INFORMATION', y);
 
@@ -471,9 +471,9 @@ const StudentProfile = () => {
       addField('Previous School', student.previous_school, col2, y, 110);
       y += 18;
 
-      // ═══════════════════════════════════════════════════════════════════════════
+      // ---------------------------------------------------------------------------
       // FEE SUMMARY
-      // ═══════════════════════════════════════════════════════════════════════════
+      // ---------------------------------------------------------------------------
       y = checkPageBreak(y, 35);
       y = addSection('FEE SUMMARY (Current Session)', y);
 
@@ -500,9 +500,9 @@ const StudentProfile = () => {
 
       y += 25;
 
-      // ═══════════════════════════════════════════════════════════════════════════
+      // ---------------------------------------------------------------------------
       // TRANSPORT DETAILS (if available)
-      // ═══════════════════════════════════════════════════════════════════════════
+      // ---------------------------------------------------------------------------
       if (student.transport_route || student.pickup_point) {
         y = checkPageBreak(y, 30);
         y = addSection('TRANSPORT DETAILS', y);
@@ -512,9 +512,9 @@ const StudentProfile = () => {
         y += 18;
       }
 
-      // ═══════════════════════════════════════════════════════════════════════════
+      // ---------------------------------------------------------------------------
       // HOSTEL DETAILS (if available)
-      // ═══════════════════════════════════════════════════════════════════════════
+      // ---------------------------------------------------------------------------
       if (student.hostel || student.room_number) {
         y = checkPageBreak(y, 30);
         y = addSection('HOSTEL DETAILS', y);
@@ -524,16 +524,16 @@ const StudentProfile = () => {
         y += 18;
       }
 
-      // ═══════════════════════════════════════════════════════════════════════════
+      // ---------------------------------------------------------------------------
       // FOOTER
-      // ═══════════════════════════════════════════════════════════════════════════
+      // ---------------------------------------------------------------------------
       const footerY = pageHeight - 12;
       addLine(footerY - 5, [180, 180, 180]);
       addText('This is a computer generated document. No signature required.', pageWidth / 2, footerY, { fontSize: 7, color: [130, 130, 130], align: 'center' });
       addText(schoolName + '  |  Powered by Jashchar ERP', pageWidth / 2, footerY + 4, { fontSize: 7, fontStyle: 'bold', color: [100, 100, 100], align: 'center' });
 
       // Download the PDF
-      const fileName = `Student-Profile-${student.school_code || student.full_name || 'export'}.pdf`;
+      const fileName = `Student-Profile-${student.enrollment_id || student.full_name || 'export'}.pdf`;
       pdf.save(fileName);
 
       toast({
@@ -552,7 +552,7 @@ const StudentProfile = () => {
     }
   };
 
-  // 📄 Handle Document Upload
+  // Handle Document Upload
   const handleDocumentUpload = async () => {
     if (!newDocumentName.trim()) {
       toast({
@@ -625,7 +625,7 @@ const StudentProfile = () => {
     }
   };
 
-  // ✅ FIX: Only refresh when navigating back from Edit page with new state
+  // ? FIX: Only refresh when navigating back from Edit page with new state
   // Removed visibilitychange listener that was causing unwanted refreshes on tab switch
   // The location.state?.refreshTime check below is sufficient for Edit page returns
   
@@ -725,7 +725,7 @@ const StudentProfile = () => {
         const totalDiscount = (paymentsData || []).reduce((sum, p) => sum + (Number(p.discount_amount) || 0), 0);
         const totalRefunded = (refundsData || []).reduce((sum, r) => sum + (Number(r.refund_amount) || 0), 0);
         // Balance = Total - Paid - Discount + Refunded (refunds add back to balance)
-        // ✅ FIXED: Balance cannot be negative (cap at 0)
+        // ? FIXED: Balance cannot be negative (cap at 0)
         const balance = Math.max(0, totalFees - totalPaid - totalDiscount + totalRefunded);
         setFeesSummary({ total: totalFees, paid: totalPaid, discount: totalDiscount, refunded: totalRefunded, balance });
         
@@ -898,9 +898,9 @@ const StudentProfile = () => {
     <DashboardLayout>
       <div ref={printRef} className="space-y-6 pb-8">
         
-        {/* ═══════════════════════════════════════════════════════════════════════════════ */}
-        {/* 🎯 HERO SECTION */}
-        {/* ═══════════════════════════════════════════════════════════════════════════════ */}
+        {/* ------------------------------------------------------------------------------- */}
+        {/* HERO SECTION */}
+        {/* ------------------------------------------------------------------------------- */}
         <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-primary via-primary/90 to-purple-600 p-8 text-white">
           {/* Background Pattern */}
           <div className="absolute inset-0 opacity-10">
@@ -944,8 +944,8 @@ const StudentProfile = () => {
               <div className="flex flex-wrap gap-6 text-sm">
                 <div className="flex items-center gap-2 bg-white/10 px-4 py-2 rounded-full">
                   <Hash className="h-4 w-4" />
-                  <span className="font-semibold">{student.school_code}</span>
-                  <span className="text-white/60">Admission No</span>
+                  <span className="font-semibold">{student.enrollment_id}</span>
+                  <span className="text-white/60">Enroll ID</span>
                 </div>
                 <div className="flex items-center gap-2 bg-white/10 px-4 py-2 rounded-full">
                   <GraduationCap className="h-4 w-4" />
@@ -988,15 +988,15 @@ const StudentProfile = () => {
           </div>
         </div>
 
-        {/* ═══════════════════════════════════════════════════════════════════════════════ */}
-        {/* 📊 QUICK STATS */}
-        {/* ═══════════════════════════════════════════════════════════════════════════════ */}
+        {/* ------------------------------------------------------------------------------- */}
+        {/* QUICK STATS */}
+        {/* ------------------------------------------------------------------------------- */}
         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
           <StatCard 
             icon={IndianRupee} 
             label="Total Fees" 
-            value={`₹${feesSummary.total.toLocaleString()}`}
-            subValue={`Balance: ₹${feesSummary.balance.toLocaleString()}`}
+            value={`?${feesSummary.total.toLocaleString()}`}
+            subValue={`Balance: ?${feesSummary.balance.toLocaleString()}`}
             color="blue"
             onClick={() => setActiveTab('fees')}
           />
@@ -1004,7 +1004,7 @@ const StudentProfile = () => {
             icon={Percent} 
             label="Fee Paid" 
             value={`${feePaymentPercent}%`}
-            subValue={`₹${feesSummary.paid.toLocaleString()} paid`}
+            subValue={`?${feesSummary.paid.toLocaleString()} paid`}
             color={feePaymentPercent >= 75 ? "green" : feePaymentPercent >= 50 ? "orange" : "red"}
           />
           <StatCard 
@@ -1038,9 +1038,9 @@ const StudentProfile = () => {
           />
         </div>
 
-        {/* ═══════════════════════════════════════════════════════════════════════════════ */}
-        {/* 📑 MAIN CONTENT TABS */}
-        {/* ═══════════════════════════════════════════════════════════════════════════════ */}
+        {/* ------------------------------------------------------------------------------- */}
+        {/* MAIN CONTENT TABS */}
+        {/* ------------------------------------------------------------------------------- */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <div className="sticky top-0 z-10 bg-background/80 backdrop-blur-lg pb-4 -mt-2 pt-2">
             <TabsList className="h-auto p-1.5 bg-muted/50 backdrop-blur rounded-xl w-full justify-start overflow-x-auto flex-nowrap">
@@ -1092,9 +1092,9 @@ const StudentProfile = () => {
             </TabsList>
           </div>
 
-          {/* ═══════════════════════════════════════════════════════════════════════════════ */}
-          {/* 📋 OVERVIEW TAB */}
-          {/* ═══════════════════════════════════════════════════════════════════════════════ */}
+          {/* ------------------------------------------------------------------------------- */}
+          {/* OVERVIEW TAB */}
+          {/* ------------------------------------------------------------------------------- */}
           <TabsContent value="overview" className="mt-0 space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
             {/* Quick Glance Row */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -1104,7 +1104,7 @@ const StudentProfile = () => {
                   <span className="text-xs font-medium text-blue-700 dark:text-blue-400">Attendance</span>
                 </div>
                 <p className="text-2xl font-bold text-blue-900 dark:text-blue-100">
-                  {attendanceSummary.total > 0 ? `${Math.round((attendanceSummary.present / attendanceSummary.total) * 100)}%` : '—'}
+                  {attendanceSummary.total > 0 ? `${Math.round((attendanceSummary.present / attendanceSummary.total) * 100)}%` : '�'}
                 </p>
                 <p className="text-xs text-blue-600/70 dark:text-blue-400/70 mt-1">
                   {attendanceSummary.total > 0 ? `${attendanceSummary.present} of ${attendanceSummary.total} days` : 'No records yet'}
@@ -1116,7 +1116,7 @@ const StudentProfile = () => {
                   <span className="text-xs font-medium text-purple-700 dark:text-purple-400">Academics</span>
                 </div>
                 <p className="text-2xl font-bold text-purple-900 dark:text-purple-100">
-                  {examSummary.totalExams > 0 ? `${examSummary.avgPercent}%` : '—'}
+                  {examSummary.totalExams > 0 ? `${examSummary.avgPercent}%` : '�'}
                 </p>
                 <p className="text-xs text-purple-600/70 dark:text-purple-400/70 mt-1">
                   {examSummary.totalExams > 0 ? `Avg across ${examSummary.totalExams} subjects` : 'No exams yet'}
@@ -1128,10 +1128,10 @@ const StudentProfile = () => {
                   <span className="text-xs font-medium text-amber-700 dark:text-amber-400">Behavior</span>
                 </div>
                 <p className="text-2xl font-bold text-amber-900 dark:text-amber-100">
-                  {behaviorSummary.total > 0 ? (behaviorSummary.score > 0 ? `+${behaviorSummary.score}` : behaviorSummary.score) : '—'}
+                  {behaviorSummary.total > 0 ? (behaviorSummary.score > 0 ? `+${behaviorSummary.score}` : behaviorSummary.score) : '�'}
                 </p>
                 <p className="text-xs text-amber-600/70 dark:text-amber-400/70 mt-1">
-                  {behaviorSummary.total > 0 ? `${behaviorSummary.positive} good · ${behaviorSummary.negative} concerns` : 'No incidents'}
+                  {behaviorSummary.total > 0 ? `${behaviorSummary.positive} good � ${behaviorSummary.negative} concerns` : 'No incidents'}
                 </p>
               </div>
               <div className="p-4 rounded-xl bg-gradient-to-br from-emerald-50 to-green-50 dark:from-emerald-950/30 dark:to-green-950/30 border border-emerald-100 dark:border-emerald-900 cursor-pointer hover:shadow-md transition-all" onClick={() => setActiveTab('fees')}>
@@ -1141,7 +1141,7 @@ const StudentProfile = () => {
                 </div>
                 <p className="text-2xl font-bold text-emerald-900 dark:text-emerald-100">{feePaymentPercent}%</p>
                 <p className="text-xs text-emerald-600/70 dark:text-emerald-400/70 mt-1">
-                  {feesSummary.balance > 0 ? `₹${feesSummary.balance.toLocaleString()} due` : 'Fully paid'}
+                  {feesSummary.balance > 0 ? `?${feesSummary.balance.toLocaleString()} due` : 'Fully paid'}
                 </p>
               </div>
             </div>
@@ -1154,7 +1154,7 @@ const StudentProfile = () => {
                   <SectionTitle icon={User} title="Basic Information" subtitle="Student's primary details" />
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <InfoItem icon={User} label="Full Name" value={student.full_name} />
-                    <InfoItem icon={Hash} label="Admission No" value={student.school_code} copyable />
+                    <InfoItem icon={Hash} label="Enroll ID" value={student.enrollment_id} copyable />
                     <InfoItem icon={GraduationCap} label="Roll Number" value={student.roll_number} />
                     <InfoItem icon={Calendar} label="Date of Birth" value={student.date_of_birth ? formatDate(student.date_of_birth) : null} />
                     <InfoItem icon={User} label="Gender" value={student.gender?.charAt(0).toUpperCase() + student.gender?.slice(1)} />
@@ -1199,7 +1199,7 @@ const StudentProfile = () => {
                       )}
                     </div>
                     <div>
-                      <p className="font-semibold">{student.school_code || student.roll_number || 'Student ID'}</p>
+                      <p className="font-semibold">{student.enrollment_id || student.roll_number || 'Student ID'}</p>
                       <p className="text-xs text-muted-foreground">Scan for quick access</p>
                     </div>
                   </div>
@@ -1242,11 +1242,11 @@ const StudentProfile = () => {
                     <Progress value={feePaymentPercent} className="h-3" />
                     <div className="grid grid-cols-2 gap-4 pt-2">
                       <div className="text-center p-3 bg-emerald-50 dark:bg-emerald-950/30 rounded-xl">
-                        <p className="text-xl font-bold text-emerald-600">₹{feesSummary.paid.toLocaleString()}</p>
+                        <p className="text-xl font-bold text-emerald-600">?{feesSummary.paid.toLocaleString()}</p>
                         <p className="text-xs text-muted-foreground">Paid</p>
                       </div>
                       <div className="text-center p-3 bg-red-50 dark:bg-red-950/30 rounded-xl">
-                        <p className="text-xl font-bold text-red-600">₹{feesSummary.balance.toLocaleString()}</p>
+                        <p className="text-xl font-bold text-red-600">?{feesSummary.balance.toLocaleString()}</p>
                         <p className="text-xs text-muted-foreground">Balance</p>
                       </div>
                     </div>
@@ -1259,9 +1259,9 @@ const StudentProfile = () => {
             </div>
           </TabsContent>
 
-          {/* ═══════════════════════════════════════════════════════════════════════════════ */}
-          {/* 👤 PERSONAL TAB */}
-          {/* ═══════════════════════════════════════════════════════════════════════════════ */}
+          {/* ------------------------------------------------------------------------------- */}
+          {/* PERSONAL TAB */}
+          {/* ------------------------------------------------------------------------------- */}
           <TabsContent value="personal" className="mt-0 space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
             <GlassCard className="p-6" gradient>
               <SectionTitle icon={User} title="Personal Details" subtitle="Complete personal information" />
@@ -1314,14 +1314,14 @@ const StudentProfile = () => {
             </GlassCard>
           </TabsContent>
 
-          {/* ═══════════════════════════════════════════════════════════════════════════════ */}
-          {/* 🎓 ACADEMIC TAB */}
-          {/* ═══════════════════════════════════════════════════════════════════════════════ */}
+          {/* ------------------------------------------------------------------------------- */}
+          {/* ACADEMIC TAB */}
+          {/* ------------------------------------------------------------------------------- */}
           <TabsContent value="academic" className="mt-0 space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
             <GlassCard className="p-6" gradient>
               <SectionTitle icon={GraduationCap} title="Current Academic Details" />
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                <InfoItem icon={Hash} label="Admission Number" value={student.school_code} copyable />
+                <InfoItem icon={Hash} label="Enrollment ID" value={student.enrollment_id} copyable />
                 <InfoItem icon={GraduationCap} label="Roll Number" value={student.roll_number} />
                 <InfoItem icon={Calendar} label="Admission Date" value={student.admission_date ? formatDate(student.admission_date) : null} />
                 <InfoItem icon={School} label="Class" value={student.class?.name} />
@@ -1352,9 +1352,9 @@ const StudentProfile = () => {
             </GlassCard>
           </TabsContent>
 
-          {/* ═══════════════════════════════════════════════════════════════════════════════ */}
-          {/* 👨‍👩‍👧 PARENTS TAB */}
-          {/* ═══════════════════════════════════════════════════════════════════════════════ */}
+          {/* ------------------------------------------------------------------------------- */}
+          {/* ???PARENTS TAB */}
+          {/* ------------------------------------------------------------------------------- */}
           <TabsContent value="parents" className="mt-0 space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
             {/* Father Details */}
             <GlassCard className="p-6" gradient>
@@ -1425,30 +1425,30 @@ const StudentProfile = () => {
             )}
           </TabsContent>
 
-          {/* ═══════════════════════════════════════════════════════════════════════════════ */}
-          {/* �‍👩‍👧‍👦 FAMILY / SIBLINGS TAB */}
-          {/* ═══════════════════════════════════════════════════════════════════════════════ */}
+          {/* ------------------------------------------------------------------------------- */}
+          {/* ?????FAMILY / SIBLINGS TAB */}
+          {/* ------------------------------------------------------------------------------- */}
           <TabsContent value="family" className="mt-0 animate-in fade-in slide-in-from-bottom-4 duration-500">
             <StudentProfileSiblingsTab studentId={targetId} />
           </TabsContent>
 
-          {/* ═══════════════════════════════════════════════════════════════════════════════ */}
-          {/* �💰 FEES TAB */}
-          {/* ═══════════════════════════════════════════════════════════════════════════════ */}
+          {/* ------------------------------------------------------------------------------- */}
+          {/* FEES TAB */}
+          {/* ------------------------------------------------------------------------------- */}
           <TabsContent value="fees" className="mt-0 animate-in fade-in slide-in-from-bottom-4 duration-500">
             <StudentProfileFeesTab studentId={targetId} />
           </TabsContent>
 
-          {/* ═══════════════════════════════════════════════════════════════════════════════ */}
-          {/* 📅 ATTENDANCE TAB */}
-          {/* ═══════════════════════════════════════════════════════════════════════════════ */}
+          {/* ------------------------------------------------------------------------------- */}
+          {/* ATTENDANCE TAB */}
+          {/* ------------------------------------------------------------------------------- */}
           <TabsContent value="attendance" className="mt-0 space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
             <StudentProfileAttendanceTab studentId={targetId} />
           </TabsContent>
 
-          {/* ═══════════════════════════════════════════════════════════════════════════════ */}
-          {/* 📝 EXAMS TAB */}
-          {/* ═══════════════════════════════════════════════════════════════════════════════ */}
+          {/* ------------------------------------------------------------------------------- */}
+          {/* EXAMS TAB */}
+          {/* ------------------------------------------------------------------------------- */}
           <TabsContent value="exams" className="mt-0 space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
             <GlassCard className="p-6" gradient>
               <SectionTitle icon={BookOpen} title="Examination Results" subtitle="Marks, grades & performance analysis" />
@@ -1458,9 +1458,9 @@ const StudentProfile = () => {
             </GlassCard>
           </TabsContent>
 
-          {/* ═══════════════════════════════════════════════════════════════════════════════ */}
-          {/* 🚌 TRANSPORT TAB */}
-          {/* ═══════════════════════════════════════════════════════════════════════════════ */}
+          {/* ------------------------------------------------------------------------------- */}
+          {/* TRANSPORT TAB */}
+          {/* ------------------------------------------------------------------------------- */}
           <TabsContent value="transport" className="mt-0 space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
             {student.transport ? (
               <GlassCard className="p-6" gradient>
@@ -1473,7 +1473,7 @@ const StudentProfile = () => {
                   <InfoItem icon={Bus} label="Vehicle Number" value={student.transport?.vehicle_number} />
                   <InfoItem icon={User} label="Driver Name" value={student.transport?.driver_name} />
                   <InfoItem icon={Phone} label="Driver Contact" value={student.transport?.driver_contact} copyable />
-                  <InfoItem icon={IndianRupee} label="Transport Fee" value={student.transport?.transport_fee ? `₹${student.transport.transport_fee}` : null} />
+                  <InfoItem icon={IndianRupee} label="Transport Fee" value={student.transport?.transport_fee ? `?${student.transport.transport_fee}` : null} />
                   <InfoItem icon={FileText} label="Special Instructions" value={student.transport?.special_instructions} className="md:col-span-2 lg:col-span-3" />
                 </div>
               </GlassCard>
@@ -1492,9 +1492,9 @@ const StudentProfile = () => {
             )}
           </TabsContent>
 
-          {/* ═══════════════════════════════════════════════════════════════════════════════ */}
-          {/* 🏨 HOSTEL TAB */}
-          {/* ═══════════════════════════════════════════════════════════════════════════════ */}
+          {/* ------------------------------------------------------------------------------- */}
+          {/* HOSTEL TAB */}
+          {/* ------------------------------------------------------------------------------- */}
           <TabsContent value="hostel" className="mt-0 space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
             {student.hostel ? (
               <GlassCard className="p-6" gradient>
@@ -1506,7 +1506,7 @@ const StudentProfile = () => {
                   <InfoItem icon={Hash} label="Bed Number" value={student.hostel?.bed_number} />
                   <InfoItem icon={Calendar} label="Check-in Date" value={student.hostel?.check_in_date ? formatDate(student.hostel.check_in_date) : null} />
                   <InfoItem icon={Calendar} label="Check-out Date" value={student.hostel?.check_out_date ? formatDate(student.hostel.check_out_date) : null} />
-                  <InfoItem icon={IndianRupee} label="Hostel Fee" value={student.hostel?.hostel_fee ? `₹${student.hostel.hostel_fee}` : null} />
+                  <InfoItem icon={IndianRupee} label="Hostel Fee" value={student.hostel?.hostel_fee ? `?${student.hostel.hostel_fee}` : null} />
                   <InfoItem icon={Phone} label="Guardian Contact" value={student.hostel?.guardian_contact} copyable />
                   <InfoItem icon={Phone} label="Emergency Contact" value={student.hostel?.emergency_contact} copyable />
                   <InfoItem icon={FileText} label="Special Requirements" value={student.hostel?.special_requirements} className="md:col-span-2 lg:col-span-3" />
@@ -1527,23 +1527,23 @@ const StudentProfile = () => {
             )}
           </TabsContent>
 
-          {/* ═══════════════════════════════════════════════════════════════════════════════ */}
-          {/* 🏥 HEALTH TAB */}
-          {/* ═══════════════════════════════════════════════════════════════════════════════ */}
+          {/* ------------------------------------------------------------------------------- */}
+          {/* HEALTH TAB */}
+          {/* ------------------------------------------------------------------------------- */}
           <TabsContent value="health" className="mt-0 animate-in fade-in slide-in-from-bottom-4 duration-500">
             <StudentProfileHealthTab studentId={targetId} />
           </TabsContent>
 
-          {/* ═══════════════════════════════════════════════════════════════════════════════ */}
-          {/* ⚠️ BEHAVIOR TAB */}
-          {/* ═══════════════════════════════════════════════════════════════════════════════ */}
+          {/* ------------------------------------------------------------------------------- */}
+          {/* BEHAVIOR TAB */}
+          {/* ------------------------------------------------------------------------------- */}
           <TabsContent value="behavior" className="mt-0 animate-in fade-in slide-in-from-bottom-4 duration-500">
             <StudentProfileBehaviorTab studentId={targetId} />
           </TabsContent>
 
-          {/* ═══════════════════════════════════════════════════════════════════════════════ */}
-          {/* 📄 DOCUMENTS TAB */}
-          {/* ═══════════════════════════════════════════════════════════════════════════════ */}
+          {/* ------------------------------------------------------------------------------- */}
+          {/* DOCUMENTS TAB */}
+          {/* ------------------------------------------------------------------------------- */}
           <TabsContent value="documents" className="mt-0 space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
             <GlassCard className="p-6" gradient>
               <StudentProfileDocChecklistSection studentId={targetId} />
@@ -1678,16 +1678,16 @@ const StudentProfile = () => {
             </Dialog>
           </TabsContent>
 
-          {/* ═══════════════════════════════════════════════════════════════════════════════ */}
-          {/* ⏳ TIMELINE TAB */}
-          {/* ═══════════════════════════════════════════════════════════════════════════════ */}
+          {/* ------------------------------------------------------------------------------- */}
+          {/* ? TIMELINE TAB */}
+          {/* ------------------------------------------------------------------------------- */}
           <TabsContent value="timeline" className="mt-0 space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
             <StudentProfileTimeline studentId={targetId} student={student} />
           </TabsContent>
 
-          {/* ═══════════════════════════════════════════════════════════════════════════════ */}
-          {/* 🧠 AI INSIGHTS TAB */}
-          {/* ═══════════════════════════════════════════════════════════════════════════════ */}
+          {/* ------------------------------------------------------------------------------- */}
+          {/* AI INSIGHTS TAB */}
+          {/* ------------------------------------------------------------------------------- */}
           <TabsContent value="ai-insights" className="mt-0 space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
             <StudentProfileAIInsightsTab studentId={targetId} />
           </TabsContent>

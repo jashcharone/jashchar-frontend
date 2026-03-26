@@ -16,7 +16,7 @@ export const FEES_COLUMNS = [
   // ─────────────────────────────────────────────────────────────────────────────
   // STUDENT INFORMATION
   // ─────────────────────────────────────────────────────────────────────────────
-  { key: 'admission_number', label: 'Admission No', type: 'text', sortable: true, groupable: false, width: '120px' },
+  { key: 'enrollment_id', label: 'Enroll ID', type: 'text', sortable: true, groupable: false, width: '120px' },
   { key: 'student_name', label: 'Student Name', type: 'text', sortable: true, groupable: false, width: '180px' },
   { key: 'class_name', label: 'Class', type: 'text', sortable: true, groupable: true, width: '80px' },
   { key: 'section_name', label: 'Section', type: 'text', sortable: true, groupable: true, width: '80px' },
@@ -169,13 +169,13 @@ export const COLUMN_SETS = {
   
   // 1. Student Fee Ledger
   student_fee_ledger: [
-    'admission_number', 'student_name', 'class_name', 'section_name',
+    'enrollment_id', 'student_name', 'class_name', 'section_name',
     'fee_head', 'total_fee', 'paid_amount', 'due_amount', 'payment_status'
   ],
 
   // 2. Fee Structure Allocation
   fee_structure_allocation: [
-    'admission_number', 'student_name', 'class_name', 'section_name',
+    'enrollment_id', 'student_name', 'class_name', 'section_name',
     'fee_structure_name', 'annual_fee', 'discount_amount', 'net_payable'
   ],
 
@@ -187,43 +187,43 @@ export const COLUMN_SETS = {
 
   // 4. Fee Dues Summary
   fee_dues_summary: [
-    'admission_number', 'student_name', 'class_name', 'section_name',
+    'enrollment_id', 'student_name', 'class_name', 'section_name',
     'father_name', 'phone', 'total_fee', 'paid_amount', 'due_amount', 'overdue_days'
   ],
 
   // 5. Student-wise Fee Report
   student_wise_fee: [
-    'admission_number', 'student_name', 'class_name', 'father_name',
+    'enrollment_id', 'student_name', 'class_name', 'father_name',
     'phone', 'total_fee', 'paid_amount', 'due_amount'
   ],
 
   // 6. Installment-wise Status
   installment_status: [
-    'admission_number', 'student_name', 'class_name', 'installment_no',
+    'enrollment_id', 'student_name', 'class_name', 'installment_no',
     'due_month', 'due_date', 'paid_amount', 'due_amount', 'late_fee', 'payment_status'
   ],
 
   // 7. Fee Head-wise Breakup
   fee_head_breakup: [
-    'admission_number', 'student_name', 'class_name', 'tuition_fee',
+    'enrollment_id', 'student_name', 'class_name', 'tuition_fee',
     'transport_fee', 'library_fee', 'lab_fee', 'exam_fee', 'total_fee'
   ],
 
   // 8. Payment History
   payment_history: [
-    'admission_number', 'student_name', 'receipt_no', 'receipt_date',
+    'enrollment_id', 'student_name', 'receipt_no', 'receipt_date',
     'fee_head', 'paid_amount', 'payment_mode', 'transaction_id', 'collected_by'
   ],
 
   // 9. Pending Fee Alerts
   pending_fee_alerts: [
-    'admission_number', 'student_name', 'class_name', 'father_name',
+    'enrollment_id', 'student_name', 'class_name', 'father_name',
     'phone', 'due_amount', 'overdue_days', 'due_date', 'payment_status'
   ],
 
   // 10. Fee Waiver List
   fee_waiver_list: [
-    'admission_number', 'student_name', 'class_name', 'category',
+    'enrollment_id', 'student_name', 'class_name', 'category',
     'total_fee', 'discount_amount', 'discount_type', 'net_payable', 'remarks'
   ],
 
@@ -235,19 +235,19 @@ export const COLUMN_SETS = {
 
   // 12. New Admission Fees
   new_admission_fees: [
-    'admission_number', 'student_name', 'class_name', 'admission_date',
+    'enrollment_id', 'student_name', 'class_name', 'admission_date',
     'admission_fee', 'one_time_fee', 'total_fee', 'paid_amount', 'due_amount'
   ],
 
   // 13. Sibling Fee Summary
   sibling_fee_summary: [
-    'admission_number', 'student_name', 'class_name', 'father_name',
+    'enrollment_id', 'student_name', 'class_name', 'father_name',
     'total_fee', 'discount_amount', 'discount_percentage', 'net_payable', 'paid_amount'
   ],
 
   // 14. TC Issued Fee Closure
   tc_fee_closure: [
-    'admission_number', 'student_name', 'class_name', 'total_fee',
+    'enrollment_id', 'student_name', 'class_name', 'total_fee',
     'paid_amount', 'refund_amount', 'balance', 'status', 'remarks'
   ],
 
@@ -263,7 +263,7 @@ export const COLUMN_SETS = {
 
   // 1. Daily Collection Report
   daily_collection: [
-    'receipt_no', 'receipt_date', 'admission_number', 'student_name',
+    'receipt_no', 'receipt_date', 'enrollment_id', 'student_name',
     'class_name', 'fee_head', 'paid_amount', 'payment_mode', 'collected_by'
   ],
 
@@ -323,25 +323,25 @@ export const COLUMN_SETS = {
 
   // 11. Online Payment Report
   online_payments: [
-    'transaction_id', 'receipt_date', 'admission_number', 'student_name',
+    'transaction_id', 'receipt_date', 'enrollment_id', 'student_name',
     'paid_amount', 'payment_gateway', 'bank_name', 'status'
   ],
 
   // 12. Cheque Status Report
   cheque_status: [
-    'cheque_no', 'cheque_date', 'bank_name', 'admission_number',
+    'cheque_no', 'cheque_date', 'bank_name', 'enrollment_id',
     'student_name', 'amount', 'deposit_date', 'status', 'bounce_charges'
   ],
 
   // 13. Receipt Register
   receipt_register: [
-    'receipt_no', 'receipt_date', 'admission_number', 'student_name',
+    'receipt_no', 'receipt_date', 'enrollment_id', 'student_name',
     'class_name', 'paid_amount', 'payment_mode', 'collected_by', 'remarks'
   ],
 
   // 14. Cancelled Receipt Report
   cancelled_receipts: [
-    'receipt_no', 'original_date', 'admission_number', 'student_name',
+    'receipt_no', 'original_date', 'enrollment_id', 'student_name',
     'original_amount', 'cancel_date', 'cancel_reason', 'cancelled_by'
   ],
 
@@ -357,19 +357,19 @@ export const COLUMN_SETS = {
 
   // 1. Transport Fee Report
   transport_fee: [
-    'admission_number', 'student_name', 'class_name', 'route_name',
+    'enrollment_id', 'student_name', 'class_name', 'route_name',
     'stop_name', 'km_distance', 'transport_fee', 'paid_amount', 'due_amount'
   ],
 
   // 2. Hostel Fee Report
   hostel_fee: [
-    'admission_number', 'student_name', 'class_name', 'hostel_name',
+    'enrollment_id', 'student_name', 'class_name', 'hostel_name',
     'room_no', 'room_type', 'hostel_fee', 'mess_fee', 'paid_amount', 'due_amount'
   ],
 
   // 3. Library Fine Report
   library_fine: [
-    'admission_number', 'student_name', 'class_name', 'book_title',
+    'enrollment_id', 'student_name', 'class_name', 'book_title',
     'issue_date', 'due_date', 'return_date', 'overdue_days', 'fine_amount', 'payment_status'
   ],
 
@@ -381,19 +381,19 @@ export const COLUMN_SETS = {
 
   // 5. Exam Fee Status
   exam_fee_status: [
-    'admission_number', 'student_name', 'class_name', 'exam_name',
+    'enrollment_id', 'student_name', 'class_name', 'exam_name',
     'exam_fee', 'late_fee', 'total_amount', 'paid_amount', 'payment_status'
   ],
 
   // 6. Activity Fee Report
   activity_fee: [
-    'admission_number', 'student_name', 'class_name', 'activity_name',
+    'enrollment_id', 'student_name', 'class_name', 'activity_name',
     'activity_fee', 'registration_date', 'paid_amount', 'payment_status'
   ],
 
   // 7. Sports Fee Collection
   sports_fee: [
-    'admission_number', 'student_name', 'class_name', 'sport_name',
+    'enrollment_id', 'student_name', 'class_name', 'sport_name',
     'sports_fee', 'equipment_fee', 'total_amount', 'paid_amount'
   ],
 
@@ -405,13 +405,13 @@ export const COLUMN_SETS = {
 
   // 9. Late Fee Collection
   late_fee_collection: [
-    'admission_number', 'student_name', 'class_name', 'original_due_date',
+    'enrollment_id', 'student_name', 'class_name', 'original_due_date',
     'payment_date', 'overdue_days', 'late_fee', 'paid_amount', 'payment_status'
   ],
 
   // 10. Refund Report
   refund_report: [
-    'admission_number', 'student_name', 'class_name', 'original_paid',
+    'enrollment_id', 'student_name', 'class_name', 'original_paid',
     'refund_amount', 'refund_date', 'refund_reason', 'refund_mode', 'processed_by'
   ],
 };

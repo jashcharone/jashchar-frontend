@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import DashboardLayout from '@/components/DashboardLayout';
 import { supabase } from '@/lib/customSupabaseClient';
@@ -66,7 +66,7 @@ const GenerateBill = () => {
         setLoading(true);
         const { data, error } = await supabase
             .from('schools')
-            .select('id, name, school_code_number')
+            .select('id, name, enrollment_id_number')
             .eq('status', 'Active')
             .order('name');
         
@@ -349,7 +349,7 @@ const GenerateBill = () => {
                                                     />
                                                     <div className="flex flex-col">
                                                         <span>{s.name}</span>
-                                                        <span className="text-xs text-muted-foreground">Code: {s.school_code_number}</span>
+                                                        <span className="text-xs text-muted-foreground">Code: {s.enrollment_id_number}</span>
                                                     </div>
                                                 </CommandItem>
                                             ))}
@@ -513,12 +513,12 @@ const GenerateBill = () => {
                             
                             <div className="flex justify-between items-center">
                                 <Label className="text-base font-normal">GST Amount</Label>
-                                <span className="font-medium">₹{billDetails.gst_amount.toFixed(2)}</span>
+                                <span className="font-medium">?{billDetails.gst_amount.toFixed(2)}</span>
                             </div>
                             
                             <div className="flex justify-between items-center text-xl font-bold pt-4 border-t border-slate-200 dark:border-slate-700">
                                 <Label className="text-xl font-bold">Total Payable</Label>
-                                <span className="text-green-600">₹{billDetails.total_amount.toFixed(2)}</span>
+                                <span className="text-green-600">?{billDetails.total_amount.toFixed(2)}</span>
                             </div>
                         </div>
                     </div>

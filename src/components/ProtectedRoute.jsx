@@ -1,4 +1,4 @@
-﻿import React from 'react';
+import React from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { usePermissions } from '@/contexts/PermissionContext';
@@ -23,7 +23,7 @@ const ProtectedRoute = ({ children, allowedRoles, requiredModule }) => {
     return <Navigate to="/login" replace />;
   }
   
-  // ✅ Priority: detectedRole (from PermissionContext) > profile.role > user_metadata.role
+  // ? Priority: detectedRole (from PermissionContext) > profile.role > user_metadata.role
   let userRole = detectedRole || user.user_metadata?.role;
 
   if (!userRole && user.profile?.role) {

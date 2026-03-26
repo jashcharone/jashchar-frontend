@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
 import api from '@/lib/api';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
@@ -12,7 +12,7 @@ import { Search, Loader2, Clock, MapPin, BookOpen, GraduationCap, XCircle } from
 const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 const INT_TO_DAY = { 1: 'Monday', 2: 'Tuesday', 3: 'Wednesday', 4: 'Thursday', 5: 'Friday', 6: 'Saturday', 7: 'Sunday' };
 
-/* ── time helpers ── */
+/* -- time helpers -- */
 const formatTime12 = (t) => {
     if (!t) return '';
     const [h, m] = t.split(':').map(Number);
@@ -33,7 +33,7 @@ const TeacherTimetable = () => {
     const [loading, setLoading] = useState(false);
     const [searched, setSearched] = useState(false);
 
-    /* ── Fetch teachers list ── */
+    /* -- Fetch teachers list -- */
     useEffect(() => {
         if (!branchId) return;
         const headers = { 'x-school-id': branchId, 'x-branch-id': branchId };
@@ -45,7 +45,7 @@ const TeacherTimetable = () => {
             });
     }, [branchId]);
 
-    /* ── Search ── */
+    /* -- Search -- */
     const handleSearch = async () => {
         if (!selectedTeacher || !branchId) {
             toast({ variant: 'destructive', title: 'Please select a teacher.' });
@@ -66,7 +66,7 @@ const TeacherTimetable = () => {
         setLoading(false);
     };
 
-    /* ── Organize data into { Monday: [entries], Tuesday: [entries], ... } ── */
+    /* -- Organize data into { Monday: [entries], Tuesday: [entries], ... } -- */
     const dayMap = useMemo(() => {
         const map = {};
         DAYS.forEach(d => { map[d] = []; });
@@ -83,19 +83,19 @@ const TeacherTimetable = () => {
         return map;
     }, [timetable]);
 
-    /* ── Max periods across all days ── */
+    /* -- Max periods across all days -- */
     const maxPeriods = useMemo(() => {
         return Math.max(1, ...DAYS.map(d => dayMap[d].length));
     }, [dayMap]);
 
-    /* ── Selected teacher name ── */
+    /* -- Selected teacher name -- */
     const teacherName = teachers.find(t => t.id === selectedTeacher)?.full_name || '';
 
     return (
         <DashboardLayout>
             <h1 className="text-3xl font-bold mb-6">Teacher Time Table</h1>
 
-            {/* ═══════ FILTER BAR ═══════ */}
+            {/* ------- FILTER BAR ------- */}
             <div className="bg-card p-5 rounded-xl shadow border mb-6">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
                     <div className="md:col-span-2">
@@ -119,17 +119,17 @@ const TeacherTimetable = () => {
                 </div>
             </div>
 
-            {/* ═══════ WEEKLY GRID VIEW ═══════ */}
+            {/* ------- WEEKLY GRID VIEW ------- */}
             {searched && (
                 <div className="bg-card rounded-xl shadow border overflow-hidden">
                     {teacherName && (
                         <div className="p-4 border-b bg-muted/30">
-                            <h2 className="text-lg font-semibold">{teacherName} — Weekly Schedule</h2>
+                            <h2 className="text-lg font-semibold">{teacherName} � Weekly Schedule</h2>
                         </div>
                     )}
                     <div className="overflow-x-auto">
                         <div className="grid grid-cols-7 min-w-[900px]">
-                            {/* ── Day Headers ── */}
+                            {/* -- Day Headers -- */}
                             {DAYS.map(day => (
                                 <div key={day}
                                     className="px-3 py-3 text-center font-bold text-sm bg-white dark:bg-card border-b border-r last:border-r-0 text-gray-700 dark:text-gray-300">
@@ -137,7 +137,7 @@ const TeacherTimetable = () => {
                                 </div>
                             ))}
 
-                            {/* ── Period Rows ── */}
+                            {/* -- Period Rows -- */}
                             {Array.from({ length: maxPeriods }).map((_, pIdx) => (
                                 <React.Fragment key={pIdx}>
                                     {DAYS.map(day => {

@@ -1,4 +1,4 @@
-﻿import React from 'react';
+import React from 'react';
 import { FileText, Activity, Zap, Globe, LayoutTemplate, UserPlus } from 'lucide-react';
 import DomainList from '@/pages/master-admin/custom-domain/DomainList';
 import DomainSettings from '@/pages/master-admin/custom-domain/DomainSettings';
@@ -48,7 +48,7 @@ export const NEW_MODULES = [
     route: { path: '/master-admin/dummy-settings', element: <DummySettings /> },
     sidebar: { title: 'Beta Settings', icon: Zap, path: '/master-admin/dummy-settings' }
   },
-  // ✅ Custom Domain Modules
+  // ? Custom Domain Modules
   {
     key: 'custom-domain-list',
     role: 'master_admin',
@@ -60,7 +60,7 @@ export const NEW_MODULES = [
     role: 'master_admin',
     route: { path: '/master-admin/custom-domain/instruction', element: <DomainSettings /> }
   },
-  // ✅ School Owner Login Settings
+  // ? School Owner Login Settings
   {
     key: 'school-login-settings',
     role: 'school_owner',

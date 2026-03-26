@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import DashboardLayout from '@/components/DashboardLayout';
 import api from '@/lib/api';
@@ -210,8 +210,8 @@ const BranchReport = () => {
                       <BarChart data={feeChartData} margin={{ top: 5, right: 10, left: 0, bottom: 5 }}>
                         <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
                         <XAxis dataKey="name" tick={{ fontSize: 11 }} />
-                        <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => `₹${(v/1000).toFixed(0)}k`} />
-                        <Tooltip formatter={(value) => [`₹${value.toLocaleString('en-IN')}`, '']} />
+                        <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => `?${(v/1000).toFixed(0)}k`} />
+                        <Tooltip formatter={(value) => [`?${value.toLocaleString('en-IN')}`, '']} />
                         <Legend />
                         <Bar dataKey="collected" fill="#22c55e" name="Collected" radius={[4, 4, 0, 0]} />
                         <Bar dataKey="pending" fill="#ef4444" name="Pending" radius={[4, 4, 0, 0]} />
@@ -316,7 +316,7 @@ const BranchReport = () => {
                         <div>
                           <p className="font-medium text-sm">{branch.name}</p>
                           <p className="text-xs text-muted-foreground">
-                            {branch.city || ''} {branch.is_primary && '• Primary'}
+                            {branch.city || ''} {branch.is_primary && '� Primary'}
                           </p>
                         </div>
                       </div>

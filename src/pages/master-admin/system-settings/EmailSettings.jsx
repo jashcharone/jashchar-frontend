@@ -1,4 +1,4 @@
-ï»¿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useToast } from '@/components/ui/use-toast';
 import DashboardLayout from '@/components/DashboardLayout';
@@ -181,7 +181,7 @@ const EmailSettings = () => {
                                                 value={settings.SMTP_PASSWORD || ''}
                                                 onChange={handleChange}
                                                 className="pl-8"
-                                                placeholder="â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢"
+                                                placeholder="••••••••"
                                             />
                                         </div>
                                     </div>

@@ -1,4 +1,4 @@
-﻿import { BASE_SIDEBAR } from '@/config/sidebarConfig';
+import { BASE_SIDEBAR } from '@/config/sidebarConfig';
 
 /**
  * SIDEBAR IMMUTABILITY LOCK

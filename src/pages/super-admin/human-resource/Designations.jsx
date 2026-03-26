@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
 import { supabase } from '@/lib/customSupabaseClient';
 import { useToast } from '@/components/ui/use-toast';
@@ -367,7 +367,7 @@ const Designations = () => {
                                 
                                 <div className="grid grid-cols-2 gap-4">
                                     <div className="space-y-2">
-                                        <Label htmlFor="minSalary">Min Salary (₹)</Label>
+                                        <Label htmlFor="minSalary">Min Salary (?)</Label>
                                         <Input 
                                             id="minSalary"
                                             type="number"
@@ -377,7 +377,7 @@ const Designations = () => {
                                         />
                                     </div>
                                     <div className="space-y-2">
-                                        <Label htmlFor="maxSalary">Max Salary (₹)</Label>
+                                        <Label htmlFor="maxSalary">Max Salary (?)</Label>
                                         <Input 
                                             id="maxSalary"
                                             type="number"

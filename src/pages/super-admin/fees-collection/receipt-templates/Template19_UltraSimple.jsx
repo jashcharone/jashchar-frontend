@@ -47,7 +47,7 @@ const Template19_UltraSimple = ({ receiptData, copyType }) => {
 
       {/* STUDENT - Single line */}
       <div style={{ fontSize: '8.5px', marginBottom: '8px', color: '#333' }}>
-        {student?.full_name || '-'} | {student?.class?.name || '-'}{student?.section?.name ? ` (${student.section.name})` : ''} | {student?.school_code || '-'} | {paymentMode || 'Cash'}
+        {student?.full_name || '-'} | {student?.class?.name || '-'}{student?.section?.name ? ` (${student.section.name})` : ''} | {student?.enrollment_id || '-'} | {paymentMode || 'Cash'}
       </div>
 
       {/* TABLE - Clean, borderless */}

@@ -1,4 +1,4 @@
-﻿/**
+/**
  * MASTER MODULE REGISTRY - CONFIGURATION
  * Used for SEEDING the database 'modules' table.
  * Runtime logic should prefer the database source of truth.

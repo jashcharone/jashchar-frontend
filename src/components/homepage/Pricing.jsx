@@ -1,4 +1,4 @@
-﻿import React from 'react';
+import React from 'react';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Check } from 'lucide-react';
@@ -7,7 +7,7 @@ import { schoolModuleMap } from '@/lib/schoolModules';
 const PricingCard = ({ plan, index }) => {
   const features = plan.modules || [];
   const isPrepaid = plan.plan_type === 'Prepaid';
-  const priceDisplay = isPrepaid ? `₹${plan.price}` : 'Usage Based';
+  const priceDisplay = isPrepaid ? `?${plan.price}` : 'Usage Based';
   const periodDisplay = isPrepaid ? `/${plan.subscription_period_type || 'Year'}` : '';
 
   return (
@@ -40,8 +40,8 @@ const PricingCard = ({ plan, index }) => {
             </>
         ) : (
             <>
-                <p>Per Student: ₹{plan.per_student_charge}</p>
-                <p>Per Staff: ₹{plan.per_staff_charge}</p>
+                <p>Per Student: ?{plan.per_student_charge}</p>
+                <p>Per Staff: ?{plan.per_staff_charge}</p>
             </>
         )}
       </div>

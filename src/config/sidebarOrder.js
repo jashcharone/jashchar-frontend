@@ -1,4 +1,4 @@
-﻿export const SIDEBAR_ORDER = {
+export const SIDEBAR_ORDER = {
   school_owner: [
     // 1. Core & Overview
     "Dashboard",

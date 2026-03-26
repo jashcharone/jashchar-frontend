@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { useBranch } from '@/contexts/BranchContext';
 import { supabase } from '@/lib/customSupabaseClient';
@@ -71,7 +71,7 @@ const StaffAttendance = () => {
     try {
       let query = supabase
         .from('employee_profiles')
-        .select('id, full_name, first_name, last_name, role:roles(name), school_code')
+        .select('id, full_name, first_name, last_name, role:roles(name), enrollment_id')
         .eq('branch_id', selectedBranch.id);
 
       if (selectedRole !== 'all') {
@@ -229,7 +229,7 @@ const StaffAttendance = () => {
               <TableBody>
                 {staffList.map((staff) => (
                   <TableRow key={staff.id}>
-                    <TableCell>{staff.school_code || '-'}</TableCell>
+                    <TableCell>{staff.enrollment_id || '-'}</TableCell>
                     <TableCell>{staff.full_name}</TableCell>
                     <TableCell>{staff.role?.name}</TableCell>
                     <TableCell>

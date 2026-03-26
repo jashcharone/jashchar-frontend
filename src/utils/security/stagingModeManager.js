@@ -1,4 +1,4 @@
-﻿/**
+/**
  * STAGING MODE MANAGER
  * Controls visibility of new features via environment flags.
  */

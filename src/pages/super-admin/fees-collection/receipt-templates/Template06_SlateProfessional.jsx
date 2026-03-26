@@ -53,7 +53,7 @@ const Template06_SlateProfessional = ({ receiptData, copyType }) => {
       <div style={{ padding: '5px 15px', borderBottom: '1px solid #dfe6e9', fontSize: '9px', display: 'flex', flexWrap: 'wrap', gap: '4px 15px' }}>
         <span><span style={{ color: '#00b894', fontWeight: 'bold' }}>Student:</span> <strong>{student?.full_name || '-'}</strong></span>
         <span><span style={{ color: '#00b894', fontWeight: 'bold' }}>Father:</span> {student?.father_name || '-'}</span>
-        <span><span style={{ color: '#00b894', fontWeight: 'bold' }}>Adm#:</span> {student?.school_code || student?.admission_no || '-'}</span>
+        <span><span style={{ color: '#00b894', fontWeight: 'bold' }}>Adm#:</span> {student?.enrollment_id || student?.enrollment_id || '-'}</span>
         <span><span style={{ color: '#00b894', fontWeight: 'bold' }}>Class:</span> {student?.class?.name || '-'}{student?.section?.name ? `(${student.section.name})` : ''}</span>
         <span><span style={{ color: '#00b894', fontWeight: 'bold' }}>Date:</span> {receiptDate ? format(new Date(receiptDate), 'dd MMM yyyy') : '-'}</span>
         <span><span style={{ color: '#00b894', fontWeight: 'bold' }}>Mode:</span> {paymentMode || 'Cash'}</span>

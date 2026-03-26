@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { useBranch } from '@/contexts/BranchContext';
 import { supabase } from '@/lib/customSupabaseClient';
@@ -35,7 +35,7 @@ const StaffAttendance = () => {
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
 
-  // ✅ Use selectedBranch from BranchContext (for Super Admin)
+  // ? Use selectedBranch from BranchContext (for Super Admin)
   const branchId = selectedBranch?.id;
   const sessionId = currentSessionId;
   const orgId = organizationId || selectedBranch?.organization_id;
@@ -206,7 +206,7 @@ const StaffAttendance = () => {
       }
 
       toast({
-        title: "✅ Success",
+        title: "? Success",
         description: `Attendance saved for ${staffList.length} staff members.`,
       });
       

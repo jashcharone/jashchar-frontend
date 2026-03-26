@@ -53,7 +53,7 @@ const Template23_ColorfulBands = ({ receiptData, copyType }) => {
             { label: 'Student', value: student?.full_name, color: '#e53935' },
             { label: 'Father', value: student?.father_name, color: '#fb8c00' },
             { label: 'Class', value: `${student?.class?.name || '-'}${student?.section?.name ? ` (${student.section.name})` : ''}`, color: '#43a047' },
-            { label: 'Adm No', value: student?.school_code, color: '#1e88e5' },
+            { label: 'Enroll ID', value: student?.enrollment_id, color: '#1e88e5' },
             { label: 'Date', value: receiptDate ? format(new Date(receiptDate), 'dd MMM yyyy') : '-', color: '#8e24aa' },
             { label: 'Mode', value: paymentMode || 'Cash', color: '#fdd835' },
           ].map((item, i) => (

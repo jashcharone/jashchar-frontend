@@ -1,9 +1,9 @@
-﻿/**
- * 🌟 STUDENT PANEL PROFILE PAGE
- * ═══════════════════════════════════════════════════════════════════════════════
+/**
+ * ?? STUDENT PANEL PROFILE PAGE
+ * -------------------------------------------------------------------------------
  * Shows student's own profile information (for student role)
  * Uses dedicated API endpoint that bypasses admin permission requirements
- * ═══════════════════════════════════════════════════════════════════════════════
+ * -------------------------------------------------------------------------------
  */
 
 import React, { useState, useEffect } from 'react';
@@ -192,7 +192,7 @@ const StudentPanelProfile = () => {
                                             </Badge>
                                         </div>
                                         <p className="text-sm text-muted-foreground mt-2">
-                                            Admission No: <span className="font-semibold">{student.school_code || student.admission_number || 'N/A'}</span>
+                                            Enroll ID: <span className="font-semibold">{student.enrollment_id || student.enrollment_id || 'N/A'}</span>
                                         </p>
                                     </div>
                                     <div className="text-right hidden md:block">
@@ -214,7 +214,7 @@ const StudentPanelProfile = () => {
                                     <IndianRupee className="h-5 w-5 text-blue-600" />
                                 </div>
                                 <div>
-                                    <p className="text-2xl font-bold">₹{student.feesSummary?.paid?.toLocaleString() || 0}</p>
+                                    <p className="text-2xl font-bold">?{student.feesSummary?.paid?.toLocaleString() || 0}</p>
                                     <p className="text-xs text-muted-foreground">Fees Paid</p>
                                 </div>
                             </div>
@@ -230,7 +230,7 @@ const StudentPanelProfile = () => {
                                     <CreditCard className="h-5 w-5 text-orange-600" />
                                 </div>
                                 <div>
-                                    <p className="text-2xl font-bold text-orange-600">₹{feeBalance?.toLocaleString() || 0}</p>
+                                    <p className="text-2xl font-bold text-orange-600">?{feeBalance?.toLocaleString() || 0}</p>
                                     <p className="text-xs text-muted-foreground">Balance Due</p>
                                 </div>
                             </div>

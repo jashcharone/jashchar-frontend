@@ -1,4 +1,4 @@
-﻿import { supabase } from '@/lib/customSupabaseClient';
+import { supabase } from '@/lib/customSupabaseClient';
 
 export const purgeDemoData = async (logger) => {
   logger.log('Initiating Purge Sequence...', 'warning');

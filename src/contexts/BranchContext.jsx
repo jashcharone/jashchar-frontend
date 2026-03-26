@@ -1,4 +1,4 @@
-﻿import React, { createContext, useContext, useState, useEffect, useRef, useMemo } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef, useMemo } from 'react';
 import { useAuth } from './SupabaseAuthContext';
 import { branchService } from '@/services/branchService';
 
@@ -13,14 +13,14 @@ export const BranchProvider = ({ children }) => {
   const [school, setSchool] = useState(null);
   const [loading, setLoading] = useState(true);
   
-  // ✅ FIX: Track if data is already loaded for this user/school combo
+  // ? FIX: Track if data is already loaded for this user/school combo
   const loadedForRef = useRef({ userId: null, schoolId: null });
 
-  // ✅ FIX: Use primitive IDs in dependency array instead of objects
+  // ? FIX: Use primitive IDs in dependency array instead of objects
   const userId = user?.id;
   const schoolId = authSchool?.id;
 
-  // ✅ Update document title when selected branch changes
+  // ? Update document title when selected branch changes
   useEffect(() => {
     if (selectedBranch?.branch_name) {
       document.title = selectedBranch.branch_name;
@@ -38,7 +38,7 @@ export const BranchProvider = ({ children }) => {
       return;
     }
     
-    // ✅ FIX: Skip refetch if already loaded for same user/school
+    // ? FIX: Skip refetch if already loaded for same user/school
     if (loadedForRef.current.userId === userId && loadedForRef.current.schoolId === schoolId) {
       return;
     }
@@ -103,7 +103,7 @@ export const BranchProvider = ({ children }) => {
           }
       }
       
-      // ✅ FIX: Mark as loaded for this user/school combo
+      // ? FIX: Mark as loaded for this user/school combo
       loadedForRef.current = { userId, schoolId };
 
     } catch (error) {
@@ -124,7 +124,7 @@ export const BranchProvider = ({ children }) => {
       }
   };
 
-  // ✅ FIX: Memoize context value to prevent unnecessary re-renders
+  // ? FIX: Memoize context value to prevent unnecessary re-renders
   const contextValue = useMemo(() => ({ 
     branches, 
     selectedBranch, 

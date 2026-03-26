@@ -175,7 +175,7 @@ const CurfewViolations = () => {
                       <TableHead>#</TableHead>
                       <TableHead>Date</TableHead>
                       <TableHead>Student</TableHead>
-                      <TableHead>Admission No</TableHead>
+                      <TableHead>Enroll ID</TableHead>
                       <TableHead>Class</TableHead>
                       <TableHead>Hostel</TableHead>
                       <TableHead>Room</TableHead>
@@ -193,7 +193,7 @@ const CurfewViolations = () => {
                         <TableCell className="font-medium">
                           {v.student?.full_name || v.student?.first_name || '-'}
                         </TableCell>
-                        <TableCell>{v.student?.admission_number || '-'}</TableCell>
+                        <TableCell>{v.student?.enrollment_id || '-'}</TableCell>
                         <TableCell>
                           {v.student?.class?.name || '-'}
                           {v.student?.section?.name ? ` - ${v.student.section.name}` : ''}

@@ -1,4 +1,4 @@
-﻿
+
 import { supabase } from '@/lib/customSupabaseClient';
 import { getEnvErrors } from "@/utils/envValidation";
 

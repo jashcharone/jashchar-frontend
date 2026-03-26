@@ -192,7 +192,7 @@ const AttendanceReport = () => {
         // First get active (non-disabled) students in current session
         let studentQuery = supabase
             .from('student_profiles')
-            .select('id, full_name, school_code, roll_number, class_id, section_id, photo_url')
+            .select('id, full_name, enrollment_id, roll_number, class_id, section_id, photo_url')
             .eq('branch_id', branchId)
             .eq('session_id', currentSessionId)  // Filter by current session
             .or('is_disabled.is.null,is_disabled.eq.false');  // Only active students (not disabled)
@@ -262,7 +262,7 @@ const AttendanceReport = () => {
             return {
                 id: student.id,
                 name: student.full_name,
-                code: student.school_code || student.roll_number || '-',
+                code: student.enrollment_id || student.roll_number || '-',
                 class: classMap.get(student.class_id) || '-',
                 section: sectionMap.get(student.section_id) || '-',
                 photo_url: student.photo_url,
@@ -418,7 +418,7 @@ const AttendanceReport = () => {
         
         // Headers with better naming
         const headers = activeTab === 'student'
-            ? ['S.No', 'Student Name', 'Admission No', 'Class', 'Section', 'Working Days', 'Present (P)', 'Absent (A)', 'Late (L)', 'Leave (Lv)', 'Holiday', 'Attendance %', 'Status']
+            ? ['S.No', 'Student Name', 'Enroll ID', 'Class', 'Section', 'Working Days', 'Present (P)', 'Absent (A)', 'Late (L)', 'Leave (Lv)', 'Holiday', 'Attendance %', 'Status']
             : ['S.No', 'Staff Name', 'Employee ID', 'Department', 'Working Days', 'Present (P)', 'Absent (A)', 'Late (L)', 'Leave (Lv)', 'Holiday', 'Attendance %', 'Status'];
         
         // Data rows with serial number and status
@@ -783,7 +783,7 @@ const AttendanceReport = () => {
                                             <TableHead className="sticky top-0 bg-background">#</TableHead>
                                             <TableHead className="sticky top-0 bg-background">Name</TableHead>
                                             <TableHead className="sticky top-0 bg-background">
-                                                {activeTab === 'student' ? 'Adm No' : 'Emp Code'}
+                                                {activeTab === 'student' ? 'Enroll ID' : 'Emp Code'}
                                             </TableHead>
                                             <TableHead className="sticky top-0 bg-background">
                                                 {activeTab === 'student' ? 'Class' : 'Department'}

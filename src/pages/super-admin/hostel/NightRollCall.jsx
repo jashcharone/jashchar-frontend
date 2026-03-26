@@ -264,7 +264,7 @@ const NightRollCall = () => {
                                     {s.student?.full_name || s.student?.first_name || 'Unknown'}
                                   </p>
                                   <p className="text-xs text-muted-foreground">
-                                    {s.student?.admission_number || '-'} • Bed: {s.bedNumber || '-'}
+                                    {s.student?.enrollment_id || '-'} • Bed: {s.bedNumber || '-'}
                                     {s.student?.class?.name ? ` • ${s.student.class.name}` : ''}
                                   </p>
                                 </div>

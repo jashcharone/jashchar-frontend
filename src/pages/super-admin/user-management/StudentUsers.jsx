@@ -390,7 +390,7 @@ const StudentUsers = () => {
                                     </th>
                                     <th className="p-3 text-left text-sm font-medium text-muted-foreground">Photo</th>
                                     <th className="p-3 text-left text-sm font-medium text-muted-foreground">Name</th>
-                                    <th className="p-3 text-left text-sm font-medium text-muted-foreground">Admission No</th>
+                                    <th className="p-3 text-left text-sm font-medium text-muted-foreground">Enroll ID</th>
                                     <th className="p-3 text-left text-sm font-medium text-muted-foreground">Class</th>
                                     <th className="p-3 text-left text-sm font-medium text-muted-foreground">Branch</th>
                                     <th className="p-3 text-left text-sm font-medium text-muted-foreground">Login Status</th>
@@ -436,7 +436,7 @@ const StudentUsers = () => {
                                             </td>
                                             <td className="p-3">
                                                 <code className="bg-muted px-2 py-1 rounded text-sm">
-                                                    {student.school_code || '-'}
+                                                    {student.enrollment_id || '-'}
                                                 </code>
                                             </td>
                                             <td className="p-3">
@@ -521,7 +521,7 @@ const StudentUsers = () => {
                         </div>
                         <div className="bg-blue-50 dark:bg-blue-950/30 p-3 rounded-lg text-sm border border-blue-200 dark:border-blue-800">
                             <p className="font-medium text-blue-700 dark:text-blue-400">Login Credentials:</p>
-                            <p className="text-blue-600 dark:text-blue-300">Username: Admission Number (e.g., SSVK-2026-00001)</p>
+                            <p className="text-blue-600 dark:text-blue-300">Username: Enrollment ID (e.g., SSVK-2026-00001)</p>
                             <p className="text-blue-600 dark:text-blue-300">Password: {defaultPassword}</p>
                         </div>
                     </div>

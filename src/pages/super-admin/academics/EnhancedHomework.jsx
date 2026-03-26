@@ -1073,7 +1073,7 @@ export default function EnhancedHomework() {
                           {sub.student?.first_name} {sub.student?.last_name}
                         </p>
                         <p className="text-sm text-muted-foreground">
-                          {sub.student?.admission_no} | Roll: {sub.student?.roll_no}
+                          {sub.student?.enrollment_id} | Roll: {sub.student?.roll_no}
                         </p>
                       </div>
                     </div>
@@ -1119,7 +1119,7 @@ export default function EnhancedHomework() {
                     </div>
                     <div>
                       <p className="font-medium">{student.first_name} {student.last_name}</p>
-                      <p className="text-sm text-muted-foreground">{student.admission_no}</p>
+                      <p className="text-sm text-muted-foreground">{student.enrollment_id}</p>
                     </div>
                   </div>
                 </Card>

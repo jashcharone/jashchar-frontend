@@ -65,7 +65,7 @@ export const HOMEWORK_COLUMNS = [
   // STUDENT INFORMATION
   // ─────────────────────────────────────────────────────────────────────────────
   { key: 'student_id', label: 'Student ID', type: 'text', group: 'Student Info', sortable: true, width: 100 },
-  { key: 'admission_number', label: 'Admission No', type: 'text', group: 'Student Info', sortable: true, width: 120 },
+  { key: 'enrollment_id', label: 'Enroll ID', type: 'text', group: 'Student Info', sortable: true, width: 120 },
   { key: 'student_name', label: 'Student Name', type: 'text', group: 'Student Info', sortable: true, width: 150 },
   { key: 'roll_number', label: 'Roll No', type: 'text', group: 'Student Info', sortable: true, width: 70 },
   { key: 'gender', label: 'Gender', type: 'text', group: 'Student Info', sortable: true, width: 70 },
@@ -175,11 +175,11 @@ export const COLUMN_SETS = {
   
   // Submission Tracking Templates
   submission_status: ['homework_title', 'class_name', 'total_students', 'submitted_count', 'pending_count', 'submission_rate'],
-  student_submissions: ['student_name', 'admission_number', 'class_name', 'total_homework', 'homework_submitted', 'homework_pending', 'submission_percentage'],
-  late_submissions: ['student_name', 'admission_number', 'homework_title', 'due_date', 'submission_date', 'late_by_days'],
-  non_submitters: ['homework_title', 'class_name', 'student_name', 'admission_number', 'due_date', 'father_phone'],
-  consistent_submitters: ['student_name', 'admission_number', 'class_name', 'submission_percentage', 'submission_streak'],
-  poor_submission: ['student_name', 'admission_number', 'class_name', 'submission_percentage', 'last_submission', 'father_phone'],
+  student_submissions: ['student_name', 'enrollment_id', 'class_name', 'total_homework', 'homework_submitted', 'homework_pending', 'submission_percentage'],
+  late_submissions: ['student_name', 'enrollment_id', 'homework_title', 'due_date', 'submission_date', 'late_by_days'],
+  non_submitters: ['homework_title', 'class_name', 'student_name', 'enrollment_id', 'due_date', 'father_phone'],
+  consistent_submitters: ['student_name', 'enrollment_id', 'class_name', 'submission_percentage', 'submission_streak'],
+  poor_submission: ['student_name', 'enrollment_id', 'class_name', 'submission_percentage', 'last_submission', 'father_phone'],
   parent_not_signed: ['student_name', 'homework_title', 'submission_date', 'parent_signed', 'father_phone'],
   submission_type_analysis: ['homework_title', 'submission_type', 'submitted_count', 'submission_rate'],
   submission_time_analysis: ['homework_title', 'on_time_count', 'late_count', 'on_time_rate', 'avg_submission_delay'],
@@ -189,7 +189,7 @@ export const COLUMN_SETS = {
   notification_sent: ['date', 'class_name', 'homework_count', 'notification_type', 'sms_sent', 'app_notification'],
   parent_view_status: ['homework_title', 'class_name', 'total_students', 'parent_viewed', 'parent_view_date'],
   parent_acknowledge: ['homework_title', 'class_name', 'student_name', 'parent_acknowledged', 'acknowledge_date'],
-  student_homework_card: ['student_name', 'admission_number', 'subject_name', 'homework_submitted', 'homework_pending', 'submission_percentage'],
+  student_homework_card: ['student_name', 'enrollment_id', 'subject_name', 'homework_submitted', 'homework_pending', 'submission_percentage'],
   class_homework_summary: ['class_name', 'section_name', 'homework_count', 'submission_rate', 'on_time_rate'],
 };
 

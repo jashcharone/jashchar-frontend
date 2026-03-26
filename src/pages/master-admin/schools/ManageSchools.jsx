@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { formatDate } from '@/utils/dateUtils';
 import { useNavigate, Link } from 'react-router-dom';
 import DashboardLayout from '@/components/DashboardLayout';
@@ -112,7 +112,7 @@ const ManageSchools = () => {
                       {school.name}
                       <div className="text-xs text-muted-foreground">{school.contact_email}</div>
                     </TableCell>
-                    <TableCell>{school.school_code_number || 'N/A'}</TableCell>
+                    <TableCell>{school.enrollment_id_number || 'N/A'}</TableCell>
                     <TableCell><Badge variant="outline">{school.subscription_plans?.name || 'No Plan'}</Badge></TableCell>
                     <TableCell>
                       <Badge variant={school.status === 'Active' ? 'default' : 'destructive'}>

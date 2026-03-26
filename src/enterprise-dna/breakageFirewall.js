@@ -1,4 +1,4 @@
-﻿import { validateImmortality } from './immortalityLock';
+import { validateImmortality } from './immortalityLock';
 
 /**
  * BREAKAGE FIREWALL

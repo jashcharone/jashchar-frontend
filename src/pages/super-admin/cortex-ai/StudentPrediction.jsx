@@ -49,15 +49,15 @@ const StudentPrediction = () => {
       // Mock data
       if (activeTab === 'dropout') {
         setDropoutRiskList([
-          { id: 1, studentName: 'Rahul Kumar', class: '9th A', admissionNo: 'STU001', riskScore: 85, factors: ['Poor attendance (62%)', 'Fee arrears', 'Declining grades'], trend: 'increasing' },
-          { id: 2, studentName: 'Priya Singh', class: '8th B', admissionNo: 'STU045', riskScore: 72, factors: ['Parent complaint', 'Transfer inquiry'], trend: 'stable' },
-          { id: 3, studentName: 'Amit Verma', class: '10th A', admissionNo: 'STU102', riskScore: 65, factors: ['Health issues', 'Frequent absences'], trend: 'decreasing' }
+          { id: 1, studentName: 'Rahul Kumar', class: '9th A', enrollmentId: 'STU001', riskScore: 85, factors: ['Poor attendance (62%)', 'Fee arrears', 'Declining grades'], trend: 'increasing' },
+          { id: 2, studentName: 'Priya Singh', class: '8th B', enrollmentId: 'STU045', riskScore: 72, factors: ['Parent complaint', 'Transfer inquiry'], trend: 'stable' },
+          { id: 3, studentName: 'Amit Verma', class: '10th A', enrollmentId: 'STU102', riskScore: 65, factors: ['Health issues', 'Frequent absences'], trend: 'decreasing' }
         ]);
       } else {
         setResultPredictions([
-          { id: 1, studentName: 'Sneha Reddy', class: '10th A', admissionNo: 'STU201', predictedPercentage: 92, confidence: 88, improvement: '+5%', suggestedStream: 'Science' },
-          { id: 2, studentName: 'Kiran Patel', class: '10th B', admissionNo: 'STU156', predictedPercentage: 78, confidence: 82, improvement: '+3%', suggestedStream: 'Commerce' },
-          { id: 3, studentName: 'Meera Nair', class: '10th A', admissionNo: 'STU178', predictedPercentage: 85, confidence: 85, improvement: '+7%', suggestedStream: 'Science' }
+          { id: 1, studentName: 'Sneha Reddy', class: '10th A', enrollmentId: 'STU201', predictedPercentage: 92, confidence: 88, improvement: '+5%', suggestedStream: 'Science' },
+          { id: 2, studentName: 'Kiran Patel', class: '10th B', enrollmentId: 'STU156', predictedPercentage: 78, confidence: 82, improvement: '+3%', suggestedStream: 'Commerce' },
+          { id: 3, studentName: 'Meera Nair', class: '10th A', enrollmentId: 'STU178', predictedPercentage: 85, confidence: 85, improvement: '+7%', suggestedStream: 'Science' }
         ]);
       }
     }
@@ -73,7 +73,7 @@ const StudentPrediction = () => {
       setShowStudent({
         studentName: 'Rahul Kumar',
         class: '9th A',
-        admissionNo: 'STU001',
+        enrollmentId: 'STU001',
         dropoutRisk: 85,
         academicPrediction: {
           math: { current: 65, predicted: 58, trend: 'down' },
@@ -122,12 +122,12 @@ const StudentPrediction = () => {
 
   const filteredDropout = dropoutRiskList.filter(s =>
     s.studentName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    s.admissionNo.toLowerCase().includes(searchTerm.toLowerCase())
+    s.enrollmentId.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const filteredResults = resultPredictions.filter(s =>
     s.studentName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    s.admissionNo.toLowerCase().includes(searchTerm.toLowerCase())
+    s.enrollmentId.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   if (loading) {
@@ -249,7 +249,7 @@ const StudentPrediction = () => {
               <thead>
                 <tr className="border-b border-gray-700">
                   <th className="text-left py-3 px-4 text-gray-400 font-medium text-sm">Student</th>
-                  <th className="text-left py-3 px-4 text-gray-400 font-medium text-sm">Admission No</th>
+                  <th className="text-left py-3 px-4 text-gray-400 font-medium text-sm">Enroll ID</th>
                   <th className="text-left py-3 px-4 text-gray-400 font-medium text-sm">Class</th>
                   <th className="text-left py-3 px-4 text-gray-400 font-medium text-sm">Risk Score</th>
                   <th className="text-left py-3 px-4 text-gray-400 font-medium text-sm">Trend</th>
@@ -261,7 +261,7 @@ const StudentPrediction = () => {
                 {filteredDropout.map((student) => (
                   <tr key={student.id} className="border-b border-gray-700/50 hover:bg-gray-700/30">
                     <td className="py-3 px-4 text-white font-medium">{student.studentName}</td>
-                    <td className="py-3 px-4 text-gray-400">{student.admissionNo}</td>
+                    <td className="py-3 px-4 text-gray-400">{student.enrollmentId}</td>
                     <td className="py-3 px-4 text-gray-300">{student.class}</td>
                     <td className="py-3 px-4">
                       <span className={`px-3 py-1 rounded-full text-sm font-medium border ${getRiskColor(student.riskScore)}`}>
@@ -423,7 +423,7 @@ const StudentPrediction = () => {
             <div className="p-6 border-b border-gray-700 flex items-center justify-between">
               <div>
                 <h2 className="text-xl font-bold text-white">{showStudent.studentName}</h2>
-                <p className="text-gray-400">{showStudent.class} | {showStudent.admissionNo}</p>
+                <p className="text-gray-400">{showStudent.class} | {showStudent.enrollmentId}</p>
               </div>
               <button 
                 onClick={() => setShowStudent(null)}

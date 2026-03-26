@@ -284,7 +284,7 @@ const IdentifyDialog = ({ face, open, onClose, onConfirm, branchId }) => {
                                                 </p>
                                                 <p className="text-xs text-muted-foreground">
                                                     {personType === 'student' 
-                                                        ? person.admission_number 
+                                                        ? person.enrollment_id 
                                                         : person.employee_code || person.email}
                                                 </p>
                                             </div>

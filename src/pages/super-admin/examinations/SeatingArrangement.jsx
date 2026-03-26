@@ -410,7 +410,7 @@ const SeatingArrangement = () => {
                                     <TableRow>
                                         <TableHead>Seat No</TableHead>
                                         <TableHead>Student Name</TableHead>
-                                        <TableHead>Admission No</TableHead>
+                                        <TableHead>Enroll ID</TableHead>
                                         <TableHead>Class</TableHead>
                                         <TableHead>Room</TableHead>
                                         <TableHead>Row</TableHead>
@@ -442,7 +442,7 @@ const SeatingArrangement = () => {
                                             <TableRow key={seat.id}>
                                                 <TableCell className="font-medium">{seat.seat_number}</TableCell>
                                                 <TableCell>{seat.student?.full_name || '-'}</TableCell>
-                                                <TableCell>{seat.student?.admission_number || '-'}</TableCell>
+                                                <TableCell>{seat.student?.enrollment_id || '-'}</TableCell>
                                                 <TableCell>
                                                     {seat.student?.class_name} - {seat.student?.section_name}
                                                 </TableCell>

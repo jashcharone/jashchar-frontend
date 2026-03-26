@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Employee List V2 - Using new employees table
  * Complete HR employee management with salary, attendance, leave integration
  */

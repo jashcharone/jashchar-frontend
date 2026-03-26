@@ -1,4 +1,4 @@
-﻿import { MODULE_CATALOG } from '@/config/moduleCatalog';
+import { MODULE_CATALOG } from '@/config/moduleCatalog';
 
 // Generate Mapping from Catalog
 const generatedMap = {};
@@ -39,7 +39,7 @@ export const SUBMODULE_OVERRIDES = {
   "Subject Groups": "subject_groups", // Match DB slug
   "General Settings": "general_setting",
   "General Setting": "general_setting",
-  "Attendance Config": "attendance_config", // 🆕 Branch Attendance Configuration
+  "Attendance Config": "attendance_config", // ?? Branch Attendance Configuration
   "Session Setting": "session_setting",
   "Roles Permissions": "roles_permissions",
   "Print Header Footer": "print_header_footer",
@@ -113,19 +113,19 @@ export const SUBMODULE_OVERRIDES = {
   "Create Task": "tasks",
   "My Tasks": "my_tasks",
   
-  // Attendance Advanced Submodules (emoji titles → DB slugs)
-  "📊 Live Dashboard": "live_dashboard",
-  "📱 QR Code Generator": "qr_code_generator",
-  "🔌 Device Management": "device_management",
-  "💳 Card Management": "card_management",
-  "👤 Face Registration": "face_registration",
-  "🤖 Live Face Attendance": "face_registration", // Maps to face_registration
-  "📹 AI Camera Management": "face_registration", // AI Face Attendance cameras
-  "🧠 FAISS Index Management": "face_registration", // AI Face index management
-  "⌚ Wearable Devices": "wearable_devices",
-  "⚙️ Attendance Rules": "attendance_rules",
-  "📍 Geo-Fence Setup": "geo_fence_setup",
-  "📈 Analytics": "analytics" // DB slug is attendance.analytics
+  // Attendance Advanced Submodules (emoji titles ? DB slugs)
+  "?? Live Dashboard": "live_dashboard",
+  "?? QR Code Generator": "qr_code_generator",
+  "?? Device Management": "device_management",
+  "?? Card Management": "card_management",
+  "?? Face Registration": "face_registration",
+  "?? Live Face Attendance": "face_registration", // Maps to face_registration
+  "?? AI Camera Management": "face_registration", // AI Face Attendance cameras
+  "?? FAISS Index Management": "face_registration", // AI Face index management
+  "? Wearable Devices": "wearable_devices",
+  "?? Attendance Rules": "attendance_rules",
+  "?? Geo-Fence Setup": "geo_fence_setup",
+  "?? Analytics": "analytics" // DB slug is attendance.analytics
 };
 
 export const DEFAULT_MODULES = Object.keys(MODULE_CATALOG);

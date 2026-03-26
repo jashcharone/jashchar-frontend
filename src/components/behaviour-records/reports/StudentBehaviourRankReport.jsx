@@ -1,4 +1,4 @@
-﻿import React, { useState } from 'react';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
@@ -139,7 +139,7 @@ const StudentBehaviourRankReport = ({ classes, sections, onClassChange, fetchDat
           <TableHeader>
             <TableRow>
               <TableHead>Rank</TableHead>
-              <TableHead>Admission No</TableHead>
+              <TableHead>Enroll ID</TableHead>
               <TableHead>Student Name</TableHead>
               <TableHead>Class (Section)</TableHead>
               <TableHead>Gender</TableHead>
@@ -153,7 +153,7 @@ const StudentBehaviourRankReport = ({ classes, sections, onClassChange, fetchDat
               paginatedData.map((entry) => (
                 <TableRow key={entry.rank}>
                   <TableCell className="font-bold">#{entry.rank}</TableCell>
-                  <TableCell>{entry.student.admission_no}</TableCell>
+                  <TableCell>{entry.student.enrollment_id}</TableCell>
                   <TableCell className="font-medium">{entry.student.full_name}</TableCell>
                   <TableCell>{entry.student.class?.name} ({entry.student.section?.name})</TableCell>
                   <TableCell>{entry.student.gender}</TableCell>

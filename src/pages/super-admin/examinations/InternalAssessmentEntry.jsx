@@ -185,7 +185,7 @@ const InternalAssessmentEntry = () => {
                         student_id: s.student_id,
                         roll_number: s.roll_number,
                         student_name: `${s.student?.first_name || ''} ${s.student?.last_name || ''}`,
-                        admission_number: s.student?.admission_number,
+                        enrollment_id: s.student?.enrollment_id,
                         // Class Tests
                         class_test_1: existing?.class_test_1 ?? '',
                         class_test_2: existing?.class_test_2 ?? '',
@@ -431,7 +431,7 @@ const InternalAssessmentEntry = () => {
                                                         <TableCell className="font-medium">{student.roll_number}</TableCell>
                                                         <TableCell>
                                                             <div>{student.student_name}</div>
-                                                            <div className="text-xs text-muted-foreground">{student.admission_number}</div>
+                                                            <div className="text-xs text-muted-foreground">{student.enrollment_id}</div>
                                                         </TableCell>
                                                         <TableCell>
                                                             <Input

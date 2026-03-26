@@ -96,7 +96,7 @@ const AssignFeeGroup = () => {
         if (!selectedBranch) return;
         setSearching(true);
         let query = supabase.from('student_profiles')
-            .select('id, full_name, school_code, father_name, gender, is_rte_student, category_id, category:student_categories(name)')
+            .select('id, full_name, enrollment_id, father_name, gender, is_rte_student, category_id, category:student_categories(name)')
             .eq('branch_id', selectedBranch.id)
             .eq('status', 'active');
         
@@ -254,7 +254,7 @@ const AssignFeeGroup = () => {
                         <thead>
                             <tr className="text-left text-muted-foreground border-b">
                                 <th className="p-2"><Checkbox checked={students.length > 0 && selectedStudents.size === students.length} onCheckedChange={handleSelectAll} /></th>
-                                <th className="p-2">Admission No</th>
+                                <th className="p-2">Enroll ID</th>
                                 <th className="p-2">Student Name</th>
                                 <th className="p-2">Father Name</th>
                                 <th className="p-2">Category</th>
@@ -265,7 +265,7 @@ const AssignFeeGroup = () => {
                             {students.map(student => (
                                 <tr key={student.id} className="border-b">
                                     <td className="p-2"><Checkbox checked={selectedStudents.has(student.id)} onCheckedChange={c => handleSelectStudent(student.id, c)} /></td>
-                                    <td className="p-2">{student.school_code}</td>
+                                    <td className="p-2">{student.enrollment_id}</td>
                                     <td className="p-2">{student.full_name}</td>
                                     <td className="p-2">{student.father_name}</td>
                                     <td className="p-2">{student.category?.name || 'General'}</td>

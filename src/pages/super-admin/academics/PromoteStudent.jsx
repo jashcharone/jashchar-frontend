@@ -234,7 +234,7 @@ const PromoteStudent = () => {
                 .from('student_profiles')
                 .select(`
                     id,
-                    school_code,
+                    enrollment_id,
                     roll_number,
                     first_name,
                     last_name,
@@ -335,7 +335,7 @@ const PromoteStudent = () => {
                     results.failed++;
                     results.errors.push({
                         student: `${student?.first_name} ${student?.last_name}`,
-                        school_code: student?.school_code,
+                        enrollment_id: student?.enrollment_id,
                         error: err.message
                     });
                 }
@@ -602,7 +602,7 @@ const PromoteStudent = () => {
                                         <p className="font-medium">Errors:</p>
                                         <ul className="list-disc pl-4">
                                             {promotionResults.errors.slice(0, 5).map((err, i) => (
-                                                <li key={i}>{err.student} ({err.school_code}): {err.error}</li>
+                                                <li key={i}>{err.student} ({err.enrollment_id}): {err.error}</li>
                                             ))}
                                         </ul>
                                     </div>
@@ -659,7 +659,7 @@ const PromoteStudent = () => {
                                                     onCheckedChange={handleSelectAll}
                                                 />
                                             </TableHead>
-                                            <TableHead>Admission No</TableHead>
+                                            <TableHead>Enroll ID</TableHead>
                                             <TableHead>Roll</TableHead>
                                             <TableHead>Student Name</TableHead>
                                             <TableHead>Gender</TableHead>
@@ -677,7 +677,7 @@ const PromoteStudent = () => {
                                                         onCheckedChange={(checked) => handleSelectStudent(student.id, checked)}
                                                     />
                                                 </TableCell>
-                                                <TableCell className="font-medium">{student.school_code}</TableCell>
+                                                <TableCell className="font-medium">{student.enrollment_id}</TableCell>
                                                 <TableCell className="font-mono">{student.roll_number || '-'}</TableCell>
                                                 <TableCell>{student.first_name} {student.last_name}</TableCell>
                                                 <TableCell>

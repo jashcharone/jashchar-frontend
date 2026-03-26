@@ -370,7 +370,7 @@ const ParentUsers = () => {
                                                     </div>
                                                     <div>
                                                         <div className="font-medium">{student.first_name} {student.last_name}</div>
-                                                        <div className="text-xs text-muted-foreground">{student.school_code}</div>
+                                                        <div className="text-xs text-muted-foreground">{student.enrollment_id}</div>
                                                     </div>
                                                 </div>
                                             </td>

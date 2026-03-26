@@ -67,7 +67,7 @@ export default function StudentAIInsights() {
       const [studentsRes, feeRes, marksRes] = await Promise.all([
         supabase
           .from('student_profiles')
-          .select('id, full_name, admission_number, school_code, photo_url, class_id, section_id, category_id, classes(id, name), sections(id, name)')
+          .select('id, full_name, enrollment_id, enrollment_id, photo_url, class_id, section_id, category_id, classes(id, name), sections(id, name)')
           .eq('branch_id', branchId)
           .eq('session_id', currentSessionId)
           .or('is_disabled.is.null,is_disabled.eq.false'),
@@ -252,8 +252,8 @@ export default function StudentAIInsights() {
       const q = searchTerm.toLowerCase();
       list = list.filter(s =>
         s.full_name?.toLowerCase().includes(q) ||
-        s.admission_number?.toLowerCase().includes(q) ||
-        s.school_code?.toLowerCase().includes(q)
+        s.enrollment_id?.toLowerCase().includes(q) ||
+        s.enrollment_id?.toLowerCase().includes(q)
       );
     }
     return list.sort((a, b) => b.riskScore - a.riskScore);
@@ -388,7 +388,7 @@ export default function StudentAIInsights() {
                             <div key={s.id} className="flex items-center justify-between p-2 rounded-lg bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800">
                               <div>
                                 <div className="font-medium text-sm">{s.full_name}</div>
-                                <div className="text-xs text-muted-foreground">{s.classes?.name} {s.sections?.name} • {s.school_code || s.admission_number}</div>
+                                <div className="text-xs text-muted-foreground">{s.classes?.name} {s.sections?.name} • {s.enrollment_id || s.enrollment_id}</div>
                               </div>
                               <Badge variant="destructive" className="text-xs">Risk: {s.riskScore}</Badge>
                             </div>
@@ -585,7 +585,7 @@ export default function StudentAIInsights() {
                                 <div>
                                   <div className="font-semibold">{s.full_name}</div>
                                   <div className="text-xs text-muted-foreground">
-                                    {s.classes?.name} {s.sections?.name} • {s.school_code || s.admission_number}
+                                    {s.classes?.name} {s.sections?.name} • {s.enrollment_id || s.enrollment_id}
                                   </div>
                                 </div>
                               </div>

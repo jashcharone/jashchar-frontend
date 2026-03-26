@@ -1,4 +1,4 @@
-﻿import { supabase } from '@/lib/customSupabaseClient';
+import { supabase } from '@/lib/customSupabaseClient';
 import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
 

@@ -13,7 +13,7 @@ const StudentListModal = ({ isOpen, onClose, title, students }) => {
 
   const filteredStudents = students.filter(student => 
     student.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    student.school_code?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    student.enrollment_id?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     student.class_name?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
@@ -51,7 +51,7 @@ const StudentListModal = ({ isOpen, onClose, title, students }) => {
             <Table>
               <TableHeader>
                 <TableRow className="bg-gray-50 hover:bg-gray-50 sticky top-0">
-                  <TableHead className="font-semibold text-gray-700">Admission No</TableHead>
+                  <TableHead className="font-semibold text-gray-700">Enroll ID</TableHead>
                   <TableHead className="font-semibold text-gray-700">Student Name</TableHead>
                   <TableHead className="font-semibold text-gray-700">Class</TableHead>
                   <TableHead className="font-semibold text-gray-700">Father Name</TableHead>
@@ -70,7 +70,7 @@ const StudentListModal = ({ isOpen, onClose, title, students }) => {
                 ) : (
                   paginatedStudents.map((student, idx) => (
                     <TableRow key={student.id || idx}>
-                      <TableCell>{student.school_code || '-'}</TableCell>
+                      <TableCell>{student.enrollment_id || '-'}</TableCell>
                       <TableCell className="font-medium">{student.full_name}</TableCell>
                       <TableCell>{student.class_name} ({student.section_name})</TableCell>
                       <TableCell>{student.father_name || '-'}</TableCell>

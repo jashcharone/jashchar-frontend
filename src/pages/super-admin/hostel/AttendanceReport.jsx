@@ -222,7 +222,7 @@ const AttendanceReport = () => {
                       <TableRow>
                         <TableHead>#</TableHead>
                         <TableHead>Student</TableHead>
-                        <TableHead>Admission No</TableHead>
+                        <TableHead>Enroll ID</TableHead>
                         <TableHead>Class</TableHead>
                         <TableHead className="text-center">Present</TableHead>
                         <TableHead className="text-center">Absent</TableHead>
@@ -239,7 +239,7 @@ const AttendanceReport = () => {
                           <TableCell className="font-medium">
                             {s.student?.full_name || s.student?.first_name || '-'}
                           </TableCell>
-                          <TableCell>{s.student?.admission_number || '-'}</TableCell>
+                          <TableCell>{s.student?.enrollment_id || '-'}</TableCell>
                           <TableCell>{s.student?.class?.name || '-'}</TableCell>
                           <TableCell className="text-center text-green-600 dark:text-green-400 font-medium">{s.present}</TableCell>
                           <TableCell className="text-center text-red-600 dark:text-red-400 font-medium">{s.absent}</TableCell>

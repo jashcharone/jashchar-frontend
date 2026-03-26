@@ -894,7 +894,7 @@ const CompetencyBadges = () => {
                                                 {sb.student?.first_name} {sb.student?.last_name}
                                             </p>
                                             <p className="text-xs text-muted-foreground">
-                                                {sb.student?.admission_number}
+                                                {sb.student?.enrollment_id}
                                             </p>
                                         </div>
                                     </div>
@@ -1476,7 +1476,7 @@ const CompetencyBadges = () => {
                                         >
                                             <Checkbox checked={awardForm.student_ids.includes(student.id)} />
                                             <span>{student.first_name} {student.last_name}</span>
-                                            <span className="text-muted-foreground text-sm">({student.admission_number})</span>
+                                            <span className="text-muted-foreground text-sm">({student.enrollment_id})</span>
                                         </div>
                                     ))}
                                 </div>
@@ -1531,7 +1531,7 @@ const CompetencyBadges = () => {
                                     {selectedStudentProfile.student?.first_name} {selectedStudentProfile.student?.last_name}
                                 </h3>
                                 <p className="text-muted-foreground">
-                                    {selectedStudentProfile.student?.admission_number} • 
+                                    {selectedStudentProfile.student?.enrollment_id} • 
                                     {selectedStudentProfile.student?.class?.name} {selectedStudentProfile.student?.section?.name}
                                 </p>
                             </div>

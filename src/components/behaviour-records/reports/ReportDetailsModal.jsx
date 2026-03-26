@@ -1,4 +1,4 @@
-﻿import React, { useState } from 'react';
+import React, { useState } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -19,7 +19,7 @@ const ReportDetailsModal = ({ isOpen, onClose, title, data = [] }) => {
   const filteredData = data.filter(item => 
     item.student?.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     item.incident?.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    item.student?.admission_no?.toLowerCase().includes(searchTerm.toLowerCase())
+    item.student?.enrollment_id?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const totalPages = Math.ceil(filteredData.length / itemsPerPage);
@@ -63,7 +63,7 @@ const ReportDetailsModal = ({ isOpen, onClose, title, data = [] }) => {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Admission No</TableHead>
+                  <TableHead>Enroll ID</TableHead>
                   <TableHead>Student</TableHead>
                   <TableHead>Class (Section)</TableHead>
                   <TableHead>House</TableHead>
@@ -76,7 +76,7 @@ const ReportDetailsModal = ({ isOpen, onClose, title, data = [] }) => {
                 {currentData.length > 0 ? (
                   currentData.map((record, index) => (
                     <TableRow key={index}>
-                      <TableCell>{record.student?.admission_no || '-'}</TableCell>
+                      <TableCell>{record.student?.enrollment_id || '-'}</TableCell>
                       <TableCell className="font-medium">{record.student?.full_name}</TableCell>
                       <TableCell>
                         {record.student?.class?.name} ({record.student?.section?.name})

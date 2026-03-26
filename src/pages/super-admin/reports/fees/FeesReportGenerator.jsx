@@ -174,7 +174,7 @@ const FeesReportGenerator = () => {
     
     return Array.from({ length: 50 }, (_, i) => ({
       id: i + 1,
-      admission_number: `ADM${2024}${String(i + 1).padStart(4, '0')}`,
+      enrollment_id: `ADM${2024}${String(i + 1).padStart(4, '0')}`,
       student_name: ['Rahul Sharma', 'Priya Verma', 'Amit Singh', 'Sneha Patel', 'Raj Kumar'][i % 5],
       class_name: classes[i % 10],
       section_name: sections[i % 3],
@@ -217,7 +217,7 @@ const FeesReportGenerator = () => {
       id: i + 1,
       receipt_no: `RCP${2024}${String(i + 1).padStart(5, '0')}`,
       receipt_date: `2024-${String((i % 12) + 1).padStart(2, '0')}-${String((i % 28) + 1).padStart(2, '0')}`,
-      admission_number: `ADM${2024}${String(i + 1).padStart(4, '0')}`,
+      enrollment_id: `ADM${2024}${String(i + 1).padStart(4, '0')}`,
       student_name: ['Rahul Sharma', 'Priya Verma', 'Amit Singh', 'Sneha Patel', 'Raj Kumar'][i % 5],
       class_name: classes[i % 10],
       fee_head: ['Tuition Fee', 'Transport Fee', 'Library Fee', 'Lab Fee', 'Exam Fee'][i % 5],
@@ -258,7 +258,7 @@ const FeesReportGenerator = () => {
     
     return Array.from({ length: 50 }, (_, i) => ({
       id: i + 1,
-      admission_number: `ADM${2024}${String(i + 1).padStart(4, '0')}`,
+      enrollment_id: `ADM${2024}${String(i + 1).padStart(4, '0')}`,
       student_name: ['Rahul Sharma', 'Priya Verma', 'Amit Singh', 'Sneha Patel', 'Raj Kumar'][i % 5],
       class_name: classes[i % 10],
       route_name: routes[i % 4],

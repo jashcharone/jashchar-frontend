@@ -623,7 +623,7 @@ const OnlineAdmissionList = () => {
           </div>
           
           <div class="instructions">
-            <h3>📱 How to Apply</h3>
+            <h3>How to Apply</h3>
             <ol>
               <li>Open your phone camera or QR scanner app</li>
               <li>Point it at the QR code above</li>
@@ -638,10 +638,10 @@ const OnlineAdmissionList = () => {
             <div class="link-url">${admissionLink}</div>
           </div>
           
-          <div class="badge">✨ Apply Online Now</div>
+          <div class="badge">? Apply Online Now</div>
           
           <div class="footer">
-            Powered by Jashchar ERP • Scan to apply for admission
+            Powered by Jashchar ERP � Scan to apply for admission
           </div>
         </div>
       </body>
@@ -845,10 +845,10 @@ const OnlineAdmissionList = () => {
                 <Building2 className="h-12 w-12 text-amber-600 dark:text-amber-400" />
               </div>
               <h2 className="text-2xl font-bold text-amber-800 dark:text-amber-200 mb-2">
-                ಶಾಖೆ ಆಯ್ಕೆ ಮಾಡಿ / Select a Branch
+                / Select a Branch
               </h2>
               <p className="text-amber-700 dark:text-amber-300">
-                ದಯವಿಟ್ಟು ಮೇಲಿನ ಹೆಡ್ಡರ್‌ನಿಂದ ಶಾಖೆಯನ್ನು ಆಯ್ಕೆ ಮಾಡಿ. ಪ್ರತಿ ಶಾಖೆಯು ತನ್ನದೇ ಆದ ದಾಖಲಾತಿ ಸೆಟ್ಟಿಂಗ್‌ಗಳು ಮತ್ತು ಅರ್ಜಿಗಳನ್ನು ಹೊಂದಿದೆ.
+                ??????????????????. ???????????????????????.
               </p>
               <p className="text-amber-600 dark:text-amber-400 text-sm mt-2">
                 Please select a branch from the header above. Each branch has its own admission settings and applications.
@@ -1460,7 +1460,7 @@ const OnlineAdmissionList = () => {
                       <p className="text-3xl font-bold text-green-600 dark:text-green-400">
                         {stats.total > 0 ? Math.round((stats.enrolled / stats.total) * 100) : 0}%
                       </p>
-                      <p className="text-xs text-green-500 dark:text-green-500 mt-1">Applications → Enrolled</p>
+                      <p className="text-xs text-green-500 dark:text-green-500 mt-1">Applications ? Enrolled</p>
                     </div>
                     <div className="p-5 bg-gradient-to-br from-blue-50 to-cyan-50 dark:from-blue-900/30 dark:to-cyan-900/30 rounded-xl border border-blue-200 dark:border-blue-700">
                       <div className="flex items-center gap-2 mb-2">
@@ -1622,7 +1622,7 @@ const OnlineAdmissionList = () => {
 
                 {/* Form Fees */}
                 <div className="space-y-2">
-                  <Label htmlFor="form_fees" className="font-medium dark:text-gray-200">Admission Form Fees (₹)</Label>
+                  <Label htmlFor="form_fees" className="font-medium dark:text-gray-200">Admission Form Fees (?)</Label>
                   <Input
                     id="form_fees"
                     type="number"

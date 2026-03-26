@@ -1,4 +1,4 @@
-﻿import { useState } from 'react';
+import { useState } from 'react';
 import { diagnoseSupabaseConnection } from '@/services/supabaseConnectionDiagnostic';
 import { retryConnection } from '@/services/safeRecoveryManager';
 

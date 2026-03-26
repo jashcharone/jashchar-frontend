@@ -45,7 +45,7 @@ const Template25_Infographic = ({ receiptData, copyType }) => {
         {[
           { icon: '👤', label: 'Student', value: student?.full_name || '-', bg: '#e3f2fd' },
           { icon: '📚', label: 'Class', value: `${student?.class?.name || '-'}${student?.section?.name ? ` (${student.section.name})` : ''}`, bg: '#e8f5e9' },
-          { icon: '🏷️', label: 'Adm No', value: student?.school_code || '-', bg: '#fff3e0' },
+          { icon: '🏷️', label: 'Enroll ID', value: student?.enrollment_id || '-', bg: '#fff3e0' },
           { icon: '💰', label: isRefund ? 'Refund' : 'This Payment', value: `₹${fmt(grandTotal)}`, bg: '#fce4ec' },
         ].map((card, i) => (
           <div key={i} style={{ flex: 1, backgroundColor: card.bg, borderRadius: '8px', padding: '5px 8px', textAlign: 'center' }}>

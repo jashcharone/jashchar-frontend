@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { supabase } from '@/lib/customSupabaseClient';
 import { useToast } from '@/components/ui/use-toast';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -57,7 +57,7 @@ const EnterMarksModal = ({ isOpen, onClose, exam, branchId }) => {
             const { data: assignedStudents, error: studentError } = await supabase
                 .from('exam_students')
                 .select(`
-                    student:student_profiles(id, full_name, roll_number, school_code, father_name)
+                    student:student_profiles(id, full_name, roll_number, enrollment_id, father_name)
                 `)
                 .eq('exam_id', exam.id);
 
@@ -125,14 +125,14 @@ const EnterMarksModal = ({ isOpen, onClose, exam, branchId }) => {
     const generateCSV = () => {
         if (!selectedSubject || students.length === 0) return;
         
-        const headers = ['Student ID', 'Admission No', 'Roll No', 'Name', 'Father Name', 'Marks', 'Absent (1=Yes, 0=No)', 'Note'];
+        const headers = ['Student ID', 'Enroll ID', 'Roll No', 'Name', 'Father Name', 'Marks', 'Absent (1=Yes, 0=No)', 'Note'];
         const csvContent = [
             headers.join(','),
             ...students.map(s => {
                 const m = marks[s.id] || {};
                 return [
                     s.id,
-                    s.school_code || '',
+                    s.enrollment_id || '',
                     s.roll_number || '',
                     `"${s.full_name}"`,
                     `"${s.father_name || ''}"`,
@@ -219,7 +219,7 @@ const EnterMarksModal = ({ isOpen, onClose, exam, branchId }) => {
                             <Table>
                                 <TableHeader>
                                     <TableRow>
-                                        <TableHead>Admission No</TableHead>
+                                        <TableHead>Enroll ID</TableHead>
                                         <TableHead>Roll No</TableHead>
                                         <TableHead>Student Name</TableHead>
                                         <TableHead>Father Name</TableHead>
@@ -233,7 +233,7 @@ const EnterMarksModal = ({ isOpen, onClose, exam, branchId }) => {
                                         const m = marks[student.id] || {};
                                         return (
                                             <TableRow key={student.id}>
-                                                <TableCell>{student.school_code}</TableCell>
+                                                <TableCell>{student.enrollment_id}</TableCell>
                                                 <TableCell>{student.roll_number}</TableCell>
                                                 <TableCell className="font-medium">{student.full_name}</TableCell>
                                                 <TableCell>{student.father_name}</TableCell>

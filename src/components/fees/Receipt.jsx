@@ -1,4 +1,4 @@
-﻿import React from 'react';
+import React from 'react';
 import { format } from 'date-fns';
 
 const Receipt = React.forwardRef(({ data, settings, currentDate }, ref) => {
@@ -18,7 +18,7 @@ const Receipt = React.forwardRef(({ data, settings, currentDate }, ref) => {
     const totalFees = 0; // Replace with actual total fees query
     const totalPaidPreviously = 0; // Replace with actual total paid query
     const totalDiscountPreviously = 0; // Replace with actual total discount query
-    // ✅ FIXED: Balance cannot be negative (cap at 0)
+    // ? FIXED: Balance cannot be negative (cap at 0)
     const newBalance = Math.max(0, totalFees - (totalPaidPreviously + totalAmountPaid) - (totalDiscountPreviously + totalDiscount));
 
 
@@ -70,7 +70,7 @@ const Receipt = React.forwardRef(({ data, settings, currentDate }, ref) => {
                 <section className="my-4 text-xs">
                     <div className="grid grid-cols-2 gap-x-8 gap-y-1">
                         <div><strong>Student Name:</strong> {student.full_name}</div>
-                        <div><strong>Admission No:</strong> {student.admission_no || student.school_code}</div>
+                        <div><strong>Enroll ID:</strong> {student.enrollment_id || student.enrollment_id}</div>
                         <div><strong>Father's Name:</strong> {student.father_name}</div>
                         <div><strong>Class:</strong> {student.class?.name || 'N/A'} ({student.section?.name || 'N/A'})</div>
                     </div>
@@ -84,7 +84,7 @@ const Receipt = React.forwardRef(({ data, settings, currentDate }, ref) => {
                             <tr className="border-b-2 border-gray-800">
                                 <th className="py-1">Sr. No.</th>
                                 <th className="py-1">Particulars</th>
-                                <th className="py-1 text-right">Amount (₹)</th>
+                                <th className="py-1 text-right">Amount (?)</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -107,11 +107,11 @@ const Receipt = React.forwardRef(({ data, settings, currentDate }, ref) => {
                              {payment.note && <p><strong>Note:</strong> {payment.note}</p>}
                         </div>
                         <div className="text-right">
-                            <p><strong>Amount Paid:</strong> ₹{totalAmountPaid.toFixed(2)}</p>
-                            <p><strong>Discount Given:</strong> ₹{totalDiscount.toFixed(2)}</p>
-                            <p><strong>Fine Paid:</strong> ₹{totalFine.toFixed(2)}</p>
+                            <p><strong>Amount Paid:</strong> ?{totalAmountPaid.toFixed(2)}</p>
+                            <p><strong>Discount Given:</strong> ?{totalDiscount.toFixed(2)}</p>
+                            <p><strong>Fine Paid:</strong> ?{totalFine.toFixed(2)}</p>
                             <hr className="my-1 border-gray-800" />
-                            <p className="font-bold text-sm"><strong>Grand Total:</strong> ₹{grandTotal.toFixed(2)}</p>
+                            <p className="font-bold text-sm"><strong>Grand Total:</strong> ?{grandTotal.toFixed(2)}</p>
                         </div>
                     </div>
                     

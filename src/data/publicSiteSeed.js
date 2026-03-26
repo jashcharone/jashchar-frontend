@@ -1,4 +1,4 @@
-﻿export const PUBLIC_SITE_SEED = {
+export const PUBLIC_SITE_SEED = {
   jashcharerp: {
     cms_url_alias: 'jashcharerp',
     is_frontend_enabled: true,

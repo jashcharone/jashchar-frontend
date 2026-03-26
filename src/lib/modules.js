@@ -1,4 +1,4 @@
-﻿import { Book, Building2, User, Users, Settings, Briefcase, GraduationCap, CreditCard, LayoutDashboard, MonitorPlay, BarChart, FileText, Newspaper, Mail, IndianRupee, List, Shield, SlidersHorizontal } from 'lucide-react';
+import { Book, Building2, User, Users, Settings, Briefcase, GraduationCap, CreditCard, LayoutDashboard, MonitorPlay, BarChart, FileText, Newspaper, Mail, IndianRupee, List, Shield, SlidersHorizontal } from 'lucide-react';
 
 const MasterAdminModules = [
   {

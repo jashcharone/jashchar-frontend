@@ -513,8 +513,8 @@ const PrintReceipt = () => {
       student = {
         full_name: snapshot.student.name || snapshot.student.full_name,
         father_name: snapshot.student.father_name,
-        admission_no: snapshot.student.admission_no,
-        school_code: snapshot.student.admission_no,
+        enrollment_id: snapshot.student.enrollment_id,
+        enrollment_id: snapshot.student.enrollment_id,
         class: { name: snapshot.student.class },
         section: { name: snapshot.student.section },
       };
@@ -1191,8 +1191,8 @@ const PrintReceipt = () => {
         student: {
           full_name: receiptData.student?.full_name,
           father_name: receiptData.student?.father_name,
-          school_code: receiptData.student?.school_code,
-          admission_no: receiptData.student?.admission_no,
+          enrollment_id: receiptData.student?.enrollment_id,
+          enrollment_id: receiptData.student?.enrollment_id,
           class_name: receiptData.student?.class?.name,
           section_name: receiptData.student?.section?.name,
         },

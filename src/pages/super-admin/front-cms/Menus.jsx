@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -436,7 +436,7 @@ const Menus = ({ branchId: propSchoolId }) => {
                                             <TableRow key={item.id}>
                                                 <TableCell className="font-medium">
                                                     <div style={{ paddingLeft: item.parent_id ? '20px' : '0' }}>
-                                                        {item.parent_id && <span className="text-gray-400 mr-2">▲</span>}
+                                                        {item.parent_id && <span className="text-gray-400 mr-2">?</span>}
                                                         {item.title}
                                                     </div>
                                                 </TableCell>

@@ -120,7 +120,7 @@ export default function CreateComplaint() {
                                 <SelectContent>
                                     {students.map(s => {
                                         const student = s.student || s;
-                                        return <SelectItem key={student.id} value={student.id}>{student.first_name} {student.last_name} ({student.admission_number})</SelectItem>;
+                                        return <SelectItem key={student.id} value={student.id}>{student.first_name} {student.last_name} ({student.enrollment_id})</SelectItem>;
                                     })}
                                 </SelectContent>
                             </Select>

@@ -1,4 +1,4 @@
-﻿import React from 'react';
+import React from 'react';
 import { useEnvStatus } from '@/contexts/EnvStatusContext';
 import { AlertOctagon, Settings } from 'lucide-react';
 import { Button } from '@/components/ui/button';

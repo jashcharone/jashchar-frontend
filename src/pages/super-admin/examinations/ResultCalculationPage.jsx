@@ -574,7 +574,7 @@ const ResultCalculationPage = () => {
                                             </TableHead>
                                             <TableHead>Rank</TableHead>
                                             <TableHead>Student</TableHead>
-                                            <TableHead>Admission No</TableHead>
+                                            <TableHead>Enroll ID</TableHead>
                                             <TableHead>Class</TableHead>
                                             <TableHead>Total</TableHead>
                                             <TableHead>Percentage</TableHead>
@@ -600,7 +600,7 @@ const ResultCalculationPage = () => {
                                                 <TableCell className="font-medium">
                                                     {result.students?.first_name} {result.students?.last_name}
                                                 </TableCell>
-                                                <TableCell>{result.students?.admission_no}</TableCell>
+                                                <TableCell>{result.students?.enrollment_id}</TableCell>
                                                 <TableCell>{result.classes?.name}</TableCell>
                                                 <TableCell>
                                                     {result.total_marks}/{result.max_marks}
@@ -652,7 +652,7 @@ const ResultCalculationPage = () => {
                             <DialogTitle>Result Details</DialogTitle>
                             <DialogDescription>
                                 {selectedStudent?.students?.first_name} {selectedStudent?.students?.last_name} 
-                                ({selectedStudent?.students?.admission_no})
+                                ({selectedStudent?.students?.enrollment_id})
                             </DialogDescription>
                         </DialogHeader>
                         <div className="space-y-4 py-4">

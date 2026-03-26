@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Universal Permission Wrapper for ALL Pages
  * Automatically adds permission checks to Edit/Delete/Add buttons
  * 

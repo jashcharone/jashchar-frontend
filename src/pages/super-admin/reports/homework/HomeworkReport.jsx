@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
 import DataTableExport from '@/components/DataTableExport';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
@@ -163,7 +163,7 @@ const HomeworkReport = () => {
       // 2. Fetch All Students in Class/Section (Base Data) - Filter by session
       let studentsQuery = supabase
         .from('student_profiles')
-        .select('id, full_name, school_code, phone, father_name, date_of_birth, gender')
+        .select('id, full_name, enrollment_id, phone, father_name, date_of_birth, gender')
         .eq('branch_id', branchId)
         .eq('class_id', filters.class_id)
         .eq('section_id', filters.section_id);

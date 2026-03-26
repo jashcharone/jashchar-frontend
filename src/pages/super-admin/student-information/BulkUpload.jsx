@@ -133,7 +133,7 @@ const findBestFieldMatch = (sourceColumn, targetFields, erpMappings) => {
 const ERP_FIELD_MAPPINGS = {
     // MCB ERP / Srishaileshwara Vidyakendra Format
     'MCB': {
-        'admission_no': ['Admission No/Reference code', 'Reference Code', 'Enrollment Code'],
+        'enrollment_id': ['Enroll ID/Reference code', 'Reference Code', 'Enrollment Code'],
         'first_name': ['Student Name', 'StudentName'],
         'date_of_birth': ['Date Of Birth', 'DOB', 'DateOfBirth'],
         'gender': ['Gender'],
@@ -158,7 +158,7 @@ const ERP_FIELD_MAPPINGS = {
         'mother_tongue': ['Mother Tongue'],
     },
     'Fedena': {
-        'admission_no': ['admission_no', 'admission_number', 'adm_no'],
+        'enrollment_id': ['enrollment_id', 'enrollment_id', 'adm_no'],
         'first_name': ['first_name', 'firstname', 'student_name'],
         'last_name': ['last_name', 'lastname', 'surname'],
         'date_of_birth': ['date_of_birth', 'dob', 'birth_date'],
@@ -179,7 +179,7 @@ const ERP_FIELD_MAPPINGS = {
         'previous_school': ['previous_school', 'prev_school', 'last_school'],
     },
     'Entab': {
-        'admission_no': ['AdmNo', 'AdmissionNo', 'StudentID'],
+        'enrollment_id': ['AdmNo', 'AdmissionNo', 'StudentID'],
         'first_name': ['FName', 'FirstName', 'StudentName'],
         'last_name': ['LName', 'LastName', 'Surname'],
         'date_of_birth': ['DOB', 'DateOfBirth', 'BirthDate'],
@@ -200,7 +200,7 @@ const ERP_FIELD_MAPPINGS = {
         'previous_school': ['PreviousSchool', 'LastSchool'],
     },
     'CampusCare': {
-        'admission_no': ['Reg_No', 'Registration_No', 'Student_ID'],
+        'enrollment_id': ['Reg_No', 'Registration_No', 'Student_ID'],
         'first_name': ['Student_First_Name', 'First_Name'],
         'last_name': ['Student_Last_Name', 'Last_Name'],
         'date_of_birth': ['Date_Of_Birth', 'DOB'],
@@ -217,8 +217,8 @@ const ERP_FIELD_MAPPINGS = {
     },
     'Generic': {
         // Admission & ID - Extended patterns
-        'admission_no': [
-            'admission_no', 'admission_number', 'adm_no', 'reg_no', 'registration', 'student_id', 
+        'enrollment_id': [
+            'enrollment_id', 'enrollment_id', 'adm_no', 'reg_no', 'registration', 'student_id', 
             'roll_no', 'id', 'admission no', 'admno', 'admission', 'adm no', 'admn no', 'admn_no',
             'registration_no', 'registration no', 'enroll_no', 'enrollment_no', 'sr no', 'sr_no',
             'admission number', 'student code', 'studentid', 'student_code', 'gr no', 'gr_no',
@@ -393,7 +393,7 @@ const ERP_FIELD_MAPPINGS = {
 // Target fields for Jashchar ERP student_profiles table
 const TARGET_FIELDS = [
     // --- Identifiers ---
-    { key: 'admission_no', label: 'Admission No', required: false, type: 'text' },
+    { key: 'enrollment_id', label: 'Enroll ID', required: false, type: 'text' },
     { key: 'roll_number', label: 'Roll Number', required: false, type: 'text' },
     
     // --- Basic Info ---
@@ -620,8 +620,8 @@ const SmartSanitizer = {
         return String(val).trim().replace(/\s+/g, ' ');
     },
     
-    // Admission Number Sanitizer
-    admissionNo: (val) => {
+    // Enrollment ID Sanitizer
+    enrollmentId: (val) => {
         if (!val) return '';
         return String(val).trim().replace(/\s/g, '').toUpperCase();
     }
@@ -801,7 +801,7 @@ const BulkUpload = () => {
     // ═══════════════════════════════════════════════════════════════════════════
     const downloadTemplate = () => {
         const templateData = [{
-            'Admission No': 'Leave blank for auto-generate',
+            'Enroll ID': 'Leave blank for auto-generate',
             'Roll Number': 'Leave blank for auto-generate',
             'First Name *': 'John',
             'Last Name': 'Doe',
@@ -1124,13 +1124,13 @@ const BulkUpload = () => {
         const dupes = [];
         
         // Fetch existing admission numbers for duplicate check
-        // Note: In student_profiles, admission_no is stored as 'school_code'
+        // Note: In student_profiles, enrollment_id is stored as 'enrollment_id'
         const { data: existingStudents } = await supabase
             .from('student_profiles')
-            .select('school_code, aadhar_no, email, phone')
+            .select('enrollment_id, aadhar_no, email, phone')
             .eq('branch_id', branchId);
         
-        const existingAdmNos = new Set(existingStudents?.map(s => s.school_code?.toLowerCase()).filter(Boolean) || []);
+        const existingAdmNos = new Set(existingStudents?.map(s => s.enrollment_id?.toLowerCase()).filter(Boolean) || []);
         const existingAadhars = new Set(existingStudents?.map(s => s.aadhar_no?.replace(/\s/g, '')).filter(Boolean) || []);
         const existingEmails = new Set(existingStudents?.map(s => s.email?.toLowerCase()).filter(Boolean) || []);
         
@@ -1208,8 +1208,8 @@ const BulkUpload = () => {
                         value = SmartSanitizer.pincode(value);
                         break;
                         
-                    case 'admission_no':
-                        value = SmartSanitizer.admissionNo(value);
+                    case 'enrollment_id':
+                        value = SmartSanitizer.enrollmentId(value);
                         break;
                         
                     case 'date_of_birth':
@@ -1257,12 +1257,12 @@ const BulkUpload = () => {
             
             // Duplicate checks
             const isDuplicate = {
-                admission_no: record.admission_no && existingAdmNos.has(record.admission_no.toLowerCase()),
+                enrollment_id: record.enrollment_id && existingAdmNos.has(record.enrollment_id.toLowerCase()),
                 aadhar_no: record.aadhar_no && existingAadhars.has(record.aadhar_no),
                 email: record.email && existingEmails.has(record.email.toLowerCase()),
             };
             
-            if (isDuplicate.admission_no || isDuplicate.aadhar_no || isDuplicate.email) {
+            if (isDuplicate.enrollment_id || isDuplicate.aadhar_no || isDuplicate.email) {
                 dupes.push({
                     row: rowNum,
                     name: `${record.first_name || ''} ${record.last_name || ''}`.trim(),
@@ -1272,7 +1272,7 @@ const BulkUpload = () => {
             }
             
             record._errors = rowErrors;
-            record._isDuplicate = isDuplicate.admission_no || isDuplicate.aadhar_no || isDuplicate.email;
+            record._isDuplicate = isDuplicate.enrollment_id || isDuplicate.aadhar_no || isDuplicate.email;
             
             if (rowErrors.length > 0) {
                 errors.push({ row: rowNum, name: `${record.first_name || ''} ${record.last_name || ''}`.trim(), errors: rowErrors });
@@ -1344,17 +1344,17 @@ const BulkUpload = () => {
             if (result.success) {
                 // Apply offset to the returned admission number for bulk uniqueness
                 if (offset > 0) {
-                    const parts = result.admissionNumber.split('-');
+                    const parts = result.enrollmentId.split('-');
                     if (parts.length === 3) {
                         const baseNum = parseInt(parts[2], 10);
                         parts[2] = String(baseNum + offset).padStart(parts[2].length, '0');
                         const offsetAdmNo = parts.join('-');
-                        console.log(`[BulkUpload] 🌟 Global Unique Admission Number: ${offsetAdmNo} (offset: ${offset})`);
+                        console.log(`[BulkUpload] 🌟 Global Unique Enrollment ID: ${offsetAdmNo} (offset: ${offset})`);
                         return offsetAdmNo;
                     }
                 }
-                console.log(`[BulkUpload] 🌟 Global Unique Admission Number: ${result.admissionNumber}`);
-                return result.admissionNumber;
+                console.log(`[BulkUpload] 🌟 Global Unique Enrollment ID: ${result.enrollmentId}`);
+                return result.enrollmentId;
             }
         } catch (error) {
             console.warn('[BulkUpload] Backend API failed, using local generation:', error.message);
@@ -1368,12 +1368,12 @@ const BulkUpload = () => {
         // Get branch settings for prefix and digit
         const { data: branchSettings } = await supabase
             .from('branches')
-            .select('student_admission_no_prefix, student_admission_no_digit')
+            .select('student_enrollment_id_prefix, student_enrollment_id_digit')
             .eq('id', branchIdParam)
             .single();
         
-        const prefix = (branchSettings?.student_admission_no_prefix ?? 'STU').trim();
-        const digit = Number(branchSettings?.student_admission_no_digit) || 5;
+        const prefix = (branchSettings?.student_enrollment_id_prefix ?? 'STU').trim();
+        const digit = Number(branchSettings?.student_enrollment_id_digit) || 5;
         
         // 🌟 Use session year format (e.g., "2026-2027" → "2026/27")
         let sessionYear;
@@ -1393,14 +1393,14 @@ const BulkUpload = () => {
         // 🌟 Query GLOBALLY for the prefix-year combination (same as StudentAdmission.jsx)
         const { data } = await supabase
             .from('student_profiles')
-            .select('school_code')
-            .like('school_code', `${yearPrefix}%`)
-            .order('school_code', { ascending: false })
+            .select('enrollment_id')
+            .like('enrollment_id', `${yearPrefix}%`)
+            .order('enrollment_id', { ascending: false })
             .limit(1);
         
         let nextNumber = 1;
-        if (data && data.length > 0 && data[0].school_code) {
-            const latestCode = data[0].school_code;
+        if (data && data.length > 0 && data[0].enrollment_id) {
+            const latestCode = data[0].enrollment_id;
             const parts = latestCode.split('-');
             if (parts.length === 3) {
                 const sequenceNum = parseInt(parts[2], 10);
@@ -1414,7 +1414,7 @@ const BulkUpload = () => {
         nextNumber += offset;
         
         const newId = `${yearPrefix}${String(nextNumber).padStart(digit, '0')}`;
-        console.log(`[BulkUpload] Local Generated Admission No: ${newId}`);
+        console.log(`[BulkUpload] Local Generated Enroll ID: ${newId}`);
         return newId;
     };
     
@@ -1474,7 +1474,7 @@ const BulkUpload = () => {
         const generatedRollNos = [];
         
         if (autoGenerateAdmissionNo) {
-            toast({ title: '🔄 Generating Admission Numbers...', description: `Creating ${total} globally unique IDs` });
+            toast({ title: '🔄 Generating Enrollment IDs...', description: `Creating ${total} globally unique IDs` });
             // 🌟 FIX: Call API once to get base number, then apply offset for each record
             // This prevents all records from getting the same admission number
             const baseAdmNo = await generateNextAdmissionNo(branchId, 0);
@@ -1650,8 +1650,8 @@ const BulkUpload = () => {
                 }
 
                 // Build student data - CRITICAL: Include organization_id, branch_id, session_id (PROJECT MANIFESTO)
-                // 🌟 Use pre-generated admission_no and roll_number (same format as StudentAdmission.jsx)
-                const admissionNo = autoGenerateAdmissionNo ? generatedAdmissionNos[i] : (record.admission_no || null);
+                // 🌟 Use pre-generated enrollment_id and roll_number (same format as StudentAdmission.jsx)
+                const enrollmentId = autoGenerateAdmissionNo ? generatedAdmissionNos[i] : (record.enrollment_id || null);
                 const rollNumber = autoGenerateRollNo ? generatedRollNos[i] : (record.roll_number || null);
                 
                 const studentData = {
@@ -1667,9 +1667,9 @@ const BulkUpload = () => {
                     section_id: selectedSection,
                     session_id: selectedSession,
                     
-                    // 🌟 school_code = admission_no (as per StudentAdmission.jsx)
+                    // 🌟 enrollment_id = enrollment_id (as per StudentAdmission.jsx)
                     // NOTE: username column removed - doesn't exist in student_profiles table (only used in auth.users)
-                    school_code: admissionNo,
+                    enrollment_id: enrollmentId,
                     roll_number: rollNumber,
                     
                     // Basic Info
@@ -1911,7 +1911,7 @@ const BulkUpload = () => {
                 results.successRecords.push({
                     row: record._rowNum,
                     name: `${record.first_name} ${record.last_name || ''}`.trim(),
-                    admission_no: admissionNo || studentData.school_code,
+                    enrollment_id: enrollmentId || studentData.enrollment_id,
                     roll_number: rollNumber || studentData.roll_number
                 });
                 
@@ -1963,7 +1963,7 @@ const BulkUpload = () => {
         const ws = XLSX.utils.json_to_sheet(uploadResults.successRecords.map(r => ({
             'Row': r.row,
             'Name': r.name,
-            'Admission No': r.admission_no,
+            'Enroll ID': r.enrollment_id,
             'Roll Number': r.roll_number,
             'Status': 'Uploaded'
         })));
@@ -2100,7 +2100,7 @@ const BulkUpload = () => {
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <div className="flex items-center justify-between p-3 bg-card rounded-lg border">
                                         <div>
-                                            <Label className="font-medium">Auto-generate Admission No</Label>
+                                            <Label className="font-medium">Auto-generate Enroll ID</Label>
                                             <p className="text-xs text-muted-foreground">Like Student Admission (ignore Excel)</p>
                                         </div>
                                         <Switch checked={autoGenerateAdmissionNo} onCheckedChange={setAutoGenerateAdmissionNo} />
@@ -2726,7 +2726,7 @@ const BulkUpload = () => {
                                                 <TableRow>
                                                     <TableHead className="w-16">Row</TableHead>
                                                     <TableHead>Name</TableHead>
-                                                    <TableHead>Admission No</TableHead>
+                                                    <TableHead>Enroll ID</TableHead>
                                                     <TableHead>Roll No</TableHead>
                                                 </TableRow>
                                             </TableHeader>
@@ -2735,7 +2735,7 @@ const BulkUpload = () => {
                                                     <TableRow key={idx}>
                                                         <TableCell className="font-mono">{rec.row}</TableCell>
                                                         <TableCell>{rec.name}</TableCell>
-                                                        <TableCell className="font-mono">{rec.admission_no}</TableCell>
+                                                        <TableCell className="font-mono">{rec.enrollment_id}</TableCell>
                                                         <TableCell>{rec.roll_number}</TableCell>
                                                     </TableRow>
                                                 ))}

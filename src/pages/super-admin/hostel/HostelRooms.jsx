@@ -1,4 +1,4 @@
-ï»¿import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import DashboardLayout from '@/components/DashboardLayout';
 import { supabase } from '@/lib/customSupabaseClient';
@@ -381,7 +381,7 @@ const HostelRooms = () => {
                           <TableCell>{room.hostels?.name || '-'}</TableCell>
                           <TableCell>{room.hostel_room_types?.name || '-'}</TableCell>
                           <TableCell className="text-center">{room.num_of_beds || '-'}</TableCell>
-                          <TableCell className="text-right">â‚¹{room.cost_per_bed || '-'}</TableCell>
+                          <TableCell className="text-right">?{room.cost_per_bed || '-'}</TableCell>
                           <TableCell className="text-center space-x-2">
                             <Button 
                               variant="outline" 
@@ -444,7 +444,7 @@ const HostelRooms = () => {
                       onClick={() => setCurrentPage(1)} 
                       disabled={currentPage === 1}
                     >
-                      Â«
+                      «
                     </Button>
                     <Button 
                       variant="outline" 
@@ -452,7 +452,7 @@ const HostelRooms = () => {
                       onClick={() => setCurrentPage(p => Math.max(1, p - 1))} 
                       disabled={currentPage === 1}
                     >
-                      â€¹
+                      ‹
                     </Button>
                     <span className="px-3 py-1 text-sm">
                       Page {currentPage} of {totalPages || 1}
@@ -463,7 +463,7 @@ const HostelRooms = () => {
                       onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} 
                       disabled={currentPage >= totalPages}
                     >
-                      â€º
+                      ›
                     </Button>
                     <Button 
                       variant="outline" 
@@ -471,7 +471,7 @@ const HostelRooms = () => {
                       onClick={() => setCurrentPage(totalPages)} 
                       disabled={currentPage >= totalPages}
                     >
-                      Â»
+                      »
                     </Button>
                   </div>
                 </div>

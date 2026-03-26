@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
 import { supabase } from '@/lib/customSupabaseClient';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
@@ -163,7 +163,7 @@ const EmployeeDocuments = () => {
                                         <div className="bg-blue-100 p-2 rounded-lg"><FileText className="h-6 w-6 text-blue-600" /></div>
                                         <div>
                                             <h4 className="font-bold">{doc.document_name}</h4>
-                                            <p className="text-xs text-muted-foreground">{doc.employee?.full_name} • {doc.document_type}</p>
+                                            <p className="text-xs text-muted-foreground">{doc.employee?.full_name} � {doc.document_type}</p>
                                             {doc.expiry_date && <p className="text-xs text-red-500 mt-1">Expires: {doc.expiry_date}</p>}
                                         </div>
                                     </div>

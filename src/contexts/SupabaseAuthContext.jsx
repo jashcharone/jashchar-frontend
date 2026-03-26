@@ -1,4 +1,4 @@
-﻿import React, { createContext, useContext, useEffect, useState, useCallback, useMemo, useRef } from 'react';
+import React, { createContext, useContext, useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/lib/customSupabaseClient';
 import { useToast } from '@/components/ui/use-toast';
@@ -23,7 +23,7 @@ export const AuthProvider = ({ children }) => {
   const navigate = useNavigate();
   const { toast } = useToast();
   
-  // ✅ FIX: Use ref for toast to prevent callback recreation
+  // ? FIX: Use ref for toast to prevent callback recreation
   const toastRef = useRef(toast);
   toastRef.current = toast;
 
@@ -37,7 +37,7 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const userIdRef = useRef(null);
   
-  // ✅ FIX: Track if initial load is done to prevent unnecessary refetches
+  // ? FIX: Track if initial load is done to prevent unnecessary refetches
   const initialLoadDoneRef = useRef(false);
 
   // Optimized Session Handling
@@ -53,7 +53,7 @@ export const AuthProvider = ({ children }) => {
       return;
     }
 
-    // ✅ FIX: Skip refetch if same user and initial load already done
+    // ? FIX: Skip refetch if same user and initial load already done
     // This prevents re-fetching when tab is switched or token is silently refreshed
     if (userIdRef.current === currentSession.user.id && initialLoadDoneRef.current) {
       // Just update the session token without re-fetching all data
@@ -82,10 +82,10 @@ export const AuthProvider = ({ children }) => {
         /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(metaSchoolId);
 
       // 1. Define Promises - PRIORITY-BASED PROFILE FETCHING
-      // ⚠️ CRITICAL: Use priority order, NOT race condition (Promise.any)
+      // ?? CRITICAL: Use priority order, NOT race condition (Promise.any)
       // Priority: 
-      //   1. metadata.role === 'master_admin' → check master_admin_profiles ONLY
-      //   2. Otherwise → school_owner_profiles > employee_profiles > profiles
+      //   1. metadata.role === 'master_admin' ? check master_admin_profiles ONLY
+      //   2. Otherwise ? school_owner_profiles > employee_profiles > profiles
       // This prevents super_admin users from accidentally getting master_admin sidebar
       
       const metadataRole = currentUser.user_metadata?.role?.toLowerCase();
@@ -239,7 +239,7 @@ export const AuthProvider = ({ children }) => {
           }
         }
 
-        // ✅ Fallback for School Owners: If branch_id is missing in profile, try finding school by owner_user_id
+        // ? Fallback for School Owners: If branch_id is missing in profile, try finding school by owner_user_id
         if (!finalSchool && profile.type === 'owner') {
            const { data } = await supabase.from('schools').select('*').eq('owner_user_id', userId).maybeSingle();
            if (data) {
@@ -264,7 +264,7 @@ export const AuthProvider = ({ children }) => {
            }
         }
 
-        // ✅ NEW: Fallback via branch_users table - Most reliable source
+        // ? NEW: Fallback via branch_users table - Most reliable source
         // If we still don't have a school, check branch_users for any linked school
         if (!finalSchool) {
            console.log('[AuthContext] No school found yet, checking branch_users table...');
@@ -305,7 +305,7 @@ export const AuthProvider = ({ children }) => {
            }
         }
 
-        // ✅ NEW FALLBACK: Check employee_profiles for staff users
+        // ? NEW FALLBACK: Check employee_profiles for staff users
         // If we still don't have a school, check employee_profiles.branch_id
         if (!finalSchool) {
            console.log('[AuthContext] No school found yet, checking employee_profiles table...');
@@ -346,7 +346,7 @@ export const AuthProvider = ({ children }) => {
            }
         }
         
-        // ✅ Check School Status - Block access if school is inactive (except Master Admin)
+        // ? Check School Status - Block access if school is inactive (except Master Admin)
         if (finalSchool && finalSchool.status === 'Inactive' && finalUser.role !== 'master_admin') {
           console.warn('[Auth] School is inactive, signing out user');
           await supabase.auth.signOut();
@@ -375,7 +375,7 @@ export const AuthProvider = ({ children }) => {
       setSchool(finalSchool);
       setSessionList(sessions);
 
-      // ✅ CRITICAL FIX: Save organization_id to localStorage for API interceptor
+      // ? CRITICAL FIX: Save organization_id to localStorage for API interceptor
       if (finalSchool?.organization_id) {
         localStorage.setItem('selectedOrganizationId', finalSchool.organization_id);
         setOrganizationId(finalSchool.organization_id);
@@ -384,7 +384,7 @@ export const AuthProvider = ({ children }) => {
         setOrganizationId(null);
       }
 
-      // ✅ CRITICAL FIX FOR SCHOOL OWNERS / SUPER ADMINS
+      // ? CRITICAL FIX FOR SCHOOL OWNERS / SUPER ADMINS
       // Ensure the 'selectedSchoolId' in localStorage helps API calls
       // BUT override it if the user is an owner and the retrieved school is different
       if (finalSchool?.id) {
@@ -419,7 +419,7 @@ export const AuthProvider = ({ children }) => {
         setCurrentSessionName(activeSession?.name || '');
       }
       
-      // ✅ FIX: Mark initial load as done to prevent unnecessary refetches
+      // ? FIX: Mark initial load as done to prevent unnecessary refetches
       initialLoadDoneRef.current = true;
 
     } catch (error) {
@@ -432,7 +432,7 @@ export const AuthProvider = ({ children }) => {
     } finally {
       setLoading(false);
     }
-  }, []); // ✅ FIX: Empty dependency array - toast is now accessed via ref
+  }, []); // ? FIX: Empty dependency array - toast is now accessed via ref
 
   useEffect(() => {
     // Initial Session Check
@@ -457,12 +457,12 @@ export const AuthProvider = ({ children }) => {
 
   /**
    * UNIFIED SIGN IN
-   * ═══════════════════════════════════════════════════════════════
+   * ---------------------------------------------------------------
    * Handles all user types with cascading auth:
    * - Student: Admission number only
    * - Parent: Mobile (primary) OR Email (secondary)
    * - Staff/Admin/Teacher: Email (primary) OR Mobile (secondary)
-   * ═══════════════════════════════════════════════════════════════
+   * ---------------------------------------------------------------
    */
   const signIn = useCallback(async (identifier, password, rememberMe = true) => {
     console.log('[SignIn] Starting unified login for:', identifier);

@@ -1,4 +1,4 @@
-﻿import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Building, User, Save, Loader2, CheckCircle, XCircle, AlertCircle, MapPin, Shield, GitBranch, RefreshCw } from 'lucide-react';
 import DashboardLayout from '@/components/DashboardLayout';
@@ -355,7 +355,7 @@ const CreateOrganization = () => {
               </div>
             </div>
             <p className="text-xs text-muted-foreground mt-2">
-              ✓ Globally unique across all organizations | ✓ Year changes automatically | ✓ No duplicates possible
+              ? Globally unique across all organizations | ? Year changes automatically | ? No duplicates possible
             </p>
           </div>
 

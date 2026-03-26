@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRegisterSW } from 'virtual:pwa-register/react';
 import { Button } from '@/components/ui/button';
 import {
@@ -13,10 +13,10 @@ import {
 import { Download, X, Share } from 'lucide-react';
 import { useToast } from './ui/use-toast';
 
-// ✅ Capture the event globally to ensure we don't miss it
+// ? Capture the event globally to ensure we don't miss it
 window.addEventListener('beforeinstallprompt', (e) => {
   e.preventDefault();
-  window.pwaInstallPrompt = e; // ✅ Make it globally accessible
+  window.pwaInstallPrompt = e; // ? Make it globally accessible
   window.dispatchEvent(new Event('pwa-install-available'));
 });
 

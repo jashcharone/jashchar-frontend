@@ -252,7 +252,7 @@ const NotificationLogTable = ({ logs, loading }) => {
                                 </Avatar>
                                 <div>
                                     <p className="font-medium text-sm">{log.students?.full_name}</p>
-                                    <p className="text-xs text-muted-foreground">{log.students?.admission_number}</p>
+                                    <p className="text-xs text-muted-foreground">{log.students?.enrollment_id}</p>
                                 </div>
                             </div>
                         </TableCell>
@@ -380,7 +380,7 @@ const AttendanceNotificationSettings = () => {
                     channels: ['sms', 'push'],
                     status: 'sent',
                     sent_at: new Date().toISOString(),
-                    students: { full_name: 'Rahul Kumar', admission_number: 'ADM001' }
+                    students: { full_name: 'Rahul Kumar', enrollment_id: 'ADM001' }
                 },
                 {
                     id: 2,
@@ -388,7 +388,7 @@ const AttendanceNotificationSettings = () => {
                     channels: ['sms', 'whatsapp'],
                     status: 'sent',
                     sent_at: new Date(Date.now() - 3600000).toISOString(),
-                    students: { full_name: 'Priya Sharma', admission_number: 'ADM002' }
+                    students: { full_name: 'Priya Sharma', enrollment_id: 'ADM002' }
                 }
             ]);
         } finally {

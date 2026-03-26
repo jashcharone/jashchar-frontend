@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Employee Loans Management
  * Using employee_loans table
  */

@@ -61,7 +61,7 @@ const OnlinePayment = () => {
                 .from('fees_collection')
                 .select(`
                     *,
-                    student:student_id(id, first_name, last_name, school_code),
+                    student:student_id(id, first_name, last_name, enrollment_id),
                     fee_master:fee_master_id(id, name, amount)
                 `)
                 .eq('branch_id', branchId)
@@ -115,7 +115,7 @@ const OnlinePayment = () => {
         const matchesSearch = !searchTerm || 
             p.student?.first_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
             p.student?.last_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            p.student?.school_code?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            p.student?.enrollment_id?.toLowerCase().includes(searchTerm.toLowerCase()) ||
             p.transaction_id?.toLowerCase().includes(searchTerm.toLowerCase());
         
         const matchesStatus = statusFilter === 'all' || 
@@ -288,7 +288,7 @@ const OnlinePayment = () => {
                                                             {payment.student?.first_name} {payment.student?.last_name}
                                                         </p>
                                                         <p className="text-xs text-muted-foreground">
-                                                            {payment.student?.school_code}
+                                                            {payment.student?.enrollment_id}
                                                         </p>
                                                     </div>
                                                 </td>
@@ -351,8 +351,8 @@ const OnlinePayment = () => {
                                         </p>
                                     </div>
                                     <div>
-                                        <p className="text-sm text-muted-foreground">Admission No</p>
-                                        <p>{selectedPayment.student?.school_code || 'N/A'}</p>
+                                        <p className="text-sm text-muted-foreground">Enroll ID</p>
+                                        <p>{selectedPayment.student?.enrollment_id || 'N/A'}</p>
                                     </div>
                                     <div>
                                         <p className="text-sm text-muted-foreground">Fee Type</p>

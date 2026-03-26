@@ -215,7 +215,7 @@ const MessAttendance = () => {
                   <TableRow>
                     <TableHead className="w-8">#</TableHead>
                     <TableHead>Student</TableHead>
-                    <TableHead>Admission No</TableHead>
+                    <TableHead>Enroll ID</TableHead>
                     <TableHead>Room</TableHead>
                     <TableHead className="text-center">Present</TableHead>
                   </TableRow>
@@ -224,7 +224,7 @@ const MessAttendance = () => {
                   {students.map((s, idx) => {
                     const sid = s.student_id || s.student?.id;
                     const studentName = s.student ? `${s.student.first_name || ''} ${s.student.last_name || ''}`.trim() : (s.student_name || 'Unknown');
-                    const admNo = s.student?.admission_number || s.admission_number || '-';
+                    const admNo = s.student?.enrollment_id || s.enrollment_id || '-';
                     const room = s.room_number || s.room?.room_number || '-';
                     const status = attendance[sid];
 

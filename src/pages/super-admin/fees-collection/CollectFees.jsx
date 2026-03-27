@@ -200,7 +200,9 @@ const CollectFees = () => {
             if (dateRange.from) query = query.gte('admission_date', dateRange.from);
             if (dateRange.to) query = query.lte('admission_date', dateRange.to);
 
-            const { data, error } = await query.order('full_name');
+            // IMPORTANT: Supabase default limit is 1000, so we need to fetch all students
+            // Using range(0, 9999) to get up to 10000 students
+            const { data, error } = await query.order('full_name').range(0, 9999);
 
             if (error) throw error;
             
@@ -414,20 +416,30 @@ const CollectFees = () => {
                 progressMap[id] = { total: 0, paid: 0, discount: 0, fine: 0, refunded: 0, balance: 0, progress: 0 };
             });
 
-            // Build sets of students who have hostel/transport in the unified ledger
-            // to avoid double counting with old tables
+            // ═══════════════════════════════════════════════════════════════════
+            // FEE ENGINE 3.0 PRIORITY: If student has data in student_fee_ledger,
+            // use ONLY that data. Skip old system (allocations/payments) completely.
+            // This prevents double-counting and ensures new system takes precedence.
+            // ═══════════════════════════════════════════════════════════════════
+            
+            // Build set of ALL students who have ANY data in student_fee_ledger
+            const studentsWithLedger = new Set();
             const studentsWithLedgerTransport = new Set();
             const studentsWithLedgerHostel = new Set();
             if (ledgerData.length > 0) {
                 ledgerData.forEach(entry => {
+                    studentsWithLedger.add(entry.student_id); // Mark student as using new system
                     if (entry.fee_source === 'transport') studentsWithLedgerTransport.add(entry.student_id);
                     if (entry.fee_source === 'hostel') studentsWithLedgerHostel.add(entry.student_id);
                 });
             }
 
-            // Add academic fee allocations
+            // Add academic fee allocations ONLY for students NOT in ledger (old system fallback)
             if (allocData.length > 0) {
                 allocData.forEach(alloc => {
+                    // SKIP if student uses new ledger system
+                    if (studentsWithLedger.has(alloc.student_id)) return;
+                    
                     const amount = parseFloat(alloc.fee_master?.amount || 0);
                     if (progressMap[alloc.student_id]) {
                         progressMap[alloc.student_id].total += amount;
@@ -435,9 +447,12 @@ const CollectFees = () => {
                 });
             }
 
-            // Add academic fee payments (with discount and fine)
+            // Add academic fee payments ONLY for students NOT in ledger (old system fallback)
             if (payData.length > 0) {
                 payData.forEach(pay => {
+                    // SKIP if student uses new ledger system
+                    if (studentsWithLedger.has(pay.student_id)) return;
+                    
                     if (progressMap[pay.student_id]) {
                         progressMap[pay.student_id].paid += parseFloat(pay.amount || 0);
                         progressMap[pay.student_id].discount += parseFloat(pay.discount_amount || 0);
@@ -449,7 +464,10 @@ const CollectFees = () => {
             // Add transport fees ONLY for students NOT in unified ledger (avoid double counting)
             if (transportData.length > 0) {
                 transportData.forEach(transport => {
-                    if (studentsWithLedgerTransport.has(transport.student_id)) return; // Skip - ledger handles this
+                    // Skip if student uses new ledger system (all fees are in ledger)
+                    if (studentsWithLedger.has(transport.student_id)) return;
+                    if (studentsWithLedgerTransport.has(transport.student_id)) return;
+                    
                     const fee = parseFloat(transport.transport_fee || 0);
                     const billingCycle = transport.billing_cycle || 'monthly';
                     let totalTransportFee = fee;
@@ -469,6 +487,7 @@ const CollectFees = () => {
             // Add transport fee payments ONLY for students NOT in unified ledger
             if (transportPayData.length > 0) {
                 transportPayData.forEach(pay => {
+                    if (studentsWithLedger.has(pay.student_id)) return;
                     if (studentsWithLedgerTransport.has(pay.student_id)) return;
                     if (progressMap[pay.student_id]) {
                         progressMap[pay.student_id].paid += parseFloat(pay.amount || 0);
@@ -481,7 +500,10 @@ const CollectFees = () => {
             // Add hostel fees ONLY for students NOT in unified ledger (avoid double counting)
             if (hostelData.length > 0) {
                 hostelData.forEach(hostel => {
-                    if (studentsWithLedgerHostel.has(hostel.student_id)) return; // Skip - ledger handles this
+                    // Skip if student uses new ledger system (all fees are in ledger)
+                    if (studentsWithLedger.has(hostel.student_id)) return;
+                    if (studentsWithLedgerHostel.has(hostel.student_id)) return;
+                    
                     const fee = parseFloat(hostel.hostel_fee || 0);
                     const billingCycle = hostel.billing_cycle || 'monthly';
                     let totalHostelFee = fee;
@@ -501,6 +523,7 @@ const CollectFees = () => {
             // Add hostel fee payments ONLY for students NOT in unified ledger
             if (hostelPayData.length > 0) {
                 hostelPayData.forEach(pay => {
+                    if (studentsWithLedger.has(pay.student_id)) return;
                     if (studentsWithLedgerHostel.has(pay.student_id)) return;
                     if (progressMap[pay.student_id]) {
                         progressMap[pay.student_id].paid += parseFloat(pay.amount || 0);

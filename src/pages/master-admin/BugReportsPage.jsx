@@ -58,15 +58,15 @@ const BugReportsPage = () => {
     const fetchReports = useCallback(async () => {
         setLoading(true);
         try {
-            // Fetch all errors, then filter for user reports
-            const allData = await errorLoggerService.getErrors({});
+            // Fetch user reports directly from server with source filter
+            const response = await errorLoggerService.getErrors({ 
+                source: 'user_report',
+                limit: 500 // Fetch more records
+            });
+            const allData = response?.data || response || [];
             
-            // Filter for user-submitted bug reports
-            const userReports = (allData || []).filter(e => 
-                e.source === 'user_report' || 
-                e.error_message?.startsWith('[USER REPORT]') ||
-                e.metadata?.isUserReport === true
-            );
+            // Ensure we have an array
+            const userReports = Array.isArray(allData) ? allData : [];
             
             // Apply local filters
             let filtered = userReports;

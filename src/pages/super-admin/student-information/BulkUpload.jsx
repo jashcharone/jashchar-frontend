@@ -137,6 +137,8 @@ const ERP_FIELD_MAPPINGS = {
         'first_name': ['Student Name', 'StudentName'],
         'date_of_birth': ['Date Of Birth', 'DOB', 'DateOfBirth'],
         'gender': ['Gender'],
+        'class_name': ['Class', 'class_name', 'ClassName'],
+        'section_name': ['Section', 'section', 'section_name', 'SectionName'],
         'father_name': ['Father Name', 'FatherName'],
         'father_phone': ['Father Mobile No', 'Father Mobile', 'FatherMobile'],
         'father_email': ['Father EmailID', 'Father Email'],
@@ -216,6 +218,16 @@ const ERP_FIELD_MAPPINGS = {
         'email': ['Student_Email', 'Email_ID'],
     },
     'Generic': {
+        // Class & Section - For multi-class upload
+        'class_name': [
+            'class_name', 'class', 'class name', 'classname', 'grade', 'standard', 'std',
+            'class/grade', 'grade/class', 'className', 'Class', 'Grade', 'ClassName'
+        ],
+        'section_name': [
+            'section_name', 'section', 'sec', 'section name', 'sectionname', 'div', 'division',
+            'Section', 'Sec', 'Division'
+        ],
+        
         // Admission & ID - Extended patterns
         'enrollment_id': [
             'enrollment_id', 'enrollment_id', 'adm_no', 'reg_no', 'registration', 'student_id', 
@@ -392,6 +404,10 @@ const ERP_FIELD_MAPPINGS = {
 
 // Target fields for Jashchar ERP student_profiles table
 const TARGET_FIELDS = [
+    // --- Class/Section (For Multi-Class Upload) ---
+    { key: 'class_name', label: 'Class Name (From Excel)', required: false, type: 'text' },
+    { key: 'section_name', label: 'Section (From Excel)', required: false, type: 'text' },
+    
     // --- Identifiers ---
     { key: 'enrollment_id', label: 'Enroll ID', required: false, type: 'text' },
     { key: 'roll_number', label: 'Roll Number', required: false, type: 'text' },
@@ -1446,9 +1462,30 @@ const BulkUpload = () => {
     // BULK UPLOAD EXECUTION
     // ═══════════════════════════════════════════════════════════════════════════
     const executeUpload = async () => {
-        if (!selectedClass || !selectedSection || !selectedSession) {
+        // Multi-class mode: class/section comes from Excel, only session required
+        const isMultiClassMode = selectedClass === 'ALL_CLASSES_FROM_EXCEL';
+        
+        if (!selectedSession) {
+            toast({ variant: 'destructive', title: 'Missing Selection', description: 'Please select Session.' });
+            return;
+        }
+        
+        if (!isMultiClassMode && (!selectedClass || !selectedSection)) {
             toast({ variant: 'destructive', title: 'Missing Selection', description: 'Please select Class, Section and Session.' });
             return;
+        }
+        
+        // For multi-class mode, validate that class_name column is mapped
+        if (isMultiClassMode) {
+            const hasClassNameMapping = Object.values(fieldMappings).includes('class_name');
+            if (!hasClassNameMapping) {
+                toast({ 
+                    variant: 'destructive', 
+                    title: 'Missing Class Mapping', 
+                    description: 'Multi-class mode requires "class_name" column to be mapped. Please map it in Step 4.' 
+                });
+                return;
+            }
         }
         
         setUploading(true);
@@ -1495,8 +1532,9 @@ const BulkUpload = () => {
             console.log(`[BulkUpload] ✅ Generated ${generatedAdmissionNos.length} admission numbers`);
         }
         
-        if (autoGenerateRollNo) {
+        if (autoGenerateRollNo && selectedClass !== 'ALL_CLASSES_FROM_EXCEL') {
             // Get base roll number and increment for each record
+            // NOTE: Only works for single-class mode. Multi-class mode uses Excel roll numbers.
             const baseRoll = await getNextRollNumber(branchId, selectedSession, selectedClass, selectedSection, 0);
             const baseNum = parseInt(baseRoll, 10);
             
@@ -1505,13 +1543,17 @@ const BulkUpload = () => {
                 generatedRollNos[i] = String(baseNum + i).padStart(2, '0');
             }
             console.log(`[BulkUpload] ✅ Generated roll numbers: ${generatedRollNos[0]} to ${generatedRollNos[total-1]}`);
+        } else if (selectedClass === 'ALL_CLASSES_FROM_EXCEL') {
+            // Multi-class mode: Use roll numbers from Excel
+            console.log(`[BulkUpload] ℹ️ Multi-class mode: Using roll numbers from Excel`);
         }
         
         // 🌟 PRE-FETCH FEE DATA - HYBRID: Check NEW architecture first, fallback to OLD
         let feeImportData = null;
         let usesNewArchitecture = false;
         
-        if (importFees) {
+        if (importFees && selectedClass !== 'ALL_CLASSES_FROM_EXCEL') {
+            // Fee import only supported in single-class mode
             const className = classes.find(c => c.id === selectedClass)?.name;
             if (className) {
                 console.log(`[Fee Import] 🔍 Checking architecture for class: "${className}" in session ${selectedSession}`);
@@ -1651,8 +1693,59 @@ const BulkUpload = () => {
 
                 // Build student data - CRITICAL: Include organization_id, branch_id, session_id (PROJECT MANIFESTO)
                 // 🌟 Use pre-generated enrollment_id and roll_number (same format as StudentAdmission.jsx)
+                const isMultiClassMode = selectedClass === 'ALL_CLASSES_FROM_EXCEL';
                 const enrollmentId = autoGenerateAdmissionNo ? generatedAdmissionNos[i] : (record.enrollment_id || null);
-                const rollNumber = autoGenerateRollNo ? generatedRollNos[i] : (record.roll_number || null);
+                // Multi-class mode: Always use Excel roll number (auto-generate disabled)
+                const rollNumber = (autoGenerateRollNo && !isMultiClassMode) 
+                    ? generatedRollNos[i] 
+                    : (record.roll_number || null);
+                
+                // 🌟 MULTI-CLASS UPLOAD: Determine class_id and section_id
+                let finalClassId = selectedClass;
+                let finalSectionId = selectedSection;
+                
+                if (selectedClass === 'ALL_CLASSES_FROM_EXCEL') {
+                    // Look up class_id from record.class_name
+                    const className = record.class_name?.trim();
+                    const matchedClass = classes.find(c => 
+                        c.name?.toLowerCase() === className?.toLowerCase() ||
+                        c.name?.toLowerCase().replace(/\s+/g, '') === className?.toLowerCase().replace(/\s+/g, '')
+                    );
+                    
+                    if (!matchedClass) {
+                        throw new Error(`Class "${className}" not found in branch. Please create it first.`);
+                    }
+                    finalClassId = matchedClass.id;
+                    
+                    // Look up section_id from record.section_name or default to first section
+                    const sectionName = record.section_name?.trim() || 'A';
+                    const { data: classSections } = await supabase
+                        .from('sections')
+                        .select('id, name')
+                        .eq('class_id', finalClassId);
+                    
+                    const matchedSection = classSections?.find(s => 
+                        s.name?.toLowerCase() === sectionName?.toLowerCase()
+                    ) || classSections?.[0];
+                    
+                    if (!matchedSection) {
+                        // Create default section if none exists
+                        const { data: newSection, error: secErr } = await supabase
+                            .from('sections')
+                            .insert([{ name: sectionName || 'A', class_id: finalClassId, branch_id: branchId }])
+                            .select('id')
+                            .single();
+                        
+                        if (secErr) {
+                            console.error('Section creation error:', secErr);
+                            finalSectionId = null;
+                        } else {
+                            finalSectionId = newSection.id;
+                        }
+                    } else {
+                        finalSectionId = matchedSection.id;
+                    }
+                }
                 
                 const studentData = {
                     // ✅ FIX: Generate UUID for id column (student_profiles.id has no default)
@@ -1662,9 +1755,9 @@ const BulkUpload = () => {
                     organization_id: organizationId,
                     branch_id: branchId,
                     
-                    // Academic
-                    class_id: selectedClass,
-                    section_id: selectedSection,
+                    // Academic - Use finalClassId/finalSectionId for multi-class support
+                    class_id: finalClassId,
+                    section_id: finalSectionId,
                     session_id: selectedSession,
                     
                     // 🌟 enrollment_id = enrollment_id (as per StudentAdmission.jsx)
@@ -2050,20 +2143,39 @@ const BulkUpload = () => {
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                 <div className="space-y-2">
                                     <Label className="font-semibold">Class <span className="text-red-500">*</span></Label>
-                                    <Select value={selectedClass} onValueChange={setSelectedClass}>
+                                    <Select value={selectedClass} onValueChange={(val) => {
+                                        setSelectedClass(val);
+                                        // If multi-class mode, auto-set section to ALL
+                                        if (val === 'ALL_CLASSES_FROM_EXCEL') {
+                                            setSelectedSection('ALL_SECTIONS_FROM_EXCEL');
+                                        } else {
+                                            setSelectedSection('');
+                                        }
+                                    }}>
                                         <SelectTrigger className="h-12">
                                             <SelectValue placeholder="Select Class" />
                                         </SelectTrigger>
                                         <SelectContent>
+                                            {/* Multi-Class Upload Option */}
+                                            <SelectItem value="ALL_CLASSES_FROM_EXCEL" className="border-b border-primary/30 font-semibold text-primary">
+                                                📊 All Classes (From Excel)
+                                            </SelectItem>
                                             {classes.map(c => (
                                                 <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
                                             ))}
                                         </SelectContent>
                                     </Select>
+                                    {selectedClass === 'ALL_CLASSES_FROM_EXCEL' && (
+                                        <p className="text-xs text-green-600 mt-1">✅ Excel ನಲ್ಲಿ class_name column ಇರಬೇಕು</p>
+                                    )}
                                 </div>
                                 <div className="space-y-2">
                                     <Label className="font-semibold">Section <span className="text-red-500">*</span></Label>
-                                    <Select value={selectedSection} onValueChange={setSelectedSection} disabled={!selectedClass}>
+                                    <Select 
+                                        value={selectedSection} 
+                                        onValueChange={setSelectedSection} 
+                                        disabled={!selectedClass || selectedClass === 'ALL_CLASSES_FROM_EXCEL'}
+                                    >
                                         <SelectTrigger className="h-12">
                                             <SelectValue placeholder="Select Section" />
                                         </SelectTrigger>
@@ -2137,6 +2249,11 @@ const BulkUpload = () => {
                             >
                                 Next: Upload File <ArrowRight className="h-4 w-4" />
                             </Button>
+                            {selectedClass === 'ALL_CLASSES_FROM_EXCEL' && (
+                                <p className="text-xs text-muted-foreground ml-4">
+                                    Multi-class upload enabled - Excel must have class_name column
+                                </p>
+                            )}
                         </CardFooter>
                     </Card>
                 )}

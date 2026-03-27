@@ -1442,6 +1442,8 @@ const StudentAdmission = () => {
       'username',           // Auto-set from enrollment_id (enrollment_id)
       'parent_username',    // Auto-set from father_phone
       'roll_number',        // Auto-generated from class/section
+      // Password fields - skip required validation when password auto-generation is enabled
+      ...(schoolSettings?.password_auto_generation ? ['password', 'retype_password', 'parent_password', 'parent_retype_password'] : [])
     ];
     
     // Photo fields - check file state instead of formData

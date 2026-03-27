@@ -132,11 +132,39 @@ const FeesGroup = () => {
             description: formData.description?.trim() || null,
         };
 
+        // Duplicate check: Prevent creating group with same name
+        let duplicateQuery = supabase
+            .from('fee_groups')
+            .select('id, name')
+            .eq('branch_id', selectedBranch.id)
+            .eq('session_id', currentSessionId)
+            .ilike('name', upsertData.name);
+        
+        // Exclude current record when editing
         if (isEditing && formData.id) {
-            upsertData.id = formData.id;
+            duplicateQuery = duplicateQuery.neq('id', formData.id);
+        }
+        
+        const { data: existingGroup } = await duplicateQuery.limit(1);
+        
+        if (existingGroup && existingGroup.length > 0) {
+            toast({ 
+                variant: 'destructive', 
+                title: 'Duplicate Fees Group!', 
+                description: `"${existingGroup[0].name}" already exists.` 
+            });
+            setIsSubmitting(false);
+            return;
         }
 
-        const { error } = await supabase.from('fee_groups').upsert(upsertData);
+        let error;
+        if (isEditing && formData.id) {
+            // Edit mode: update existing record
+            ({ error } = await supabase.from('fee_groups').update(upsertData).eq('id', formData.id));
+        } else {
+            // Create mode: insert new record
+            ({ error } = await supabase.from('fee_groups').insert(upsertData));
+        }
 
         if (error) {
             toast({ variant: 'destructive', title: 'Error saving fees group', description: error.message });

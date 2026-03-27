@@ -288,6 +288,31 @@ const FeeStructures = () => {
 
     setSaving(true);
 
+    // Duplicate check: Prevent creating structure with same name
+    let duplicateQuery = supabase
+      .from('fee_structures')
+      .select('id, name')
+      .eq('branch_id', selectedBranch.id)
+      .eq('session_id', currentSessionId)
+      .ilike('name', formData.name.trim());
+    
+    // Exclude current record when editing
+    if (isEditing && formData.id) {
+      duplicateQuery = duplicateQuery.neq('id', formData.id);
+    }
+    
+    const { data: existingStructure } = await duplicateQuery.limit(1);
+    
+    if (existingStructure && existingStructure.length > 0) {
+      toast({ 
+        variant: 'destructive', 
+        title: 'Duplicate Fee Structure!', 
+        description: `"${existingStructure[0].name}" already exists.` 
+      });
+      setSaving(false);
+      return;
+    }
+
     const totalAnnual = formComponents.reduce((sum, c) => sum + (parseFloat(c.amount) || 0), 0);
 
     const structurePayload = {

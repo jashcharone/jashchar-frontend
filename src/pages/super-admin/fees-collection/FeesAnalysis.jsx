@@ -87,11 +87,13 @@ const FeesAnalysis = () => {
   }, [branchId]);
 
   const fetchFeeTypes = useCallback(async () => {
-    if (!branchId) return;
+    if (!branchId || !currentSessionId) return;
     const { data } = await supabase.from('fee_types').select('id, name')
-      .eq('branch_id', branchId).order('name');
+      .eq('branch_id', branchId)
+      .eq('session_id', currentSessionId)
+      .order('name');
     setFeeTypes(data || []);
-  }, [branchId]);
+  }, [branchId, currentSessionId]);
 
   useEffect(() => { fetchClasses(); fetchFeeTypes(); }, [fetchClasses, fetchFeeTypes]);
 

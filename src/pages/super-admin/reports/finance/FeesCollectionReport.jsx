@@ -11,7 +11,7 @@ import { format } from 'date-fns';
 import DataTableExport from '@/components/DataTableExport';
 
 const FeesCollectionReport = () => {
-  const { school } = useAuth();
+  const { school, currentSessionId } = useAuth();
   const { toast } = useToast();
   const [classes, setClasses] = useState([]);
   const [sections, setSections] = useState([]);
@@ -65,7 +65,7 @@ const FeesCollectionReport = () => {
 
       const [classRes, feeTypeRes, collectorRes] = await Promise.all([
         supabase.from('classes').select('id, name').eq('branch_id', school.id),
-        supabase.from('fee_types').select('id, name').eq('branch_id', school.id),
+        supabase.from('fee_types').select('id, name').eq('branch_id', school.id).eq('session_id', currentSessionId),
         supabase.from('profiles').select('id, full_name').eq('branch_id', school.id).in('role_id', roleIds)
       ]);
 

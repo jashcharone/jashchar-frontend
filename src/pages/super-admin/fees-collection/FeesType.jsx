@@ -228,21 +228,55 @@ const FeesType = () => {
             description: formData.description?.trim() || null,
         };
 
-        // Duplicate check: Prevent creating fee type with same code or name
-        if (!isEditing || !formData.id) {
-            const { data: existing } = await supabase
-                .from('fee_types')
-                .select('id, name, code')
-                .eq('branch_id', selectedBranch.id)
-                .eq('session_id', currentSessionId)
-                .or(`code.eq.${upsertData.code},name.ilike.${upsertData.name}`)
-                .limit(1);
+        // Duplicate check: Prevent creating/updating fee type with same code or name
+        // Check for duplicate NAME (case-insensitive)
+        let nameQuery = supabase
+            .from('fee_types')
+            .select('id, name, code')
+            .eq('branch_id', selectedBranch.id)
+            .eq('session_id', currentSessionId)
+            .ilike('name', upsertData.name);
+        
+        // Exclude current record when editing
+        if (isEditing && formData.id) {
+            nameQuery = nameQuery.neq('id', formData.id);
+        }
+        
+        const { data: existingName } = await nameQuery.limit(1);
+        
+        if (existingName && existingName.length > 0) {
+            toast({ 
+                variant: 'destructive', 
+                title: 'Duplicate Fee Type Name!', 
+                description: `"${existingName[0].name}" already exists. Please use a different name.` 
+            });
+            setIsSubmitting(false);
+            return;
+        }
 
-            if (existing && existing.length > 0) {
-                toast({ variant: 'destructive', title: 'Duplicate Fee Type!', description: `"${existing[0].name}" (${existing[0].code}) already exists.` });
-                setIsSubmitting(false);
-                return;
-            }
+        // Check for duplicate CODE (case-insensitive)
+        let codeQuery = supabase
+            .from('fee_types')
+            .select('id, name, code')
+            .eq('branch_id', selectedBranch.id)
+            .eq('session_id', currentSessionId)
+            .ilike('code', upsertData.code);
+        
+        // Exclude current record when editing
+        if (isEditing && formData.id) {
+            codeQuery = codeQuery.neq('id', formData.id);
+        }
+        
+        const { data: existingCode } = await codeQuery.limit(1);
+        
+        if (existingCode && existingCode.length > 0) {
+            toast({ 
+                variant: 'destructive', 
+                title: 'Duplicate Fee Code!', 
+                description: `Code "${existingCode[0].code}" is already used by "${existingCode[0].name}". Please use a different code.` 
+            });
+            setIsSubmitting(false);
+            return;
         }
 
         let error;

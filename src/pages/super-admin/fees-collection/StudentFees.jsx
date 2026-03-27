@@ -980,13 +980,14 @@ const StudentFees = () => {
             await cancelLedgerRows('transport', null);
 
             if (feeVal > 0) {
-                // Lookup transport fee type ID dynamically
+                // Lookup transport fee type ID dynamically (code: TRANSPORT)
                 const { data: feeType } = await supabase
                     .from('fee_types')
                     .select('id')
                     .eq('branch_id', selectedBranch.id)
-                    .eq('code', 'transport-fee')
-                    .single();
+                    .eq('session_id', currentSessionId)
+                    .eq('code', 'TRANSPORT')
+                    .maybeSingle();
 
                 await writeFeesToLedger({
                     feeSource: 'transport',
@@ -1123,13 +1124,14 @@ const StudentFees = () => {
             await cancelLedgerRows('hostel', null);
 
             if (feeVal > 0) {
-                // Lookup hostel fee type ID dynamically
+                // Lookup hostel fee type ID dynamically (code: HOSTEL)
                 const { data: feeType } = await supabase
                     .from('fee_types')
                     .select('id')
                     .eq('branch_id', selectedBranch.id)
-                    .eq('code', 'hostel-fee')
-                    .single();
+                    .eq('session_id', currentSessionId)
+                    .eq('code', 'HOSTEL')
+                    .maybeSingle();
 
                 await writeFeesToLedger({
                     feeSource: 'hostel',

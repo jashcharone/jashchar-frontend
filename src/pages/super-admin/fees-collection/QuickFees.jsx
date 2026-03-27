@@ -464,6 +464,7 @@ const QuickFees = () => {
                 .from('fee_types')
                 .select('id')
                 .eq('branch_id', branchId)
+                .eq('session_id', currentSessionId)
                 .eq('code', inst.fee_code)
                 .maybeSingle();
                 
@@ -538,7 +539,7 @@ const QuickFees = () => {
             
             for (const inst of installments) {
                 // 2. Check if Fee Type exists or create it
-                 let { data: feeType, error: typeError } = await supabase.from('fee_types').select('id').eq('branch_id', branchId).eq('code', inst.fee_code).maybeSingle();
+                 let { data: feeType, error: typeError } = await supabase.from('fee_types').select('id').eq('branch_id', branchId).eq('session_id', currentSessionId).eq('code', inst.fee_code).maybeSingle();
                 if (typeError) throw typeError;
 
                 if (!feeType) {

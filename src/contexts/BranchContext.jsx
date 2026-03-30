@@ -68,23 +68,42 @@ export const BranchProvider = ({ children }) => {
       const savedBranchId = localStorage.getItem('selectedBranchId');
       const savedOrgId = localStorage.getItem('selectedOrganizationId');
       
-      // ? CRITICAL FIX: Validate organization_id match before using saved branch
-      // This prevents cross-org branch access when localStorage is stale
+      // ? CRITICAL FIX: Get current organization ID from multiple sources
       const currentOrgId = authSchool?.organization_id || user?.user_metadata?.organization_id;
       
-      // If organization changed, clear all branch selection data
+      // ? ROBUST FIX: Clear stale data if organization mismatch
       if (savedOrgId && currentOrgId && savedOrgId !== currentOrgId) {
-        console.log('[BranchContext] Organization changed! Clearing stale branch selection.');
+        console.log('[BranchContext] Organization changed! Clearing ALL stale selection data.');
         console.log('  Old Org:', savedOrgId);
         console.log('  New Org:', currentOrgId);
         localStorage.removeItem('selectedBranchId');
+        localStorage.setItem('selectedOrganizationId', currentOrgId);
+      }
+      
+      // Update org ID in localStorage
+      if (currentOrgId) {
+        localStorage.setItem('selectedOrganizationId', currentOrgId);
       }
       
       // CRITICAL FIX: Only use saved branch if it's in the user's available branches
       // This prevents cross-user branch access when localStorage is shared
-      const found = savedBranchId && savedBranchId !== 'all' 
-        ? availableBranches.find(b => b.id === savedBranchId) 
-        : null;
+      let found = null;
+      if (savedBranchId && savedBranchId !== 'all') {
+        found = availableBranches.find(b => b.id === savedBranchId);
+        
+        // ? EXTRA VALIDATION: Even if found, verify it belongs to current org
+        if (found && currentOrgId) {
+          const branchOrgId = found.organization_id;
+          if (branchOrgId && branchOrgId !== currentOrgId) {
+            console.log('[BranchContext] ? CROSS-ORG DETECTED! Saved branch belongs to different org.');
+            console.log('  Branch Org:', branchOrgId);
+            console.log('  Current Org:', currentOrgId);
+            console.log('  Clearing invalid branch selection...');
+            found = null;
+            localStorage.removeItem('selectedBranchId');
+          }
+        }
+      }
       
       if (found) {
         setSelectedBranch(found);

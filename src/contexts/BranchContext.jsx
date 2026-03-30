@@ -66,6 +66,19 @@ export const BranchProvider = ({ children }) => {
 
       // Restore selection or default to primary branch
       const savedBranchId = localStorage.getItem('selectedBranchId');
+      const savedOrgId = localStorage.getItem('selectedOrganizationId');
+      
+      // ? CRITICAL FIX: Validate organization_id match before using saved branch
+      // This prevents cross-org branch access when localStorage is stale
+      const currentOrgId = authSchool?.organization_id || user?.user_metadata?.organization_id;
+      
+      // If organization changed, clear all branch selection data
+      if (savedOrgId && currentOrgId && savedOrgId !== currentOrgId) {
+        console.log('[BranchContext] Organization changed! Clearing stale branch selection.');
+        console.log('  Old Org:', savedOrgId);
+        console.log('  New Org:', currentOrgId);
+        localStorage.removeItem('selectedBranchId');
+      }
       
       // CRITICAL FIX: Only use saved branch if it's in the user's available branches
       // This prevents cross-user branch access when localStorage is shared

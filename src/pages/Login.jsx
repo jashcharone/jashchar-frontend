@@ -586,7 +586,7 @@ const Login = () => {
                     type={showPassword ? "text" : "password"}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    placeholder="••••••••"
+                    placeholder="â—â—â—â—â—â—â—â—"
                     required
                   />
                   <button

@@ -88,9 +88,10 @@ const FeesAnalysis = () => {
 
   const fetchFeeTypes = useCallback(async () => {
     if (!branchId || !currentSessionId) return;
-    const { data } = await supabase.from('fee_types').select('id, name')
+    const { data } = await supabase.from('fee_types').select('id, name, is_active')
       .eq('branch_id', branchId)
       .eq('session_id', currentSessionId)
+      .eq('is_active', true)
       .order('name');
     setFeeTypes(data || []);
   }, [branchId, currentSessionId]);
@@ -119,15 +120,31 @@ const FeesAnalysis = () => {
     setLoading(true);
 
     try {
-      // === 1. GET ALL STUDENTS FOR THIS SESSION ===
-      let studentQuery = supabase.from('student_profiles')
-        .select('id, full_name, enrollment_id, class_id, classes!student_profiles_class_id_fkey(name), sections!student_profiles_section_id_fkey(name), father_name, phone, father_phone, mother_phone, guardian_name, guardian_phone')
-        .eq('branch_id', branchId)
-        .eq('session_id', selectedSessionId);
+      // === 1. GET ALL STUDENTS FOR THIS SESSION (with pagination to bypass 1000 row limit) ===
+      let allStudents = [];
+      const studentBatchSize = 1000;
+      let studentOffset = 0;
+      let hasMoreStudents = true;
       
-      if (selectedClass !== 'all') studentQuery = studentQuery.eq('class_id', selectedClass);
-      const { data: students } = await studentQuery;
-      const allStudents = students || [];
+      while (hasMoreStudents) {
+        let studentQuery = supabase.from('student_profiles')
+          .select('id, full_name, enrollment_id, class_id, classes!student_profiles_class_id_fkey(name), sections!student_profiles_section_id_fkey(name), father_name, phone, father_phone, mother_phone, guardian_name, guardian_phone')
+          .eq('branch_id', branchId)
+          .eq('session_id', selectedSessionId)
+          .range(studentOffset, studentOffset + studentBatchSize - 1);
+        
+        if (selectedClass !== 'all') studentQuery = studentQuery.eq('class_id', selectedClass);
+        const { data: students } = await studentQuery;
+        
+        if (students && students.length > 0) {
+          allStudents.push(...students);
+          studentOffset += studentBatchSize;
+          hasMoreStudents = students.length === studentBatchSize;
+        } else {
+          hasMoreStudents = false;
+        }
+      }
+      
       const studentIds = allStudents.map(s => s.id);
       const studentMap = {};
       allStudents.forEach(s => { studentMap[s.id] = s; });
@@ -182,17 +199,22 @@ const FeesAnalysis = () => {
       let allTransportPayments = [];
       for (let i = 0; i < studentIds.length; i += batchSize) {
         const batch = studentIds.slice(i, i + batchSize);
-        const [detRes, payRes] = await Promise.all([
-          supabase.from('student_transport_details')
-            .select('id, student_id, transport_fee')
-            .in('student_id', batch),
-          supabase.from('transport_fee_payments')
-            .select('id, student_id, amount, discount_amount, fine_paid, payment_mode, payment_date, created_at')
-            .in('student_id', batch)
-            .is('reverted_at', null)
-        ]);
-        if (detRes.data) allTransportDetails.push(...detRes.data);
-        if (payRes.data) allTransportPayments.push(...payRes.data);
+        try {
+          const [detRes, payRes] = await Promise.all([
+            supabase.from('student_transport_details')
+              .select('id, student_id, transport_fee')
+              .in('student_id', batch),
+            supabase.from('transport_fee_payments')
+              .select('id, student_id, amount, discount_amount, fine_paid, payment_mode, payment_date, created_at')
+              .in('student_id', batch)
+              .is('reverted_at', null)
+          ]);
+          if (detRes.data) allTransportDetails.push(...detRes.data);
+          if (payRes.data) allTransportPayments.push(...payRes.data);
+        } catch (transportErr) {
+          // Transport tables may not exist or RLS may block - continue gracefully
+          console.log('Transport fee data not available (table may not exist):', transportErr?.message);
+        }
       }
 
       // === 3C. FETCH HOSTEL FEE DATA ===
@@ -200,28 +222,38 @@ const FeesAnalysis = () => {
       let allHostelPayments = [];
       for (let i = 0; i < studentIds.length; i += batchSize) {
         const batch = studentIds.slice(i, i + batchSize);
-        const [detRes, payRes] = await Promise.all([
-          supabase.from('student_hostel_details')
-            .select('id, student_id, hostel_fee')
-            .in('student_id', batch),
-          supabase.from('hostel_fee_payments')
-            .select('id, student_id, amount, discount_amount, fine_paid, payment_mode, payment_date, created_at')
-            .in('student_id', batch)
-            .is('reverted_at', null)
-        ]);
-        if (detRes.data) allHostelDetails.push(...detRes.data);
-        if (payRes.data) allHostelPayments.push(...payRes.data);
+        try {
+          const [detRes, payRes] = await Promise.all([
+            supabase.from('student_hostel_details')
+              .select('id, student_id, hostel_fee')
+              .in('student_id', batch),
+            supabase.from('hostel_fee_payments')
+              .select('id, student_id, amount, discount_amount, fine_paid, payment_mode, payment_date, created_at')
+              .in('student_id', batch)
+              .is('reverted_at', null)
+          ]);
+          if (detRes.data) allHostelDetails.push(...detRes.data);
+          if (payRes.data) allHostelPayments.push(...payRes.data);
+        } catch (hostelErr) {
+          // Hostel tables may not exist or RLS may block - continue gracefully
+          console.log('Hostel fee data not available (table may not exist):', hostelErr?.message);
+        }
       }
 
       // === 3D. FETCH APPROVED REFUNDS ===
       let allRefunds = [];
       for (let i = 0; i < studentIds.length; i += batchSize) {
         const batch = studentIds.slice(i, i + batchSize);
-        const { data } = await supabase.from('fee_refunds')
-          .select('id, student_id, refund_amount, refund_type, status')
-          .in('student_id', batch)
-          .eq('status', 'approved');
-        if (data) allRefunds.push(...data);
+        try {
+          const { data, error } = await supabase.from('fee_refunds')
+            .select('id, student_id, refund_amount, refund_type, status')
+            .in('student_id', batch)
+            .eq('status', 'approved');
+          if (!error && data) allRefunds.push(...data);
+        } catch (refundErr) {
+          // fee_refunds table may not exist - continue gracefully
+          console.log('Fee refunds data not available (table may not exist):', refundErr?.message);
+        }
       }
 
       // === 4. COMPUTE OVERVIEW ===

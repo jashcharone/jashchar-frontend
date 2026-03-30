@@ -371,147 +371,40 @@ const StudentDetails = () => {
         return () => clearTimeout(timer);
     }, [filters.keyword]);
 
-    // Fetch fees progress for students
+    // Fetch fees progress for students from unified fee ledger
     const fetchFeesProgress = async (studentIds) => {
         try {
-            // Get allocations for students (correct table name: student_fee_allocations)
-            const { data: allocations } = await supabase
-                .from('student_fee_allocations')
-                .select(`
-                    id,
-                    student_id,
-                    fee_master:fee_masters(amount)
-                `)
-                .in('student_id', studentIds);
-            
-            // Get payments for students including discount and fine
-            const { data: payments } = await supabase
-                .from('fee_payments')
-                .select('student_id, amount, discount_amount, fine_paid')
+            // Get all fee ledger entries for students (includes academic, transport, hostel fees)
+            const { data: ledgerEntries } = await supabase
+                .from('student_fee_ledger')
+                .select('student_id, net_amount, paid_amount, discount_amount, fine_amount, balance')
                 .in('student_id', studentIds)
-                .is('reverted_at', null);
-            
-            // Get transport details for fee calculation
-            const { data: transportDetails } = await supabase
-                .from('student_transport_details')
-                .select('student_id, transport_fee')
-                .in('student_id', studentIds);
-            
-            // Get transport payments
-            const { data: transportPayments } = await supabase
-                .from('transport_fee_payments')
-                .select('student_id, amount, discount_amount, fine_paid')
-                .in('student_id', studentIds)
-                .is('reverted_at', null);
-            
-            // Get hostel details for fee calculation
-            const { data: hostelDetails } = await supabase
-                .from('student_hostel_details')
-                .select('student_id, hostel_fee, billing_cycle')
-                .in('student_id', studentIds);
-            
-            // Get hostel payments
-            const { data: hostelPayments } = await supabase
-                .from('hostel_fee_payments')
-                .select('student_id, amount, discount_amount, fine_paid')
-                .in('student_id', studentIds)
-                .is('reverted_at', null);
-            
-            // Get approved refunds
-            const { data: refunds } = await supabase
-                .from('fee_refunds')
-                .select('student_id, refund_amount')
-                .in('student_id', studentIds)
-                .eq('status', 'approved');
+                .eq('session_id', currentSessionId);
             
             // Calculate progress per student
             const progressMap = {};
             studentIds.forEach(id => {
-                progressMap[id] = { total: 0, paid: 0, discount: 0, fine: 0, refunded: 0, balance: 0, progress: 0 };
+                progressMap[id] = { total: 0, paid: 0, discount: 0, fine: 0, balance: 0, progress: 0 };
             });
             
-            // Sum up total fees from allocations
-            if (allocations) {
-                allocations.forEach(alloc => {
-                    const amount = alloc.fee_master?.amount || 0;
-                    if (progressMap[alloc.student_id]) {
-                        progressMap[alloc.student_id].total += parseFloat(amount);
+            // Sum up fees from ledger entries
+            if (ledgerEntries) {
+                ledgerEntries.forEach(entry => {
+                    if (progressMap[entry.student_id]) {
+                        progressMap[entry.student_id].total += parseFloat(entry.net_amount || 0);
+                        progressMap[entry.student_id].paid += parseFloat(entry.paid_amount || 0);
+                        progressMap[entry.student_id].discount += parseFloat(entry.discount_amount || 0);
+                        progressMap[entry.student_id].fine += parseFloat(entry.fine_amount || 0);
+                        progressMap[entry.student_id].balance += parseFloat(entry.balance || 0);
                     }
                 });
             }
             
-            // Add transport fees to total (monthly * 12)
-            if (transportDetails) {
-                transportDetails.forEach(t => {
-                    if (progressMap[t.student_id]) {
-                        progressMap[t.student_id].total += parseFloat(t.monthly_fee || 0) * 12;
-                    }
-                });
-            }
-            
-            // Add hostel fees to total based on billing cycle
-            if (hostelDetails) {
-                hostelDetails.forEach(h => {
-                    const fee = parseFloat(h.hostel_fee || 0);
-                    const billingCycle = h.billing_cycle || 'monthly';
-                    let totalHostelFee = fee;
-                    if (billingCycle === 'monthly') totalHostelFee = fee * 12;
-                    else if (billingCycle === 'quarterly') totalHostelFee = fee * 4;
-                    else if (billingCycle === 'half_yearly') totalHostelFee = fee * 2;
-                    if (progressMap[h.student_id]) {
-                        progressMap[h.student_id].total += totalHostelFee;
-                    }
-                });
-            }
-            
-            // Sum up paid amount, discount and fine from academic payments
-            if (payments) {
-                payments.forEach(pay => {
-                    if (progressMap[pay.student_id]) {
-                        progressMap[pay.student_id].paid += parseFloat(pay.amount || 0);
-                        progressMap[pay.student_id].discount += parseFloat(pay.discount_amount || 0);
-                        progressMap[pay.student_id].fine += parseFloat(pay.fine_paid || 0);
-                    }
-                });
-            }
-            
-            // Add transport payments
-            if (transportPayments) {
-                transportPayments.forEach(pay => {
-                    if (progressMap[pay.student_id]) {
-                        progressMap[pay.student_id].paid += parseFloat(pay.amount || 0);
-                        progressMap[pay.student_id].discount += parseFloat(pay.discount_amount || 0);
-                        progressMap[pay.student_id].fine += parseFloat(pay.fine_paid || 0);
-                    }
-                });
-            }
-            
-            // Add hostel payments
-            if (hostelPayments) {
-                hostelPayments.forEach(pay => {
-                    if (progressMap[pay.student_id]) {
-                        progressMap[pay.student_id].paid += parseFloat(pay.amount || 0);
-                        progressMap[pay.student_id].discount += parseFloat(pay.discount_amount || 0);
-                        progressMap[pay.student_id].fine += parseFloat(pay.fine_paid || 0);
-                    }
-                });
-            }
-            
-            // Add refunds
-            if (refunds) {
-                refunds.forEach(refund => {
-                    if (progressMap[refund.student_id]) {
-                        progressMap[refund.student_id].refunded += parseFloat(refund.refund_amount || 0);
-                    }
-                });
-            }
-            
-            // Calculate balance and progress
-            // Balance = Total + Fine - Paid - Discount + Refunded
+            // Calculate progress percentage
             Object.keys(progressMap).forEach(id => {
-                const { total, paid, discount, fine, refunded } = progressMap[id];
-                progressMap[id].balance = Math.max(0, total + fine - paid - discount + refunded);
-                progressMap[id].progress = (total + fine) > 0 ? Math.min(100, Math.round(((paid + discount) / (total + fine)) * 100)) : 0;
+                const { total, paid, discount, fine } = progressMap[id];
+                const totalDue = total + fine;
+                progressMap[id].progress = totalDue > 0 ? Math.min(100, Math.round(((paid + discount) / totalDue) * 100)) : 0;
             });
             
             setFeesData(progressMap);

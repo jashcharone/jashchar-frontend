@@ -377,6 +377,18 @@ const FeeStructures = () => {
       return;
     }
 
+    // ── Auto-activate fee types used in this structure ──
+    const usedFeeTypeIds = [...new Set(componentPayloads.map(c => c.fee_type_id))];
+    if (usedFeeTypeIds.length > 0) {
+      await supabase
+        .from('fee_types')
+        .update({ is_active: true })
+        .in('id', usedFeeTypeIds)
+        .eq('branch_id', selectedBranch.id)
+        .eq('session_id', currentSessionId);
+      console.log('[FeeStructures] Auto-activated fee types:', usedFeeTypeIds);
+    }
+
     // ── Propagate due_date changes to existing student_fee_ledger entries ──
     if (isEditing && structureId) {
       let ledgerUpdated = 0;

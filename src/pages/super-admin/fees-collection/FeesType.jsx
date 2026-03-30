@@ -539,6 +539,7 @@ const FeesType = () => {
                                                         <th className="text-left p-3 font-medium">Name</th>
                                                         <th className="text-left p-3 font-medium">Fees Code</th>
                                                         <th className="text-left p-3 font-medium hidden md:table-cell">Description</th>
+                                                        <th className="text-center p-3 font-medium w-20">Status</th>
                                                         <th className="text-center p-3 font-medium w-32">Action</th>
                                                     </tr>
                                                 </thead>
@@ -567,6 +568,19 @@ const FeesType = () => {
                                                                 <span className="text-xs text-muted-foreground">
                                                                     {type.description || '-'}
                                                                 </span>
+                                                            </td>
+                                                            <td className="p-3">
+                                                                <div className="flex items-center justify-center">
+                                                                    {type.is_active ? (
+                                                                        <Badge className="bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300">
+                                                                            Active
+                                                                        </Badge>
+                                                                    ) : (
+                                                                        <Badge variant="secondary" className="text-muted-foreground">
+                                                                            Inactive
+                                                                        </Badge>
+                                                                    )}
+                                                                </div>
                                                             </td>
                                                             <td className="p-3">
                                                                 <div className="flex items-center justify-center gap-1">

@@ -469,9 +469,10 @@ const StudentFees = () => {
             const ledgerEntries = (ledgerRes.data || []).map(entry => {
                 const netAmount = Number(entry.net_amount) || 0;
                 const paidAmount = Number(entry.paid_amount) || 0;
-                const discountAmount = Number(entry.discount_amount) || 0;
+                // Include both discount_amount (instant discount) and concession_amount (pre-assigned concession)
+                const discountAmount = (Number(entry.discount_amount) || 0) + (Number(entry.concession_amount) || 0);
                 const fineAmount = Number(entry.fine_amount) || 0;
-                const balance = Math.max(0, netAmount - paidAmount - discountAmount);
+                const balance = Math.max(0, netAmount - paidAmount);
 
                 let fine = 0;
                 let isOverdue = false;

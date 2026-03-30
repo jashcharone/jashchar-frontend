@@ -41,8 +41,8 @@ const EmployeeDocuments = () => {
     const fetchData = async () => {
         setLoading(true);
         const [staffRes, docsRes] = await Promise.all([
-            supabase.from('employee_profiles').select('id, full_name').eq('branch_id', branchId).eq('branch_id', selectedBranch.id),
-            supabase.from('employee_documents').select('*, employee:employee_id(full_name)').eq('branch_id', branchId).eq('branch_id', selectedBranch.id).order('upload_date', { ascending: false })
+            supabase.from('employee_profiles').select('id, full_name').eq('branch_id', selectedBranch.id),
+            supabase.from('employee_documents').select('*, employee:employee_id(full_name)').eq('branch_id', selectedBranch.id).order('upload_date', { ascending: false })
         ]);
         setStaffList(staffRes.data || []);
         setDocuments(docsRes.data || []);
@@ -77,7 +77,6 @@ const EmployeeDocuments = () => {
 
         const { error } = await supabase.from('employee_documents').insert({
             ...newDoc,
-            branch_id: branchId,
             branch_id: selectedBranch.id,
             document_url: publicUrl,
             upload_date: new Date().toISOString()
@@ -163,7 +162,7 @@ const EmployeeDocuments = () => {
                                         <div className="bg-blue-100 p-2 rounded-lg"><FileText className="h-6 w-6 text-blue-600" /></div>
                                         <div>
                                             <h4 className="font-bold">{doc.document_name}</h4>
-                                            <p className="text-xs text-muted-foreground">{doc.employee?.full_name} • {doc.document_type}</p>
+                                            <p className="text-xs text-muted-foreground">{doc.employee?.full_name} ï¿½ {doc.document_type}</p>
                                             {doc.expiry_date && <p className="text-xs text-red-500 mt-1">Expires: {doc.expiry_date}</p>}
                                         </div>
                                     </div>

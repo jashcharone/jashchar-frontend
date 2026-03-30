@@ -504,14 +504,13 @@ const QuickFees = () => {
             .select();
         if (masterError) throw masterError;
         
-        // Create allocations
+        // Create allocations (fee_group_id is tracked via fee_masters table, not here)
         const allocations = feeMasters.map(master => ({ 
             branch_id: branchId, 
             session_id: currentSessionId, 
             organization_id: organizationId, 
             student_id: student.id, 
             fee_master_id: master.id, 
-            fee_group_id: feeGroup.id, 
             id: uuidv4() 
         }));
         
@@ -566,8 +565,8 @@ const QuickFees = () => {
             const { data: feeMasters, error: masterError } = await supabase.from('fee_masters').insert(feeMastersToInsert).select();
             if (masterError) throw masterError;
 
-            // 5. Batch insert Allocations
-            const allocations = feeMasters.map(master => ({ branch_id: branchId, session_id: currentSessionId, organization_id: organizationId, student_id: selectedStudentId, fee_master_id: master.id, fee_group_id: feeGroup.id, id: uuidv4() }));
+            // 5. Batch insert Allocations (fee_group_id is tracked via fee_masters table, not here)
+            const allocations = feeMasters.map(master => ({ branch_id: branchId, session_id: currentSessionId, organization_id: organizationId, student_id: selectedStudentId, fee_master_id: master.id, id: uuidv4() }));
             const { error: allocError } = await supabase.from('student_fee_allocations').insert(allocations);
             
             if (allocError) throw allocError;

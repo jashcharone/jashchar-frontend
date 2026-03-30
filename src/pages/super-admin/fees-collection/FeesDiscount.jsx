@@ -36,7 +36,7 @@ const toValidDate = (date) => {
 };
 
 const FeesDiscount = () => {
-    const { user } = useAuth();
+    const { user, currentSessionId, organizationId } = useAuth();
     const { selectedBranch } = useBranch();
     const { toast } = useToast();
     const [discounts, setDiscounts] = useState([]);
@@ -88,14 +88,15 @@ const FeesDiscount = () => {
     }, [selectedBranch]);
 
     const fetchDiscounts = useCallback(async () => {
-        if (!selectedBranch) return;
+        if (!selectedBranch || !currentSessionId) return;
         setLoading(true);
         
-        // Fetch discounts with usage count
+        // Fetch discounts with usage count - filtered by session
         const { data, error } = await supabase
             .from('discounts')
             .select('*')
             .eq('branch_id', selectedBranch.id)
+            .eq('session_id', currentSessionId)
             .order('created_at', { ascending: false });
             
         if (error) {
@@ -139,7 +140,7 @@ const FeesDiscount = () => {
         }
         
         setLoading(false);
-    }, [selectedBranch, toast]);
+    }, [selectedBranch, currentSessionId, toast]);
 
     const fetchStudents = useCallback(async () => {
         if (!selectedBranch) return;
@@ -202,6 +203,8 @@ const FeesDiscount = () => {
             expire_date: expireDate ? format(expireDate, 'yyyy-MM-dd') : null,
             description: formData.description,
             branch_id: selectedBranch.id,
+            session_id: currentSessionId,
+            organization_id: organizationId,
         };
         
         let error;

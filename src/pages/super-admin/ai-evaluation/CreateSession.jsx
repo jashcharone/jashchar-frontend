@@ -201,16 +201,17 @@ const CreateSession = () => {
       const sessionName = formData.evaluation_name || generateSessionName();
       
       // Map frontend field names to backend expected names
+      // Convert empty strings to null for optional UUID fields
       const response = await api.post('/ai-evaluation/sessions', {
         evaluation_name: sessionName,
-        evaluation_code: formData.exam_name,
+        evaluation_code: formData.exam_name || null,
         class_id: formData.class_id,
-        section_id: formData.section_id,
-        subject_id: formData.subject_id,
-        exam_date: formData.exam_date,
-        total_marks: parseInt(formData.total_marks),
-        passing_marks: parseInt(formData.passing_marks),
-        ocr_engine: formData.ocr_engine,
+        section_id: formData.section_id || null,
+        subject_id: formData.subject_id || null,
+        exam_date: formData.exam_date || null,
+        total_marks: parseInt(formData.total_marks) || 100,
+        passing_marks: parseInt(formData.passing_marks) || 33,
+        ocr_engine: formData.ocr_engine || 'tesseract',
         session_id: currentSessionId
       });
       

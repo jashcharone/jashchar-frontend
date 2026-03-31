@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Check } from 'lucide-react';
@@ -40,8 +40,8 @@ const PricingCard = ({ plan, index }) => {
             </>
         ) : (
             <>
-                <p>Per Student: ?{plan.per_student_charge}</p>
-                <p>Per Staff: ?{plan.per_staff_charge}</p>
+                <p>Per Student: ₹{plan.per_student_charge}</p>
+                <p>Per Staff: ₹{plan.per_staff_charge}</p>
             </>
         )}
       </div>
@@ -107,3 +107,4 @@ const Pricing = ({ content, plans }) => {
 };
 
 export default Pricing;
+

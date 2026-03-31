@@ -104,8 +104,10 @@ export const ROUTES = {
     CORTEX_AI: '/super-admin/cortex-ai',
     // AI Evaluation
     AI_EVALUATION: '/super-admin/ai-evaluation',
+    AI_EVALUATION_DASHBOARD: '/super-admin/ai-evaluation/dashboard',
     AI_EVALUATION_SESSIONS: '/super-admin/ai-evaluation/sessions',
-    AI_EVALUATION_CREATE_SESSION: '/super-admin/ai-evaluation/create-session',
+    AI_EVALUATION_CREATE: '/super-admin/ai-evaluation/sessions/create',
+    AI_EVALUATION_CREATE_SESSION: '/super-admin/ai-evaluation/sessions/create',
     AI_EVALUATION_UPLOAD: '/super-admin/ai-evaluation/upload',
     AI_EVALUATION_QUESTION_MAPPING: '/super-admin/ai-evaluation/question-mapping',
     AI_EVALUATION_REVIEW: '/super-admin/ai-evaluation/review',

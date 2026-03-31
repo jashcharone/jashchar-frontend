@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { Calendar as CalendarIcon, Search, Loader2, CreditCard, Banknote } from 'lucide-react';
 import { addDays, format } from 'date-fns';
 import { cn } from '@/lib/utils';
@@ -149,7 +149,7 @@ const SubscriptionTransactions = () => {
                         <td className="px-6 py-4 font-mono text-xs">{transaction.transaction_id || 'N/A'}</td>
                         <td className="px-6 py-4 font-medium">{transaction.schools?.name || 'Unknown School'}</td>
                         <td className="px-6 py-4">{transaction.subscription_plans?.name || 'Unknown Plan'}</td>
-                        <td className="px-6 py-4 font-semibold">?{transaction.amount}</td>
+                        <td className="px-6 py-4 font-semibold">₹{transaction.amount}</td>
                         <td className="px-6 py-4 text-muted-foreground">{format(new Date(transaction.created_at), 'MMM dd, yyyy HH:mm')}</td>
                         <td className="px-6 py-4">
                             <div className="flex items-center gap-2">
@@ -180,3 +180,4 @@ const SubscriptionTransactions = () => {
 };
 
 export default SubscriptionTransactions;
+

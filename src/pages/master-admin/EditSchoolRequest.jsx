@@ -1223,17 +1223,17 @@ const EditSchoolRequest = () => {
                                         <>
                                             <div>
                                                 <p className="text-slate-500 dark:text-slate-400">Per Student Charge</p>
-                                                <p className="font-medium dark:text-slate-200">?{plan.per_student_charge}</p>
+                                                <p className="font-medium dark:text-slate-200">₹{plan.per_student_charge}</p>
                                             </div>
                                             <div>
                                                 <p className="text-slate-500 dark:text-slate-400">Per Staff Charge</p>
-                                                <p className="font-medium dark:text-slate-200">?{plan.per_staff_charge}</p>
+                                                <p className="font-medium dark:text-slate-200">₹{plan.per_staff_charge}</p>
                                             </div>
                                         </>
                                     ) : (
                                         <div>
                                             <p className="text-slate-500 dark:text-slate-400">Price</p>
-                                            <p className="font-medium dark:text-slate-200">?{plan.price}</p>
+                                            <p className="font-medium dark:text-slate-200">₹{plan.price}</p>
                                         </div>
                                     )}
                                     <div>
@@ -1473,3 +1473,4 @@ const EditSchoolRequest = () => {
 };
 
 export default EditSchoolRequest;
+

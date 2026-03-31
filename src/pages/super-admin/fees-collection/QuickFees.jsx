@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+﻿import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { addMonths, setDate, format, parseISO } from 'date-fns';
 import DashboardLayout from '@/components/DashboardLayout';
 import { supabase } from '@/lib/customSupabaseClient';
@@ -690,7 +690,7 @@ const QuickFees = () => {
                                 <SelectItem value="__manual__">Manual Entry</SelectItem>
                                 {feeTemplates.map(t => (
                                     <SelectItem key={t.id} value={t.id}>
-                                        {t.template_name} - ?{Number(t.total_amount || 0).toLocaleString()}
+                                        {t.template_name} - ₹{Number(t.total_amount || 0).toLocaleString()}
                                     </SelectItem>
                                 ))}
                             </SelectContent>
@@ -897,7 +897,7 @@ const QuickFees = () => {
                                                     <td className="p-3 text-right pr-12">
                                                         {inst.fine_type === 'none' ? '0.00' : inst.fine_value}
                                                     </td>
-                                                    <td className="p-3 text-right font-medium">?{Number(inst.amount).toLocaleString()}</td>
+                                                    <td className="p-3 text-right font-medium">₹{Number(inst.amount).toLocaleString()}</td>
                                                 </tr>
                                             ))}
                                         </tbody>
@@ -905,7 +905,7 @@ const QuickFees = () => {
                                             <tr>
                                                 <td colSpan="4" className="p-3 text-right">Total Fees</td>
                                                 <td className="p-3 text-right text-green-600">
-                                                    ?{installments.reduce((acc, curr) => acc + Number(curr.amount), 0).toLocaleString()}
+                                                    ₹{installments.reduce((acc, curr) => acc + Number(curr.amount), 0).toLocaleString()}
                                                 </td>
                                             </tr>
                                         </tfoot>
@@ -1070,15 +1070,15 @@ const QuickFees = () => {
                                 <div className="space-y-2 text-sm">
                                     <div className="flex justify-between">
                                         <span className="text-muted-foreground">Total Fees:</span>
-                                        <span className="font-medium">?{Number(feeData.totalFees || 0).toLocaleString()}</span>
+                                        <span className="font-medium">₹{Number(feeData.totalFees || 0).toLocaleString()}</span>
                                     </div>
                                     <div className="flex justify-between">
                                         <span className="text-muted-foreground">1st Installment:</span>
-                                        <span className="font-medium">?{Number(feeData.firstInstallment || 0).toLocaleString()}</span>
+                                        <span className="font-medium">₹{Number(feeData.firstInstallment || 0).toLocaleString()}</span>
                                     </div>
                                     <div className="flex justify-between">
                                         <span className="text-muted-foreground">Balance:</span>
-                                        <span className="font-medium">?{balanceFees.toLocaleString()}</span>
+                                        <span className="font-medium">₹{balanceFees.toLocaleString()}</span>
                                     </div>
                                     <hr className="my-2" />
                                     <div className="flex justify-between">
@@ -1115,7 +1115,7 @@ const QuickFees = () => {
                                                 {templateHeads.slice(0, 4).map((h, i) => (
                                                     <div key={i} className="flex justify-between text-xs">
                                                         <span>{h.fee_heads?.name || 'Head'}</span>
-                                                        <span>?{Number(h.amount || 0).toLocaleString()}</span>
+                                                        <span>₹{Number(h.amount || 0).toLocaleString()}</span>
                                                     </div>
                                                 ))}
                                                 {templateHeads.length > 4 && (
@@ -1201,3 +1201,4 @@ const QuickFees = () => {
 };
 
 export default QuickFees;
+

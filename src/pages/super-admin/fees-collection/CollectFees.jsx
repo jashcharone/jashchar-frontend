@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import DashboardLayout from '@/components/DashboardLayout';
 import { supabase } from '@/lib/customSupabaseClient';
@@ -45,13 +45,17 @@ const CollectFees = () => {
     const [dateFrom, setDateFrom] = useState('');
     const [dateTo, setDateTo] = useState('');
     const [students, setStudents] = useState([]);
-    const [allStudents, setAllStudents] = useState([]); // Store all fetched students for client-side filtering
     const [loading, setLoading] = useState(false);
     const [searched, setSearched] = useState(false);
     const [initialLoadDone, setInitialLoadDone] = useState(false); // For auto-load on page open
     const [feesData, setFeesData] = useState({}); // { studentId: { total, paid, balance, progress } }
     const [hostelAssignments, setHostelAssignments] = useState({}); // { studentId: { hostel_name, room_no } }
     const [transportAssignments, setTransportAssignments] = useState({}); // { studentId: { route, pickup_point } }
+    
+    // Pagination states
+    const [currentPage, setCurrentPage] = useState(1);
+    const [pageSize, setPageSize] = useState(25);
+    const [totalCount, setTotalCount] = useState(0);
 
     // DEBUG: Log branch resolution
     console.log('[CollectFees] branchId:', branchId, '| selectedBranch:', selectedBranch?.id, '| branchLoading:', branchLoading);
@@ -123,29 +127,6 @@ const CollectFees = () => {
         fetchSections();
     }, [selectedClass, toast]);
 
-    // Client-side instant search filter
-    const filteredStudents = useMemo(() => {
-        if (!keyword || !keyword.trim()) {
-            return allStudents;
-        }
-        const searchTerm = keyword.toLowerCase().trim();
-        return allStudents.filter(s => {
-            const fullName = (s.full_name || '').toLowerCase();
-            const schoolCode = (s.enrollment_id || '').toLowerCase();
-            const fatherName = (s.father_name || '').toLowerCase();
-            const phone = (s.father_phone || s.mother_phone || s.guardian_phone || s.phone || '').toLowerCase();
-            return fullName.includes(searchTerm) || 
-                   schoolCode.includes(searchTerm) || 
-                   fatherName.includes(searchTerm) ||
-                   phone.includes(searchTerm);
-        });
-    }, [allStudents, keyword]);
-
-    // Update students display when filtered results change
-    useEffect(() => {
-        setStudents(filteredStudents);
-    }, [filteredStudents]);
-
     // Admission Period date range helper
     const getDateRange = (filter, from, to) => {
         const now = new Date();
@@ -160,7 +141,7 @@ const CollectFees = () => {
         }
     };
 
-    const handleSearch = async () => {
+    const handleSearch = async (page = 1) => {
         if (!branchId) {
             toast({ variant: 'destructive', title: 'Branch not selected' });
             return;
@@ -169,148 +150,56 @@ const CollectFees = () => {
         setSearched(true);
         
         try {
-            // Use session from header dropdown (currentSessionId) � respects user's session selection
             const activeSessionId = currentSessionId;
+            const from = (page - 1) * pageSize;
+            const to = from + pageSize - 1;
             
-            // Use student_profiles directly - it's faster and more reliable
+            // Build query with pagination
             let query = supabase
                 .from('student_profiles')
-                .select('id, full_name, father_name, mother_name, phone, father_phone, mother_phone, guardian_phone, enrollment_id, session_id, date_of_birth, gender, photo_url, admission_date, classes!student_profiles_class_id_fkey(name), sections!student_profiles_section_id_fkey(name)')
-                .eq('branch_id', branchId);
+                .select('id, full_name, father_name, mother_name, phone, father_phone, mother_phone, guardian_phone, enrollment_id, session_id, date_of_birth, gender, photo_url, admission_date, classes!student_profiles_class_id_fkey(name), sections!student_profiles_section_id_fkey(name)', { count: 'exact' })
+                .eq('branch_id', branchId)
+                .or('is_disabled.is.null,is_disabled.eq.false');
             
-            // Filter by branch's active session
             if (activeSessionId) {
                 query = query.eq('session_id', activeSessionId);
             }
-
-            // Only add class filter if specific class selected (not 'all')
             if (selectedClass && selectedClass !== 'all') {
                 query = query.eq('class_id', selectedClass);
             }
-
             if (selectedSection && selectedSection !== 'all') {
                 query = query.eq('section_id', selectedSection);
             }
-
-            // NOTE: Keyword search is done client-side for instant results
-            // No server-side keyword filter needed
-
-            // Admission Period filter
+            
+            // Server-side keyword search
+            if (keyword && keyword.trim()) {
+                const kw = keyword.trim();
+                query = query.or(`full_name.ilike.%${kw}%,enrollment_id.ilike.%${kw}%,father_name.ilike.%${kw}%,phone.ilike.%${kw}%,father_phone.ilike.%${kw}%`);
+            }
+            
             const dateRange = getDateRange(dateFilter, dateFrom, dateTo);
             if (dateRange.from) query = query.gte('admission_date', dateRange.from);
             if (dateRange.to) query = query.lte('admission_date', dateRange.to);
-
-            // IMPORTANT: Supabase default limit is 1000, so we need to fetch all students
-            // Using range(0, 9999) to get up to 10000 students
-            const { data, error } = await query.order('full_name').range(0, 9999);
-
+            
+            // Execute with pagination
+            const { data, error, count } = await query
+                .order('full_name')
+                .range(from, to);
+            
             if (error) throw error;
             
-            // Store all students for client-side instant search
-            setAllStudents(data || []);
+            setTotalCount(count || 0);
+            setCurrentPage(page);
             setStudents(data || []);
             
-            if (data && data.length > 0) {
-                toast({ title: `${data.length} students found.`});
-            } else {
-                toast({ title: "No students found." });
-            }
-            
-            // ====================================================================
-            // AUTO-ALLOCATE FEES: Based on fee_group_class_assignments for this class
-            // This ensures ALL students in the class get their fees allocated
-            // Only run when a specific class is selected (not 'all')
-            // ====================================================================
-            if (data && data.length > 0 && selectedClass && selectedClass !== 'all') {
-                try {
-                    // Step 1: Get fee_group_class_assignments for this class
-                    let assignmentsQuery = supabase
-                        .from('fee_group_class_assignments')
-                        .select('fee_group_id')
-                        .eq('class_id', selectedClass)
-                        .eq('branch_id', branchId)
-                        .eq('session_id', currentSessionId)
-                        .eq('is_active', true);
-                    
-                    // If specific section selected, filter by section or null (all sections)
-                    if (selectedSection && selectedSection !== 'all') {
-                        assignmentsQuery = assignmentsQuery.or(`section_id.is.null,section_id.eq.${selectedSection}`);
-                    }
-                    
-                    const { data: classAssignments } = await assignmentsQuery;
-                    
-                    if (classAssignments && classAssignments.length > 0) {
-                        const feeGroupIds = [...new Set(classAssignments.map(a => a.fee_group_id))];
-                        
-                        // Step 2: Get all fee_masters for these fee groups
-                        const { data: feeMasters } = await supabase
-                            .from('fee_masters')
-                            .select('id')
-                            .in('fee_group_id', feeGroupIds)
-                            .eq('branch_id', branchId)
-                            .eq('session_id', currentSessionId);
-                        
-                        if (feeMasters && feeMasters.length > 0) {
-                            const studentIds = data.map(s => s.id);
-                            
-                            // Step 3: Get existing allocations for these students
-                            const { data: existingAllocations } = await supabase
-                                .from('student_fee_allocations')
-                                .select('student_id, fee_master_id')
-                                .in('student_id', studentIds)
-                                .eq('branch_id', branchId)
-                                .eq('session_id', currentSessionId);
-                            
-                            // Create a set of existing student+fee combinations
-                            const existingSet = new Set(
-                                (existingAllocations || []).map(a => `${a.student_id}_${a.fee_master_id}`)
-                            );
-                            
-                            // Step 4: Create missing allocations
-                            const missingAllocations = [];
-                            for (const student of data) {
-                                for (const feeMaster of feeMasters) {
-                                    const key = `${student.id}_${feeMaster.id}`;
-                                    if (!existingSet.has(key)) {
-                                        missingAllocations.push({
-                                            student_id: student.id,
-                                            fee_master_id: feeMaster.id,
-                                            branch_id: branchId,
-                                            session_id: currentSessionId,
-                                            organization_id: organizationId,
-                                        });
-                                    }
-                                }
-                            }
-                            
-                            // Step 5: Batch insert missing allocations
-                            if (missingAllocations.length > 0) {
-                                const batchSize = 100;
-                                for (let i = 0; i < missingAllocations.length; i += batchSize) {
-                                    const batch = missingAllocations.slice(i, i + batchSize);
-                                    await supabase
-                                        .from('student_fee_allocations')
-                                        .upsert(batch, { 
-                                            onConflict: 'student_id,fee_master_id',
-                                            ignoreDuplicates: true 
-                                        });
-                                }
-                                console.log(`Auto-allocated ${missingAllocations.length} fees for ${data.length} students`);
-                            }
-                        }
-                    }
-                } catch (allocErr) {
-                    console.warn('Auto-allocation error (non-critical):', allocErr);
-                }
-            }
-            // ====================================================================
-            
-            // Fetch fees progress for found students
+            // Fetch fees progress for current page students
             if (data && data.length > 0) {
                 const studentIds = data.map(s => s.id);
-                await fetchFeesProgress(studentIds);
-                await fetchHostelAssignments(studentIds);
-                await fetchTransportAssignments(studentIds);
+                await Promise.all([
+                    fetchFeesProgress(studentIds),
+                    fetchHostelAssignments(studentIds),
+                    fetchTransportAssignments(studentIds)
+                ]);
             } else {
                 setFeesData({});
             }
@@ -318,25 +207,25 @@ const CollectFees = () => {
             console.error('Search error:', error);
             toast({ variant: 'destructive', title: 'Error searching students', description: error.message });
             setStudents([]);
-            setAllStudents([]);
+            setTotalCount(0);
         } finally {
             setLoading(false);
         }
     };
 
-    // Auto-search: Trigger search automatically on page load (with 'all' classes default)
+    // Auto-search: Trigger search when filters change (reset to page 1)
     useEffect(() => {
-        if (initialLoadDone && selectedClass === 'all' && students.length === 0 && !loading) {
-            handleSearch();
+        if (initialLoadDone && branchId && currentSessionId) {
+            handleSearch(1);
         }
-    }, [initialLoadDone]);
-
-    // Re-fetch when session changes from header dropdown
+    }, [initialLoadDone, selectedClass, selectedSection, dateFilter, dateFrom, dateTo, currentSessionId, pageSize]);
+    
+    // Debounced server-side keyword search (500ms)
     useEffect(() => {
-        if (currentSessionId && initialLoadDone && selectedClass) {
-            handleSearch();
-        }
-    }, [currentSessionId]);
+        if (!initialLoadDone || !branchId || !currentSessionId) return;
+        const timer = setTimeout(() => handleSearch(1), 500);
+        return () => clearTimeout(timer);
+    }, [keyword]);
 
     // Fetch fee allocations and payments for fee progress display (including transport & hostel & ledger)
     const fetchFeesProgress = async (studentIds) => {
@@ -637,7 +526,7 @@ const CollectFees = () => {
     // Summary stats for the searched students
     const summaryStats = (() => {
         const studentIds = students.map(s => s.id);
-        let totalStudents = students.length;
+        let totalStudents = totalCount;
         let fullyPaid = 0;
         let partialPaid = 0;
         let unpaid = 0;
@@ -670,13 +559,10 @@ const CollectFees = () => {
         <DashboardLayout>
             <h1 className="text-xl sm:text-2xl font-bold mb-4 sm:mb-6">Collect Fees</h1>
             <Card className="mb-6">
-                <CardHeader>
-                    <CardTitle>Select Criteria</CardTitle>
-                </CardHeader>
-                <CardContent>
-                    <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4 items-end">
-                        <div className="space-y-2">
-                            <label className="text-sm font-medium">Class</label>
+                <CardContent className="pt-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
+                        <div>
+                            <label className="text-sm font-medium mb-1 block">Class</label>
                             <Select value={selectedClass} onValueChange={setSelectedClass}>
                                 <SelectTrigger><SelectValue placeholder="Select Class" /></SelectTrigger>
                                 <SelectContent>
@@ -685,8 +571,8 @@ const CollectFees = () => {
                                 </SelectContent>
                             </Select>
                         </div>
-                        <div className="space-y-2">
-                             <label className="text-sm font-medium">Section</label>
+                        <div>
+                             <label className="text-sm font-medium mb-1 block">Section</label>
                             <Select value={selectedSection} onValueChange={setSelectedSection} disabled={!selectedClass || selectedClass === 'all'}>
                                 <SelectTrigger><SelectValue placeholder="Select Section" /></SelectTrigger>
                                 <SelectContent>
@@ -695,8 +581,24 @@ const CollectFees = () => {
                                 </SelectContent>
                             </Select>
                         </div>
-                        <div className="space-y-2">
-                            <label className="text-sm font-medium flex items-center gap-1"><CalendarDays className="h-3.5 w-3.5" /> Admission Period</label>
+                        <div>
+                            <label className="text-sm font-medium mb-1 block">Status</label>
+                            <Select value="active" disabled>
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Select Status" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="active">
+                                        <span className="flex items-center gap-2">
+                                            <span className="w-2 h-2 rounded-full bg-green-500"></span>
+                                            Active
+                                        </span>
+                                    </SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+                        <div>
+                            <label className="text-sm font-medium mb-1 block flex items-center gap-1"><CalendarDays className="h-3.5 w-3.5" /> Admission Period</label>
                             <Select value={dateFilter} onValueChange={setDateFilter}>
                                 <SelectTrigger><SelectValue placeholder="Select Period" /></SelectTrigger>
                                 <SelectContent>
@@ -709,36 +611,36 @@ const CollectFees = () => {
                                 </SelectContent>
                             </Select>
                         </div>
-                         <div className="space-y-2 md:col-span-2 lg:col-span-2">
-                            <label className="text-sm font-medium">Instant Search</label>
-                            <Input 
-                                placeholder="Type any letter to search..."
-                                value={keyword}
-                                onChange={e => setKeyword(e.target.value)}
-                            />
-                        </div>
                     </div>
                     {dateFilter === 'custom' && (
                         <div className="grid grid-cols-2 gap-4 mt-3">
-                            <div className="space-y-2">
-                                <label className="text-sm font-medium">From Date</label>
+                            <div>
+                                <label className="text-sm font-medium mb-1 block">From Date</label>
                                 <Input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)} />
                             </div>
-                            <div className="space-y-2">
-                                <label className="text-sm font-medium">To Date</label>
+                            <div>
+                                <label className="text-sm font-medium mb-1 block">To Date</label>
                                 <Input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)} />
                             </div>
                         </div>
                     )}
-                    <div className="flex justify-end mt-3">
+                    <div className="flex gap-4 mt-3 items-end">
+                        <div className="flex-1">
+                            <label className="text-sm font-medium mb-1 block">Search</label>
+                            <Input 
+                                placeholder="Search by name, admission no, phone, father name..."
+                                value={keyword}
+                                onChange={e => setKeyword(e.target.value)}
+                            />
+                        </div>
                         <Button onClick={handleSearch} disabled={loading} className="h-10">
-                            <RefreshCcw className="mr-2 h-4 w-4" />{loading ? 'Loading...' : 'Refresh'}
+                            <RefreshCcw className={`mr-2 h-4 w-4 ${loading ? 'animate-spin' : ''}`} />{loading ? 'Loading...' : 'Refresh'}
                         </Button>
                     </div>
                 </CardContent>
             </Card>
 
-            {allStudents.length > 0 && (
+            {totalCount > 0 && (
                 <>
                     {/* Summary Stats Cards */}
                     {students.length > 0 && (
@@ -836,9 +738,7 @@ const CollectFees = () => {
                                     <Users className="h-5 w-5" />
                                     Student List
                                     <span className="text-sm font-normal text-muted-foreground ml-2">
-                                        {keyword 
-                                            ? `Showing ${students.length} of ${allStudents.length} students` 
-                                            : `Total: ${allStudents.length} students`}
+                                        {`Showing ${((currentPage - 1) * pageSize) + 1}-${Math.min(currentPage * pageSize, totalCount)} of ${totalCount} students`}
                                     </span>
                                 </CardTitle>
                                 <div className="flex items-center gap-2">
@@ -858,6 +758,7 @@ const CollectFees = () => {
                         </CardHeader>
                         <CardContent>
                             {loading ? <div className="flex justify-center p-8"><Loader2 className="animate-spin" /></div> : (
+                                <>
                                 <div className="overflow-x-auto">
                                     <table className="w-full text-sm">
                                         <thead>
@@ -882,7 +783,7 @@ const CollectFees = () => {
 
                                                 return (
                                                     <tr key={student.id} className={`border-b hover:bg-muted/50 transition-colors ${progressBg}`}>
-                                                        <td className="p-2 sm:p-3 text-muted-foreground">{index + 1}</td>
+                                                        <td className="p-2 sm:p-3 text-muted-foreground">{(currentPage - 1) * pageSize + index + 1}</td>
                                                         <td className="p-2 sm:p-3">
                                                             <div className="flex items-center gap-3">
                                                                 {/* Avatar */}
@@ -998,29 +899,48 @@ const CollectFees = () => {
                                         </tbody>
                                     </table>
                                 </div>
+                                
+                                {/* Pagination Controls */}
+                                {totalCount > 0 && (
+                                    <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-4 pt-4 border-t">
+                                        <div className="text-sm text-muted-foreground">
+                                            Showing {((currentPage - 1) * pageSize) + 1} - {Math.min(currentPage * pageSize, totalCount)} of {totalCount} students
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                onClick={() => handleSearch(currentPage - 1)}
+                                                disabled={currentPage === 1 || loading}
+                                            >
+                                                Previous
+                                            </Button>
+                                            <span className="text-sm px-3 py-1 bg-muted rounded">
+                                                Page {currentPage} of {Math.ceil(totalCount / pageSize)}
+                                            </span>
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                onClick={() => handleSearch(currentPage + 1)}
+                                                disabled={currentPage === Math.ceil(totalCount / pageSize) || loading}
+                                            >
+                                                Next
+                                            </Button>
+                                        </div>
+                                    </div>
+                                )}
+                                </>
                             )}
                         </CardContent>
                     </Card>
                 </>
             )}
 
-            {students.length === 0 && !loading && allStudents.length === 0 && (
+            {students.length === 0 && !loading && searched && (
                 <Card className="p-10">
                     <div className="text-center text-muted-foreground">
                         <Users className="h-12 w-12 mx-auto mb-4 opacity-30" />
-                        <p>No students found. Click Refresh to load students.</p>
-                    </div>
-                </Card>
-            )}
-
-            {students.length === 0 && !loading && allStudents.length > 0 && keyword && (
-                <Card className="p-10">
-                    <div className="text-center text-muted-foreground">
-                        <Search className="h-12 w-12 mx-auto mb-4 opacity-30" />
-                        <p>No students match "{keyword}"</p>
-                        <Button variant="link" className="mt-2" onClick={() => setKeyword('')}>
-                            Clear search
-                        </Button>
+                        <p>No students found. Try adjusting your search criteria.</p>
                     </div>
                 </Card>
             )}

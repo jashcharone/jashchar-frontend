@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+﻿import React, { useState, useEffect, useCallback } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
 import { supabase } from '@/lib/customSupabaseClient';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
@@ -156,7 +156,7 @@ const SearchIncome = () => {
                                             <TableCell>{income.invoice_no || '-'}</TableCell>
                                             <TableCell>{income.income_head?.name || '-'}</TableCell>
                                             <TableCell>{income.date ? format(new Date(income.date), 'MM/dd/yyyy') : '-'}</TableCell>
-                                            <TableCell className="text-right">?{income.amount?.toLocaleString('en-IN') || '0'}</TableCell>
+                                            <TableCell className="text-right">₹{income.amount?.toLocaleString('en-IN') || '0'}</TableCell>
                                         </TableRow>
                                     ))
                                 )}
@@ -173,3 +173,4 @@ const SearchIncome = () => {
 };
 
 export default SearchIncome;
+

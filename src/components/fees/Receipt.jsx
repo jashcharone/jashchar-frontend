@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import { format } from 'date-fns';
 
 const Receipt = React.forwardRef(({ data, settings, currentDate }, ref) => {
@@ -107,11 +107,11 @@ const Receipt = React.forwardRef(({ data, settings, currentDate }, ref) => {
                              {payment.note && <p><strong>Note:</strong> {payment.note}</p>}
                         </div>
                         <div className="text-right">
-                            <p><strong>Amount Paid:</strong> ?{totalAmountPaid.toFixed(2)}</p>
-                            <p><strong>Discount Given:</strong> ?{totalDiscount.toFixed(2)}</p>
-                            <p><strong>Fine Paid:</strong> ?{totalFine.toFixed(2)}</p>
+                            <p><strong>Amount Paid:</strong> ₹{totalAmountPaid.toFixed(2)}</p>
+                            <p><strong>Discount Given:</strong> ₹{totalDiscount.toFixed(2)}</p>
+                            <p><strong>Fine Paid:</strong> ₹{totalFine.toFixed(2)}</p>
                             <hr className="my-1 border-gray-800" />
-                            <p className="font-bold text-sm"><strong>Grand Total:</strong> ?{grandTotal.toFixed(2)}</p>
+                            <p className="font-bold text-sm"><strong>Grand Total:</strong> ₹{grandTotal.toFixed(2)}</p>
                         </div>
                     </div>
                     
@@ -140,3 +140,4 @@ const Receipt = React.forwardRef(({ data, settings, currentDate }, ref) => {
 
 Receipt.displayName = 'Receipt';
 export default Receipt;
+

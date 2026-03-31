@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+﻿import React, { useState, useEffect, useCallback } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
 import { supabase } from '@/lib/customSupabaseClient';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
@@ -308,7 +308,7 @@ const AddIncome = () => {
                                                     <TableCell>{inc.invoice_no || '-'}</TableCell>
                                                     <TableCell>{inc.date ? format(new Date(inc.date), 'MM/dd/yyyy') : '-'}</TableCell>
                                                     <TableCell className="text-blue-600">{inc.income_head?.name || '-'}</TableCell>
-                                                    <TableCell className="text-right">?{inc.amount?.toLocaleString('en-IN') || '0'}</TableCell>
+                                                    <TableCell className="text-right">₹{inc.amount?.toLocaleString('en-IN') || '0'}</TableCell>
                                                     <TableCell>
                                                         <div className="flex gap-1">
                                                             <Button size="icon" variant="ghost" className="h-8 w-8 bg-blue-500 text-white hover:bg-blue-600" onClick={() => handleEdit(inc)}>
@@ -337,3 +337,4 @@ const AddIncome = () => {
 };
 
 export default AddIncome;
+

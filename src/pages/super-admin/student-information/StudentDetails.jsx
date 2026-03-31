@@ -769,7 +769,7 @@ const StudentDetails = () => {
                                                 )}
                                             </td>
                                             <td className="p-3 min-w-[180px]">
-                                                <div className="space-y-1" title={`Total: ?${studentFees.total.toLocaleString()} | Paid: ?${studentFees.paid.toLocaleString()} | Balance: ?${studentFees.balance.toLocaleString()}`}>
+                                                <div className="space-y-1" title={`Total: ₹${studentFees.total.toLocaleString()} | Paid: ₹${studentFees.paid.toLocaleString()} | Balance: ₹${studentFees.balance.toLocaleString()}`}>
                                                     <div className="flex items-center gap-2">
                                                         <Progress 
                                                             value={feesProgress} 
@@ -778,24 +778,24 @@ const StudentDetails = () => {
                                                         <span className={`text-xs font-medium w-10 ${feesProgress === 100 ? 'text-green-600 dark:text-green-400' : feesProgress > 0 ? 'text-amber-600 dark:text-amber-400' : 'text-red-500 dark:text-red-400'}`}>{feesProgress}%</span>
                                                     </div>
                                                     <div className="flex items-center justify-between text-xs">
-                                                        <span className="text-green-600 dark:text-green-400">?{studentFees.paid.toLocaleString('en-IN')}</span>
+                                                        <span className="text-green-600 dark:text-green-400">₹{studentFees.paid.toLocaleString('en-IN')}</span>
                                                         <span className="text-muted-foreground">/</span>
-                                                        <span className="text-muted-foreground">?{studentFees.total.toLocaleString('en-IN')}</span>
+                                                        <span className="text-muted-foreground">₹{studentFees.total.toLocaleString('en-IN')}</span>
                                                     </div>
                                                     {/* Show discount, fine, and refund if present */}
                                                     <div className="flex flex-wrap gap-1 text-[10px]">
                                                         {studentFees.discount > 0 && (
-                                                            <span className="text-amber-600 dark:text-amber-400" title="Discount">D:?{studentFees.discount.toLocaleString('en-IN')}</span>
+                                                            <span className="text-amber-600 dark:text-amber-400" title="Discount">D:₹{studentFees.discount.toLocaleString('en-IN')}</span>
                                                         )}
                                                         {studentFees.fine > 0 && (
-                                                            <span className="text-orange-600 dark:text-orange-400" title="Fine">F:?{studentFees.fine.toLocaleString('en-IN')}</span>
+                                                            <span className="text-orange-600 dark:text-orange-400" title="Fine">F:₹{studentFees.fine.toLocaleString('en-IN')}</span>
                                                         )}
                                                         {studentFees.refunded > 0 && (
-                                                            <span className="text-blue-600 dark:text-blue-400" title="Refund">R:?{studentFees.refunded.toLocaleString('en-IN')}</span>
+                                                            <span className="text-blue-600 dark:text-blue-400" title="Refund">R:₹{studentFees.refunded.toLocaleString('en-IN')}</span>
                                                         )}
                                                     </div>
                                                     {studentFees.balance > 0 && (
-                                                        <div className="text-xs text-red-600 dark:text-red-400 font-medium">Due: ?{studentFees.balance.toLocaleString('en-IN')}</div>
+                                                        <div className="text-xs text-red-600 dark:text-red-400 font-medium">Due: ₹{studentFees.balance.toLocaleString('en-IN')}</div>
                                                     )}
                                                 </div>
                                             </td>

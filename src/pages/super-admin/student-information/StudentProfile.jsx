@@ -1242,11 +1242,11 @@ const StudentProfile = () => {
                     <Progress value={feePaymentPercent} className="h-3" />
                     <div className="grid grid-cols-2 gap-4 pt-2">
                       <div className="text-center p-3 bg-emerald-50 dark:bg-emerald-950/30 rounded-xl">
-                        <p className="text-xl font-bold text-emerald-600">?{feesSummary.paid.toLocaleString()}</p>
+                        <p className="text-xl font-bold text-emerald-600">₹{feesSummary.paid.toLocaleString()}</p>
                         <p className="text-xs text-muted-foreground">Paid</p>
                       </div>
                       <div className="text-center p-3 bg-red-50 dark:bg-red-950/30 rounded-xl">
-                        <p className="text-xl font-bold text-red-600">?{feesSummary.balance.toLocaleString()}</p>
+                        <p className="text-xl font-bold text-red-600">₹{feesSummary.balance.toLocaleString()}</p>
                         <p className="text-xs text-muted-foreground">Balance</p>
                       </div>
                     </div>
@@ -1699,3 +1699,4 @@ const StudentProfile = () => {
 };
 
 export default StudentProfile;
+

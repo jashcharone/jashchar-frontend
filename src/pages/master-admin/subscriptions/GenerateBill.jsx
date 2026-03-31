@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+﻿import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import DashboardLayout from '@/components/DashboardLayout';
 import { supabase } from '@/lib/customSupabaseClient';
@@ -513,12 +513,12 @@ const GenerateBill = () => {
                             
                             <div className="flex justify-between items-center">
                                 <Label className="text-base font-normal">GST Amount</Label>
-                                <span className="font-medium">?{billDetails.gst_amount.toFixed(2)}</span>
+                                <span className="font-medium">₹{billDetails.gst_amount.toFixed(2)}</span>
                             </div>
                             
                             <div className="flex justify-between items-center text-xl font-bold pt-4 border-t border-slate-200 dark:border-slate-700">
                                 <Label className="text-xl font-bold">Total Payable</Label>
-                                <span className="text-green-600">?{billDetails.total_amount.toFixed(2)}</span>
+                                <span className="text-green-600">₹{billDetails.total_amount.toFixed(2)}</span>
                             </div>
                         </div>
                     </div>
@@ -538,3 +538,4 @@ const GenerateBill = () => {
 };
 
 export default GenerateBill;
+

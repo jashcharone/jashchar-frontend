@@ -1,4 +1,4 @@
-/**
+﻿/**
  * ?? STUDENT PANEL PROFILE PAGE
  * -------------------------------------------------------------------------------
  * Shows student's own profile information (for student role)
@@ -214,7 +214,7 @@ const StudentPanelProfile = () => {
                                     <IndianRupee className="h-5 w-5 text-blue-600" />
                                 </div>
                                 <div>
-                                    <p className="text-2xl font-bold">?{student.feesSummary?.paid?.toLocaleString() || 0}</p>
+                                    <p className="text-2xl font-bold">₹{student.feesSummary?.paid?.toLocaleString() || 0}</p>
                                     <p className="text-xs text-muted-foreground">Fees Paid</p>
                                 </div>
                             </div>
@@ -230,7 +230,7 @@ const StudentPanelProfile = () => {
                                     <CreditCard className="h-5 w-5 text-orange-600" />
                                 </div>
                                 <div>
-                                    <p className="text-2xl font-bold text-orange-600">?{feeBalance?.toLocaleString() || 0}</p>
+                                    <p className="text-2xl font-bold text-orange-600">₹{feeBalance?.toLocaleString() || 0}</p>
                                     <p className="text-xs text-muted-foreground">Balance Due</p>
                                 </div>
                             </div>

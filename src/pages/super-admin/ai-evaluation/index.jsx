@@ -138,6 +138,10 @@ const AIEvaluation = () => {
         <Route path="sessions/:sessionId/results" element={<FinalMarks />} />
         <Route path="sessions/:sessionId/audit-logs" element={<AuditLogs />} />
         
+        {/* Direct access routes - redirect to sessions (need to select session first) */}
+        <Route path="upload" element={<Navigate to="/super-admin/ai-evaluation/sessions" replace state={{ message: 'Please select a session to upload papers' }} />} />
+        <Route path="question-mapping" element={<Navigate to="/super-admin/ai-evaluation/sessions" replace state={{ message: 'Please select a session to map questions' }} />} />
+        
         {/* Teacher Review */}
         <Route path="review" element={<TeacherReview />} />
         <Route path="review/:paperId" element={<ReviewPaper />} />

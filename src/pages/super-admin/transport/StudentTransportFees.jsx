@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+﻿import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import DashboardLayout from '@/components/DashboardLayout';
 import { supabase } from '@/lib/customSupabaseClient';
@@ -489,7 +489,7 @@ const StudentTransportFees = () => {
             <div className="bg-card rounded-xl shadow p-4 border-l-4 border-purple-500">
               <div className="flex items-center gap-3">
                 <IndianRupee className="h-8 w-8 text-purple-500" />
-                <div><p className="text-xs text-muted-foreground">Monthly Revenue</p><p className="text-2xl font-bold">?{stats.totalFee.toLocaleString('en-IN')}</p></div>
+                <div><p className="text-xs text-muted-foreground">Monthly Revenue</p><p className="text-2xl font-bold">₹{stats.totalFee.toLocaleString('en-IN')}</p></div>
               </div>
             </div>
           </div>
@@ -610,13 +610,13 @@ const StudentTransportFees = () => {
                     </div>
                     {formData.pickup_type !== 'both' && billingConfig?.one_way_percentage && (
                       <p className="text-xs text-amber-600 dark:text-amber-400">
-                        ? One-way: {billingConfig.one_way_percentage}% of annual fee = ?{Math.round((formData.annual_fee || 0) * billingConfig.one_way_percentage / 100).toLocaleString('en-IN')}
+                        ? One-way: {billingConfig.one_way_percentage}% of annual fee = ₹{Math.round((formData.annual_fee || 0) * billingConfig.one_way_percentage / 100).toLocaleString('en-IN')}
                       </p>
                     )}
                     {billingConfig && (
                       <p className="text-xs text-muted-foreground">
                         Billing: <strong className="capitalize">{(billingConfig.billing_mode || 'monthly').replace('_', ' ')}</strong>
-                        {billingConfig.billing_mode === 'monthly' && ` � ${billingConfig.working_months || 10} months`}
+                        {billingConfig.billing_mode === 'monthly' && ` � ${billingConfig.working_months || 10} months`}
                       </p>
                     )}
                   </div>
@@ -816,3 +816,4 @@ const StudentTransportFees = () => {
 };
 
 export default StudentTransportFees;
+

@@ -35,7 +35,7 @@ import { useToast } from '@/components/ui/use-toast';
 import { formatDate } from '@/utils/dateUtils';
 
 const SessionDetails = () => {
-  const { id } = useParams();
+  const { sessionId: id } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
   const { toast } = useToast();

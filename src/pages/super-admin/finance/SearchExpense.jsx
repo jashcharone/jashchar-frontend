@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+﻿import React, { useState, useEffect, useCallback } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
 import { supabase } from '@/lib/customSupabaseClient';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
@@ -162,7 +162,7 @@ const SearchExpense = () => {
                                             <TableCell>{expense.invoice_no || '-'}</TableCell>
                                             <TableCell>{expense.date ? format(new Date(expense.date), 'MM/dd/yyyy') : '-'}</TableCell>
                                             <TableCell>{expense.expense_head?.name || '-'}</TableCell>
-                                            <TableCell className="text-right">?{expense.amount?.toLocaleString('en-IN') || '0'}</TableCell>
+                                            <TableCell className="text-right">₹{expense.amount?.toLocaleString('en-IN') || '0'}</TableCell>
                                             <TableCell>
                                                 {expense.documents && expense.documents.length > 0 ? expense.documents.map((doc, index) => (
                                                     <Button asChild key={index} variant="link" size="sm">
@@ -189,3 +189,4 @@ const SearchExpense = () => {
 };
 
 export default SearchExpense;
+

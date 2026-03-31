@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+﻿import React, { useState, useEffect, useMemo } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { supabase } from '@/lib/customSupabaseClient';
@@ -162,7 +162,7 @@ const StudentPanelFees = () => {
                                         <td className="p-3 md:border-b" data-label="Fees Code">{master.fee_type.code}</td>
                                         <td className="p-3 md:border-b" data-label="Due Date">{format(new Date(master.due_date), 'dd-MM-yyyy')}</td>
                                         <td className="p-3 md:border-b" data-label="Status"><span className={`px-2 py-1 text-xs font-medium rounded-full ${master.statusClass}`}>{master.status}</span></td>
-                                        <td className="p-3 md:border-b text-right" data-label="Amount">?{Number(master.amount).toFixed(2)}</td>
+                                        <td className="p-3 md:border-b text-right" data-label="Amount">₹{Number(master.amount).toFixed(2)}</td>
                                         
                                         {master.relatedPayments.length === 0 ? (
                                              <td colSpan="4" className="p-3 md:border-b text-center text-muted-foreground">No payment yet</td>
@@ -171,10 +171,10 @@ const StudentPanelFees = () => {
                                             <td className="p-3 md:border-b" data-label="Payment ID">{master.relatedPayments[0].id.substring(0,8)}...</td>
                                             <td className="p-3 md:border-b" data-label="Mode">{master.relatedPayments[0].mode}</td>
                                             <td className="p-3 md:border-b" data-label="Date">{format(new Date(master.relatedPayments[0].date), 'dd-MM-yyyy')}</td>
-                                            <td className="p-3 md:border-b text-right" data-label="Paid">?{Number(master.relatedPayments[0].amount).toFixed(2)}</td>
+                                            <td className="p-3 md:border-b text-right" data-label="Paid">₹{Number(master.relatedPayments[0].amount).toFixed(2)}</td>
                                             </>
                                         )}
-                                        <td className="p-3 md:border-b text-right font-bold" data-label="Balance">?{master.balance.toFixed(2)}</td>
+                                        <td className="p-3 md:border-b text-right font-bold" data-label="Balance">₹{master.balance.toFixed(2)}</td>
                                         <td className="p-3 md:border-b text-center" data-label="Action">
                                             {master.balance > 0 ? (
                                                 <Button size="sm" onClick={() => handlePayClick(master)} className="bg-green-600 hover:bg-green-700">Pay</Button>
@@ -189,7 +189,7 @@ const StudentPanelFees = () => {
                                             <td className="p-3 md:border-b" data-label="Payment ID">{p.id.substring(0,8)}...</td>
                                             <td className="p-3 md:border-b" data-label="Mode">{p.mode}</td>
                                             <td className="p-3 md:border-b" data-label="Date">{format(new Date(p.date), 'dd-MM-yyyy')}</td>
-                                            <td className="p-3 md:border-b text-right" data-label="Paid">?{Number(p.amount).toFixed(2)}</td>
+                                            <td className="p-3 md:border-b text-right" data-label="Paid">₹{Number(p.amount).toFixed(2)}</td>
                                             <td colSpan="2" className="p-3 md:border-b"></td>
                                         </tr>
                                     ))}
@@ -199,18 +199,18 @@ const StudentPanelFees = () => {
                         <tfoot className="font-bold bg-muted hidden md:table-footer-group">
                             <tr>
                                 <td colSpan="4" className="p-3 text-right">Grand Total</td>
-                                <td className="p-3 text-right">?{grandTotal.amount.toFixed(2)}</td>
+                                <td className="p-3 text-right">₹{grandTotal.amount.toFixed(2)}</td>
                                 <td colSpan="3"></td>
-                                <td className="p-3 text-right">?{grandTotal.paid.toFixed(2)}</td>
-                                <td className="p-3 text-right">?{grandTotal.balance.toFixed(2)}</td>
+                                <td className="p-3 text-right">₹{grandTotal.paid.toFixed(2)}</td>
+                                <td className="p-3 text-right">₹{grandTotal.balance.toFixed(2)}</td>
                                 <td className="p-3"></td>
                             </tr>
                         </tfoot>
                     </table>
                      <div className="md:hidden mt-4 p-4 bg-muted rounded-lg font-bold space-y-2">
-                        <div className="flex justify-between"><span>Grand Total:</span><span>?{grandTotal.amount.toFixed(2)}</span></div>
-                        <div className="flex justify-between"><span>Total Paid:</span><span>?{grandTotal.paid.toFixed(2)}</span></div>
-                        <div className="flex justify-between text-red-600"><span>Total Balance:</span><span>?{grandTotal.balance.toFixed(2)}</span></div>
+                        <div className="flex justify-between"><span>Grand Total:</span><span>₹{grandTotal.amount.toFixed(2)}</span></div>
+                        <div className="flex justify-between"><span>Total Paid:</span><span>₹{grandTotal.paid.toFixed(2)}</span></div>
+                        <div className="flex justify-between text-red-600"><span>Total Balance:</span><span>₹{grandTotal.balance.toFixed(2)}</span></div>
                     </div>
                 </div>
             </div>
@@ -246,3 +246,4 @@ const StudentPanelFees = () => {
 };
 
 export default StudentPanelFees;
+

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { formatDate } from '@/utils/dateUtils';
 import { useParams, Link } from 'react-router-dom';
 import { supabase } from '@/lib/customSupabaseClient';
@@ -187,7 +187,7 @@ const StaffProfile = () => {
                     </div>
                     <div className="flex justify-between py-2 border-b border-dashed">
                         <span className="text-muted-foreground">Basic Salary</span>
-                        <span className="font-medium">?{staff.basic_salary || '-'}</span>
+                        <span className="font-medium">₹{staff.basic_salary || '-'}</span>
                     </div>
                     <div className="flex justify-between py-2 border-b border-dashed">
                         <span className="text-muted-foreground">Contract Type</span>
@@ -335,7 +335,7 @@ const StaffProfile = () => {
                         <h3 className="text-lg font-semibold flex items-center gap-2 text-primary mb-4"><Banknote className="w-5 h-5" /> Financial & Statutory</h3>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-y-4 gap-x-8 text-sm">
                             <div className="grid grid-cols-3 border-b pb-2"><span className="text-muted-foreground">Salary Pay Type</span><span className="col-span-2 font-medium">{staff.salary_pay_type || '-'}</span></div>
-                            <div className="grid grid-cols-3 border-b pb-2"><span className="text-muted-foreground">Basic Salary</span><span className="col-span-2 font-medium">?{staff.basic_salary || '0.00'}</span></div>
+                            <div className="grid grid-cols-3 border-b pb-2"><span className="text-muted-foreground">Basic Salary</span><span className="col-span-2 font-medium">₹{staff.basic_salary || '0.00'}</span></div>
                             <div className="grid grid-cols-3 border-b pb-2"><span className="text-muted-foreground">EPF Number</span><span className="col-span-2 font-medium">{staff.epf_no || '-'}</span></div>
                         </div>
                     </section>
@@ -397,25 +397,25 @@ const StaffProfile = () => {
                         <Card className="bg-blue-50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-800">
                             <CardContent className="p-4">
                                 <p className="text-xs text-muted-foreground uppercase font-semibold">Total Net Salary Paid</p>
-                                <h3 className="text-xl font-bold text-blue-700 dark:text-blue-400 mt-1">?{payrolls.reduce((acc, curr) => acc + (curr.net_salary || 0), 0).toLocaleString()}</h3>
+                                <h3 className="text-xl font-bold text-blue-700 dark:text-blue-400 mt-1">₹{payrolls.reduce((acc, curr) => acc + (curr.net_salary || 0), 0).toLocaleString()}</h3>
                             </CardContent>
                         </Card>
                         <Card className="bg-green-50 dark:bg-green-950/20 border-green-200 dark:border-green-800">
                             <CardContent className="p-4">
                                 <p className="text-xs text-muted-foreground uppercase font-semibold">Total Gross Salary</p>
-                                <h3 className="text-xl font-bold text-green-700 dark:text-green-400 mt-1">?{payrolls.reduce((acc, curr) => acc + (curr.gross_salary || 0), 0).toLocaleString()}</h3>
+                                <h3 className="text-xl font-bold text-green-700 dark:text-green-400 mt-1">₹{payrolls.reduce((acc, curr) => acc + (curr.gross_salary || 0), 0).toLocaleString()}</h3>
                             </CardContent>
                         </Card>
                         <Card className="bg-purple-50 dark:bg-purple-950/20 border-purple-200 dark:border-purple-800">
                             <CardContent className="p-4">
                                 <p className="text-xs text-muted-foreground uppercase font-semibold">Total Earnings</p>
-                                <h3 className="text-xl font-bold text-purple-700 dark:text-purple-400 mt-1">?{payrolls.reduce((acc, curr) => acc + (curr.total_earnings || 0), 0).toLocaleString()}</h3>
+                                <h3 className="text-xl font-bold text-purple-700 dark:text-purple-400 mt-1">₹{payrolls.reduce((acc, curr) => acc + (curr.total_earnings || 0), 0).toLocaleString()}</h3>
                             </CardContent>
                         </Card>
                         <Card className="bg-red-50 dark:bg-red-950/20 border-red-200 dark:border-red-800">
                             <CardContent className="p-4">
                                 <p className="text-xs text-muted-foreground uppercase font-semibold">Total Deductions</p>
-                                <h3 className="text-xl font-bold text-red-700 dark:text-red-400 mt-1">?{payrolls.reduce((acc, curr) => acc + (curr.total_deductions || 0), 0).toLocaleString()}</h3>
+                                <h3 className="text-xl font-bold text-red-700 dark:text-red-400 mt-1">₹{payrolls.reduce((acc, curr) => acc + (curr.total_deductions || 0), 0).toLocaleString()}</h3>
                             </CardContent>
                         </Card>
                     </div>
@@ -444,7 +444,7 @@ const StaffProfile = () => {
                                             <TableCell>{formatDate(p.created_at)}</TableCell>
                                             <TableCell>{p.payment_mode || 'Bank Transfer'}</TableCell>
                                             <TableCell><Badge variant={p.status === 'paid' ? 'success' : 'warning'} className={p.status === 'paid' ? 'bg-green-500 dark:bg-green-600' : 'bg-yellow-500 dark:bg-yellow-600'}>{p.status}</Badge></TableCell>
-                                            <TableCell className="text-right font-bold">?{p.net_salary}</TableCell>
+                                            <TableCell className="text-right font-bold">₹{p.net_salary}</TableCell>
                                             <TableCell className="text-right">
                                                 <Button size="sm" variant="outline">View Payslip</Button>
                                             </TableCell>
@@ -688,3 +688,4 @@ const StaffProfile = () => {
 };
 
 export default StaffProfile;
+

@@ -460,7 +460,7 @@ const SchoolRequests = () => {
                                         <SelectContent>
                                             {plans.map((plan) => (
                                                 <SelectItem key={plan.id} value={plan.id}>
-                                                    {plan.name} - ?{plan.price}/month
+                                                    {plan.name} - ₹{plan.price}/month
                                                 </SelectItem>
                                             ))}
                                         </SelectContent>
@@ -486,3 +486,4 @@ const SchoolRequests = () => {
 };
 
 export default SchoolRequests;
+

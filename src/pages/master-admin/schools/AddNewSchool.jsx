@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { ArrowLeft, Building, User, Eye, EyeOff, Loader2 } from 'lucide-react';
@@ -197,7 +197,7 @@ const AddNewSchool = () => {
               <Label>Assign Plan</Label>
               <Select value={formData.subscription_plan} onValueChange={(v) => handleSelectChange('subscription_plan', v)}>
                 <SelectTrigger><SelectValue placeholder="Select Plan" /></SelectTrigger>
-                <SelectContent>{subscriptionPlans.map(p => <SelectItem key={p.id} value={p.id}>{p.name} (?{p.price})</SelectItem>)}</SelectContent>
+                <SelectContent>{subscriptionPlans.map(p => <SelectItem key={p.id} value={p.id}>{p.name} (₹{p.price})</SelectItem>)}</SelectContent>
               </Select>
             </div>
             <div className="space-y-2">
@@ -243,3 +243,4 @@ const AddNewSchool = () => {
 };
 
 export default AddNewSchool;
+

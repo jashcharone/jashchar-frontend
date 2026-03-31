@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+﻿import React, { useState, useEffect, useMemo, useRef } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
 import DataTableExport from '@/components/DataTableExport';
 import { supabase } from '@/lib/customSupabaseClient';
@@ -145,11 +145,11 @@ const IncomeGroupReport = () => {
                                     {Object.entries(reportData).map(([head, data]) => (
                                         <tr key={head} className="border-b">
                                             <td className="p-2 font-medium">{head} ({data.count} {data.count > 1 ? 'items' : 'item'})</td>
-                                            <td className="p-2 text-right">?{data.total.toFixed(2)}</td>
+                                            <td className="p-2 text-right">₹{data.total.toFixed(2)}</td>
                                         </tr>
                                     ))}
                                 </tbody>
-                                <tfoot className="font-bold bg-muted"><tr><td className="p-2 text-right">Grand Total</td><td className="p-2 text-right">?{grandTotal.toFixed(2)}</td></tr></tfoot>
+                                <tfoot className="font-bold bg-muted"><tr><td className="p-2 text-right">Grand Total</td><td className="p-2 text-right">₹{grandTotal.toFixed(2)}</td></tr></tfoot>
                             </table>
                         </div>
                     </CardContent>
@@ -160,3 +160,4 @@ const IncomeGroupReport = () => {
 };
 
 export default IncomeGroupReport;
+

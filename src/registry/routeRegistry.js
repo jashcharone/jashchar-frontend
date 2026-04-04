@@ -259,13 +259,29 @@ export const ROUTES = {
     INCIDENTS: '/super-admin/behaviour-records/incidents',
     BEHAVIOUR_REPORTS: '/super-admin/behaviour-records/reports',
     BEHAVIOUR_SETTING: '/super-admin/behaviour-records/setting',
-    // Attendance
+    // Attendance - Student
     STUDENT_ATTENDANCE: '/super-admin/attendance/student-attendance',
     ATTENDANCE_BY_DATE: '/super-admin/attendance/attendance-by-date',
     APPROVE_LEAVE: '/super-admin/attendance/approve-student-leave',
-    STAFF_ATTENDANCE: '/super-admin/attendance/staff-attendance',
     ATTENDANCE_REPORT: '/super-admin/attendance/attendance-report',
-    // Advanced Attendance (Futuristic Module)
+    // Smart Student Attendance
+    SMART_STUDENT_LIVE_FACE: '/super-admin/attendance/smart/student/live-face',
+    SMART_STUDENT_FACE_REGISTRATION: '/super-admin/attendance/smart/student/face-registration',
+    SMART_STUDENT_QR_CODE: '/super-admin/attendance/smart/student/qr-code',
+    SMART_STUDENT_CARDS: '/super-admin/attendance/smart/student/cards',
+    SMART_STUDENT_DEVICES: '/super-admin/attendance/smart/student/devices',
+    SMART_STUDENT_ANALYTICS: '/super-admin/attendance/smart/student/analytics',
+    // Attendance - Staff
+    STAFF_ATTENDANCE: '/super-admin/attendance/staff-attendance',
+    STAFF_ATTENDANCE_REPORT: '/super-admin/attendance/staff-attendance-report',
+    // Smart Staff Attendance
+    SMART_STAFF_LIVE_FACE: '/super-admin/attendance/smart/staff/live-face',
+    SMART_STAFF_FACE_REGISTRATION: '/super-admin/attendance/smart/staff/face-registration',
+    SMART_STAFF_QR_CODE: '/super-admin/attendance/smart/staff/qr-code',
+    SMART_STAFF_CARDS: '/super-admin/attendance/smart/staff/cards',
+    SMART_STAFF_DEVICES: '/super-admin/attendance/smart/staff/devices',
+    SMART_STAFF_ANALYTICS: '/super-admin/attendance/smart/staff/analytics',
+    // AI Attendance System (Shared)
     LIVE_ATTENDANCE_DASHBOARD: '/super-admin/attendance/live-dashboard',
     QR_CODE_GENERATOR: '/super-admin/attendance/qr-generator',
     DEVICE_MANAGEMENT: '/super-admin/attendance/device-management',

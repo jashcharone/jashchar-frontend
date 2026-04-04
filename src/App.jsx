@@ -3,6 +3,7 @@ window.deploymentTimestamp = '2025-02-05-chunk-retry-fix';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { Capacitor } from '@capacitor/core';
 import ProtectedRoute from '@/components/ProtectedRoute';
+import AttendanceModuleGuard from '@/components/AttendanceModuleGuard';
 import SecurityHeaders from '@/components/SecurityHeaders';
 import { lazyWithRetry } from '@/utils/lazyWithRetry';
 import { ROUTES } from '@/registry/routeRegistry';
@@ -383,6 +384,20 @@ const AttendanceRules = lazy(() => import('@/pages/super-admin/attendance/Attend
 const GeoFenceSetup = lazy(() => import('@/pages/super-admin/attendance/GeoFenceSetup'));
 const AttendanceAnalytics = lazy(() => import('@/pages/super-admin/attendance/AttendanceAnalytics'));
 const WearableDevices = lazy(() => import('@/pages/super-admin/attendance/WearableDevices'));
+// Smart Student Attendance
+const SmartStudentLiveFace = lazy(() => import('@/pages/super-admin/attendance/smart/student/SmartStudentLiveFace'));
+const SmartStudentFaceRegistration = lazy(() => import('@/pages/super-admin/attendance/smart/student/SmartStudentFaceRegistration'));
+const SmartStudentQRCode = lazy(() => import('@/pages/super-admin/attendance/smart/student/SmartStudentQRCode'));
+const SmartStudentCards = lazy(() => import('@/pages/super-admin/attendance/smart/student/SmartStudentCards'));
+const SmartStudentDevices = lazy(() => import('@/pages/super-admin/attendance/smart/student/SmartStudentDevices'));
+const SmartStudentAnalytics = lazy(() => import('@/pages/super-admin/attendance/smart/student/SmartStudentAnalytics'));
+// Smart Staff Attendance
+const SmartStaffLiveFace = lazy(() => import('@/pages/super-admin/attendance/smart/staff/SmartStaffLiveFace'));
+const SmartStaffFaceRegistration = lazy(() => import('@/pages/super-admin/attendance/smart/staff/SmartStaffFaceRegistration'));
+const SmartStaffQRCode = lazy(() => import('@/pages/super-admin/attendance/smart/staff/SmartStaffQRCode'));
+const SmartStaffCards = lazy(() => import('@/pages/super-admin/attendance/smart/staff/SmartStaffCards'));
+const SmartStaffDevices = lazy(() => import('@/pages/super-admin/attendance/smart/staff/SmartStaffDevices'));
+const SmartStaffAnalytics = lazy(() => import('@/pages/super-admin/attendance/smart/staff/SmartStaffAnalytics'));
 
 // Fees (Remaining)
 const FeesGroup = lazy(() => import('@/pages/super-admin/fees-collection/FeesGroup'));
@@ -1588,34 +1603,48 @@ function App() {
             <Route path={ROUTES.SUPER_ADMIN.HR_LOANS} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'accountant']} requiredModule="human_resource"><LoansManagement /></ProtectedRoute>} />
 
             {/* ? Attendance */}
-            <Route path={ROUTES.SUPER_ADMIN.STUDENT_ATTENDANCE} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'teacher', 'principal']} requiredModule="attendance"><StudentAttendance /></ProtectedRoute>} />
-            <Route path={ROUTES.SUPER_ADMIN.ATTENDANCE_BY_DATE} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'teacher', 'principal']} requiredModule="attendance"><AttendanceByDate /></ProtectedRoute>} />
-            <Route path={ROUTES.SUPER_ADMIN.APPROVE_LEAVE} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'teacher', 'principal']} requiredModule="attendance"><ApproveStudentLeave /></ProtectedRoute>} />
-            <Route path={ROUTES.SUPER_ADMIN.STAFF_ATTENDANCE} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'principal']} requiredModule="attendance"><StaffAttendance /></ProtectedRoute>} />
-            <Route path={ROUTES.SUPER_ADMIN.ATTENDANCE_REPORT} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'teacher', 'principal']} requiredModule="attendance"><AttendanceReport /></ProtectedRoute>} />
+            <Route path={ROUTES.SUPER_ADMIN.STUDENT_ATTENDANCE} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'teacher', 'principal']} requiredModule="attendance"><AttendanceModuleGuard moduleCode="manual_student"><StudentAttendance /></AttendanceModuleGuard></ProtectedRoute>} />
+            <Route path={ROUTES.SUPER_ADMIN.ATTENDANCE_BY_DATE} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'teacher', 'principal']} requiredModule="attendance"><AttendanceModuleGuard moduleCode="attendance_by_date"><AttendanceByDate /></AttendanceModuleGuard></ProtectedRoute>} />
+            <Route path={ROUTES.SUPER_ADMIN.APPROVE_LEAVE} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'teacher', 'principal']} requiredModule="attendance"><AttendanceModuleGuard moduleCode="leave_management"><ApproveStudentLeave /></AttendanceModuleGuard></ProtectedRoute>} />
+            <Route path={ROUTES.SUPER_ADMIN.STAFF_ATTENDANCE} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'principal']} requiredModule="attendance"><AttendanceModuleGuard moduleCode="manual_staff"><StaffAttendance /></AttendanceModuleGuard></ProtectedRoute>} />
+            <Route path={ROUTES.SUPER_ADMIN.ATTENDANCE_REPORT} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'teacher', 'principal']} requiredModule="attendance"><AttendanceModuleGuard moduleCode="basic_report"><AttendanceReport /></AttendanceModuleGuard></ProtectedRoute>} />
             {/* Advanced Attendance (Futuristic) */}
-            <Route path={ROUTES.SUPER_ADMIN.LIVE_ATTENDANCE_DASHBOARD} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="attendance"><LiveAttendanceDashboard /></ProtectedRoute>} />
-            <Route path={ROUTES.SUPER_ADMIN.QR_CODE_GENERATOR} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'teacher']} requiredModule="attendance"><QRCodeGenerator /></ProtectedRoute>} />
-            <Route path={ROUTES.SUPER_ADMIN.DEVICE_MANAGEMENT} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="attendance"><DeviceManagement /></ProtectedRoute>} />
-            <Route path={ROUTES.SUPER_ADMIN.CARD_MANAGEMENT} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="attendance"><CardManagement /></ProtectedRoute>} />
-            <Route path={ROUTES.SUPER_ADMIN.FACE_REGISTRATION} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="attendance"><FaceRegistration /></ProtectedRoute>} />
-            <Route path={ROUTES.SUPER_ADMIN.LIVE_FACE_ATTENDANCE} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'teacher']} requiredModule="attendance"><LiveFaceAttendance /></ProtectedRoute>} />
-            <Route path={ROUTES.SUPER_ADMIN.AI_CAMERA_MANAGEMENT} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="attendance"><AICameraManagement /></ProtectedRoute>} />
-            <Route path={ROUTES.SUPER_ADMIN.FAISS_INDEX_MANAGEMENT} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="attendance"><FaissIndexManagement /></ProtectedRoute>} />
-            <Route path={ROUTES.SUPER_ADMIN.SPOOF_ALERTS} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="attendance"><SpoofAlerts /></ProtectedRoute>} />
-            <Route path={ROUTES.SUPER_ADMIN.FACE_ATTENDANCE_DASHBOARD} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'principal']} requiredModule="attendance"><FaceAttendanceDashboard /></ProtectedRoute>} />
-            <Route path={ROUTES.SUPER_ADMIN.ATTENDANCE_HEATMAP} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'principal']} requiredModule="attendance"><AttendanceHeatmap /></ProtectedRoute>} />
-            <Route path={ROUTES.SUPER_ADMIN.LATE_ARRIVAL_TRACKING} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'principal', 'teacher']} requiredModule="attendance"><LateArrivalTracking /></ProtectedRoute>} />
-            <Route path={ROUTES.SUPER_ADMIN.UNKNOWN_FACE_MANAGEMENT} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="attendance"><UnknownFaceManagement /></ProtectedRoute>} />
-            <Route path={ROUTES.SUPER_ADMIN.FACE_ATTENDANCE_REPORTS} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'principal']} requiredModule="attendance"><FaceAttendanceReports /></ProtectedRoute>} />
-            <Route path={ROUTES.SUPER_ADMIN.ATTENDANCE_NOTIFICATION_SETTINGS} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="attendance"><AttendanceNotificationSettings /></ProtectedRoute>} />
-            <Route path={ROUTES.SUPER_ADMIN.FACE_ATTENDANCE_TEST_DASHBOARD} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="attendance"><FaceAttendanceTestDashboard /></ProtectedRoute>} />
-            <Route path={ROUTES.SUPER_ADMIN.FACE_ATTENDANCE_HELP} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'principal', 'teacher']} requiredModule="attendance"><FaceAttendanceHelp /></ProtectedRoute>} />
-            <Route path={ROUTES.SUPER_ADMIN.FACE_ATTENDANCE_ADMIN_SETTINGS} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="attendance"><FaceAttendanceAdminSettings /></ProtectedRoute>} />
-            <Route path={ROUTES.SUPER_ADMIN.ATTENDANCE_RULES} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="attendance"><AttendanceRules /></ProtectedRoute>} />
-            <Route path={ROUTES.SUPER_ADMIN.GEO_FENCE_SETUP} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="attendance"><GeoFenceSetup /></ProtectedRoute>} />
-            <Route path={ROUTES.SUPER_ADMIN.WEARABLE_DEVICES} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="attendance"><WearableDevices /></ProtectedRoute>} />
-            <Route path={ROUTES.SUPER_ADMIN.ATTENDANCE_ANALYTICS} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'teacher']} requiredModule="attendance"><AttendanceAnalytics /></ProtectedRoute>} />
+            <Route path={ROUTES.SUPER_ADMIN.LIVE_ATTENDANCE_DASHBOARD} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="attendance"><AttendanceModuleGuard moduleCode="live_dashboard"><LiveAttendanceDashboard /></AttendanceModuleGuard></ProtectedRoute>} />
+            <Route path={ROUTES.SUPER_ADMIN.QR_CODE_GENERATOR} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'teacher']} requiredModule="attendance"><AttendanceModuleGuard moduleCode="qr_attendance"><QRCodeGenerator /></AttendanceModuleGuard></ProtectedRoute>} />
+            <Route path={ROUTES.SUPER_ADMIN.DEVICE_MANAGEMENT} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="attendance"><AttendanceModuleGuard moduleCode="device_management"><DeviceManagement /></AttendanceModuleGuard></ProtectedRoute>} />
+            <Route path={ROUTES.SUPER_ADMIN.CARD_MANAGEMENT} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="attendance"><AttendanceModuleGuard moduleCode="rfid_attendance"><CardManagement /></AttendanceModuleGuard></ProtectedRoute>} />
+            <Route path={ROUTES.SUPER_ADMIN.FACE_REGISTRATION} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="attendance"><AttendanceModuleGuard moduleCode="face_registration"><FaceRegistration /></AttendanceModuleGuard></ProtectedRoute>} />
+            <Route path={ROUTES.SUPER_ADMIN.LIVE_FACE_ATTENDANCE} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'teacher']} requiredModule="attendance"><AttendanceModuleGuard moduleCode="face_recognition"><LiveFaceAttendance /></AttendanceModuleGuard></ProtectedRoute>} />
+            <Route path={ROUTES.SUPER_ADMIN.AI_CAMERA_MANAGEMENT} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="attendance"><AttendanceModuleGuard moduleCode="ai_cameras"><AICameraManagement /></AttendanceModuleGuard></ProtectedRoute>} />
+            <Route path={ROUTES.SUPER_ADMIN.FAISS_INDEX_MANAGEMENT} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="attendance"><AttendanceModuleGuard moduleCode="ai_cameras"><FaissIndexManagement /></AttendanceModuleGuard></ProtectedRoute>} />
+            <Route path={ROUTES.SUPER_ADMIN.SPOOF_ALERTS} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="attendance"><AttendanceModuleGuard moduleCode="proxy_detection"><SpoofAlerts /></AttendanceModuleGuard></ProtectedRoute>} />
+            <Route path={ROUTES.SUPER_ADMIN.FACE_ATTENDANCE_DASHBOARD} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'principal']} requiredModule="attendance"><AttendanceModuleGuard moduleCode="face_recognition"><FaceAttendanceDashboard /></AttendanceModuleGuard></ProtectedRoute>} />
+            <Route path={ROUTES.SUPER_ADMIN.ATTENDANCE_HEATMAP} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'principal']} requiredModule="attendance"><AttendanceModuleGuard moduleCode="face_recognition"><AttendanceHeatmap /></AttendanceModuleGuard></ProtectedRoute>} />
+            <Route path={ROUTES.SUPER_ADMIN.LATE_ARRIVAL_TRACKING} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'principal', 'teacher']} requiredModule="attendance"><AttendanceModuleGuard moduleCode="face_recognition"><LateArrivalTracking /></AttendanceModuleGuard></ProtectedRoute>} />
+            <Route path={ROUTES.SUPER_ADMIN.UNKNOWN_FACE_MANAGEMENT} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="attendance"><AttendanceModuleGuard moduleCode="face_recognition"><UnknownFaceManagement /></AttendanceModuleGuard></ProtectedRoute>} />
+            <Route path={ROUTES.SUPER_ADMIN.FACE_ATTENDANCE_REPORTS} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'principal']} requiredModule="attendance"><AttendanceModuleGuard moduleCode="face_recognition"><FaceAttendanceReports /></AttendanceModuleGuard></ProtectedRoute>} />
+            <Route path={ROUTES.SUPER_ADMIN.ATTENDANCE_NOTIFICATION_SETTINGS} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="attendance"><AttendanceModuleGuard moduleCode="face_recognition"><AttendanceNotificationSettings /></AttendanceModuleGuard></ProtectedRoute>} />
+            <Route path={ROUTES.SUPER_ADMIN.FACE_ATTENDANCE_TEST_DASHBOARD} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="attendance"><AttendanceModuleGuard moduleCode="face_recognition"><FaceAttendanceTestDashboard /></AttendanceModuleGuard></ProtectedRoute>} />
+            <Route path={ROUTES.SUPER_ADMIN.FACE_ATTENDANCE_HELP} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'principal', 'teacher']} requiredModule="attendance"><AttendanceModuleGuard moduleCode="face_recognition"><FaceAttendanceHelp /></AttendanceModuleGuard></ProtectedRoute>} />
+            <Route path={ROUTES.SUPER_ADMIN.FACE_ATTENDANCE_ADMIN_SETTINGS} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="attendance"><AttendanceModuleGuard moduleCode="face_recognition"><FaceAttendanceAdminSettings /></AttendanceModuleGuard></ProtectedRoute>} />
+            <Route path={ROUTES.SUPER_ADMIN.ATTENDANCE_RULES} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="attendance"><AttendanceModuleGuard moduleCode="automation_rules"><AttendanceRules /></AttendanceModuleGuard></ProtectedRoute>} />
+            <Route path={ROUTES.SUPER_ADMIN.GEO_FENCE_SETUP} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="attendance"><AttendanceModuleGuard moduleCode="geo_fence"><GeoFenceSetup /></AttendanceModuleGuard></ProtectedRoute>} />
+            <Route path={ROUTES.SUPER_ADMIN.WEARABLE_DEVICES} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="attendance"><AttendanceModuleGuard moduleCode="wearable_devices"><WearableDevices /></AttendanceModuleGuard></ProtectedRoute>} />
+            <Route path={ROUTES.SUPER_ADMIN.ATTENDANCE_ANALYTICS} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'teacher']} requiredModule="attendance"><AttendanceModuleGuard moduleCode="advanced_report"><AttendanceAnalytics /></AttendanceModuleGuard></ProtectedRoute>} />
+            {/* 🎯 Smart Student Attendance */}
+            <Route path={ROUTES.SUPER_ADMIN.SMART_STUDENT_LIVE_FACE} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'teacher']} requiredModule="attendance"><AttendanceModuleGuard moduleCode="face_recognition"><SmartStudentLiveFace /></AttendanceModuleGuard></ProtectedRoute>} />
+            <Route path={ROUTES.SUPER_ADMIN.SMART_STUDENT_FACE_REGISTRATION} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="attendance"><AttendanceModuleGuard moduleCode="face_registration"><SmartStudentFaceRegistration /></AttendanceModuleGuard></ProtectedRoute>} />
+            <Route path={ROUTES.SUPER_ADMIN.SMART_STUDENT_QR_CODE} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'teacher']} requiredModule="attendance"><AttendanceModuleGuard moduleCode="qr_attendance"><SmartStudentQRCode /></AttendanceModuleGuard></ProtectedRoute>} />
+            <Route path={ROUTES.SUPER_ADMIN.SMART_STUDENT_CARDS} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="attendance"><AttendanceModuleGuard moduleCode="rfid_attendance"><SmartStudentCards /></AttendanceModuleGuard></ProtectedRoute>} />
+            <Route path={ROUTES.SUPER_ADMIN.SMART_STUDENT_DEVICES} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="attendance"><AttendanceModuleGuard moduleCode="device_management"><SmartStudentDevices /></AttendanceModuleGuard></ProtectedRoute>} />
+            <Route path={ROUTES.SUPER_ADMIN.SMART_STUDENT_ANALYTICS} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'principal']} requiredModule="attendance"><AttendanceModuleGuard moduleCode="advanced_report"><SmartStudentAnalytics /></AttendanceModuleGuard></ProtectedRoute>} />
+            {/* 🎯 Smart Staff Attendance */}
+            <Route path={ROUTES.SUPER_ADMIN.SMART_STAFF_LIVE_FACE} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="attendance"><AttendanceModuleGuard moduleCode="face_recognition"><SmartStaffLiveFace /></AttendanceModuleGuard></ProtectedRoute>} />
+            <Route path={ROUTES.SUPER_ADMIN.SMART_STAFF_FACE_REGISTRATION} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="attendance"><AttendanceModuleGuard moduleCode="face_registration"><SmartStaffFaceRegistration /></AttendanceModuleGuard></ProtectedRoute>} />
+            <Route path={ROUTES.SUPER_ADMIN.SMART_STAFF_QR_CODE} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="attendance"><AttendanceModuleGuard moduleCode="qr_attendance"><SmartStaffQRCode /></AttendanceModuleGuard></ProtectedRoute>} />
+            <Route path={ROUTES.SUPER_ADMIN.SMART_STAFF_CARDS} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="attendance"><AttendanceModuleGuard moduleCode="rfid_attendance"><SmartStaffCards /></AttendanceModuleGuard></ProtectedRoute>} />
+            <Route path={ROUTES.SUPER_ADMIN.SMART_STAFF_DEVICES} element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredModule="attendance"><AttendanceModuleGuard moduleCode="device_management"><SmartStaffDevices /></AttendanceModuleGuard></ProtectedRoute>} />
+            <Route path={ROUTES.SUPER_ADMIN.SMART_STAFF_ANALYTICS} element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'principal']} requiredModule="attendance"><AttendanceModuleGuard moduleCode="advanced_report"><SmartStaffAnalytics /></AttendanceModuleGuard></ProtectedRoute>} />
 
             {/* ? Task Management - Available to ALL 21 Staff Roles */}
             <Route path="/super-admin/task-management" element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'principal', 'vice_principal', 'coordinator', 'accountant', 'cashier', 'receptionist', 'teacher', 'class_teacher', 'subject_teacher', 'librarian', 'lab_assistant', 'driver', 'hostel_warden', 'sports_coach', 'security_guard', 'maintenance_staff', 'peon']} requiredModule="task_management"><TaskDashboard /></ProtectedRoute>} />

@@ -235,41 +235,59 @@ export const BASE_SIDEBAR = {
       title: 'Attendance',
       icon: Calendar,
       submenu: [
-        // -- Manual Attendance --
-        { title: '-- Manual Attendance --', path: '#att-manual', disabled: true },
-        { title: 'Student Attendance', path: ROUTES.SUPER_ADMIN.STUDENT_ATTENDANCE },
-        { title: 'Attendance By Date', path: ROUTES.SUPER_ADMIN.ATTENDANCE_BY_DATE },
-        { title: 'Approve Leave', path: ROUTES.SUPER_ADMIN.APPROVE_LEAVE },
-        { title: 'Staff Attendance', path: ROUTES.SUPER_ADMIN.STAFF_ATTENDANCE },
-        { title: 'Attendance Report', path: ROUTES.SUPER_ADMIN.ATTENDANCE_REPORT },
-        // -- Smart Attendance --
-        { title: '-- Smart Attendance --', path: '#att-smart', disabled: true },
-        { title: 'Live Dashboard', path: ROUTES.SUPER_ADMIN.LIVE_ATTENDANCE_DASHBOARD },
-        { title: 'QR Code Generator', path: ROUTES.SUPER_ADMIN.QR_CODE_GENERATOR },
-        { title: 'Device Management', path: ROUTES.SUPER_ADMIN.DEVICE_MANAGEMENT },
-        { title: 'Card Management', path: ROUTES.SUPER_ADMIN.CARD_MANAGEMENT },
-        { title: 'Face Registration', path: ROUTES.SUPER_ADMIN.FACE_REGISTRATION },
-        { title: 'Live Face Attendance', path: ROUTES.SUPER_ADMIN.LIVE_FACE_ATTENDANCE },
-        { title: 'AI Camera Management', path: ROUTES.SUPER_ADMIN.AI_CAMERA_MANAGEMENT },
-        { title: 'FAISS Index Management', path: ROUTES.SUPER_ADMIN.FAISS_INDEX_MANAGEMENT },
-        { title: 'Spoof Alerts', path: ROUTES.SUPER_ADMIN.SPOOF_ALERTS },
-        // -- Face Analytics --
-        { title: '-- Face Analytics --', path: '#att-face-analytics', disabled: true },
-        { title: 'Face Analytics Dashboard', path: ROUTES.SUPER_ADMIN.FACE_ATTENDANCE_DASHBOARD },
-        { title: 'Recognition Heatmap', path: ROUTES.SUPER_ADMIN.ATTENDANCE_HEATMAP },
-        { title: 'Late Arrivals', path: ROUTES.SUPER_ADMIN.LATE_ARRIVAL_TRACKING },
-        { title: 'Unknown Faces', path: ROUTES.SUPER_ADMIN.UNKNOWN_FACE_MANAGEMENT },
-        { title: 'Attendance Reports', path: ROUTES.SUPER_ADMIN.FACE_ATTENDANCE_REPORTS },
+        // ═══════════════════════════════════════════════════════════════════════
+        // STUDENT ATTENDANCE
+        // ═══════════════════════════════════════════════════════════════════════
+        { title: '-- Student Attendance --', path: '#att-student', disabled: true },
+        { title: 'Student Attendance', path: ROUTES.SUPER_ADMIN.STUDENT_ATTENDANCE, moduleCode: 'manual_student' },
+        { title: 'Attendance By Date', path: ROUTES.SUPER_ADMIN.ATTENDANCE_BY_DATE, moduleCode: 'attendance_by_date' },
+        { title: 'Approve Leave', path: ROUTES.SUPER_ADMIN.APPROVE_LEAVE, moduleCode: 'leave_management' },
+        { title: 'Student Report', path: ROUTES.SUPER_ADMIN.ATTENDANCE_REPORT, moduleCode: 'basic_report' },
+        // Smart Student Attendance
+        { title: '-- Smart Student Attendance --', path: '#att-smart-student', disabled: true },
+        { title: 'Live Face Attendance', path: ROUTES.SUPER_ADMIN.SMART_STUDENT_LIVE_FACE, badge: 'AI', moduleCode: 'face_recognition' },
+        { title: 'Face Registration', path: ROUTES.SUPER_ADMIN.SMART_STUDENT_FACE_REGISTRATION, moduleCode: 'face_registration' },
+        { title: 'QR Code Generator', path: ROUTES.SUPER_ADMIN.SMART_STUDENT_QR_CODE, moduleCode: 'qr_attendance' },
+        { title: 'Student Cards', path: ROUTES.SUPER_ADMIN.SMART_STUDENT_CARDS, moduleCode: 'rfid_attendance' },
+        { title: 'Student Devices', path: ROUTES.SUPER_ADMIN.SMART_STUDENT_DEVICES, moduleCode: 'device_management' },
+        { title: 'Student Analytics', path: ROUTES.SUPER_ADMIN.SMART_STUDENT_ANALYTICS, moduleCode: 'advanced_report' },
+        // ═══════════════════════════════════════════════════════════════════════
+        // STAFF ATTENDANCE
+        // ═══════════════════════════════════════════════════════════════════════
+        { title: '-- Staff Attendance --', path: '#att-staff', disabled: true },
+        { title: 'Staff Attendance', path: ROUTES.SUPER_ADMIN.STAFF_ATTENDANCE, moduleCode: 'manual_staff' },
+        { title: 'Staff Report', path: ROUTES.SUPER_ADMIN.STAFF_ATTENDANCE_REPORT, moduleCode: 'basic_report' },
+        // Smart Staff Attendance
+        { title: '-- Smart Staff Attendance --', path: '#att-smart-staff', disabled: true },
+        { title: 'Live Face Attendance', path: ROUTES.SUPER_ADMIN.SMART_STAFF_LIVE_FACE, badge: 'AI', moduleCode: 'face_recognition' },
+        { title: 'Face Registration', path: ROUTES.SUPER_ADMIN.SMART_STAFF_FACE_REGISTRATION, moduleCode: 'face_registration' },
+        { title: 'QR Code Generator', path: ROUTES.SUPER_ADMIN.SMART_STAFF_QR_CODE, moduleCode: 'qr_attendance' },
+        { title: 'Staff Cards', path: ROUTES.SUPER_ADMIN.SMART_STAFF_CARDS, moduleCode: 'rfid_attendance' },
+        { title: 'Staff Devices', path: ROUTES.SUPER_ADMIN.SMART_STAFF_DEVICES, moduleCode: 'device_management' },
+        { title: 'Staff Analytics', path: ROUTES.SUPER_ADMIN.SMART_STAFF_ANALYTICS, moduleCode: 'advanced_report' },
+        // ═══════════════════════════════════════════════════════════════════════
+        // AI SYSTEM & ANALYTICS
+        // ═══════════════════════════════════════════════════════════════════════
+        { title: '-- AI System & Analytics --', path: '#att-ai-system', disabled: true },
+        { title: 'Live Dashboard', path: ROUTES.SUPER_ADMIN.LIVE_ATTENDANCE_DASHBOARD, moduleCode: 'live_dashboard' },
+        { title: 'AI Camera Management', path: ROUTES.SUPER_ADMIN.AI_CAMERA_MANAGEMENT, moduleCode: 'ai_cameras' },
+        { title: 'FAISS Index Management', path: ROUTES.SUPER_ADMIN.FAISS_INDEX_MANAGEMENT, moduleCode: 'ai_cameras' },
+        { title: 'Spoof Alerts', path: ROUTES.SUPER_ADMIN.SPOOF_ALERTS, moduleCode: 'proxy_detection' },
+        { title: 'Face Analytics Dashboard', path: ROUTES.SUPER_ADMIN.FACE_ATTENDANCE_DASHBOARD, moduleCode: 'face_recognition' },
+        { title: 'Recognition Heatmap', path: ROUTES.SUPER_ADMIN.ATTENDANCE_HEATMAP, moduleCode: 'face_recognition' },
+        { title: 'Late Arrivals', path: ROUTES.SUPER_ADMIN.LATE_ARRIVAL_TRACKING, moduleCode: 'face_recognition' },
+        { title: 'Unknown Faces', path: ROUTES.SUPER_ADMIN.UNKNOWN_FACE_MANAGEMENT, moduleCode: 'face_recognition' },
+        { title: 'AI Reports', path: ROUTES.SUPER_ADMIN.FACE_ATTENDANCE_REPORTS, moduleCode: 'face_recognition' },
         // -- Settings & Tools --
         { title: '-- Settings & Tools --', path: '#att-settings', disabled: true },
-        { title: 'Notification Settings', path: ROUTES.SUPER_ADMIN.ATTENDANCE_NOTIFICATION_SETTINGS },
-        { title: 'System Test Dashboard', path: ROUTES.SUPER_ADMIN.FACE_ATTENDANCE_TEST_DASHBOARD },
-        { title: 'Help & Documentation', path: ROUTES.SUPER_ADMIN.FACE_ATTENDANCE_HELP },
-        { title: 'Admin Settings', path: ROUTES.SUPER_ADMIN.FACE_ATTENDANCE_ADMIN_SETTINGS },
-        { title: 'Wearable Devices', path: ROUTES.SUPER_ADMIN.WEARABLE_DEVICES },
-        { title: 'Attendance Rules', path: ROUTES.SUPER_ADMIN.ATTENDANCE_RULES },
-        { title: 'Geo-Fence Setup', path: ROUTES.SUPER_ADMIN.GEO_FENCE_SETUP },
-        { title: 'Analytics', path: ROUTES.SUPER_ADMIN.ATTENDANCE_ANALYTICS },
+        { title: 'Notification Settings', path: ROUTES.SUPER_ADMIN.ATTENDANCE_NOTIFICATION_SETTINGS, moduleCode: 'face_recognition' },
+        { title: 'System Test Dashboard', path: ROUTES.SUPER_ADMIN.FACE_ATTENDANCE_TEST_DASHBOARD, moduleCode: 'face_recognition' },
+        { title: 'Help & Documentation', path: ROUTES.SUPER_ADMIN.FACE_ATTENDANCE_HELP, moduleCode: 'face_recognition' },
+        { title: 'Admin Settings', path: ROUTES.SUPER_ADMIN.FACE_ATTENDANCE_ADMIN_SETTINGS, moduleCode: 'face_recognition' },
+        { title: 'Wearable Devices', path: ROUTES.SUPER_ADMIN.WEARABLE_DEVICES, moduleCode: 'wearable_devices' },
+        { title: 'Attendance Rules', path: ROUTES.SUPER_ADMIN.ATTENDANCE_RULES, moduleCode: 'automation_rules' },
+        { title: 'Geo-Fence Setup', path: ROUTES.SUPER_ADMIN.GEO_FENCE_SETUP, moduleCode: 'geo_fence' },
+        { title: 'Analytics', path: ROUTES.SUPER_ADMIN.ATTENDANCE_ANALYTICS, moduleCode: 'advanced_report' },
       ],
     },
     {

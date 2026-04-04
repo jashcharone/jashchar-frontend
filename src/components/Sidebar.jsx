@@ -154,13 +154,31 @@ const Sidebar = ({ role, isSidebarOpen, isMobile, toggleSidebar, closeSidebar, o
         
         if (!isAttendanceModule || !item.submenu) return item;
         
+        // Step 1: Filter non-header items based on module config
         const filteredSubmenu = item.submenu.filter(sub => {
-          if (sub.disabled) return true; // Keep section dividers like "-- Advanced --"
+          // Section headers (disabled items with # paths) - check via isPathEnabled which handles section headers
+          if (sub.disabled && sub.path?.startsWith('#')) {
+            return isPathEnabled(sub.path);
+          }
+          if (sub.disabled) return true; // Other dividers always show
           return isPathEnabled(sub.path);
         });
         
-        if (filteredSubmenu.length === 0) return null;
-        return { ...item, submenu: filteredSubmenu };
+        // Step 2: Remove trailing section headers with no items after them
+        const cleanedSubmenu = filteredSubmenu.filter((sub, idx, arr) => {
+          if (sub.disabled && sub.path?.startsWith('#')) {
+            // Check if there's at least one non-disabled item after this header before next header
+            for (let i = idx + 1; i < arr.length; i++) {
+              if (arr[i].disabled && arr[i].path?.startsWith('#')) break; // Hit next section header
+              if (!arr[i].disabled) return true; // Found a real item
+            }
+            return false; // No items in this section
+          }
+          return true;
+        });
+        
+        if (cleanedSubmenu.length === 0) return null;
+        return { ...item, submenu: cleanedSubmenu };
       }).filter(Boolean);
     }
     
@@ -193,7 +211,14 @@ const Sidebar = ({ role, isSidebarOpen, isMobile, toggleSidebar, closeSidebar, o
       
       if (item.submenu && item.submenu.length > 0) {
         const visibleSubmenu = item.submenu.filter(sub => {
-          // Keep section dividers like "-- Advanced --"
+          // Section headers with # paths - check via isPathEnabled (handles section header mapping)
+          if (sub.disabled && sub.path?.startsWith('#')) {
+            if (isAttendanceModule && hasAttendanceConfig) {
+              return isPathEnabled(sub.path);
+            }
+            return true;
+          }
+          // Other dividers
           if (sub.disabled) return true;
           
           // ? ATTENDANCE MODULE FILTERING - Check if path is enabled by Master Admin
@@ -247,8 +272,19 @@ const Sidebar = ({ role, isSidebarOpen, isMobile, toggleSidebar, closeSidebar, o
         });
         
         if (visibleSubmenu.length > 0) {
-          item.submenu = visibleSubmenu;
-          return true;
+          // Clean up section headers that have no items after them
+          const cleanedSubmenu = visibleSubmenu.filter((sub, idx, arr) => {
+            if (sub.disabled && sub.path?.startsWith('#')) {
+              for (let i = idx + 1; i < arr.length; i++) {
+                if (arr[i].disabled && arr[i].path?.startsWith('#')) break;
+                if (!arr[i].disabled) return true;
+              }
+              return false;
+            }
+            return true;
+          });
+          item.submenu = cleanedSubmenu;
+          return cleanedSubmenu.length > 0;
         }
         
         // If no visible submenu but parent has access, show parent without submenu
